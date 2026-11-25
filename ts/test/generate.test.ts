@@ -952,6 +952,22 @@ describe('generate', () => {
   })
 
 
+  test('a hyphenated slug names the elixir app once, in snake case, everywhere', async () => {
+    const out = await generate(['elixir'], 'acme-shop')
+    ok(out['elixir/mix.exs'].includes('app: :acme_shop,'), 'mix.exs names another app')
+    for (const file of ['lib/acme_shop.ex', 'lib/acme_shop_types.ex']) {
+      ok(null != out['elixir/' + file], 'no ' + file)
+    }
+    deepStrictEqual(Object.keys(out).filter((path) => path.startsWith('elixir/lib/acme-shop')), [],
+      'a file is named after the slug')
+    ok(Object.keys(out).some((path) => path.startsWith('elixir/lib/acme_shop/')),
+      'the module folder is named otherwise')
+    ok(/├── acme_shop\.ex\s/.test(out['elixir/README.md']) && /└── acme_shop\//.test(out['elixir/README.md']),
+      'the README tree names other files')
+    ok(out['elixir/README.md'].includes('{:acme_shop, '), 'the install names another app')
+  })
+
+
   test('a manifest description names its target by title and by what it is', async () => {
     const expected: Record<string, string> = {
       ts: 'TypeScript SDK', js: 'JavaScript SDK', py: 'Python SDK', php: 'PHP SDK',

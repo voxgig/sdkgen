@@ -3,13 +3,14 @@ import * as Path from 'node:path'
 
 import { cmp, Content, isPublished, repoInfo, packageVersion, sdkName, readerDir } from '@voxgig/sdkgen'
 
+import { elixirApp } from './app_elixir'
+
 
 const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
   const { target, ctx$ } = props
   const { model } = ctx$
 
-  // Match the app atom in mix.exs: snake_case, since `:a-b` is not a valid atom.
-  const app = model.const.name.toLowerCase().replace(/-/g, '_')
+  const app = elixirApp(model)
 
   if (isPublished(model, target.name)) {
     // Live on Hex: add the dependency to mix.exs deps/0.

@@ -9,6 +9,8 @@ import {
   targetFeatures,
 } from '@voxgig/sdkgen'
 
+import { elixirApp } from './app_elixir'
+
 
 import {
   KIT,
@@ -64,7 +66,7 @@ const Main = cmp(async function Main(props: any) {
   Folder({ name: 'lib' }, () => {
     Copy({
       from: 'tm/' + target.name + '/lib/projectname',
-      to: model.const.name,
+      to: elixirApp(model),
       exclude: [
         ...inactiveFeatureExcludes(props.ctx$, target, 'tm/' + target.name + '/lib/projectname'),
         ...pluginExcludes(model),
@@ -78,7 +80,7 @@ const Main = cmp(async function Main(props: any) {
   Folder({ name: 'lib' }, () => {
 
     // Main SDK module (entity factory fns injected at the slot).
-    File({ name: model.const.name + '.' + target.ext }, () => {
+    File({ name: elixirApp(model) + '.' + target.ext }, () => {
       Fragment(
         {
           from: ff + 'Main.fragment.ex',

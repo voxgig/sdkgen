@@ -6,6 +6,8 @@ import {
   File, Folder, Content,
 } from '@voxgig/sdkgen'
 
+import { elixirApp } from './app_elixir'
+
 import { opRequestShape, OP_SUFFIX, warnEntityTypeCollisions, deriveEntityNames, elixirTypeName, entityCollection } from '@voxgig/sdkgen'
 
 import {
@@ -49,7 +51,7 @@ const EntityTypes = cmp(function EntityTypes(props: any) {
   const { model, log } = props.ctx$
 
   const Name = model.const.Name
-  const app = model.const.name.toLowerCase()
+  const app = elixirApp(model)
 
   const entity = getModelPath(model, `main.${KIT}.entity`, { only_active: false, required: false })
   // Emit for EVERY entity that gets an entity module: the consumer scaffold
