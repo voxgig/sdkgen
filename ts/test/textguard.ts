@@ -244,7 +244,7 @@ function variations(): Variation[] {
     targets: [lead],
     extra: base.extra + `\nmain: kit: phase: top: active: false\nmain: kit: target: ${lead}: output: root: true`,
   })
-  for (const away of Object.keys(wraps).slice(0, 1)) {
+  for (const away of [Object.keys(wraps)[0], lead].filter((t) => null != t)) {
     with_('external-' + away, 'placement', {
       extra: base.extra + `\nmain: kit: target: '${away}': output: ` +
         `{ path: '../elsewhere/${away}', repo: 'acme/${away}', sdkrel: '../sdk' }`,

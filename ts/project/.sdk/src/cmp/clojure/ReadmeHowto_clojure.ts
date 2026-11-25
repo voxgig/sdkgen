@@ -1,5 +1,5 @@
 
-import { cmp, Content, canonKey, canonScalarKey, entityIdField, pickExampleEntity, requiredItems, matchExampleItems, requestExampleItems } from '@voxgig/sdkgen'
+import { cmp, Content, canonKey, canonScalarKey, entityIdField, pickExampleEntity, requiredItems, matchExampleItems, requestExampleItems, cdTarget } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -143,7 +143,7 @@ vendored struct corpus) runs offline through a single \`tools.deps\` entry
 point:
 
 \`\`\`bash
-cd ${target.name} && make test
+${cdTarget(target)}make test
 \`\`\`
 
 To exercise the SDK against the live API, construct a client with real

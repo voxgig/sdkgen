@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, safeVarName, exampleVarName, requiredItems, litPair, matchExampleItems, requestExampleItems, envLocalAt } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, safeVarName, exampleVarName, requiredItems, litPair, matchExampleItems, requestExampleItems, envLocalAt, cdTarget } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -139,7 +139,7 @@ ${envName(model)}_TEST_LIVE=TRUE${apikeyEnvLine}
 Then run:
 
 \`\`\`bash
-cd py && pytest test/
+${cdTarget(target)}pytest test/
 \`\`\`
 
 `)

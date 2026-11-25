@@ -1,5 +1,7 @@
 
-import { cmp, Content, installCommand, isPublished, repoInfo } from '@voxgig/sdkgen'
+import * as Path from 'node:path'
+
+import { cmp, Content, installCommand, isPublished, repoInfo, cdTarget, readerDir } from '@voxgig/sdkgen'
 
 
 const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
@@ -14,7 +16,7 @@ ${installCommand(model, target.name)}
 Or add a project reference to a source checkout:
 
 \`\`\`bash
-dotnet add reference ../${model.const.Name}SDK/${model.const.Name}SDK.csproj
+dotnet add reference ${Path.posix.join('..', repoInfo(model).repo, readerDir(target), model.const.Name + 'SDK.csproj')}
 \`\`\`
 
 `)
@@ -29,7 +31,7 @@ release tag (\`${target.name}/vX.Y.Z\`, see [Tags](${tagsUrl})) or
 from a source checkout — build the library and add a project reference:
 
 \`\`\`bash
-cd csharp && dotnet build ${model.const.Name}SDK.csproj
+${cdTarget(target)}dotnet build ${model.const.Name}SDK.csproj
 \`\`\`
 
 `)

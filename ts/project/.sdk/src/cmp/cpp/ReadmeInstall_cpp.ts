@@ -1,5 +1,7 @@
 
-import { cmp, Content, repoInfo, sdkName } from '@voxgig/sdkgen'
+import * as Path from 'node:path'
+
+import { cmp, Content, repoInfo, sdkName, readerDir } from '@voxgig/sdkgen'
 
 
 const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
@@ -11,15 +13,17 @@ const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
   // SDK directory on the compiler include path. The git release tag
   // (`cpp/vX.Y.Z`) is the unit of distribution.
   const { tagsUrl } = repoInfo(model)
+  const dir = readerDir(target)
+  const vendored = '.' === dir ? 'repository' : '\`' + dir + '/\` directory'
 
   Content(`The ${target.title} SDK is **header-only** — there is no package to install
-from a registry. Vendor the \`cpp/\` directory into your project (or add the
+from a registry. Vendor the ${vendored} into your project (or add the
 repository as a git submodule) and put it on your compiler's include path.
 Releases are cut as the git tag \`${target.name}/vX.Y.Z\` (see
 [Tags](${tagsUrl})).
 
 \`\`\`bash
-# Add the SDK as a submodule (or copy the cpp/ directory into your tree).
+# Add the SDK as a submodule (or copy ${'.' === dir ? 'it' : 'the ' + dir + '/ directory'} into your tree).
 git submodule add <repo-url> third_party/${sdkName(model.const.Name.toLowerCase())}
 \`\`\`
 
@@ -30,7 +34,7 @@ Then include the umbrella header and compile with C++17:
 \`\`\`
 
 \`\`\`bash
-g++ -std=c++17 -Ithird_party/${sdkName(model.const.Name.toLowerCase())}/cpp your_app.cpp -o your_app
+g++ -std=c++17 -I${Path.posix.join('third_party', sdkName(model.const.Name.toLowerCase()), dir)} your_app.cpp -o your_app
 \`\`\`
 
 `)

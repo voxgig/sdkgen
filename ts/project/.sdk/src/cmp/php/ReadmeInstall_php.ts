@@ -1,5 +1,7 @@
 
-import { cmp, Content, installCommand, isPublished, packageName, repoInfo } from '@voxgig/sdkgen'
+import * as Path from 'node:path'
+
+import { cmp, Content, installCommand, isPublished, packageName, repoInfo, readerDir } from '@voxgig/sdkgen'
 
 
 const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
@@ -24,7 +26,7 @@ from a clone as a Composer path repository:
 
 \`\`\`bash
 git clone ${repoUrl}
-composer config repositories.${repo} path ./${repo}/${target.name}
+composer config repositories.${repo} path ./${Path.posix.join(repo, readerDir(target))}
 composer require ${packageName(model, target.name)}:@dev
 \`\`\`
 

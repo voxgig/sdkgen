@@ -13,6 +13,21 @@ function envLocalAt(ctx$: any, target: any): string {
 }
 
 
+// A target's directory as its own documents name it: its folder, from the root
+// of this repository, or `.` where the reader of its README stands in it.
+function readerDir(target: any): string {
+  return 'folder' === fact(target, 'place') ? fact(target, 'dir') : '.'
+}
+
+
+function cdTarget(target: any): string {
+  const dir = readerDir(target)
+  return '.' === dir ? '' : 'cd ' + dir + ' && '
+}
+
+
 export {
+  cdTarget,
   envLocalAt,
+  readerDir,
 }

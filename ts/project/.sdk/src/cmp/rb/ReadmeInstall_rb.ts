@@ -1,5 +1,7 @@
 
-import { cmp, Content, installCommand, isPublished, packageName, repoInfo } from '@voxgig/sdkgen'
+import * as Path from 'node:path'
+
+import { cmp, Content, installCommand, isPublished, packageName, repoInfo, readerDir } from '@voxgig/sdkgen'
 
 
 const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
@@ -41,7 +43,7 @@ git clone ${repoUrl}
 Then add it to your \`Gemfile\` by path, and run \`bundle install\`:
 
 \`\`\`ruby
-gem "${packageName(model, target.name)}", path: "./${repo}/${target.name}"
+gem "${packageName(model, target.name)}", path: "./${Path.posix.join(repo, readerDir(target))}"
 \`\`\`
 
 `)

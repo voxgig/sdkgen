@@ -1,5 +1,5 @@
 
-import { cmp, Content, isPublished, repoInfo, packageVersion, sdkName } from '@voxgig/sdkgen'
+import { cmp, Content, isPublished, repoInfo, packageVersion, sdkName, cdTarget } from '@voxgig/sdkgen'
 
 import { mavenGroupId } from './utility_scala'
 
@@ -27,7 +27,7 @@ libraryDependencies += "${groupId}" %% "${artifactId}" % "${packageVersion(model
 Or build from a source checkout — the SDK is a plain scala-cli project:
 
 \`\`\`bash
-cd scala && scala-cli compile .
+${cdTarget(target)}scala-cli compile .
 \`\`\`
 
 `)
@@ -46,7 +46,7 @@ dependencies). Install it from the ${hostName} release tag
 checkout — compile it with scala-cli:
 
 \`\`\`bash
-cd scala && scala-cli compile .
+${cdTarget(target)}scala-cli compile .
 \`\`\`
 
 `)

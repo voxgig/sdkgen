@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, safeVarName, exampleVarName, seededList, litPair, matchExampleItems, requestExampleItems, envLocalAt } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, safeVarName, exampleVarName, seededList, litPair, matchExampleItems, requestExampleItems, envLocalAt, cdTarget } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -157,7 +157,7 @@ ${envName(model)}_TEST_LIVE=TRUE${apikeyEnvLine}
 Then run:
 
 \`\`\`bash
-cd rb && ruby -Itest -e "Dir['test/*_test.rb'].each { |f| require_relative f }"
+${cdTarget(target)}ruby -Itest -e "Dir['test/*_test.rb'].each { |f| require_relative f }"
 \`\`\`
 
 `)

@@ -1,5 +1,5 @@
 
-import { cmp, Content, isPublished, repoInfo, packageVersion } from '@voxgig/sdkgen'
+import { cmp, Content, isPublished, repoInfo, packageVersion, cdTarget } from '@voxgig/sdkgen'
 
 
 const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
@@ -18,7 +18,7 @@ dependencies: [
 Or build from a source checkout — the SDK is a plain SwiftPM package:
 
 \`\`\`bash
-cd swift && swift build
+${cdTarget(target)}swift build
 \`\`\`
 
 `)
@@ -46,7 +46,7 @@ dependencies: [
 Or build from a source checkout with SwiftPM:
 
 \`\`\`bash
-cd swift && swift build
+${cdTarget(target)}swift build
 \`\`\`
 
 `)

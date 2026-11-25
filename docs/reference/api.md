@@ -199,6 +199,16 @@ then it names the SDK project that generates the target, with the path back
 to it from the target's directory. A `ReadmeHowto_<lang>` component ends its
 "Create a `.env.local` file" sentence with it.
 
+### `readerDir(target) → string` and `cdTarget(target) → string`
+
+A target's directory as its own documents name it. For a target generated
+in a folder of the repository, `readerDir` answers that folder, so a command
+the README gives from the repository root enters it, and `cdTarget` answers
+`cd <folder> && `. A target generated at the project root or in another
+repository is the directory its README sits in: `readerDir` answers `.` and
+`cdTarget` answers an empty string. The per-language `ReadmeHowto` and
+`ReadmeInstall` components build every `cd` line and checkout path with them.
+
 ### `collectDeps(model, targetName, targetDeps) → DepEntry[]`
 
 Collect target-language dependencies from features and from the target's

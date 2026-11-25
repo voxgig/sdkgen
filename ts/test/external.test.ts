@@ -704,6 +704,19 @@ describe('external target', () => {
     })
 
 
+    // Out of tree the reader of a target's README stands in its directory.
+    test('a relocated target\'s documents enter no folder of the SDK repository', async () => {
+      for (const t of ['ts', 'go', 'c']) {
+        const away = (await generate([t], t,
+          `main: kit: target: '${t}': output: sdkrel: '../../zzproj'`)).outside
+        const entered = Object.keys(away).flatMap((path: string) => away[path].split('\n')
+          .filter((line: string) => new RegExp('\\bcd ' + t + '\\b|(?<![\\w/.-])' + t + '/core\\b').test(line))
+          .map((line: string) => path + ': ' + line))
+        deepStrictEqual(entered, [], t + ': a relocated tree enters ' + t + '/')
+      }
+    })
+
+
     test('a declared `output: sdkrel` replaces the derivation', async () => {
       const sink: any[] = []
       const gen = setup(['go', 'go-cli'], { 'go-cli': OUT },

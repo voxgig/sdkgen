@@ -1,5 +1,7 @@
 
-import { cmp, Content, isPublished, repoInfo } from '@voxgig/sdkgen'
+import * as Path from 'node:path'
+
+import { cmp, Content, isPublished, repoInfo, readerDir } from '@voxgig/sdkgen'
 
 
 const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
@@ -31,15 +33,14 @@ using a \`tools.deps\` git dependency:
 {:deps {${model.const.Name.toLowerCase()}/sdk
         {:git/url "${repoUrl}"
          :git/tag "${target.name}/vX.Y.Z"
-         :git/sha "..."
-         :deps/root "${target.name}"}}}
+         :git/sha "..."${'.' === readerDir(target) ? '' : '\n         :deps/root "' + readerDir(target) + '"'}}}}
 \`\`\`
 
 Or from a local source checkout:
 
 \`\`\`clojure
 ;; deps.edn
-{:deps {${model.const.Name.toLowerCase()}/sdk {:local/root "../${target.name}"}}}
+{:deps {${model.const.Name.toLowerCase()}/sdk {:local/root "${Path.posix.join('..', repo, readerDir(target))}"}}}
 \`\`\`
 
 `)

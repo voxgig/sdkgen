@@ -1,5 +1,7 @@
 
-import { cmp, Content, installCommand, isPublished, repoInfo } from '@voxgig/sdkgen'
+import * as Path from 'node:path'
+
+import { cmp, Content, installCommand, isPublished, repoInfo, readerDir } from '@voxgig/sdkgen'
 
 import { crateName } from './utility_rust'
 
@@ -17,7 +19,7 @@ Or add it as a path dependency in your \`Cargo.toml\`:
 
 \`\`\`toml
 [dependencies]
-${crateName(model)} = { path = "../${target.name}" }
+${crateName(model)} = { path = "${Path.posix.join('..', repoInfo(model).repo, readerDir(target))}" }
 \`\`\`
 
 `)
@@ -34,7 +36,7 @@ from a source checkout by adding it to your \`Cargo.toml\`:
 \`\`\`toml
 [dependencies]
 # From a source checkout:
-${crateName(model)} = { path = "../${target.name}" }
+${crateName(model)} = { path = "${Path.posix.join('..', repoInfo(model).repo, readerDir(target))}" }
 
 # Or from the git release tag:
 # ${crateName(model)} = { git = "<repo-url>", tag = "${target.name}/vX.Y.Z" }

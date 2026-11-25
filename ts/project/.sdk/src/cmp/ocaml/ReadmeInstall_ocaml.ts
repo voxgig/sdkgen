@@ -1,5 +1,5 @@
 
-import { cmp, Content, installCommand, isPublished, repoInfo } from '@voxgig/sdkgen'
+import { cmp, Content, installCommand, isPublished, repoInfo, cdTarget } from '@voxgig/sdkgen'
 
 
 const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
@@ -15,7 +15,7 @@ Or build from a source checkout — the SDK is dependency-free and compiles
 with the stock \`ocamlc\` (no opam packages, no dune):
 
 \`\`\`bash
-cd ${target.name} && make build
+${cdTarget(target)}make build
 \`\`\`
 
 `)
@@ -32,7 +32,7 @@ or from a source checkout. The SDK is dependency-free and compiles with the
 stock \`ocamlc\` — no opam packages, no dune:
 
 \`\`\`bash
-cd ${target.name} && make build
+${cdTarget(target)}make build
 \`\`\`
 
 `)

@@ -1,5 +1,5 @@
 
-import { cmp, Content, installCommand, isPublished, repoInfo } from '@voxgig/sdkgen'
+import { cmp, Content, installCommand, isPublished, repoInfo, cdTarget } from '@voxgig/sdkgen'
 
 
 const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
@@ -14,7 +14,7 @@ ${installCommand(model, target.name)}
 Or build it from a source checkout:
 
 \`\`\`bash
-cd ${target.name} && zig build
+${cdTarget(target)}zig build
 \`\`\`
 
 `)
@@ -30,7 +30,7 @@ git tag (\`${target.name}/vX.Y.Z\`, see [Tags](${tagsUrl})). Add it to
 your \`build.zig.zon\` dependencies, or build from a source checkout:
 
 \`\`\`bash
-cd ${target.name} && zig build
+${cdTarget(target)}zig build
 \`\`\`
 
 To depend on it from another project, add the tagged archive to

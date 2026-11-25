@@ -1,5 +1,7 @@
 
-import { cmp, Content, installCommand, isPublished, repoInfo } from '@voxgig/sdkgen'
+import * as Path from 'node:path'
+
+import { cmp, Content, installCommand, isPublished, repoInfo, cdTarget, readerDir } from '@voxgig/sdkgen'
 
 import { cIdent } from './utility_c'
 
@@ -8,11 +10,12 @@ import { cIdent } from './utility_c'
 // do to keep it so.
 function linking(target: any, model: any): string {
   const prefix = cIdent(model) + '_'
+  const dir = readerDir(target)
   return `Every global name in \`libsdk.a\` carries this SDK's prefix
 (\`${prefix}sdk_prepare\`, \`${prefix}cmap\`, ...), so one program can link several
 generated SDKs. \`make\` maps each short name to its prefixed one in
-\`${target.name}/core/prefix.h\`, which the SDK is compiled with, and each name its
-headers declare in \`${target.name}/core/prefix_api.h\`, which \`core/api.h\` includes,
+\`${Path.posix.join(dir, 'core/prefix.h')}\`, which the SDK is compiled with, and each name its
+headers declare in \`${Path.posix.join(dir, 'core/prefix_api.h')}\`, which \`core/api.h\` includes,
 so your code keeps the short names and the SDK's private names never rename
 your own. Include \`core/api.h\` before any other SDK header, and give each SDK
 a source file of its own: the headers of two SDKs declare the same type names.
@@ -33,7 +36,7 @@ ${installCommand(model, target.name)}
 Or build it from a source checkout with the bundled \`Makefile\`:
 
 \`\`\`bash
-cd ${target.name} && make
+${cdTarget(target)}make
 \`\`\`
 
 ${linking(target, model)}`)
@@ -51,16 +54,16 @@ vendored under \`utility/struct\`, so there are no external dependencies to
 fetch:
 
 \`\`\`bash
-cd ${target.name} && make          # builds libsdk.a
-cd ${target.name} && make test     # builds + runs the test binaries
+${cdTarget(target)}make          # builds libsdk.a
+${cdTarget(target)}make test     # builds + runs the test binaries
 \`\`\`
 
 Link your program against \`libsdk.a\` and the libraries \`make -s ldlibs\`
 prints, and include \`core/api.h\`:
 
 \`\`\`bash
-cc -I ${target.name}/core -I ${target.name}/utility/struct \\
-   myapp.c ${target.name}/libsdk.a $(make -s -C ${target.name} ldlibs) -o myapp
+cc -I ${Path.posix.join(readerDir(target), 'core')} -I ${Path.posix.join(readerDir(target), 'utility/struct')} \\
+   myapp.c ${Path.posix.join(readerDir(target), 'libsdk.a')} $(make -s -C ${readerDir(target)} ldlibs) -o myapp
 \`\`\`
 
 ${linking(target, model)}`)

@@ -1,5 +1,5 @@
 
-import { cmp, Content, isPublished, repoInfo, packageVersion, sdkName } from '@voxgig/sdkgen'
+import { cmp, Content, isPublished, repoInfo, packageVersion, sdkName, cdTarget } from '@voxgig/sdkgen'
 
 import { gradleGroup } from './utility_kotlin'
 
@@ -23,7 +23,7 @@ dependencies {
 Or build and install from a source checkout:
 
 \`\`\`bash
-cd kotlin && gradle build
+${cdTarget(target)}gradle build
 \`\`\`
 
 `)
@@ -38,7 +38,7 @@ release tag (\`${target.name}/vX.Y.Z\`, see [Tags](${tagsUrl})) or
 from a source checkout — build the library with Gradle:
 
 \`\`\`bash
-cd kotlin && gradle build
+${cdTarget(target)}gradle build
 \`\`\`
 
 `)

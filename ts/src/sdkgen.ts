@@ -70,7 +70,7 @@ import { guardModelNames } from './helpers/modelNames'
 import { guardFlowSteps } from './helpers/flowGuard'
 import { guardModel } from './helpers/guardModel'
 import { sourceString } from './helpers/sourcestring'
-import { envLocalAt } from './helpers/readerdir'
+import { cdTarget, envLocalAt, readerDir } from './helpers/readerdir'
 import { applyFacts, fact, refuseRootPlan } from './helpers/facts'
 import { docFindings } from './helpers/doccheck'
 import { claimedFiles, pruneGenerated } from './helpers/generated'
@@ -1199,6 +1199,8 @@ export {
   guardModel,
   sourceString,
   envLocalAt,
+  readerDir,
+  cdTarget,
   applyFacts,
   fact,
   projectConst,

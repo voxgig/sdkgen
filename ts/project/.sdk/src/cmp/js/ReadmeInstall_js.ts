@@ -1,5 +1,7 @@
 
-import { cmp, Content, isPublished, repoInfo } from '@voxgig/sdkgen'
+import * as Path from 'node:path'
+
+import { cmp, Content, isPublished, repoInfo, readerDir } from '@voxgig/sdkgen'
 
 
 const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
@@ -24,7 +26,7 @@ clone:
 
 \`\`\`bash
 git clone ${repoUrl}
-npm install ./${repo}/${target.name}
+npm install ./${Path.posix.join(repo, readerDir(target))}
 \`\`\`
 
 `)

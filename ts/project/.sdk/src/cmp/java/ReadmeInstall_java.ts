@@ -1,5 +1,5 @@
 
-import { cmp, Content, isPublished, repoInfo, packageVersion, sdkName } from '@voxgig/sdkgen'
+import { cmp, Content, isPublished, repoInfo, packageVersion, sdkName, cdTarget } from '@voxgig/sdkgen'
 
 import { mavenGroupId } from './utility_java'
 
@@ -25,7 +25,7 @@ const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
 Or build and install from a source checkout:
 
 \`\`\`bash
-cd java && mvn install
+${cdTarget(target)}mvn install
 \`\`\`
 
 `)
@@ -40,7 +40,7 @@ release tag (\`${target.name}/vX.Y.Z\`, see [Tags](${tagsUrl})) or
 from a source checkout — build the library with Maven:
 
 \`\`\`bash
-cd java && mvn install
+${cdTarget(target)}mvn install
 \`\`\`
 
 `)
