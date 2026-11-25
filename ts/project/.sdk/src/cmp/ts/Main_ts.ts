@@ -122,12 +122,6 @@ if (null != this._secrets) {
             '// #SecretsExport': ({ indent }: any) => secrets ?
               Line({ indent }, 'sekreto,') : undefined,
 
-            '#BuildFeatures': ({ indent }: any) => {
-              List({ item: feature, line: false }, ({ item }: any) =>
-                Line({ indent },
-                  `featureAdd(this._rootctx, new ${item.Name}Feature())`))
-            },
-
             '#Feature-Hook': ({ name, indent }: any) => Content({ indent }, `
 fres = featureHook(ctx, '${name}')
 if (fres instanceof Promise) { await fres }

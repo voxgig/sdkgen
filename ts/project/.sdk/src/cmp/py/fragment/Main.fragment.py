@@ -91,8 +91,6 @@ class ProjectNameSDK:
 
         utility.feature_hook(self._rootctx, "PostConstruct")
 
-        # #BuildFeatures
-
     @property
     def options(self):
         return self._options

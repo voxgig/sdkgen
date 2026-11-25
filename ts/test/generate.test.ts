@@ -785,6 +785,37 @@ describe('generate', () => {
   })
 
 
+  // A comment holding nothing but `#Name` or `#Name-Tag` is a fragment marker
+  // no replacement fired on.
+  test('no fragment marker line survives into generated source', async () => {
+    const MARKER =
+      /^\s*(\/\/|#|--|;+|\(\*|\/\*|\*)\s*#[A-Z][A-Za-z0-9]*(-[A-Z][A-Za-z0-9]*)?\s*(\*\)|\*\/)?\s*$/
+    const features = readdirSync(Path.resolve(__dirname, '..', 'project', '.sdk', 'model', 'feature'))
+      .filter((f: string) => f.endsWith('.aontu') && !f.includes('-index'))
+      .map((f: string) => f.replace(/\.aontu$/, ''))
+    const targets = [...sdkTargets(), ...NON_SDK_TARGETS]
+
+    const left: string[] = []
+    for (const featureSet of [undefined, features]) {
+      const out = await generate(targets, undefined, undefined, undefined, featureSet)
+      for (const [path, text] of Object.entries(out)) {
+        if (path.endsWith('.md') || 'string' !== typeof text) continue
+        text.split('\n').forEach((line: string, i: number) => {
+          if (MARKER.test(line)) left.push(path + ':' + (i + 1) + ': ' + line.trim())
+        })
+      }
+    }
+    deepStrictEqual(left, [])
+  })
+
+
+  test('lua: each feature comment is indented as the constructor body around it', async () => {
+    const main = (await generate(['lua']))['lua/demo_sdk.lua']
+    deepStrictEqual(main.split('\n').filter((line: string) => line.includes('-- feature: ')),
+      ['  -- feature: log', '  -- feature: test'])
+  })
+
+
   // The title, which an alias keeps, rather than the key, which it renames.
   test('ts, js: the main SDK file is headed with the target\'s title', async () => {
     for (const target of ['ts', 'js']) {

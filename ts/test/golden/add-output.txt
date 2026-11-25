@@ -530,7 +530,7 @@ src/cmp/go/EntityTypes_go.ts 3702d5d19fd2
 src/cmp/go/Entity_go.ts 7ee87e28bab9
 src/cmp/go/Gitignore_go.ts 93490d4fab7a
 src/cmp/go/MainEntity_go.ts b9f011d284f8
-src/cmp/go/Main_go.ts 174638830097
+src/cmp/go/Main_go.ts bdfdf88d1789
 src/cmp/go/Package_go.ts 111b2b904994
 src/cmp/go/PrepareAuth_go.ts 397083cd6c97
 src/cmp/go/ReadmeEntity_go.ts 52b6a144ae95
@@ -787,7 +787,7 @@ src/cmp/js/EntityTypes_js.ts 6c115a92a18f
 src/cmp/js/Entity_js.ts debbc06d5c79
 src/cmp/js/Gitignore_js.ts 7e1f5ab06113
 src/cmp/js/MainEntity_js.ts 2d4bef66f0c1
-src/cmp/js/Main_js.ts 9bfa6b81bac7
+src/cmp/js/Main_js.ts b9f8c80bcf65
 src/cmp/js/Package_js.ts bf2c5d8163f2
 src/cmp/js/PrepareAuth_js.ts 9742af3eb16d
 src/cmp/js/ReadmeEntity_js.ts 2d00cb31f641
@@ -1010,7 +1010,7 @@ src/cmp/lua/EntityTypes_lua.ts ea893834ebd9
 src/cmp/lua/Entity_lua.ts 480ffabdb329
 src/cmp/lua/Gitignore_lua.ts ddf4d3003936
 src/cmp/lua/MainEntity_lua.ts 5dcd807504e4
-src/cmp/lua/Main_lua.ts 12d209201ab5
+src/cmp/lua/Main_lua.ts 50659c0ef4fe
 src/cmp/lua/Package_lua.ts a2e4299a9bbb
 src/cmp/lua/PrepareAuth_lua.ts cc49fb94005b
 src/cmp/lua/ReadmeEntity_lua.ts 999d57a4df76
@@ -1289,7 +1289,7 @@ src/cmp/php/EntityTypes_php.ts 4ffa1b893ae1
 src/cmp/php/Entity_php.ts 11d4cc8b9dae
 src/cmp/php/Gitignore_php.ts e6379c0edbe7
 src/cmp/php/MainEntity_php.ts 63d270027217
-src/cmp/php/Main_php.ts 7cf40a8baf83
+src/cmp/php/Main_php.ts 86eb87103ce8
 src/cmp/php/Package_php.ts d6e54478a53a
 src/cmp/php/PrepareAuth_php.ts c1c0ed41ade8
 src/cmp/php/ReadmeEntity_php.ts a7b6d0434fe8
@@ -1394,7 +1394,7 @@ src/cmp/py/EntityTypes_py.ts fb8f811e2680
 src/cmp/py/Entity_py.ts 4cd98dd60bc0
 src/cmp/py/Gitignore_py.ts 07f7135b0381
 src/cmp/py/MainEntity_py.ts 853d7533f8fb
-src/cmp/py/Main_py.ts 5630f0feb88c
+src/cmp/py/Main_py.ts b75bd1b62455
 src/cmp/py/Package_py.ts 69c4ddb165ed
 src/cmp/py/PrepareAuth_py.ts 43f26508d49b
 src/cmp/py/ReadmeEntity_py.ts c0fff5be4178
@@ -1422,7 +1422,7 @@ src/cmp/py/fragment/EntityLoadOp.fragment.py 064347063bcd
 src/cmp/py/fragment/EntityPatchOp.fragment.py 626869d06e72
 src/cmp/py/fragment/EntityRemoveOp.fragment.py a023efcf614f
 src/cmp/py/fragment/EntityUpdateOp.fragment.py 9fee208f42c0
-src/cmp/py/fragment/Main.fragment.py 8b87526d0835
+src/cmp/py/fragment/Main.fragment.py 5e2685d984f2
 src/cmp/py/tsconfig.json 720a3f229019
 src/cmp/py/utility_py.ts dcadf423b5da
 tm/py/LICENSE 52acd47c245f
@@ -1529,7 +1529,7 @@ src/cmp/rb/EntityTypes_rb.ts 632232bd2ef4
 src/cmp/rb/Entity_rb.ts a7ca2f61dccf
 src/cmp/rb/Gitignore_rb.ts d6ab9def4134
 src/cmp/rb/MainEntity_rb.ts a88eedc19290
-src/cmp/rb/Main_rb.ts d92e24cb896b
+src/cmp/rb/Main_rb.ts fa32d80e5fbf
 src/cmp/rb/Package_rb.ts 2391c7fb8c9b
 src/cmp/rb/PrepareAuth_rb.ts 7db3c548fb09
 src/cmp/rb/ReadmeEntity_rb.ts cbeafa4bd3d4
@@ -2029,7 +2029,7 @@ src/cmp/ts/EntityTypes_ts.ts 4d45bb867597
 src/cmp/ts/Entity_ts.ts 866beb700dc7
 src/cmp/ts/Gitignore_ts.ts e445d077a3ac
 src/cmp/ts/MainEntity_ts.ts 17072010d850
-src/cmp/ts/Main_ts.ts ff8fe17495ba
+src/cmp/ts/Main_ts.ts d29dfd5c4f67
 src/cmp/ts/Package_ts.ts 61d52a361614
 src/cmp/ts/PrepareAuth_ts.ts 13cc5f3c7f72
 src/cmp/ts/ReadmeEntity_ts.ts 4f1fb3daec35
