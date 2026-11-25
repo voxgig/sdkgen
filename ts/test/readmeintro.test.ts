@@ -79,12 +79,12 @@ describe('ReadmeIntro', () => {
 describe('introOps', () => {
   const ops = (entity: any) => introOps({ main: { kit: { entity } } })
 
-  test('names the active ops of the active entities, canonical first', () => {
+  test('names the active ops of the active entities that the targets generate, in canonical order', () => {
     deepStrictEqual(ops({
       a: { op: { remove: {}, search: {}, list: {}, load: { active: false } } },
       b: { op: { create: {}, archive: {} } },
       c: { active: false, op: { update: {} } },
-    }), ['list', 'create', 'remove', 'search', 'archive'])
+    }), ['list', 'create', 'remove'])
   })
 
   test('names list and load when nothing is active', () => {

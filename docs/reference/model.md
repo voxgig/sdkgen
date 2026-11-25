@@ -28,6 +28,11 @@ properties the point's JSON request body declares, or is `false` for a JSON
 body that declares none. Arguments use `a`, `k`, `n`, `r`, and `t`; `or`
 preserves the original name and `ex` supplies an example.
 
+An operation itself takes `active: false` to leave it out of the SDK, as in
+`main: kit: entity: planet: op: remove: active: false`. Generation removes such
+an operation before anything reads the model, so no target's code, document or
+test names it, and a flow step on it is made inactive as below.
+
 Flow steps use `a`, `o`, `i`, `m`, `d`, `s`, and `v` for activation,
 operation, inputs, match, data, mutations, and assertions. Inactive steps
 are omitted from generated tests. Generation also makes a step inactive when

@@ -1,10 +1,5 @@
 {
-  "suspended": [
-    {
-      "family": "op",
-      "reason": "DQ1: what an operation-level active: false means is undecided; until it is, the family is one entry rather than a pin per line"
-    }
-  ],
+  "suspended": [],
   "pins": [
     {
       "relation": "fence",

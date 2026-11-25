@@ -183,6 +183,8 @@ main: kit: entity: &: {
   active: *true | boolean
 
   alias: {}
+
+  op: &: active: *true | boolean
 }
 
 

@@ -395,19 +395,17 @@ function invalidRequest(ent: any):
 }
 
 
-// The entity's ACTIVE op names, in canonical CRUD order, then any others
-// sorted. Doc generators gate an op example on this, NOT on the raw
-// `Object.keys(ent.op)`: an `active: false` op generates no method, and an op
-// whose every route is an action is refused without one, so a plain example
-// of either would fail.
+// The entity's ACTIVE op names that the bundled targets generate, in canonical
+// CRUD order. Doc generators gate an op example on this, NOT on the raw
+// `Object.keys(ent.op)`: an op outside `CANON_OP_ORDER` generates no method,
+// and an op whose every route is an action is refused without one, so a plain
+// example of either would fail.
 const CANON_OP_ORDER = ['list', 'load', 'create', 'update', 'patch', 'remove']
 
 function entityOps(ent: any): string[] {
   const ops = (ent && ent.op) || {}
-  const active = Object.keys(ops).filter((o: string) =>
+  return CANON_OP_ORDER.filter((o: string) =>
     ops[o] && ops[o].active !== false && !opNeedsAction(ops[o]))
-  return CANON_OP_ORDER.filter((o) => active.includes(o))
-    .concat(active.filter((o) => !CANON_OP_ORDER.includes(o)).sort())
 }
 
 
@@ -422,7 +420,6 @@ function introOps(model: any): string[] {
     }
   }
   const names = CANON_OP_ORDER.filter((o) => found.has(o))
-    .concat([...found].filter((o) => !CANON_OP_ORDER.includes(o)))
   return 0 < names.length ? names : ['list', 'load']
 }
 
