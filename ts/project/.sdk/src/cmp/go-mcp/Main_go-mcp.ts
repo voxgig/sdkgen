@@ -212,15 +212,31 @@ const Main = cmp(function Main(props: any) {
   const toggle = `\`main: kit: target: '${target.name}': tool: write: true\``
   const writeOps = tools.map((tool) => tool.op).filter((op) => MCP_WRITE_OPS.includes(op))
   const writeNames = phrase(writeOps)
+  // The write tools the toggle would add, which the model may have none of.
+  const writable = mcpTools(model, target.name, true).map((tool) => tool.op)
+    .filter((op) => MCP_WRITE_OPS.includes(op))
+  const writableNames = phrase(writable)
   const writeText = 0 < writeOps.length ?
     `${writeNames.charAt(0).toUpperCase() + writeNames.slice(1)} ${1 < writeOps.length ? 'are' : 'is'} on, as the SDK's model sets
 ${toggle}. Each tool carries the MCP hints an agent host reads before calling
-it, listed in the reference below.` : write ?
+it, listed in the reference below.` : 0 === writable.length ? (write ?
       `The server only reads: the SDK's model sets ${toggle}, but no entity
 has a create, update, patch or remove a plain call runs.` :
-      `The server only reads. Create, update, patch and remove become tools too when the
-SDK's own model sets ${toggle}; they are off by default, as an agent calling
-them changes the API's data.`
+      'The server only reads: no entity has a create, update, patch or remove a plain call runs.') :
+      `The server only reads. ${writableNames.charAt(0).toUpperCase() + writableNames.slice(1)} ${1 < writable.length ?
+        'become tools' : 'becomes a tool'} too when the
+SDK's own model sets ${toggle}; ${1 < writable.length ? 'they are' : 'it is'} off by default, as an agent calling
+${1 < writable.length ? 'them' : 'it'} changes the API's data.`
+
+  const toggleHowto = 0 === writable.length ? '' : `### ${write ? 'Turn the write tools off' : 'Turn on the write tools'}
+
+In the SDK's own model (\`.sdk/model/sdk.aontu\`), then regenerate:
+
+\`\`\`
+main: kit: target: '${target.name}': tool: write: ${write ? 'false' : 'true'}
+\`\`\`
+
+`
 
   const goSdk = '' !== sdk.dir ? `the sibling Go SDK at \`${sdk.path}\`` :
     sdk.away ? 'the Go SDK in ' + ('' === sdk.url ? 'its own repository' :
@@ -413,15 +429,7 @@ Streamable HTTP lets several agents share one running process; stdio (the
 default) spawns a fresh process per client.
 
 ${howtoCalls}
-### ${write ? 'Turn the write tools off' : 'Turn on the write tools'}
-
-In the SDK's own model (\`.sdk/model/sdk.aontu\`), then regenerate:
-
-\`\`\`
-main: kit: target: '${target.name}': tool: write: ${write ? 'false' : 'true'}
-\`\`\`
-
-### Cross-compile release binaries
+${toggleHowto}### Cross-compile release binaries
 
 \`\`\`sh
 make build       # native binary for this machine

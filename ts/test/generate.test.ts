@@ -23,6 +23,7 @@ import {
   ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY, DOC_MODELS, namedEntity, toolchain,
   REQUEST_SHAPED_ENTITY, exampleParams, wireNameParams, slashRoutes, getOnlyFlows, getOnlyBuildctx, multiRouteLoad, keylessLoad,
   directDiscovery, liveFallbacks, slugKeyed, liveIdentities, stageAlias, BASIC_TEMPLATED,
+  CREATE_ONLY_ENTITY,
 } from './generateharness'
 
 
@@ -6325,6 +6326,53 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
   })
 
 
+  // planet alone writes in the fixture; with its writes off the API has none.
+  test('consumers name a write only where the API has one', async () => {
+    const readonly = await generate(['go', 'go-mcp', 'py', 'py-data'], undefined,
+      'main: kit: entity: planet: op: { create: { active: false }, update: { active: false }, ' +
+      'remove: { active: false } }')
+    for (const doc of [readonly['go-mcp/README.md'], readonly['README.md']]) {
+      ok(!/become tools|becomes a tool|Turn on the write tools/.test(doc), 'a write that would become a tool:\n' + doc)
+      ok(/only reads(:|, as) no entity has a create, update, patch or remove/.test(doc), doc)
+    }
+    const data = Object.entries(readonly).filter(([path]) => path.startsWith('py-data/'))
+    deepStrictEqual(data.filter(([, text]) => /SomeEntity/.test(text)).map(([path]) => path), [])
+    ok(!/\.(create|update|remove)\(/.test(readonly['py-data/README.md'] + readonly['py-data/AGENTS.md']),
+      'py-data shows a write the API lacks')
+
+    const writes = await generate(['go', 'go-mcp', 'py', 'py-data'])
+    ok(writes['go-mcp/README.md'].includes('Create, update and remove become tools too'),
+      'go-mcp: the write tools it would add')
+    ok(writes['README.md'].includes('create, update and remove become tools when'),
+      'the root README: the write tools the MCP server would add')
+    for (const file of ['README.md', 'AGENTS.md', 'demo_data/__init__.py']) {
+      ok(writes['py-data/' + file].includes('result = ad.sdk.Planet().create({'), 'py-data: ' + file)
+    }
+  })
+
+
+  // planet's id is a string, ambient has none, and console only lists.
+  test('go-cli: examples send each entity\'s own query, and the entity table its words', async () => {
+    const off = (names: string[]) =>
+      names.map((name) => `main: kit: entity: ${name}: active: false\n`).join('')
+    const out = await generate(['go', 'go-cli'], undefined,
+      off(['ambient', 'console', 'graph_ql', 'history']) + BASIC_TEMPLATED + CREATE_ONLY_ENTITY +
+      'main: kit: flow: BasicZincFlow: { entity: "zinc", kind: "basic", name: "BasicZincFlow", ' +
+      'step: [ { o: "create", i: { ref: "zinc_ref01" } } ] }\n')
+    const readme = out['go-cli/README.md']
+    ok(!readme.includes('{id:1}') && !/ load 1 /.test(readme), 'go-cli: a numeric id for a string one:\n' + readme)
+    ok(readme.includes(`./demo-cli load '{id:"example_id"}' planet`), 'go-cli: no planet load')
+    ok(/^\.\/demo-cli update '\{id:"example",\w+:[^}]+\}' planet$/m.test(readme), 'go-cli: no planet update')
+    ok(readme.includes('| `planet` | `list`, `load`, `update` |'), 'go-cli: the entity table')
+    ok(!/^\| `zinc` \|/m.test(readme) && readme.includes('other entity, `zinc`, has no list'),
+      'go-cli: an entity no word runs on has a row')
+
+    const single = await generate(['go', 'go-cli'], undefined, off(['console', 'graph_ql', 'history',
+      'planet', 'record', 'utility']))
+    ok(single['go-cli/README.md'].includes('./demo-cli load ambient\n'), 'go-cli: ambient takes no query')
+  })
+
+
   // ROUTING_MODEL's `signal` lists only through its actions, so a plain list
   // of it is refused. With the entities between it and `ambient` off, it is
   // the next entity holding a list operation.
@@ -6348,7 +6396,7 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
     const first = await commands(off(['ambient', ...between]))
     ok(!first.some((c) => c.startsWith('list signal')),
       'go-cli: the quick start lists signal first, which lists only by action: ' + first)
-    ok(first.some((c) => c.startsWith('load 1 signal')),
+    ok(first.some((c) => c === `load '{id:"example_id"}' signal`),
       'go-cli: the quick start does not fall back to loading signal: ' + first)
   })
 

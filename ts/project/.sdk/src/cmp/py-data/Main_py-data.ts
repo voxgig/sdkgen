@@ -2,7 +2,7 @@
 import {
   cmp, each,
   File, Content, Copy, Folder,
-  entityCollection, entityOps, entityIdField, canonToDtype,
+  entityCollection, entityOps, entityIdField, canonToDtype, matchArg, dataArg, idLiteral,
   collectDeps, pkgDescription, tomlString, keywords, repoInfo, apiName,
   packageName, registryState, consumedTarget, fact,
   packageVersion,
@@ -49,6 +49,8 @@ const Main = cmp(function Main(props: any) {
   const seriesEnts = ents.filter((e: any) =>
     entityOps(e).includes(SERIES_OP) && null != entityIdField(e))
 
+  const write = writeCall(ents)
+
   log.info({
     point: 'py-data-entities', target: target.name,
     note: `frames:${frameEnts.length} series:${seriesEnts.length} of ${ents.length}`,
@@ -65,16 +67,16 @@ const Main = cmp(function Main(props: any) {
       from: 'tm/' + target.name + '/pkg',
       replace: { ...ctx$.stdrep },
     })
-    DataClient({ model, name, lower, ENV, sdkModule, sdkClass, dataModule, needsBase, keyed, secret })
+    DataClient({ model, name, lower, ENV, sdkModule, sdkClass, dataModule, needsBase, keyed, secret, write })
     EntityFrames({ model, frameEnts, seriesEnts, lower, dataModule })
   })
 
   Gitignore({})
   Package({ target, model, lower, dataModule, sdk })
   EntityFramesTest({ frameEnts, seriesEnts, lower, sdkModule, sdkClass, dataModule })
-  Readme({ target, model, name, lower, ENV, dataModule, frameEnts, seriesEnts, needsBase, keyed, secret, sdk })
-  AgentGuide({ model, name, lower, ENV, dataModule, frameEnts, seriesEnts, needsBase, keyed, secret, sdk })
-  Quickstart({ target, model, name, lower, ENV, dataModule, frameEnts, needsBase, keyed, secret, sdk })
+  Readme({ target, model, name, lower, ENV, dataModule, frameEnts, seriesEnts, needsBase, keyed, secret, sdk, write })
+  AgentGuide({ model, name, lower, ENV, dataModule, frameEnts, seriesEnts, needsBase, keyed, secret, sdk, write })
+  Quickstart({ target, model, name, lower, ENV, dataModule, frameEnts, needsBase, keyed, secret, sdk, write })
 })
 
 
@@ -88,6 +90,21 @@ function gitInstall(model: any, target: any, sdk: Consumed): [string, string] {
     '' === sdk.dir ? `"${packageName(model, sdk.name)}"` : `"git+${repoUrl}${sub(sdk.dir)}"`,
     `"git+${repoUrl}${sub(own)}"`,
   ]
+}
+
+
+// A write the API has, on the first entity with one, as a call on the wrapped
+// client; null when it has none.
+function writeCall(ents: any[]): string | null {
+  for (const ent of ents) {
+    const op = ['create', 'update', 'remove'].find((name) => entityOps(ent).includes(name))
+    if (null != op) {
+      const idF = entityIdField(ent)
+      return `ad.sdk.${ent.Name}().${op}(${'remove' === op ?
+        matchArg('py', ent, op, idF, idLiteral(ent, op, idF)) : dataArg('py', ent, op, idF)})`
+    }
+  }
+  return null
 }
 
 
@@ -172,7 +189,7 @@ include = ["${dataModule}*"]
 // The DataClient module: `data()` plus the wrapper that owns credential
 // discovery and exposes the raw SDK as an escape hatch.
 const DataClient = cmp(function DataClient(props: any) {
-  const { name, ENV, sdkModule, sdkClass, dataModule, needsBase, keyed, secret } = props
+  const { name, ENV, sdkModule, sdkClass, dataModule, needsBase, keyed, secret, write } = props
 
   const baseCheck = needsBase
     ? `
@@ -238,12 +255,12 @@ class ${name}Data(EntityFrames):
     # ---- escape hatches ---------------------------------------------------
 
     def frame(self, result: Any, **kwargs) -> pd.DataFrame:
-        """Shape ANY op result into a DataFrame.
+        """Shape ANY op result into a DataFrame.${null == write ? '' : `
 
         For endpoints without a generated accessor:
 
-            rows = ad.sdk.SomeEntity().list()
-            df = ad.frame(rows)
+            result = ${write}
+            df = ad.frame(result)`}
         """
         return records_df(result, **kwargs)
 
@@ -602,7 +619,7 @@ class TestFramesAgainstTestMode:
 // ---------------------------------------------------------------------------
 
 const Readme = cmp(function Readme(props: any) {
-  const { target, model, name, ENV, dataModule, frameEnts, seriesEnts, needsBase, keyed, secret, sdk } =
+  const { target, model, name, ENV, dataModule, frameEnts, seriesEnts, needsBase, keyed, secret, sdk, write } =
     props
   const ctx$ = props.ctx$
 
@@ -763,17 +780,20 @@ ${columnSections || '_No entities with declared fields._'}
 
 ## What this package does not do
 
-- **Writes.** Create, update and delete are not exposed. Use \`ad.sdk\` for
+${null == write ? `- **Writes.** The API has no create, update or remove operations.
+- **Endpoints without a list or load op.** Use \`ad.sdk\` and shape the result
+  with \`ad.frame(result)\`.
+` : `- **Writes.** Create, update and delete are not exposed. Use \`ad.sdk\` for
   those — a generated bulk-write path against a live API is a liability, not a
   convenience.
 - **Endpoints without a list or load op.** Use \`ad.sdk\` and shape the result
   with \`ad.frame(result)\`.
 
 \`\`\`python
-result = ad.sdk.SomeEntity().create({"name": "x"})   # full SDK, unchanged
-df = ad.frame(result)                                # shape anything
+${[[`result = ${write}`, 'full SDK, unchanged'], ['df = ad.frame(result)', 'shape anything']]
+    .map(([line, note], _i, all) => line.padEnd(Math.max(...all.map(([l]) => l.length)) + 3) + '# ' + note).join('\n')}
 \`\`\`
-
+`}
 ## Generated code
 
 This package is generated from the API model by
@@ -787,7 +807,7 @@ affiliated with or endorsed by the upstream API provider.
 
 
 const AgentGuide = cmp(function AgentGuide(props: any) {
-  const { name, ENV, dataModule, frameEnts, seriesEnts, needsBase, keyed, secret, sdk } = props
+  const { name, ENV, dataModule, frameEnts, seriesEnts, needsBase, keyed, secret, sdk, write } = props
 
   const credentials = keyed ? `Credentials resolve from, in order: the \`token=\` argument, the Colab secret
 \`${ENV}_APIKEY\`, then the environment variable \`${ENV}_APIKEY\`.${secret ? `
@@ -842,14 +862,16 @@ ${accessorLines || '_This API exposes no list or load operations._'}
 
 ## When there is no accessor
 
-Writes and non-entity endpoints are deliberately absent. Use the wrapped
+${null == write ? `Non-entity endpoints are deliberately absent, and the API has no writes. Use
+the wrapped client, \`ad.sdk\`, and shape what it returns with \`ad.frame(result)\`.
+` : `Writes and non-entity endpoints are deliberately absent. Use the wrapped
 client and shape the result:
 
 \`\`\`python
-result = ad.sdk.SomeEntity().create({"name": "x"})
+result = ${write}
 df = ad.frame(result)
 \`\`\`
-
+`}
 ## Generated
 
 Generated by @voxgig/sdkgen from the API model. Do not edit files here — they
@@ -865,7 +887,7 @@ are overwritten. Change the model and regenerate.
 // A runnable Colab notebook. .ipynb is just JSON; keeping outputs empty means
 // the file is diffable and CI can execute it as a smoke test.
 const Quickstart = cmp(function Quickstart(props: any) {
-  const { target, model, name, ENV, dataModule, frameEnts, needsBase, keyed, secret, sdk } = props
+  const { target, model, name, ENV, dataModule, frameEnts, needsBase, keyed, secret, sdk, write } = props
 
   const pending = 'active' !== registryState(model, target.name)
   const distName = packageName(model, target.name)
@@ -954,12 +976,16 @@ const Quickstart = cmp(function Quickstart(props: any) {
   cells.push(md([
     `## ${++step}. Anything else`,
     '',
-    'Writes and non-entity endpoints are not wrapped. Use the SDK directly',
-    'and shape the result:',
+    ...(null == write ? [
+      'Non-entity endpoints are not wrapped. Use the SDK directly and shape the',
+      'result; these are the entities that are:',
+    ] : [
+      'Writes and non-entity endpoints are not wrapped. Use the SDK directly',
+      'and shape the result:',
+    ]),
   ]))
   cells.push(code([
-    `# rows = ad.sdk.SomeEntity().list()`,
-    `# ad.frame(rows)`,
+    ...(null == write ? [] : [`# result = ${write}`, `# ad.frame(result)`]),
     `ad.entities()`,
   ]))
 

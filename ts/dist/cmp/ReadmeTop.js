@@ -372,30 +372,32 @@ const ReadmeTopMcp = (0, component_1.cmp)(function ReadmeTopMcp(props) {
     if (hasMcp) {
         const mcp = mcpTargets[0].name;
         const mcpOps = (0, mcpTools_1.mcpTools)(model, mcp).map((tool) => tool.op);
-        const mcpWrite = true === mcpTargets[0].tool?.write;
+        // The write tools the toggle would add, which the model may have none of.
+        const writable = (0, mcpTools_1.mcpTools)(model, mcp, true).map((tool) => tool.op)
+            .filter((op) => mcpTools_1.MCP_WRITE_OPS.includes(op));
         const toggle = `\`main: kit: target: '${mcp}': tool: write: true\``;
-        const opText = mcpOps.length < 2 ? mcpOps.join('') :
-            mcpOps.slice(0, -1).join(', ') + ' and ' + mcpOps[mcpOps.length - 1];
+        const phrase = (ops) => ops.length < 2 ? ops.join('') :
+            ops.slice(0, -1).join(', ') + ' and ' + ops[ops.length - 1];
         // What the server reads and writes is what it registers, not the flag.
-        const reads = mcpOps.some((op) => mcpTools_1.MCP_WRITE_OPS.includes(op)) ? '' : mcpWrite ?
+        const reads = mcpOps.some((op) => mcpTools_1.MCP_WRITE_OPS.includes(op)) ? '' : 0 === writable.length ?
             ' It only reads, as no entity has a create, update, patch or remove a plain call runs.' :
-            ` It only reads: create, update, patch and remove become tools when the SDK's model sets
+            ` It only reads: ${phrase(writable)} ${1 < writable.length ? 'become tools' : 'becomes a tool'} when the SDK's model sets
 ${toggle}.`;
         (0, jostraca_1.Content)(0 === mcpOps.length ? `## Use it from an AI agent (MCP)
 
 The generated MCP server has no tools for this SDK: no entity has a list or
-load a plain call runs${mcpWrite ? ', or a create, update, patch or remove' :
-            `, and create, update, patch and remove are off until the SDK's model sets
+load a plain call runs${0 === writable.length ? ', or a create, update, patch or remove' :
+            `, and ${phrase(writable)} ${1 < writable.length ? 'are' : 'is'} off until the SDK's model sets
 ${toggle}`}.
 
 ` : `## Use it from an AI agent (MCP)
 
-The generated MCP server exposes this SDK's ${opText} operations as
+The generated MCP server exposes this SDK's ${phrase(mcpOps)} operations as
 [MCP](https://modelcontextprotocol.io) tools that Claude, Cursor or Cline
 can call directly.${reads} Build and register it:
 
 \`\`\`bash
-cd ${mcp} && go build -o ${model.name}-mcp .
+cd ${mcp} && make build          # -> dist/<os>-<arch>/${model.name}-mcp
 \`\`\`
 
 Then add it to your agent's MCP config (Claude Desktop, Cursor, etc.):

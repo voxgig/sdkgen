@@ -3,6 +3,7 @@ import * as Path from 'node:path'
 
 import {
   cmp, each, deriveEntityNames, entityOps, consumedTarget, fact,
+  entityIdField, matchArg, listMatchArg, dataArg, idLiteral,
   File, Content, Fragment, Slot, goModule, goVersion
 } from '@voxgig/sdkgen'
 
@@ -37,6 +38,40 @@ github.com/tabnas/jsonic/go v0.4.0/go.mod h1:eDpkddhkuTFuIXMkSqTZl7cU7M23swbMpkX
 github.com/tabnas/parser/go v0.4.0 h1:M8+qRT4KaCtr4OCpg9NDNUXJIdbbweqeqbpEpVGNEqU=
 github.com/tabnas/parser/go v0.4.0/go.mod h1:WrlfEVyZ1QjEIowWiyEu3K1iHj7wxuPut5zoH9Trehk=
 `
+
+
+// A boru map of what an example sends, from the JSON the SDK documents'
+// examples are built from; '' when it sends nothing.
+function boruMap(json: string): string {
+  const members = Object.entries(JSON.parse(json))
+  return 0 === members.length ? '' : '{' + members.map(([key, val]) =>
+    (/^[A-Za-z_][A-Za-z0-9_]*$/.test(key) ? key : JSON.stringify(key)) + ':' +
+    JSON.stringify(val)).join(',') + '}'
+}
+
+
+function queryOf(ent: any, op: string): string {
+  const idF = entityIdField(ent)
+  return boruMap('list' === op ? listMatchArg('json', ent) :
+    'update' === op ? dataArg('json', ent, 'update', idF) :
+    matchArg('json', ent, op, idF, idLiteral(ent, op, idF)))
+}
+
+
+// One command for an operation of an entity, as the shell passes it and as
+// the REPL reads it, and the scalar that stands for its query, if one does.
+function commandOf(ent: any, op: string):
+  { query: string, shell: string, repl: string, scalar: string } {
+  const query = queryOf(ent, op)
+  const name = String(ent.name).toLowerCase()
+  const scalar = /^\{id:-?\d+(\.\d+)?\}$/.test(query) ? query.slice(4, -1) : ''
+  return {
+    query,
+    shell: [op, ...('' === query ? [] : ["'" + query.replace(/'/g, "'\\''") + "'"]), name].join(' '),
+    repl: [op, ...('' === query ? [] : [query]), name].join(' '),
+    scalar,
+  }
+}
 
 
 function phrase(items: string[]): string {
@@ -116,7 +151,6 @@ const Main = cmp(function Main(props: any) {
 `))
 
   const bin = `${model.name}-cli`
-  const entityList = entityNames.length > 0 ? entityNames.join(' ') : '(none)'
   const entityCount = entityNames.length
 
   const env = fact(model.main[KIT], 'env')
@@ -153,18 +187,31 @@ const Main = cmp(function Main(props: any) {
     : (entityNames[0] || 'entity')
   const hasOp = (entity: any, op: string) => entityOps(entity).includes(op)
   const firstHas = (op: string) => hasOp(firstEntityObj, op)
+  const wordsOf = (entity: any) => ['list', 'load', 'update'].filter((op) => hasOp(entity, op))
+  const wordless = activeEntityObjs.filter((ent: any) => 0 === wordsOf(ent).length)
   const otherLister = activeEntityObjs.slice(1).find((e: any) => hasOp(e, 'list'))
   const entityNoun = entityCount === 1 ? 'entity' : 'entities'
   // The best single example expression this SDK can actually run, for the
   // tutorial/REPL walkthroughs (never demonstrates an unsupported op).
-  const exampleOp =
-    firstHas('list') ? `list ${firstEntity}` :
-    firstHas('load') ? `load 1 ${firstEntity}` :
-    firstHas('update') ? `update '{id:1}' ${firstEntity}` : ''
+  const exampleWord = ['list', 'load', 'update'].find((op) => firstHas(op))
+  const example = null == exampleWord ? null : commandOf(firstEntityObj, exampleWord)
+  const exampleOp = null == example ? '' : example.repl
   // Fallback differs by context: a COMMAND-LINE arg uses the `--help` flag;
   // the `/`-prefixed meta-command is only valid INSIDE the REPL.
-  const cliExampleExpr = exampleOp || '--help'
+  const cliExampleExpr = null == example ? '--help' : example.shell
   const replExampleExpr = exampleOp || '/help'
+
+  const list = firstHas('list') ? commandOf(firstEntityObj, 'list') : null
+  const load = firstHas('load') ? commandOf(firstEntityObj, 'load') : null
+  const update = firstHas('update') ? commandOf(firstEntityObj, 'update') : null
+  // A query a scalar stands for, shown both ways, with the comments aligned.
+  const loads: [string, string][] = null == load ? [] : '' === load.scalar ? [[load.shell, '']] : [
+    [`load ${load.scalar} ${firstEntity}`, `{id:${load.scalar}} shorthand`],
+    [load.shell, 'explicit match map'],
+  ]
+  const loadWidth = Math.max(0, ...loads.map(([cmd]) => cmd.length))
+  const loadLines = (pad: number) => loads.map(([cmd, note]) =>
+    `./${bin} ` + ('' === note ? cmd : cmd.padEnd(loadWidth + pad) + ' # ' + note))
 
   const ex: string[] = []
   let step = 0
@@ -180,14 +227,11 @@ const Main = cmp(function Main(props: any) {
     ex.push('')
   }
   ex.push(`# ${++step}. Each command line is ONE boru expression, run against the API:`)
-  if (firstHas('list')) ex.push(`./${bin} list ${firstEntity}`)
-  if (firstHas('load')) {
-    ex.push(`./${bin} load 1 ${firstEntity}            # {id:1} shorthand`)
-    ex.push(`./${bin} load '{id:1}' ${firstEntity}       # explicit match map`)
-  }
-  if (firstHas('update')) ex.push(`./${bin} update '{name:"x"}' ${firstEntity}`)
+  if (null != list) ex.push(`./${bin} ${list.shell}`)
+  ex.push(...loadLines(11))
+  if (null != update) ex.push(`./${bin} ${update.shell}`)
   if (null != otherLister) {
-    ex.push(`./${bin} list ${String(otherLister.name).toLowerCase()}`)
+    ex.push(`./${bin} ${commandOf(otherLister, 'list').shell}`)
   }
   ex.push('')
   ex.push(`# ${++step}. Override the API base URL for a single call`)
@@ -200,29 +244,31 @@ const Main = cmp(function Main(props: any) {
   const exampleBlock = ex.join('\n')
 
   const howtos: string[] = []
-  if (firstHas('list')) howtos.push(`### List the records of an entity
+  if (null != list) howtos.push(`### List the records of an entity
 
 \`\`\`sh
-./${bin} list ${firstEntity}
+./${bin} ${list.shell}
 \`\`\`
 
-\`list <entity>\` returns the first page of records. \`<entity>\` is a bareword —
+${'' === list.query ? '\`list <entity>\` returns the first page of records.' :
+    '\`list <query> <entity>\` returns the first page of records under the parent the query names.'} \`<entity>\` is a bareword —
 it is auto-quoted as an boru atom, so no quotes are needed.`)
 
-  if (firstHas('load')) howtos.push(`### Load a single record
+  if (null != load) howtos.push(`### Load a single record
 
 \`\`\`sh
-./${bin} load 1 ${firstEntity}          # scalar shorthand for {id:1}
-./${bin} load '{id:1}' ${firstEntity}     # explicit match map
+${loadLines(5).map((line) => line.replace(/ # \{id:(.*)\} shorthand$/, ' # scalar shorthand for {id:$1}')).join('\n')}
 \`\`\`
 
-The query is either a **scalar** (\`1\`, treated as \`{id:1}\`) or a **match map**
-(\`{id:1}\`, \`{slug:"acme"}\`). Quote the map so your shell passes it through intact.`)
+${'' === load.query ?
+    `\`load <entity>\` needs no query for \`${firstEntity}\`, which has one record.` :
+    `The query is a **match map** naming the record (\`${load.query}\`)${'' === load.scalar ? '' :
+      ', or a **scalar**, treated as \`{id:<scalar>}\`'}. Quote the map so your shell passes it through intact.`}`)
 
-  if (firstHas('update')) howtos.push(`### Update a record
+  if (null != update) howtos.push(`### Update a record
 
 \`\`\`sh
-./${bin} update '{id:1,name:"new"}' ${firstEntity}
+./${bin} ${update.shell}
 \`\`\`
 
 The match map carries both the selector and the new field values; the updated
@@ -342,8 +388,8 @@ The CLI registers these boru words, each bound to the SDK:
 ${verbRows}
 
 - \`<entity>\` is a bareword, auto-quoted as an boru atom (e.g. \`${firstEntity}\`).
-- \`<query>\` is either a **Map** (\`{id:1}\`) or a **Scalar** (\`1\`, treated as
-  \`{id:1}\`). A scalar is always wrapped as \`{id:<value>}\`.
+- \`<query>\` is either a **Map** naming the record, or a **Scalar**, which is
+  always wrapped as \`{id:<value>}\`.
 
 ### Environment variables
 
@@ -383,10 +429,17 @@ Meta-commands use the \`/\` prefix (everything else on a line is evaluated as bo
 
 ### Entities
 
-The ${entityCount} ${entityNoun} this SDK exposes (any is valid as \`<entity>\`):
+${wordless.length === activeEntityObjs.length ? 'No word runs on any entity of this SDK.' :
+    `The entities a word runs on, each with its words:
 
-${entityList}
-
+| Entity | Words |
+|--------|-------|
+${activeEntityObjs.filter((ent: any) => !wordless.includes(ent)).map((ent: any) =>
+      `| \`${String(ent.name).toLowerCase()}\` | ${wordsOf(ent).map((op) => '\`' + op + '\`').join(', ')} |`).join('\n')}`}
+${0 === wordless.length ? '' : `
+The SDK's other ${1 === wordless.length ? 'entity' : 'entities'}, ${phrase(wordless.map((ent: any) =>
+    '\`' + String(ent.name).toLowerCase() + '\`'))}, ${1 === wordless.length ? 'has' : 'have'} no list, load or update.
+`}
 ## Explanation
 
 ### Why boru?

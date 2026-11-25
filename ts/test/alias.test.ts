@@ -409,7 +409,7 @@ describe('aliased targets in the generated documents', () => {
         strictEqual(mapped[file], base[file], file + ' differs once the aliases are mapped back')
       }
       ok(out['README.md'].includes('## Use it from an AI agent (MCP)'), 'no MCP section for go-mcq')
-      ok(out['README.md'].includes('cd go-mcq && go build'), 'the MCP section builds another directory')
+      ok(out['README.md'].includes('cd go-mcq && make build'), 'the MCP section builds another directory')
     }
     finally {
       staged.forEach((s) => s.remove())
