@@ -8,7 +8,7 @@ import Path from 'node:path'
 
 import {
   opRequestShape, opTypeName, OP_SUFFIX, entityClassName, entityConstructorName, pickExampleEntity,
-  opReachable, opNeedsAction, entityOps, guardFlowSteps, ungeneratedOps, warnUngeneratedOps,
+  opReachable, opNeedsAction, entityOps, introOps, guardFlowSteps, ungeneratedOps, warnUngeneratedOps,
   entityIdField, pointPlaceholders, requiredItems, matchArg, requestExampleItems, dataArg,
 } from '../dist/sdkgen.js'
 import { targetOrigins, resolvesBundled, resolveSource, BUNDLED } from '../dist/action/resolve.js'
@@ -652,6 +652,15 @@ describe('opNeedsAction and entityOps', () => {
     deepStrictEqual(entityOps(ent), ['load'])
     deepStrictEqual(entityOps({ ...ent, op: { ...ent.op, list: { points: [pt('/signal/strong', 'strong')] } } }),
       ['load'])
+  })
+
+  test('an operation outside the six the targets generate is in neither list', () => {
+    const ent = {
+      name: 'report', active: true,
+      op: { generate: { points: [pt('/report/generate')] }, load: { points: [pt('/report/{id}')] } },
+    }
+    deepStrictEqual(entityOps(ent), ['load'])
+    deepStrictEqual(introOps({ main: { kit: { entity: { report: ent } } } }), ['load'])
   })
 })
 

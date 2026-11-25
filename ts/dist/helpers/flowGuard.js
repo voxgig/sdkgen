@@ -14,7 +14,7 @@ const GENERATED = ['create', 'list', 'load', 'update', 'remove'];
 // the record's id where the op acts on one, and what the entity instance
 // holds. A step whose op is absent, or whose call reaches no route, is
 // switched off and marked unreachable for the live harness to resolve.
-function guardFlowSteps(model, log) {
+function guardFlowSteps(model, log, dropped) {
     const kit = model?.main?.[apidef_1.KIT];
     const flows = kit?.flow;
     const entities = kit?.entity;
@@ -72,19 +72,32 @@ function guardFlowSteps(model, log) {
             stored = stored || STORES.includes(step.o);
         });
     }
-    if (0 < ungenerated.length && log?.warn) {
+    // A step on an operation the project switched off is no surprise.
+    const off = (s) => true === dropped?.has(flows[s.flow].entity + '.' + s.op);
+    const switchedOff = [...ungenerated, ...out].filter(off);
+    const ungen = ungenerated.filter((s) => !off(s));
+    const unreached = out.filter((s) => !off(s));
+    if (0 < switchedOff.length && log?.info) {
+        log.info({
+            point: 'flow-step-dropped',
+            steps: switchedOff.map((s) => s.flow + '.' + s.step + ':' + s.op),
+            note: 'flow step(s) ' + switchedOff.map((s) => s.flow + '#' + s.step + ' (' + s.op + ')').join(', ') +
+                ' switched off: the model switches their operation off.',
+        });
+    }
+    if (0 < ungen.length && log?.warn) {
         log.warn({
             point: 'flow-step-ungenerated',
-            steps: ungenerated.map((s) => s.flow + '.' + s.step + ':' + s.op),
-            note: 'flow step(s) ' + ungenerated.map((s) => s.flow + '#' + s.step + ' (' + s.op + ')').join(', ') +
+            steps: ungen.map((s) => s.flow + '.' + s.step + ':' + s.op),
+            note: 'flow step(s) ' + ungen.map((s) => s.flow + '#' + s.step + ' (' + s.op + ')').join(', ') +
                 ' switched off: a generated flow test calls ' + GENERATED.join(', ') + ' and no other operation.',
         });
     }
-    if (0 < out.length && log?.warn) {
+    if (0 < unreached.length && log?.warn) {
         log.warn({
             point: 'flow-step-unreachable',
-            steps: out.map((s) => s.flow + '.' + s.step + ':' + s.op),
-            note: 'flow step(s) ' + out.map((s) => s.flow + '#' + s.step + ' (' + s.op + ')').join(', ') +
+            steps: unreached.map((s) => s.flow + '.' + s.step + ':' + s.op),
+            note: 'flow step(s) ' + unreached.map((s) => s.flow + '#' + s.step + ' (' + s.op + ')').join(', ') +
                 ' switched off: the entity has no such operation, the call they make reaches no route of it, ' +
                 'or they check a removal such a step was to make. ' +
                 'Every route needs an action, or a path parameter the step does not give.',

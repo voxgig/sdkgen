@@ -266,11 +266,12 @@ The typed-model subsystem (full picture:
   warn about) duplicate generated type names across entities.
 - **`entityIdField(ent)`** / **`entityDataIdField(ent)`** — the id-like
   key of the load match / of the data type (they differ; doc generators
-  must pick the right one). **`entityOps(ent)`** — active op names in
-  canonical order, leaving out an op whose every route is an action;
-  **`introOps(model)`** — the op names a README introduction lists, across
-  every active entity, canonical ones first, or `list` and `load` when there
-  are none;
+  must pick the right one). **`entityOps(ent)`** — active op names of the
+  six the bundled targets generate, in canonical order, leaving out an op
+  whose every route is an action;
+  **`introOps(model)`** — the op names of those six a README introduction
+  lists, across every active entity, in canonical order, or `list` and `load`
+  when there are none;
   **`entityPrimaryOp(ent)`** — the representative op for a single example;
   **`pickExampleEntity(entityColl)`** — the entity a README example should
   use, preferring one whose example call reaches a route.

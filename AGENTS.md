@@ -651,8 +651,7 @@ which carries a reason. A pin that matches nothing fails, so fixing a writer
 means deleting its pin. `npm test` runs `link` and `fence` on a fixed subset; `npm run
 textguard` runs the full matrix, which is a CI lane. `npm run
 textguard-update` rewrites the pins from what it finds, keeping each reason;
-a new pin reads `TODO` and fails until it has one. The operation-level
-`active: false` family is suspended as one entry until decision DQ1.
+a new pin reads `TODO` and fails until it has one.
 
 A finding keys on the writing component, so split a component that writes
 many sections into labelled ones (`ReadmeTop`, `AgentGuideTop`) rather than

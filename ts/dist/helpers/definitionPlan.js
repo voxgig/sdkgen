@@ -35,7 +35,6 @@ function definitionPlan(ctx$) {
         if (false === entity.active)
             continue;
         for (const [op, operation] of Object.entries(entity.op || {})) {
-            // An inactive operation stays in the model but gets no method.
             if (false === operation?.active || !GENERATED_OPS.includes(op))
                 continue;
             const points = (operation?.points || []).filter((p) => false !== p.a);
