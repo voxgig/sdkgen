@@ -78,6 +78,7 @@ function publishWorkflow(
   const name = target.name
   const dir = fact(target, 'dir')
   const tag = fact(target, 'tag') + '$VERSION'
+  const tagged = '' !== fact(target, 'tag')
   const pkg = packageName(model, name)
   const setup = null == repository ? '' : `
 # .sdk/admin/setup-npm-trust.sh registers exactly this, and with --check
@@ -103,12 +104,13 @@ function publishWorkflow(
 #
 ${'active' === registryState(model, name) ? `# BY DISPATCH, deliberately. The deploy Makefile publishes with a
 # vault-injected token; a tag-triggered workflow racing it would publish one
-# version by two mechanisms.` : `# BY DISPATCH, deliberately. While the registry is pending, the deploy
+# version by two mechanisms.` : tagged ? `# BY DISPATCH, deliberately. While the registry is pending, the deploy
 # Makefile only cuts the git tag, and a tag-triggered workflow would turn
-# every tag it cuts into a publish.`} Releasing is an act someone performs and
+# every tag it cuts into a publish.` : `# BY DISPATCH, deliberately. While the registry is pending, the deploy
+# Makefile publishes nothing.`} Releasing is an act someone performs and
 # watches.
 #
-# THREE JOBS, BECAUSE THEY NEED DIFFERENT PRIVILEGES. A dependency lifecycle
+# ${tagged ? 'THREE' : 'TWO'} JOBS, BECAUSE THEY NEED DIFFERENT PRIVILEGES. A dependency lifecycle
 # script can ask the runner for any OIDC token its job is permitted to mint,
 # so a job that both installs dependencies and holds \`id-token: write\` can be
 # made to publish before its own gates finish. The same reasoning keeps
@@ -117,7 +119,7 @@ ${'active' === registryState(model, name) ? `# BY DISPATCH, deliberately. The de
 #
 #   verify   contents: read, nothing else. Installs, builds and tests.
 #   publish  id-token: write. Installs no dependencies and runs no project
-#            code; it packs what is already in the tree.
+#            code; it packs what is already in the tree.${tagged ? `
 #   tag      contents: write. Runs git and nothing else.
 #
 # THE TAG IS CUT HERE BECAUSE IT CANNOT BE CUT ANYWHERE ELSE. npm binds the
@@ -126,7 +128,11 @@ ${'active' === registryState(model, name) ? `# BY DISPATCH, deliberately. The de
 # workflow run, so "tag, and let a tag-triggered publisher fire" does not
 # work. A release that publishes but leaves no ref cannot be answered later:
 # nothing in git says which tree the tarball came from, and nothing
-# downstream can pin this SDK by tag.
+# downstream can pin this SDK by tag.` : `
+#
+# NO TAG IS CUT. The model switches this target's release tag off
+# (publish.tag.active is false), so nothing in git names the tree a
+# version was published from.`}
 
 name: publish-${name}
 
@@ -238,7 +244,13 @@ jobs:
         if: steps.registry.outputs.published == 'false'
         working-directory: ${dir}
         run: npm publish --access public
+` + (tagged ? tagJob(tag) : '')
+}
 
+
+// The job that cuts the release tag, once the package is published.
+function tagJob(tag: string): string {
+  return `
   # Runs git and nothing else. No install, no project code — so the
   # repository-write credential is never in scope while third-party code runs.
   #
@@ -317,9 +329,11 @@ An npm with no \`npm trust\` command is bypassed for \`npx npm@latest\`.
   // primary npm target owns the bare `v<version>` and every other one is
   // prefixed, so with more than one npm target the answer differs per row.
   const tagRows = '| target | tag |\n|---|---|\n' + targets.map((t: any) =>
-    `| \`${t.name}/\` | \`` +
-    fact(t, 'tag') + '<version>' +
-    '\` |').join('\n')
+    `| \`${t.name}/\` | ` +
+    ('' === fact(t, 'tag') ? 'none' : '`' + fact(t, 'tag') + '<version>`') +
+    ' |').join('\n')
+  const untagged = targets.filter((t: any) => '' === fact(t, 'tag')).length
+  const tagged = untagged < targets.length
 
   return `# Publishing
 
@@ -356,14 +370,17 @@ the commit you checked and the run resolving.
 
 ${dispatchReason(model, targets)}
 
-## The release is tagged for you
+${tagged ? `## The release is tagged for you
 
 The workflow cuts the git tag itself, after a successful publish, so a
 released version always has a ref naming the tree it came from. Nothing to
 do by hand.
 
 ${tagRows}
-
+${0 < untagged ? `
+A target whose tag reads none cuts no tag: its model sets
+\`publish.tag.active: false\`, so its workflow has no tag job.
+` : ''}
 Re-dispatching a version that is already on the registry skips the publish
 and still cuts a missing tag, so a partial release is finished by running it
 again rather than repaired by hand. If the tag already exists on a DIFFERENT
@@ -374,7 +391,13 @@ which is wrong.
 The tag job is the only one that may write to the repository, and it runs
 git and nothing else. \`contents: write\` never shares a job with project
 code, for the same reason \`id-token: write\` does not — \`checkout\` persists
-its token into the git config for the whole job.
+its token into the git config for the whole job.` : `## No release tag
+
+The model switches the release tag off (\`publish.tag.active: false\`), so
+the workflow publishes without cutting a git tag, and nothing in git names
+the tree a version came from.
+
+${tagRows}`}
 
 ## One-time set-up
 
@@ -401,7 +424,7 @@ package goes out by hand from an authenticated machine:
 
 After that, register the publisher and every later release is a dispatch.
 
-## Why the workflow has three jobs
+## Why the workflow has ${tagged ? 'three' : 'two'} jobs
 
 A dependency lifecycle script can ask the runner for any OIDC token the job
 it runs in is permitted to mint. A job that both installs dependencies and
@@ -409,14 +432,15 @@ holds \`id-token: write\` can therefore be made to publish as this package
 before its own gates finish.
 
 So \`verify\` installs, builds and tests under \`contents: read\` and holds no
-credential; \`publish\` holds \`id-token: write\` while installing nothing and
+credential${tagged ? `; \`publish\` holds \`id-token: write\` while installing nothing and
 running no project code; and \`tag\` holds \`contents: write\` while running
 git and nothing else.
 
 The tag cannot be moved out into its own workflow: npm binds the trusted
 publisher to ONE workflow filename, so anything that must accompany a publish
 has to live inside this file. Nor can it be left to a tag-triggered
-publisher — a ref pushed with \`GITHUB_TOKEN\` starts no further workflow run.
+publisher — a ref pushed with \`GITHUB_TOKEN\` starts no further workflow run.` : `, and \`publish\` holds \`id-token: write\` while installing nothing and
+running no project code.`}
 `
 }
 

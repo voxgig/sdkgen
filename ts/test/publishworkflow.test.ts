@@ -18,12 +18,13 @@ const log: any = {
 
 
 // A test reuses its target objects, and the fact pass writes into each.
-function makeModel(targets: any, host: string) {
+function makeModel(targets: any, host: string, kit: any = {}) {
   return applyFacts({
     name: 'demo',
     origin: 'voxgig-sdk',
     main: {
       kit: {
+        ...kit,
         repo: { host, org: 'acme', name: 'demo-sdk' },
         target: Object.fromEntries(Object.entries(structuredClone(targets))
           .map(([name, t]: [string, any]) => [name, { output: { path: '', root: false }, ...t }])),
@@ -33,12 +34,12 @@ function makeModel(targets: any, host: string) {
 }
 
 
-async function renderFs(targets: any, host = 'github.com') {
+async function renderFs(targets: any, host = 'github.com', kit: any = {}) {
   const { fs, vol } = memfs({})
   const jostraca = Jostraca()
 
   await jostraca.generate(
-    { fs: () => fs, folder: '/x', model: makeModel(targets, host), log },
+    { fs: () => fs, folder: '/x', model: makeModel(targets, host, kit), log },
     () => {
       Project({ folder: 'p' }, () => {
         PublishWorkflow({})
@@ -55,8 +56,8 @@ async function renderFs(targets: any, host = 'github.com') {
 }
 
 
-async function render(targets: any, host?: string): Promise<Record<string, string>> {
-  return (await renderFs(targets, host)).out
+async function render(targets: any, host?: string, kit?: any): Promise<Record<string, string>> {
+  return (await renderFs(targets, host, kit)).out
 }
 
 
@@ -414,6 +415,31 @@ describe('PublishWorkflow', () => {
 
     const m = /TAG="([^"]+)"/.exec(out['.github/workflows/publish-js.yml'])
     strictEqual(m && m[1], 'v$VERSION', 'a sole target did not take the bare tag')
+  })
+
+
+  test('a declared prefix names the tag, and a tag switched off cuts none', async () => {
+    const prefixed = await render({ ts: { ...NPM_TS.ts, publish: { ...NPM_TS.ts.publish, tag: { prefix: 'sdk' } } } })
+    const m = /TAG="([^"]+)"/.exec(prefixed['.github/workflows/publish-ts.yml'])
+    strictEqual(m && m[1], 'sdk/v$VERSION')
+    ok(prefixed['.sdk/PUBLISHING.md'].includes('| `ts/` | `sdk/v<version>` |'))
+    ok(prefixed['.github/workflows/publish-ts.yml'].includes('# THREE JOBS,'))
+    ok(!prefixed['.sdk/PUBLISHING.md'].includes('reads none'))
+
+    const off = await render({ ts: { ...NPM_TS.ts, publish: { ...NPM_TS.ts.publish, tag: { active: false } } } })
+    const wf = off['.github/workflows/publish-ts.yml']
+    ok(!/^ {2}tag:$/m.test(wf) && !wf.includes('TAG='), 'a tag job is emitted for a target that cuts no tag')
+    ok(off['.sdk/PUBLISHING.md'].includes('| `ts/` | none |'))
+    ok(wf.includes('# TWO JOBS,') && wf.includes('# NO TAG IS CUT.') && !wf.includes('#   tag      contents:'),
+      'the header of a workflow that cuts no tag describes a tag job')
+    const doc = off['.sdk/PUBLISHING.md']
+    ok(doc.includes('## No release tag') && doc.includes('## Why the workflow has two jobs') &&
+      !doc.includes('The tag job'), 'PUBLISHING.md describes a tag job no workflow has:\n' + doc)
+
+    const mixed = (await render({ ...NPM_TS, js: { ...NPM_TS.ts, name: 'js', publish: {
+      ...NPM_TS.ts.publish, tag: { active: false } } } }))['.sdk/PUBLISHING.md']
+    ok(mixed.includes('## The release is tagged for you') && mixed.includes('| `js/` | none |') &&
+      mixed.includes('A target whose tag reads none cuts no tag'), mixed)
   })
 
 
