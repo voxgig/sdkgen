@@ -92,6 +92,7 @@ function applyFacts(model: any): any {
   kit.fact.option = optionRows(kit.optspec)
   releaseTags(model)
   texts.forEach((t, i) => place(t.at, t.path, out.escape['t' + i]))
+  kit.fact.field = mapOr(kit.fact.field)
   titleFacts(kit.target)
   kit.fact.external = externalTargets(model)
   place(kit, ['definitionKind'], definitionKind(model))

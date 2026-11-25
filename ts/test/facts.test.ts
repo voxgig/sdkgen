@@ -239,6 +239,19 @@ describe('escaped text', () => {
     }
   })
 
+  test('a field description escapes beside the kit, keyed by entity and field', () => {
+    const kit = applyFacts({ main: { [KIT]: { entity: { moon: { name: 'moon', fields: {
+      size: { n: 'size', sh: 'In km | miles, $$name$$\nor [see](guide.md)' },
+      mass: { n: 'mass' },
+    } } } } } }).main[KIT]
+    const field = fact(kit, 'field')
+    deepStrictEqual(Object.keys(field.moon), ['size'])
+    strictEqual(field.moon.size.desc.cell, 'In km \\| miles, $&#36;name$&#36;<br>or see')
+    strictEqual(field.moon.size.desc.inline, 'In km | miles, $&#36;name$&#36; or see')
+    strictEqual(kit.entity.moon.fields.size.fact, undefined, 'the field itself carries no fact')
+    deepStrictEqual(fact(applyFacts({ main: { [KIT]: {} } }).main[KIT], 'field'), {})
+  })
+
   test('a feature option escapes its default and its type', () => {
     const f = applyFacts({ main: { [KIT]: { feature: { f: { name: 'f', title: 'F', config: {
       options: { sep: '|', tick: 'a`b' },
