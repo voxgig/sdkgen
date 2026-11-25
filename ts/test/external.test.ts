@@ -2,11 +2,12 @@
 import { test, describe, before, after } from 'node:test'
 import { ok, strictEqual, deepStrictEqual } from 'node:assert'
 
+import Fs from 'node:fs'
 import Path from 'node:path'
 
 import { memfs } from 'memfs'
 
-import { SdkGen } from '../dist/sdkgen.js'
+import { SdkGen, registerComponent } from '../dist/sdkgen.js'
 
 import { makeModel, makeRoot, layeredFs, makeLog, STAGE, SCAFFOLD } from './generateharness'
 
@@ -28,6 +29,7 @@ type GenOpts = {
   extra?: string
   sink?: any[]
   external?: Record<string, any>
+  root?: any
 }
 
 
@@ -53,7 +55,7 @@ function setup(
 
   return {
     model,
-    run: () => sdkgen.generate({ model, root: makeRoot() }),
+    run: () => sdkgen.generate({ model, root: opts.root ?? makeRoot() }),
 
     // EVERY written path, `.jostraca` bookkeeping included — that is what
     // the destination's own .gitignore has to cover, so a view that hides it
@@ -264,6 +266,30 @@ describe('external target', () => {
     deepStrictEqual(committed(after), before, 'a committed file differs under the override')
     deepStrictEqual(Object.keys(after).filter((file) => file.startsWith('ts/')), [])
     ok(null != under(moved.files(), OUT2)['package.json'], 'ts was not written out of tree')
+  })
+
+
+  // A project's own component writes its target's files as a built-in does.
+  test('an override keeps a registered component out of the tree', async () => {
+    const file = Path.join(STAGE, '.sdk', 'dist', 'cmp', 'ts', 'Extra_ts.js')
+    Fs.writeFileSync(file, "const { File, Content } = require('jostraca')\n" +
+      "module.exports.Extra = () => File({ name: 'EXTRA.md' }, () => Content('extra'))\n")
+    try {
+      const plain = setup(['ts'], {}, { root: makeRoot([registerComponent('Extra')]) })
+      await plain.run()
+      ok(null != under(plain.files(), norm(STAGE))['ts/EXTRA.md'], 'the registered component did not run')
+
+      const moved = setup(['ts'], {}, {
+        root: makeRoot([registerComponent('Extra')]),
+        external: { ts: { path: OUT2, sdkrel: '../sdk' } },
+      })
+      await moved.run()
+      deepStrictEqual(Object.keys(under(moved.files(), norm(STAGE)))
+        .filter((path) => path.startsWith('ts/')), [])
+    }
+    finally {
+      Fs.rmSync(file, { force: true })
+    }
   })
 
 

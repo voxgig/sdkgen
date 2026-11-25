@@ -2283,7 +2283,7 @@ const RegisteredQuick = registerComponent('ReadmeTopQuick')
 const RegisteredAbsent = registerComponent('NoSuchThing')
 
 
-function makeRoot(): any {
+function makeRoot(registered: any[] = []): any {
   return cmp(function Root(props: any) {
     const { model, ctx$ } = props
 
@@ -2340,6 +2340,7 @@ function makeRoot(): any {
 
           RegisteredQuick({ target })
           RegisteredAbsent({ target })
+          registered.forEach((Registered: any) => Registered({ target }))
 
           if (phase.readme) Readme({ target })
           if (phase.agentguide) AgentGuide({ target })
