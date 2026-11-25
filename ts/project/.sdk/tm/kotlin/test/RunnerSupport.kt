@@ -35,7 +35,7 @@ object RunnerSupport {
   private var cachedTestControl: Map<String, Any?>? = null
   private var cachedTestSpec: Map<String, Any?>? = null
 
-  // loadEnvLocal reads ../.env.local (if present) into an overlay map.
+  // loadEnvLocal reads SDKREL/.env.local (if present) into an overlay map.
   @Synchronized
   fun loadEnvLocal() {
     if (envLocalLoaded) {
@@ -43,7 +43,7 @@ object RunnerSupport {
     }
     envLocalLoaded = true
     try {
-      val data = Files.readString(Paths.get("..", ".env.local"))
+      val data = Files.readString(Paths.get("SDKREL", ".env.local"))
       for (lineRaw in data.split("\n")) {
         val line = lineRaw.trim()
         if (line.isEmpty() || line.startsWith("#")) {

@@ -107,6 +107,7 @@
     "entitySpecMap",
     "entitySpecs",
     "entityTypeCollisions",
+    "envLocalAt",
     "envName",
     "envToken",
     "exampleVarName",

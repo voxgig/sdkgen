@@ -149,7 +149,7 @@ public static class TestRunner
             }
             _envLocalLoaded = true;
 
-            var envFile = Path.Combine(SourceDir(), "..", "..", ".env.local");
+            var envFile = Path.Combine(SourceDir(), "..", "SDKREL", ".env.local");
             if (!File.Exists(envFile))
             {
                 return;

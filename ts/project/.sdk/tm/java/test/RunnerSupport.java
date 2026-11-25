@@ -43,7 +43,7 @@ public final class RunnerSupport {
   private static Map<String, Object> cachedTestControl;
   private static Map<String, Object> cachedTestSpec;
 
-  // loadEnvLocal reads ../.env.local (if present) into an overlay map
+  // loadEnvLocal reads SDKREL/.env.local (if present) into an overlay map
   // consulted by getenv(); real environment variables win.
   public static synchronized void loadEnvLocal() {
     if (envLocalLoaded) {
@@ -51,7 +51,7 @@ public final class RunnerSupport {
     }
     envLocalLoaded = true;
     try {
-      String data = Files.readString(Path.of("..", ".env.local"));
+      String data = Files.readString(Path.of("SDKREL", ".env.local"));
       for (String line : data.split("\n")) {
         line = line.trim();
         if (line.isEmpty() || line.startsWith("#")) {

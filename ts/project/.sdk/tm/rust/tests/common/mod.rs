@@ -116,10 +116,10 @@ pub fn live_delay_ms() -> i64 {
 
 // ---- env ---------------------------------------------------------------------
 
-/// Load ../.env.local (KEY=VALUE lines) into the process env, once per call.
+/// Load the project's .env.local (KEY=VALUE lines) into the process env, once per call.
 pub fn load_env_local() {
     let mut p = manifest_dir();
-    p.push("..");
+    p.push("SDKREL");
     p.push(".env.local");
     let data = match std::fs::read_to_string(&p) {
         Ok(d) => d,

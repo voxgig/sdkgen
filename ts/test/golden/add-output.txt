@@ -20,7 +20,7 @@ src/cmp/c/PrepareAuth_c.ts ba13d256f46b
 src/cmp/c/ReadmeEntity_c.ts b1b24f6b4c2f
 src/cmp/c/ReadmeExamplesTest_c.ts 2e899b115aaa
 src/cmp/c/ReadmeExplanation_c.ts 193fa2c194dd
-src/cmp/c/ReadmeHowto_c.ts 302f5f982cc8
+src/cmp/c/ReadmeHowto_c.ts be282ac2f2c8
 src/cmp/c/ReadmeInstall_c.ts d91184e38d27
 src/cmp/c/ReadmeIntro_c.ts 17d6da0d3ab6
 src/cmp/c/ReadmeModel_c.ts a28efdaa99f9
@@ -268,7 +268,7 @@ src/cmp/cpp/PrepareAuth_cpp.ts 06c46235ac63
 src/cmp/cpp/ReadmeEntity_cpp.ts 823fb70799cc
 src/cmp/cpp/ReadmeExamplesTest_cpp.ts 76497cfc63d1
 src/cmp/cpp/ReadmeExplanation_cpp.ts beb3014070b4
-src/cmp/cpp/ReadmeHowto_cpp.ts 4d0a05963a78
+src/cmp/cpp/ReadmeHowto_cpp.ts 7de3531f4202
 src/cmp/cpp/ReadmeInstall_cpp.ts 615f9f586fad
 src/cmp/cpp/ReadmeIntro_cpp.ts 61d4716331c9
 src/cmp/cpp/ReadmeModel_cpp.ts 93f050aec32e
@@ -315,7 +315,7 @@ tm/cpp/test/omni_resolver.hpp 07c63c9dffaa
 tm/cpp/test/omni_smoke_test.cpp dacc9e1b8327
 tm/cpp/test/pipeline_test.cpp 34072773b4a2
 tm/cpp/test/primary_utility_test.cpp 665b26ebbc7e
-tm/cpp/test/runner_support.hpp a02040caa40e
+tm/cpp/test/runner_support.hpp 39b5ac859ca2
 tm/cpp/test/sdk-test-control.json acadc87764f6
 tm/cpp/test/server_variable_test.cpp a6a1670e96ac
 tm/cpp/test/struct_corpus_test.cpp 210609f6d564
@@ -348,7 +348,7 @@ src/cmp/csharp/PrepareAuth_csharp.ts 31a115d93de8
 src/cmp/csharp/ReadmeEntity_csharp.ts 2dcd4dcb59dd
 src/cmp/csharp/ReadmeExamplesTest_csharp.ts ee7a79c93f15
 src/cmp/csharp/ReadmeExplanation_csharp.ts 007d1a894315
-src/cmp/csharp/ReadmeHowto_csharp.ts 91137704ddfb
+src/cmp/csharp/ReadmeHowto_csharp.ts 80f8bb1e5ed9
 src/cmp/csharp/ReadmeInstall_csharp.ts 51a168916cd3
 src/cmp/csharp/ReadmeIntro_csharp.ts a4751721738b
 src/cmp/csharp/ReadmeModel_csharp.ts 4f0c0d4867ee
@@ -405,7 +405,7 @@ tm/csharp/test/OmniResolver.cs 12edf791ee98
 tm/csharp/test/OmniSmokeTest.cs adbc2519341d
 tm/csharp/test/PipelineTest.cs d5e845f81b70
 tm/csharp/test/PrimaryUtilityTest.cs 75b2f47cd898
-tm/csharp/test/Runner.cs 3d8b461933fb
+tm/csharp/test/Runner.cs b07634213c7a
 tm/csharp/test/StructUtilityTest.cs 352d86d1cb43
 tm/csharp/test/sdk-test-control.json 1368770ffc61
 tm/csharp/test/vendor/omni/Runner.cs 1b3bd0b58299
@@ -461,7 +461,7 @@ src/cmp/elixir/PrepareAuth_elixir.ts 60ef10da18e2
 src/cmp/elixir/ReadmeEntity_elixir.ts 4fbe9da24c13
 src/cmp/elixir/ReadmeExamplesTest_elixir.ts 12baaaa2aaee
 src/cmp/elixir/ReadmeExplanation_elixir.ts fbaf1b7b19ef
-src/cmp/elixir/ReadmeHowto_elixir.ts e8fbce28ee17
+src/cmp/elixir/ReadmeHowto_elixir.ts 3576cfe632ab
 src/cmp/elixir/ReadmeInstall_elixir.ts 3acf9fdebf84
 src/cmp/elixir/ReadmeIntro_elixir.ts 46304960cfa0
 src/cmp/elixir/ReadmeModel_elixir.ts 446cb536e8ac
@@ -536,7 +536,7 @@ src/cmp/go/PrepareAuth_go.ts 397083cd6c97
 src/cmp/go/ReadmeEntity_go.ts 52b6a144ae95
 src/cmp/go/ReadmeExamplesTest_go.ts 5b977d8f902c
 src/cmp/go/ReadmeExplanation_go.ts e40b052e75ce
-src/cmp/go/ReadmeHowto_go.ts e1088279aa51
+src/cmp/go/ReadmeHowto_go.ts 3bb310eb736e
 src/cmp/go/ReadmeInstall_go.ts f77e8b14f711
 src/cmp/go/ReadmeIntro_go.ts 40fb911321fe
 src/cmp/go/ReadmeModel_go.ts 898ad10ce183
@@ -594,7 +594,7 @@ tm/go/test/pipeline_test.go aa2adc359fec
 tm/go/test/primary_utility_test.go c803e3f4af30
 tm/go/test/sdk-test-control.json acadc87764f6
 tm/go/test/struct_utility_test.go a6f195d313c5
-tm/go/test/testsupport_test.go 7310227c9b87
+tm/go/test/testsupport_test.go 80b8ffed98bc
 tm/go/utility/clean.go dcf65d645342
 tm/go/utility/done.go 829dd26164b3
 tm/go/utility/feature_add.go 0b62e5d1c8db
@@ -673,7 +673,7 @@ src/cmp/java/PrepareAuth_java.ts 2e8593a5f789
 src/cmp/java/ReadmeEntity_java.ts 63f97c38dd85
 src/cmp/java/ReadmeExamplesTest_java.ts 40e3f79a3fa0
 src/cmp/java/ReadmeExplanation_java.ts e2c006f92e81
-src/cmp/java/ReadmeHowto_java.ts 1f3f364b9105
+src/cmp/java/ReadmeHowto_java.ts d42d38dc32dc
 src/cmp/java/ReadmeInstall_java.ts cf2a01ac4bb8
 src/cmp/java/ReadmeIntro_java.ts 20c352a58d33
 src/cmp/java/ReadmeModel_java.ts 4487884b8c96
@@ -734,7 +734,7 @@ tm/java/test/OmniResolver.java 54333ccce204
 tm/java/test/OmniSmokeTest.java 722cc2d6bfe7
 tm/java/test/PipelineTest.java 2bde7fdedd64
 tm/java/test/PrimaryUtilityTest.java 25d9199bbd90
-tm/java/test/RunnerSupport.java fe6d701b1ef0
+tm/java/test/RunnerSupport.java fef0736a4b6e
 tm/java/test/StructCorpusTest.java 842ed547747a
 tm/java/test/sdk-test-control.json acadc87764f6
 tm/java/test/vendor/omni/Json.java 995735a01cfb
@@ -792,7 +792,7 @@ src/cmp/js/Package_js.ts bf2c5d8163f2
 src/cmp/js/PrepareAuth_js.ts 9742af3eb16d
 src/cmp/js/ReadmeEntity_js.ts 20cb70a7e456
 src/cmp/js/ReadmeExplanation_js.ts e35423942ff1
-src/cmp/js/ReadmeHowto_js.ts 2d8a9c38bce3
+src/cmp/js/ReadmeHowto_js.ts c0bb3f77ff81
 src/cmp/js/ReadmeInstall_js.ts b32a0d558675
 src/cmp/js/ReadmeIntro_js.ts ff6e22583d99
 src/cmp/js/ReadmeModel_js.ts 14995251d016
@@ -808,14 +808,14 @@ src/cmp/js/TestClean_js.ts fd70d2850eb4
 src/cmp/js/TestDefinition_js.ts 9bd45df6b9d9
 src/cmp/js/TestDirect_js.ts 46fc3fefb5d4
 src/cmp/js/TestEntity_js.ts 8dd3edd008ce
-src/cmp/js/TestLive_js.ts e3e62987a7e2
+src/cmp/js/TestLive_js.ts 7e369f6f6ba5
 src/cmp/js/TestMain_js.ts 8b45d4d8db1a
 src/cmp/js/Test_js.ts 212a62b03e50
 src/cmp/js/fragment/Config.data.fragment.js 6fa799d1949c
 src/cmp/js/fragment/Config.fragment.js 213303866508
-src/cmp/js/fragment/Direct.test.fragment.js 6ffbef7a54f8
+src/cmp/js/fragment/Direct.test.fragment.js 7226783d88c6
 src/cmp/js/fragment/Entity.fragment.js 80e2253ca047
-src/cmp/js/fragment/Entity.test.fragment.js b775ab2604b5
+src/cmp/js/fragment/Entity.test.fragment.js 9397fa98b3f4
 src/cmp/js/fragment/EntityBase.fragment.js 64620f56ed2f
 src/cmp/js/fragment/EntityCreateOp.fragment.js a9274756ef5e
 src/cmp/js/fragment/EntityListOp.fragment.js dc2d796d188d
@@ -918,7 +918,7 @@ src/cmp/kotlin/PrepareAuth_kotlin.ts 4f8679d0c503
 src/cmp/kotlin/ReadmeEntity_kotlin.ts c11b93b9dddd
 src/cmp/kotlin/ReadmeExamplesTest_kotlin.ts 6304f45cb224
 src/cmp/kotlin/ReadmeExplanation_kotlin.ts 7a3e0bc261d0
-src/cmp/kotlin/ReadmeHowto_kotlin.ts 183de78953a7
+src/cmp/kotlin/ReadmeHowto_kotlin.ts 9a43d9d59d72
 src/cmp/kotlin/ReadmeInstall_kotlin.ts 46d9c5adddc6
 src/cmp/kotlin/ReadmeIntro_kotlin.ts 3edc60fc57ff
 src/cmp/kotlin/ReadmeModel_kotlin.ts 2f1384cd9686
@@ -976,7 +976,7 @@ tm/kotlin/test/OmniResolver.kt 177193e3e49a
 tm/kotlin/test/OmniSmokeTest.kt ec9e888beb69
 tm/kotlin/test/PipelineTest.kt c654fb25bc20
 tm/kotlin/test/PrimaryUtilityTest.kt 737610cd82ff
-tm/kotlin/test/RunnerSupport.kt 5aeadcec92c5
+tm/kotlin/test/RunnerSupport.kt 9a14f7be245b
 tm/kotlin/test/ServerVariableTest.kt cf52d241cde8
 tm/kotlin/test/StructCorpusTest.kt 1dd3e7bf0be4
 tm/kotlin/test/sdk-test-control.json bb1582608f2f
@@ -1016,7 +1016,7 @@ src/cmp/lua/PrepareAuth_lua.ts cc49fb94005b
 src/cmp/lua/ReadmeEntity_lua.ts 999d57a4df76
 src/cmp/lua/ReadmeExamplesTest_lua.ts 491f3286a9f4
 src/cmp/lua/ReadmeExplanation_lua.ts 74936c6ce867
-src/cmp/lua/ReadmeHowto_lua.ts ccda334815c9
+src/cmp/lua/ReadmeHowto_lua.ts a160637a7fcf
 src/cmp/lua/ReadmeInstall_lua.ts 8edbb24fb530
 src/cmp/lua/ReadmeIntro_lua.ts 77962cc9ab21
 src/cmp/lua/ReadmeModel_lua.ts 16db8d238063
@@ -1065,7 +1065,7 @@ tm/lua/test/omni_smoke_test.lua f889b585f462
 tm/lua/test/option_defaults_test.lua b3c002d12dee
 tm/lua/test/pipeline_test.lua 1db7549f13a9
 tm/lua/test/primary_utility_test.lua 7f75cf9f4e0a
-tm/lua/test/runner.lua ed5ad73d4f51
+tm/lua/test/runner.lua 1b90a1ad5bc2
 tm/lua/test/sdk-test-control.json da0a617f04f6
 tm/lua/test/struct_utility_test.lua 8bbd7286c164
 tm/lua/test/vendor/omni/json.lua ba02816c5157
@@ -1126,7 +1126,7 @@ src/cmp/ocaml/PrepareAuth_ocaml.ts 4faf9c4284b6
 src/cmp/ocaml/ReadmeEntity_ocaml.ts 98af9e5818cb
 src/cmp/ocaml/ReadmeExamplesTest_ocaml.ts fa124db31217
 src/cmp/ocaml/ReadmeExplanation_ocaml.ts a25d52a901d2
-src/cmp/ocaml/ReadmeHowto_ocaml.ts 9972eaefa2ce
+src/cmp/ocaml/ReadmeHowto_ocaml.ts e4a2e0944ca4
 src/cmp/ocaml/ReadmeInstall_ocaml.ts 71fdf7f8309e
 src/cmp/ocaml/ReadmeIntro_ocaml.ts 47dd558857e2
 src/cmp/ocaml/ReadmeModel_ocaml.ts 2f8a64aefa65
@@ -1188,7 +1188,7 @@ src/cmp/perl/PrepareAuth_perl.ts f6a9d71e3a11
 src/cmp/perl/ReadmeEntity_perl.ts 3caae01227dc
 src/cmp/perl/ReadmeExamplesTest_perl.ts 45d8c2903ea0
 src/cmp/perl/ReadmeExplanation_perl.ts 92641c9d1f5c
-src/cmp/perl/ReadmeHowto_perl.ts 2e6bdaf03369
+src/cmp/perl/ReadmeHowto_perl.ts db244e534070
 src/cmp/perl/ReadmeInstall_perl.ts 6ae7b2078d0b
 src/cmp/perl/ReadmeIntro_perl.ts 7068d774730b
 src/cmp/perl/ReadmeModel_perl.ts d4c2850a637d
@@ -1237,7 +1237,7 @@ tm/perl/t/omni.pm f5df6ec0ff2e
 tm/perl/t/omni_smoke.t 5b5284fad82f
 tm/perl/t/pipeline.t b9dfbf3bdc49
 tm/perl/t/primary_utility.t 20521961c707
-tm/perl/t/runner.pm faf289b7cd5d
+tm/perl/t/runner.pm b296f74a1df4
 tm/perl/t/sdk-test-control.json b75ea700c514
 tm/perl/t/server_variables.t 4404608c9256
 tm/perl/t/stream.t 0e1aa023c171
@@ -1295,7 +1295,7 @@ src/cmp/php/PrepareAuth_php.ts c1c0ed41ade8
 src/cmp/php/ReadmeEntity_php.ts a7b6d0434fe8
 src/cmp/php/ReadmeExamplesTest_php.ts 9e282bdf7586
 src/cmp/php/ReadmeExplanation_php.ts 452c1e096b54
-src/cmp/php/ReadmeHowto_php.ts c73e518bbf33
+src/cmp/php/ReadmeHowto_php.ts f8f95c36e462
 src/cmp/php/ReadmeInstall_php.ts a67ef3f9bffe
 src/cmp/php/ReadmeIntro_php.ts ec27ddafd34d
 src/cmp/php/ReadmeModel_php.ts 39c1d3c64b4b
@@ -1344,7 +1344,7 @@ tm/php/test/Omni.php ae0461d4f350
 tm/php/test/OmniSmokeTest.php cad939a73897
 tm/php/test/PipelineTest.php 286ea2f18635
 tm/php/test/PrimaryUtilityTest.php 440e365b3957
-tm/php/test/Runner.php df683b0bb54e
+tm/php/test/Runner.php af062cbd1387
 tm/php/test/StructUtilityTest.php e86495931a37
 tm/php/test/sdk-test-control.json 0ef7278caec2
 tm/php/test/vendor/omni/Runner.php 15543b170b09
@@ -1400,7 +1400,7 @@ src/cmp/py/PrepareAuth_py.ts 43f26508d49b
 src/cmp/py/ReadmeEntity_py.ts c0fff5be4178
 src/cmp/py/ReadmeExamplesTest_py.ts e962e254edcb
 src/cmp/py/ReadmeExplanation_py.ts d7c6b57925cf
-src/cmp/py/ReadmeHowto_py.ts c6edf97e409e
+src/cmp/py/ReadmeHowto_py.ts 4c1d08aff59a
 src/cmp/py/ReadmeInstall_py.ts 1b6d219a6182
 src/cmp/py/ReadmeIntro_py.ts 606b93bc8b3a
 src/cmp/py/ReadmeModel_py.ts 5daa6ff58b9a
@@ -1482,7 +1482,7 @@ tm/py/test/__init__.py e3b0c44298fc
 tm/py/test/feature/__init__.py e3b0c44298fc
 tm/py/test/feature_harness.py d0500966bdc0
 tm/py/test/omni.py a0c2cbc9c182
-tm/py/test/runner.py ae1f27c9c182
+tm/py/test/runner.py 5374b9cbf035
 tm/py/test/sdk-test-control.json ea9bf9046c8a
 tm/py/test/test_concurrency.py 884ffdf859a2
 tm/py/test/test_feature.py a005b5017a7c
@@ -1535,7 +1535,7 @@ src/cmp/rb/PrepareAuth_rb.ts 7db3c548fb09
 src/cmp/rb/ReadmeEntity_rb.ts cbeafa4bd3d4
 src/cmp/rb/ReadmeExamplesTest_rb.ts 617653f6d99d
 src/cmp/rb/ReadmeExplanation_rb.ts 324138dd35be
-src/cmp/rb/ReadmeHowto_rb.ts 209213e8a905
+src/cmp/rb/ReadmeHowto_rb.ts 472c9baaaf52
 src/cmp/rb/ReadmeInstall_rb.ts e3cdcd29853e
 src/cmp/rb/ReadmeIntro_rb.ts 9c3538077a54
 src/cmp/rb/ReadmeModel_rb.ts 8df29f2bf2a2
@@ -1585,7 +1585,7 @@ tm/rb/test/omni.rb a43cb54f434a
 tm/rb/test/omni_smoke_test.rb b39afea20e26
 tm/rb/test/pipeline_test.rb bba6c6975b16
 tm/rb/test/primary_utility_test.rb 90b786d74e98
-tm/rb/test/runner.rb 84b3aeebd794
+tm/rb/test/runner.rb ebde68cbfda9
 tm/rb/test/sdk-test-control.json 9b96054952f6
 tm/rb/test/struct_utility_test.rb ccef3340d593
 tm/rb/test/vendor/omni/runner.rb 17732f8259f8
@@ -1643,7 +1643,7 @@ src/cmp/rust/PrepareAuth_rust.ts f48748ac39c5
 src/cmp/rust/ReadmeEntity_rust.ts 3ff319020626
 src/cmp/rust/ReadmeExamplesTest_rust.ts fe0bd437773e
 src/cmp/rust/ReadmeExplanation_rust.ts c5fc0dca76a9
-src/cmp/rust/ReadmeHowto_rust.ts 1391cecc43d9
+src/cmp/rust/ReadmeHowto_rust.ts a095f24c874a
 src/cmp/rust/ReadmeInstall_rust.ts 912b9bd72f54
 src/cmp/rust/ReadmeIntro_rust.ts ff8ade9a8b24
 src/cmp/rust/ReadmeModel_rust.ts d205e3754c09
@@ -1690,7 +1690,7 @@ tm/rust/feature/test.rs f31ebcee0db3
 tm/rust/src/feature/README.md f623e5e15340
 tm/rust/src/feature/base/.gitkeep e3b0c44298fc
 tm/rust/src/feature/test/.gitkeep e3b0c44298fc
-tm/rust/tests/common/mod.rs 117f7059122a
+tm/rust/tests/common/mod.rs 53b95bcd16e1
 tm/rust/tests/custom_utility_test.rs 958b76f524b2
 tm/rust/tests/netsim_test.rs bc23c72e88b2
 tm/rust/tests/omni_resolver/mod.rs c189080628fa
@@ -1763,7 +1763,7 @@ src/cmp/scala/PrepareAuth_scala.ts b9a5ce33389e
 src/cmp/scala/ReadmeEntity_scala.ts d3d4cf89862b
 src/cmp/scala/ReadmeExamplesTest_scala.ts 29ebfa47559d
 src/cmp/scala/ReadmeExplanation_scala.ts 4aeff743d451
-src/cmp/scala/ReadmeHowto_scala.ts b3b6fe511466
+src/cmp/scala/ReadmeHowto_scala.ts 44dfd3a45752
 src/cmp/scala/ReadmeInstall_scala.ts 0e22bad14e50
 src/cmp/scala/ReadmeIntro_scala.ts f0ed7e16f36a
 src/cmp/scala/ReadmeModel_scala.ts d7519593b40f
@@ -1931,7 +1931,7 @@ src/cmp/swift/PrepareAuth_swift.ts c61d7cfcd37e
 src/cmp/swift/ReadmeEntity_swift.ts e2bc6df72b91
 src/cmp/swift/ReadmeExamplesTest_swift.ts ce2a5ee1841a
 src/cmp/swift/ReadmeExplanation_swift.ts 9d20df0c92d9
-src/cmp/swift/ReadmeHowto_swift.ts aae6db439e49
+src/cmp/swift/ReadmeHowto_swift.ts 77f191371add
 src/cmp/swift/ReadmeInstall_swift.ts 875706f869b4
 src/cmp/swift/ReadmeIntro_swift.ts a1c0402aab9d
 src/cmp/swift/ReadmeModel_swift.ts 835703794d2f
@@ -2036,7 +2036,7 @@ src/cmp/ts/ReadmeEntity_ts.ts 4f1fb3daec35
 src/cmp/ts/ReadmeExampleTest_ts.ts 5dfbe547c29e
 src/cmp/ts/ReadmeExamplesTest_ts.ts 1dc83e9a7ade
 src/cmp/ts/ReadmeExplanation_ts.ts adae2c36cfde
-src/cmp/ts/ReadmeHowto_ts.ts 7b342767c2d0
+src/cmp/ts/ReadmeHowto_ts.ts 7230f0347dfc
 src/cmp/ts/ReadmeInstall_ts.ts 2fd8f46f6491
 src/cmp/ts/ReadmeIntro_ts.ts 0c116a147317
 src/cmp/ts/ReadmeModel_ts.ts 9333bada81aa
@@ -2052,14 +2052,14 @@ src/cmp/ts/TestClean_ts.ts 928ed127ff31
 src/cmp/ts/TestDefinition_ts.ts f75c97be6281
 src/cmp/ts/TestDirect_ts.ts cf90eb2a6b45
 src/cmp/ts/TestEntity_ts.ts 4fb70c4806ec
-src/cmp/ts/TestLive_ts.ts 06caf320e2f1
+src/cmp/ts/TestLive_ts.ts df4f84cf2f0f
 src/cmp/ts/TestMain_ts.ts 8b45d4d8db1a
 src/cmp/ts/Test_ts.ts e5c125bcc0dd
 src/cmp/ts/fragment/Config.data.fragment.ts 8689b1457f2f
 src/cmp/ts/fragment/Config.fragment.ts 23d0e5cd7698
-src/cmp/ts/fragment/Direct.test.fragment.ts 7f691b9b3743
+src/cmp/ts/fragment/Direct.test.fragment.ts 944038625983
 src/cmp/ts/fragment/Entity.fragment.ts b367e32cfced
-src/cmp/ts/fragment/Entity.test.fragment.ts 04cf43984acb
+src/cmp/ts/fragment/Entity.test.fragment.ts c27b966dc21f
 src/cmp/ts/fragment/EntityBase.fragment.ts d394838422df
 src/cmp/ts/fragment/EntityCreateOp.fragment.ts 6b4d8769e6b4
 src/cmp/ts/fragment/EntityListOp.fragment.ts 9cc64d614ca3
@@ -2163,7 +2163,7 @@ src/cmp/zig/PrepareAuth_zig.ts ff18ef091eeb
 src/cmp/zig/ReadmeEntity_zig.ts 9a69dff638cb
 src/cmp/zig/ReadmeExamplesTest_zig.ts 297a208374be
 src/cmp/zig/ReadmeExplanation_zig.ts b1c49bcd7f93
-src/cmp/zig/ReadmeHowto_zig.ts 1b37df0e4998
+src/cmp/zig/ReadmeHowto_zig.ts 58e4059e157b
 src/cmp/zig/ReadmeInstall_zig.ts 52b119944d2c
 src/cmp/zig/ReadmeIntro_zig.ts 04e7058e1817
 src/cmp/zig/ReadmeModel_zig.ts 957ed3c603bf

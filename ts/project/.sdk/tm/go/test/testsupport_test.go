@@ -23,7 +23,7 @@ func loadEnvLocal() {
 	envLocalOnce.Do(func() {
 		_, filename, _, _ := runtime.Caller(0)
 		dir := filepath.Dir(filename)
-		envFile := filepath.Join(dir, "..", "..", ".env.local")
+		envFile := filepath.Join(dir, "..", "SDKREL", ".env.local")
 
 		data, err := os.ReadFile(envFile)
 		if err != nil {

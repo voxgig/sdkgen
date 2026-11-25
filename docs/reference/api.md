@@ -190,6 +190,15 @@ prints text from the spec in generated source through it, so the template
 pass never reads a `$$` in the text as a model path. It throws for a language
 it does not know.
 
+### `envLocalAt(ctx$, target) → string`
+
+Where `.env.local` goes, as a target's own README states it: every generated
+live test reads the file from the project directory. It answers
+`at the project root`, unless the target is generated in another repository:
+then it names the SDK project that generates the target, with the path back
+to it from the target's directory. A `ReadmeHowto_<lang>` component ends its
+"Create a `.env.local` file" sentence with it.
+
 ### `collectDeps(model, targetName, targetDeps) → DepEntry[]`
 
 Collect target-language dependencies from features and from the target's

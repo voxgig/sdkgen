@@ -19,9 +19,9 @@ const OUT2 = '/elsewhere/acme-sdk'
 const REL = '../elsewhere/rel-cli'
 
 
-// The in-tree walk from a target back to the project's `.sdk`: `../.sdk`,
-// `"..", ".sdk"`, or `push("..")` then `push(".sdk")`.
-const IN_TREE_BACK = /\.\.(?:\/|["'],\s*["']|["']\);\s*\w+\.push\(["'])\.sdk\b/
+// The in-tree walk from a target back to the project's `.sdk` or
+// `.env.local`: `../.sdk`, `"..", ".sdk"`, or `push("..")` then `push(".sdk")`.
+const IN_TREE_BACK = /\.\.(?:\/|["'],\s*["']|["']\);\s*\w+\.push\(["'])\.(?:sdk|env\.local)\b/
 
 
 const norm = (path: string) =>
@@ -683,6 +683,23 @@ describe('external target', () => {
           t + ': no file names the declared path back')
         deepStrictEqual(code(away).filter((path: string) => IN_TREE_BACK.test(away[path])), [],
           t + ': these still walk back to the project as they do in tree')
+      }
+    })
+
+
+    // The live tests read `.env.local` from the project, so the how-to says
+    // where that is from the README's own directory.
+    test('a how-to puts .env.local where the live tests read it', async () => {
+      for (const t of ['ts', 'go', 'rust']) {
+        const tree = under((await generate([t], {})).inside, t)
+        const away = (await generate([t], t,
+          `main: kit: target: '${t}': output: sdkrel: '../../zzproj'`)).outside
+
+        ok(tree['README.md'].includes('Create a `.env.local` file at the project root:'),
+          t + ': in tree the file is not at the project root')
+        ok(away['README.md'].includes('Create a `.env.local` file in the SDK project that ' +
+          'generates this package, `../../zzproj/` from this directory:'),
+          t + ': out of tree the README does not name the path back')
       }
     })
 

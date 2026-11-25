@@ -20,7 +20,7 @@ my %ENVLOCAL;
 my $TEST_CONTROL;
 
 sub load_env_local {
-  my $env_file = "$DIR/../../.env.local";
+  my $env_file = "$DIR/../SDKREL/.env.local";
   return unless -e $env_file;
 
   open my $fh, '<', $env_file or return;
