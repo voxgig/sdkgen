@@ -9,8 +9,10 @@ const ReadmeExplanation = cmp(function ReadmeExplanation(props: any) {
 
 The Lua SDK uses plain Lua tables throughout rather than typed
 objects. This mirrors the dynamic nature of the API and keeps the
-SDK flexible — no code generation is needed when the API schema
-changes.
+SDK flexible: code that works with the tables needs no regeneration
+when the API schema changes. The typed models in
+\`${model.name}_types.lua\` follow the schema only when the SDK is
+regenerated.
 
 Use \`helpers.to_map()\` to safely validate that a value is a table.
 

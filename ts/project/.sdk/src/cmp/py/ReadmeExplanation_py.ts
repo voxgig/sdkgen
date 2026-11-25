@@ -25,8 +25,10 @@ const ReadmeExplanation = cmp(function ReadmeExplanation(props: any) {
 
 The Python SDK uses plain dicts throughout rather than typed
 objects. This mirrors the dynamic nature of the API and keeps the
-SDK flexible — no code generation is needed when the API schema
-changes.
+SDK flexible: code that works with the dicts needs no regeneration
+when the API schema changes. The typed models in
+\`${pkgdir}/${model.const.Name.toLowerCase()}_types.py\` follow the schema only when the
+SDK is regenerated.
 
 Use \`helpers.to_map()\` to safely validate that a value is a dict.
 

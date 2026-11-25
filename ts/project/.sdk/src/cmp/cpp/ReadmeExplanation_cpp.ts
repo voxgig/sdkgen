@@ -10,7 +10,10 @@ const ReadmeExplanation = cmp(function ReadmeExplanation(props: any) {
 The C++ SDK uses a single dynamic \`sdk::Value\` type (a JSON-like variant
 over string / number / bool / list / map) throughout rather than generated
 typed structs. This mirrors the dynamic nature of the API and keeps the
-SDK flexible — no code generation is needed when the API schema changes.
+SDK flexible: code that works with \`sdk::Value\` needs no regeneration
+when the API schema changes. The typed models in
+\`${model.const.Name.toLowerCase()}_types.hpp\` follow the schema only when the
+SDK is regenerated.
 
 Build maps with \`sdk::vmap({{"key", sdk::Value("v")}})\` and lists with
 \`sdk::vlist({...})\`; read fields back with \`sdk::getp(value, "key")\`. Use

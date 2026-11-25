@@ -767,6 +767,24 @@ describe('generate', () => {
   })
 
 
+  test('a README says a schema change needs no regeneration only where no typed model follows it', async () => {
+    const cmpdir = Path.resolve(__dirname, '..', 'project', '.sdk', 'src', 'cmp')
+    const targets = sdkTargets()
+    const out = await generate(targets)
+
+    for (const target of targets) {
+      const readme = out[target + '/README.md']
+      const typed = existsSync(Path.join(cmpdir, target, 'EntityTypes_' + target + '.ts'))
+      ok(!(typed && /no code generation is\s+needed/.test(readme)),
+        target + ': the README says no regeneration is needed beside the typed models it generates')
+      for (const m of readme.matchAll(/typed models in\s+`([^`]+)`/g)) {
+        ok(null != out[target + '/' + m[1]],
+          target + ': the README names typed models in ' + m[1] + ', which generation does not write')
+      }
+    }
+  })
+
+
   test('clojure: the namespace example names an entity namespace the run writes', async () => {
     const structure = (readme: string): string =>
       readme.slice(readme.indexOf('### Namespace structure'), readme.indexOf('### Entity state'))

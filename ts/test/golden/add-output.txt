@@ -19,7 +19,7 @@ src/cmp/c/Package_c.ts e1fcd4b774ba
 src/cmp/c/PrepareAuth_c.ts ba13d256f46b
 src/cmp/c/ReadmeEntity_c.ts b1b24f6b4c2f
 src/cmp/c/ReadmeExamplesTest_c.ts 2e899b115aaa
-src/cmp/c/ReadmeExplanation_c.ts 193fa2c194dd
+src/cmp/c/ReadmeExplanation_c.ts c15007d41caa
 src/cmp/c/ReadmeHowto_c.ts 302f5f982cc8
 src/cmp/c/ReadmeInstall_c.ts d91184e38d27
 src/cmp/c/ReadmeIntro_c.ts 17d6da0d3ab6
@@ -267,7 +267,7 @@ src/cmp/cpp/Package_cpp.ts e1fcd4b774ba
 src/cmp/cpp/PrepareAuth_cpp.ts 06c46235ac63
 src/cmp/cpp/ReadmeEntity_cpp.ts 823fb70799cc
 src/cmp/cpp/ReadmeExamplesTest_cpp.ts 76497cfc63d1
-src/cmp/cpp/ReadmeExplanation_cpp.ts beb3014070b4
+src/cmp/cpp/ReadmeExplanation_cpp.ts dcad83ba2059
 src/cmp/cpp/ReadmeHowto_cpp.ts 4d0a05963a78
 src/cmp/cpp/ReadmeInstall_cpp.ts 615f9f586fad
 src/cmp/cpp/ReadmeIntro_cpp.ts 61d4716331c9
@@ -535,7 +535,7 @@ src/cmp/go/Package_go.ts 111b2b904994
 src/cmp/go/PrepareAuth_go.ts 397083cd6c97
 src/cmp/go/ReadmeEntity_go.ts 52b6a144ae95
 src/cmp/go/ReadmeExamplesTest_go.ts 5b977d8f902c
-src/cmp/go/ReadmeExplanation_go.ts e40b052e75ce
+src/cmp/go/ReadmeExplanation_go.ts a51c8b0b7cbe
 src/cmp/go/ReadmeHowto_go.ts e1088279aa51
 src/cmp/go/ReadmeInstall_go.ts f77e8b14f711
 src/cmp/go/ReadmeIntro_go.ts 40fb911321fe
@@ -1015,7 +1015,7 @@ src/cmp/lua/Package_lua.ts a2e4299a9bbb
 src/cmp/lua/PrepareAuth_lua.ts cc49fb94005b
 src/cmp/lua/ReadmeEntity_lua.ts 999d57a4df76
 src/cmp/lua/ReadmeExamplesTest_lua.ts 491f3286a9f4
-src/cmp/lua/ReadmeExplanation_lua.ts 74936c6ce867
+src/cmp/lua/ReadmeExplanation_lua.ts 61c408cfe225
 src/cmp/lua/ReadmeHowto_lua.ts ccda334815c9
 src/cmp/lua/ReadmeInstall_lua.ts 8edbb24fb530
 src/cmp/lua/ReadmeIntro_lua.ts 77962cc9ab21
@@ -1294,7 +1294,7 @@ src/cmp/php/Package_php.ts d6e54478a53a
 src/cmp/php/PrepareAuth_php.ts c1c0ed41ade8
 src/cmp/php/ReadmeEntity_php.ts a7b6d0434fe8
 src/cmp/php/ReadmeExamplesTest_php.ts 9e282bdf7586
-src/cmp/php/ReadmeExplanation_php.ts 452c1e096b54
+src/cmp/php/ReadmeExplanation_php.ts 9dcba67c485c
 src/cmp/php/ReadmeHowto_php.ts c73e518bbf33
 src/cmp/php/ReadmeInstall_php.ts a67ef3f9bffe
 src/cmp/php/ReadmeIntro_php.ts ec27ddafd34d
@@ -1399,7 +1399,7 @@ src/cmp/py/Package_py.ts 69c4ddb165ed
 src/cmp/py/PrepareAuth_py.ts 43f26508d49b
 src/cmp/py/ReadmeEntity_py.ts c0fff5be4178
 src/cmp/py/ReadmeExamplesTest_py.ts e962e254edcb
-src/cmp/py/ReadmeExplanation_py.ts 4c7106557c46
+src/cmp/py/ReadmeExplanation_py.ts 96d01b6f00b7
 src/cmp/py/ReadmeHowto_py.ts c6edf97e409e
 src/cmp/py/ReadmeInstall_py.ts 1b6d219a6182
 src/cmp/py/ReadmeIntro_py.ts 606b93bc8b3a
@@ -1534,7 +1534,7 @@ src/cmp/rb/Package_rb.ts 2391c7fb8c9b
 src/cmp/rb/PrepareAuth_rb.ts 7db3c548fb09
 src/cmp/rb/ReadmeEntity_rb.ts cbeafa4bd3d4
 src/cmp/rb/ReadmeExamplesTest_rb.ts 617653f6d99d
-src/cmp/rb/ReadmeExplanation_rb.ts 324138dd35be
+src/cmp/rb/ReadmeExplanation_rb.ts 28d8413ca707
 src/cmp/rb/ReadmeHowto_rb.ts 209213e8a905
 src/cmp/rb/ReadmeInstall_rb.ts e3cdcd29853e
 src/cmp/rb/ReadmeIntro_rb.ts 9c3538077a54
@@ -1642,7 +1642,7 @@ src/cmp/rust/Package_rust.ts 2803ef7d34a0
 src/cmp/rust/PrepareAuth_rust.ts f48748ac39c5
 src/cmp/rust/ReadmeEntity_rust.ts 3ff319020626
 src/cmp/rust/ReadmeExamplesTest_rust.ts fe0bd437773e
-src/cmp/rust/ReadmeExplanation_rust.ts c5fc0dca76a9
+src/cmp/rust/ReadmeExplanation_rust.ts 7f54cf1cf43f
 src/cmp/rust/ReadmeHowto_rust.ts 1391cecc43d9
 src/cmp/rust/ReadmeInstall_rust.ts 912b9bd72f54
 src/cmp/rust/ReadmeIntro_rust.ts ff8ade9a8b24
