@@ -27,7 +27,7 @@ const TSC = Path.resolve(Path.dirname(require.resolve('typescript')), '..', 'bin
 
 import {
   makeModel, makeRoot, layeredFs, makeLog, toolchain, rubyEnv, pythonEnv, ROUTING_MODEL, entityTestData,
-  searchOnly, listOnly, retypedList, seedableList, selectorLoad, shadowedLoad, actionList, parentedCreate, underscoreKeyed, idlessUpdate, namedFieldEntity, FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY,
+  searchOnly, listOnly, retypedList, seedableList, selectorLoad, shadowedLoad, actionList, parentedCreate, underscoreKeyed, idlessUpdate, parentKeyedUpdate, namedFieldEntity, FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY,
   ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY, NEW_PREFIX_ENTITY, CRUD_MODEL, DOC_MODELS, OPLESS_ENTITY, CREATE_ONLY_ENTITY, PATCH_ONLY_ENTITY, REQUEST_SHAPED_ENTITY, multiRouteLoad, keylessLoad,
   namedEntity, liveIdentities, BASIC_TEMPLATED, BASIC_QUERY,
 } from './generateharness'
@@ -1104,6 +1104,8 @@ pub fn main() void {
     ['create examples whose routes each need a parent of their own', 'ts-readme-parented-create',
       parentedCreate()],
     ['an update example whose request carries no id', 'ts-readme-idless-update', idlessUpdate()],
+    ['an update example keyed by a parent id whose route needs an id', 'ts-readme-parent-keyed-update',
+      parentKeyedUpdate()],
     ['update and remove examples on a record keyed by _id', 'ts-readme-underscore-id', underscoreKeyed()],
     ['examples whose load parameter and create field hold a quote and a backslash', 'ts-readme-quoted',
       namedFieldEntity('a"b\\c')],
@@ -8988,6 +8990,12 @@ describe('the README examples run for a slug carrying the word client', () => {
       async (t) => {
         await readmeLane(t, lane, lane.target + '-idless-update', idlessUpdate(), /Fruit/,
           'update example on the fruit')
+      })
+
+    test(lane.target + ': the README examples run where an update keyed by a parent id needs an id in its route',
+      async (t) => {
+        await readmeLane(t, lane, lane.target + '-parent-keyed-update', parentKeyedUpdate(), /update/i,
+          'update example on the access rules')
       })
 
     test(lane.target + ': the README examples run where a load parameter and a create field hold a quote and a backslash',

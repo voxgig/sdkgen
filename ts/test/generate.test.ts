@@ -18,7 +18,7 @@ import { aliasCmpText } from '../dist/action/target.js'
 // Fixture, miniature Root and memfs layering — shared with
 // generatedcompile.test.ts so both suites generate the SAME SDK.
 import {
-  KIT, STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot, ROUTING_MODEL, searchOnly, listOnly, selectorList, selectorLoad, embeddedLoad, shadowedLoad, actionList, parentedCreate, idlessUpdate, namedFieldEntity, seedableList, graphqlOnly, entityOnly,
+  KIT, STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot, ROUTING_MODEL, searchOnly, listOnly, selectorList, selectorLoad, embeddedLoad, shadowedLoad, actionList, parentedCreate, idlessUpdate, parentKeyedUpdate, namedFieldEntity, seedableList, graphqlOnly, entityOnly,
   FOLD_ENTITY, UNGENERATED_OP, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, CREATELESS_ENTITY,
   ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY, DOC_MODELS, namedEntity, toolchain,
   REQUEST_SHAPED_ENTITY, exampleParams, wireNameParams, slashRoutes, getOnlyFlows, getOnlyBuildctx, multiRouteLoad, keylessLoad,
@@ -6841,6 +6841,22 @@ main: kit: flow: BasicBadgeFlow: {
     }
     deepStrictEqual(wrong, [], 'update examples sending an id their request lacks, ' +
       'or patch examples leaving out one it carries:\n' + wrong.join('\n'))
+  })
+
+
+  test('an update example keyed by a parent id still sends the id its route needs, in every target', async () => {
+    const targets = sdkTargets()
+    const out = await generate(targets, undefined, parentKeyedUpdate())
+
+    // The id as a key, in each target's map syntax.
+    const idKey = /(["'])id\1|[{,(]\s*id\s*[:=]/
+    const wrong: string[] = []
+    for (const target of targets) {
+      const updates = opCalls(out, target, 'update', /[Aa]ccess/)
+      ok(0 < updates.length, target + ': no update example found')
+      wrong.push(...updates.filter((line: string) => !idKey.test(line) || !/\bagent_id\b/.test(line)))
+    }
+    deepStrictEqual(wrong, [], 'update examples leaving out a route parameter:\n' + wrong.join('\n'))
   })
 
 
