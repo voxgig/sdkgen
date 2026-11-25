@@ -1489,9 +1489,7 @@ main: kit: flow: BasicFruitFlow: {
 }
 
 
-// Artil's access rules: read for all channels by the agent's id, set one
-// channel at a time, so the match key is `agent_id` and the update's route
-// also needs an `id` of its own.
+// Artil's access rules: matched by `agent_id`, updated per channel at a route that also needs `id`.
 function parentKeyedUpdate(): string {
   const param = (n: string) => `{ k: "param", n: "${n}", or: "${n}", r: true, t: "\`$STRING\`" }`
   return entityOnly(`
