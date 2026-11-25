@@ -379,6 +379,28 @@ describe('target, entity and project facts', () => {
     { ts: ['.', '.'], go: ['go', '..'], py: ['../py-sdk', '../sdk'] })
   })
 
+  test('external: each active target placed in another repository, with that repository', () => {
+    const kit = makeModel(['ts', 'go', 'go-cli', 'py', 'rb'], undefined, [
+      "main: kit: target: 'go-cli': output: { path: '../acme-cli', repo: 'acme/demo-cli' }",
+      "main: kit: target: py: output: path: '../acme-py'",
+      "main: kit: target: rb: output: { path: '../acme-rb', repo: 'acme/demo-rb' }",
+      'main: kit: target: rb: active: false',
+      'main: kit: target: go: output: root: true',
+    ].join('\n')).main[KIT]
+    deepStrictEqual(fact(kit, 'external'), [
+      { name: 'go-cli', title: 'Go CLI', surface: 'cli', url: 'https://github.com/acme/demo-cli' },
+      { name: 'py', title: 'Python', surface: 'sdk', url: '' },
+    ])
+
+    const hosted = makeModel(['ts'], undefined, [
+      "main: kit: repo: host: 'gitlab.com'",
+      "main: kit: target: ts: output: { path: '../acme-ts', repo: 'acme/demo-ts' }",
+    ].join('\n')).main[KIT]
+    deepStrictEqual(fact(hosted, 'external').map((t: any) => t.url), ['https://gitlab.com/acme/demo-ts'])
+
+    deepStrictEqual(fact(makeModel(['ts', 'go']).main[KIT], 'external'), [])
+  })
+
   test('tag: the one npm package, or the ts one, is tagged v; every other target by name', () => {
     const tags = (targets: string[], extra: string) => {
       const target = makeModel(targets, undefined, extra).main[KIT].target

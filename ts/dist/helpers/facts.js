@@ -81,8 +81,22 @@ function applyFacts(model) {
     releaseTags(model);
     texts.forEach((t, i) => place(t.at, t.path, out.escape['t' + i]));
     (0, title_1.titleFacts)(kit.target);
+    kit.fact.external = externalTargets(model);
     place(kit, ['definitionKind'], (0, graphqlPoint_1.definitionKind)(model));
     return model;
+}
+// The active targets placed in another repository, read here because the model
+// the project's Root receives, which its documents read, leaves them out.
+function externalTargets(model) {
+    const target = mapOr(model.main[apidef_1.KIT].target);
+    return model.main[apidef_1.KIT].fact.active
+        .filter((name) => 'external' === target[name].fact?.place)
+        .map((name) => ({
+        name,
+        title: target[name].fact.title,
+        surface: target[name].fact.surface,
+        url: '' === String(target[name].output?.repo ?? '') ? '' : (0, packageMeta_1.repoInfo)(model, name).repoUrl,
+    }));
 }
 function mapOr(value) {
     return isMap(value) ? value : {};

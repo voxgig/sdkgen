@@ -63,6 +63,22 @@ Three of those rows are the failure modes worth naming:
 `output.path` is not a consumer-target feature: point a language target
 at another repo and it generates there exactly as it would in-tree.
 
+## What the SDK repo still says about it
+
+Leaving the in-tree pass takes the target out of the model the project's
+`Root.ts` receives, not out of the project. The root README and the root
+agent guide describe the whole project, so both still name the target: by
+its title, linked to `output.repo` when the model sets one and unlinked when
+it does not, and as generated into its own repository rather than as a
+folder of this one. The fact pass takes what they say from the full model,
+before the target is dropped, so a run that skips the target
+(`create: false`) or moves it (an override) names it the same way.
+
+The files about the packages this repository releases leave it out: the
+scope in SECURITY.md, the changelog, the release Makefile and the publish
+workflows. They describe what this repository publishes, and the target is
+released from its own.
+
 ## The destination is a decision, not a typo
 
 The path is taken verbatim from the model, generation overwrites, and

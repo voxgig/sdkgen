@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SURFACE_WORD = exports.SURFACE_SINCE = exports.SURFACES = void 0;
 exports.documentOrder = documentOrder;
+exports.externalName = externalName;
 exports.surfaceName = surfaceName;
 exports.surfaceOf = surfaceOf;
 const types_1 = require("../types");
@@ -34,21 +35,32 @@ const SURFACE_NOUN = {
     data: 'data package',
     'seneca-provider': 'Seneca provider',
 };
-function surfaceOf(target) {
-    const surface = (0, facts_1.fact)(target, 'surface');
+function knownSurface(surface) {
     return SURFACES.includes(surface) ? surface : '';
+}
+function surfaceOf(target) {
+    return knownSurface((0, facts_1.fact)(target, 'surface'));
+}
+function surfaceName(target) {
+    return titledSurface(String((0, facts_1.fact)(target, 'title')), surfaceOf(target));
 }
 // The title and the noun for what the target is, with the noun's words the
 // title already ends with said once: "Go CLI", "Python Data package".
-function surfaceName(target) {
-    const title = String((0, facts_1.fact)(target, 'title')).split(' ');
-    const noun = (SURFACE_NOUN[surfaceOf(target)] ?? 'package').split(' ');
+function titledSurface(titleText, surface) {
+    const title = titleText.split(' ');
+    const noun = (SURFACE_NOUN[knownSurface(surface)] ?? 'package').split(' ');
     for (let k = Math.min(title.length, noun.length); 0 < k; k--) {
         if (title.slice(-k).join(' ').toLowerCase() === noun.slice(0, k).join(' ').toLowerCase()) {
             return [...title, ...noun.slice(k)].join(' ');
         }
     }
     return [...title, ...noun].join(' ');
+}
+// A target the `external` fact lists, as this repository's documents name it:
+// linked to its own repository when the model names one.
+function externalName(target) {
+    const name = titledSurface(target.title, target.surface);
+    return '' === target.url ? name : `[${name}](${target.url})`;
 }
 // The configured languages by origin, then the rest, then the CLI and MCP server.
 function documentOrder(model, targets) {

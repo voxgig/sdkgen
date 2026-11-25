@@ -2,7 +2,8 @@
 import { names, Content, File } from 'jostraca'
 import { cmp } from '../helpers/component'
 import { fact } from '../helpers/facts'
-import { surfaceOf } from '../helpers/surface'
+import { externalName, surfaceOf } from '../helpers/surface'
+import { KIT } from '../types'
 
 import {
   activeTargets,
@@ -50,22 +51,23 @@ feature in its own directory (\`<lang>/src/feature/<name>/AGENTS.md\`)` : ''}.
 
 
 const AgentGuideTopTargets = cmp(function AgentGuideTopTargets(props: any) {
-  const { model, targets } = props.s
+  const { model, targets, external } = props.s
 
-  if (0 < targets.length) {
-    Content(`**Targets** (${targets.length}):
+  const rows: [string, string][] = targets.map((t: any) => {
+    const note = langCmd(t.name, model).note ? ' — ' + langCmd(t.name, model).note : ''
+    const dir = 'folder' === fact(t, 'place') ? `\`${t.name}/\`` : '—'
+    const guide = fact(t, 'docs').agents ? `[\`${t.name}/AGENTS.md\`](./${t.name}/AGENTS.md)` : '—'
+    return [t.name, `| \`${t.name}\` | ${dir}${note} | ${guide} |`]
+  }).concat(external.map((t: any) =>
+    [t.name, `| \`${t.name}\` | ${externalName(t)}, generated into its own repository | — |`]))
+    .sort(([a]: [string, string], [b]: [string, string]) => a < b ? -1 : a > b ? 1 : 0)
+
+  if (0 < rows.length) {
+    Content(`**Targets** (${rows.length}):
 
 | Target | Directory | Build guide |
 | --- | --- | --- |
-`)
-    targets.forEach((t: any) => {
-      const note = langCmd(t.name, model).note ? ' — ' + langCmd(t.name, model).note : ''
-      const dir = 'folder' === fact(t, 'place') ? `\`${t.name}/\`` : '—'
-      const guide = fact(t, 'docs').agents ? `[\`${t.name}/AGENTS.md\`](./${t.name}/AGENTS.md)` : '—'
-      Content(`| \`${t.name}\` | ${dir}${note} | ${guide} |
-`)
-    })
-    Content(`
+${rows.map(([, row]) => row + '\n').join('')}
 `)
   }
 })
@@ -180,10 +182,11 @@ const AgentGuideTop = cmp(function AgentGuideTop(props: any) {
 
   const Name = projectName(model)
   const targets = activeTargets(model)
+  const external = fact(model.main[KIT], 'external')
   const features = activeFeatures(model)
   const entities = activeEntities(model)
 
-  const s = { Name, model, targets, features, entities }
+  const s = { Name, model, targets, external, features, entities }
 
   File({ name: 'AGENTS.md' }, () => {
     AgentGuideTopIntro({ s })
