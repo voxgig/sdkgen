@@ -220,17 +220,16 @@ sub fixtures_literal {
 
 
 # Rewrite a runnable block into an executable offline test-mode program: the
-# SDK lib is put on \@INC by absolute path; any real ->new/->test constructor
-# becomes ${sdkClass}->test(<fixtures>); a block that only uses \$client gets
-# such a constructor prepended. The constructor arg match is deliberately
-# shallow (no nested parens) - runnable op blocks never build a client inline
-# with a paren-bearing argument.
+# SDK lib is put on \@INC by absolute path; any real ->new/->test constructor,
+# its argument list matched to the parenthesis that balances it, becomes
+# ${sdkClass}->test(<fixtures>); a block that only uses \$client gets such a
+# constructor prepended.
 sub to_runner {
   my ($block) = @_;
   my $fixtures = fixtures_literal($block);
   my $body;
   if ($block =~ /\\Q$SDK_CLASS\\E->(?:new|test)\\b/) {
-    ($body = $block) =~ s/\\Q$SDK_CLASS\\E->(?:new|test)(?:\\s*\\([^()]*\\))?/$SDK_CLASS->test($fixtures)/g;
+    ($body = $block) =~ s/\\Q$SDK_CLASS\\E->(?:new|test)(?:\\s*(?<args>\\((?:[^()]++|(?&args))*\\)))?/$SDK_CLASS->test($fixtures)/g;
   }
   else {
     $body = "my \\\$client = $SDK_CLASS->test($fixtures);\\n" . $block;

@@ -1186,7 +1186,7 @@ src/cmp/perl/Main_perl.ts dbbd7bcdcdde
 src/cmp/perl/Package_perl.ts d2ec55eddbfc
 src/cmp/perl/PrepareAuth_perl.ts f6a9d71e3a11
 src/cmp/perl/ReadmeEntity_perl.ts 3caae01227dc
-src/cmp/perl/ReadmeExamplesTest_perl.ts 45d8c2903ea0
+src/cmp/perl/ReadmeExamplesTest_perl.ts 82fe5ea7e496
 src/cmp/perl/ReadmeExplanation_perl.ts 92641c9d1f5c
 src/cmp/perl/ReadmeHowto_perl.ts 2e6bdaf03369
 src/cmp/perl/ReadmeInstall_perl.ts 6ae7b2078d0b
@@ -1293,7 +1293,7 @@ src/cmp/php/Main_php.ts 7cf40a8baf83
 src/cmp/php/Package_php.ts d6e54478a53a
 src/cmp/php/PrepareAuth_php.ts c1c0ed41ade8
 src/cmp/php/ReadmeEntity_php.ts a7b6d0434fe8
-src/cmp/php/ReadmeExamplesTest_php.ts 9e282bdf7586
+src/cmp/php/ReadmeExamplesTest_php.ts c3f4b304d367
 src/cmp/php/ReadmeExplanation_php.ts 452c1e096b54
 src/cmp/php/ReadmeHowto_php.ts c73e518bbf33
 src/cmp/php/ReadmeInstall_php.ts a67ef3f9bffe
@@ -1533,7 +1533,7 @@ src/cmp/rb/Main_rb.ts d92e24cb896b
 src/cmp/rb/Package_rb.ts 2391c7fb8c9b
 src/cmp/rb/PrepareAuth_rb.ts 7db3c548fb09
 src/cmp/rb/ReadmeEntity_rb.ts cbeafa4bd3d4
-src/cmp/rb/ReadmeExamplesTest_rb.ts 617653f6d99d
+src/cmp/rb/ReadmeExamplesTest_rb.ts 0c8afcfed641
 src/cmp/rb/ReadmeExplanation_rb.ts 324138dd35be
 src/cmp/rb/ReadmeHowto_rb.ts 209213e8a905
 src/cmp/rb/ReadmeInstall_rb.ts e3cdcd29853e
@@ -2033,8 +2033,8 @@ src/cmp/ts/Main_ts.ts 1220d104f55d
 src/cmp/ts/Package_ts.ts 61d52a361614
 src/cmp/ts/PrepareAuth_ts.ts 13cc5f3c7f72
 src/cmp/ts/ReadmeEntity_ts.ts 4f1fb3daec35
-src/cmp/ts/ReadmeExampleTest_ts.ts 5dfbe547c29e
-src/cmp/ts/ReadmeExamplesTest_ts.ts 1dc83e9a7ade
+src/cmp/ts/ReadmeExampleTest_ts.ts fdb149a6b84e
+src/cmp/ts/ReadmeExamplesTest_ts.ts d86e740bc444
 src/cmp/ts/ReadmeExplanation_ts.ts adae2c36cfde
 src/cmp/ts/ReadmeHowto_ts.ts 7b342767c2d0
 src/cmp/ts/ReadmeInstall_ts.ts 2fd8f46f6491

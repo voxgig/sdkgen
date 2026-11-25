@@ -306,14 +306,34 @@ function typeCheckBlocks(blocks: string[], key: string): {
 }
 
 
+// Replace each call \`head\` matches up to its opening parenthesis with \`to\`,
+// reading the arguments to the parenthesis that balances that one.
+function replaceCalls(code: string, head: RegExp, to: string): string {
+  let out = ''
+  let at = 0
+  let m: RegExpExecArray | null
+  while (null != (m = head.exec(code))) {
+    let depth = 0
+    let end = m.index + m[0].length - 1
+    for (; end < code.length; end++) {
+      if ('(' === code[end]) depth++
+      else if (')' === code[end] && 0 === --depth) break
+    }
+    if (end === code.length) break
+    out += code.slice(at, m.index) + to
+    at = head.lastIndex = end + 1
+  }
+  return out + code.slice(at)
+}
+
+
 // Turn a documented snippet into an offline-runnable one: strip imports,
 // rewrite real client construction (\`new <Sdk>SDK(...)\` and any
 // \`<Sdk>SDK.test(...)\`) to a seeded test-mode client, and give snippets
 // that reference \`client\` without constructing one a shared seeded client.
 function rewriteForRun(code: string): string {
   let out = stripImports(code)
-  out = out.replace(/new\\s+${Name}SDK\\s*\\([^)]*\\)/g, () => SEEDED_CTOR)
-  out = out.replace(/${Name}SDK\\.test\\s*\\([^)]*\\)/g, () => SEEDED_CTOR)
+  out = replaceCalls(out, /(?:new\\s+${Name}SDK|${Name}SDK\\.test)\\s*\\(/g, SEEDED_CTOR)
   if (CLIENT.test(out) && !/\\b(?:const|let|var)\\s+client\\b/.test(out)) {
     out = 'const client = ' + SEEDED_CTOR + '\\n' + out
   }

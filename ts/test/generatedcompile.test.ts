@@ -1181,6 +1181,28 @@ pub fn main() void {
   })
 
 
+  test('typescript: the README example tests run a constructor whose arguments hold a call', async () => {
+    ok(Fs.existsSync(TSC), 'no local typescript — run `npm install`')
+
+    const sdkroot = Path.join(tmp, 'ts-readme-ctor-call', 'ts')
+    await generateTo('ts', sdkroot, undefined, undefined, { top: true })
+    linkDeps(sdkroot)
+    Fs.appendFileSync(Path.join(sdkroot, 'README.md'),
+      '\n```ts\nconst client = new DemoSDK({ apikey: String(process.env.DEMO_APIKEY ?? \'none\') })\n' +
+      'console.log(String(client))\n```\n')
+
+    const built = run(process.execPath, [TSC, '--build', 'src', 'test'], sdkroot)
+    ok(built.ok, 'the generated SDK does not build:\n' + built.out)
+
+    const suite = run(process.execPath,
+      ['--test', '--test-reporter=tap', Path.join('dist-test', 'readme_examples.test.js')],
+      sdkroot, nestedTestEnv())
+    ok(suite.ok, 'the README example tests failed:\n' + tail(suite.out, 60))
+    ok(/^\s*ok \d+ - .*every runnable example executes/m.test(suite.out),
+      'the README example tests did not run the examples:\n' + tail(suite.out, 40))
+  })
+
+
   // Run as written: the README suites above replace a block's seed with their own.
   for (const [what, target, fence, howto] of [
     ['typescript: the root README test block', 'ts', 'ts', false],
@@ -8912,6 +8934,8 @@ const README_LANES: {
   command: () => { bin: string, args: string[], env?: NodeJS.ProcessEnv } | null,
   // A runnable block added to the README, whose output is not ASCII.
   example?: string,
+  // A runnable block whose client constructor holds a call among its arguments.
+  ctor?: string,
   // The module every example loads, and what the suite reports when it does not parse.
   entry: RegExp,
   unloaded: RegExp,
@@ -8923,6 +8947,8 @@ const README_LANES: {
     ran: /\d+ runs, \d+ assertions, 0 failures, 0 errors, 0 skips/,
     command: () => minitest(['test/readme_examples_test.rb']),
     example: '```ruby\nputs "naïve café — #{client.class}"\n```',
+    ctor: '```ruby\nclient = MultifonClientSDK.new({ "apikey" => ENV.fetch("MULTIFON_CLIENT_APIKEY", "none") })\n' +
+      'puts client.class\n```',
     entry: /^[^/]+_sdk\.rb$/,
     unloaded: /SyntaxError/,
   },
@@ -8960,6 +8986,9 @@ const README_LANES: {
     ran: /[1-9]\d* passed/,
     command: () => pytest(['test/test_readme_examples.py', '-q']),
     example: '```python\nprint("naïve café — " + client.__class__.__name__)\n```',
+    ctor: '```python\nimport os\n' +
+      'client = MultifonClientSDK({"apikey": os.environ.get("MULTIFON_CLIENT_APIKEY", "none")})\n' +
+      'print(client.__class__.__name__)\n```',
     entry: /^(?!test\/)[^/]+\/__init__\.py$/,
     unloaded: /SyntaxError/,
   },
@@ -8972,6 +9001,8 @@ const README_LANES: {
       const perl = toolchain('perl')
       return null == perl ? null : { bin: perl, args: ['-Ilib', 't/readme_examples.t'] }
     },
+    ctor: '```perl\nmy $client = MultifonClientSDK->new({ \'apikey\' => ($ENV{\'MULTIFON_CLIENT_APIKEY\'} // \'none\') });\n' +
+      'print ref($client), "\\n";\n```',
     entry: /^lib\/[^/]+SDK\.pm$/,
     unloaded: /syntax error/,
   },
@@ -8981,6 +9012,8 @@ const README_LANES: {
     needs: 'php with phpunit, or composer to install it',
     ran: /OK \([1-9]\d* tests?, \d+ assertions?\)/,
     command: () => phpunitViaComposer(['test/ReadmeExamplesTest.php']),
+    ctor: '```php\n<?php\n$client = new MultifonClientSDK([\'apikey\' => (getenv(\'MULTIFON_CLIENT_APIKEY\') ?: \'none\')]);\n' +
+      'echo get_class($client), "\\n";\n```',
     entry: /^[^/]+_sdk\.php$/,
     unloaded: /Unmatched '\)'|syntax error|ParseError/,
   },
@@ -9040,6 +9073,18 @@ describe('the README examples run for a slug carrying the word client', () => {
     test(lane.target + ': every README example is classified, and run', async (t) => {
       await readmeLane(t, lane, lane.target)
     })
+
+    // php prints the key as a call, getenv("...").
+    test(lane.target + ': the README examples run where the constructor reads an API key', async (t) => {
+      await readmeLane(t, lane, lane.target + '-apikey', 'main: kit: config: auth: active: true', /APIKEY/,
+        'constructor reading an API key')
+    })
+
+    if (null != lane.ctor) {
+      test(lane.target + ': the README examples run where a constructor\'s arguments hold a call', async (t) => {
+        await readmeLane(t, { ...lane, example: lane.ctor }, lane.target + '-ctor-call')
+      })
+    }
 
     // The crud model's tutorial patches an entity as well.
     test(lane.target + ': every README example is classified, and run, with a patch', async (t) => {
