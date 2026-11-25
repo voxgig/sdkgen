@@ -47,6 +47,31 @@ describe('facts', () => {
       { ts: 'root', go: 'folder', py: 'external' })
   })
 
+  test('link: a target links the root documents from its own folder, when they are written', () => {
+    const model = makeModel(['ts', 'go', 'py'], undefined, [
+      'main: kit: target: go: phase: agentguide: active: false',
+      "main: kit: target: py: output: path: '../py-sdk'",
+    ].join('\n'))
+    const target = model.main[KIT].target
+    const facts = (t: string) => [fact(target[t], 'link'), fact(target[t], 'docs')]
+    deepStrictEqual(facts('ts'), [{ readme: '../README.md', agents: '../AGENTS.md' }, { readme: true, agents: true }])
+    deepStrictEqual(facts('go'), [{ readme: '../README.md', agents: '../AGENTS.md' }, { readme: true, agents: false }])
+    deepStrictEqual(facts('py'), [{ readme: '', agents: '' }, { readme: false, agents: false }])
+
+    const off = makeModel(['ts'], undefined, 'main: kit: phase: top: active: false').main[KIT].target.ts
+    deepStrictEqual([fact(off, 'link'), fact(off, 'docs')], [{ readme: '', agents: '' }, { readme: true, agents: true }])
+
+    const root = makeModel(['ts'], undefined,
+      'main: kit: phase: top: active: false\nmain: kit: target: ts: output: root: true').main[KIT].target.ts
+    deepStrictEqual([fact(root, 'link'), fact(root, 'docs')], [{ readme: '', agents: '' }, { readme: false, agents: false }])
+  })
+
+  test('active: the active targets, in key order', () => {
+    const model = makeModel(['ts', 'go', 'py'], undefined, 'main: kit: target: go: active: false')
+    deepStrictEqual(fact(model.main[KIT], 'active'), ['py', 'ts'])
+    deepStrictEqual(fact(applyFacts({ main: { [KIT]: { target: {} } } }).main[KIT], 'active'), [])
+  })
+
   test('a fact whose input is missing is absent, and reading it fails', () => {
     const model = applyFacts({
       main: { [KIT]: {

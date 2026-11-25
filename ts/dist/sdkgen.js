@@ -450,11 +450,11 @@ function SdkGen(opts) {
         // target — so the only correction that survives is one made to the model
         // itself, before Root runs. See helpers/modelNames.
         (0, modelNames_1.guardModelNames)(model, log);
-        (0, opShape_1.warnUngeneratedOps)(model, log, (0, resolve_1.targetOrigins)(model));
         // A flow step whose call the runtime would refuse is switched off, so no
         // generated test makes it; see helpers/flowGuard.
         (0, flowGuard_1.guardFlowSteps)(model, log);
         (0, facts_1.applyFacts)(model);
+        (0, opShape_1.warnUngeneratedOps)(model, log, (0, resolve_1.targetOrigins)(model));
         let Root = spec.root;
         if (null == Root && null != config?.root) {
             clear(config.root);
@@ -633,6 +633,10 @@ function SdkGen(opts) {
             throw modelError(path, errs[0], errs);
         }
         model.const = projectConst(model);
+        // The model a generate prepares, without the notices, which belong to it.
+        (0, modelNames_1.guardModelNames)(model);
+        (0, flowGuard_1.guardFlowSteps)(model);
+        (0, facts_1.applyFacts)(model);
         return {
             model,
             url: path,
@@ -931,6 +935,9 @@ function withoutExternal(model, external) {
             }
         }
         kit[kind] = kept;
+    }
+    if (Array.isArray(kit.fact?.active)) {
+        kit.fact = { ...kit.fact, active: kit.fact.active.filter((name) => !drop.has('target:' + name)) };
     }
     return {
         ...model,

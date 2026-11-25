@@ -56,8 +56,15 @@ function applyFacts(model) {
     }
     copyFacts(out.main[apidef_1.KIT], kit);
     linkConsumers(kit.target, out.main[apidef_1.KIT].target);
+    kit.fact = isMap(kit.fact) ? kit.fact : {};
+    kit.fact.active = activeNames(kit.target);
     texts.forEach((t, i) => place(t.at, t.path, out.escape['t' + i]));
     return model;
+}
+// aontu lists no map's keys, so the active targets are named here.
+function activeNames(target) {
+    return !isMap(target) ? [] : Object.keys(target).sort()
+        .filter((name) => isMap(target[name]) && false !== target[name].active);
 }
 // A hand-built model may lack the slots the rules read, and only code can say
 // whether a target's provenance leads to the bundled scaffold.

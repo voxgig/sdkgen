@@ -66,8 +66,17 @@ function applyFacts(model: any): any {
 
   copyFacts(out.main[KIT], kit)
   linkConsumers(kit.target, out.main[KIT].target)
+  kit.fact = isMap(kit.fact) ? kit.fact : {}
+  kit.fact.active = activeNames(kit.target)
   texts.forEach((t, i) => place(t.at, t.path, out.escape['t' + i]))
   return model
+}
+
+
+// aontu lists no map's keys, so the active targets are named here.
+function activeNames(target: any): string[] {
+  return !isMap(target) ? [] : Object.keys(target).sort()
+    .filter((name: string) => isMap(target[name]) && false !== target[name].active)
 }
 
 

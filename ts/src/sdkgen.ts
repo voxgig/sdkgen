@@ -328,13 +328,13 @@ function SdkGen(opts: SdkGenOptions) {
     // target — so the only correction that survives is one made to the model
     // itself, before Root runs. See helpers/modelNames.
     guardModelNames(model, log)
-    warnUngeneratedOps(model, log, targetOrigins(model))
 
     // A flow step whose call the runtime would refuse is switched off, so no
     // generated test makes it; see helpers/flowGuard.
     guardFlowSteps(model, log)
 
     applyFacts(model)
+    warnUngeneratedOps(model, log, targetOrigins(model))
 
     let Root = spec.root
 
@@ -570,6 +570,11 @@ function SdkGen(opts: SdkGenOptions) {
     }
 
     model.const = projectConst(model)
+
+    // The model a generate prepares, without the notices, which belong to it.
+    guardModelNames(model)
+    guardFlowSteps(model)
+    applyFacts(model)
 
     return {
       model,
@@ -982,6 +987,10 @@ function withoutExternal(
     }
 
     kit[kind] = kept
+  }
+
+  if (Array.isArray(kit.fact?.active)) {
+    kit.fact = { ...kit.fact, active: kit.fact.active.filter((name: string) => !drop.has('target:' + name)) }
   }
 
   return {

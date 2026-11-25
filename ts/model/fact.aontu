@@ -44,6 +44,14 @@ main: kit: target: &: {
     surfaceFrom: match(maybe(..surface), "", match(maybe(..derive.legacy.surface), "",
       match(maybe(.phase.entity), false, "unknown", "entities"), "legacy"), "slot")
     place: match(maybe(..output), { root: true }, "root", { path: "" }, "folder", "external")
+    link: {
+      readme: match(maybe(..place), "folder", match(maybe($.main.kit.fact."top"), true, "../README.md", ""), "")
+      agents: match(maybe(..place), "folder", match(maybe($.main.kit.fact."top"), true, "../AGENTS.md", ""), "")
+    }
+    docs: {
+      readme: match(maybe(..place), "folder", maybe(..phase.readme), false)
+      agents: match(maybe(..place), "folder", maybe(..phase.agentguide), false)
+    }
     phase: {
       entity: ...phase.entity.active
       feature: ...phase.feature.active
