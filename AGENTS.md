@@ -624,9 +624,10 @@ The text guard regenerates the documentation, with a docs-only Root that
 follows the plan facts, under every single-switch variation of the model:
 each target, feature, entity and operation removed, the empty and lone state
 of each kind, each auth and server shape, each document phase off, a target
-at the root. The variations come from the compiled fixture; none is listed by
-hand, and the fixture's entity names are opaque tokens so a mention scan
-cannot mistake `console` or `record` for prose. It reports:
+at the root and one out of tree. The variations come from the compiled
+fixture; none is listed by hand, and the fixture's entity names are opaque
+tokens so a mention scan cannot mistake `console` or `record` for prose. It
+reports:
 
 - `link`: a relative link, anchor or `cd` that does not resolve in what the
   full Root writes for that variation (`.sdk/` counts too).
