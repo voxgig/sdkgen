@@ -73,39 +73,7 @@ ${f.title}.
 
 `)
 
-
-
-    if (0 < f.options.length) {
-      Content(`| Option | Default |
-|---|---|
-`)
-      for (const o of f.options) {
-        Content(`| \`${o.name}\` | ${o.code} |
-`)
-      }
-      Content(`
-`)
-    }
-    else if (0 === f.extras.length) {
-      Content(`\`active\` only — this feature takes no further options.
-
-`)
-    }
-
-    if (0 < f.extras.length) {
-      Content(`| Option | Type |
-|---|---|
-`)
-      for (const o of f.extras) {
-        Content(`| \`${o.name}\` | ${o.type} |
-`)
-      }
-      Content(`
-These take no default: the feature behaves one way when you supply them and
-another when you do not.
-
-`)
-    }
+    ReadmeRefFeatureOptions({ feature: f })
 
     Content(`**Usage**
 
@@ -143,6 +111,43 @@ its default unless you name it.
 
     Content(`- ${f.on ? `Active by default: set \`feature.${f.name}.active\` to false to switch it off.` :
       'Inactive by default: leaving it out costs nothing at runtime.'}
+
+`)
+  }
+})
+
+
+const ReadmeRefFeatureOptions = cmp(function ReadmeRefFeatureOptions(props: any) {
+  const f: FeatureDoc = props.feature
+
+  if (0 < f.options.length) {
+    Content(`| Option | Default |
+|---|---|
+`)
+    for (const o of f.options) {
+      Content(`| \`${o.name}\` | ${o.code} |
+`)
+    }
+    Content(`
+`)
+  }
+  else if (0 === f.extras.length) {
+    Content(`\`active\` only — this feature takes no further options.
+
+`)
+  }
+
+  if (0 < f.extras.length) {
+    Content(`| Option | Type |
+|---|---|
+`)
+    for (const o of f.extras) {
+      Content(`| \`${o.name}\` | ${o.type} |
+`)
+    }
+    Content(`
+These take no default: the feature behaves one way when you supply them and
+another when you do not.
 
 `)
   }

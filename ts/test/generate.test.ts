@@ -22,7 +22,7 @@ import {
   FOLD_ENTITY, UNGENERATED_OP, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, CREATELESS_ENTITY,
   ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY, DOC_MODELS, namedEntity, toolchain,
   REQUEST_SHAPED_ENTITY, exampleParams, wireNameParams, slashRoutes, getOnlyFlows, getOnlyBuildctx, multiRouteLoad, keylessLoad,
-  directDiscovery, liveFallbacks, slugKeyed, liveIdentities,
+  directDiscovery, liveFallbacks, slugKeyed, liveIdentities, offFeature,
 } from './generateharness'
 
 
@@ -1923,9 +1923,9 @@ main: kit: target: js: phase: feature: active: false
     const shipped: string[] = []
 
     for (const target of allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))) {
-      const off = 'main: kit: feature: secrets: { active: false plugin: vault: active: true }'
+      const off = offFeature('secrets') + 'main: kit: feature: secrets: plugin: vault: active: true'
       const trims = false !== makeModel([target]).main[KIT].target[target].feature?.trim
-      const out = await generate([target], undefined, off, undefined, ['test', 'log', 'secrets'])
+      const out = await generate([target], undefined, off, undefined, ['test', 'log'])
 
       for (const [path] of filesFor(out, target)) {
         if (/hashicorp/i.test(path) || (trims && SECRETS.test(path.slice(target.length)))) {
@@ -4716,8 +4716,8 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
     // no kind file, and the accessor emitted EMPTY - it exists in every
     // config.c so sdk.h's prototype always has a definition.
     const off = await genc(
-      'main: kit: feature: secrets: { active: false plugin: vault: active: true }',
-      ['test', 'log', 'secrets'])
+      offFeature('secrets') + 'main: kit: feature: secrets: plugin: vault: active: true',
+      ['test', 'log'])
     ok(null == findFile(off, 'c/feature/secrets/kinds.c') &&
       null == findFile(off, 'c/feature/secrets/kinds.mk'),
       'c: an inactive feature still generated its wiring files')
@@ -4924,8 +4924,8 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
     })
     const offres = await off.generate({
       model: makeModel(['zig'], undefined,
-        'main: kit: feature: secrets: { active: false }',
-        ['test', 'log', 'secrets']),
+        offFeature('secrets'),
+        ['test', 'log']),
       root: makeRoot(),
     })
     strictEqual(offres.ok, true, 'generation did not report ok')
@@ -5151,8 +5151,8 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
     // no kind file, no include, and the accessor emitted EMPTY - it exists
     // in every config.hpp so a caller can always ask.
     const off = await gencpp(
-      'main: kit: feature: secrets: { active: false plugin: vault: active: true }',
-      ['test', 'log', 'secrets'])
+      offFeature('secrets') + 'main: kit: feature: secrets: plugin: vault: active: true',
+      ['test', 'log'])
     ok(null == findFile(off, 'cpp/feature/secrets/kinds.cpp') &&
       null == findFile(off, 'cpp/feature/secrets/kinds.mk'),
       'cpp: an inactive feature still generated its wiring files')
@@ -5409,8 +5409,8 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
     // no container, no kind module, and the accessor emitted EMPTY and
     // untyped - it exists in every sdk_config.ml.
     const off = await genml(
-      'main: kit: feature: secrets: { active: false plugin: vault: active: true }',
-      ['test', 'log', 'secrets'])
+      offFeature('secrets') + 'main: kit: feature: secrets: plugin: vault: active: true',
+      ['test', 'log'])
     ok(null == findFile(off, 'ocaml/feature/secrets/feature.mk'),
       'ocaml: an inactive feature still generated its build fragment')
     ok(null == findFile(off, 'ocaml/feature/secrets_feature.ml') &&
@@ -5883,7 +5883,7 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
       fs: layeredFs(offfs), folder: STAGE, root: '', pino: makeLog(),
     })
     const offres = await offgen.generate({
-      model: makeModel(['clojure'], undefined, undefined, ['test', 'log', 'secrets']),
+      model: makeModel(['clojure'], undefined, offFeature('secrets'), ['test', 'log']),
       root: makeRoot(),
     })
     strictEqual(offres.ok, true, 'feature-off generation did not report ok')
@@ -6013,7 +6013,7 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
       fs: layeredFs(offfs), folder: STAGE, root: '', pino: makeLog(),
     })
     const offres = await offgen.generate({
-      model: makeModel(['elixir'], undefined, undefined, ['test', 'log', 'secrets']),
+      model: makeModel(['elixir'], undefined, offFeature('secrets'), ['test', 'log']),
       root: makeRoot(),
     })
     strictEqual(offres.ok, true, 'feature-off generation did not report ok')
@@ -6146,14 +6146,15 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
     ok(null == findFile(out, 'swift/src/feature/secrets/.gitkeep'),
       'swift: the feature-add copy-target dir leaked into the package')
 
-    for (const [label, features] of [['undeclared', undefined],
-      ['declared-inactive', ['test', 'log', 'secrets']]] as [string, string[] | undefined][]) {
+    for (const [label, features, extra] of [['undeclared', undefined, undefined],
+      ['declared-inactive', ['test', 'log'], offFeature('secrets')]] as
+      [string, string[] | undefined, string | undefined][]) {
       const { fs: offfs, vol: offvol } = memfs({})
       const offgen = SdkGen({
         fs: layeredFs(offfs), folder: STAGE, root: '', pino: makeLog(),
       })
       const offres = await offgen.generate({
-        model: makeModel(['swift'], undefined, undefined, features),
+        model: makeModel(['swift'], undefined, extra, features),
         root: makeRoot(),
       })
       strictEqual(offres.ok, true, label + ': generation did not report ok')

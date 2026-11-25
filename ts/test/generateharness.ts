@@ -2,7 +2,7 @@
 import Fs, { writeFileSync } from 'node:fs'
 import Path from 'node:path'
 
-import { strictEqual } from 'node:assert'
+import { ok, strictEqual } from 'node:assert'
 
 import { Aontu } from 'aontu'
 import { each, names, Project, Folder } from 'jostraca'
@@ -2360,6 +2360,17 @@ function makeRoot(registered: any[] = []): any {
 
 
 
+// A project's own copy of a bundled feature model, switched off: its include.
+function offFeature(name: string): string {
+  const dir = Path.join(STAGE, '.sdk', 'model', 'feature-off')
+  Fs.mkdirSync(dir, { recursive: true })
+  const src = Fs.readFileSync(Path.join(STAGE, '.sdk', 'model', 'feature', name + '.aontu'), 'utf8')
+  ok(/^ {2}active: true$/m.test(src), name + ': the feature model does not declare itself active')
+  writeFileSync(Path.join(dir, name + '.aontu'), src.replace(/^ {2}active: true$/m, '  active: false'))
+  return `@"feature-off/${name}.aontu"\n`
+}
+
+
 function namedEntity(name: string): string {
   const Flow = 'Basic' + name.split('_').map((s) => s.charAt(0).toUpperCase() + s.slice(1)).join('') + 'Flow'
   return `
@@ -2545,4 +2556,5 @@ export {
   stageAlias,
   makeRoot,
   namedEntity,
+  offFeature,
 }

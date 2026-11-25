@@ -63,36 +63,7 @@ ${f.title}.
         (0, jostraca_1.Content)(`**Configuration**
 
 `);
-        if (0 < f.options.length) {
-            (0, jostraca_1.Content)(`| Option | Default |
-|---|---|
-`);
-            for (const o of f.options) {
-                (0, jostraca_1.Content)(`| \`${o.name}\` | ${o.code} |
-`);
-            }
-            (0, jostraca_1.Content)(`
-`);
-        }
-        else if (0 === f.extras.length) {
-            (0, jostraca_1.Content)(`\`active\` only — this feature takes no further options.
-
-`);
-        }
-        if (0 < f.extras.length) {
-            (0, jostraca_1.Content)(`| Option | Type |
-|---|---|
-`);
-            for (const o of f.extras) {
-                (0, jostraca_1.Content)(`| \`${o.name}\` | ${o.type} |
-`);
-            }
-            (0, jostraca_1.Content)(`
-These take no default: the feature behaves one way when you supply them and
-another when you do not.
-
-`);
-        }
+        ReadmeRefFeatureOptions({ feature: f });
         (0, jostraca_1.Content)(`**Usage**
 
 Set \`feature.${f.name}.active\` to true in the client options${0 < f.options.length ?
@@ -129,4 +100,37 @@ its default unless you name it.
     }
 });
 exports.ReadmeRefFeatures = ReadmeRefFeatures;
+const ReadmeRefFeatureOptions = (0, component_1.cmp)(function ReadmeRefFeatureOptions(props) {
+    const f = props.feature;
+    if (0 < f.options.length) {
+        (0, jostraca_1.Content)(`| Option | Default |
+|---|---|
+`);
+        for (const o of f.options) {
+            (0, jostraca_1.Content)(`| \`${o.name}\` | ${o.code} |
+`);
+        }
+        (0, jostraca_1.Content)(`
+`);
+    }
+    else if (0 === f.extras.length) {
+        (0, jostraca_1.Content)(`\`active\` only — this feature takes no further options.
+
+`);
+    }
+    if (0 < f.extras.length) {
+        (0, jostraca_1.Content)(`| Option | Type |
+|---|---|
+`);
+        for (const o of f.extras) {
+            (0, jostraca_1.Content)(`| \`${o.name}\` | ${o.type} |
+`);
+        }
+        (0, jostraca_1.Content)(`
+These take no default: the feature behaves one way when you supply them and
+another when you do not.
+
+`);
+    }
+});
 //# sourceMappingURL=ReadmeRefFeatures.js.map

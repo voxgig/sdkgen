@@ -52,6 +52,26 @@
       ]
     },
     {
+      "relation": "off",
+      "chain": "Readme > ReadmeFeatures > ReadmeFeatureOptions",
+      "cause": "feature",
+      "reason": "Generic word: `cache` here is the secrets feature's own option, which keeps a resolved credential, not the cache feature.",
+      "line": "| `cache` | `true` |",
+      "variations": [
+        "feature-cache"
+      ]
+    },
+    {
+      "relation": "off",
+      "chain": "Readme > ReadmeRef > ReadmeRefFeatures > ReadmeRefFeatureOptions",
+      "cause": "feature",
+      "reason": "Generic word: `cache` here is the secrets feature's own option, which keeps a resolved credential, not the cache feature.",
+      "line": "| `cache` | `true` |",
+      "variations": [
+        "feature-cache"
+      ]
+    },
+    {
       "relation": "parity",
       "chain": "ReadmeHowto@clojure",
       "cause": "auth",
@@ -409,6 +429,36 @@
       "line": "",
       "variations": [
         "baseline"
+      ]
+    },
+    {
+      "relation": "reaction",
+      "chain": "AgentGuide > AgentGuideFeatureTable",
+      "cause": "empty",
+      "reason": "Per-target fact: the Template column shows only where a feature has a template of its own; clojure and ocaml have one for secrets alone, so without secrets their tables drop the column while their siblings keep it.",
+      "line": "| Feature | Template | Active hooks |",
+      "variations": [
+        "features-empty"
+      ]
+    },
+    {
+      "relation": "reaction",
+      "chain": "AgentGuide > AgentGuideFeatureTable",
+      "cause": "feature",
+      "reason": "Per-target fact: the Template column shows only where a feature has a template of its own; clojure and ocaml have one for secrets alone, so without secrets their tables drop the column while their siblings keep it.",
+      "line": "| Feature | Template | Active hooks |",
+      "variations": [
+        "feature-secrets"
+      ]
+    },
+    {
+      "relation": "reaction",
+      "chain": "AgentGuide > AgentGuideFeatureTable",
+      "cause": "lone",
+      "reason": "Per-target fact: the Template column shows only where a feature has a template of its own; clojure and ocaml have one for secrets alone, so without secrets their tables drop the column while their siblings keep it.",
+      "line": "| Feature | Template | Active hooks |",
+      "variations": [
+        "features-lone"
       ]
     }
   ]
