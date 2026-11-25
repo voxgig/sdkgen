@@ -2049,7 +2049,7 @@ src/cmp/ts/ReadmeTopTest_ts.ts 8c614df68cb0
 src/cmp/ts/Schema_ts.ts 28d8eedbb21a
 src/cmp/ts/SdkError_ts.ts 699cd45f2bf3
 src/cmp/ts/TestClean_ts.ts 7c3843705372
-src/cmp/ts/TestDefinition_ts.ts 8f242daf10a0
+src/cmp/ts/TestDefinition_ts.ts f75c97be6281
 src/cmp/ts/TestDirect_ts.ts cf90eb2a6b45
 src/cmp/ts/TestEntity_ts.ts 2bdc706ac45e
 src/cmp/ts/TestLive_ts.ts 06caf320e2f1
