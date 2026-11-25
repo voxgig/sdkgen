@@ -767,6 +767,25 @@ describe('generate', () => {
   })
 
 
+  test('clojure: the namespace example names an entity namespace the run writes', async () => {
+    const structure = (readme: string): string =>
+      readme.slice(readme.indexOf('### Namespace structure'), readme.indexOf('### Entity state'))
+
+    const out = await generate(['clojure'])
+    const named = [...structure(out['clojure/README.md']).matchAll(/\[sdk\.entity\.(\S+) :as e-(\S+)\]/g)]
+    strictEqual(named.length, 1, 'the namespace paragraph names no single entity namespace')
+    strictEqual(named[0][1], named[0][2], 'the alias names another entity')
+    ok(null != out['clojure/src/sdk/entity/' + named[0][1] + '.clj'],
+      'the example names sdk.entity.' + named[0][1] + ', which no entity file declares')
+
+    const entities = Object.keys(makeModel([], undefined, '', []).main[KIT].entity)
+    const none = await generateWarning(['clojure'], undefined,
+      entities.map((name: string) => `main: kit: entity: ${name}: active: false\n`).join(''))
+    ok(!structure(none['clojure/README.md']).includes('sdk.entity.'),
+      'with no active entity the namespace paragraph still names an entity namespace')
+  })
+
+
   // A bundled target leaves some optional components to a shared default, and
   // that is no news to a consumer: a warning there is noise in every run.
   test('a bundled target generates with no optional component warning', async () => {

@@ -142,7 +142,7 @@ src/cmp/clojure/Package_clojure.ts d675493d467e
 src/cmp/clojure/PrepareAuth_clojure.ts f367a47086b2
 src/cmp/clojure/ReadmeEntity_clojure.ts 115f1e2c1b2a
 src/cmp/clojure/ReadmeExamplesTest_clojure.ts 845d633b4210
-src/cmp/clojure/ReadmeExplanation_clojure.ts 2f6eac715762
+src/cmp/clojure/ReadmeExplanation_clojure.ts da41588af3a1
 src/cmp/clojure/ReadmeHowto_clojure.ts 39b088e91be9
 src/cmp/clojure/ReadmeInstall_clojure.ts be41896688cd
 src/cmp/clojure/ReadmeIntro_clojure.ts ecca16eaf2c8
