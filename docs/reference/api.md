@@ -182,6 +182,14 @@ that reads facts from a model `generate()` did not prepare, such as docgen
 running alone over `sdk.json`, applies both in that order. Applying it to a
 prepared model changes nothing.
 
+### `sourceString(lang, text) → string`
+
+The inside of a double-quoted string literal in the language `lang` that
+holds `text`, with every `$` written as that language's escape. A component
+prints text from the spec in generated source through it, so the template
+pass never reads a `$$` in the text as a model path. It throws for a language
+it does not know.
+
 ### `collectDeps(model, targetName, targetDeps) → DepEntry[]`
 
 Collect target-language dependencies from features and from the target's

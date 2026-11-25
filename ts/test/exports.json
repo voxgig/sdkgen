@@ -265,6 +265,7 @@
     "serverVarEnv",
     "serverVariables",
     "snakify",
+    "sourceString",
     "srcFeatureExcludes",
     "stationLibrary",
     "swiftSafeTypeName",
