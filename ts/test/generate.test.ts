@@ -22,8 +22,11 @@ import {
   FOLD_ENTITY, UNGENERATED_OP, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, CREATELESS_ENTITY,
   ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY, DOC_MODELS, namedEntity, toolchain,
   REQUEST_SHAPED_ENTITY, exampleParams, wireNameParams, slashRoutes, getOnlyFlows, getOnlyBuildctx, multiRouteLoad, keylessLoad,
-  directDiscovery, liveFallbacks, slugKeyed, liveIdentities, stageAlias,
+  directDiscovery, liveFallbacks, slugKeyed, liveIdentities, stageAlias, BASIC_TEMPLATED,
 } from './generateharness'
+
+
+const BEARER = "main: kit: config: auth: { active: true, prefix: 'Bearer', in: 'header', name: 'Authorization' }"
 
 
 const SCHEMA_FILE = /(^|\/)(sdk_)?schema\.[a-z]+$/i
@@ -6367,7 +6370,7 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
   // A key shown in the README is an example in no vendor's format, so it
   // cannot be read as a real key or as another vendor's.
   test('go-cli, go-mcp: every example API key starts apikey_', async () => {
-    const out = await generate(['go', 'go-cli', 'go-mcp'])
+    const out = await generate(['go', 'go-cli', 'go-mcp'], undefined, BEARER)
     for (const target of ['go-cli', 'go-mcp']) {
       const readme = findFile(out, target + '/README.md')
       ok(null != readme, target + ': no README generated')
@@ -6375,6 +6378,52 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
       ok(0 < keys.length, target + ': the README shows no example key')
       deepStrictEqual(keys.filter((key) => !key.startsWith('apikey_')), [],
         target + ': an example key does not start apikey_')
+    }
+  })
+
+
+  // The fixture's API has no auth; BASIC_TEMPLATED takes a key and a secret,
+  // and a URL with one variable to fill and one defaulted.
+  test('consumers ask for the credential and server variables the SDK needs, and no other', async () => {
+    const off = await generate(['go', 'go-cli', 'go-mcp', 'py', 'py-data'])
+    for (const target of ['go-cli', 'go-mcp']) {
+      ok(!/APIKEY/.test(off[target + '/README.md']), target + ': names an API key without auth')
+      ok(!/_SERVER_/.test(off[target + '/README.md'] + off[target + '/main.go']), target + ': server variables')
+    }
+    ok(!/Credentials|APIKEY|token/.test(off['py-data/README.md'] + off['py-data/AGENTS.md']),
+      'py-data documents a credential without auth')
+    ok(!/APIKEY|Credentials/.test(off['py-data/notebooks/quickstart.ipynb']), 'the notebook asks for a key')
+    const client = off['py-data/demo_data/__init__.py']
+    ok(!/missing_token_message|token/.test(client) && /opts: dict = \{\}/.test(client), client)
+
+    const basic = await generate(['go', 'go-cli', 'go-mcp', 'py', 'py-data'], undefined, BASIC_TEMPLATED)
+    for (const target of ['go-cli', 'go-mcp']) {
+      const readme = basic[target + '/README.md']
+      const main = basic[target + '/main.go']
+      for (const name of ['DEMO_APIKEY', 'DEMO_SECRET', 'DEMO_SERVER_TENANT']) {
+        ok(readme.includes('| `' + name + '` |'), target + ': the README does not list ' + name)
+      }
+      ok(!/DEMO_SERVER_REGION/.test(readme + main), target + ': asks for the defaulted region')
+      ok(/os\.Getenv\("DEMO_SECRET"\)/.test(main) && /opts\["secret"\] = secret/.test(main),
+        target + ': main.go does not read the secret')
+      ok(/"tenant": "DEMO_SERVER_TENANT"/.test(main) && /opts\["server"\] = server/.test(main),
+        target + ': main.go does not read the server variable')
+    }
+    ok(/"secret": secret/.test(basic['py-data/demo_data/__init__.py']), 'py-data data() drops the secret')
+    for (const file of ['README.md', 'AGENTS.md', 'notebooks/quickstart.ipynb']) {
+      ok(basic['py-data/' + file].includes('DEMO_SECRET'), 'py-data: ' + file + ' omits the secret')
+    }
+  })
+
+
+  // A doubled or edge separator collapses in an environment name, as the SDK spells it.
+  test('go-cli, go-mcp: environment names are the SDK\'s own', async () => {
+    const out = await generate(['go', 'go-cli', 'go-mcp'], '-acme--x-', BEARER)
+    for (const target of ['go-cli', 'go-mcp']) {
+      const main = out[target + '/main.go']
+      ok(main.includes('os.Getenv("ACME_X_APIKEY")') && main.includes('os.Getenv("ACME_X_BASE")'), main)
+      ok(out[target + '/README.md'].includes('`ACME_X_APIKEY`'), target + ': README')
+      ok(!/ACME__X|_ACME_X/.test(main + out[target + '/README.md']), target + ': a separator survives')
     }
   })
 

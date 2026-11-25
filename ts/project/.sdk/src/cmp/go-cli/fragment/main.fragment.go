@@ -56,6 +56,7 @@ func run(args []string, in io.Reader, out, errOut io.Writer) int {
 	if apikey := os.Getenv("APIKEYENVVAR"); apikey != "" {
 		opts = map[string]any{"apikey": apikey}
 	}
+	// #Options
 	if base := os.Getenv("BASEENVVAR"); base != "" {
 		if opts == nil {
 			opts = map[string]any{}

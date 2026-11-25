@@ -123,6 +123,54 @@ function tagText(text: string): string {
 }
 
 
+type Need = { kind: string, name: string, value: string, note: string, row: string }
+
+// What a run reads from the environment beyond the base URL: the credential
+// and each server variable the API requires, with an example value each.
+function environment(model: any): Need[] {
+  const kit = model.main[KIT]
+  const auth = fact(kit, 'auth')
+  const env = fact(kit, 'env')
+  return [
+    ...(auth.apikey ? [{ kind: 'apikey', name: env.apikey, value: 'apikey_xxx', note: 'API key',
+      row: 'API key sent with every request.' }] : []),
+    ...(auth.secret ? [{ kind: 'secret', name: env.secret, value: 'secret_xxx', note: 'API secret',
+      row: 'Secret sent with the API key, as HTTP Basic credentials.' }] : []),
+    ...(fact(kit, 'server') as any[]).filter((v: any) => v.required).map((v: any) => ({
+      kind: 'server', name: env.server[v.name],
+      value: 'your-' + v.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+      note: `the ${v.name} of the API URL`,
+      row: `The \`${v.name}\` variable of the API's server URL, which has no default.`,
+    })),
+  ]
+}
+
+
+// Go that reads the secret and the server variables into the SDK options.
+function readOptions(model: any): string {
+  const kit = model.main[KIT]
+  const env = fact(kit, 'env')
+  const set = (key: string, val: string) => `		if opts == nil {
+			opts = map[string]any{}
+		}
+		opts[${JSON.stringify(key)}] = ${val}
+`
+  const servers = (fact(kit, 'server') as any[]).filter((v: any) => v.required)
+  return (fact(kit, 'auth').secret ? `	if secret := os.Getenv(${JSON.stringify(env.secret)}); secret != "" {
+${set('secret', 'secret')}	}
+` : '') + (0 === servers.length ? '' : `	server := map[string]any{}
+	for name, key := range map[string]string{${servers.map((v: any) =>
+    JSON.stringify(v.name) + ': ' + JSON.stringify(env.server[v.name])).join(', ')}} {
+		if val := os.Getenv(key); val != "" {
+			server[name] = val
+		}
+	}
+	if 0 < len(server) {
+${set('server', 'server')}	}
+`)
+}
+
+
 const Main = cmp(function Main(props: any) {
   const { target } = props
   const { model } = props.ctx$
@@ -155,9 +203,11 @@ const Main = cmp(function Main(props: any) {
   const toolNoun = 1 === tools.length ? 'tool' : 'tools'
   const first = tools[0]
 
-  const projUpper = String(model.name).toUpperCase().replace(/[^A-Z0-9]/g, '_')
-  const apiKeyEnv = projUpper + '_APIKEY'
-  const baseEnv = projUpper + '_BASE'
+  const env = fact(model.main[KIT], 'env')
+  const baseEnv = env.base
+  const needs = environment(model)
+  const keyed = needs.some((need) => 'apikey' === need.kind)
+  const servered = needs.some((need) => 'server' === need.kind)
 
   const toggle = `\`main: kit: target: '${target.name}': tool: write: true\``
   const writeOps = tools.map((tool) => tool.op).filter((op) => MCP_WRITE_OPS.includes(op))
@@ -178,6 +228,12 @@ them changes the API's data.`
   const here = 'folder' === fact(target, 'place') ? `this \`${target.name}/\` directory` :
     'the repository root'
   const source = 'external' === fact(target, 'place') ? 'the SDK project' : 'this repo'
+
+  const exports = [...needs.map((need) => [`export ${need.name}=${need.value}`, need.note]),
+    [`export ${baseEnv}=https://api.example.com`,
+      servered ? 'or: the whole API base URL' : 'optional: override the API base URL']]
+  const width = Math.max(...exports.map(([line]) => line.length)) + 1
+  const exportLines = exports.map(([line, note]) => line.padEnd(width) + ' # ' + note).join('\n')
 
   const exampleCalls = tools.map((tool) =>
     `// ${tool.name}: ${TOOL_SPEC[tool.op].summary}\n${toolExample(tool)}`).join('\n\n')
@@ -214,10 +270,24 @@ ${exampleCalls}
 
 `
 
+  // The tutorial's steps, numbered by what the API needs set first.
+  const tutorialEnv = 0 === needs.length ? '' : `2. **Set ${phrase([
+    ...(keyed ? ['your API key'] : []),
+    ...(needs.some((need) => 'secret' === need.kind) ? ['secret'] : []),
+    ...(servered ? ['the server variables'] : []),
+  ])}:**
+
+   \`\`\`sh
+${needs.map((need) => `   export ${need.name}=${need.value}`).join('\n')}
+   \`\`\`
+
+`
+  const installStep = 0 === needs.length ? 2 : 3
+
   const restart = null == first ?
-    `4. **Restart Claude Code.** The server registers no tools for this SDK, so
+    `${installStep + 1}. **Restart Claude Code.** The server registers no tools for this SDK, so
    none appear.` :
-    `4. **Restart Claude Code.** The ${toolNames} ${toolNoun} now appear in new
+    `${installStep + 1}. **Restart Claude Code.** The ${toolNames} ${toolNoun} now appear in new
    sessions. Ask the agent to *"${first.op} ${entityNames(first)[0]} using ${slugLower}"*
    and it calls \`${first.name}\` with \`${toolExample(first).replace(/ /g, '')}\`.`
 
@@ -288,14 +358,14 @@ ${writeText}
 # 1. Build a native binary (-> dist/<os>-<arch>/${bin})
 make build
 
-# 2. Provide credentials via the environment
-export ${apiKeyEnv}=apikey_xxx
+${0 === needs.length ? '' : `# 2. ${keyed ? 'Provide credentials' : 'Configure it'} via the environment
+${needs.map((need) => `export ${need.name}=${need.value}`).join('\n')}
 
-# 3a. Install into Claude Code over stdio (most common)
+`}# ${installStep}a. Install into Claude Code over stdio (most common)
 claude mcp add --scope user ${slugLower} \\
   -- /absolute/path/to/${bin} -transport stdio
 
-# 3b. …or run a shared HTTP server instead
+# ${installStep}b. …or run a shared HTTP server instead
 ./${bin} -transport http -addr :8080
 \`\`\`
 
@@ -311,13 +381,7 @@ ${callText}> The rest of this guide follows the [Diátaxis](https://diataxis.fr)
    make build          # -> dist/<os>-<arch>/${bin}
    \`\`\`
 
-2. **Set your API key:**
-
-   \`\`\`sh
-   export ${apiKeyEnv}=apikey_xxx
-   \`\`\`
-
-3. **Install it into Claude Code** (stdio transport):
+${tutorialEnv}${installStep}. **Install it into Claude Code** (stdio transport):
 
    \`\`\`sh
    claude mcp add --scope user ${slugLower} \\
@@ -328,17 +392,16 @@ ${restart}
 
 ## How-to guides
 
-### Authenticate and choose an environment
+### ${keyed ? 'Authenticate and choose' : 'Choose'} an environment
 
 Configuration is read from the environment — nothing is written to disk:
 
 \`\`\`sh
-export ${apiKeyEnv}=apikey_xxx             # API key
-export ${baseEnv}=https://api.example.com  # optional: override the API base URL
+${exportLines}
 \`\`\`
 
-Set these in the shell that launches the server (or in the \`claude mcp add\`
-environment) so every tool call is authenticated.
+Set ${1 < exports.length ? 'these' : 'it'} in the shell that launches the server (or in the \`claude mcp add\`
+environment) so every tool call ${keyed ? 'is authenticated' : 'reaches the API'}.
 
 ### Run as a shared HTTP server
 
@@ -378,8 +441,9 @@ ${toolRef}### Transports & flags
 
 | Variable | Purpose |
 |----------|---------|
-| \`${apiKeyEnv}\` | API key sent with every request. |
-| \`${baseEnv}\` | Optional override of the API base URL. |
+${needs.map((need) => `| \`${need.name}\` | ${need.row} |\n`).join('')}| \`${baseEnv}\` | ${servered ?
+    'The whole API base URL, in place of the server variables.' :
+    'Optional override of the API base URL.'} |
 ${smoke}
 ## Explanation
 
@@ -467,8 +531,9 @@ clean:
         replace: {
           ...props.ctx$.stdrep,
           GOMODULE: sdkModule,
-          APIKEYENVVAR: String(model.name).toUpperCase().replace(/[^A-Z0-9]/g, '_') + '_APIKEY',
-          BASEENVVAR: String(model.name).toUpperCase().replace(/[^A-Z0-9]/g, '_') + '_BASE',
+          APIKEYENVVAR: env.apikey,
+          BASEENVVAR: env.base,
+          '/[ \\t]*\\/\\/ #Options\\n/': () => Content(readOptions(model)),
         },
       },
       () => {

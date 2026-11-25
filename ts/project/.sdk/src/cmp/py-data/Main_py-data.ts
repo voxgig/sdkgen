@@ -3,8 +3,8 @@ import {
   cmp, each,
   File, Content, Copy, Folder,
   entityCollection, entityOps, entityIdField, canonToDtype,
-  collectDeps, pkgDescription, tomlString, keywords, repoInfo, envName, apiName,
-  packageName, registryState, serverVariables, consumedTarget, fact,
+  collectDeps, pkgDescription, tomlString, keywords, repoInfo, apiName,
+  packageName, registryState, consumedTarget, fact,
   packageVersion,
 } from '@voxgig/sdkgen'
 
@@ -27,19 +27,20 @@ const Main = cmp(function Main(props: any) {
 
   const sdk = consumedTarget(model, target, ctx$.stdrep.SDKREL)
 
+  const kit = model.main[KIT]
   const name = model.const.Name
   const lower = String(name).toLowerCase()
-  const ENV = envName(model)
-  const sdkModule = fact(model.main[KIT], 'package').py
+  const ENV = fact(kit, 'env').prefix
+  const sdkModule = fact(kit, 'package').py
   const sdkClass = `${name}SDK`
   const dataModule = `${lower}_data`
 
-  // Multi-tenant APIs (a server URL carrying an unresolved {variable}, e.g.
-  // https://{instance}.example.com/api) have no single host, so base_url
-  // becomes REQUIRED rather than optional. Guessing a host produces confusing
-  // 404s, so `data()` refuses instead.
-  const svars = serverVariables(model)
-  const needsBase = svars.some((v: any) => v.required)
+  // What the SDK needs from the caller: a key, a secret beside it for HTTP
+  // Basic, and, where the server URL has a variable with no default, a base
+  // URL, since guessing a host produces confusing 404s.
+  const keyed = fact(kit, 'auth').apikey
+  const secret = fact(kit, 'auth').secret
+  const needsBase = (fact(kit, 'server') as any[]).some((v: any) => v.required)
 
   const ents = each(entityCollection(model))
     .filter((e: any) => e && null != e.name && false !== e.active)
@@ -64,16 +65,16 @@ const Main = cmp(function Main(props: any) {
       from: 'tm/' + target.name + '/pkg',
       replace: { ...ctx$.stdrep },
     })
-    DataClient({ model, name, lower, ENV, sdkModule, sdkClass, dataModule, needsBase })
+    DataClient({ model, name, lower, ENV, sdkModule, sdkClass, dataModule, needsBase, keyed, secret })
     EntityFrames({ model, frameEnts, seriesEnts, lower, dataModule })
   })
 
   Gitignore({})
   Package({ target, model, lower, dataModule, sdk })
   EntityFramesTest({ frameEnts, seriesEnts, lower, sdkModule, sdkClass, dataModule })
-  Readme({ target, model, name, lower, ENV, dataModule, frameEnts, seriesEnts, needsBase, svars, sdk })
-  AgentGuide({ model, name, lower, ENV, dataModule, frameEnts, seriesEnts, needsBase, sdk })
-  Quickstart({ target, model, name, lower, ENV, dataModule, frameEnts, needsBase, sdk })
+  Readme({ target, model, name, lower, ENV, dataModule, frameEnts, seriesEnts, needsBase, keyed, secret, sdk })
+  AgentGuide({ model, name, lower, ENV, dataModule, frameEnts, seriesEnts, needsBase, keyed, secret, sdk })
+  Quickstart({ target, model, name, lower, ENV, dataModule, frameEnts, needsBase, keyed, secret, sdk })
 })
 
 
@@ -171,14 +172,38 @@ include = ["${dataModule}*"]
 // The DataClient module: `data()` plus the wrapper that owns credential
 // discovery and exposes the raw SDK as an escape hatch.
 const DataClient = cmp(function DataClient(props: any) {
-  const { name, ENV, sdkModule, sdkClass, dataModule, needsBase } = props
+  const { name, ENV, sdkModule, sdkClass, dataModule, needsBase, keyed, secret } = props
 
   const baseCheck = needsBase
     ? `
-        if not base_url:
-            raise ValueError(auth.missing_base_message("${ENV}"))
+    if not base_url:
+        raise ValueError(auth.missing_base_message("${ENV}"))
 `
     : ''
+
+  // What data() finds for itself, and where it looks.
+  const args = [...(keyed ? ['token'] : []), ...(secret ? ['secret'] : []), 'base_url']
+  const found = [...(keyed ? [ENV + '_APIKEY'] : []), ...(secret ? [ENV + '_SECRET'] : []),
+    ...(needsBase ? [ENV + '_BASE'] : [])]
+  const discovery = 0 === found.length ? '' : `
+    Discovery order (first hit wins):
+      1. the ${args.map((arg) => '\`' + arg + '\`').join(' / ')} arguments
+      2. Colab secrets  — ${found.join(' / ')}
+      3. environment    — ${found.join(' / ')}
+`
+  const params = args.map((arg) => `    ${arg}: str | None = None,\n`).join('')
+  const resolve = keyed ? `    token, base_url, _source = auth.resolve("${ENV}", token, base_url)
+
+    if not token:
+        raise ValueError(auth.missing_token_message("${ENV}"))
+` : `    base_url = auth.resolve("${ENV}", None, base_url)[1]
+`
+  const resolveSecret = secret ? `
+    secret = auth.resolve("${ENV}", secret, None, token_key="${ENV}_SECRET")[0]
+    if not secret:
+        raise ValueError(auth.missing_token_message("${ENV}", "${ENV}_SECRET", "secret"))
+` : ''
+  const credentials = [...(keyed ? ['"apikey": token'] : []), ...(secret ? ['"secret": secret'] : [])]
 
   File({ name: '__init__.py' }, () => Content(`# ${name} Data — notebook-friendly access to the ${name} API.
 #
@@ -242,26 +267,15 @@ class ${name}Data(EntityFrames):
 
 
 def data(
-    token: str | None = None,
-    base_url: str | None = None,
-    **options,
+${params}    **options,
 ) -> ${name}Data:
-    """Build a ${name}Data client, finding credentials automatically.
-
-    Discovery order (first hit wins):
-      1. the \`token\` / \`base_url\` arguments
-      2. Colab secrets  — ${ENV}_APIKEY / ${ENV}_BASE
-      3. environment    — ${ENV}_APIKEY / ${ENV}_BASE
-
+    """Build a ${name}Data client${keyed ? ', finding credentials automatically' : ''}.
+${discovery}
     Extra keyword arguments are passed straight through to the SDK client, so
     anything the SDK accepts (feature options, headers, timeouts) works here.
     """
-    token, base_url, _source = auth.resolve("${ENV}", token, base_url)
-
-    if not token:
-        raise ValueError(auth.missing_token_message("${ENV}"))
-${baseCheck}
-    opts: dict = {"apikey": token}
+${resolve}${resolveSecret}${baseCheck}
+    opts: dict = {${credentials.join(', ')}}
     if base_url:
         opts["base"] = base_url
     opts.update(options)
@@ -588,7 +602,8 @@ class TestFramesAgainstTestMode:
 // ---------------------------------------------------------------------------
 
 const Readme = cmp(function Readme(props: any) {
-  const { target, model, name, ENV, dataModule, frameEnts, seriesEnts, needsBase, sdk } = props
+  const { target, model, name, ENV, dataModule, frameEnts, seriesEnts, needsBase, keyed, secret, sdk } =
+    props
   const ctx$ = props.ctx$
 
   const distName = packageName(model, target.name)
@@ -618,6 +633,44 @@ const Readme = cmp(function Readme(props: any) {
     return `| \`${singularAccessor(e)}(${idf})\` | \`${e.name}\` | Series | ${fs.length} |`
   })).join('\n')
 
+  // Where data() finds what the SDK needs: the arguments, then Colab secrets,
+  // then the environment.
+  const keys = [...(keyed ? [ENV + '_APIKEY'] : []), ...(secret ? [ENV + '_SECRET'] : [])]
+  const named = (names: string[]) => names.map((key) => '\`' + key + '\`')
+    .reduce((list: string, key: string, i: number, all: string[]) =>
+      0 === i ? key : list + (i === all.length - 1 ? ' and ' : ', ') + key, '')
+  const args = [...(keyed ? ['token='] : []), ...(secret ? ['secret='] : []), 'base_url=']
+  const credentials = 0 === keys.length ? '' : `## Credentials
+
+\`data()\` looks in three places, in order, and stops at the first hit:
+
+1. the ${args.map((arg) => '\`' + arg + '\`').join(' / ')} arguments
+2. **Colab secrets** — ${named([...keys, ...(needsBase ? [ENV + '_BASE'] : [])])}
+3. **environment variables** — the same names
+
+In Colab, open the key panel in the left sidebar, add ${named(keys)}, and
+switch on notebook access for ${1 < keys.length ? 'them' : 'it'}. Elsewhere:
+
+\`\`\`python
+import os
+${keys.map((key) => `os.environ["${key}"] = "your-api-${key === ENV + '_SECRET' ? 'secret' : 'key'}"`).join('\n')}
+\`\`\`
+`
+  const tenant = !needsBase ? '' : `${0 === keys.length ? `## Base URL
+
+\`data()\` takes the base URL from its \`base_url=\` argument, then the Colab
+secret \`${ENV}_BASE\`, then the environment variable of that name.
+` : ''}
+**${name} is multi-tenant** — there is no single API host, so the base URL for
+your instance is required:
+
+\`\`\`python
+ad = data(base_url="https://your-instance.example.com")
+\`\`\`
+`
+  const found = 0 < keys.length ? ' Credentials are found automatically (see below).' :
+    needsBase ? ' The base URL is found automatically (see below).' : ''
+
   const columnSections = frameEnts.concat(
     seriesEnts.filter((s: any) => !frameEnts.includes(s))
   ).map((e: any) => {
@@ -646,7 +699,7 @@ df.groupby("${firstCol}").size()` : ''}
 \`\`\`
 
 No client to construct, no pagination loop to write, no \`json_normalize\`
-boilerplate. Credentials are found automatically (see below).
+boilerplate.${found}
 
 ## Install
 
@@ -666,30 +719,7 @@ pip install ${distName}
 
 It depends on \`${sdkDist}\` and \`pandas\`, both installed automatically.`}
 
-## Credentials
-
-\`data()\` looks in three places, in order, and stops at the first hit:
-
-1. the \`token=\` / \`base_url=\` arguments
-2. **Colab secrets** — \`${ENV}_APIKEY\`${needsBase ? ` and \`${ENV}_BASE\`` : ''}
-3. **environment variables** — the same names
-
-In Colab, open the key panel in the left sidebar, add \`${ENV}_APIKEY\`, and
-switch on notebook access for it. Elsewhere:
-
-\`\`\`python
-import os
-os.environ["${ENV}_APIKEY"] = "your-api-key"
-\`\`\`
-${needsBase ? `
-**${name} is multi-tenant** — there is no single API host, so the base URL for
-your instance is required:
-
-\`\`\`python
-ad = data(base_url="https://your-instance.example.com")
-\`\`\`
-` : ''}
-## Accessors
+${credentials}${tenant}${'' === credentials + tenant ? '' : '\n'}## Accessors
 
 | Call | Entity | Returns | Columns |
 |---|---|---|---|
@@ -757,7 +787,12 @@ affiliated with or endorsed by the upstream API provider.
 
 
 const AgentGuide = cmp(function AgentGuide(props: any) {
-  const { name, ENV, dataModule, frameEnts, seriesEnts, needsBase, sdk } = props
+  const { name, ENV, dataModule, frameEnts, seriesEnts, needsBase, keyed, secret, sdk } = props
+
+  const credentials = keyed ? `Credentials resolve from, in order: the \`token=\` argument, the Colab secret
+\`${ENV}_APIKEY\`, then the environment variable \`${ENV}_APIKEY\`.${secret ? `
+The secret resolves the same way, from \`secret=\` and \`${ENV}_SECRET\`.` : ''}` : ''
+  const tenant = needsBase ? `This API is multi-tenant: \`base_url\` (or \`${ENV}_BASE\`) is REQUIRED.` : ''
 
   const accessorLines = frameEnts.map((e: any) => {
     const fs = entFields(e)
@@ -782,11 +817,10 @@ from ${dataModule} import data
 ad = data(${needsBase ? 'base_url="https://<instance>.example.com"' : ''})
 \`\`\`
 
-Credentials resolve from, in order: the \`token=\` argument, the Colab secret
-\`${ENV}_APIKEY\`, then the environment variable \`${ENV}_APIKEY\`.${needsBase ? `
-This API is multi-tenant: \`base_url\` (or \`${ENV}_BASE\`) is REQUIRED.` : ''}
+${[credentials, tenant].filter((text) => '' !== text).join('\n')}${'' === credentials + tenant ?
+    'Do not construct the SDK client directly — \`data()\` already does.' : `
 Do not construct the SDK client directly and do not read env vars yourself —
-\`data()\` already does both.
+\`data()\` already does both.`}
 
 ## Accessors
 
@@ -831,7 +865,7 @@ are overwritten. Change the model and regenerate.
 // A runnable Colab notebook. .ipynb is just JSON; keeping outputs empty means
 // the file is diffable and CI can execute it as a smoke test.
 const Quickstart = cmp(function Quickstart(props: any) {
-  const { target, model, name, ENV, dataModule, frameEnts, needsBase, sdk } = props
+  const { target, model, name, ENV, dataModule, frameEnts, needsBase, keyed, secret, sdk } = props
 
   const pending = 'active' !== registryState(model, target.name)
   const distName = packageName(model, target.name)
@@ -848,6 +882,7 @@ const Quickstart = cmp(function Quickstart(props: any) {
   const firstCol = first ? exampleGroupField(fields) : 'id'
 
   const cells: any[] = []
+  let step = 0
 
   cells.push(md([
     `# ${name} Data — quickstart`,
@@ -857,25 +892,36 @@ const Quickstart = cmp(function Quickstart(props: any) {
     `Generated by [@voxgig/sdkgen](https://github.com/voxgig/sdkgen). MIT.`,
   ]))
 
-  cells.push(md(['## 1. Install']))
+  cells.push(md([`## ${++step}. Install`]))
   cells.push(code(installCode))
 
-  cells.push(md([
-    '## 2. Credentials',
-    '',
-    `In Colab, add a secret named \`${ENV}_APIKEY\` in the key panel (left`,
-    'sidebar) and enable notebook access for it. Outside Colab, set the same',
-    'name as an environment variable — the cell below covers both.',
-  ]))
-  cells.push(code([
-    `import os`,
-    ``,
-    `# Colab: prefer the secrets panel. This is the non-Colab fallback.`,
-    `if not os.environ.get("${ENV}_APIKEY"):`,
-    `    os.environ["${ENV}_APIKEY"] = "your-api-key"  # <- replace`,
-  ]))
+  if (keyed) {
+    const keys = [ENV + '_APIKEY', ...(secret ? [ENV + '_SECRET'] : [])]
+    cells.push(md([
+      `## ${++step}. Credentials`,
+      '',
+      ...(secret ? [
+        `In Colab, add secrets named \`${keys[0]}\` and \`${keys[1]}\` in the key panel`,
+        '(left sidebar) and enable notebook access for them. Outside Colab, set the',
+        'same names as environment variables — the cell below covers both.',
+      ] : [
+        `In Colab, add a secret named \`${keys[0]}\` in the key panel (left`,
+        'sidebar) and enable notebook access for it. Outside Colab, set the same',
+        'name as an environment variable — the cell below covers both.',
+      ]),
+    ]))
+    cells.push(code([
+      `import os`,
+      ``,
+      `# Colab: prefer the secrets panel. This is the non-Colab fallback.`,
+      ...keys.flatMap((key) => [
+        `if not os.environ.get("${key}"):`,
+        `    os.environ["${key}"] = "your-api-${key === keys[1] ? 'secret' : 'key'}"  # <- replace`,
+      ]),
+    ]))
+  }
 
-  cells.push(md(['## 3. Connect']))
+  cells.push(md([`## ${++step}. Connect`]))
   cells.push(code([
     `from ${dataModule} import data`,
     ``,
@@ -887,7 +933,7 @@ const Quickstart = cmp(function Quickstart(props: any) {
 
   if (firstAcc) {
     cells.push(md([
-      `## 4. Load a table`,
+      `## ${++step}. Load a table`,
       '',
       'Every page is fetched. `limit=` takes a slice while you explore.',
     ]))
@@ -896,17 +942,17 @@ const Quickstart = cmp(function Quickstart(props: any) {
       `df.head()`,
     ]))
 
-    cells.push(md(['## 5. Inspect the schema']))
+    cells.push(md([`## ${++step}. Inspect the schema`]))
     cells.push(code([`df.dtypes`]))
 
-    cells.push(md(['## 6. Analyse']))
+    cells.push(md([`## ${++step}. Analyse`]))
     cells.push(code([
       `df.groupby("${firstCol}").size().sort_values(ascending=False).head(10)`,
     ]))
   }
 
   cells.push(md([
-    `## ${firstAcc ? '7' : '4'}. Anything else`,
+    `## ${++step}. Anything else`,
     '',
     'Writes and non-entity endpoints are not wrapped. Use the SDK directly',
     'and shape the result:',

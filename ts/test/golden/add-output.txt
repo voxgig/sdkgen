@@ -634,8 +634,8 @@ model/feature/test.aontu c6ebe063b562
 model/sdk.aontu deb90c7d4659
 model/target/go-cli.aontu 7a1c45e58e4f
 model/target/target-index.aontu fbd86a3a35fb
-src/cmp/go-cli/Main_go-cli.ts c93d59dc05e1
-src/cmp/go-cli/fragment/main.fragment.go edad9cbfb479
+src/cmp/go-cli/Main_go-cli.ts 69dbecd10717
+src/cmp/go-cli/fragment/main.fragment.go 92f705f0fa89
 src/cmp/go-cli/fragment/words.fragment.go a382337cb162
 tm/go-cli/src/feature/README.md 2c5a3094a7ed
 tm/go-cli/src/feature/base/.gitkeep e3b0c44298fc
@@ -647,8 +647,8 @@ model/feature/test.aontu c6ebe063b562
 model/sdk.aontu deb90c7d4659
 model/target/go-mcp.aontu 1ea6f206f321
 model/target/target-index.aontu d043228b9b1a
-src/cmp/go-mcp/Main_go-mcp.ts 7749b337d426
-src/cmp/go-mcp/fragment/main.fragment.go 26cd4ae5eee2
+src/cmp/go-mcp/Main_go-mcp.ts 9b78ac0b132b
+src/cmp/go-mcp/fragment/main.fragment.go de42ea863335
 src/cmp/go-mcp/fragment/tools.fragment.go 626e299be379
 tm/go-mcp/src/feature/README.md 2c5a3094a7ed
 tm/go-mcp/src/feature/base/.gitkeep e3b0c44298fc
@@ -1502,10 +1502,10 @@ model/feature/test.aontu c6ebe063b562
 model/sdk.aontu deb90c7d4659
 model/target/py-data.aontu 45b0b0ae0829
 model/target/target-index.aontu fab6a58fafb8
-src/cmp/py-data/Main_py-data.ts 9527fb77179b
+src/cmp/py-data/Main_py-data.ts a0448335a4ea
 tm/py-data/LICENSE 52acd47c245f
 tm/py-data/Makefile 6b7f45226456
-tm/py-data/pkg/auth.py a84c020b8eb1
+tm/py-data/pkg/auth.py c3d9f24cd480
 tm/py-data/pkg/fetch.py 5a3573da5894
 tm/py-data/pkg/frames.py ac33e1a16cb4
 tm/py-data/src/feature/README.md bb687edfc361
@@ -1513,7 +1513,7 @@ tm/py-data/src/feature/base/.gitkeep e3b0c44298fc
 tm/py-data/src/feature/test/.gitkeep e3b0c44298fc
 tm/py-data/test/__init__.py e3b0c44298fc
 tm/py-data/test/conftest.py d824fc6fe45a
-tm/py-data/test/test_auth.py c77f79f502d7
+tm/py-data/test/test_auth.py a68647d70c37
 tm/py-data/test/test_fetch.py 2141fd295c08
 tm/py-data/test/test_frames.py 1ca04ad46a4b
 

@@ -39,6 +39,60 @@ github.com/tabnas/parser/go v0.4.0/go.mod h1:WrlfEVyZ1QjEIowWiyEu3K1iHj7wxuPut5z
 `
 
 
+function phrase(items: string[]): string {
+  return items.length < 2 ? items.join('') :
+    items.slice(0, -1).join(', ') + ' and ' + items[items.length - 1]
+}
+
+
+type Need = { kind: string, name: string, value: string, note: string, row: string }
+
+// What a run reads from the environment beyond the base URL: the credential
+// and each server variable the API requires, with an example value each.
+function environment(model: any): Need[] {
+  const kit = model.main[KIT]
+  const auth = fact(kit, 'auth')
+  const env = fact(kit, 'env')
+  return [
+    ...(auth.apikey ? [{ kind: 'apikey', name: env.apikey, value: 'apikey_xxx', note: 'API key',
+      row: 'API key sent with every request.' }] : []),
+    ...(auth.secret ? [{ kind: 'secret', name: env.secret, value: 'secret_xxx', note: 'API secret',
+      row: 'Secret sent with the API key, as HTTP Basic credentials.' }] : []),
+    ...(fact(kit, 'server') as any[]).filter((v: any) => v.required).map((v: any) => ({
+      kind: 'server', name: env.server[v.name],
+      value: 'your-' + v.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+      note: `the ${v.name} of the API URL`,
+      row: `The \`${v.name}\` variable of the API's server URL, which has no default.`,
+    })),
+  ]
+}
+
+
+// Go that reads the secret and the server variables into the SDK options.
+function readOptions(model: any): string {
+  const kit = model.main[KIT]
+  const env = fact(kit, 'env')
+  const set = (key: string, val: string) => `		if opts == nil {
+			opts = map[string]any{}
+		}
+		opts[${JSON.stringify(key)}] = ${val}
+`
+  const servers = (fact(kit, 'server') as any[]).filter((v: any) => v.required)
+  return (fact(kit, 'auth').secret ? `	if secret := os.Getenv(${JSON.stringify(env.secret)}); secret != "" {
+${set('secret', 'secret')}	}
+` : '') + (0 === servers.length ? '' : `	server := map[string]any{}
+	for name, key := range map[string]string{${servers.map((v: any) =>
+    JSON.stringify(v.name) + ': ' + JSON.stringify(env.server[v.name])).join(', ')}} {
+		if val := os.Getenv(key); val != "" {
+			server[name] = val
+		}
+	}
+	if 0 < len(server) {
+${set('server', 'server')}	}
+`)
+}
+
+
 const Main = cmp(function Main(props: any) {
   const { target } = props
   const { model } = props.ctx$
@@ -65,9 +119,11 @@ const Main = cmp(function Main(props: any) {
   const entityList = entityNames.length > 0 ? entityNames.join(' ') : '(none)'
   const entityCount = entityNames.length
 
-  const projUpper = String(model.name).toUpperCase().replace(/[^A-Z0-9]/g, '_')
-  const apiKeyEnv = projUpper + '_APIKEY'
-  const baseEnv = projUpper + '_BASE'
+  const env = fact(model.main[KIT], 'env')
+  const baseEnv = env.base
+  const needs = environment(model)
+  const keyed = needs.some((need) => 'apikey' === need.kind)
+  const servered = needs.some((need) => 'server' === need.kind)
 
   const CLI_VERB_ROWS: Record<string, string> = {
     list:   '| `list`   | `list <entity>` · `list <query> <entity>`     | First page of records          |',
@@ -111,16 +167,19 @@ const Main = cmp(function Main(props: any) {
   const replExampleExpr = exampleOp || '/help'
 
   const ex: string[] = []
-  ex.push(`# 1. Build a native binary (-> dist/<os>-<arch>/${bin})`)
+  let step = 0
+  ex.push(`# ${++step}. Build a native binary (-> dist/<os>-<arch>/${bin})`)
   ex.push('make build')
   ex.push('')
-  ex.push('# 2. See usage (words, entities, env vars)')
+  ex.push(`# ${++step}. See usage (words, entities, env vars)`)
   ex.push(`./${bin} --help`)
   ex.push('')
-  ex.push('# 3. Provide credentials once, via the environment')
-  ex.push(`export ${apiKeyEnv}=apikey_xxx`)
-  ex.push('')
-  ex.push('# 4. Each command line is ONE boru expression, run against the API:')
+  if (0 < needs.length) {
+    ex.push(`# ${++step}. ${keyed ? 'Provide credentials' : 'Configure it'} once, via the environment`)
+    needs.forEach((need) => ex.push(`export ${need.name}=${need.value}`))
+    ex.push('')
+  }
+  ex.push(`# ${++step}. Each command line is ONE boru expression, run against the API:`)
   if (firstHas('list')) ex.push(`./${bin} list ${firstEntity}`)
   if (firstHas('load')) {
     ex.push(`./${bin} load 1 ${firstEntity}            # {id:1} shorthand`)
@@ -131,10 +190,10 @@ const Main = cmp(function Main(props: any) {
     ex.push(`./${bin} list ${String(otherLister.name).toLowerCase()}`)
   }
   ex.push('')
-  ex.push('# 5. Override the API base URL for a single call')
+  ex.push(`# ${++step}. Override the API base URL for a single call`)
   ex.push(`${baseEnv}=https://api.example.com ./${bin} ${cliExampleExpr}`)
   ex.push('')
-  ex.push('# 6. No arguments -> interactive REPL')
+  ex.push(`# ${++step}. No arguments -> interactive REPL`)
   ex.push(`./${bin}`)
   ex.push(`${model.name}> ${replExampleExpr}`)
   ex.push(`${model.name}> /quit`)
@@ -169,17 +228,21 @@ The query is either a **scalar** (\`1\`, treated as \`{id:1}\`) or a **match map
 The match map carries both the selector and the new field values; the updated
 record is printed back.`)
 
-  howtos.push(`### Authenticate and choose an environment
+  const exports = [...needs.map((need) => [`export ${need.name}=${need.value}`, need.note]),
+    [`export ${baseEnv}=https://api.example.com`,
+      servered ? 'or: the whole API base URL' : 'optional: override the API base URL']]
+  const width = Math.max(...exports.map(([line]) => line.length)) + 1
+  howtos.push(`### ${keyed ? 'Authenticate and choose' : 'Choose'} an environment
 
 Configuration is read from the environment — nothing is written to disk:
 
 \`\`\`sh
-export ${apiKeyEnv}=apikey_xxx             # API key
-export ${baseEnv}=https://api.example.com  # optional: override the API base URL
+${exports.map(([line, note]) => line.padEnd(width) + ' # ' + note).join('\n')}
 ./${bin} ${cliExampleExpr}
 \`\`\`
 
-Both are injectable by a secrets vault, so the key never has to be typed inline.`)
+${1 === exports.length ? 'It is' : 2 === exports.length ? 'Both are' : 'Each is'} injectable by a secrets vault${keyed ?
+    ', so the key never has to be typed inline' : ''}.`)
 
   howtos.push(`### Explore interactively with the REPL
 
@@ -205,6 +268,19 @@ make build-all   # linux/darwin/windows x amd64/arm64, under dist/<os>-<arch>/
 below — this SDK exposes ${entityCount} ${entityNoun}.`)
 
   const howtoBlock = howtos.join('\n\n')
+
+  const tutorialEnv = 0 === needs.length ? '' : `2. **Set ${phrase([
+    ...(keyed ? ['your API key'] : []),
+    ...(needs.some((need) => 'secret' === need.kind) ? ['secret'] : []),
+    ...(servered ? ['the server variables'] : []),
+  ])}** (read from the environment):
+
+   \`\`\`sh
+${needs.map((need) => `   export ${need.name}=${need.value}`).join('\n')}
+   \`\`\`
+
+`
+  const tutorialStep = 0 === needs.length ? 1 : 2
 
   const goSdk = '' !== sdk.dir ? `the sibling Go SDK at \`${sdk.path}\`` :
     sdk.away ? 'the Go SDK in ' + ('' === sdk.url ? 'its own repository' :
@@ -239,23 +315,17 @@ ${exampleBlock}
    make build          # -> dist/<os>-<arch>/${bin}
    \`\`\`
 
-2. **Set your API key** (read from the environment):
-
-   \`\`\`sh
-   export ${apiKeyEnv}=apikey_xxx
-   \`\`\`
-
-3. **Run a query.** Evaluate an boru expression against the API (or run with no
+${tutorialEnv}${tutorialStep + 1}. **Run a query.** Evaluate an boru expression against the API (or run with no
    arguments to open the REPL):
 
    \`\`\`sh
    ./dist/*/${bin} ${cliExampleExpr}
    \`\`\`
 
-4. **Go interactive.** Run the binary with no arguments to open the REPL, then
+${tutorialStep + 2}. **Go interactive.** Run the binary with no arguments to open the REPL, then
    type \`/help\` for the word and entity lists and \`/quit\` to leave.
 
-That is the whole loop: *build → set key → evaluate boru expressions*.
+That is the whole loop: *build → ${keyed ? 'set key → ' : 0 < needs.length ? 'configure → ' : ''}evaluate boru expressions*.
 
 ## How-to guides
 
@@ -279,10 +349,11 @@ ${verbRows}
 
 | Variable | Purpose |
 |----------|---------|
-| \`${apiKeyEnv}\` | API key sent with every request. |
-| \`${baseEnv}\` | Optional override of the API base URL. |
+${needs.map((need) => `| \`${need.name}\` | ${need.row} |\n`).join('')}| \`${baseEnv}\` | ${servered ?
+    'The whole API base URL, in place of the server variables.' :
+    'Optional override of the API base URL.'} |
 
-Unset variables fall back to the SDK's built-in defaults.
+Unset variables fall back to the SDK's built-in defaults${servered ? ', and a server variable has none' : ''}.
 
 ### CLI flags
 
@@ -406,10 +477,9 @@ clean:
         replace: {
           ...props.ctx$.stdrep,
           GOMODULE: sdkModule,
-          // Env vars the CLI reads: <PROJ>_APIKEY for the key and <PROJ>_BASE
-          // to override the API base URL (both injectable by a secrets vault).
-          APIKEYENVVAR: String(model.name).toUpperCase().replace(/[^A-Z0-9]/g, '_') + '_APIKEY',
-          BASEENVVAR: String(model.name).toUpperCase().replace(/[^A-Z0-9]/g, '_') + '_BASE',
+          APIKEYENVVAR: env.apikey,
+          BASEENVVAR: env.base,
+          '/[ \\t]*\\/\\/ #Options\\n/': () => Content(readOptions(model)),
         },
       },
       () => {

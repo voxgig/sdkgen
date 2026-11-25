@@ -85,14 +85,17 @@ def resolve(
     )
 
 
-def missing_token_message(prefix: str, token_key: str | None = None) -> str:
+def missing_token_message(
+    prefix: str, token_key: str | None = None, arg: str = "token",
+) -> str:
     """The error an analyst sees when no credential was found.
 
     Shows the exact lines to run for THIS SDK in both environments. A generic
     "credentials not found" costs the reader a trip to the README; this costs
-    them a copy-paste.
+    them a copy-paste. `arg` is the `data()` argument that takes the value.
     """
     tkey = token_key or f"{prefix}_APIKEY"
+    value = "your-api-key" if "token" == arg else f"your-api-{arg}"
     return (
         f"No API credential found for ProjectName.\n"
         f"\n"
@@ -100,16 +103,16 @@ def missing_token_message(prefix: str, token_key: str | None = None) -> str:
         f"named {tkey}, and enable notebook access for it. Or set it in code:\n"
         f"\n"
         f"    from google.colab import userdata\n"
-        f"    userdata.set('{tkey}', 'your-api-key')\n"
+        f"    userdata.set('{tkey}', '{value}')\n"
         f"\n"
         f"Elsewhere (Jupyter, a script, a terminal):\n"
         f"\n"
         f"    import os\n"
-        f"    os.environ['{tkey}'] = 'your-api-key'\n"
+        f"    os.environ['{tkey}'] = '{value}'\n"
         f"\n"
         f"Or pass it directly:\n"
         f"\n"
-        f"    data(token='your-api-key')\n"
+        f"    data({arg}='{value}')\n"
     )
 
 
