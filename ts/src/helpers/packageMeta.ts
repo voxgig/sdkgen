@@ -41,14 +41,16 @@ function sdkName(slug: string): string {
 }
 
 
-function repoInfo(model: any) {
+function repoInfo(model: any, target?: string) {
   const slug = model.name
   const origin = model.origin || 'voxgig-sdk'
 
   const declared = (model && model.main && model.main[KIT] && model.main[KIT].repo) || {}
+  const targetRepo = null == target ? '' : model?.main?.[KIT]?.target?.[target]?.output?.repo
 
   const host = '' === (declared.host || '') ? 'github.com' : (declared.host || 'github.com')
-  const path = '' === (declared.path || '') ? `${origin}/${sdkName(slug)}` : String(declared.path)
+  const path = null != targetRepo && '' !== targetRepo ? String(targetRepo) :
+    '' === (declared.path || '') ? `${origin}/${sdkName(slug)}` : String(declared.path)
 
   const seg = path.split('/')
   const repo = seg[seg.length - 1]

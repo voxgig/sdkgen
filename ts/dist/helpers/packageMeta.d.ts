@@ -6,7 +6,7 @@ declare const LANG_LABEL: Record<string, string>;
 declare function langLabel(target: string): string;
 declare function originName(model: any, target: string): string;
 declare function sdkName(slug: string): string;
-declare function repoInfo(model: any): {
+declare function repoInfo(model: any, target?: string): {
     slug: any;
     origin: any;
     host: any;
