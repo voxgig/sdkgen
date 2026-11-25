@@ -78,6 +78,7 @@ Object.defineProperty(exports, "featureTags", { enumerable: true, get: function 
 Object.defineProperty(exports, "unknownTags", { enumerable: true, get: function () { return applicability_1.unknownTags; } });
 Object.defineProperty(exports, "TAGS", { enumerable: true, get: function () { return applicability_1.TAGS; } });
 const ExternalTarget_1 = require("./cmp/ExternalTarget");
+const placement_1 = require("./helpers/placement");
 const apidef_1 = require("@voxgig/apidef");
 const Deploy_1 = require("./cmp/Deploy");
 Object.defineProperty(exports, "Deploy", { enumerable: true, get: function () { return Deploy_1.Deploy; } });
@@ -731,48 +732,18 @@ SdkGen.makeBuild = async function (opts) {
     };
 };
 function resolveExternalOverride(opts, log, targets) {
-    const declared = opts.external || {};
-    const raw = process.env.SDKGEN_EXTERNAL;
-    if (null == raw || '' === raw.trim()) {
-        return declared;
-    }
-    let parsed;
-    try {
-        parsed = JSON.parse(raw);
-    }
-    catch (err) {
-        throw new utility_1.SdkGenError('SDKGEN_EXTERNAL is not valid JSON: ' + (err?.message || err) +
-            '\n  Expected an object keyed by item name, for example:' +
-            '\n    {"seneca-provider":{"path":"../..","sdkrel":".sdksrc/acme-sdk","enclosing":true}}' +
-            '\n  Got: ' + raw.slice(0, 200));
-    }
-    if (null == parsed || 'object' !== typeof parsed || Array.isArray(parsed)) {
-        throw new utility_1.SdkGenError('SDKGEN_EXTERNAL must be a JSON OBJECT keyed by item name, for example:' +
-            '\n    {"seneca-provider":{"path":"../..","sdkrel":".sdksrc/acme-sdk","enclosing":true}}' +
-            '\n  Got: ' + raw.slice(0, 200));
-    }
-    // A misspelled name would otherwise change nothing and still be logged as
-    // an override.
-    const unknown = Object.keys(parsed).filter((name) => !targets.includes(name)).sort();
-    if (0 < unknown.length) {
-        throw new utility_1.SdkGenError('SDKGEN_EXTERNAL names ' + unknown.join(', ') + ', which ' +
-            (1 === unknown.length ? 'is not a target' : 'are not targets') + ' of this model' +
-            '\n  Its targets are: ' + [...targets].sort().join(', '));
-    }
-    const merged = { ...declared };
-    for (const name of Object.keys(parsed)) {
-        merged[name] = { ...(declared[name] || {}), ...(parsed[name] || {}) };
-    }
+    const { override, named } = (0, placement_1.readOverride)(opts.external, process.env.SDKGEN_EXTERNAL, targets);
     // LOUDLY. Generation writing somewhere other than the model says is
     // exactly the thing whose only previous trace was one INFO line naming a
     // resolved folder, and that cost a silent green run that emitted nothing.
-    const named = Object.keys(parsed).sort();
-    log.info({
-        point: 'external-override',
-        items: named.join(','),
-        note: 'SDKGEN_EXTERNAL overrides the output of: ' + named.join(', '),
-    });
-    return merged;
+    if (0 < named.length) {
+        log.info({
+            point: 'external-override',
+            items: named.join(','),
+            note: 'SDKGEN_EXTERNAL overrides the output of: ' + named.join(', '),
+        });
+    }
+    return override;
 }
 // SDK targets can generate into separately owned repositories. Documentation
 // editions are confined to this SDK repository and are handled by docgen.
@@ -783,19 +754,9 @@ function externalItems(model, folder, kinds, override) {
             .map((name) => {
             // Overrides are keyed by installed target name.
             const ov = override[name] || {};
-            // A SHALLOW CLONE, so the override never writes back into the model.
-            // The in-tree pass still reads it, and `target add` still round-trips
-            // it to disk; an override is for THIS RUN. Nothing compares these by
-            // identity — withoutExternal keys by kind:name.
-            const output = { ...(items[name]?.output || {}) };
-            if (null != ov.path && '' !== ov.path) {
-                output.path = ov.path;
-                // The override relocates this run's output, root placement included.
-                delete output.root;
-            }
-            if (null != ov.sdkrel && '' !== ov.sdkrel) {
-                output.sdkrel = ov.sdkrel;
-            }
+            // A copy, so the override never writes back into the model: the
+            // in-tree pass still reads it, and `target add` round-trips it to disk.
+            const output = (0, placement_1.runOutput)(items[name]?.output, ov);
             return { kind, name, target: { ...items[name], output }, ov };
         })
             // AFTER the override, so it can send an item out of tree that the

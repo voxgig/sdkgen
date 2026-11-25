@@ -294,7 +294,10 @@ Three things `remove` deliberately leaves alone, and says so:
 - **Generated output.** `<name>/` beside `.sdk/` stays unless
   `--delete-output` is passed: a retired port often wants its last
   generated state kept in history rather than deleted in the same commit.
-  A target that generates out of tree (`output.path`) is never touched.
+  A target that generates out of tree (`output.path`, or a path
+  `SDKGEN_EXTERNAL` gives it for the run) or at the project root
+  (`output.root`) is never touched, and a `<name>/` folder left beside
+  `.sdk/` is reported and kept.
 - **The project's own declarations.** A `main: kit: target: <name>:` block
   in `.sdk/model/sdk.aontu` is the project's, not the toolchain's; `remove`
   reports the file that still carries it.
@@ -372,6 +375,10 @@ gate. What it checks:
 | `model-key-missing` | error | `model/<kind>/<name>.aontu` declares some *other* name — the mistake made when a bundled target is copied as a starting point and the key inside is not renamed. |
 | `model-schema` | error | It does not unify with the base schema: a non-defaulted key is missing (`ext`, `comment.line`, `module.name`, a feature's `title`). This is what a consumer compiles. |
 | `target-publish-pinned` | error | The target model sets a publication value the *project* owns, so the project can no longer set it (concrete-vs-concrete is a conflict) — and the failure would name the project's file. |
+| `manifest-parity-surface` | error | A target's `parity` tier disagrees with its surface: `CONSUMER` on an SDK, or another tier on a target that is not one. A target is graded `CONSUMER` exactly when its surface is not `sdk`. |
+| `target-surface-unknown` | warn | The target declares a `surface` word this release does not know. Generation reads it as unknown and names the target by its title; a later release that introduces the word reads it. |
+| `target-surface-since` | info | The target declares a known `surface` word, and `engines.sdkgen` admits releases older than the one that first reads it. Those releases ignore the slot. |
+| `target-facts` | error | The fact rules fail on the target's model alone, so a project that installs it cannot generate. |
 | `target-title-missing` | warn | A target model with no `title`. The generated documents name the target by the label of its origin, else by its name. |
 | `feature-deps-misplaced` | warn | Dependencies under `feature.<f>.target.<t>.deps`, which nothing reads. They go directly under the feature: `deps: <target>: {…}`. |
 | `feature-source-undelivered` | warn | `targetsSupported` claims a target for which no feature source can be found. |

@@ -1,7 +1,10 @@
 import { kindCollection } from '../helpers/kindCollection'
 
 import { unknownTags, TAGS } from '../helpers/applicability'
-import { SURFACES } from '../helpers/surface'
+import { SURFACES, SURFACE_SINCE } from '../helpers/surface'
+import { applyFacts, fact } from '../helpers/facts'
+import { admitsBelow } from '../helpers/semver'
+import { SDKGEN_VERSION } from '../helpers/shipped'
 import Path from 'node:path'
 
 import { KIT } from '../types'
@@ -15,6 +18,7 @@ import { SdkGenError } from '../utility'
 
 import {
   MANIFEST,
+  parityFinding,
   probePackage,
   validateManifest,
 } from '../helpers/manifest'
@@ -191,7 +195,11 @@ function checkItems(fs: any, sdk: string, manifest?: Manifest): Finding[] {
         continue
       }
 
-      found.push(...checkDefinition(fs, kind, name, file))
+      found.push(...checkDefinition(fs, kind, name, file, {
+        manifest: Path.join(sdk, '..', MANIFEST),
+        tier: manifest?.parity?.[name],
+        range: manifest?.engines?.sdkgen,
+      }))
     }
   }
 
@@ -199,8 +207,12 @@ function checkItems(fs: any, sdk: string, manifest?: Manifest): Finding[] {
 }
 
 
+// What the manifest says about an item, for the checks that compare the two.
+type Declared = { manifest: string, tier?: string, range?: string }
+
+
 function checkDefinition(
-  fs: any, kind: string, name: string, file: string,
+  fs: any, kind: string, name: string, file: string, pkg?: Declared,
 ): Finding[] {
   const found: Finding[] = []
   const raw = String(fs.readFileSync(file, 'utf8'))
@@ -210,7 +222,7 @@ function checkDefinition(
   const legacyFile = isLegacyPath(file)
   const legacy = legacyFile || src !== raw
 
-  const at = (level: 'error' | 'warn', point: string, note: string): Finding =>
+  const at = (level: 'error' | 'warn' | 'info', point: string, note: string): Finding =>
     ({ level, point, kind, name, file, note: file + ': ' + note })
 
   if (legacy) {
@@ -316,12 +328,8 @@ function checkDefinition(
   if ('target' === kind) {
     found.push(...checkTargetModel(checked, name, file, at))
 
-    const surface = (declared as any)?.surface
-    if ('string' === typeof surface && '' !== surface && !SURFACES.includes(surface)) {
-      found.push(at('error', 'target-surface-unknown',
-        'declares surface `' + surface + '`, which is not one of ' + SURFACES.join(', ') +
-        ' — a document names a target with any other word by its title, never as an ' +
-        'SDK, a CLI or an MCP server'))
+    if (0 === unified.errors.length && null != declared) {
+      found.push(...checkTargetSurface(unified.model, name, pkg, at))
     }
 
     const title = (declared as any)?.title
@@ -341,7 +349,51 @@ function checkDefinition(
 }
 
 
-type At = (level: 'error' | 'warn', point: string, note: string) => Finding
+type At = (level: 'error' | 'warn' | 'info', point: string, note: string) => Finding
+
+
+// The surface the fact rules give the target, against its parity tier, and
+// its declared word against the releases that read it. Generation reads a
+// word it does not know as unknown, so no word fails it.
+function checkTargetSurface(
+  model: any, name: string, pkg: Declared | undefined, at: At,
+): Finding[] {
+  let surface: string
+
+  try {
+    applyFacts(model)
+    surface = fact(model.main[KIT].target[name], 'surface')
+  }
+  catch (err: any) {
+    return [at('error', 'target-facts', 'the fact rules fail on this target alone: ' + err.message)]
+  }
+
+  const found: Finding[] = null == pkg?.tier ? [] :
+    parityFinding(pkg.manifest, name, pkg.tier, surface)
+
+  const word = model.main[KIT].target[name].surface
+  if ('string' !== typeof word || '' === word) {
+    return found
+  }
+
+  const since = SURFACE_SINCE[word]
+  if (null == since) {
+    found.push(at('warn', 'target-surface-unknown',
+      'declares surface `' + word + '`, which sdkgen ' + SDKGEN_VERSION +
+      ' does not know (' + SURFACES.join(', ') + '): generation reads it as unknown ' +
+      'and names the target by its title. A release that introduces the word reads it, ' +
+      'from that release on; otherwise it is a misspelling'))
+  }
+  else if (false !== admitsBelow(pkg?.range ?? '', since)) {
+    found.push(at('info', 'target-surface-since',
+      'declares surface `' + word + '`, which sdkgen reads from ' + since + '; ' +
+      (null == pkg?.range ? 'the manifest declares no `engines.sdkgen`, so it' :
+        '`engines.sdkgen` `' + pkg.range + '`') +
+      ' admits older releases, which ignore the slot'))
+  }
+
+  return found
+}
 
 
 // The publish-override probe: unify the target model with a project that sets

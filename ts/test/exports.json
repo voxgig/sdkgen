@@ -497,5 +497,14 @@
     "validateSeeds",
     "vendorCommand",
     "warnUngeneratedOps"
+  ],
+  "testkit": [
+    "PLACEHOLDERS",
+    "SDKGEN_ROOT",
+    "generateInto",
+    "manifestParity",
+    "stageConsumer",
+    "textGuard",
+    "volumeKey"
   ]
 }
