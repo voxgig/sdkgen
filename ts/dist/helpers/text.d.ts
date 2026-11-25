@@ -1,2 +1,3 @@
 declare function modelText(model: any): any;
-export { modelText, };
+declare function seriesList(items: string[]): string;
+export { modelText, seriesList, };

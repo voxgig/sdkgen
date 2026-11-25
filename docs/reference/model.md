@@ -305,7 +305,7 @@ files in `ts/project/.sdk/model/target/`:
 | --- | --- | --- | --- |
 | `name` | string | `key()` | Target name (e.g. `ts`). |
 | `active` | boolean | `true` | Whether the target is generated. An inactive target stays in the model. |
-| `title` | string | — | Display name (e.g. `TypeScript`). |
+| `title` | string | — | Display name (e.g. `TypeScript`). Without one, the documents use the label of the target's origin, else its name, and `package check` warns. |
 | `ext` | string | — | Source file extension. |
 | `comment.line` | string | — | Line-comment token (e.g. `//`). |
 | `module.name` | string | `'$$name$$'` | Package/module name. |

@@ -185,6 +185,26 @@ function registryName(model: any, target: string): string {
   return 'none' === name ? '' : name
 }
 
+const REGISTRY_LABEL: Record<string, string> = {
+  npm: 'npm',
+  pypi: 'PyPI',
+  packagist: 'Packagist',
+  rubygems: 'RubyGems',
+  luarocks: 'LuaRocks',
+  'crates.io': 'crates.io',
+  nuget: 'NuGet',
+  'maven-central': 'Maven Central',
+  clojars: 'Clojars',
+  hex: 'Hex',
+  cpan: 'CPAN',
+  opam: 'opam',
+  swiftpm: 'Swift Package Manager',
+}
+
+function registryLabel(name: string): string {
+  return REGISTRY_LABEL[name] || name
+}
+
 // The install route for a target not on a registry: `go get <module>@latest`
 // for go, resolved by the proxy from the `go/vX.Y.Z` tag. go-cli, go-mcp and a
 // port with no registry get '', and their README's build steps are the route.
@@ -435,6 +455,7 @@ export {
   registryState,
   isPublished,
   registryName,
+  registryLabel,
   vendorCommand,
   pkgDescription,
   tomlString,

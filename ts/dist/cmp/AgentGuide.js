@@ -4,6 +4,7 @@ exports.AgentGuide = void 0;
 const jostraca_1 = require("jostraca");
 const component_1 = require("../helpers/component");
 const optional_1 = require("../helpers/optional");
+const facts_1 = require("../helpers/facts");
 const AgentGuideContent_1 = require("./AgentGuideContent");
 const AgentGuideFeature_1 = require("./AgentGuideFeature");
 // Per-language agent guide. Emitted inside the ambient target folder (the Root
@@ -15,7 +16,7 @@ const AgentGuide = (0, component_1.cmp)(function AgentGuide(props) {
     const { model } = ctx$;
     const Name = (0, AgentGuideContent_1.projectName)(model);
     const lang = target.name;
-    const title = target.title || lang;
+    const title = (0, facts_1.fact)(target, 'title');
     const surface = (0, AgentGuideContent_1.langCmd)(lang, model).note;
     const features = (0, AgentGuideContent_1.activeFeatures)(model, target);
     const featuresOn = (0, AgentGuideContent_1.featuresEnabled)(target);

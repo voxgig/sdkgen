@@ -142,6 +142,16 @@ describe('AgentGuideTop', () => {
     ok(agents!.includes('<lang>/src/feature/<name>/AGENTS.md'), 'names the per-feature guides ts writes')
   })
 
+  test('one SDK target is a project in its language, several a multi-language one', async () => {
+    const lone = find(await render(AgentGuideTop, {}, undefined,
+      { model: makeModel({ ts: false }) }), '/p/AGENTS.md')!
+    ok(lone.includes('This is a **generated** Go SDK project.'), lone.slice(0, 300))
+    ok(!lone.includes('multi-language') && !lone.includes('each language directory'), lone.slice(0, 300))
+
+    const both = find(await render(AgentGuideTop, {}), '/p/AGENTS.md')!
+    ok(both.includes('This is a **generated** multi-language SDK project.'), both.slice(0, 300))
+  })
+
   test('says the add overwrites when the project regenerates .sdk in full', async () => {
     const files = await render(AgentGuideTop, {}, undefined, { model: makeModel({ copies: 'overwrite' }) })
     const agents = find(files, '/p/AGENTS.md')!.replace(/\s+/g, ' ')
@@ -329,7 +339,7 @@ describe('AgentGuideFeature (dir layout)', () => {
   test('feature guide has active hooks, .aontu paths, root-relative regenerate', async () => {
     const files = await render(
       AgentGuideFeature,
-      { target: T_TS, feature: makeModel().main.kit.feature.log },
+      { target: 'ts', feature: makeModel().main.kit.feature.log },
       'ts',
     )
 
@@ -354,7 +364,7 @@ describe('AgentGuideFeature (dir layout)', () => {
     const model = makeModel()
     model.main.kit.entity.advice.op = {}
     const files = await render(AgentGuideFeature,
-      { target: T_TS, feature: model.main.kit.feature.log }, 'ts', { model })
+      { target: 'ts', feature: model.main.kit.feature.log }, 'ts', { model })
     const agents = find(files, 'ts/src/feature/log/AGENTS.md')
     ok(agents!.includes('stages of every entity operation and of'), 'no empty parenthesis')
   })
@@ -362,7 +372,7 @@ describe('AgentGuideFeature (dir layout)', () => {
   test('feature inactive-by-default renders as no', async () => {
     const files = await render(
       AgentGuideFeature,
-      { target: T_TS, feature: makeModel().main.kit.feature.test },
+      { target: 'ts', feature: makeModel().main.kit.feature.test },
       'ts',
     )
     const agents = find(files, 'ts/src/feature/test/AGENTS.md')

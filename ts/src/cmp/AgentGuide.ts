@@ -3,6 +3,7 @@ import { Content, File } from 'jostraca'
 import { cmp } from '../helpers/component'
 
 import { optionalComponent } from '../helpers/optional'
+import { fact } from '../helpers/facts'
 
 import {
   activeFeatures,
@@ -32,7 +33,7 @@ const AgentGuide = cmp(function AgentGuide(props: any) {
 
   const Name = projectName(model)
   const lang = target.name
-  const title = target.title || lang
+  const title = fact(target, 'title')
   const surface = langCmd(lang, model).note
 
   const features = activeFeatures(model, target)

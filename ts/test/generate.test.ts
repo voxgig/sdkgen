@@ -829,6 +829,68 @@ describe('generate', () => {
   })
 
 
+  test('the first changelog entry names the languages and surfaces the model has', async () => {
+    const entry = async (targets: string[]) =>
+      (await generate(targets))['CHANGELOG.md'].split('## [0.0.1]')[1].replace(/\s+/g, ' ')
+
+    const ts = await entry(['ts'])
+    ok(ts.includes('the Demo SDK (TypeScript),'), ts)
+    ok(!/CLI|MCP/.test(ts), ts)
+
+    const zig = await entry(['zig'])
+    ok(zig.includes('(Zig)') && !zig.includes('TypeScript'), zig)
+
+    const cli = await entry(['go', 'go-cli'])
+    ok(cli.includes('(Golang, plus the CLI surface)') && !cli.includes('MCP'), cli)
+  })
+
+
+  test('SECURITY.md names only the registries its SDK targets publish to', async () => {
+    const scope = async (targets: string[]) =>
+      (await generate(targets))['SECURITY.md'].split('## Scope')[1].replace(/\s+/g, ' ')
+
+    const js = await scope(['js'])
+    ok(js.includes('published from this repository (npm).'), js)
+    ok(!/PyPI|Packagist|RubyGems|LuaRocks|Go module/.test(js), js)
+
+    const mixed = await scope(['ts', 'go', 'zig', 'go-cli'])
+    ok(mixed.includes('(npm, the Go module, and git tags).'), mixed)
+  })
+
+
+  test('a target with no title is named by its origin\'s label, never undefined', async () => {
+    const dir = Path.join(STAGE, '.sdk', 'model', 'untitled')
+    Fs.mkdirSync(dir, { recursive: true })
+    try {
+      const src = readFileSync(Path.join(STAGE, '.sdk', 'model', 'target', 'ts.aontu'), 'utf8')
+        .replace(/^\s*title:.*$/m, '')
+      ok(!/^\s*title:/m.test(src), 'the ts model still declares a title')
+      writeFileSync(Path.join(dir, 'ts.aontu'), src)
+
+      const { fs, vol } = memfs({})
+      const sdkgen = SdkGen({ fs: layeredFs(fs), folder: STAGE, root: '', pino: makeLog() })
+      const res = await sdkgen.generate({
+        model: makeModel(['ts'], undefined, undefined, undefined, 'untitled'), root: makeRoot(),
+      })
+      strictEqual(res.ok, true, 'generation did not report ok')
+
+      const docs: Record<string, string> = {}
+      for (const [path, text] of Object.entries(vol.toJSON() as Record<string, string>)) {
+        const rel = Path.relative(STAGE, path).split(Path.sep).join('/')
+        if (rel.endsWith('.md') && !rel.includes('.jostraca/')) docs[rel] = text
+      }
+      // The generator's own documents; the per-language README bodies are the target's copies.
+      const own = ['README.md', 'AGENTS.md', 'CHANGELOG.md', 'SECURITY.md', 'ts/AGENTS.md']
+      deepStrictEqual(own.filter((file) => docs[file].includes('undefined')), [])
+      ok(docs['ts/README.md'].startsWith('# Demo TypeScript SDK\n'), docs['ts/README.md'].slice(0, 80))
+      ok(docs['README.md'].includes('### TypeScript'), 'the root README does not name ts by its label')
+    }
+    finally {
+      Fs.rmSync(dir, { recursive: true, force: true })
+    }
+  })
+
+
   // A table row that ends as its header ends, with as many cells.
   const wellFormed = (doc: string): string[] => {
     const bad: string[] = []

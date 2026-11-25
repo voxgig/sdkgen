@@ -23,7 +23,7 @@ import { canonScalarKey } from '../helpers/canonType'
 import { safeVarName, exampleVarName, jsKey } from '../helpers/naming'
 import { modelText } from '../helpers/text'
 import { fact } from '../helpers/facts'
-import { surfaceOf } from '../helpers/surface'
+import { documentOrder, surfaceOf } from '../helpers/surface'
 import { copyMode, MERGE } from '../helpers/copymerge'
 
 import {
@@ -154,7 +154,7 @@ const ReadmeTopSurfaceLine = cmp(function ReadmeTopSurfaceLine(props: any) {
     surfaces.push(`${langList} SDKs`)
     if (hasCli) surfaces.push('a CLI with an interactive REPL')
     if (hasMcp) surfaces.push('an MCP server for AI agents')
-    consumerTargets.forEach((t: any) => surfaces.push(`the ${t.title} package`))
+    consumerTargets.forEach((t: any) => surfaces.push(`the ${fact(t, 'title')} package`))
     const surfaceList = surfaces.length > 1
       ? surfaces.slice(0, -1).join(', ') + ', and ' + surfaces[surfaces.length - 1]
       : surfaces[0]
@@ -309,7 +309,7 @@ network, and no credentials:
       const Test =
         optionalComponent(ctx$, tgt, 'ReadmeTopTest')
       if (Test) {
-        Content(`### ${tgt.title}
+        Content(`### ${fact(tgt, 'title')}
 
 `)
         Test['ReadmeTopTest']({ target: tgt })
@@ -353,7 +353,7 @@ const ReadmeTopPackages = cmp(function ReadmeTopPackages(props: any) {
         // tag, which a repository may not have.
         cell = `publish pending — [install from source](${tgt.name}/README.md#install)`
       }
-      Content(`| ${tgt.title} | \`${packageName(model, tgt.name)}\` | ${cell} |
+      Content(`| ${fact(tgt, 'title')} | \`${packageName(model, tgt.name)}\` | ${cell} |
 `)
     })
     Content(`
@@ -368,7 +368,7 @@ const ReadmeTopQuickstart = cmp(function ReadmeTopQuickstart(props: any) {
   if (leadTarget) {
     Content(`## Quickstart
 
-### ${leadTarget.title}
+### ${fact(leadTarget, 'title')}
 
 `)
     const LeadQuick =
@@ -378,7 +378,7 @@ const ReadmeTopQuickstart = cmp(function ReadmeTopQuickstart(props: any) {
     }
     const placement = credentialPlacement(model)
     Content(`
-${'' === placement ? '' : placement + '\n\n'}See the [${leadTarget.title} README](${leadTarget.name}/README.md) for the full guide.
+${'' === placement ? '' : placement + '\n\n'}See the [${fact(leadTarget, 'title')} README](${leadTarget.name}/README.md) for the full guide.
 
 `)
   }
@@ -408,7 +408,7 @@ const ReadmeTopSurfaces = cmp(function ReadmeTopSurfaces(props: any) {
 `)
     }
     consumerTargets.forEach((t: any) => {
-      Content(`| **${t.title}** | \`${t.name}/\` |
+      Content(`| **${fact(t, 'title')}** | \`${t.name}/\` |
 `)
     })
     Content(`
@@ -514,7 +514,7 @@ const ReadmeTopOtherLanguages = cmp(function ReadmeTopOtherLanguages(props: any)
       const Quick =
         optionalComponent(ctx$, tgt, 'ReadmeTopQuick')
       if (Quick) {
-        Content(`### ${tgt.title}
+        Content(`### ${fact(tgt, 'title')}
 
 `)
         Quick['ReadmeTopQuick']({ target: tgt })
@@ -692,7 +692,7 @@ const ReadmeTopPerLanguage = cmp(function ReadmeTopPerLanguage(props: any) {
 
 `)
     docTargets.forEach((tgt: any) => {
-      Content(`- [${tgt.title}](${tgt.name}/README.md)
+      Content(`- [${fact(tgt, 'title')}](${tgt.name}/README.md)
 `)
     })
     Content(`
@@ -805,21 +805,7 @@ const ReadmeTop = cmp(function ReadmeTop(props: any) {
   const hasMcp = 0 < mcpTargets.length
 
 
-  const docsOrder: string[] = (getModelPath(model, `main.${KIT}.config.docs_order`,
-    { only_active: false, required: false }) as any) || []
-
-  const orderOf = (t: any): number => {
-    const i = docsOrder.indexOf(originName(model, t.name))
-    if (i !== -1) return i
-    const surface = surfaceOf(t)
-    if ('cli' === surface) return docsOrder.length + 1
-    if ('mcp' === surface) return docsOrder.length + 2
-    return docsOrder.length
-  }
-
-  const ordered = activeTargets
-    .slice()
-    .sort((a: any, b: any) => orderOf(a) - orderOf(b))
+  const ordered = documentOrder(model, activeTargets)
 
   const isCliOrMcp = (t: any) => ['cli', 'mcp'].includes(surfaceOf(t))
 
@@ -830,11 +816,9 @@ const ReadmeTop = cmp(function ReadmeTop(props: any) {
 
   const docTargets = ordered.filter((t: any) => !isCliOrMcp(t))
 
-  const pkgTargets = activeTargets
-    .filter((t: any) => hasPackageName(model, t.name))
-    .sort((a: any, b: any) => orderOf(a) - orderOf(b))
+  const pkgTargets = ordered.filter((t: any) => hasPackageName(model, t.name))
 
-  const langList = sdkTargets.map((t: any) => t.title).join(', ')
+  const langList = sdkTargets.map((t: any) => fact(t, 'title')).join(', ')
   const leadTarget = pickLeadTarget(sdkTargets)
 
   const s = {

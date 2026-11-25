@@ -15,7 +15,11 @@ const model = applyFacts({
   name: 'demo', Name: 'Demo',
   main: { kit: {
     info: { tagline: 'Tagged.' },
-    target: { body: {}, whole: {}, 'go-cli': {} },
+    target: {
+      body: { name: 'body', title: 'Body' },
+      whole: { name: 'whole', title: 'Whole' },
+      'go-cli': {},
+    },
     entity: {},
   } },
 })
@@ -52,7 +56,7 @@ describe('ReadmeIntro', () => {
       child() { return log } }
     await Jostraca().generate({ fs: () => fs, folder, model, log }, () => {
       Project({ folder: 'p' }, () => Folder({ name: 'd' }, () => File({ name: 'out.md' }, () => {
-        ReadmeIntro({ target: { name, title: name[0].toUpperCase() + name.slice(1) } })
+        ReadmeIntro({ target: model.main.kit.target[name] })
       })))
     })
     const json: any = vol.toJSON()

@@ -203,6 +203,11 @@ function checkDefinition(fs, kind, name, file) {
                 ' — a document names a target with any other word by its title, never as an ' +
                 'SDK, a CLI or an MCP server'));
         }
+        const title = declared?.title;
+        if (null != declared && ('string' !== typeof title || '' === title.trim())) {
+            found.push(at('warn', 'target-title-missing', 'declares no `title` — the generated documents name this target by its ' +
+                "origin's label, else as `" + name + '`'));
+        }
     }
     if ('feature' === kind) {
         found.push(...checkFeatureModel(strict.model, name, at));

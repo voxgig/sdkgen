@@ -4,16 +4,22 @@ exports.AgentGuideTop = void 0;
 const jostraca_1 = require("jostraca");
 const component_1 = require("../helpers/component");
 const facts_1 = require("../helpers/facts");
+const surface_1 = require("../helpers/surface");
 const AgentGuideContent_1 = require("./AgentGuideContent");
 const AgentGuideTopIntro = (0, component_1.cmp)(function AgentGuideTopIntro(props) {
     const { Name, model, targets } = props.s;
     const featureGuides = targets.some((t) => (0, facts_1.fact)(t, 'phase').agentguide && (0, AgentGuideContent_1.writesFeatureGuides)(model, t));
+    // One SDK is named by its title; only several make a multi-language project.
+    const sdks = targets.filter((t) => 'sdk' === (0, surface_1.surfaceOf)(t));
+    const project = 1 < sdks.length ? `multi-language SDK project. The client libraries in
+each language directory are` : 1 === sdks.length ? `${(0, facts_1.fact)(sdks[0], 'title')} SDK project. The client library
+is` : `project. Its targets are`;
+    const output = 1 < sdks.length ? 'the language directories' : 'the generated code';
     (0, jostraca_1.Content)(`# ${Name} SDK — Agent Guide
 
-This is a **generated** multi-language SDK project. The client libraries in
-each language directory are produced by [@voxgig/sdkgen](https://github.com/voxgig/sdkgen)
+This is a **generated** ${project} produced by [@voxgig/sdkgen](https://github.com/voxgig/sdkgen)
 from an API model; the generator, model, templates, and components all live in
-\`.sdk/\`. Treat the language directories as build output — change the model,
+\`.sdk/\`. Treat ${output} as build output — change the model,
 a template, or a component and regenerate.
 
 There are companion guides deeper in the tree: one per language

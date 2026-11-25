@@ -11,6 +11,7 @@ exports.installCommand = installCommand;
 exports.registryState = registryState;
 exports.isPublished = isPublished;
 exports.registryName = registryName;
+exports.registryLabel = registryLabel;
 exports.vendorCommand = vendorCommand;
 exports.pkgDescription = pkgDescription;
 exports.tomlString = tomlString;
@@ -183,6 +184,24 @@ function registryName(model, target) {
     const reg = model?.main?.[apidef_1.KIT]?.target?.[target]?.publish?.registry;
     const name = (reg && reg.name) ? String(reg.name) : '';
     return 'none' === name ? '' : name;
+}
+const REGISTRY_LABEL = {
+    npm: 'npm',
+    pypi: 'PyPI',
+    packagist: 'Packagist',
+    rubygems: 'RubyGems',
+    luarocks: 'LuaRocks',
+    'crates.io': 'crates.io',
+    nuget: 'NuGet',
+    'maven-central': 'Maven Central',
+    clojars: 'Clojars',
+    hex: 'Hex',
+    cpan: 'CPAN',
+    opam: 'opam',
+    swiftpm: 'Swift Package Manager',
+};
+function registryLabel(name) {
+    return REGISTRY_LABEL[name] || name;
 }
 // The install route for a target not on a registry: `go get <module>@latest`
 // for go, resolved by the proxy from the `go/vX.Y.Z` tag. go-cli, go-mcp and a

@@ -120,7 +120,7 @@ const ReadmeTopSurfaceLine = (0, component_1.cmp)(function ReadmeTopSurfaceLine(
             surfaces.push('a CLI with an interactive REPL');
         if (hasMcp)
             surfaces.push('an MCP server for AI agents');
-        consumerTargets.forEach((t) => surfaces.push(`the ${t.title} package`));
+        consumerTargets.forEach((t) => surfaces.push(`the ${(0, facts_1.fact)(t, 'title')} package`));
         const surfaceList = surfaces.length > 1
             ? surfaces.slice(0, -1).join(', ') + ', and ' + surfaces[surfaces.length - 1]
             : surfaces[0];
@@ -261,7 +261,7 @@ network, and no credentials:
         sdkTargets.forEach((tgt) => {
             const Test = (0, optional_1.optionalComponent)(ctx$, tgt, 'ReadmeTopTest');
             if (Test) {
-                (0, jostraca_1.Content)(`### ${tgt.title}
+                (0, jostraca_1.Content)(`### ${(0, facts_1.fact)(tgt, 'title')}
 
 `);
                 Test['ReadmeTopTest']({ target: tgt });
@@ -304,7 +304,7 @@ const ReadmeTopPackages = (0, component_1.cmp)(function ReadmeTopPackages(props)
                 // tag, which a repository may not have.
                 cell = `publish pending — [install from source](${tgt.name}/README.md#install)`;
             }
-            (0, jostraca_1.Content)(`| ${tgt.title} | \`${(0, packageMeta_1.packageName)(model, tgt.name)}\` | ${cell} |
+            (0, jostraca_1.Content)(`| ${(0, facts_1.fact)(tgt, 'title')} | \`${(0, packageMeta_1.packageName)(model, tgt.name)}\` | ${cell} |
 `);
         });
         (0, jostraca_1.Content)(`
@@ -316,7 +316,7 @@ const ReadmeTopQuickstart = (0, component_1.cmp)(function ReadmeTopQuickstart(pr
     if (leadTarget) {
         (0, jostraca_1.Content)(`## Quickstart
 
-### ${leadTarget.title}
+### ${(0, facts_1.fact)(leadTarget, 'title')}
 
 `);
         const LeadQuick = (0, optional_1.optionalComponent)(ctx$, leadTarget, 'ReadmeTopQuick');
@@ -325,7 +325,7 @@ const ReadmeTopQuickstart = (0, component_1.cmp)(function ReadmeTopQuickstart(pr
         }
         const placement = (0, utility_1.credentialPlacement)(model);
         (0, jostraca_1.Content)(`
-${'' === placement ? '' : placement + '\n\n'}See the [${leadTarget.title} README](${leadTarget.name}/README.md) for the full guide.
+${'' === placement ? '' : placement + '\n\n'}See the [${(0, facts_1.fact)(leadTarget, 'title')} README](${leadTarget.name}/README.md) for the full guide.
 
 `);
     }
@@ -352,7 +352,7 @@ const ReadmeTopSurfaces = (0, component_1.cmp)(function ReadmeTopSurfaces(props)
 `);
         }
         consumerTargets.forEach((t) => {
-            (0, jostraca_1.Content)(`| **${t.title}** | \`${t.name}/\` |
+            (0, jostraca_1.Content)(`| **${(0, facts_1.fact)(t, 'title')}** | \`${t.name}/\` |
 `);
         });
         (0, jostraca_1.Content)(`
@@ -447,7 +447,7 @@ const ReadmeTopOtherLanguages = (0, component_1.cmp)(function ReadmeTopOtherLang
         otherTargets.forEach((tgt) => {
             const Quick = (0, optional_1.optionalComponent)(ctx$, tgt, 'ReadmeTopQuick');
             if (Quick) {
-                (0, jostraca_1.Content)(`### ${tgt.title}
+                (0, jostraca_1.Content)(`### ${(0, facts_1.fact)(tgt, 'title')}
 
 `);
                 Quick['ReadmeTopQuick']({ target: tgt });
@@ -607,7 +607,7 @@ const ReadmeTopPerLanguage = (0, component_1.cmp)(function ReadmeTopPerLanguage(
 
 `);
         docTargets.forEach((tgt) => {
-            (0, jostraca_1.Content)(`- [${tgt.title}](${tgt.name}/README.md)
+            (0, jostraca_1.Content)(`- [${(0, facts_1.fact)(tgt, 'title')}](${tgt.name}/README.md)
 `);
         });
         (0, jostraca_1.Content)(`
@@ -699,30 +699,14 @@ const ReadmeTop = (0, component_1.cmp)(function ReadmeTop(props) {
     const mcpTargets = activeTargets.filter((t) => 'mcp' === (0, surface_1.surfaceOf)(t));
     const hasCli = 0 < cliTargets.length;
     const hasMcp = 0 < mcpTargets.length;
-    const docsOrder = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.config.docs_order`, { only_active: false, required: false }) || [];
-    const orderOf = (t) => {
-        const i = docsOrder.indexOf((0, packageMeta_1.originName)(model, t.name));
-        if (i !== -1)
-            return i;
-        const surface = (0, surface_1.surfaceOf)(t);
-        if ('cli' === surface)
-            return docsOrder.length + 1;
-        if ('mcp' === surface)
-            return docsOrder.length + 2;
-        return docsOrder.length;
-    };
-    const ordered = activeTargets
-        .slice()
-        .sort((a, b) => orderOf(a) - orderOf(b));
+    const ordered = (0, surface_1.documentOrder)(model, activeTargets);
     const isCliOrMcp = (t) => ['cli', 'mcp'].includes((0, surface_1.surfaceOf)(t));
     const sdkTargets = ordered.filter((t) => 'sdk' === (0, surface_1.surfaceOf)(t));
     // The CLI and the MCP server have surfaces of their own below.
     const consumerTargets = ordered.filter((t) => 'sdk' !== (0, surface_1.surfaceOf)(t) && !isCliOrMcp(t));
     const docTargets = ordered.filter((t) => !isCliOrMcp(t));
-    const pkgTargets = activeTargets
-        .filter((t) => (0, packageMeta_1.hasPackageName)(model, t.name))
-        .sort((a, b) => orderOf(a) - orderOf(b));
-    const langList = sdkTargets.map((t) => t.title).join(', ');
+    const pkgTargets = ordered.filter((t) => (0, packageMeta_1.hasPackageName)(model, t.name));
+    const langList = sdkTargets.map((t) => (0, facts_1.fact)(t, 'title')).join(', ');
     const leadTarget = pickLeadTarget(sdkTargets);
     const s = {
         model,

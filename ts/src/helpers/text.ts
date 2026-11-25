@@ -28,6 +28,14 @@ function given(value: any): boolean {
 }
 
 
+// "a", "a and b", "a, b, and c".
+function seriesList(items: string[]): string {
+  return items.length < 3 ? items.join(' and ') :
+    items.slice(0, -1).join(', ') + ', and ' + items[items.length - 1]
+}
+
+
 export {
   modelText,
+  seriesList,
 }
