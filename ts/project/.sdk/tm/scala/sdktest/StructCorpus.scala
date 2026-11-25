@@ -278,7 +278,8 @@ object Runner {
     val validateGroups = Seq(
       "basic" -> false, "child" -> true, "nof" -> false, "exact" -> true,
       "invalid" -> false, "special" -> true, "directive" -> false, "all" -> false,
-      "len" -> false, "range" -> false, "like" -> false, "unknown" -> false)
+      "len" -> false, "range" -> false, "rest" -> false, "like" -> false,
+      "unknown" -> false)
     validateGroups.foreach { case (gn, nulls) =>
       run.runset("validate." + gn, g("validate", gn), nulls)(vin => {
         val injm = vget(vin, "inj")

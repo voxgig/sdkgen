@@ -533,7 +533,7 @@ int main() {
     return inj_v.is_map() ? validate(getp(in, "data"), getp(in, "spec"), inj_v)
                           : validate(getp(in, "data"), getp(in, "spec"));
   });
-  for (const char* name : {"directive", "all", "len", "range", "like", "unknown"}) {
+  for (const char* name : {"directive", "all", "len", "range", "rest", "like", "unknown"}) {
     run("validate", name, false,
         [](const Value& in) { return validate(getp(in, "data"), getp(in, "spec")); });
   }

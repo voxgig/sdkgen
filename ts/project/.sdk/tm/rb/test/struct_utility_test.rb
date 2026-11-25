@@ -581,6 +581,7 @@ class StructUtilityTest < Minitest::Test
     "all" => false,
     "len" => false,
     "range" => false,
+    "rest" => false,
     "like" => false,
     "unknown" => false,
   }.freeze

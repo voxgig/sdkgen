@@ -1056,6 +1056,7 @@ const VALIDATE_GROUPS = [_]ValidateGroup{
     .{ .name = "all", .null_ = false },
     .{ .name = "len", .null_ = false },
     .{ .name = "range", .null_ = false },
+    .{ .name = "rest", .null_ = false },
     .{ .name = "like", .null_ = false },
     .{ .name = "unknown", .null_ = false },
 };

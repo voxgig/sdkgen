@@ -285,6 +285,7 @@ class StructCorpusTest {
     add(tests, "validate", "all", false) { Struct.validate(getp(it, "data"), getp(it, "spec")) }
     add(tests, "validate", "len", false) { Struct.validate(getp(it, "data"), getp(it, "spec")) }
     add(tests, "validate", "range", false) { Struct.validate(getp(it, "data"), getp(it, "spec")) }
+    add(tests, "validate", "rest", false) { Struct.validate(getp(it, "data"), getp(it, "spec")) }
     add(tests, "validate", "like", false) { Struct.validate(getp(it, "data"), getp(it, "spec")) }
     add(tests, "validate", "unknown", false) { Struct.validate(getp(it, "data"), getp(it, "spec")) }
 

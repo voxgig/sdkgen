@@ -243,6 +243,7 @@
                            ["exact" {}] ["invalid" {"null" false}] ["special" {}]
                            ["directive" {"null" false}] ["all" {"null" false}]
                            ["len" {"null" false}] ["range" {"null" false}]
+                           ["rest" {"null" false}]
                            ["like" {"null" false}] ["unknown" {"null" false}]]
           named (set (map first validate-groups))
           groups (filter #(instance? Map (gp validateS %)) (keys validateS))

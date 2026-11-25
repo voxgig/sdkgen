@@ -349,7 +349,8 @@ final class StructUtilityTest: XCTestCase {
     ("basic", false), ("child", true), ("nof", false),
     ("exact", true), ("invalid", false), ("special", true),
     ("directive", false), ("all", false), ("len", false),
-    ("range", false), ("like", false), ("unknown", false),
+    ("range", false), ("rest", false), ("like", false),
+    ("unknown", false),
   ]
 
   func testValidate() {

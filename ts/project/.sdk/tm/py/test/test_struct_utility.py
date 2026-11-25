@@ -99,6 +99,7 @@ VALIDATE_GROUPS = {
     "all": False,
     "len": False,
     "range": False,
+    "rest": False,
     "like": False,
     "unknown": False,
 }

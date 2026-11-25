@@ -480,7 +480,7 @@ my $validate_spec = $struct_spec->{validate};
 my @validate_groups = (
   [basic => 0], [child => 1], [nof => 0], [exact => 1],
   [invalid => 0], [special => 1], [directive => 0], [all => 0],
-  [len => 0], [range => 0], [like => 0], [unknown => 0],
+  [len => 0], [range => 0], [rest => 0], [like => 0], [unknown => 0],
 );
 
 for my $vg (@validate_groups) {

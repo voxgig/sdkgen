@@ -351,6 +351,7 @@ public class StructCorpusTest {
     add(tests, "validate", "all", false, in -> Struct.validate(getp(in, "data"), getp(in, "spec")));
     add(tests, "validate", "len", false, in -> Struct.validate(getp(in, "data"), getp(in, "spec")));
     add(tests, "validate", "range", false, in -> Struct.validate(getp(in, "data"), getp(in, "spec")));
+    add(tests, "validate", "rest", false, in -> Struct.validate(getp(in, "data"), getp(in, "spec")));
     add(tests, "validate", "like", false, in -> Struct.validate(getp(in, "data"), getp(in, "spec")));
     add(tests, "validate", "unknown", false, in -> Struct.validate(getp(in, "data"), getp(in, "spec")));
 

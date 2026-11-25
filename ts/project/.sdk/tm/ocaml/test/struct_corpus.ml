@@ -228,7 +228,8 @@ let run_all (r : R.run) =
   let validate_groups =
     [ ("basic", false); ("child", true); ("nof", false); ("exact", true);
       ("invalid", false); ("special", true); ("directive", false); ("all", false);
-      ("len", false); ("range", false); ("like", false); ("unknown", false) ] in
+      ("len", false); ("range", false); ("rest", false); ("like", false);
+      ("unknown", false) ] in
   List.iter (fun (gn, nullflag) ->
       set ~nullflag ("validate." ^ gn) (O.jget validates gn)
         (fun vin ->

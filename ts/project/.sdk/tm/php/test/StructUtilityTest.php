@@ -819,7 +819,7 @@ class StructUtilityTest extends TestCase
      */
     private const VALIDATE_GROUPS = [
         'basic', 'child', 'nof', 'exact', 'invalid', 'special',
-        'directive', 'all', 'len', 'range', 'like', 'unknown',
+        'directive', 'all', 'len', 'range', 'rest', 'like', 'unknown',
     ];
 
     public static function validateGroups(): array

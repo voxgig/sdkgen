@@ -1014,6 +1014,7 @@ int main(void) {
   run("validate", "all", 0, subj_validate, NULL);
   run("validate", "len", 0, subj_validate, NULL);
   run("validate", "range", 0, subj_validate, NULL);
+  run("validate", "rest", 0, subj_validate, NULL);
   run("validate", "like", 0, subj_validate, NULL);
   run("validate", "unknown", 0, subj_validate, NULL);
   runs_every_group("validate");
