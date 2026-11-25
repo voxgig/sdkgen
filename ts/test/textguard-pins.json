@@ -203,20 +203,6 @@
     },
     {
       "relation": "off",
-      "chain": "Changelog",
-      "cause": "target",
-      "reason": "Known stale, S02: the first CHANGELOG entry lists six fixed languages; WP15.",
-      "line": "  Ruby, and Lua, plus CLI and MCP surfaces), generated from the upstream",
-      "variations": [
-        "target-lua",
-        "target-php",
-        "target-py",
-        "target-rb",
-        "target-ts"
-      ]
-    },
-    {
-      "relation": "off",
       "chain": "Readme > ReadmeExplanation",
       "cause": "target",
       "reason": "Generic word: \"Java-backed\" describes the JVM runtime of kotlin, scala and clojure, not the java target.",

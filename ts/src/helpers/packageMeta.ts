@@ -3,33 +3,15 @@ import { each } from 'jostraca'
 
 import { KIT, nom } from '@voxgig/apidef'
 
-import { surfaceOf } from './surface'
+import { surfaceName, surfaceOf } from './surface'
 import { fact } from './facts'
 import { kindCollection } from './kindCollection'
-import { modelText } from './text'
+import { LANG_LABEL, langLabel } from './title'
 
 const PUBLISHER = 'Voxgig'
 const PUBLISHER_URL = 'https://voxgig.com'
 const SECURITY_EMAIL = 'security@voxgig.com'
 const GENERATOR_URL = 'https://github.com/voxgig/sdkgen'
-
-const LANG_LABEL: Record<string, string> = {
-  ts: 'TypeScript',
-  js: 'JavaScript',
-  py: 'Python',
-  php: 'PHP',
-  rb: 'Ruby',
-  lua: 'Lua',
-  go: 'Go',
-  'go-cli': 'Go CLI',
-  'go-mcp': 'Go MCP server',
-  'py-data': 'Python Data',
-}
-
-function langLabel(target: string): string {
-  return LANG_LABEL[target] || target
-}
-
 
 function originName(model: any, target: string): string {
   const orig = model?.main?.[KIT]?.target?.[target]?.origname
@@ -182,9 +164,8 @@ function registryState(model: any, target: string): 'tag' | 'pending' | 'active'
   return 'pending'
 }
 
-// True only when the package is actually live on its registry (so a README
-// may print the real `npm install`/`pip install`/... command). Everything
-// else — pending, inactive, tag-only — installs from the git tag instead.
+// Only a package live on its registry gets a registry install command; any
+// other installs from the git tag.
 function isPublished(model: any, target: string): boolean {
   return 'active' === registryState(model, target)
 }
@@ -196,12 +177,31 @@ function goFamily(model: any, target: string): boolean {
   return '' !== wraps && 'go' === originName(model, wraps)
 }
 
-// The registry a target uploads to (npm | pypi | packagist | ...), or ''
-// for tag-only ports. Used in the "not yet on <registry>" pending message.
+// The registry a target uploads to (npm | pypi | packagist | ...), or '' for a tag-only port.
 function registryName(model: any, target: string): string {
   const reg = model?.main?.[KIT]?.target?.[target]?.publish?.registry
   const name = (reg && reg.name) ? String(reg.name) : ''
   return 'none' === name ? '' : name
+}
+
+const REGISTRY_LABEL: Record<string, string> = {
+  npm: 'npm',
+  pypi: 'PyPI',
+  packagist: 'Packagist',
+  rubygems: 'RubyGems',
+  luarocks: 'LuaRocks',
+  'crates.io': 'crates.io',
+  nuget: 'NuGet',
+  'maven-central': 'Maven Central',
+  clojars: 'Clojars',
+  hex: 'Hex',
+  cpan: 'CPAN',
+  opam: 'opam',
+  swiftpm: 'Swift Package Manager',
+}
+
+function registryLabel(name: string): string {
+  return REGISTRY_LABEL[name] || name
 }
 
 // The install route for a target not on a registry: `go get <module>@latest`
@@ -230,10 +230,10 @@ function vendorCommand(model: any, target: string): string {
   }
 }
 
+// The API's name fact without a trailing "API", for "the <name> public API".
 function apiName(model: any): string {
-  const info = modelText(model)
-  const raw = (null != info.title ? String(info.title) : '').trim()
-  const stripped = raw.replace(/\s*API\s*$/i, '').trim()
+  const stripped = String(fact(model.main[KIT], 'apiName').raw).trim()
+    .replace(/\s*API\s*$/i, '').trim()
   return stripped || nom(model, 'Name') || model.name
 }
 
@@ -342,7 +342,7 @@ function installCommand(model: any, target: string): string {
 }
 
 function pkgDescription(model: any, target: string): string {
-  return `Unofficial generated ${langLabel(originName(model, target))} SDK` +
+  return `Unofficial generated ${surfaceName(model.main[KIT].target[target])}` +
     ` for the ${apiName(model)} public API.` +
     ` Not affiliated with or endorsed by the upstream API provider.`
 }
@@ -454,6 +454,7 @@ export {
   registryState,
   isPublished,
   registryName,
+  registryLabel,
   vendorCommand,
   pkgDescription,
   tomlString,

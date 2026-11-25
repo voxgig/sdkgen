@@ -56,6 +56,7 @@ function docTexts(model) {
     const add = (at, path, raw, vendor) => texts.push({ raw, vendor, at, path });
     const slot = (name, raw) => add(kit, ['text', name], raw, !given(own[name]));
     slot('title', str(info.title));
+    add(kit, ['apiName'], str(info.title) || (0, apidef_1.nom)(model, 'Name') + ' API', given(info.title) && !given(own.title));
     slot('tagline', str(info.tagline) || str(def.tagline));
     slot('summary', str(info.summary, true));
     slot('about_md', str(info.about_md, true));

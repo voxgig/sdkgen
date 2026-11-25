@@ -176,7 +176,7 @@ listed here, such as a misspelled `taglin`, fails the model build.
 
 | Path | Type | Default | Description |
 | --- | --- | --- | --- |
-| `text.title` | string | `''` | The API's name in the README files and the package descriptions. |
+| `text.title` | string | `''` | The API's name in the README files, the agent guides, `SECURITY.md` and the package descriptions. With neither this nor the spec's title, the name is the SDK's name followed by "API". |
 | `text.summary` | string | `''` | The paragraph under the README's tagline. |
 | `text.website` | string | `''` | The API's own site, linked from the README. |
 | `text.tagline` | string | `''` | The line under each README's title. |
@@ -305,7 +305,7 @@ files in `ts/project/.sdk/model/target/`:
 | --- | --- | --- | --- |
 | `name` | string | `key()` | Target name (e.g. `ts`). |
 | `active` | boolean | `true` | Whether the target is generated. An inactive target stays in the model. |
-| `title` | string | — | Display name (e.g. `TypeScript`). |
+| `title` | string | — | Display name (e.g. `TypeScript`). Without one, the documents use the label of the target's origin, else its name, and `package check` warns. |
 | `ext` | string | — | Source file extension. |
 | `comment.line` | string | — | Line-comment token (e.g. `//`). |
 | `module.name` | string | `'$$name$$'` | Package/module name. |

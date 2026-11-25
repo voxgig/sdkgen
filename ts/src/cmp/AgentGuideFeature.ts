@@ -52,7 +52,7 @@ A **feature** is a pipeline extension: an object of hooks that fire at named
 stages of every entity operation${0 < ops.length ? ' (' + ops.join(', ') + ')' : ''} and of
 the SDK/entity lifecycle. Features are how you inspect or modify the request
 pipeline without forking the SDK. This directory holds the **generated**
-runtime for the \`${name}\` feature in the ${target.title || lang} target — do
+runtime for the \`${name}\` feature in the ${fact(target, 'title')} target — do
 not edit it by hand; change its template/model in \`.sdk/\` and regenerate.
 
 Active by default: **${defaultOn ? 'yes' : 'no'}** (\`config.options.active\`
@@ -99,7 +99,7 @@ ${regenerationStatement()}
 
 To author a **new** feature, copy this one's model + template shape — see ${'' === guide ? '' :
   `the\n[project guide](../../../${guide}) and `}the
-[${target.title || lang} guide](../../../AGENTS.md).
+[${fact(target, 'title')} guide](../../../AGENTS.md).
 `)
     })
 

@@ -338,6 +338,15 @@ describe('package check — the model rules', () => {
   })
 
 
+  test('a target with no title warns, and the check still passes', () => {
+    const report = check((dir) =>
+      editModel(dir, 'target', 'iotgo', (src) => src.replace(/^\s*title:.*$/m, '')))
+    ok(points(report, 'warn').includes('target-title-missing'), points(report).join(','))
+    ok(!points(report, 'error').includes('target-title-missing'), points(report).join(','))
+    ok(/`iotgo`/.test(noted(report, 'target-title-missing')), noted(report, 'target-title-missing'))
+  })
+
+
   test('a surface outside the word list is an error, and seneca-provider is in it', () => {
     const surface = (word: string) => check((dir) =>
       editModel(dir, 'target', 'iotgo', (src) =>

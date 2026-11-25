@@ -144,6 +144,16 @@ describe('AgentGuideTop', () => {
     ok(agents!.includes('<lang>/src/feature/<name>/AGENTS.md'), 'names the per-feature guides ts writes')
   })
 
+  test('one SDK target is a project in its language, several a multi-language one', async () => {
+    const lone = find(await render(AgentGuideTop, {}, undefined,
+      { model: makeModel({ ts: false }) }), '/p/AGENTS.md')!
+    ok(lone.includes('This is a **generated** Go SDK project.'), lone.slice(0, 300))
+    ok(!lone.includes('multi-language') && !lone.includes('each language directory'), lone.slice(0, 300))
+
+    const both = find(await render(AgentGuideTop, {}), '/p/AGENTS.md')!
+    ok(both.includes('This is a **generated** multi-language SDK project.'), both.slice(0, 300))
+  })
+
   test('says the add overwrites when the project regenerates .sdk in full', async () => {
     const files = await render(AgentGuideTop, {}, undefined, { model: makeModel({ copies: 'overwrite' }) })
     const agents = find(files, '/p/AGENTS.md')!.replace(/\s+/g, ' ')

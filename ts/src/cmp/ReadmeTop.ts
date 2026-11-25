@@ -21,9 +21,9 @@ import { mcpTools, MCP_WRITE_OPS } from '../helpers/mcpTools'
 import type { ExampleLang, PrimaryCall } from '../helpers/opExample'
 import { canonScalarKey } from '../helpers/canonType'
 import { safeVarName, exampleVarName, jsKey } from '../helpers/naming'
-import { modelText } from '../helpers/text'
+import { definitionName, modelText } from '../helpers/text'
 import { fact } from '../helpers/facts'
-import { surfaceOf } from '../helpers/surface'
+import { documentOrder, surfaceOf } from '../helpers/surface'
 import { copyMode, MERGE } from '../helpers/copymerge'
 
 import {
@@ -147,18 +147,18 @@ ${tagline}
 
 
 const ReadmeTopSurfaceLine = cmp(function ReadmeTopSurfaceLine(props: any) {
-  const { hasCli, hasMcp, sdkTargets, consumerTargets, langList } = props.s
+  const { hasCli, hasMcp, sdkTargets, consumerTargets, langList, definition } = props.s
 
   if (sdkTargets.length > 1) {
     const surfaces = []
     surfaces.push(`${langList} SDKs`)
     if (hasCli) surfaces.push('a CLI with an interactive REPL')
     if (hasMcp) surfaces.push('an MCP server for AI agents')
-    consumerTargets.forEach((t: any) => surfaces.push(`the ${t.title} package`))
+    consumerTargets.forEach((t: any) => surfaces.push(`the ${fact(t, 'title')} package`))
     const surfaceList = surfaces.length > 1
       ? surfaces.slice(0, -1).join(', ') + ', and ' + surfaces[surfaces.length - 1]
       : surfaces[0]
-    Content(`> ${surfaceList} — all generated from one OpenAPI spec by [@voxgig/sdkgen](${SDKGEN_REPO}).
+    Content(`> ${surfaceList} — all generated from one ${definition} by [@voxgig/sdkgen](${SDKGEN_REPO}).
 
 `)
   }
@@ -309,7 +309,7 @@ network, and no credentials:
       const Test =
         optionalComponent(ctx$, tgt, 'ReadmeTopTest')
       if (Test) {
-        Content(`### ${tgt.title}
+        Content(`### ${fact(tgt, 'title')}
 
 `)
         Test['ReadmeTopTest']({ target: tgt })
@@ -355,7 +355,7 @@ const ReadmeTopPackages = cmp(function ReadmeTopPackages(props: any) {
         cell = readme ? `publish pending — [install from source](${tgt.name}/README.md#install)` :
           `publish pending — install from source in \`${tgt.name}/\``
       }
-      Content(`| ${tgt.title} | \`${packageName(model, tgt.name)}\` | ${cell} |
+      Content(`| ${fact(tgt, 'title')} | \`${packageName(model, tgt.name)}\` | ${cell} |
 `)
     })
     Content(`
@@ -370,7 +370,7 @@ const ReadmeTopQuickstart = cmp(function ReadmeTopQuickstart(props: any) {
   if (leadTarget) {
     Content(`## Quickstart
 
-### ${leadTarget.title}
+### ${fact(leadTarget, 'title')}
 
 `)
     const LeadQuick =
@@ -381,7 +381,7 @@ const ReadmeTopQuickstart = cmp(function ReadmeTopQuickstart(props: any) {
     const placement = credentialPlacement(model)
     Content(`
 ${'' === placement ? '' : placement + '\n\n'}${fact(leadTarget, 'docs').readme ?
-  `See the [${leadTarget.title} README](${leadTarget.name}/README.md) for the full guide.` : ''}
+  `See the [${fact(leadTarget, 'title')} README](${leadTarget.name}/README.md) for the full guide.` : ''}
 
 `)
   }
@@ -411,7 +411,7 @@ const ReadmeTopSurfaces = cmp(function ReadmeTopSurfaces(props: any) {
 `)
     }
     consumerTargets.forEach((t: any) => {
-      Content(`| **${t.title}** | \`${t.name}/\` |
+      Content(`| **${fact(t, 'title')}** | \`${t.name}/\` |
 `)
     })
     Content(`
@@ -517,7 +517,7 @@ const ReadmeTopOtherLanguages = cmp(function ReadmeTopOtherLanguages(props: any)
       const Quick =
         optionalComponent(ctx$, tgt, 'ReadmeTopQuick')
       if (Quick) {
-        Content(`### ${tgt.title}
+        Content(`### ${fact(tgt, 'title')}
 
 `)
         Quick['ReadmeTopQuick']({ target: tgt })
@@ -606,7 +606,7 @@ forking the SDK.
 
 
 const ReadmeTopCustomizing = cmp(function ReadmeTopCustomizing(props: any) {
-  const { model, sdkTargets, docTargets } = props.s
+  const { model, sdkTargets, docTargets, definition } = props.s
 
   // 11c. Customization: model-driven declarations, in-repo templates and
   // components, regeneration that overwrites, customising in `.sdk`, and a
@@ -661,7 +661,7 @@ customizable without forking any upstream tool:
 | \`.sdk/model/text.aontu\` | The README wording, in \`main.kit.text\`: the tagline, the summary and the entity descriptions | Yes. The scaffold writes it once and never again. |
 | \`.sdk/model/guide/guide.aontu\` | How the spec's paths map onto entities and operations | Yes. The scaffold writes it once and never again. |
 | \`.sdk/model/\`, the rest | The API model built from the spec, and the target and feature definitions | Not by hand. Generation, \`target add\` and a new scaffold run rewrite it, apart from a feature or target this project defines itself. |
-| \`.sdk/def/\` | The OpenAPI spec | Replace it when the API changes. Generation rebuilds the model from it. |
+| \`.sdk/def/\` | The ${definition} | Replace it when the API changes. Generation rebuilds the model from it. |
 | \`.sdk/src/cmp/<target>/\`, \`.sdk/tm/<target>/\` | The components and templates that generate each target | ${copiesRow} |
 | \`.sdk/test/\` | The shared test cases the generated tests run | No. |
 | ${targetDir} | One generated SDK per target, with its own tests | No. Generation overwrites it. |
@@ -695,7 +695,7 @@ const ReadmeTopPerLanguage = cmp(function ReadmeTopPerLanguage(props: any) {
 
 `)
     docTargets.filter((tgt: any) => fact(tgt, 'docs').readme).forEach((tgt: any) => {
-      Content(`- [${tgt.title}](${tgt.name}/README.md)
+      Content(`- [${fact(tgt, 'title')}](${tgt.name}/README.md)
 `)
     })
     Content(`
@@ -705,15 +705,15 @@ const ReadmeTopPerLanguage = cmp(function ReadmeTopPerLanguage(props: any) {
 
 
 const ReadmeTopUpstream = cmp(function ReadmeTopUpstream(props: any) {
-  const { text } = props.s
+  const { text, definition, definitionFull } = props.s
   const upstream = text.upstream
   const docs = text.docs_url
   Content(`## Upstream API
 
-This SDK is generated from the upstream OpenAPI specification. It is an
+This SDK is generated from the upstream ${definitionFull}. It is an
 unofficial client and is not affiliated with the API provider.
 
-The OpenAPI spec(s) this SDK was generated from are kept in the
+The ${definition}(s) this SDK was generated from are kept in the
 [\`.sdk/def/\`](.sdk/def/) folder.
 
 `)
@@ -752,11 +752,11 @@ Do not open public issues for suspected vulnerabilities.
 
 
 const ReadmeTopFooter = cmp(function ReadmeTopFooter(props: any) {
-  const { productName } = props.s
+  const { productName, definition } = props.s
 
   Content(`---
 
-Generated from the ${productName} OpenAPI spec by [@voxgig/sdkgen](${SDKGEN_REPO}).
+Generated from the ${productName} ${definition} by [@voxgig/sdkgen](${SDKGEN_REPO}).
 `)
 })
 
@@ -772,10 +772,14 @@ const ReadmeTop = cmp(function ReadmeTop(props: any) {
 
   const text = fact(model.main[KIT], 'text')
 
-  const productName = text.title.inline || `${model.Name} API`
+  const productName = fact(model.main[KIT], 'apiName').inline
+
+  const kind = fact(model.main[KIT], 'definitionKind')
+  const definition = definitionName(kind)
+  const definitionFull = definitionName(kind, true)
 
   const tagline = text.tagline.inline
-    || `${productName} client, generated from the OpenAPI spec.`
+    || `${productName} client, generated from the ${definition}.`
 
   const aboutMd = text.about_md.text
 
@@ -808,21 +812,7 @@ const ReadmeTop = cmp(function ReadmeTop(props: any) {
   const hasMcp = 0 < mcpTargets.length
 
 
-  const docsOrder: string[] = (getModelPath(model, `main.${KIT}.config.docs_order`,
-    { only_active: false, required: false }) as any) || []
-
-  const orderOf = (t: any): number => {
-    const i = docsOrder.indexOf(originName(model, t.name))
-    if (i !== -1) return i
-    const surface = surfaceOf(t)
-    if ('cli' === surface) return docsOrder.length + 1
-    if ('mcp' === surface) return docsOrder.length + 2
-    return docsOrder.length
-  }
-
-  const ordered = activeTargets
-    .slice()
-    .sort((a: any, b: any) => orderOf(a) - orderOf(b))
+  const ordered = documentOrder(model, activeTargets)
 
   const isCliOrMcp = (t: any) => ['cli', 'mcp'].includes(surfaceOf(t))
 
@@ -833,11 +823,9 @@ const ReadmeTop = cmp(function ReadmeTop(props: any) {
 
   const docTargets = ordered.filter((t: any) => !isCliOrMcp(t))
 
-  const pkgTargets = activeTargets
-    .filter((t: any) => hasPackageName(model, t.name))
-    .sort((a: any, b: any) => orderOf(a) - orderOf(b))
+  const pkgTargets = ordered.filter((t: any) => hasPackageName(model, t.name))
 
-  const langList = sdkTargets.map((t: any) => t.title).join(', ')
+  const langList = sdkTargets.map((t: any) => fact(t, 'title')).join(', ')
   const leadTarget = pickLeadTarget(sdkTargets)
 
   const s = {
@@ -847,6 +835,8 @@ const ReadmeTop = cmp(function ReadmeTop(props: any) {
     def,
     text,
     productName,
+    definition,
+    definitionFull,
     tagline,
     aboutMd,
     apiSummary,

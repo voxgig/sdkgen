@@ -24,6 +24,7 @@ const facts_1 = require("../helpers/facts");
 const featureSource_1 = require("../helpers/featureSource");
 const copymerge_1 = require("../helpers/copymerge");
 const packageMeta_1 = require("../helpers/packageMeta");
+const text_1 = require("../helpers/text");
 const jostraca_1 = require("jostraca");
 const types_1 = require("../types");
 const LANG_CMD = {
@@ -253,12 +254,12 @@ deps live in \`.sdk/model/target/<lang>.aontu\`; features in
 \`.sdk/model/feature/<name>.aontu\`.
 `;
 }
-function aontuSection() {
+function aontuSection(model) {
     return `## The model language (aontu, \`.aontu\` files)
 
 The model is one structured object assembled by **aontu** (a unification
 engine) from three sources: the API model (entities/operations, from the
-OpenAPI spec via \`@voxgig/apidef\`), the base schema, and the target/feature
+${(0, text_1.definitionName)((0, facts_1.fact)(model.main[types_1.KIT], 'definitionKind'))} via \`@voxgig/apidef\`), the base schema, and the target/feature
 definitions in \`.sdk/model/\`. An \`.aontu\` file is a relaxed JSON (jsonic
 syntax) with unification semantics:
 

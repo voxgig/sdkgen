@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.definitionKind = definitionKind;
 exports.pointIsGraphql = pointIsGraphql;
 exports.pointGraphql = pointGraphql;
 exports.ownPointFirst = ownPointFirst;
@@ -9,6 +10,22 @@ const jostraca_1 = require("jostraca");
 const apidef_1 = require("@voxgig/apidef");
 function pointIsGraphql(point) {
     return 'graphql' === point?.k;
+}
+// What the model was built from, as its active entities' points agree: '' when
+// they do not, or there are none.
+function definitionKind(model) {
+    const kinds = new Set();
+    for (const ent of Object.values(model?.main?.[apidef_1.KIT]?.entity || {})) {
+        if (false === ent?.active) {
+            continue;
+        }
+        for (const op of Object.values(ent?.op || {})) {
+            for (const point of Object.values(op?.points || {})) {
+                kinds.add(pointIsGraphql(point) ? 'graphql' : 'openapi');
+            }
+        }
+    }
+    return 1 === kinds.size ? [...kinds][0] : '';
 }
 // A list's own field is the entity's plural (`teams`), any other op's the singular.
 function ownField(point, entityName, opname) {

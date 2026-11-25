@@ -5,6 +5,7 @@ const jostraca_1 = require("jostraca");
 const component_1 = require("../helpers/component");
 const optional_1 = require("../helpers/optional");
 const facts_1 = require("../helpers/facts");
+const packageMeta_1 = require("../helpers/packageMeta");
 const AgentGuideContent_1 = require("./AgentGuideContent");
 const AgentGuideFeature_1 = require("./AgentGuideFeature");
 // Per-language agent guide. Emitted inside the ambient target folder (the Root
@@ -16,7 +17,7 @@ const AgentGuide = (0, component_1.cmp)(function AgentGuide(props) {
     const { model } = ctx$;
     const Name = (0, AgentGuideContent_1.projectName)(model);
     const lang = target.name;
-    const title = target.title || lang;
+    const title = (0, facts_1.fact)(target, 'title');
     const surface = (0, AgentGuideContent_1.langCmd)(lang, model).note;
     const features = (0, AgentGuideContent_1.activeFeatures)(model, target);
     const featuresOn = (0, AgentGuideContent_1.featuresEnabled)(target);
@@ -39,7 +40,7 @@ const AgentGuide = (0, component_1.cmp)(function AgentGuide(props) {
 ${surface
             ? surface + '\n\nGenerated from the shared model' +
                 ('' === guide ? '.' : `; see the [project guide](${guide}) for the full workflow.`)
-            : `The ${title} client for the ${Name} API. This directory is **generated** — do not edit it by hand; change the model/template/component in \`.sdk/\` and regenerate.` +
+            : `The ${title} client for the ${(0, packageMeta_1.apiName)(model)} API. This directory is **generated** — do not edit it by hand; change the model/template/component in \`.sdk/\` and regenerate.` +
                 ('' === guide ? '' : ` See the [project guide](${guide}) for the full workflow and the aontu model language.`)}
 
 ${pathNote}## Regenerate this target
