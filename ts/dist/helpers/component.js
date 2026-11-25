@@ -39,11 +39,18 @@ const Jostraca = __importStar(require("jostraca"));
 // helpers/generated traces a generated file to the component that produced it.
 const COMPONENT = 'cmp';
 exports.COMPONENT = COMPONENT;
-// jostraca's cmp, labelling each node it makes with the component's name.
+// The components that write one target's own files.
+const PER_TARGET = ['Main', 'Entity', 'Feature', 'Readme', 'Test', 'AgentGuide'];
+// jostraca's cmp, labelling each node it makes with the component's name. A
+// target a run override relocates writes nothing in the in-tree pass.
 const cmp = ((component) => {
     const labelled = (props, children) => {
         if (null != props?.ctx$?.node?.meta) {
             props.ctx$.node.meta[COMPONENT] = component.name;
+        }
+        if (PER_TARGET.includes(component.name) &&
+            true === props?.ctx$?.meta?.relocated?.includes(props?.target?.name)) {
+            return;
         }
         return component(props, children);
     };

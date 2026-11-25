@@ -494,13 +494,19 @@ function SdkGen(opts) {
             .map((ext) => ({ ...ext, skip: externalSkipReason(ext, fs) }));
         checkExternalFolders(external, root, fs);
         (0, facts_1.refuseRootPlan)(model, external.map((ext) => ext.name));
+        // A run override moves a target for this run only, so the committed files
+        // keep describing the declared layout: the Root keeps the target, and the
+        // components that write the target's own files skip it.
+        const declaredOut = external.filter((ext) => '' !== String(model.main[apidef_1.KIT][ext.kind]?.[ext.name]?.output?.path ?? ''));
+        const relocated = external.filter((ext) => !declaredOut.includes(ext)).map((ext) => ext.name);
+        warnStale(fs, log, root, external.filter((ext) => relocated.includes(ext.name)));
         const tree = {};
-        const jres = await jostraca.generate(jopts, keepingTree(() => Root({ model: 0 === external.length ? model : withoutExternal(model, external) }), tree));
+        const jres = await jostraca.generate({ ...jopts, meta: { ...jopts.meta, relocated } }, keepingTree(() => Root({ model: 0 === declaredOut.length ? model : withoutExternal(model, declaredOut) }), tree));
         (0, util_2.showChanges)(jopts.log, 'generate-result', jres, node_path_1.default.dirname(process.cwd()));
         checkDocs(tree.root, folder);
         (0, generated_1.pruneGenerated)({
             fs, log, project: root, out: root, jres, claims: (0, generated_1.claimedFiles)(tree.root, folder),
-            dryrun: !!opts.dryrun,
+            dryrun: !!opts.dryrun, keep: relocated.map((name) => name + '/'),
         });
         // Docgen owns editions, destinations, templates, text QA and deployment.
         if (model?.main?.[apidef_1.KIT]?.doc?.active !== false && Object.values(model?.main?.[apidef_1.KIT]?.doc?.edition ?? {})
@@ -513,7 +519,7 @@ function SdkGen(opts) {
         for (const ext of external) {
             const gone = false === ext.target.output?.create && !fs.existsSync(ext.folder);
             if (null != ext.skip || gone) {
-                log.info({
+                log[ext.active ? 'warn' : 'info']({
                     point: 'generate-external-skip', target: ext.name, folder: ext.folder,
                     note: ext.skip ?? (ext.name + ' output folder disappeared after ' +
                         'preflight and output.create=false, not generated')
@@ -809,6 +815,19 @@ function externalItems(model, folder, kinds, override) {
             active: false !== t.target.active,
         }));
     });
+}
+// A target this run writes elsewhere leaves its earlier in-tree output as it was.
+function warnStale(fs, log, root, moved) {
+    for (const ext of moved) {
+        const folder = node_path_1.default.join(root, ext.name);
+        if (fs.existsSync(folder)) {
+            log.warn({
+                point: 'generate-external-stale', target: ext.name, folder,
+                note: ext.name + '/ holds an earlier in-tree generation, and this run writes ' +
+                    ext.name + ' to ' + ext.folder + ': the in-tree copy is left as it was, and is stale'
+            });
+        }
+    }
 }
 function externalSkipReason(ext, fs) {
     if (!ext.active) {

@@ -18,6 +18,7 @@ type PruneContext = {
     jres: any;
     claims?: Claims;
     dryrun: boolean;
+    keep?: string[];
 };
 declare function readGenerated(fs: any, project: string): GeneratedRecord;
 declare function claimedFiles(node: any, folder: string): Claims;
