@@ -1846,6 +1846,7 @@ main: kit: target: js: phase: feature: active: false
         'py-data installs the absent py')
       ok(out['py-data/AGENTS.md'].includes('the sibling Python SDK at `../py2`'), out['py-data/AGENTS.md'])
       ok(/pip install -e \.\.\/py2$/m.test(out['py-data/Makefile']), out['py-data/Makefile'])
+      ok(out['py-data/test/conftest.py'].includes('_here.parent / "../py2"'), out['py-data/test/conftest.py'])
     }
     finally {
       py2.remove()
