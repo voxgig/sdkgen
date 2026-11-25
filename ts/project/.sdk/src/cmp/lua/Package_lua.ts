@@ -1,4 +1,6 @@
 
+import * as Path from 'node:path'
+
 import {
   Content,
   File,
@@ -12,6 +14,7 @@ import {
   fact,
   packageVersion,
   targetFeatures,
+  readerDir,
 } from '@voxgig/sdkgen'
 
 
@@ -86,7 +89,7 @@ source = {
   -- \`make publish\` pushes when there is one, in the package's subdir.
   url = "git+${repoUrl}.git",${'' === tag ? '' : `
   tag = "${tag}${rockVersion}",`}
-  dir = "${repo}/lua"
+  dir = "${Path.posix.join(repo, readerDir(target))}"
 }
 description = {
   summary = ${luaString(pkgDescription(model, target.name))},

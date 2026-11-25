@@ -995,7 +995,7 @@ src/cmp/lua/Entity_lua.ts 480ffabdb329
 src/cmp/lua/Gitignore_lua.ts ddf4d3003936
 src/cmp/lua/MainEntity_lua.ts 5dcd807504e4
 src/cmp/lua/Main_lua.ts 027add4c78d9
-src/cmp/lua/Package_lua.ts 91a0b781bab1
+src/cmp/lua/Package_lua.ts d25412b412a6
 src/cmp/lua/PrepareAuth_lua.ts cc49fb94005b
 src/cmp/lua/ReadmeEntity_lua.ts 999d57a4df76
 src/cmp/lua/ReadmeExamplesTest_lua.ts 491f3286a9f4

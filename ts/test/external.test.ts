@@ -181,6 +181,14 @@ describe('external target', () => {
   })
 
 
+  test('a relocated rockspec builds from the root of its own repository', async () => {
+    const { outside } = await generate(['lua'], 'lua', "main: kit: target: lua: output: repo: 'acme/demo-lua'")
+    const spec = outside['demo.rockspec']
+    ok(spec.includes('url = "git+https://github.com/acme/demo-lua.git"'), spec)
+    ok(/^  dir = "demo-lua"$/m.test(spec), spec)
+  })
+
+
   test('a relative output path resolves against the SDK project, not the CWD',
     async () => {
       const gen = setup(['go', 'go-cli'], { 'go-cli': REL })
@@ -677,11 +685,13 @@ describe('external target', () => {
           `main: kit: target: '${t}': output: sdkrel: '../../zzproj'`)).outside
 
         deepStrictEqual(code(away), code(tree), t + ': out of tree writes other files')
-        // A target out of tree is not the tree's one npm package, and its
-        // release tag follows the tag fact.
-        const tagless = (text: string) => text.replace(/^TAG := .*$/m, 'TAG :=')
+        // A target out of tree is not the tree's one npm package, its release
+        // tag follows the tag fact, and its rockspec builds from the root of
+        // the clone.
+        const placed = (text: string) => text.replace(/^TAG := .*$/m, 'TAG :=')
+          .replace(/^  dir = ".*"$/m, '  dir =')
         const differ = code(tree).filter((path: string) =>
-          tagless(away[path].split('../../zzproj').join('..')) !== tagless(tree[path]))
+          placed(away[path].split('../../zzproj').join('..')) !== placed(tree[path]))
         deepStrictEqual(differ, [], t + ': these differ from the in-tree files by more than the path back')
         ok(code(away).some((path: string) => away[path].includes('zzproj')),
           t + ': no file names the declared path back')

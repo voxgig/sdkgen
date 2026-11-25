@@ -1093,6 +1093,16 @@ describe('generate', () => {
   })
 
 
+  // The rockspec's source dir is the target's folder in the cloned repository.
+  test('the lua rockspec finds the package where the target is placed', async () => {
+    const dir = (out: Record<string, string>, file: string) => /^\s*dir = "([^"]+)"/m.exec(out[file])?.[1]
+    strictEqual(dir(await generate(['lua']), 'lua/demo.rockspec'), 'demo-sdk/lua')
+    const root = await generate(['lua'], undefined,
+      'main: kit: phase: top: active: false\nmain: kit: target: lua: output: root: true')
+    strictEqual(dir(root, 'demo.rockspec'), 'demo-sdk')
+  })
+
+
   test('a manifest description names its target by title and by what it is', async () => {
     const expected: Record<string, string> = {
       ts: 'TypeScript SDK', js: 'JavaScript SDK', py: 'Python SDK', php: 'PHP SDK',
