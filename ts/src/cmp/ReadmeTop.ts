@@ -23,7 +23,7 @@ import { canonScalarKey } from '../helpers/canonType'
 import { safeVarName, exampleVarName, jsKey } from '../helpers/naming'
 import { modelText } from '../helpers/text'
 import { fact } from '../helpers/facts'
-import { isConsumer } from '../helpers/alongside'
+import { surfaceOf } from '../helpers/surface'
 import { copyMode, MERGE } from '../helpers/copymerge'
 
 import {
@@ -386,7 +386,8 @@ ${'' === placement ? '' : placement + '\n\n'}See the [${leadTarget.title} README
 
 
 const ReadmeTopSurfaces = cmp(function ReadmeTopSurfaces(props: any) {
-  const { hasCli, hasMcp, sdkTargets, consumerTargets, langList } = props.s
+  const { hasCli, hasMcp, cliTargets, mcpTargets, sdkTargets, consumerTargets, langList } = props.s
+  const paths = (targets: any[]) => targets.map((t: any) => `\`${t.name}/\``).join(' ')
 
   if (sdkTargets.length > 0 || hasCli || hasMcp || consumerTargets.length > 0) {
     Content(`## Surfaces
@@ -395,16 +396,15 @@ const ReadmeTopSurfaces = cmp(function ReadmeTopSurfaces(props: any) {
 | --- | --- |
 `)
     if (sdkTargets.length > 0) {
-      const paths = sdkTargets.map((t: any) => `\`${t.name}/\``).join(' ')
-      Content(`| **SDK** (${langList}) | ${paths} |
+      Content(`| **SDK** (${langList}) | ${paths(sdkTargets)} |
 `)
     }
     if (hasCli) {
-      Content(`| **CLI** | \`go-cli/\` |
+      Content(`| **CLI** | ${paths(cliTargets)} |
 `)
     }
     if (hasMcp) {
-      Content(`| **MCP server** | \`go-mcp/\` |
+      Content(`| **MCP server** | ${paths(mcpTargets)} |
 `)
     }
     consumerTargets.forEach((t: any) => {
@@ -418,12 +418,13 @@ const ReadmeTopSurfaces = cmp(function ReadmeTopSurfaces(props: any) {
 
 
 const ReadmeTopMcp = cmp(function ReadmeTopMcp(props: any) {
-  const { model, hasMcp } = props.s
+  const { model, hasMcp, mcpTargets } = props.s
 
   if (hasMcp) {
-    const mcpOps = mcpTools(model).map((tool) => tool.op)
-    const mcpWrite = true === model.main?.[KIT]?.target?.['go-mcp']?.tool?.write
-    const toggle = "`main: kit: target: 'go-mcp': tool: write: true`"
+    const mcp = mcpTargets[0].name
+    const mcpOps = mcpTools(model, mcp).map((tool) => tool.op)
+    const mcpWrite = true === mcpTargets[0].tool?.write
+    const toggle = `\`main: kit: target: '${mcp}': tool: write: true\``
     const opText = mcpOps.length < 2 ? mcpOps.join('') :
       mcpOps.slice(0, -1).join(', ') + ' and ' + mcpOps[mcpOps.length - 1]
     // What the server reads and writes is what it registers, not the flag.
@@ -445,7 +446,7 @@ The generated MCP server exposes this SDK's ${opText} operations as
 can call directly.${reads} Build and register it:
 
 \`\`\`bash
-cd go-mcp && go build -o ${model.name}-mcp .
+cd ${mcp} && go build -o ${model.name}-mcp .
 \`\`\`
 
 Then add it to your agent's MCP config (Claude Desktop, Cursor, etc.):
@@ -798,37 +799,40 @@ const ReadmeTop = cmp(function ReadmeTop(props: any) {
   const activeEntities = each(entity).filter((e: any) => e.active !== false)
   const activeTargets = each(target).filter((t: any) => t.active !== false)
 
-  const hasCli = activeTargets.some((t: any) => t.name === 'go-cli')
-  const hasMcp = activeTargets.some((t: any) => t.name === 'go-mcp')
+  const cliTargets = activeTargets.filter((t: any) => 'cli' === surfaceOf(t))
+  const mcpTargets = activeTargets.filter((t: any) => 'mcp' === surfaceOf(t))
+  const hasCli = 0 < cliTargets.length
+  const hasMcp = 0 < mcpTargets.length
 
 
   const docsOrder: string[] = (getModelPath(model, `main.${KIT}.config.docs_order`,
     { only_active: false, required: false }) as any) || []
 
-  const orderOf = (name: string): number => {
-    const i = docsOrder.indexOf(name)
+  const orderOf = (t: any): number => {
+    const i = docsOrder.indexOf(originName(model, t.name))
     if (i !== -1) return i
-    if (name === 'go-cli') return docsOrder.length + 1
-    if (name === 'go-mcp') return docsOrder.length + 2
+    const surface = surfaceOf(t)
+    if ('cli' === surface) return docsOrder.length + 1
+    if ('mcp' === surface) return docsOrder.length + 2
     return docsOrder.length
   }
 
   const ordered = activeTargets
     .slice()
-    .sort((a: any, b: any) => orderOf(a.name) - orderOf(b.name))
+    .sort((a: any, b: any) => orderOf(a) - orderOf(b))
 
-  const isCliOrMcp = (t: any) => t.name === 'go-cli' || t.name === 'go-mcp'
+  const isCliOrMcp = (t: any) => ['cli', 'mcp'].includes(surfaceOf(t))
 
-  const sdkTargets = ordered.filter((t: any) => !isConsumer(t))
+  const sdkTargets = ordered.filter((t: any) => 'sdk' === surfaceOf(t))
 
   // The CLI and the MCP server have surfaces of their own below.
-  const consumerTargets = ordered.filter((t: any) => isConsumer(t) && !isCliOrMcp(t))
+  const consumerTargets = ordered.filter((t: any) => 'sdk' !== surfaceOf(t) && !isCliOrMcp(t))
 
   const docTargets = ordered.filter((t: any) => !isCliOrMcp(t))
 
   const pkgTargets = activeTargets
     .filter((t: any) => hasPackageName(model, t.name))
-    .sort((a: any, b: any) => orderOf(a.name) - orderOf(b.name))
+    .sort((a: any, b: any) => orderOf(a) - orderOf(b))
 
   const langList = sdkTargets.map((t: any) => t.title).join(', ')
   const leadTarget = pickLeadTarget(sdkTargets)
@@ -849,6 +853,8 @@ const ReadmeTop = cmp(function ReadmeTop(props: any) {
     activeEntities,
     hasCli,
     hasMcp,
+    cliTargets,
+    mcpTargets,
     sdkTargets,
     consumerTargets,
     docTargets,

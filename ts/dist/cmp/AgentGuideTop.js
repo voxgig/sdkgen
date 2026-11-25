@@ -25,7 +25,7 @@ feature in its own directory (\`<lang>/src/feature/<name>/AGENTS.md\`)` : ''}.
 `);
 });
 const AgentGuideTopTargets = (0, component_1.cmp)(function AgentGuideTopTargets(props) {
-    const { targets } = props.s;
+    const { model, targets } = props.s;
     if (0 < targets.length) {
         (0, jostraca_1.Content)(`**Targets** (${targets.length}):
 
@@ -33,7 +33,7 @@ const AgentGuideTopTargets = (0, component_1.cmp)(function AgentGuideTopTargets(
 | --- | --- | --- |
 `);
         targets.forEach((t) => {
-            const note = (0, AgentGuideContent_1.langCmd)(t.name).note ? ' — ' + (0, AgentGuideContent_1.langCmd)(t.name).note : '';
+            const note = (0, AgentGuideContent_1.langCmd)(t.name, model).note ? ' — ' + (0, AgentGuideContent_1.langCmd)(t.name, model).note : '';
             (0, jostraca_1.Content)(`| \`${t.name}\` | \`${t.name}/\`${note} | [\`${t.name}/AGENTS.md\`](./${t.name}/AGENTS.md) |
 `);
         });

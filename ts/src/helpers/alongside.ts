@@ -1,13 +1,6 @@
 import { KIT } from '@voxgig/apidef'
 
-
-const PHASES = ['entity', 'feature', 'readme', 'agentguide', 'test']
-
-
-// A consumer (py-data) switches every phase off and has no ReadmeTop components.
-function isConsumer(target: any): boolean {
-  return PHASES.every((name: string) => false === target?.phase?.[name]?.active)
-}
+import { surfaceOf } from './surface'
 
 
 // Names only the active surfaces, so a project with go-mcp off is not promised one.
@@ -15,12 +8,11 @@ function alongsideNote(model: any, self: string): string {
   const target = model?.main?.[KIT]?.target || {}
   const others = Object.entries(target)
     .filter(([name, t]: [string, any]) => name !== self && null != t && false !== t.active)
+    .map(([, t]: [string, any]) => surfaceOf(t))
 
-  const has = (name: string) => others.some(([other]) => other === name)
-  const cli = has('go-cli')
-  const mcp = has('go-mcp')
-  const langs = others.some(([name, t]: [string, any]) =>
-    'go-cli' !== name && 'go-mcp' !== name && !isConsumer(t))
+  const cli = others.includes('cli')
+  const mcp = others.includes('mcp')
+  const langs = others.includes('sdk')
 
   const parts: string[] = []
   if (langs) parts.push('Other languages')
@@ -41,6 +33,5 @@ function alongsideNote(model: any, self: string): string {
 
 
 export {
-  isConsumer,
   alongsideNote,
 }

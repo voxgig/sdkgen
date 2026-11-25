@@ -16,7 +16,7 @@ const AgentGuide = (0, component_1.cmp)(function AgentGuide(props) {
     const Name = (0, AgentGuideContent_1.projectName)(model);
     const lang = target.name;
     const title = target.title || lang;
-    const surface = (0, AgentGuideContent_1.langCmd)(lang).note;
+    const surface = (0, AgentGuideContent_1.langCmd)(lang, model).note;
     const features = (0, AgentGuideContent_1.activeFeatures)(model, target);
     const featuresOn = (0, AgentGuideContent_1.featuresEnabled)(target);
     const dirLayout = (0, AgentGuideContent_1.isDirLayout)(target);
@@ -42,7 +42,7 @@ ${(0, AgentGuideContent_1.regenerationStatement)()}
 
 Then build and test the generated output:
 
-${(0, AgentGuideContent_1.langCommandsBlock)(lang)}
+${(0, AgentGuideContent_1.langCommandsBlock)(lang, model)}
 
 ## What generates this target
 

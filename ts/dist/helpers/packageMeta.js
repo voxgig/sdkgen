@@ -31,7 +31,8 @@ exports.packageVersion = packageVersion;
 exports.docsSiteUrl = docsSiteUrl;
 const jostraca_1 = require("jostraca");
 const apidef_1 = require("@voxgig/apidef");
-const alongside_1 = require("./alongside");
+const surface_1 = require("./surface");
+const facts_1 = require("./facts");
 const kindCollection_1 = require("./kindCollection");
 const text_1 = require("./text");
 const PUBLISHER = 'Voxgig';
@@ -169,11 +170,8 @@ function goPackageIdent(model, target) {
 }
 // A registry named `none` is no registry: c, cpp and zig declare it.
 function registryState(model, target) {
-    const eco = originName(model, target);
-    if ('go' === eco || 'go-cli' === eco || 'go-mcp' === eco)
-        return 'tag';
     const reg = model?.main?.[apidef_1.KIT]?.target?.[target]?.publish?.registry;
-    if (null == reg || '' === registryName(model, target))
+    if (null == reg || '' === registryName(model, target) || goFamily(model, target))
         return 'tag';
     if (true === reg.active)
         return 'active';
@@ -187,6 +185,13 @@ function registryState(model, target) {
 // else — pending, inactive, tag-only — installs from the git tag instead.
 function isPublished(model, target) {
     return 'active' === registryState(model, target);
+}
+// Go installs from its git tag whatever the registry, as does a target built on it.
+function goFamily(model, target) {
+    if ('go' === originName(model, target))
+        return true;
+    const wraps = (0, facts_1.fact)(model.main[apidef_1.KIT].target[target], 'consumes');
+    return '' !== wraps && 'go' === originName(model, wraps);
 }
 // The registry a target uploads to (npm | pypi | packagist | ...), or ''
 // for tag-only ports. Used in the "not yet on <registry>" pending message.
@@ -277,7 +282,7 @@ function packageName(model, eco) {
 const NAMED_CONSUMERS = ['go-cli', 'go-mcp', 'py-data'];
 function hasPackageName(model, target) {
     const declared = model?.main?.[apidef_1.KIT]?.target?.[target];
-    if (!(0, alongside_1.isConsumer)(declared)) {
+    if ('sdk' === (0, surface_1.surfaceOf)(declared)) {
         return true;
     }
     const pkg = declared?.publish?.registry?.package;

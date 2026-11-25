@@ -22,7 +22,7 @@ const T_TS = { name: 'ts', title: 'TypeScript', ext: 'ts' }
 const T_GO = { name: 'go', title: 'Go', ext: 'go', srcfeature: false }
 const T_GOCLI = { name: 'go-cli', title: 'Go CLI', ext: 'go', phase: { feature: { active: false } } }
 
-function makeModel(over: { ts?: boolean, copies?: string } = {}) {
+function makeModel(over: { ts?: boolean, copies?: string, targets?: Record<string, any> } = {}) {
   return applyFacts({
     name: 'demo', Name: 'Demo', const: { Name: 'Demo' },
     main: { kit: {
@@ -32,6 +32,7 @@ function makeModel(over: { ts?: boolean, copies?: string } = {}) {
         go: { active: true, ...T_GO },
         old: { active: false, name: 'old', title: 'Old' },
         'go-cli': { active: false, ...T_GOCLI },
+        ...over.targets,
       },
       feature: {
         log: {
@@ -307,6 +308,19 @@ describe('AgentGuide — feature phase disabled (go-cli/go-mcp)', () => {
     ok(!agents!.includes('## Features in this target'), 'no feature section when phase off')
     ok(!find(files, 'go-cli/src/feature/log/AGENTS.md'), 'no per-feature files')
     ok(!find(files, 'go-cli/feature/log/AGENTS.md'), 'no per-feature files')
+  })
+
+  test('an alias of go-cli reads go-cli\'s row', async () => {
+    const model = makeModel({ targets: { cli: { active: true, ...T_GOCLI, name: 'cli', origname: 'go-cli' } } })
+
+    const agents = find(await render(AgentGuide, { target: 'cli' }, 'cli', { model }), 'cli/AGENTS.md')!
+    ok(agents.includes('CLI surface'), 'the alias guide does not note the CLI surface')
+    ok(agents.includes('go build ./...'), 'the alias guide does not build with go')
+    ok(!agents.includes('make test'), 'the alias guide takes the default commands')
+
+    const top = find(await render(AgentGuideTop, {}, undefined, { model }), '/p/AGENTS.md')!
+    ok(top.includes('| `cli` | `cli/` — A CLI surface, not an SDK client library. |'),
+      'the root guide lost the alias\'s note')
   })
 })
 

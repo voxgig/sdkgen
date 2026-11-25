@@ -8,7 +8,7 @@ import { spawnSync } from 'node:child_process'
 import { Jostraca, Project } from 'jostraca'
 import { memfs } from 'memfs'
 
-import { Deploy } from '../dist/sdkgen.js'
+import { Deploy, applyFacts } from '../dist/sdkgen.js'
 import type { ModelTarget } from '../dist/types'
 
 
@@ -24,10 +24,12 @@ const canRunMake = 'win32' !== process.platform &&
   0 === spawnSync('/bin/bash', ['--version']).status
 
 
+// A test reuses its target objects, and the fact pass writes into each.
 async function render(target: Record<string, ModelTarget>): Promise<string> {
   const { fs, vol } = memfs({})
+  const model = applyFacts({ Name: 'Demo', main: { kit: { target: structuredClone(target) } } })
   await Jostraca().generate(
-    { fs: () => fs, folder: '/deploy', model: { Name: 'Demo', main: { kit: { target } } }, log },
+    { fs: () => fs, folder: '/deploy', model, log },
     () => Project({}, () => Deploy({})),
   )
   const files = vol.toJSON()

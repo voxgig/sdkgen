@@ -6,8 +6,8 @@ type LangCmd = {
     note?: string;
 };
 declare const LANG_CMD: Record<string, LangCmd>;
-declare function langCmd(name: string): LangCmd;
-declare function langCommandsBlock(name: string): string;
+declare function langCmd(name: string, model?: any): LangCmd;
+declare function langCommandsBlock(name: string, model?: any): string;
 declare function featuresEnabled(target: any): boolean;
 declare function isDirLayout(target: any): boolean;
 declare function featureTemplates(fs: any, target: any, features: any[]): Record<string, string>;

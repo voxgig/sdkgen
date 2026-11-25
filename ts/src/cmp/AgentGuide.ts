@@ -33,7 +33,7 @@ const AgentGuide = cmp(function AgentGuide(props: any) {
   const Name = projectName(model)
   const lang = target.name
   const title = target.title || lang
-  const surface = langCmd(lang).note
+  const surface = langCmd(lang, model).note
 
   const features = activeFeatures(model, target)
   const featuresOn = featuresEnabled(target)
@@ -61,7 +61,7 @@ ${regenerationStatement()}
 
 Then build and test the generated output:
 
-${langCommandsBlock(lang)}
+${langCommandsBlock(lang, model)}
 
 ## What generates this target
 

@@ -23,6 +23,7 @@ const applicability_1 = require("../helpers/applicability");
 const facts_1 = require("../helpers/facts");
 const featureSource_1 = require("../helpers/featureSource");
 const copymerge_1 = require("../helpers/copymerge");
+const packageMeta_1 = require("../helpers/packageMeta");
 const jostraca_1 = require("jostraca");
 const types_1 = require("../types");
 const LANG_CMD = {
@@ -42,14 +43,15 @@ const LANG_CMD = {
     },
 };
 exports.LANG_CMD = LANG_CMD;
-function langCmd(name) {
-    return LANG_CMD[name] || { viaMake: true };
+// Keyed by origin, so an alias reads its origin's row.
+function langCmd(name, model) {
+    return LANG_CMD[null == model ? name : (0, packageMeta_1.originName)(model, name)] || { viaMake: true };
 }
 // A fenced shell block of the per-target build/test commands, run **in the
 // target directory** (the per-language guide already lives there). Prefers the
 // target's Makefile recipes (`make build` / `make test`).
-function langCommandsBlock(name) {
-    const c = langCmd(name);
+function langCommandsBlock(name, model) {
+    const c = langCmd(name, model);
     const lines = [];
     if (c.install)
         lines.push(c.install);

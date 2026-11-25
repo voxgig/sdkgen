@@ -3,6 +3,7 @@ import { featureApplies } from '../helpers/applicability'
 import { fact } from '../helpers/facts'
 import { findFeatureSources } from '../helpers/featureSource'
 import { copyMode, MERGE } from '../helpers/copymerge'
+import { originName } from '../helpers/packageMeta'
 
 import { each } from 'jostraca'
 
@@ -36,16 +37,17 @@ const LANG_CMD: Record<string, LangCmd> = {
 }
 
 
-function langCmd(name: string): LangCmd {
-  return LANG_CMD[name] || { viaMake: true }
+// Keyed by origin, so an alias reads its origin's row.
+function langCmd(name: string, model?: any): LangCmd {
+  return LANG_CMD[null == model ? name : originName(model, name)] || { viaMake: true }
 }
 
 
 // A fenced shell block of the per-target build/test commands, run **in the
 // target directory** (the per-language guide already lives there). Prefers the
 // target's Makefile recipes (`make build` / `make test`).
-function langCommandsBlock(name: string): string {
-  const c = langCmd(name)
+function langCommandsBlock(name: string, model?: any): string {
+  const c = langCmd(name, model)
   const lines: string[] = []
   if (c.install) lines.push(c.install)
   if (c.viaMake) {

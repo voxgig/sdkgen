@@ -7,7 +7,7 @@ import Path from 'node:path'
 import { Jostraca, Project } from 'jostraca'
 import { memfs } from 'memfs'
 
-import { PublishWorkflow } from '../dist/sdkgen.js'
+import { PublishWorkflow, applyFacts } from '../dist/sdkgen.js'
 
 
 const noop = () => {}
@@ -17,17 +17,18 @@ const log: any = {
 }
 
 
+// A test reuses its target objects, and the fact pass writes into each.
 function makeModel(targets: any, host: string) {
-  return {
+  return applyFacts({
     name: 'demo',
     origin: 'voxgig-sdk',
     main: {
       kit: {
         repo: { host, org: 'acme', name: 'demo-sdk' },
-        target: targets,
+        target: structuredClone(targets),
       },
     },
-  }
+  })
 }
 
 
