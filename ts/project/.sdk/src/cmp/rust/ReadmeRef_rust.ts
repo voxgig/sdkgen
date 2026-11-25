@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField , targetFeatures, opNeedsAction, bodyNote, matchExampleItems, requestExampleItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField , targetFeatures, opNeedsAction, bodyNote, matchExampleItems, requestExampleItems, entityClassName, entityCollection } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -126,9 +126,9 @@ let client = test_sdk(Value::Noval, Value::Noval);
 
     // Entity factory methods
     publishedEntities.map((ent: any) => {
-      Content(`#### \`${rustMethodName(ent.name)}(entopts: Value) -> Rc<${ent.Name}Entity>\`
+      Content(`#### \`${rustMethodName(ent.name)}(entopts: Value) -> Rc<${entityClassName(ent, entityCollection(model))}>\`
 
-Create a new \`${ent.Name}Entity\` instance. Pass \`Value::Noval\` for no
+Create a new \`${entityClassName(ent, entityCollection(model))}\` instance. Pass \`Value::Noval\` for no
 initial options.
 
 `)
@@ -179,7 +179,7 @@ Prepare a fetch definition without sending. Returns the fetchdef on \`Ok\`.
       Content(`
 ---
 
-## ${ent.Name}Entity
+## ${entityClassName(ent, entityCollection(model))}
 
 `)
 
@@ -342,7 +342,7 @@ Get the entity match criteria. Pass \`Some(&map)\` to set it.
 
 #### \`make() -> Rc<dyn Entity>\`
 
-Create a new \`${ent.Name}Entity\` instance with the same options.
+Create a new \`${entityClassName(ent, entityCollection(model))}\` instance with the same options.
 
 #### \`get_name() -> String\`
 

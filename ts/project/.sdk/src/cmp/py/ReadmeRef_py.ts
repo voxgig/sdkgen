@@ -127,7 +127,7 @@ client = ${model.const.Name}SDK.test()
     publishedEntities.map((ent: any) => {
       Content(`#### \`${ent.Name}(data=None)\`
 
-Create a new \`${ent.Name}Entity\` instance. Pass \`None\` for no initial data.
+Create a new \`${entityClassName(ent, entityCollection(model))}\` instance. Pass \`None\` for no initial data.
 
 `)
     })
@@ -178,7 +178,7 @@ Prepare a fetch definition without sending. Returns the \`fetchdef\` and raises 
       Content(`
 ---
 
-## ${ent.Name}Entity
+## ${entityClassName(ent, entityCollection(model))}
 
 `)
 
@@ -359,7 +359,7 @@ Set the entity match criteria.
 
 #### \`make() -> Entity\`
 
-Create a new \`${ent.Name}Entity\` instance with the same options.
+Create a new \`${entityClassName(ent, entityCollection(model))}\` instance with the same options.
 
 #### \`get_name() -> str\`
 

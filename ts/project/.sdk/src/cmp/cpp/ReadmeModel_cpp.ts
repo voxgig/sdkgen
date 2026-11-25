@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, entityClassName, entityCollection } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -79,7 +79,7 @@ also provided.
   each(entityList, (ent: any) => {
     const acc = cppVarName(ent.name)
     const article = /^[aeiou]/i.test(ent.Name) ? 'an' : 'a'
-    Content(`| \`${acc}\` | \`(entopts) -> std::shared_ptr<${ent.Name}Entity>\` | Create ${article} ${ent.Name} entity instance. |
+    Content(`| \`${acc}\` | \`(entopts) -> std::shared_ptr<${entityClassName(ent, entityCollection(model))}>\` | Create ${article} ${ent.Name} entity instance. |
 `)
   })
 

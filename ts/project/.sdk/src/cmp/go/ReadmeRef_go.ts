@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField, entityOps, targetFeatures, bodyNote, listMatchArg, matchExampleItems, litString, requestExampleItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField, entityOps, targetFeatures, bodyNote, listMatchArg, matchExampleItems, litString, requestExampleItems, entityClassName, entityCollection } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -176,7 +176,7 @@ same parameters as \`Direct()\`.
       Content(`
 ---
 
-## ${ent.Name}Entity
+## ${entityClassName(ent, entityCollection(model))}
 
 `)
 
@@ -367,7 +367,7 @@ Get or set the entity match criteria. Works the same as \`Data()\`.
 
 #### \`Make() Entity\`
 
-Create a new \`${ent.Name}Entity\` instance with the same client and
+Create a new \`${entityClassName(ent, entityCollection(model))}\` instance with the same client and
 options.
 
 #### \`Stream(action string, args map[string]any, callopts map[string]any) <-chan StreamItem\`

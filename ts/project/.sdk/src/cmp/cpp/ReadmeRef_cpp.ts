@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField , targetFeatures, opNeedsAction, bodyNote, matchExampleItems, requestExampleItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField , targetFeatures, opNeedsAction, bodyNote, matchExampleItems, requestExampleItems, entityClassName, entityCollection } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -132,9 +132,9 @@ auto client = ${model.const.Name}SDK::testSDK();
     // Entity factory methods
     publishedEntities.map((ent: any) => {
       const acc = cppVarName(ent.name)
-      Content(`#### \`${acc}(entopts = Value::undef()) -> std::shared_ptr<${ent.Name}Entity>\`
+      Content(`#### \`${acc}(entopts = Value::undef()) -> std::shared_ptr<${entityClassName(ent, entityCollection(model))}>\`
 
-Create a new \`${ent.Name}Entity\` instance bound to this client.
+Create a new \`${entityClassName(ent, entityCollection(model))}\` instance bound to this client.
 
 `)
     })
@@ -183,7 +183,7 @@ Prepare a fetch definition without sending. Returns the \`fetchdef\` and throws 
       Content(`
 ---
 
-## ${ent.Name}Entity
+## ${entityClassName(ent, entityCollection(model))}
 
 `)
 
@@ -346,7 +346,7 @@ Get the entity match criteria (no argument) or set it (with a map argument).
 
 #### \`make() -> EntityPtr\`
 
-Create a new \`${ent.Name}Entity\` instance with the same options.
+Create a new \`${entityClassName(ent, entityCollection(model))}\` instance with the same options.
 
 #### \`getName() -> std::string\`
 

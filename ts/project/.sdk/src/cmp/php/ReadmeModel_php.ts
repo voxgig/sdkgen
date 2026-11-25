@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, entityClassName, entityCollection } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -9,6 +9,9 @@ import {
 
 const ReadmeModel = cmp(function ReadmeModel(props: any) {
   const { target, ctx$: { model } } = props
+
+  // PHP class names ignore case, so Entity_php folds case when it names one.
+  const className = (ent: any): string => entityClassName(ent, entityCollection(model), true)
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
   const entityList = each(entity).filter((e: any) => e.active !== false)
@@ -73,7 +76,7 @@ Creates a test-mode client with mock transport. Both arguments may be \`null\`.
 
   each(entityList, (ent: any) => {
     const article = /^[aeiou]/i.test(ent.Name) ? 'an' : 'a'
-    Content(`| \`${ent.Name}\` | \`($data): ${ent.Name}Entity\` | Create ${article} ${ent.Name} entity instance. |
+    Content(`| \`${ent.Name}\` | \`($data): ${className(ent)}\` | Create ${article} ${ent.Name} entity instance. |
 `)
   })
 

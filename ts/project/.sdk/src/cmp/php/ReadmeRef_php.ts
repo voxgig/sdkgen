@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, phpEntityAccessor, targetFeatures, opNeedsAction, bodyNote, listMatchArg, matchExampleItems, litString, requestExampleItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, phpEntityAccessor, targetFeatures, opNeedsAction, bodyNote, listMatchArg, matchExampleItems, litString, requestExampleItems, entityClassName, entityCollection } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -59,6 +59,9 @@ const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string
 const ReadmeRef = cmp(function ReadmeRef(props: any) {
   const { target } = props
   const { model } = props.ctx$
+
+  // PHP class names ignore case, so Entity_php folds case when it names one.
+  const className = (ent: any): string => entityClassName(ent, entityCollection(model), true)
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
   const feature = targetFeatures(model, target)
@@ -128,7 +131,7 @@ $client = ${model.const.Name}SDK::test();
     publishedEntities.map((ent: any) => {
       Content(`#### \`${ent.Name}($data = null)\`
 
-Create a new \`${ent.Name}Entity\` instance. Pass \`null\` for no initial data.
+Create a new \`${className(ent)}\` instance. Pass \`null\` for no initial data.
 
 `)
     })
@@ -182,7 +185,7 @@ Prepare a fetch definition without sending the request. Returns the
       Content(`
 ---
 
-## ${ent.Name}Entity
+## ${className(ent)}
 
 `)
 
@@ -357,9 +360,9 @@ Get the entity match criteria.
 
 Set the entity match criteria.
 
-#### \`make(): ${ent.Name}Entity\`
+#### \`make(): ${className(ent)}\`
 
-Create a new \`${ent.Name}Entity\` instance with the same client and
+Create a new \`${className(ent)}\` instance with the same client and
 options.
 
 #### \`get_name(): string\`

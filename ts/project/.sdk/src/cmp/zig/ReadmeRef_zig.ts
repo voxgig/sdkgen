@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonKey, canonScalarKey, File, isAuthActive, entityIdField , targetFeatures, opNeedsAction, bodyNote, matchExampleItems, requestExampleItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonKey, canonScalarKey, File, isAuthActive, entityIdField , targetFeatures, opNeedsAction, bodyNote, matchExampleItems, requestExampleItems, entityClassName, entityCollection } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -134,9 +134,9 @@ const client = sdk.test_sdk(h.vnull(), h.vnull());
 
     // Entity factory methods
     publishedEntities.map((ent: any) => {
-      Content(`#### \`${zigVarName(ent.name)}(entopts: Value) *${ent.Name}Entity\`
+      Content(`#### \`${zigVarName(ent.name)}(entopts: Value) *${entityClassName(ent, entityCollection(model))}\`
 
-Create a new \`${ent.Name}Entity\` instance. Pass \`h.vnull()\` for no
+Create a new \`${entityClassName(ent, entityCollection(model))}\` instance. Pass \`h.vnull()\` for no
 initial options.
 
 `)
@@ -188,7 +188,7 @@ Prepare a fetch definition without sending. Returns the fetchdef (use
       Content(`
 ---
 
-## ${ent.Name}Entity
+## ${entityClassName(ent, entityCollection(model))}
 
 `)
 

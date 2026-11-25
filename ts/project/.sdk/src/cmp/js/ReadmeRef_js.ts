@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField, safeVarName, exampleVarName, jsKey , targetFeatures, opNeedsAction, bodyNote, listMatchArg, matchExampleItems, requestExampleItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField, safeVarName, exampleVarName, jsKey , targetFeatures, opNeedsAction, bodyNote, listMatchArg, matchExampleItems, requestExampleItems, entityClassName, entityCollection } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -131,7 +131,7 @@ Create a new \`${ent.Name}\` entity instance.
 | --- | --- | --- |
 | \`data\` | \`object\` | Initial entity data. |
 
-**Returns:** \`${ent.Name}Entity\` instance.
+**Returns:** \`${entityClassName(ent, entityCollection(model))}\` instance.
 
 `)
     })
@@ -206,7 +206,7 @@ as \`callopts.signal\`, and ends when it aborts.
       Content(`
 ---
 
-## ${ent.Name}Entity
+## ${entityClassName(ent, entityCollection(model))}
 
 `)
 
@@ -380,7 +380,7 @@ Get or set the entity match criteria. Works the same as \`data()\`.
 
 #### \`make()\`
 
-Create a new \`${ent.Name}Entity\` instance with the same client and
+Create a new \`${entityClassName(ent, entityCollection(model))}\` instance with the same client and
 options.
 
 #### \`client()\`
