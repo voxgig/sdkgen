@@ -634,7 +634,7 @@ model/feature/test.aontu c6ebe063b562
 model/sdk.aontu deb90c7d4659
 model/target/go-cli.aontu 7a1c45e58e4f
 model/target/target-index.aontu fbd86a3a35fb
-src/cmp/go-cli/Main_go-cli.ts a76fbf7fc0c2
+src/cmp/go-cli/Main_go-cli.ts 6f46d6ce9629
 src/cmp/go-cli/fragment/main.fragment.go 92f705f0fa89
 src/cmp/go-cli/fragment/words.fragment.go a382337cb162
 tm/go-cli/src/feature/README.md 2c5a3094a7ed
@@ -647,7 +647,7 @@ model/feature/test.aontu c6ebe063b562
 model/sdk.aontu deb90c7d4659
 model/target/go-mcp.aontu 1ea6f206f321
 model/target/target-index.aontu d043228b9b1a
-src/cmp/go-mcp/Main_go-mcp.ts 7f976cfefb9b
+src/cmp/go-mcp/Main_go-mcp.ts 11b2bb3b12a6
 src/cmp/go-mcp/fragment/main.fragment.go de42ea863335
 src/cmp/go-mcp/fragment/tools.fragment.go 626e299be379
 tm/go-mcp/src/feature/README.md 2c5a3094a7ed

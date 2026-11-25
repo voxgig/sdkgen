@@ -107,24 +107,19 @@ function environment(model: any): Need[] {
 function readOptions(model: any): string {
   const kit = model.main[KIT]
   const env = fact(kit, 'env')
-  const set = (key: string, val: string) => `		if opts == nil {
-			opts = map[string]any{}
-		}
-		opts[${JSON.stringify(key)}] = ${val}
-`
+  const set = (key: string, val: string) =>
+    `\t\tif opts == nil {\n\t\t\topts = map[string]any{}\n\t\t}\n\t\topts[${JSON.stringify(key)}] = ${val}\n`
   const servers = (fact(kit, 'server') as any[]).filter((v: any) => v.required)
-  return (fact(kit, 'auth').secret ? `	if secret := os.Getenv(${JSON.stringify(env.secret)}); secret != "" {
-${set('secret', 'secret')}	}
-` : '') + (0 === servers.length ? '' : `	server := map[string]any{}
-	for name, key := range map[string]string{${servers.map((v: any) =>
-    JSON.stringify(v.name) + ': ' + JSON.stringify(env.server[v.name])).join(', ')}} {
-		if val := os.Getenv(key); val != "" {
-			server[name] = val
-		}
-	}
-	if 0 < len(server) {
-${set('server', 'server')}	}
-`)
+  const secret = !fact(kit, 'auth').secret ? '' :
+    `\tif secret := os.Getenv(${JSON.stringify(env.secret)}); secret != "" {\n` +
+    set('secret', 'secret') + '\t}\n'
+  const vars = 0 === servers.length ? '' :
+    '\tserverVars := map[string]any{}\n' +
+    `\tfor name, key := range map[string]string{${servers.map((v: any) =>
+      JSON.stringify(v.name) + ': ' + JSON.stringify(env.server[v.name])).join(', ')}} {\n` +
+    '\t\tif val := os.Getenv(key); val != "" {\n\t\t\tserverVars[name] = val\n\t\t}\n\t}\n' +
+    '\tif 0 < len(serverVars) {\n' + set('server', 'serverVars') + '\t}\n'
+  return secret + vars
 }
 
 

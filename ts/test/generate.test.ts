@@ -6454,7 +6454,7 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
       ok(!/DEMO_SERVER_REGION/.test(readme + main), target + ': asks for the defaulted region')
       ok(/os\.Getenv\("DEMO_SECRET"\)/.test(main) && /opts\["secret"\] = secret/.test(main),
         target + ': main.go does not read the secret')
-      ok(/"tenant": "DEMO_SERVER_TENANT"/.test(main) && /opts\["server"\] = server/.test(main),
+      ok(/"tenant": "DEMO_SERVER_TENANT"/.test(main) && /opts\["server"\] = serverVars/.test(main),
         target + ': main.go does not read the server variable')
     }
     ok(/"secret": secret/.test(basic['py-data/demo_data/__init__.py']), 'py-data data() drops the secret')
