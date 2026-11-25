@@ -6326,6 +6326,37 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
   })
 
 
+  // The binaries print and read what the model has: the fixture's API has no
+  // auth, and only planet updates.
+  test('go-cli, go-mcp: the binaries say and read only what the model has', async () => {
+    const off = await generate(['go', 'go-cli', 'go-mcp'], undefined,
+      'main: kit: entity: planet: op: update: active: false')
+    for (const target of ['go-cli', 'go-mcp']) {
+      ok(!/APIKEY/.test(off[target + '/main.go']), target + ': main.go reads a key without auth')
+    }
+    ok(off['go-cli/main.go'].startsWith('// Command demo-cli is a CLI'), off['go-cli/main.go'].split('\n')[0])
+    for (const file of ['go-cli/main.go', 'go-cli/words.go']) {
+      ok(!/update/.test(off[file]), file + ' offers update, which no entity has')
+    }
+    ok(/range \[\]string\{"list", "load"\}/.test(off['go-cli/words.go']), 'go-cli: the registered words')
+    const tools = off['go-mcp/tools.go']
+    ok(!/\{\\"id\\":1\}|first page/.test(tools), 'go-mcp: a tool says {"id":1} or first page:\n' + tools)
+
+    const basic = await generate(['go', 'go-cli', 'go-mcp'], undefined, BASIC_TEMPLATED, undefined,
+      ['test', 'log', 'paging'])
+    ok(basic['go-cli/main.go'].includes(
+      '"Env:      DEMO_APIKEY (api key), DEMO_SECRET (api secret), DEMO_SERVER_TENANT (tenant in the url), ' +
+      'DEMO_BASE (base url override)"'), 'go-cli: the env help line')
+    ok(basic['go-mcp/tools.go'].includes('Returns the first page of records as JSON.'),
+      'go-mcp: the list tool of an SDK with paging')
+    ok(basic['go-mcp/tools.go'].includes('match map naming the record, such as {\\"id\\":\\"example_id\\"}') ||
+      basic['go-mcp/tools.go'].includes('match map naming the record by its identifying fields'), 'go-mcp: load help')
+
+    const nested = await generate(['go', 'go-mcp'], undefined, ROUTING_MODEL)
+    ok(nested['go-mcp/tools.go'].includes('moon needs one naming the parent'), 'go-mcp: the nested list')
+  })
+
+
   // planet alone writes in the fixture; with its writes off the API has none.
   test('consumers name a write only where the API has one', async () => {
     const readonly = await generate(['go', 'go-mcp', 'py', 'py-data'], undefined,
@@ -6409,7 +6440,7 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
     const out = await generate(['go', 'go-mcp'], undefined, ROUTING_MODEL + off)
     const readme = findFile(out, 'go-mcp/README.md')
     ok(null != readme, 'go-mcp: no README generated')
-    const listed = readme!.match(/_list: first page of records\n\{ "entity": "(\w+)" \}/)?.[1]
+    const listed = readme!.match(/_list: records\n\{ "entity": "(\w+)" \}/)?.[1]
     ok('utility' === listed,
       'go-mcp: the list example names ' + listed + ', not utility, the first entity a plain list runs on')
   })
@@ -6563,7 +6594,7 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
     const out = await generate(['go', 'go-mcp'], undefined,
       ROUTING_MODEL + off + "main: kit: target: 'go-mcp': tool: write: true")
     const readme = findFile(out, 'go-mcp/README.md')!
-    const list = JSON.parse(readme.match(/_list: first page of records\n(\{.*\})/)![1])
+    const list = JSON.parse(readme.match(/_list: records\n(\{.*\})/)![1])
     strictEqual(list.entity, 'moon')
     ok(null != list.query?.planet_id, 'go-mcp: the moon list example omits its planet')
     const update = JSON.parse(readme.match(/_update: change a record's fields\n(\{.*\})/)![1])

@@ -634,9 +634,9 @@ model/feature/test.aontu c6ebe063b562
 model/sdk.aontu deb90c7d4659
 model/target/go-cli.aontu 7a1c45e58e4f
 model/target/target-index.aontu fbd86a3a35fb
-src/cmp/go-cli/Main_go-cli.ts 6f46d6ce9629
-src/cmp/go-cli/fragment/main.fragment.go 92f705f0fa89
-src/cmp/go-cli/fragment/words.fragment.go a382337cb162
+src/cmp/go-cli/Main_go-cli.ts 0bcd366d2ee2
+src/cmp/go-cli/fragment/main.fragment.go d67e7b95a99b
+src/cmp/go-cli/fragment/words.fragment.go 27fae356f93f
 tm/go-cli/src/feature/README.md 2c5a3094a7ed
 tm/go-cli/src/feature/base/.gitkeep e3b0c44298fc
 tm/go-cli/src/feature/test/.gitkeep e3b0c44298fc
@@ -647,8 +647,8 @@ model/feature/test.aontu c6ebe063b562
 model/sdk.aontu deb90c7d4659
 model/target/go-mcp.aontu 1ea6f206f321
 model/target/target-index.aontu d043228b9b1a
-src/cmp/go-mcp/Main_go-mcp.ts 11b2bb3b12a6
-src/cmp/go-mcp/fragment/main.fragment.go de42ea863335
+src/cmp/go-mcp/Main_go-mcp.ts f1813c267f8d
+src/cmp/go-mcp/fragment/main.fragment.go 85f4ac8f3012
 src/cmp/go-mcp/fragment/tools.fragment.go 626e299be379
 tm/go-mcp/src/feature/README.md 2c5a3094a7ed
 tm/go-mcp/src/feature/base/.gitkeep e3b0c44298fc

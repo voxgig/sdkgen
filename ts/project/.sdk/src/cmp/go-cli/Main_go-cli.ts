@@ -80,7 +80,7 @@ function phrase(items: string[]): string {
 }
 
 
-type Need = { kind: string, name: string, value: string, note: string, row: string }
+type Need = { kind: string, name: string, value: string, note: string, row: string, help: string }
 
 // What a run reads from the environment beyond the base URL: the credential
 // and each server variable the API requires, with an example value each.
@@ -90,26 +90,30 @@ function environment(model: any): Need[] {
   const env = fact(kit, 'env')
   return [
     ...(auth.apikey ? [{ kind: 'apikey', name: env.apikey, value: 'apikey_xxx', note: 'API key',
-      row: 'API key sent with every request.' }] : []),
+      row: 'API key sent with every request.', help: 'api key' }] : []),
     ...(auth.secret ? [{ kind: 'secret', name: env.secret, value: 'secret_xxx', note: 'API secret',
-      row: 'Secret sent with the API key, as HTTP Basic credentials.' }] : []),
+      row: 'Secret sent with the API key, as HTTP Basic credentials.', help: 'api secret' }] : []),
     ...(fact(kit, 'server') as any[]).filter((v: any) => v.required).map((v: any) => ({
       kind: 'server', name: env.server[v.name],
       value: 'your-' + v.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
       note: `the ${v.name} of the API URL`,
       row: `The \`${v.name}\` variable of the API's server URL, which has no default.`,
+      help: `${v.name} in the url`,
     })),
   ]
 }
 
 
-// Go that reads the secret and the server variables into the SDK options.
+// Go that reads the credential and the server variables into the SDK options.
 function readOptions(model: any): string {
   const kit = model.main[KIT]
   const env = fact(kit, 'env')
   const set = (key: string, val: string) =>
     `\t\tif opts == nil {\n\t\t\topts = map[string]any{}\n\t\t}\n\t\topts[${JSON.stringify(key)}] = ${val}\n`
   const servers = (fact(kit, 'server') as any[]).filter((v: any) => v.required)
+  const apikey = !fact(kit, 'auth').apikey ? '' :
+    `\tif apikey := os.Getenv(${JSON.stringify(env.apikey)}); apikey != "" {\n` +
+    `\t\topts = map[string]any{"apikey": apikey}\n\t}\n`
   const secret = !fact(kit, 'auth').secret ? '' :
     `\tif secret := os.Getenv(${JSON.stringify(env.secret)}); secret != "" {\n` +
     set('secret', 'secret') + '\t}\n'
@@ -119,7 +123,7 @@ function readOptions(model: any): string {
       JSON.stringify(v.name) + ': ' + JSON.stringify(env.server[v.name])).join(', ')}} {\n` +
     '\t\tif val := os.Getenv(key); val != "" {\n\t\t\tserverVars[name] = val\n\t\t}\n\t}\n' +
     '\tif 0 < len(serverVars) {\n' + set('server', 'serverVars') + '\t}\n'
-  return secret + vars
+  return apikey + secret + vars
 }
 
 
@@ -159,18 +163,6 @@ const Main = cmp(function Main(props: any) {
     load:   '| `load`   | `load <entity>` · `load <query> <entity>`     | A single record                |',
     update: '| `update` | `update <query> <entity>`                     | Update a record, return it     |',
   }
-  const supportedOps = new Set<string>()
-  each(entityMap, (entity: any) => {
-    if (entity && entity.active === false) return
-    const ops = (entity && entity.op) || {}
-    for (const opname of Object.keys(ops)) {
-      if (ops[opname] && ops[opname].active !== false) supportedOps.add(opname)
-    }
-  })
-  const verbRows = ['list', 'load', 'update']
-    .filter(op => supportedOps.has(op))
-    .map(op => CLI_VERB_ROWS[op])
-    .join('\n')
 
   // Concrete examples, each gated on the ops the entity it names can run
   // without an action, so no example is refused.
@@ -184,6 +176,11 @@ const Main = cmp(function Main(props: any) {
   const firstHas = (op: string) => hasOp(firstEntityObj, op)
   const wordsOf = (entity: any) => ['list', 'load', 'update'].filter((op) => hasOp(entity, op))
   const wordless = activeEntityObjs.filter((ent: any) => 0 === wordsOf(ent).length)
+  // The words the binary registers: those an active entity runs.
+  const words = ['list', 'load', 'update'].filter((op) => activeEntityObjs.some((ent: any) => hasOp(ent, op)))
+  const wordList = words.map((op) => '\`' + op + '\`').join(' / ')
+  const verbRows = words.map((op) => CLI_VERB_ROWS[op]).join('\n')
+  const usage = [...needs.map((need) => `${need.name} (${need.help})`), `${baseEnv} (base url override)`]
   const otherLister = activeEntityObjs.slice(1).find((e: any) => hasOp(e, 'list'))
   const entityNoun = entityCount === 1 ? 'entity' : 'entities'
   // The best single example expression this SDK can actually run, for the
@@ -305,8 +302,8 @@ make build-all   # linux/darwin/windows x amd64/arm64, under dist/<os>-<arch>/
 
   howtos.push(`### Discover the available entities
 
-\`/help\` in the REPL prints the full entity list, or see [Entities](#entities)
-below — this SDK exposes ${entityCount} ${entityNoun}.`)
+\`/help\` in the REPL lists the entities a word runs on, as [Entities](#entities)
+below does — this SDK exposes ${entityCount} ${entityNoun}.`)
 
   const howtoBlock = howtos.join('\n\n')
 
@@ -376,11 +373,12 @@ ${howtoBlock}
 
 ### Words
 
-The CLI registers these boru words, each bound to the SDK:
+${0 === words.length ? 'The CLI registers no boru words: no entity has a list, load or update.' :
+    `The CLI registers these boru words, each bound to the SDK:
 
 | Word     | Signatures                                    | Returns                        |
 |----------|-----------------------------------------------|--------------------------------|
-${verbRows}
+${verbRows}`}
 
 - \`<entity>\` is a bareword, auto-quoted as an boru atom (e.g. \`${firstEntity}\`).
 - \`<query>\` is either a **Map** naming the record, or a **Scalar**, which is
@@ -442,14 +440,17 @@ The SDK's other ${1 === wordless.length ? 'entity' : 'entities'}, ${phrase(wordl
 The whole command line is one [boru](https://github.com/boru-lang/boru) expression,
 not a fixed \`verb --flag\` grammar. That means the same binary works one-shot
 (\`./${bin} <expr>\`) and interactively (the REPL), and expressions compose the
-same way in both. \`list\` / \`load\` / \`update\` are ordinary boru *words* bound to
+same way in both. ${0 === words.length ? 'Each' : `${wordList} ${1 < words.length ? 'are' : 'is an'}`} ordinary boru *word${1 < words.length ? 's' : ''}* bound to
 the SDK — adding SDK operations is adding words, not re-parsing flags.
 
 ### How it is wired
 
 \`main.go\` builds the SDK client (configured from the environment), creates an
-boru registry, and \`words.go\` registers \`list\` / \`load\` / \`update\` as native
-words that dispatch on the entity atom and call ${goSdk}.
+boru registry, and ${0 === words.length ?
+    `\`words.go\` registers no words, as no entity has a list, load or update; the
+binary is built on ${goSdk}.` :
+    `\`words.go\` registers ${wordList} as native
+word${1 < words.length ? 's that dispatch' : ' that dispatches'} on the entity atom and call${1 < words.length ? '' : 's'} ${goSdk}.`}
 Results are unwrapped from their \`Entity\` wrappers to plain data before being
 printed.
 
@@ -525,14 +526,22 @@ clean:
         replace: {
           ...props.ctx$.stdrep,
           GOMODULE: sdkModule,
-          APIKEYENVVAR: env.apikey,
+          CLIBINNAME: bin,
+          TARGETNAME: target.name,
           BASEENVVAR: env.base,
           '/[ \\t]*\\/\\/ #Options\\n/': () => Content(readOptions(model)),
+          '/[ \\t]*\\/\\/ #UsageWords\\n/': () => Content(0 === words.length ? '' :
+            `\tfmt.Fprintln(out, "Words:    ${words.join(' / ')} <query?> <entity>")\n`),
+          '/[ \\t]*\\/\\/ #UsageEnv\\n/': () => Content(`\tfmt.Fprintln(out, "Env:      ${usage.join(', ')}")\n`),
+          '/[ \\t]*\\/\\/ #ReplWords\\n/': () => Content(0 === words.length ? '' :
+            `\t\t\tfmt.Fprintln(out, "words:    ${words.join(' / ')} <query?> <entity>")\n`),
         },
       },
       () => {
         Slot({ name: 'promptName' }, () => Content(model.name))
-        Slot({ name: 'entityNamesSpaced' }, () => Content(entityNames.join(' ')))
+        Slot({ name: 'entityNamesSpaced' }, () => Content(activeEntityObjs
+          .filter((ent: any) => !wordless.includes(ent))
+          .map((ent: any) => String(ent.name).toLowerCase()).join(' ')))
       },
     )
   })
@@ -544,6 +553,12 @@ clean:
         replace: {
           ...props.ctx$.stdrep,
           GOMODULE: sdkModule,
+          TARGETNAME: target.name,
+          CLIWORDS: words.map((op) => JSON.stringify(op)).join(', '),
+          // With no word, a case still reads ent and arg, which Go requires.
+          '/[ \\t]*\\/\\/ #WordCases\\n/': () => Content(words.map((op) =>
+            `\tcase ${JSON.stringify(op)}:\n\t\tresult, err = ent.${op.charAt(0).toUpperCase() + op.slice(1)}(arg, nil)\n`)
+            .join('') || '\tcase "":\n\t\tresult = []any{ent, arg}\n'),
         },
       },
       () => {

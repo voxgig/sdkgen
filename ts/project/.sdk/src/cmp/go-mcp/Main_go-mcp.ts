@@ -2,8 +2,8 @@
 import * as Path from 'node:path'
 
 import {
-  cmp, each, deriveEntityNames, entityIdField, mcpTools, matchArg, dataArg, idLiteral,
-  consumedTarget, fact,
+  cmp, each, deriveEntityNames, entityIdField, mcpTools, matchArg, listMatchArg, dataArg, idLiteral,
+  consumedTarget, fact, targetFeatures,
   File, Content, Fragment, Slot, goModule, goVersion, packageVersion, MCP_WRITE_OPS
 } from '@voxgig/sdkgen'
 
@@ -48,20 +48,23 @@ golang.org/x/tools v0.42.0/go.mod h1:Ma6lCIwGZvHK6XtgbswSoWroEkhugApmsXyrUmBhfr0
 `
 
 
-// What each tool takes and says. `field` is the argument the operation reads.
-const TOOL_SPEC: Record<string, {
+type ToolSpec = {
   type: string, field: string, key: string, optional: boolean, help: string,
   summary: string, verb: string, returns: string, annotations: string,
-}> = {
+}
+
+// What each tool takes and says. `field` is the argument the operation reads.
+// The list, load and remove help depends on the entities a tool serves; see specOf.
+const TOOL_SPEC: Record<string, ToolSpec> = {
   list: {
     type: 'ListArgs', field: 'Query', key: 'query', optional: true,
-    help: 'optional filter map; omit it for the first page',
-    summary: 'first page of records', verb: 'List records from',
-    returns: 'the first page of records', annotations: 'ReadOnlyHint: true',
+    help: 'optional filter map',
+    summary: 'records', verb: 'List records from',
+    returns: 'the records', annotations: 'ReadOnlyHint: true',
   },
   load: {
     type: 'LoadArgs', field: 'Query', key: 'query', optional: false,
-    help: 'match map naming the record, such as {"id":1}',
+    help: 'match map naming the record',
     summary: 'one record', verb: 'Load one record from',
     returns: 'the record', annotations: 'ReadOnlyHint: true',
   },
@@ -85,10 +88,41 @@ const TOOL_SPEC: Record<string, {
   },
   remove: {
     type: 'RemoveArgs', field: 'Query', key: 'query', optional: false,
-    help: 'match map naming the record, such as {"id":1}',
+    help: 'match map naming the record',
     summary: 'delete a record', verb: 'Remove a record from',
     returns: 'the removed record', annotations: 'DestructiveHint: hint(true)',
   },
+}
+
+
+// A tool's spec for the entities it serves: a list says which of them need a
+// parent, and the first page only when the SDK pages; a load or remove shows
+// the match its entities share, if they share one.
+function specOf(tool: McpTool, paging: boolean): ToolSpec {
+  const spec = { ...TOOL_SPEC[tool.op] }
+  const names = entityNames(tool)
+  if ('list' === tool.op) {
+    const parented = tool.entities.filter((ent: any) => '{}' !== listMatchArg('json', ent))
+      .map((ent: any) => String(ent.name).toLowerCase())
+    const rest = paging ? 'omit it for the first page' : 'omit it to list without a filter'
+    spec.optional = parented.length < names.length
+    spec.help = 0 === parented.length ? 'optional filter map; ' + rest :
+      !spec.optional ? 'filter map naming the parent the records are listed under' :
+        'filter map; ' + phrase(parented) + (1 < parented.length ? ' need' : ' needs') +
+        ' one naming the parent, and for the others ' + rest
+    spec.summary = paging ? 'first page of records' : 'records'
+    spec.returns = paging ? 'the first page of records' : 'the records'
+  }
+  else if ('load' === tool.op || 'remove' === tool.op) {
+    const matches = [...new Set(tool.entities.map((ent: any) => {
+      const idF = entityIdField(ent)
+      return JSON.stringify(JSON.parse(matchArg('json', ent, tool.op, idF, idLiteral(ent, tool.op, idF))))
+    }))]
+    spec.help = 1 !== matches.length ? spec.help + ' by its identifying fields' :
+      '{}' === matches[0] ? 'empty match map, as the record needs no naming' :
+        spec.help + ', such as ' + matches[0]
+  }
+  return spec
 }
 
 
@@ -123,7 +157,7 @@ function tagText(text: string): string {
 }
 
 
-type Need = { kind: string, name: string, value: string, note: string, row: string }
+type Need = { kind: string, name: string, value: string, note: string, row: string, help: string }
 
 // What a run reads from the environment beyond the base URL: the credential
 // and each server variable the API requires, with an example value each.
@@ -133,26 +167,30 @@ function environment(model: any): Need[] {
   const env = fact(kit, 'env')
   return [
     ...(auth.apikey ? [{ kind: 'apikey', name: env.apikey, value: 'apikey_xxx', note: 'API key',
-      row: 'API key sent with every request.' }] : []),
+      row: 'API key sent with every request.', help: 'api key' }] : []),
     ...(auth.secret ? [{ kind: 'secret', name: env.secret, value: 'secret_xxx', note: 'API secret',
-      row: 'Secret sent with the API key, as HTTP Basic credentials.' }] : []),
+      row: 'Secret sent with the API key, as HTTP Basic credentials.', help: 'api secret' }] : []),
     ...(fact(kit, 'server') as any[]).filter((v: any) => v.required).map((v: any) => ({
       kind: 'server', name: env.server[v.name],
       value: 'your-' + v.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
       note: `the ${v.name} of the API URL`,
       row: `The \`${v.name}\` variable of the API's server URL, which has no default.`,
+      help: `${v.name} in the url`,
     })),
   ]
 }
 
 
-// Go that reads the secret and the server variables into the SDK options.
+// Go that reads the credential and the server variables into the SDK options.
 function readOptions(model: any): string {
   const kit = model.main[KIT]
   const env = fact(kit, 'env')
   const set = (key: string, val: string) =>
     `\t\tif opts == nil {\n\t\t\topts = map[string]any{}\n\t\t}\n\t\topts[${JSON.stringify(key)}] = ${val}\n`
   const servers = (fact(kit, 'server') as any[]).filter((v: any) => v.required)
+  const apikey = !fact(kit, 'auth').apikey ? '' :
+    `\tif apikey := os.Getenv(${JSON.stringify(env.apikey)}); apikey != "" {\n` +
+    `\t\topts = map[string]any{"apikey": apikey}\n\t}\n`
   const secret = !fact(kit, 'auth').secret ? '' :
     `\tif secret := os.Getenv(${JSON.stringify(env.secret)}); secret != "" {\n` +
     set('secret', 'secret') + '\t}\n'
@@ -162,7 +200,7 @@ function readOptions(model: any): string {
       JSON.stringify(v.name) + ': ' + JSON.stringify(env.server[v.name])).join(', ')}} {\n` +
     '\t\tif val := os.Getenv(key); val != "" {\n\t\t\tserverVars[name] = val\n\t\t}\n\t}\n' +
     '\tif 0 < len(serverVars) {\n' + set('server', 'serverVars') + '\t}\n'
-  return secret + vars
+  return apikey + secret + vars
 }
 
 
@@ -185,6 +223,7 @@ const Main = cmp(function Main(props: any) {
   const slugLower = model.name.toLowerCase()
   const tools = mcpTools(model, target.name)
   const write = true === target.tool?.write
+  const paging = null != targetFeatures(model, sdk.name).paging
 
   const FRAGMENT = Path.normalize(__dirname + '/../../../src/cmp/go-mcp/fragment')
 
@@ -247,10 +286,10 @@ main: kit: target: '${target.name}': tool: write: ${write ? 'false' : 'true'}
   const exportLines = exports.map(([line, note]) => line.padEnd(width) + ' # ' + note).join('\n')
 
   const exampleCalls = tools.map((tool) =>
-    `// ${tool.name}: ${TOOL_SPEC[tool.op].summary}\n${toolExample(tool)}`).join('\n\n')
+    `// ${tool.name}: ${specOf(tool, paging).summary}\n${toolExample(tool)}`).join('\n\n')
 
   const howtoCalls = tools.map((tool) => {
-    const spec = TOOL_SPEC[tool.op]
+    const spec = specOf(tool, paging)
     return `### Call the \`${tool.name}\` tool
 
 Args: \`entity\` (required), \`${spec.key}\` (${spec.optional ? 'optional' : 'required'}: ${spec.help}).
@@ -263,7 +302,7 @@ ${toolExample(tool)}
   }).join('\n')
 
   const toolRows = tools.map((tool) => {
-    const spec = TOOL_SPEC[tool.op]
+    const spec = specOf(tool, paging)
     const hints = 'ReadOnlyHint: true' === spec.annotations ? 'read-only' :
       'DestructiveHint: hint(false)' === spec.annotations ? 'additive' : 'destructive'
     return `| \`${tool.name}\` | \`entity\`, \`${spec.key}\` (${spec.optional ? 'optional' : 'required'} map) | ${spec.returns.charAt(0).toUpperCase() + spec.returns.slice(1)} as JSON | ${hints} |`
@@ -534,7 +573,6 @@ clean:
         replace: {
           ...props.ctx$.stdrep,
           GOMODULE: sdkModule,
-          APIKEYENVVAR: env.apikey,
           BASEENVVAR: env.base,
           '/[ \\t]*\\/\\/ #Options\\n/': () => Content(readOptions(model)),
         },
@@ -558,7 +596,7 @@ clean:
       },
       () => {
         Slot({ name: 'toolArgs' }, () => Content(tools.map((tool) => {
-          const spec = TOOL_SPEC[tool.op]
+          const spec = specOf(tool, paging)
           const json = spec.key + (spec.optional ? ',omitempty' : '')
           return `// ${spec.type} is what an agent sends to ${tool.name}.
 type ${spec.type} struct {
@@ -567,7 +605,7 @@ type ${spec.type} struct {
 }`
         }).join('\n\n')))
         Slot({ name: 'toolRegistrations' }, () => Content(tools.map((tool) => {
-          const spec = TOOL_SPEC[tool.op]
+          const spec = specOf(tool, paging)
           return `	mcp.AddTool(server, &mcp.Tool{
 		Name:        ${JSON.stringify(tool.name)},
 		Description: ${JSON.stringify(spec.verb + ' ' + model.Name + '. Args: entity, ' + spec.key + ' (' + spec.help + '). Returns ' + spec.returns + ' as JSON.')},
