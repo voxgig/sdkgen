@@ -61,13 +61,14 @@ function render(
   return `// The canary sweep: every credential slot holds a distinctive value, every
 // diagnostic feature this SDK ships is switched on with a capturing sink, a
 // real operation runs through every outcome, and every string that leaves
-// the SDK is searched for the canaries and their encoded forms. It also
-// proves its own sensitivity: with clean switched off the canary MUST show.
+// the SDK is searched for the canaries and their encoded forms; a second
+// sweep does the same for a body of bytes. With clean off the canary MUST show.
 
 using System.Collections;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 
 using Voxgig.Struct;
 using Xunit;
@@ -115,11 +116,25 @@ public class CleanTest
         return forms;
     }
 
+    // The marker a body of bytes carries.
+    private const string Content = "CANARY-CONTENT-b7n3v9x1c5";
+    private static readonly byte[] ContentBytes = Encoding.ASCII.GetBytes(Content);
+
+    // Every value this SDK accepts as a raw body.
+    private static readonly (string Name, Func<object> Make)[] Carriers =
+    {
+        ("bytes", () => ContentBytes.ToArray()),
+        ("stream", () => new MemoryStream(ContentBytes.ToArray())),
+        ("string", () => Content),
+    };
+
     private sealed record Sink(string Name, string Text);
 
     private sealed record Candidate(string Name, Func<${Name}SDK, ${Name}EntityBase> Accessor, string[] Ops);
 
     private sealed record Target(Candidate Candidate, string Op, Dictionary<string, object?> Match);
+
+    private sealed record BinaryTarget(Target Target, string? Media);
 
     // Header maps keep the caller's spelling; the assertion should not care.
     private static object? Header(object? map, string name)
@@ -140,6 +155,21 @@ public class CleanTest
     private static List<string> Leaks(string text)
     {
         return Forms.Where(f => text.Contains(f)).ToList();
+    }
+
+    // The forms bytes travel in once copied: text, a list of byte values
+    // however it is separated, hex with or without dashes, base64.
+    private static List<string> ContentLeaks(string text)
+    {
+        var flat = Regex.Replace(text, @"\\s+", "");
+        var numbers = "," + string.Join(",", Regex.Matches(text, @"\\d+").Select(m => m.Value)) + ",";
+        var found = new List<string>();
+        if (text.Contains(Content)) found.Add("text");
+        if (numbers.Contains("," + string.Join(",", ContentBytes) + ",")) found.Add("byte values");
+        if (flat.Replace("-", "").Contains(Convert.ToHexString(ContentBytes),
+            StringComparison.OrdinalIgnoreCase)) found.Add("hex");
+        if (flat.Contains(Convert.ToBase64String(ContentBytes))) found.Add("base64");
+        return found;
     }
 
     private static readonly JsonSerializerOptions FieldsJson = new()
@@ -565,6 +595,98 @@ ${candidateLines}
 
     private const string NoOp = "no operation of this SDK completes against a plain 200; nothing to sweep";
 
+    // The first operation with a point that sends a raw body the model marks
+    // binary, with every path parameter of that point filled in.
+    private static BinaryTarget? BinaryOp()
+    {
+        var plain = Construct(new Dictionary<string, object?> { ["apikey"] = CanaryApikey });
+        foreach (var candidate in Candidates)
+        {
+            foreach (var op in candidate.Ops.OrderBy(o => o, StringComparer.Ordinal))
+            {
+                var points = StructUtils.GetPath(plain.GetRootCtx().Config,
+                    StructUtils.Jt("entity", candidate.Name, "op", op, "points")) as List<object?>;
+                foreach (var point in points ?? new List<object?>())
+                {
+                    var body = StructUtils.GetProp(point, "body");
+                    if (!"raw".Equals(StructUtils.GetProp(body, "kind")) ||
+                        StructUtils.GetProp(body, "binary") is not true)
+                    {
+                        continue;
+                    }
+                    var match = new Dictionary<string, object?>();
+                    var ps = StructUtils.GetPath(point, StructUtils.Jt("args", "params")) as List<object?>;
+                    foreach (var p in ps ?? new List<object?>())
+                    {
+                        if (StructUtils.GetProp(p, "name") is string pname)
+                        {
+                            match[pname] = "p1";
+                        }
+                    }
+                    var action = StructUtils.GetProp(StructUtils.GetProp(point, "select"), "$action");
+                    if (null != action)
+                    {
+                        match["$action"] = action;
+                    }
+                    return new BinaryTarget(new Target(candidate, op, match),
+                        StructUtils.GetProp(body, "media") as string);
+                }
+            }
+        }
+        return null;
+    }
+
+    private const string NoBinaryOp = "no operation of this SDK sends a binary body; nothing to sweep";
+
+    private static Target WithBody(Target target, object body)
+    {
+        return target with
+        {
+            Match = new Dictionary<string, object?>(target.Match) { ["$body"] = body },
+        };
+    }
+
+    private static string TextOf(object? body)
+    {
+        return body switch
+        {
+            string s => s,
+            byte[] b => Encoding.ASCII.GetString(b),
+            MemoryStream ms => Encoding.ASCII.GetString(ms.ToArray()),
+            _ => "",
+        };
+    }
+
+    // What stands where a body was: the kind, and the size and type when known.
+    private static Dictionary<string, object?> Described(string kind, long? size, string? media)
+    {
+        var desc = new Dictionary<string, object?> { ["binary$"] = kind };
+        if (null != size) desc["size"] = size;
+        if (null != media) desc["type"] = media;
+        return desc;
+    }
+
+    private static void AssertSame(Dictionary<string, object?> want, object? got, string what)
+    {
+        Assert.True(got is Dictionary<string, object?> d && d.Count == want.Count &&
+            want.All(kv => d.TryGetValue(kv.Key, out var v) && Equals(kv.Value, v)),
+            what + ": expected " + Render(want) + ", got " + Render(got));
+    }
+
+    private static readonly (string Name, Func<Dictionary<string, object?>> Ctrl)[] Variants =
+    {
+        ("throw", () => new Dictionary<string, object?>()),
+        ("explain", () => new Dictionary<string, object?>
+        {
+            ["explain"] = new Dictionary<string, object?>(),
+        }),
+        ("nothrow", () => new Dictionary<string, object?>
+        {
+            ["throw"] = false,
+            ["explain"] = new Dictionary<string, object?>(),
+        }),
+    };
+
     private static Exception? Drive(${Name}SDK sdk, Target target,
         Dictionary<string, object?> ctrl, List<Sink> sinks)
     {
@@ -618,23 +740,9 @@ ${candidateLines}
         var errors = new Dictionary<string, Exception>();
         var explains = new Dictionary<string, Dictionary<string, object?>>();
 
-        var variants = new (string Name, Func<Dictionary<string, object?>> Ctrl)[]
-        {
-            ("throw", () => new Dictionary<string, object?>()),
-            ("explain", () => new Dictionary<string, object?>
-            {
-                ["explain"] = new Dictionary<string, object?>(),
-            }),
-            ("nothrow", () => new Dictionary<string, object?>
-            {
-                ["throw"] = false,
-                ["explain"] = new Dictionary<string, object?>(),
-            }),
-        };
-
         foreach (var scenario in Scenarios)
         {
-            foreach (var variant in variants)
+            foreach (var variant in Variants)
             {
                 var sdk = MakeSdk(scenario, sinks);
                 var ctrl = variant.Ctrl();
@@ -929,6 +1037,201 @@ ${candidateLines}
             ["x-session-token"] = "RESP-TOKEN-a1b2c3d4e5",
         }) as Dictionary<string, object?>;
         Assert.Equal(Mask, masked?.GetValueOrDefault("x-session-token"));
+    }
+
+    [Fact]
+    public void NoBodyOfBytesLeavesTheSdkInAnyForm()
+    {
+        var upload = BinaryOp();
+        if (null == upload)
+        {
+            Report("clean: skipped: " + NoBinaryOp);
+            return;
+        }
+
+        var sinks = new List<Sink>();
+        var sent = new Dictionary<string, object?>();
+        var errors = new Dictionary<string, Exception>();
+        var explains = new Dictionary<string, Dictionary<string, object?>>();
+
+        foreach (var carrier in Carriers)
+        {
+            foreach (var scenario in Scenarios.Take(4))
+            {
+                foreach (var variant in Variants)
+                {
+                    var key = carrier.Name + "/" + scenario.Name + "/" + variant.Name;
+                    // The transport is where the bytes are meant to arrive, whole.
+                    var seen = new Scenario(scenario.Name, (url, fetchdef) =>
+                    {
+                        sent[key] = fetchdef.GetValueOrDefault("body");
+                        return scenario.Respond(url, fetchdef);
+                    });
+                    var sdk = MakeSdk(seen, sinks);
+                    var ctrl = variant.Ctrl();
+                    var err = Drive(sdk, WithBody(upload.Target, carrier.Make()), ctrl, sinks);
+                    if (null != err) errors[key] = err;
+                    if (ctrl.TryGetValue("explain", out var ex) && ex is Dictionary<string, object?> exm)
+                    {
+                        explains[key] = exm;
+                    }
+                    sinks.AddRange(FormsOf("sdk", sdk));
+                }
+            }
+        }
+
+        var leaked = sinks
+            .Select(s => (s.Name, Found: ContentLeaks(s.Text)))
+            .Where(s => 0 < s.Found.Count)
+            .ToList();
+
+        Report("clean: content swept " + sinks.Count + " surface(s), " + leaked.Count + " leak(s)");
+
+        Assert.True(0 == leaked.Count, "a body of bytes leaked through: " + string.Join("; ",
+            leaked.Select(l => l.Name + " [" + string.Join(", ", l.Found) + "]").Distinct()));
+
+        // The request itself is untouched: what the transport was handed is the body.
+        foreach (var carrier in Carriers)
+        {
+            var handed = sent.GetValueOrDefault(carrier.Name + "/notfound/throw");
+            Assert.True(null != handed, carrier.Name + ": the transport was not handed a body");
+            Assert.True(Content == TextOf(handed), carrier.Name + ": the transport was handed something else");
+        }
+
+        // The positive half: where the body was, what describes it now is. A
+        // stream is read before the first attempt, so its spec holds bytes.
+        var desc = Described("bytes", ContentBytes.Length, upload.Media);
+        foreach (var carrier in Carriers)
+        {
+            Assert.True(errors.TryGetValue(carrier.Name + "/notfound/throw", out var failed),
+                carrier.Name + ": the 404 scenario must throw");
+            AssertSame(desc, StructUtils.GetProp(Assert.IsType<${Name}Error>(failed).SpecVal, "body"),
+                carrier.Name + ": the thrown spec");
+            Assert.True(explains.TryGetValue(carrier.Name + "/ok/explain", out var explained),
+                carrier.Name + ": the ok scenario should explain");
+            AssertSame(desc, StructUtils.GetPath(explained, StructUtils.Jt("spec", "body")),
+                carrier.Name + ": the explain record");
+            AssertSame(desc, StructUtils.GetPath(explained, StructUtils.Jt("fetchdef", "body")),
+                carrier.Name + ": the explained fetch definition");
+        }
+    }
+
+    [Fact]
+    public void TheSweepCanSeeABodyCleanSwitchedOffShowsTheBytes()
+    {
+        var upload = BinaryOp();
+        if (null == upload)
+        {
+            Report("clean: skipped: " + NoBinaryOp);
+            return;
+        }
+
+        foreach (var carrier in Carriers)
+        {
+            var sinks = new List<Sink>();
+            var sdk = MakeSdk(Scenarios[1], sinks, new Dictionary<string, object?> { ["active"] = false });
+            var err = Drive(sdk, WithBody(upload.Target, carrier.Make()),
+                new Dictionary<string, object?>(), sinks);
+            Assert.True(null != err, carrier.Name + ": the 404 scenario must throw");
+            var leaked = sinks.Where(s => 0 < ContentLeaks(s.Text).Count).ToList();
+            Assert.True(0 < leaked.Count,
+                carrier.Name + ": with clean off, nothing showed the bytes: the sweep is blind");
+        }
+    }
+
+    // A stream that fails whatever is asked of it.
+    private sealed class UnreadableStream : Stream
+    {
+        private static Exception Touched() => new InvalidOperationException("the stream was touched");
+
+        public override bool CanRead => throw Touched();
+        public override bool CanSeek => throw Touched();
+        public override bool CanWrite => throw Touched();
+        public override long Length => throw Touched();
+        public override long Position { get => throw Touched(); set => throw Touched(); }
+        public override void Flush() => throw Touched();
+        public override int Read(byte[] buffer, int offset, int count) => throw Touched();
+        public override long Seek(long offset, SeekOrigin origin) => throw Touched();
+        public override void SetLength(long value) => throw Touched();
+        public override void Write(byte[] buffer, int offset, int count) => throw Touched();
+        public override string ToString() => throw Touched();
+    }
+
+    [Fact]
+    public void BytesAreDescribedWhereverTheySitAndAStreamIsNeverRead()
+    {
+        var sdk = Construct(new Dictionary<string, object?> { ["apikey"] = CanaryApikey });
+        var utility = sdk.GetUtility();
+        var rootctx = sdk.GetRootCtx();
+        var bytes = Described("bytes", ContentBytes.Length, null);
+
+        var live = ContentBytes.ToArray();
+        var cleaned = utility.Clean(rootctx, new Dictionary<string, object?>
+        {
+            ["held"] = new List<object?> { new Dictionary<string, object?> { ["deep"] = live } },
+            ["memory"] = new ReadOnlyMemory<byte>(live),
+            ["upload"] = new UnreadableStream(),
+            ["x-upload-token"] = ContentBytes.ToArray(),
+            ["note"] = Content,
+        });
+        AssertSame(bytes, StructUtils.GetPath(cleaned, StructUtils.Jt("held", "0", "deep")), "bytes in a list");
+        AssertSame(bytes, StructUtils.GetProp(cleaned, "memory"), "a memory of bytes");
+        AssertSame(Described("stream", null, null), StructUtils.GetProp(cleaned, "upload"), "a stream");
+        Assert.Equal(Mask, StructUtils.GetProp(cleaned, "x-upload-token"));
+        Assert.Equal(Content, StructUtils.GetProp(cleaned, "note"));
+        Assert.True(live.SequenceEqual(ContentBytes), "the live bytes were changed");
+        AssertSame(bytes, utility.Clean(rootctx, ContentBytes.ToArray()), "bytes at the top");
+        Assert.Equal(Content, utility.Clean(rootctx, Content));
+
+        var off = Construct(new Dictionary<string, object?>
+        {
+            ["clean"] = new Dictionary<string, object?> { ["active"] = false },
+        });
+        Assert.True(ReferenceEquals(live, off.GetUtility().Clean(off.GetRootCtx(), live)),
+            "with clean off the bytes are returned as they are");
+
+        // By the model: only at a point marked binary is a string body bytes.
+        object? CleanedAt(Dictionary<string, object?> declared, object body, object? given = null)
+        {
+            var ctx = utility.MakeContext(new Dictionary<string, object?>
+            {
+                ["point"] = new Dictionary<string, object?> { ["body"] = declared },
+                ["spec"] = new Spec(new Dictionary<string, object?> { ["body"] = body }),
+                ["reqdata"] = new Dictionary<string, object?> { ["$body"] = given ?? body },
+            }, rootctx);
+            return utility.Clean(ctx, new Dictionary<string, object?>
+            {
+                ["spec"] = ctx.Spec, ["reqdata"] = ctx.Reqdata,
+                ["copy"] = Content, ["x-copy-token"] = Content, ["other"] = "unrelated",
+            });
+        }
+
+        var binary = new Dictionary<string, object?>
+        {
+            ["kind"] = "raw", ["media"] = "audio/wav", ["binary"] = true,
+        };
+        var typed = Described("bytes", ContentBytes.Length, "audio/wav");
+
+        var text = CleanedAt(binary, Content);
+        AssertSame(typed, StructUtils.GetPath(text, StructUtils.Jt("spec", "body")), "a string at a binary point");
+        AssertSame(typed, StructUtils.GetPath(text, StructUtils.Jt("reqdata", "$body")), "the request data");
+        AssertSame(typed, StructUtils.GetProp(text, "copy"), "a string equal to the live body");
+        Assert.Equal(Mask, StructUtils.GetProp(text, "x-copy-token"));
+        Assert.Equal("unrelated", StructUtils.GetProp(text, "other"));
+
+        var streamed = CleanedAt(binary, ContentBytes.ToArray(), new UnreadableStream());
+        AssertSame(typed, StructUtils.GetPath(streamed, StructUtils.Jt("spec", "body")), "the bytes read from a stream");
+        AssertSame(Described("stream", null, "audio/wav"),
+            StructUtils.GetPath(streamed, StructUtils.Jt("reqdata", "$body")), "the live stream");
+        Assert.Equal(Content, StructUtils.GetProp(streamed, "copy"));
+
+        var plain = CleanedAt(new Dictionary<string, object?> { ["kind"] = "raw", ["media"] = "text/vtt" }, Content);
+        Assert.Equal(Content, StructUtils.GetPath(plain, StructUtils.Jt("spec", "body")));
+        Assert.Equal(Content, StructUtils.GetPath(plain, StructUtils.Jt("reqdata", "$body")));
+
+        var json = CleanedAt(new Dictionary<string, object?> { ["kind"] = "json", ["media"] = "application/json" },
+            new Dictionary<string, object?> { ["name"] = "n1" });
+        Assert.Equal("n1", StructUtils.GetPath(json, StructUtils.Jt("spec", "body", "name")));
     }
 }
 `

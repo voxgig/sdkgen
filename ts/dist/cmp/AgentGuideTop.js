@@ -3,71 +3,85 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AgentGuideTop = void 0;
 const jostraca_1 = require("jostraca");
 const component_1 = require("../helpers/component");
+const facts_1 = require("../helpers/facts");
+const surface_1 = require("../helpers/surface");
+const types_1 = require("../types");
 const AgentGuideContent_1 = require("./AgentGuideContent");
-const AgentGuideTop = (0, component_1.cmp)(function AgentGuideTop(props) {
-    const { ctx$ } = props;
-    const { model } = ctx$;
-    if (model.name && !model.Name)
-        (0, jostraca_1.names)(model, model.name);
-    const Name = (0, AgentGuideContent_1.projectName)(model);
-    const targets = (0, AgentGuideContent_1.activeTargets)(model);
-    const features = (0, AgentGuideContent_1.activeFeatures)(model);
-    const entities = (0, AgentGuideContent_1.activeEntities)(model);
-    (0, jostraca_1.File)({ name: 'AGENTS.md' }, () => {
-        (0, jostraca_1.Content)(`# ${Name} SDK — Agent Guide
+const AgentGuideTopIntro = (0, component_1.cmp)(function AgentGuideTopIntro(props) {
+    const { Name, model, targets } = props.s;
+    const featureGuides = targets.some((t) => (0, facts_1.fact)(t, 'phase').agentguide && (0, AgentGuideContent_1.writesFeatureGuides)(model, t));
+    // One SDK is named by its title; only several make a multi-language project.
+    const sdks = targets.filter((t) => 'sdk' === (0, surface_1.surfaceOf)(t));
+    const project = 1 < sdks.length ? `multi-language SDK project. The client libraries in
+each language directory are` : 1 === sdks.length ? `${(0, facts_1.fact)(sdks[0], 'title')} SDK project. The client library
+is` : `project. Its targets are`;
+    const output = 1 < sdks.length ? 'the language directories' : 'the generated code';
+    (0, jostraca_1.Content)(`# ${Name} SDK — Agent Guide
 
-This is a **generated** multi-language SDK project. The client libraries in
-each language directory are produced by [@voxgig/sdkgen](https://github.com/voxgig/sdkgen)
+This is a **generated** ${project} produced by [@voxgig/sdkgen](https://github.com/voxgig/sdkgen)
 from an API model; the generator, model, templates, and components all live in
-\`.sdk/\`. Treat the language directories as build output — change the model,
+\`.sdk/\`. Treat ${output} as build output — change the model,
 a template, or a component and regenerate.
 
 There are companion guides deeper in the tree: one per language
-(\`<lang>/AGENTS.md\`) and one per feature
-(\`<lang>/src/feature/<name>/AGENTS.md\`).
+(\`<lang>/AGENTS.md\`)${featureGuides ? `, and one per feature in a target that keeps each
+feature in its own directory (\`<lang>/src/feature/<name>/AGENTS.md\`)` : ''}.
 
 ## Project map
 
 `);
-        if (0 < targets.length) {
-            (0, jostraca_1.Content)(`**Targets** (${targets.length}):
+});
+const AgentGuideTopTargets = (0, component_1.cmp)(function AgentGuideTopTargets(props) {
+    const { model, targets, external } = props.s;
+    const rows = targets.map((t) => {
+        const note = (0, AgentGuideContent_1.langCmd)(t.name, model).note ? ' — ' + (0, AgentGuideContent_1.langCmd)(t.name, model).note : '';
+        const dir = 'folder' === (0, facts_1.fact)(t, 'place') ? `\`${t.name}/\`` : '—';
+        const guide = (0, facts_1.fact)(t, 'docs').agents ? `[\`${t.name}/AGENTS.md\`](./${t.name}/AGENTS.md)` : '—';
+        return [t.name, `| \`${t.name}\` | ${dir}${note} | ${guide} |`];
+    }).concat(external.map((t) => [t.name, `| \`${t.name}\` | ${(0, surface_1.externalName)(t)}, generated into its own repository | — |`]))
+        .sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0);
+    if (0 < rows.length) {
+        (0, jostraca_1.Content)(`**Targets** (${rows.length}):
 
 | Target | Directory | Build guide |
 | --- | --- | --- |
+${rows.map(([, row]) => row + '\n').join('')}
 `);
-            targets.forEach((t) => {
-                const note = (0, AgentGuideContent_1.langCmd)(t.name).note ? ' — ' + (0, AgentGuideContent_1.langCmd)(t.name).note : '';
-                (0, jostraca_1.Content)(`| \`${t.name}\` | \`${t.name}/\`${note} | [\`${t.name}/AGENTS.md\`](./${t.name}/AGENTS.md) |
-`);
-            });
-            (0, jostraca_1.Content)(`
-`);
-        }
-        if (0 < features.length) {
-            (0, jostraca_1.Content)(`**Features** (${features.length}): `);
-            (0, jostraca_1.Content)(features.map((f) => `\`${f.name}\``).join(', ') + `.
+    }
+});
+const AgentGuideTopFeatures = (0, component_1.cmp)(function AgentGuideTopFeatures(props) {
+    const { features } = props.s;
+    if (0 < features.length) {
+        (0, jostraca_1.Content)(`**Features** (${features.length}): `);
+        (0, jostraca_1.Content)(features.map((f) => `\`${f.name}\``).join(', ') + `.
 
-Each feature is generated into every SDK target — as a directory
-\`<lang>/src/feature/<name>/\` (ts/js) or a flat file in the \`<lang>/feature/\`
-package (other languages). Each target's guide documents its features.
+Each feature is generated into each SDK target that supports it, and each
+target's guide documents where that target keeps its features.
 
 `);
-        }
-        if (0 < entities.length) {
-            (0, jostraca_1.Content)(`**Entities** (${entities.length}): `);
-            (0, jostraca_1.Content)(entities.map((e) => `\`${e.Name || e.name}\``).join(', ') + `.
+    }
+});
+const AgentGuideTopEntities = (0, component_1.cmp)(function AgentGuideTopEntities(props) {
+    const { entities } = props.s;
+    if (0 < entities.length) {
+        (0, jostraca_1.Content)(`**Entities** (${entities.length}): `);
+        (0, jostraca_1.Content)(entities.map((e) => `\`${e.Name || e.name}\``).join(', ') + `.
 
 `);
-        }
-        // Station paragraph (station design §9.4; declarative design §11
-        // item 4), only when the model carries the feature: an agent working
-        // on this repo should know the runtime story without leaving
-        // AGENTS.md — and, first, that the application's integrations are
-        // DECLARED in station.json, so that file is where to look.
-        if (features.some((f) => 'station' === f.name)) {
-            (0, jostraca_1.Content)(`**Station**: this SDK is a
+    }
+});
+const AgentGuideTopStation = (0, component_1.cmp)(function AgentGuideTopStation(props) {
+    const { features } = props.s;
+    // Station paragraph (station design §9.4; declarative design §11
+    // item 4), only when the model carries the feature: an agent working
+    // on this repo should know the runtime story without leaving
+    // AGENTS.md — and, first, that the application's integrations are
+    // DECLARED in station.json, so that file is where to look.
+    const station = features.find((f) => 'station' === f.name);
+    if (null != station) {
+        (0, jostraca_1.Content)(`**Station**: this SDK is a
 [voxgig/station](https://github.com/voxgig/station) plugin (the
-\`station\` feature, off by default). An application's outbound
+\`station\` feature, ${(0, facts_1.fact)(station, 'on') ? 'on' : 'off'} by default). An application's outbound
 integrations are **declared in \`station.json\`** at its repo root —
 to learn what the application talks to, read that file: every SDK
 instance (\`sdk\`), per-api default (\`api\`), feature setting, and
@@ -83,12 +97,22 @@ with Station" README section and \`src/feature/station/\` (or the
 target's feature container) for the generated adapter.
 
 `);
-        }
-        (0, jostraca_1.Content)((0, AgentGuideContent_1.workflowSection)());
-        (0, jostraca_1.Content)((0, AgentGuideContent_1.featureSection)());
-        (0, jostraca_1.Content)((0, AgentGuideContent_1.customiseSection)());
-        (0, jostraca_1.Content)((0, AgentGuideContent_1.aontuSection)());
-        (0, jostraca_1.Content)(`## Where things live
+    }
+});
+const AgentGuideTopWorkflow = (0, component_1.cmp)(function AgentGuideTopWorkflow(props) {
+    (0, jostraca_1.Content)((0, AgentGuideContent_1.workflowSection)(props.s.model));
+});
+const AgentGuideTopFeatureGuide = (0, component_1.cmp)(function AgentGuideTopFeatureGuide() {
+    (0, jostraca_1.Content)((0, AgentGuideContent_1.featureSection)());
+});
+const AgentGuideTopCustomise = (0, component_1.cmp)(function AgentGuideTopCustomise() {
+    (0, jostraca_1.Content)((0, AgentGuideContent_1.customiseSection)());
+});
+const AgentGuideTopAontu = (0, component_1.cmp)(function AgentGuideTopAontu(props) {
+    (0, jostraca_1.Content)((0, AgentGuideContent_1.aontuSection)(props.s.model));
+});
+const AgentGuideTopLayout = (0, component_1.cmp)(function AgentGuideTopLayout() {
+    (0, jostraca_1.Content)(`## Where things live
 
 \`\`\`
 .sdk/
@@ -106,6 +130,29 @@ Makefile          per-target deploy recipes
 Generated by [@voxgig/sdkgen](https://github.com/voxgig/sdkgen). Regenerate
 with \`cd .sdk && npm run generate\`.
 `);
+});
+const AgentGuideTop = (0, component_1.cmp)(function AgentGuideTop(props) {
+    const { ctx$ } = props;
+    const { model } = ctx$;
+    if (model.name && !model.Name)
+        (0, jostraca_1.names)(model, model.name);
+    const Name = (0, AgentGuideContent_1.projectName)(model);
+    const targets = (0, AgentGuideContent_1.activeTargets)(model);
+    const external = (0, facts_1.fact)(model.main[types_1.KIT], 'external');
+    const features = (0, AgentGuideContent_1.activeFeatures)(model);
+    const entities = (0, AgentGuideContent_1.activeEntities)(model);
+    const s = { Name, model, targets, external, features, entities };
+    (0, jostraca_1.File)({ name: 'AGENTS.md' }, () => {
+        AgentGuideTopIntro({ s });
+        AgentGuideTopTargets({ s });
+        AgentGuideTopFeatures({ s });
+        AgentGuideTopEntities({ s });
+        AgentGuideTopStation({ s });
+        AgentGuideTopWorkflow({ s });
+        AgentGuideTopFeatureGuide({ s });
+        AgentGuideTopCustomise({ s });
+        AgentGuideTopAontu({ s });
+        AgentGuideTopLayout({ s });
     });
     (0, jostraca_1.File)({ name: 'CLAUDE.md' }, () => {
         (0, jostraca_1.Content)((0, AgentGuideContent_1.claudePointer)(`${Name} SDK`));

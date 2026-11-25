@@ -2,11 +2,12 @@
 import { test, describe, before, after } from 'node:test'
 import { ok, strictEqual, deepStrictEqual } from 'node:assert'
 
+import Fs from 'node:fs'
 import Path from 'node:path'
 
 import { memfs } from 'memfs'
 
-import { SdkGen } from '../dist/sdkgen.js'
+import { SdkGen, registerComponent } from '../dist/sdkgen.js'
 
 import { makeModel, makeRoot, layeredFs, makeLog, STAGE, SCAFFOLD } from './generateharness'
 
@@ -28,6 +29,7 @@ type GenOpts = {
   extra?: string
   sink?: any[]
   external?: Record<string, any>
+  root?: any
 }
 
 
@@ -53,7 +55,7 @@ function setup(
 
   return {
     model,
-    run: () => sdkgen.generate({ model, root: makeRoot() }),
+    run: () => sdkgen.generate({ model, root: opts.root ?? makeRoot() }),
 
     // EVERY written path, `.jostraca` bookkeeping included — that is what
     // the destination's own .gitignore has to cover, so a view that hides it
@@ -67,6 +69,15 @@ function setup(
       return out
     },
   }
+}
+
+
+function files(vol: any): Record<string, string> {
+  const out: Record<string, string> = {}
+  for (const [path, content] of Object.entries(vol.toJSON() as Record<string, string>)) {
+    out[norm(path)] = content
+  }
+  return out
 }
 
 
@@ -155,6 +166,16 @@ describe('external target', () => {
   })
 
 
+  test('a target that names its own repository points its manifest and install text there', async () => {
+    const { outside } = await generate(['ts'], 'ts', "main: kit: target: ts: output: repo: 'acme/demo-ts'")
+    const pkg = JSON.parse(outside['package.json'])
+    for (const url of [pkg.repository?.url ?? pkg.repository, pkg.homepage, pkg.bugs?.url ?? pkg.bugs]) {
+      ok(String(url).includes('github.com/acme/demo-ts'), JSON.stringify(url))
+    }
+    ok(outside['README.md'].includes('github.com/acme/demo-ts'), 'the install text names the SDK repository')
+  })
+
+
   test('a relative output path resolves against the SDK project, not the CWD',
     async () => {
       const gen = setup(['go', 'go-cli'], { 'go-cli': REL })
@@ -207,6 +228,104 @@ describe('external target', () => {
           rootFiles.join(', '))
       }
     }
+  })
+
+
+  // The SDK repository's files are not beside a package in another repository.
+  test('no document written out of tree links above the destination', async () => {
+    const { outside } = await generate(['ts', 'go'], 'ts')
+    const up: string[] = []
+    for (const [file, text] of Object.entries(outside).filter(([f]) => f.endsWith('.md'))) {
+      for (const m of String(text).matchAll(/\]\(([^)#\s]+)[^)]*\)/g)) {
+        if (/^[a-z]+:/i.test(m[1])) continue
+        const to = Path.posix.normalize(Path.posix.join(Path.posix.dirname(file), m[1]))
+        if (to.startsWith('../')) up.push(file + ' -> ' + m[1])
+      }
+    }
+    ok(null != outside['README.md'], 'nothing was written out of tree')
+    deepStrictEqual(up, [])
+  })
+
+
+  // A run override is for this run: the SDK repository's committed files
+  // describe the model's layout either way.
+  test('an override changes no document or release file in tree', async () => {
+    const plain = setup(['ts', 'go'], {})
+    await plain.run()
+    const moved = setup(['ts', 'go'], {}, { external: { ts: { path: OUT2, sdkrel: '../sdk' } } })
+    await moved.run()
+
+    // A null entry is a directory, which git does not hold.
+    const committed = (all: Record<string, string>) => Object.fromEntries(Object.entries(all)
+      .filter(([file, text]) => null != text && !file.startsWith('ts/') && !file.startsWith('.sdk/log/')))
+    const before = committed(under(plain.files(), norm(STAGE)))
+    const after = under(moved.files(), norm(STAGE))
+    for (const file of ['README.md', 'AGENTS.md', 'Makefile']) {
+      ok(null != before[file], file + ' is not written without the override')
+    }
+    deepStrictEqual(committed(after), before, 'a committed file differs under the override')
+    deepStrictEqual(Object.keys(after).filter((file) => file.startsWith('ts/')), [])
+    ok(null != under(moved.files(), OUT2)['package.json'], 'ts was not written out of tree')
+  })
+
+
+  // A project's own component writes its target's files as a built-in does.
+  test('an override keeps a registered component out of the tree', async () => {
+    const file = Path.join(STAGE, '.sdk', 'dist', 'cmp', 'ts', 'Extra_ts.js')
+    Fs.writeFileSync(file, "const { File, Content } = require('jostraca')\n" +
+      "module.exports.Extra = () => File({ name: 'EXTRA.md' }, () => Content('extra'))\n")
+    try {
+      const plain = setup(['ts'], {}, { root: makeRoot([registerComponent('Extra')]) })
+      await plain.run()
+      ok(null != under(plain.files(), norm(STAGE))['ts/EXTRA.md'], 'the registered component did not run')
+
+      const moved = setup(['ts'], {}, {
+        root: makeRoot([registerComponent('Extra')]),
+        external: { ts: { path: OUT2, sdkrel: '../sdk' } },
+      })
+      await moved.run()
+      deepStrictEqual(Object.keys(under(moved.files(), norm(STAGE)))
+        .filter((path) => path.startsWith('ts/')), [])
+    }
+    finally {
+      Fs.rmSync(file, { force: true })
+    }
+  })
+
+
+  test('relocating the only SDK prunes nothing and names the stale folder', async () => {
+    const { fs, vol } = memfs({})
+    const sink: any[] = []
+    const warnings: any[] = []
+    const run = (external?: any) => SdkGen({
+      fs: layeredFs(fs), folder: STAGE, root: '', pino: makeLog(sink, warnings), external,
+    }).generate({ model: makeModel(['ts']), root: makeRoot() })
+
+    await run()
+    const first = Object.keys(under(files(vol), norm(STAGE)))
+    ok(first.includes('ts/package.json') && first.includes('Makefile'), first.join('\n'))
+
+    await run({ ts: { path: OUT2, sdkrel: '../sdk' } })
+    const second = Object.keys(under(files(vol), norm(STAGE)))
+    deepStrictEqual(first.filter((file) => !second.includes(file)), [], 'a file was pruned')
+    deepStrictEqual(sink.filter((e: any) => 'generate-prune' === e?.point), [])
+    const stale = warnings.filter((w: any) => 'generate-external-stale' === w?.point)
+    strictEqual(stale.length, 1, JSON.stringify(stale))
+    ok(String(stale[0].note).startsWith('ts/'), stale[0].note)
+  })
+
+
+  test('an absent destination with create: false is skipped with one warning', async () => {
+    const warnings: any[] = []
+    const { fs } = memfs({})
+    const sdkgen = SdkGen({ fs: layeredFs(fs), folder: STAGE, root: '', pino: makeLog([], warnings) })
+    await sdkgen.generate({
+      model: makeModel(['go', 'go-cli'], undefined,
+        `main: kit: target: 'go-cli': output: { path: '${OUT}', create: false, sdkrel: '../sdk' }`),
+      root: makeRoot(),
+    })
+    const skipped = warnings.filter((w: any) => 'generate-external-skip' === w?.point)
+    strictEqual(skipped.length, 1, JSON.stringify(warnings.map((w: any) => w?.point)))
   })
 
 
@@ -404,6 +523,104 @@ describe('external target', () => {
 
     ok(gitignore.split('\n').some((line) => '.jostraca/' === line.trim()),
       'the destination .gitignore does not ignore .jostraca/:\n' + gitignore)
+  })
+
+
+  // The root README and AGENTS.md describe the whole project, so they name a
+  // target generated into another repository; the documents about the
+  // packages this repository publishes do not.
+  describe('root documents', () => {
+
+    const REPO = "main: kit: target: 'go-cli': output: repo: 'acme/demo-cli'"
+
+    const LINKED = '[Go CLI](https://github.com/acme/demo-cli)'
+
+    const inTree = (inside: Record<string, string>, name: string) =>
+      Object.keys(inside).filter((p) => name === p || p.startsWith(name + '/'))
+
+
+    test('name a declared out-of-tree target, linked to its own repository', async () => {
+      const { inside } = await generate(['ts', 'go', 'go-cli'], 'go-cli', REPO)
+      const readme = inside['README.md']
+      const agents = inside['AGENTS.md']
+
+      ok(readme.includes('> TypeScript, Golang SDKs, and the ' + LINKED + ' — all generated from one'), readme)
+      ok(readme.includes('| **' + LINKED + '** | generated into its own repository |'), readme)
+      ok(agents.includes('**Targets** (3):'), agents)
+      ok(agents.includes('| `go-cli` | ' + LINKED + ', generated into its own repository | — |'), agents)
+
+      for (const doc of ['README.md', 'AGENTS.md']) {
+        ok(!inside[doc].includes('go-cli/'), doc + ' names an in-tree go-cli folder')
+      }
+    })
+
+
+    test('name it without a link when the model names no repository', async () => {
+      const { inside } = await generate(['ts', 'go', 'go-cli'], 'go-cli')
+      const readme = inside['README.md']
+      const agents = inside['AGENTS.md']
+
+      ok(readme.includes('> TypeScript, Golang SDKs, and the Go CLI — all generated from one'), readme)
+      ok(readme.includes('| **Go CLI** | generated into its own repository |'), readme)
+      ok(agents.includes('| `go-cli` | Go CLI, generated into its own repository | — |'), agents)
+      ok(!(readme + agents).includes('[Go CLI]('), 'a link with no repository to link')
+    })
+
+
+    test('name it while this run skips it, and never once it is inactive', async () => {
+      const skipped = await generate(['ts', 'go', 'go-cli'], 'go-cli',
+        REPO + "\nmain: kit: target: 'go-cli': output: create: false")
+      deepStrictEqual(Object.keys(skipped.outside), [], 'the absent destination was generated into')
+      ok(skipped.inside['README.md'].includes('| **' + LINKED + '** |'), skipped.inside['README.md'])
+      ok(skipped.inside['AGENTS.md'].includes('| `go-cli` | ' + LINKED), skipped.inside['AGENTS.md'])
+
+      const off = await generate(['ts', 'go', 'go-cli'], 'go-cli',
+        REPO + "\nmain: kit: target: 'go-cli': active: false")
+      for (const doc of ['README.md', 'AGENTS.md']) {
+        ok(!/go-cli|Go CLI/.test(off.inside[doc]), doc + ' names an inactive target')
+      }
+    })
+
+
+    test('keep SECURITY.md and the release files to the packages this repository publishes', async () => {
+      const both = await generate(['ts', 'go'], {})
+      ok(both.inside['SECURITY.md'].includes('repository (npm and the Go module).'), both.inside['SECURITY.md'])
+      ok(/^TARGETS := .*\bgo\b/m.test(both.inside['Makefile']), 'control: go is not released in tree')
+
+      const { inside } = await generate(['ts', 'go'], 'go', "main: kit: target: go: output: repo: 'acme/demo-go'")
+      ok(inside['README.md'].includes('| **[Golang SDK](https://github.com/acme/demo-go)** | generated into its own repository |'),
+        inside['README.md'])
+      ok(inside['SECURITY.md'].includes('repository (npm).'), inside['SECURITY.md'])
+      ok(!inside['SECURITY.md'].includes('Go module'), inside['SECURITY.md'])
+      ok(/^TARGETS := ts$/m.test(inside['Makefile']), 'the release Makefile acts on go')
+      ok(!inside['CHANGELOG.md'].includes('Golang'), inside['CHANGELOG.md'])
+    })
+
+
+    test('read the same under a run override, which moves only the target\'s own files', async () => {
+      const plain = setup(['ts', 'go', 'go-cli'], { 'go-cli': OUT }, { extra: REPO })
+      await plain.run()
+      const moved = setup(['ts', 'go', 'go-cli'], { 'go-cli': OUT },
+        { extra: REPO, external: { 'go-cli': { path: OUT2, sdkrel: '../sdk' } } })
+      await moved.run()
+
+      const committed = (all: Record<string, string>) => Object.fromEntries(Object.entries(under(all, norm(STAGE)))
+        .filter(([file, text]) => null != text && !file.startsWith('.sdk/log/')))
+      const before = committed(plain.files())
+      ok(before['README.md'].includes(LINKED), 'the out-of-tree target is not named without the override')
+      deepStrictEqual(committed(moved.files()), before, 'a committed file differs under the override')
+      ok(null != under(moved.files(), OUT2)['go.mod'], 'go-cli was not written where the override says')
+      deepStrictEqual(under(moved.files(), OUT), {}, 'go-cli was written to its declared path as well')
+      deepStrictEqual(inTree(under(moved.files(), norm(STAGE)), 'go-cli'), [])
+    })
+
+
+    test('leave no per-target file and no folder in tree', async () => {
+      const { inside, outside } = await generate(['ts', 'go', 'go-cli'], 'go-cli', REPO)
+      ok(null != outside['go.mod'], 'go-cli was not generated out of tree')
+      deepStrictEqual(inTree(inside, 'go-cli'), [])
+      ok(0 < inTree(inside, 'go').length, 'control: go wrote nothing in tree')
+    })
   })
 
 
@@ -769,6 +986,21 @@ describe('external target', () => {
         ok(null != err, 'a malformed SDKGEN_EXTERNAL was accepted')
         ok(String(err.message).includes('SDKGEN_EXTERNAL'),
           'the error does not name the variable: ' + err.message)
+      })
+
+
+      test('a name that is not a target is refused, naming it', async () => {
+        process.env.SDKGEN_EXTERNAL = JSON.stringify({ 'go-clii': { path: OUT2 } })
+
+        const gen = setup(['go', 'go-cli'], { 'go-cli': OUT })
+
+        let err: any = null
+        try { await gen.run() } catch (e: any) { err = e }
+
+        ok(null != err, 'an override naming no target was accepted')
+        ok(/SDKGEN_EXTERNAL names go-clii, which is not a target of this model/.test(String(err.message)),
+          err.message)
+        ok(/go-cli/.test(String(err.message).split('\n')[1]), 'the error does not list the targets: ' + err.message)
       })
 
 

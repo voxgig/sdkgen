@@ -24,7 +24,7 @@ module ProjectNameUtilities
     agent = ctx.utility.clean.call(ctx, BodyHeader.call(sent, "user-agent")).to_s
     agent = "transport default" if agent.empty?
     detail = "HTTP #{status}, content-type #{ctype.empty? ? 'none' : ctype}, user-agent #{agent}"
-    detail += ", body: " + BodyPreview.call(ctx, text) unless text.nil?
+    detail += ", body: " + BodyPreview.call(ctx, text) if !text.nil? && BodyQuotable.call(ctx, ctype)
 
     if failed
       return "#{failed} (#{detail})" if failed.is_a?(String)
@@ -45,6 +45,17 @@ module ProjectNameUtilities
     return "" unless headers.is_a?(Hash)
     pair = headers.find { |key, _| key.to_s.downcase == name }
     pair ? pair[1].to_s : ""
+  }
+
+  TEXT_MEDIA = /json|xml|html|javascript|ecmascript|yaml|urlencoded|graphql/.freeze
+
+  # Only text is quoted: bytes are a file's, by the model or by their type.
+  # Text is no declared type, text/*, or a structured text format.
+  BodyQuotable = ->(ctx, ctype) {
+    response = ctx.point.is_a?(Hash) ? ctx.point["response"] : nil
+    return false if response.is_a?(Hash) && true == response["binary"]
+    media = ctype.to_s.split(";").first.to_s.strip.downcase
+    media.empty? || media.start_with?("text/") || TEXT_MEDIA.match?(media)
   }
 
   # Cleaned whole: a secret the bound would split could leave its prefix.

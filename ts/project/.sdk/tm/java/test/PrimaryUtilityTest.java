@@ -461,6 +461,182 @@ public class PrimaryUtilityTest {
     }
   }
 
+  // The API's origin, which redirects, and another origin, which records
+  // what reaches it: another port on the same host is another origin.
+  static final class RedirectOrigins implements AutoCloseable {
+    static final String SECRET = "REDIRECT-SECRET-q7w3e9r1";
+    static final List<String> CREDENTIALS =
+        List.of("authorization", "cookie", "x-api-key", "private-token", "x-acme-auth");
+
+    final List<Map<String, Object>> arrived =
+        java.util.Collections.synchronizedList(new ArrayList<>());
+    final com.sun.net.httpserver.HttpServer api = listen("api");
+    final com.sun.net.httpserver.HttpServer other = listen("other");
+    final String apibase = "http://127.0.0.1:" + api.getAddress().getPort();
+    final String otherbase = "http://127.0.0.1:" + other.getAddress().getPort();
+
+    private com.sun.net.httpserver.HttpServer listen(String where) {
+      try {
+        com.sun.net.httpserver.HttpServer server = com.sun.net.httpserver.HttpServer.create(
+            new java.net.InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/", (exchange) -> {
+          String path = exchange.getRequestURI().getRawPath();
+          Map<String, Object> headers = new LinkedHashMap<>();
+          exchange.getRequestHeaders().forEach((name, vals) ->
+              headers.put(name.toLowerCase(java.util.Locale.ROOT), String.join(", ", vals)));
+          String body = new String(exchange.getRequestBody().readAllBytes(),
+              java.nio.charset.StandardCharsets.UTF_8);
+          arrived.add(fhMap("where", where, "method", exchange.getRequestMethod(),
+              "path", path, "headers", headers, "body", body));
+          Object[] hop = switch (path) {
+            case "/out" -> new Object[] {302, otherbase + "/landed"};
+            case "/out307" -> new Object[] {307, otherbase + "/landed"};
+            case "/in" -> new Object[] {302, "/landed"};
+            case "/in307" -> new Object[] {307, "/landed"};
+            case "/in303" -> new Object[] {303, "/landed"};
+            case "/round" -> new Object[] {302, "/round"};
+            default -> null;
+          };
+          byte[] out = hop == null ? "{\"id\":\"r1\"}".getBytes() : new byte[0];
+          if (hop != null) {
+            exchange.getResponseHeaders().set("Location", (String) hop[1]);
+          }
+          exchange.getResponseHeaders().set("Content-Type", "application/json");
+          exchange.sendResponseHeaders(hop != null ? (int) hop[0] : 200, 0 < out.length ? out.length : -1);
+          exchange.getResponseBody().write(out);
+          exchange.close();
+        });
+        server.start();
+        return server;
+      }
+      catch (java.io.IOException e) {
+        throw new java.io.UncheckedIOException(e);
+      }
+    }
+
+    // Sent by a live client that holds the secret as its apikey, which is
+    // how a caller's reaches the registry.
+    Map<String, Object> send(boolean cleanactive, String method, String path, String body) {
+      ProjectNameSDK liveClient = new ProjectNameSDK(fhMap(
+          "base", apibase, "apikey", SECRET, "clean", fhMap("active", cleanactive)));
+      Utility liveUtility = liveClient.getUtility();
+      Context ctx = liveUtility.makeContext.apply(fhMap("opname", "load"), liveClient.getRootCtx());
+      Map<String, Object> headers = fhMap(
+          "authorization", "Bearer " + SECRET,
+          "cookie", "sid=" + SECRET,
+          "x-api-key", SECRET,
+          "private-token", "pt-12345",
+          // Not a sensitive name: a credential by the value it holds.
+          "x-acme-auth", "v1 " + SECRET,
+          "x-tenant", "acme");
+      Map<String, Object> fetchdef = fhMap("method", method, "headers", headers);
+      if (body != null) {
+        headers.put("content-type", "audio/wav");
+        fetchdef.put("body", body);
+      }
+      arrived.clear();
+      return (Map<String, Object>) liveUtility.fetcher.fetch(ctx, apibase + path, fetchdef);
+    }
+
+    List<String> seen() {
+      List<String> out = new ArrayList<>();
+      for (Map<String, Object> a : new ArrayList<>(arrived)) {
+        out.add(a.get("where") + " " + a.get("method") + " " + a.get("path")
+            + ("".equals(a.get("body")) ? "" : " " + a.get("body")));
+      }
+      return out;
+    }
+
+    // The names of the given headers the nth request carried.
+    List<String> carried(int nth, List<String> names) {
+      Map<String, Object> headers = (Map<String, Object>) arrived.get(nth).get("headers");
+      List<String> out = new ArrayList<>();
+      for (String name : names) {
+        if (headers.get(name) != null) {
+          out.add(name);
+        }
+      }
+      return out;
+    }
+
+    @Override
+    public void close() {
+      api.stop(0);
+      other.stop(0);
+    }
+  }
+
+  @Test
+  public void fetcherRedirectToAnotherOriginCarriesNoCredential() {
+    for (boolean cleanactive : new boolean[] {true, false}) {
+      try (RedirectOrigins origins = new RedirectOrigins()) {
+        Map<String, Object> res = origins.send(cleanactive, "GET", "/out", null);
+        assertEquals(200, res.get("status"));
+        assertEquals(List.of("api GET /out", "other GET /landed"), origins.seen());
+        assertEquals(RedirectOrigins.CREDENTIALS, origins.carried(0, RedirectOrigins.CREDENTIALS),
+            "the API itself was not sent every credential");
+        assertEquals(List.of(), origins.carried(1, RedirectOrigins.CREDENTIALS),
+            "another origin was sent a credential, clean.active " + cleanactive);
+        assertEquals(List.of("x-tenant"), origins.carried(1, List.of("x-tenant")));
+        assertFalse(String.valueOf(origins.arrived.get(1).get("headers"))
+            .contains(RedirectOrigins.SECRET), "another origin was sent the secret");
+      }
+    }
+  }
+
+  @Test
+  public void fetcherRedirectOnTheSameOriginKeepsEveryHeader() {
+    try (RedirectOrigins origins = new RedirectOrigins()) {
+      Map<String, Object> res = origins.send(true, "GET", "/in", null);
+      assertEquals(200, res.get("status"));
+      assertEquals(List.of("api GET /in", "api GET /landed"), origins.seen());
+      List<String> all = new ArrayList<>(RedirectOrigins.CREDENTIALS);
+      all.add("x-tenant");
+      assertEquals(all, origins.carried(1, all), "the same origin lost a header");
+    }
+  }
+
+  @Test
+  public void fetcherRedirectNeverSendsABodyToAnotherOrigin() {
+    try (RedirectOrigins origins = new RedirectOrigins()) {
+      Map<String, Object> res = origins.send(true, "PUT", "/out307", "BODY-" + RedirectOrigins.SECRET);
+      assertEquals(307, res.get("status"));
+      assertEquals(List.of("api PUT /out307 BODY-" + RedirectOrigins.SECRET), origins.seen());
+    }
+  }
+
+  @Test
+  public void fetcherRedirectRewritesTheMethodByStatus() {
+    try (RedirectOrigins origins = new RedirectOrigins()) {
+      for (String path : new String[] {"/in307", "/in"}) {
+        Map<String, Object> kept = origins.send(true, "PUT", path, "BODY-1");
+        assertEquals(200, kept.get("status"));
+        assertEquals(List.of("api PUT " + path + " BODY-1", "api PUT /landed BODY-1"), origins.seen());
+        assertEquals(List.of("content-type"), origins.carried(1, List.of("content-type")));
+      }
+
+      for (String[] hop : new String[][] {{"PUT", "/in303"}, {"POST", "/in"}}) {
+        Map<String, Object> res = origins.send(true, hop[0], hop[1], "{\"a\":1}");
+        assertEquals(200, res.get("status"));
+        assertEquals(List.of("api " + hop[0] + " " + hop[1] + " {\"a\":1}", "api GET /landed"),
+            origins.seen());
+        assertEquals(List.of("x-api-key"), origins.carried(1, List.of("content-type", "x-api-key")));
+      }
+
+      origins.send(true, "HEAD", "/in303", null);
+      assertEquals(List.of("api HEAD /in303", "api GET /landed"), origins.seen());
+    }
+  }
+
+  @Test
+  public void fetcherRedirectStopsAtTheHopLimit() {
+    try (RedirectOrigins origins = new RedirectOrigins()) {
+      Map<String, Object> round = origins.send(true, "GET", "/round", null);
+      assertEquals(302, round.get("status"));
+      assertEquals(6, origins.arrived.size(), "the first request, then each hop the limit allows");
+    }
+  }
+
   // Nothing listens on port 9: a request the guard let through fails there.
   // A JVM cannot set its own environment, so the probe runs in a child JVM.
   @Test

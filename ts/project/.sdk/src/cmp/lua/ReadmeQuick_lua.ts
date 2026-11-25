@@ -162,7 +162,7 @@ ${printRecord(eVar, printCols, '')}
 
     const examplePairs = (opname: string): string[] => {
       const items = requestExampleItems(exampleEntity, opname)
-        .filter((it: any) => !idNames.has(it.name) ||
+        .filter((it: any) => (it.name !== idF && (!idNames.has(it.name) || !it.optional)) ||
           ('create' === opname && !it.optional))
       const required = items.filter((it: any) => !it.optional)
       const optional = items.filter((it: any) => it.optional)

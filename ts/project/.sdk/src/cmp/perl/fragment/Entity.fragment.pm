@@ -344,6 +344,9 @@ sub _unexpected {
     }
   }
   return undef if defined $ctx->{ctrl}{throw_err} && !$ctx->{ctrl}{throw_err};
+  # An exception object of another class is the caller's own, and is thrown
+  # on as it is: clean would hand back a copy of it.
+  return $err if Scalar::Util::blessed($err) && !$err->isa('ProjectNameError');
   return $clean->($ctx, $err);
 }
 

@@ -207,7 +207,7 @@ Everything it calls is the real thing: `addPackage` is `package add`,
 `generateInto` is a real generation run. That is the point — a kit that
 reimplemented any of it would pass while the shipped path was broken.
 
-Three details worth knowing:
+Four details worth knowing:
 
 - **A target that generates out of tree must declare where.** `generateInto`
   treats a generated path outside the consumer root as a bug, because that
@@ -215,7 +215,10 @@ Three details worth knowing:
   writes outside the root on purpose, so pass those destinations as
   `outside: ['../acme-provider']` and read their files back from the
   `outside` map in the result, keyed by destination. A path under neither
-  the root nor a declared destination still fails.
+  the root nor a declared destination still fails. To relocate a target for
+  one call, as `SDKGEN_EXTERNAL` relocates it for a run, pass
+  `external: { 'iot-go': { path: '../iot-go-out' } }` and name the same
+  destination in `outside`.
 - **`compile()` transpiles; it does not type-check.** Type-checking your
   components is your build's job (`tsc --noEmit` over `src/cmp/**`), and
   repeating it per staged consumer would add seconds to every test for an
@@ -226,6 +229,30 @@ Three details worth knowing:
   with a CWD-relative path, because that is where a consumer runs
   `generate`. The kit sets and restores the working directory for you; if
   you call `generate()` yourself, use `consumer.inSdk(...)`.
+- **The root documents are written only on request.** `generateInto`
+  writes no root README, agent guide or license unless you pass
+  `top: true`, and then only while the model's top phase is on, as the
+  standard Root writes them. A target generated at the project root
+  (`output: root: true`) needs `main: kit: phase: top: active: false`, or
+  generation refuses the model, as it does for a project.
+
+The kit also checks the documents a generation wrote. `textGuard` reads
+the Markdown in `files` and returns a finding for each link that resolves
+to nothing written, each unfired `$$path$$` marker, each code block in
+another language, and each line naming a word you list as absent:
+
+```js
+const { textGuard } = require('@voxgig/sdkgen/testkit')
+
+const { files } = await generateInto(consumer, { model, top: true })
+assert.deepEqual(textGuard(files, { fences: { 'iot-go': 'go' } }), [])
+```
+
+Generate with `top: true` so a link to the root README resolves, name the
+code-block tag of each of your own targets in `fences`, and pass
+`absent: ['<feature>']` over a generation without a feature to find a
+document that still mentions it. The
+[API reference](../reference/api.md#test-kit) lists the findings.
 
 A worked example ships with sdkgen: `ts/test/fixture/acme-widgets/` is a
 complete package — a target, a feature with an overlay, and a docs item —

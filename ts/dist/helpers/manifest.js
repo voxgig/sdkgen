@@ -4,6 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ITEM_NAME_RE = exports.PARITY = exports.SCHEMA = exports.MANIFEST = void 0;
+exports.parityFinding = parityFinding;
 exports.manifestPath = manifestPath;
 exports.probePackage = probePackage;
 exports.readManifest = readManifest;
@@ -261,5 +262,20 @@ function probePackage(fs, project, ref) {
         return { found: { ref, root, sdk, read: readManifest(fs, sdk) }, search };
     }
     return { search };
+}
+// A target is graded CONSUMER exactly when its surface is not `sdk`: the
+// corpus tiers grade an SDK, and nothing else runs the corpus.
+function parityFinding(file, name, tier, surface) {
+    if (!PARITY.includes(tier) || ('CONSUMER' === tier) === ('sdk' !== surface)) {
+        return [];
+    }
+    const what = '' === surface ? 'a surface the model does not say' : 'surface `' + surface + '`';
+    return [{
+            level: 'error', point: 'manifest-parity-surface', file, kind: 'target', name,
+            note: file + ': `parity.' + name + '` is ' + tier + ', and the target has ' + what +
+                ' — ' + ('CONSUMER' === tier ?
+                'CONSUMER grades a target that is not an SDK; grade an SDK FULL, MIRRORED or UNCOVERED' :
+                'a target that is not an SDK runs no corpus, so it is graded CONSUMER'),
+        }];
 }
 //# sourceMappingURL=manifest.js.map

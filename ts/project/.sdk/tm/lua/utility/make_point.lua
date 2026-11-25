@@ -94,18 +94,22 @@ local function make_point_util(ctx)
       'Operation "' .. op.name .. '" has no endpoint definitions.')
   end
 
-  if #op.points == 1 then
+  local reqselector, selector
+  if op.input == "data" then
+    reqselector = ctx.reqdata
+    selector = ctx.data
+  else
+    reqselector = ctx.reqmatch
+    selector = ctx.match
+  end
+
+  -- A lone point still needs the call's action to agree with its own; the
+  -- selection below refuses a mismatch either way.
+  if #op.points == 1 and
+      vs.getprop(reqselector, "$action") ==
+        vs.getprop(vs.getprop(op.points[1], "select"), "$action") then
     ctx.point = op.points[1]
   else
-    local reqselector, selector
-    if op.input == "data" then
-      reqselector = ctx.reqdata
-      selector = ctx.data
-    else
-      reqselector = ctx.reqmatch
-      selector = ctx.match
-    end
-
     local point = nil
     local matched = false
     for i = 1, #op.points do

@@ -10,10 +10,11 @@ declare function pruneStaleTemplates(ctx$: any, fromDir: string, toRel: string, 
 }): void;
 declare function featureCatalogue(ctx$: any, tfolder: string): string[];
 declare function trimFeatures(ctx$: any, tfolder: string, torigname: string, tname: string, features: string[]): RegExp[];
-declare function readTargetFeature(ctx$: any, tfolder: string, torigname: string, tname: string): {
+type TargetFeature = {
     trim: boolean;
     fullset: string[];
 };
+declare function readTargetFeature(ctx$: any, tfolder: string, torigname: string, tname: string): TargetFeature;
 declare function resolveTarget(tref: string, ctx$: any): {
     tname: string;
     tfolder: string;

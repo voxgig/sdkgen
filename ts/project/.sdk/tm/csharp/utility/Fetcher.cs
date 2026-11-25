@@ -15,59 +15,44 @@ public static partial class SdkUtility
     // CookieContainer would send one call's Set-Cookie on the next, under a
     // different credential — and .NET ADDS container cookies to a request
     // that already carries a Cookie header, which an `apiKey in: cookie`
-    // scheme does. Pooling is the handler's own and is unaffected. Past five
-    // redirects the last 3xx is the answer, as in every target. A gzip or
-    // deflate body is decoded, which .NET leaves to the handler to ask for: a
-    // server may compress its answer whatever the request asked for.
-    private static HttpClientHandler CookielessHandler(bool allowRedirect) =>
+    // scheme does. Pooling is the handler's own and is unaffected. No handler
+    // follows a redirect: DefaultHttpFetch does. A gzip or deflate body is
+    // decoded, which .NET leaves to the handler to ask for: a server may
+    // compress its answer whatever the request asked for.
+    private static HttpClientHandler CookielessHandler() =>
         new HttpClientHandler
         {
-            AllowAutoRedirect = allowRedirect,
-            MaxAutomaticRedirections = 5,
+            AllowAutoRedirect = false,
             UseCookies = false,
             AutomaticDecompression =
                 System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Deflate,
         };
 
-    private static readonly HttpClient DefaultHttpClient = new(CookielessHandler(true));
+    private static readonly HttpClient DefaultHttpClient = new(CookielessHandler());
 
-    // Non-following twin of DefaultHttpClient. The station feature's
-    // middleware sets `redirect: manual` on the fetch definition under a
-    // hosts egress policy: a 3xx must come back as a response like any
-    // other, because an automatic follow would carry injected credentials
-    // to a Location no policy approved (the ts donor's fetch honours the
-    // same key natively; redirect policy is per-handler in .NET, hence a
-    // second client).
-    private static readonly HttpClient ManualRedirectHttpClient =
-        new(CookielessHandler(false));
-
-    // Proxy-routed clients, cached per proxy URL and redirect policy (see
-    // the proxy feature's fetchdef annotation).
+    // Proxy-routed clients, cached per proxy URL (see the proxy feature's
+    // fetchdef annotation).
     private static readonly Dictionary<string, HttpClient> ProxyClients = new();
     private static readonly object ProxyClientsLock = new();
 
     private static HttpClient ClientFor(Dictionary<string, object?> fetchdef)
     {
-        var manual = fetchdef.TryGetValue("redirect", out var rraw) &&
-            rraw is string redirect && redirect == "manual";
-
         if (fetchdef.TryGetValue("proxy", out var raw) && raw is string proxy && proxy != "")
         {
             lock (ProxyClientsLock)
             {
-                var key = (manual ? "manual|" : "auto|") + proxy;
-                if (!ProxyClients.TryGetValue(key, out var client))
+                if (!ProxyClients.TryGetValue(proxy, out var client))
                 {
-                    var handler = CookielessHandler(!manual);
+                    var handler = CookielessHandler();
                     handler.Proxy = new System.Net.WebProxy(proxy);
                     handler.UseProxy = true;
                     client = new HttpClient(handler);
-                    ProxyClients[key] = client;
+                    ProxyClients[proxy] = client;
                 }
                 return client;
             }
         }
-        return manual ? ManualRedirectHttpClient : DefaultHttpClient;
+        return DefaultHttpClient;
     }
 
     internal const string GetOnlyEnv = "VOXGIG_GETONLY_GUARD";
@@ -92,17 +77,112 @@ public static partial class SdkUtility
             "[GET-ONLY GUARD] blocked " + upper + " " + (path == "" ? "/" : path), null);
     }
 
-    internal static Dictionary<string, object?> DefaultHttpFetch(
-        string fullurl, Dictionary<string, object?> fetchdef)
+    // 300 as HttpClient followed it, beside the statuses every target follows.
+    private static readonly int[] RedirectStatus = { 300, 301, 302, 303, 307, 308 };
+    private const int RedirectMax = 5;
+    private static readonly string[] CredentialHeaders =
     {
-        var method = fetchdef.TryGetValue("method", out var mraw) && mraw is string m && m != ""
-            ? m : "GET";
-        var refused = GetOnlyRefusal(fullurl, method);
-        if (refused != null)
-        {
-            throw refused;
-        }
+        "authorization", "cookie", "proxy-authorization",
+    };
 
+    // What another origin is not sent: the names every client drops, and
+    // whatever the SDK holds as a secret, by its name or by its value. A call
+    // with no context is answered from the schema's sensitive names.
+    private static bool IsCredential(Context? ctx, string name, object? value)
+    {
+        return CredentialHeaders.Contains(name.ToLowerInvariant()) ||
+            (ctx?.Utility?.CleanSecret ?? CleanSecretUtil)(ctx!, name, value);
+    }
+
+    private static bool SameOrigin(Uri here, Uri next)
+    {
+        return here.Scheme == next.Scheme && here.Port == next.Port &&
+            string.Equals(here.Host, next.Host, StringComparison.OrdinalIgnoreCase);
+    }
+
+    // Left to follow, HttpClient sends another origin every header but
+    // Authorization, and a 307's body with them. Followed here instead: each
+    // hop passes the GET-only guard; past RedirectMax hops, or where a body
+    // would go to another origin, the 3xx is the answer.
+    internal static Dictionary<string, object?> DefaultHttpFetch(
+        string fullurl, Dictionary<string, object?> fetchdef, Context? ctx = null)
+    {
+        // "manual" (set by the station feature's middleware under a hosts
+        // policy) is answered by the 3xx, like any other response.
+        var manual = "manual".Equals(fetchdef.GetValueOrDefault("redirect"));
+        var url = fullurl;
+        var def = fetchdef;
+
+        for (var hops = 0; ; hops++)
+        {
+            var method = def.GetValueOrDefault("method") is string given && given != "" ? given : "GET";
+            var refused = GetOnlyRefusal(url, method);
+            if (refused != null)
+            {
+                throw refused;
+            }
+
+            var res = SendOnce(url, method, def);
+            if (manual || RedirectMax <= hops || res["status"] is not int status ||
+                !RedirectStatus.Contains(status) ||
+                StructUtils.GetProp(res["headers"], "location") is not string location ||
+                !Uri.TryCreate(url, UriKind.Absolute, out var here) ||
+                !Uri.TryCreate(here, location, out var next))
+            {
+                return res;
+            }
+
+            // As HttpClient refused to: from https to any other scheme.
+            if (here.Scheme == Uri.UriSchemeHttps && next.Scheme != Uri.UriSchemeHttps)
+            {
+                return res;
+            }
+
+            // As HttpClient rewrote it: a 303, and any other but a 307 or 308
+            // answering a POST, become a GET without the body.
+            method = method.ToUpperInvariant();
+            var toget = 303 == status ? "HEAD" != method && "GET" != method
+                : "POST" == method && 307 != status && 308 != status;
+            var cross = !SameOrigin(here, next);
+            var body = toget ? null : def.GetValueOrDefault("body");
+
+            // A stream is read once, so it cannot be sent again either.
+            if (body != null && (cross || body is Stream))
+            {
+                return res;
+            }
+
+            var headers = new Dictionary<string, object?>();
+            if (def.GetValueOrDefault("headers") is Dictionary<string, object?> held)
+            {
+                foreach (var kv in held)
+                {
+                    var dropped =
+                        (toget && kv.Key.StartsWith("content-", StringComparison.OrdinalIgnoreCase)) ||
+                        (cross && IsCredential(ctx, kv.Key, kv.Value));
+                    if (!dropped)
+                    {
+                        headers[kv.Key] = kv.Value;
+                    }
+                }
+            }
+
+            def = new Dictionary<string, object?>(def)
+            {
+                ["method"] = toget ? "GET" : method,
+                ["headers"] = headers,
+            };
+            if (body == null)
+            {
+                def.Remove("body");
+            }
+            url = next.AbsoluteUri;
+        }
+    }
+
+    private static Dictionary<string, object?> SendOnce(
+        string fullurl, string method, Dictionary<string, object?> fetchdef)
+    {
         using var req = new HttpRequestMessage(new HttpMethod(method), fullurl);
 
         if (fetchdef.TryGetValue("body", out var braw))
@@ -241,7 +321,7 @@ public static partial class SdkUtility
 
         if (sysFetch == null)
         {
-            return DefaultHttpFetch(fullurl, fetchdef);
+            return DefaultHttpFetch(fullurl, fetchdef, ctx);
         }
 
         if (sysFetch is Func<string, Dictionary<string, object?>, Dictionary<string, object?>> fetchFunc)

@@ -90,9 +90,9 @@ function render(model: any, entity: any[], auth: {
  *
  * Every credential slot holds a distinctive value, every diagnostic feature
  * this SDK ships is switched on with a capturing sink, a real operation runs
- * through every outcome, and every string that leaves the SDK is searched
- * for the canaries and their encoded forms. It also proves its own
- * sensitivity: with clean switched off the canary MUST show. *)
+ * through every outcome, and every string that leaves is searched for the
+ * canaries and their encoded forms; a second sweep does the same for a body
+ * of bytes. With clean switched off the canary MUST show. *)
 
 open Voxgig_struct
 open Sdk_types
@@ -122,6 +122,29 @@ let forms_all : string list =
   @ [base64_encode (canary_of "apikey" ^ ":" ^ canary_of "secret")]
 
 let leaks (text : string) : string list = List.filter (fun f -> substr_contains text f) forms_all
+
+(* The marker a body of bytes carries. *)
+let content = "CANARY-CONTENT-b7n3v9x1c5"
+
+(* Every value this SDK accepts as a raw body: a Str holding the bytes. *)
+let carriers : (string * (unit -> value)) list = [ ("Str", (fun () -> Str content)) ]
+
+(* The forms bytes travel in once copied: text, a list of byte values, hex,
+ * base64. *)
+let content_leaks (text : string) : string list =
+  let flat = Buffer.create (String.length text) in
+  String.iter (fun c -> match c with
+      | ' ' | '\\t' | '\\n' | '\\r' -> ()
+      | c -> Buffer.add_char flat c) text;
+  let flat = Buffer.contents flat in
+  let codes = List.map Char.code (List.of_seq (String.to_seq content)) in
+  let values = String.concat "," (List.map string_of_int codes) in
+  let hex = String.concat "" (List.map (Printf.sprintf "%02x") codes) in
+  List.filter_map (fun (form, found) -> if found then Some form else None) [
+    ("text", substr_contains text content);
+    ("byte values", substr_contains flat values);
+    ("hex", substr_contains (String.lowercase_ascii flat) hex);
+    ("base64", substr_contains flat (base64_encode content)) ]
 
 let ends_with_s (s : string) (suf : string) : bool =
   let ls = String.length s and lf = String.length suf in
@@ -331,12 +354,40 @@ let usable_op () : target option =
           try ignore (c.c_run plain (args ps) (empty_map ()) (ref Noval)); Some { t_cand = c; t_params = ps }
           with _ -> None) [[]; c.c_params]) candidates
 
-let drive (sdk : sdk_client) (t : target) (ctrl : value) (sinks : sinks) : exn option =
+(* The first operation with a point that sends a raw body the model marks
+ * binary, with every path parameter of that point filled in; with it, the
+ * action that selects the point and the media type it declares. *)
+let binary_op () : (target * value * value) option =
+  let plain = construct (jo [("apikey", Str (canary_of "apikey"))]) in
+  let config = match plain.cl_rootctx with Some ctx -> ctx.c_config | None -> Noval in
+  first_some (fun c ->
+      let entname, opname = match String.rindex_opt c.c_name '.' with
+        | Some i -> (String.sub c.c_name 0 i, String.sub c.c_name (i + 1) (String.length c.c_name - i - 1))
+        | None -> (c.c_name, "") in
+      let points = getp (getp (getp (getp (getp config "entity") entname) "op") opname) "points" in
+      first_some (fun point ->
+          let body = getp point "body" in
+          match getp body "kind", getp body "binary" with
+          | Str "raw", Bool true ->
+            let params = match getp (getp point "args") "params" with
+              | List r -> List.filter_map (fun p -> match getp p "name" with Str n -> Some n | _ -> None) !r
+              | _ -> [] in
+            Some ({ t_cand = c; t_params = params }, getp (getp point "select") "$action", getp body "media")
+          | _ -> None)
+        (match points with List r -> !r | _ -> [])) candidates
+
+(* What a binary call passes beside its path parameters. *)
+let binary_data (action : value) (body : value) : (string * value) list =
+  ("$body", body) :: (match action with Noval | Null -> [] | a -> [("$action", a)])
+
+let drive ?(data = []) (sdk : sdk_client) (t : target) (ctrl : value) (sinks : sinks) : exn option =
   (* A caller may keep the record it passed rather than read ctrl.explain. *)
   let held = getp ctrl "explain" in
   let mtch = ref Noval in
+  let m = args t.t_params in
+  List.iter (fun (k, v) -> setp m k v) data;
   let err =
-    try value_forms sinks "result" (t.t_cand.c_run sdk (args t.t_params) ctrl mtch); None
+    try value_forms sinks "result" (t.t_cand.c_run sdk m ctrl mtch); None
     with e -> error_forms sinks "error" e; Some e in
   (* Raw, as a caller copying the match into another query reads it. *)
   value_forms sinks "match" !mtch;
@@ -562,6 +613,69 @@ let () =
       check "listed under a token header" (List.mem "LISTED-SECRET-2" values);
       check "a number, as its text" (List.mem "123456789" values);
       check "an ordinary name" (not (List.mem "not-a-secret" values)))
+
+let no_binary = "no operation of this SDK sends a binary body; nothing to sweep"
+
+let () =
+  test "clean.no_body_of_bytes_leaves_the_sdk" (fun () ->
+      match binary_op () with
+      | None -> Printf.printf "SKIP clean.no_body_of_bytes_leaves_the_sdk: %s\\n%!" no_binary
+      | Some (target, action, media) ->
+      let sinks : sinks = ref [] in
+      let sent = ref [] and errors = ref [] and explains = ref [] in
+      List.iter (fun (cname, make) ->
+          List.iter (fun sc ->
+              List.iter (fun (vname, mkctrl) ->
+                  let key = cname ^ "/" ^ sc.s_name ^ "/" ^ vname in
+                  (* The transport is where the bytes are meant to arrive, whole. *)
+                  let seen = { sc with s_respond = (fun url fd ->
+                      sent := (key, getp fd "body") :: !sent;
+                      sc.s_respond url fd) } in
+                  let sdk = make_sdk seen sinks [] in
+                  let ctrl = mkctrl () in
+                  let err = drive ~data:(binary_data action (make ())) sdk target ctrl sinks in
+                  (match err with Some e -> errors := (key, e) :: !errors | None -> ());
+                  (match getp ctrl "explain" with Map _ as ex -> explains := (key, ex) :: !explains | _ -> ());
+                  value_forms sinks "sdk" (client_to_value sdk)) variants)
+            (List.filteri (fun i _ -> i < 4) scenarios)) carriers;
+      let leaked = List.filter (fun (_, text) -> content_leaks text <> []) !sinks in
+      Printf.printf "clean: content swept %d surface(s), %d leak(s)\\n%!" (List.length !sinks) (List.length leaked);
+      if leaked <> [] then
+        failwith ("a body of bytes leaked through: "
+                  ^ String.concat "; " (List.map (fun (n, t) ->
+                      n ^ " [" ^ String.concat ", " (content_leaks t) ^ "]") leaked));
+      List.iter (fun (cname, make) ->
+          (* The request itself is untouched: what the transport was handed is the body. *)
+          check (cname ^ ": the transport was handed something else")
+            (match List.assoc_opt (cname ^ "/notfound/throw") !sent with
+             | Some body -> veq body (make ())
+             | None -> false);
+          (* The positive half: where the body was, what describes it now is. *)
+          let desc = jo [("binary$", Str "bytes"); ("size", vint_of (String.length content))] in
+          (match media with Str _ -> setp desc "type" media | _ -> ());
+          let failed = match List.assoc_opt (cname ^ "/notfound/throw") !errors with
+            | Some (Sdk_error_exc e) -> getp e.err_spec "body"
+            | _ -> failwith (cname ^ ": the 404 scenario must throw an SDK error") in
+          check (cname ^ ": the thrown spec holds " ^ stringify failed) (veq failed desc);
+          let explained = match List.assoc_opt (cname ^ "/ok/explain") !explains with
+            | Some ex -> getp (getp ex "spec") "body"
+            | None -> Noval in
+          check (cname ^ ": the explain record holds " ^ stringify explained) (veq explained desc))
+        carriers)
+
+let () =
+  test "clean.the_sweep_can_see_a_body" (fun () ->
+      match binary_op () with
+      | None -> Printf.printf "SKIP clean.the_sweep_can_see_a_body: %s\\n%!" no_binary
+      | Some (target, action, _) ->
+      List.iter (fun (cname, make) ->
+          let sinks : sinks = ref [] in
+          let sdk = make_sdk (List.nth scenarios 1) sinks [("active", Bool false)] in
+          let err = drive ~data:(binary_data action (make ())) sdk target (empty_map ()) sinks in
+          check (cname ^ ": the 404 scenario must throw") (err <> None);
+          check (cname ^ ": with clean off, nothing showed the bytes: the sweep is blind")
+            (List.exists (fun (_, t) -> content_leaks t <> []) !sinks))
+        carriers)
 `
 }
 

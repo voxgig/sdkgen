@@ -23,12 +23,19 @@ declare function seededList(lang: LiteralLang, ent: any, idF: string | null, key
     call: string[];
     record: string[];
 };
+declare function dataItems(ent: any, op: string, idF: string | null): any[];
 declare function dataArg(lang: LiteralLang, ent: any, op: string, idF: string | null): string;
+type ArgItem = {
+    name: string;
+    type: any;
+    id: boolean;
+};
+declare function exampleArgItems(ent: any, op: string, idF: string | null): ArgItem[];
 type PrimaryCall = {
     expr: string;
     resultVar: string;
     isVoid: boolean;
 };
 declare function primaryOpCall(lang: ExampleLang, eName: string, eLower: string, op: string, idF: string | null, ent: any): PrimaryCall;
-export { EXAMPLE_LANGS, helperLang, primaryOpCall, idLiteral, requiredItems, requestExampleItems, sendsId, matchExampleItems, matchArg, listMatchArg, seededList, dataArg, javaMap, javaMapOf, javaMapItems, litFor, litPair, litString, };
-export type { ExampleLang, LiteralLang, PrimaryCall, };
+export { EXAMPLE_LANGS, helperLang, primaryOpCall, idLiteral, requiredItems, requestExampleItems, sendsId, matchExampleItems, matchArg, listMatchArg, seededList, dataArg, dataItems, exampleArgItems, javaMap, javaMapOf, javaMapItems, litFor, litPair, litString, };
+export type { ArgItem, ExampleLang, LiteralLang, PrimaryCall, };

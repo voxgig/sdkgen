@@ -7,6 +7,11 @@ exports.cmd_package_check = cmd_package_check;
 exports.checkPackage = checkPackage;
 const kindCollection_1 = require("../helpers/kindCollection");
 const applicability_1 = require("../helpers/applicability");
+const surface_1 = require("../helpers/surface");
+const facts_1 = require("../helpers/facts");
+const semver_1 = require("../helpers/semver");
+const shipped_1 = require("../helpers/shipped");
+const targetguard_1 = require("../helpers/targetguard");
 const node_path_1 = __importDefault(require("node:path"));
 const types_1 = require("../types");
 const utility_1 = require("../utility");
@@ -14,7 +19,7 @@ const manifest_1 = require("../helpers/manifest");
 const definition_1 = require("../helpers/definition");
 const modelcheck_1 = require("../helpers/modelcheck");
 const featureSource_1 = require("../helpers/featureSource");
-const shipped_1 = require("../helpers/shipped");
+const shipped_2 = require("../helpers/shipped");
 const kind_1 = require("./kind");
 const SAME_FILE_LIMIT = 5;
 const UNRESOLVED_INCLUDE = ['multisource_not_found', 'include_extension'];
@@ -109,12 +114,16 @@ function checkItems(fs, sdk, manifest) {
             if (!fs.existsSync(file)) {
                 continue;
             }
-            found.push(...checkDefinition(fs, kind, name, file));
+            found.push(...checkDefinition(fs, kind, name, file, {
+                manifest: node_path_1.default.join(sdk, '..', manifest_1.MANIFEST),
+                tier: manifest?.parity?.[name],
+                range: manifest?.engines?.sdkgen,
+            }));
         }
     }
     return found;
 }
-function checkDefinition(fs, kind, name, file) {
+function checkDefinition(fs, kind, name, file, pkg) {
     const found = [];
     const raw = String(fs.readFileSync(file, 'utf8'));
     // Checked as a project receives it: `add` renames `.aon` includes.
@@ -196,9 +205,55 @@ function checkDefinition(fs, kind, name, file) {
     }
     if ('target' === kind) {
         found.push(...checkTargetModel(checked, name, file, at));
+        if (0 === unified.errors.length && null != declared) {
+            found.push(...checkTargetSurface(unified.model, name, pkg, at));
+        }
+        const title = declared?.title;
+        if (null != declared && ('string' !== typeof title || '' === title.trim())) {
+            found.push(at('warn', 'target-title-missing', 'declares no `title` — the generated documents name this target by its ' +
+                "origin's label, else as `" + name + '`'));
+        }
     }
     if ('feature' === kind) {
         found.push(...checkFeatureModel(strict.model, name, at));
+        found.push(...checkFeatureHooks(strict.model, name, at));
+    }
+    return found;
+}
+// The surface the fact rules give the target, against its parity tier, and
+// its declared word against the releases that read it. Generation reads a
+// word it does not know as unknown, so no word fails it.
+function checkTargetSurface(model, name, pkg, at) {
+    let surface;
+    try {
+        (0, facts_1.applyFacts)(model);
+        surface = (0, facts_1.fact)(model.main[types_1.KIT].target[name], 'surface');
+    }
+    catch (err) {
+        return [at('error', 'target-facts', 'the fact rules fail on this target alone: ' + err.message)];
+    }
+    const found = null == pkg?.tier ? [] :
+        (0, manifest_1.parityFinding)(pkg.manifest, name, pkg.tier, surface);
+    const target = model.main[types_1.KIT].target[name];
+    if ((0, targetguard_1.entityless)(target)) {
+        found.push(at('error', 'target-entity-off', (0, targetguard_1.entitylessNote)(name)));
+    }
+    const word = target.surface;
+    if ('string' !== typeof word || '' === word) {
+        return found;
+    }
+    const since = surface_1.SURFACE_SINCE[word];
+    if (null == since) {
+        found.push(at('warn', 'target-surface-unknown', 'declares surface `' + word + '`, which sdkgen ' + shipped_1.SDKGEN_VERSION +
+            ' does not know (' + surface_1.SURFACES.join(', ') + '): generation reads it as unknown ' +
+            'and names the target by its title. A release that introduces the word reads it, ' +
+            'from that release on; otherwise it is a misspelling'));
+    }
+    else if (false !== (0, semver_1.admitsBelow)(pkg?.range ?? '', since)) {
+        found.push(at('info', 'target-surface-since', 'declares surface `' + word + '`, which sdkgen reads from ' + since + '; ' +
+            (null == pkg?.range ? 'the manifest declares no `engines.sdkgen`, so it' :
+                '`engines.sdkgen` `' + pkg.range + '`') +
+            ' admits older releases, which ignore the slot'));
     }
     return found;
 }
@@ -246,6 +301,20 @@ function checkFeatureModel(model, name, at) {
     }
     return found;
 }
+function checkFeatureHooks(model, name, at) {
+    const hook = model?.main?.[types_1.KIT]?.feature?.[name]?.hook;
+    if (null == hook || 'object' !== typeof hook) {
+        return [];
+    }
+    const known = (0, modelcheck_1.schemaHooks)();
+    const unknown = Object.keys(hook).filter((h) => !known.includes(h)).sort();
+    if (0 === unknown.length) {
+        return [];
+    }
+    return [at('error', 'feature-hook-unknown', 'declares hook(s) the base schema does not list: ' + unknown.join(', ') +
+            ' — no pipeline fires them, so the feature never runs there. The hooks are: ' +
+            known.join(', '))];
+}
 // The template trees: does a feature's declared coverage exist, and is
 // anything in a target's tree feature-shaped but invisible to the trim?
 function checkFeatureSource(fs, sdk, manifest) {
@@ -254,7 +323,7 @@ function checkFeatureSource(fs, sdk, manifest) {
     // The catalogue a CONSUMER will have: this generator's own features, plus
     // the package's. A package shipping a copy of a bundled target ships source
     // for features it does not provide, and those are not strays.
-    const bundled = (0, featureSource_1.availableFeatures)(fs, (0, shipped_1.scaffoldFolder)());
+    const bundled = (0, featureSource_1.availableFeatures)(fs, (0, shipped_2.scaffoldFolder)());
     const known = new Set([...bundled, ...(0, featureSource_1.availableFeatures)(fs, sdk)]);
     // Declared coverage. `targetsSupported: { <feature>: [<target>, …] }` is
     // the author's statement about which targets a feature ships source for, so

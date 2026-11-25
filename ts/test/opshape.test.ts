@@ -8,10 +8,12 @@ import Path from 'node:path'
 
 import {
   opRequestShape, opTypeName, OP_SUFFIX, entityClassName, entityConstructorName, pickExampleEntity,
-  opReachable, opNeedsAction, entityOps, guardFlowSteps, ungeneratedOps, warnUngeneratedOps,
+  opReachable, opNeedsAction, entityOps, introOps, guardFlowSteps, ungeneratedOps, warnUngeneratedOps,
   entityIdField, pointPlaceholders, requiredItems, matchArg, requestExampleItems, dataArg,
 } from '../dist/sdkgen.js'
 import { targetOrigins, resolvesBundled, resolveSource, BUNDLED } from '../dist/action/resolve.js'
+
+import { makeStampedModel } from './generateharness'
 
 
 // A model entity with a mix of required/optional fields, a per-op exclusion,
@@ -603,10 +605,10 @@ function pt(path: string, action?: string): any {
 
 describe('opReachable — the route makePoint would take', () => {
 
-  test('a lone point is taken whatever its action, if the call fills it', () => {
+  test('a lone point is taken if the call fills it, and never if it is an action', () => {
     strictEqual(opReachable({ points: [pt('/planet/{id}')] }, ['id']), true)
     strictEqual(opReachable({ points: [pt('/planet/{id}')] }, []), false)
-    strictEqual(opReachable({ points: [pt('/signal/strong', 'strong')] }, []), true)
+    strictEqual(opReachable({ points: [pt('/signal/strong', 'strong')] }, []), false)
   })
 
   test('otherwise only a point without an action, and one the call fills', () => {
@@ -631,9 +633,10 @@ describe('opReachable — the route makePoint would take', () => {
 
 describe('opNeedsAction and entityOps', () => {
 
-  test('every route an action, and more than one of them', () => {
+  test('every route an action, a lone one included', () => {
     strictEqual(opNeedsAction({ points: [pt('/a', 'x'), pt('/b', 'y')] }), true)
-    strictEqual(opNeedsAction({ points: [pt('/a', 'x')] }), false)
+    strictEqual(opNeedsAction({ points: [pt('/a', 'x')] }), true)
+    strictEqual(opNeedsAction({ points: [pt('/a')] }), false)
     strictEqual(opNeedsAction({ points: [pt('/a', 'x'), pt('/b')] }), false)
     strictEqual(opNeedsAction({}), false)
   })
@@ -647,6 +650,17 @@ describe('opNeedsAction and entityOps', () => {
       },
     }
     deepStrictEqual(entityOps(ent), ['load'])
+    deepStrictEqual(entityOps({ ...ent, op: { ...ent.op, list: { points: [pt('/signal/strong', 'strong')] } } }),
+      ['load'])
+  })
+
+  test('an operation outside the six the targets generate is in neither list', () => {
+    const ent = {
+      name: 'report', active: true,
+      op: { generate: { points: [pt('/report/generate')] }, load: { points: [pt('/report/{id}')] } },
+    }
+    deepStrictEqual(entityOps(ent), ['load'])
+    deepStrictEqual(introOps({ main: { kit: { entity: { report: ent } } } }), ['load'])
   })
 })
 
@@ -931,21 +945,22 @@ describe('ungeneratedOps — operations the bundled targets do not generate', ()
 
   test('says nothing when no bundled target is generated', () => {
     const warns: any[] = []
-    const external = { bundled: [], external: MIXED.external }
+    const external = { bundled: [], external: MIXED.external, owned: [] }
     deepStrictEqual(warnUngeneratedOps(extraOpModel(),
       { warn: (e: any) => warns.push(e) }, external), [])
     deepStrictEqual(warnUngeneratedOps(extraOpModel(),
-      { warn: (e: any) => warns.push(e) }, { bundled: [], external: [] }), [])
+      { warn: (e: any) => warns.push(e) }, { bundled: [], external: [], owned: [] }), [])
     strictEqual(warns.length, 0)
   })
 })
 
 
-const BUNDLED_ONLY = { bundled: ['go', 'ts'], external: [] }
+const BUNDLED_ONLY = { bundled: ['go', 'ts'], external: [], owned: [] }
 
 const MIXED = {
   bundled: ['go', 'ts'],
   external: [{ name: 'dart', from: 'node_modules/@voxgig/sdkgen-langpack/.sdk' }],
+  owned: [],
 }
 
 
@@ -987,8 +1002,9 @@ describe('targetOrigins — which targets the ungenerated-op warning speaks for'
         { name: 'dart', from: 'node_modules/@voxgig/sdkgen-langpack/.sdk' },
         { name: 'py', from: '/elsewhere/sdkgen/ts/project/.sdk' },
       ],
+      owned: [],
     })
-    deepStrictEqual(targetOrigins({}), { bundled: [], external: [] })
+    deepStrictEqual(targetOrigins({}), { bundled: [], external: [], owned: [] })
   })
 
   // The same answer resolveSource gives when the next add re-resolves each
@@ -1021,6 +1037,28 @@ describe('targetOrigins — which targets the ungenerated-op warning speaks for'
     finally {
       Fs.rmSync(tmp, { recursive: true, force: true })
     }
+  })
+
+  test('classes the generation fixture by the provenance target add records', () => {
+    const model = makeStampedModel(['go', 'ts'])
+    const go = model.main.kit.target.go
+    deepStrictEqual([go.base, go.package], [BUNDLED, '@voxgig/sdkgen'])
+    strictEqual(model.main.kit.target.bash.base, '')
+
+    const { bundled } = targetOrigins(model)
+    ok(bundled.includes('go') && bundled.includes('ts'), JSON.stringify(bundled))
+  })
+
+  test('names a project-owned target apart from the bundled ones', () => {
+    deepStrictEqual(targetOrigins(makeStampedModel(['go'])), { bundled: ['go'], external: [], owned: ['bash'] })
+
+    const warns: any[] = []
+    warnUngeneratedOps(extraOpModel(), { warn: (e: any) => warns.push(e) },
+      { bundled: ['go'], external: [], owned: ['bash'] })
+    deepStrictEqual([warns[0].bundled, warns[0].owned], [['go'], ['bash']])
+    ok(warns[0].note.includes('the bundled targets (go) do not generate'), warns[0].note)
+    ok(warns[0].note.includes("not judged here: bash (the project's own)"), warns[0].note)
+    ok(!/the SDK has no method|active: false/.test(warns[0].note), warns[0].note)
   })
 })
 

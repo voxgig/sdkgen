@@ -169,6 +169,27 @@ APIs that need no authentication. An API whose spec omits its security
 schemes (GitHub's official OpenAPI does) still gets a credential when the
 project sets `config: auth: { active: true, prefix: 'Bearer' }`.
 
+### `guardModel(model, log?) → model`
+
+Prepare a model before anything reads a fact from it. It renames an entity
+name no target can hold, a leading digit or two names that meet once case is
+ignored, together with the model's references to that name. It also switches
+off a flow step whose call the runtime would refuse. Given a `log`, it reports
+each change.
+
+`generate()` applies it and then the fact pass, `applyFacts(model)`. A tool
+that reads facts from a model `generate()` did not prepare, such as docgen
+running alone over `sdk.json`, applies both in that order. Applying it to a
+prepared model changes nothing.
+
+### `sourceString(lang, text) → string`
+
+The inside of a double-quoted string literal in the language `lang` that
+holds `text`, with every `$` written as that language's escape. A component
+prints text from the spec in generated source through it, so the template
+pass never reads a `$$` in the text as a model path. It throws for a language
+it does not know.
+
 ### `collectDeps(model, targetName, targetDeps) → DepEntry[]`
 
 Collect target-language dependencies from features and from the target's
@@ -245,20 +266,83 @@ The typed-model subsystem (full picture:
   warn about) duplicate generated type names across entities.
 - **`entityIdField(ent)`** / **`entityDataIdField(ent)`** — the id-like
   key of the load match / of the data type (they differ; doc generators
-  must pick the right one). **`entityOps(ent)`** — active op names in
-  canonical order, leaving out an op whose every route is an action;
-  **`introOps(model)`** — the op names a README introduction lists, across
-  every active entity, canonical ones first, or `list` and `load` when there
-  are none;
+  must pick the right one). **`entityOps(ent)`** — active op names of the
+  six the bundled targets generate, in canonical order, leaving out an op
+  whose every route is an action;
+  **`introOps(model)`** — the op names of those six a README introduction
+  lists, across every active entity, in canonical order, or `list` and `load`
+  when there are none;
   **`entityPrimaryOp(ent)`** — the representative op for a single example;
   **`pickExampleEntity(entityColl)`** — the entity a README example should
   use, preferring one whose example call reaches a route.
 - **`opReachable(op, given) → boolean`** — whether a call that gives these
-  parameter names reaches a route of the op, by the rule the runtime point
-  choice applies: a lone route is taken as it is, and otherwise only a route
-  without an action that the call fills. **`opNeedsAction(op) → boolean`**
-  — whether the op has more than one route and every one is an action, so a
-  call must name one with `$action`.
+  parameter names, and no `$action`, reaches a route of the op, by the rule
+  the runtime point choice applies: only a route without an action that the
+  call fills. **`opNeedsAction(op) → boolean`** — whether every route of the
+  op is an action, a lone one included, so a call must name one with
+  `$action`.
+
+---
+
+## Test kit
+
+`@voxgig/sdkgen/testkit` is the package's second entry point: what an
+sdkgen package's own suite uses to install the package into a staged
+project and generate from it. The
+[package authoring guide](../how-to/author-an-sdkgen-package.md) walks
+through it.
+
+```js
+const { stageConsumer, generateInto, textGuard } = require('@voxgig/sdkgen/testkit')
+```
+
+### `stageConsumer(opts?) → Consumer`
+
+Builds a real project on disk, with `@voxgig/sdkgen` and its peers linked
+into its `.sdk/node_modules`. On the consumer, `addPackage(ref)` runs
+`package add`, `add(kind, ref)` runs an add through the same dispatch as
+the command line,
+`compile()` transpiles `.sdk/src/cmp/**`, and `cleanup()` removes the tree.
+
+### `generateInto(consumer, opts) → Promise<GenerateResult>`
+
+A real generation run from the staged project into memory. `opts.model` is
+the compiled model. `top: true` also writes the root documents, `outside`
+names the destinations of targets generated out of tree, and `external`
+relocates targets for this call, as `SDKGEN_EXTERNAL` relocates them for a
+run. The result is `{ files, outside, leaks }`: the files by path, the
+out-of-tree files by destination, and each placeholder that survived.
+
+### `textGuard(files, opts?) → TextFinding[]`
+
+Reads the Markdown in a `files` map, such as the one `generateInto`
+returns, and returns a finding for each line it objects to, without
+throwing. A finding is `{ relation, doc, line, cause }`:
+
+| `relation` | The line | `cause` |
+| --- | --- | --- |
+| `link` | links or changes directory to a path the run did not write, or to an anchor its page lacks | the path, with the anchor |
+| `marker` | holds a `$$path$$` marker outside a code span | `unfired` |
+| `fence` | opens a code block tagged with a language other than its target's | the tag |
+| `off` | names a word in `opts.absent` | the word |
+
+`opts.fences` maps a target's directory to the tag its documents use,
+beside the bundled targets' tags and the neutral tags for shell sessions
+and data; the guard skips a directory it has no tag for. `opts.absent`
+lists the words, or regular expressions, for what the run left out.
+`opts.present` names paths that exist although the run did not write them.
+Run it over a generation with `top: true`, so a link to a root document
+has something to resolve against.
+
+### `manifestParity(pkgRoot) → Record<string, string>`
+
+The `parity` map of the package's `sdkgen-package.json`, or an empty map.
+
+### `volumeKey(path) → string`, `PLACEHOLDERS` and `SDKGEN_ROOT`
+
+`volumeKey` turns a path into the key the in-memory file system stores it
+under: forward slashes, no drive letter. `PLACEHOLDERS` lists the tokens `leaks` reports,
+and `SDKGEN_ROOT` is the root of the installed `@voxgig/sdkgen`.
 
 ---
 

@@ -91,6 +91,15 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 
 `)
 
+    // The first example of an entity requires its namespace: the quick start
+    // requires only its own entity's, and a reader starts from this section.
+    let required = false
+    const requireLine = () => {
+      if (required) return ''
+      required = true
+      return `(require '[sdk.entity.${eLow} :as e-${eLow}])\n\n`
+    }
+
     if (opnames.length > 0) {
       Content(`#### Operations
 
@@ -140,7 +149,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
       Content(`#### Example: Load
 
 \`\`\`clojure
-(def ${eLow} (e-${eLow}/load (api/${eLow} client nil) ${loadArg} nil))
+${requireLine()}(def ${eLow} (e-${eLow}/load (api/${eLow} client nil) ${loadArg} nil))
 \`\`\`
 
 `)
@@ -150,7 +159,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
       Content(`#### Example: List
 
 \`\`\`clojure
-(def ${eLow}s (e-${eLow}/list (api/${eLow} client nil) ${cljListMatch(entity)} nil))
+${requireLine()}(def ${eLow}s (e-${eLow}/list (api/${eLow} client nil) ${cljListMatch(entity)} nil))
 \`\`\`
 
 `)
@@ -164,7 +173,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
       Content(`#### Example: Create
 
 \`\`\`clojure
-(def ${eLow}
+${requireLine()}(def ${eLow}
   (e-${eLow}/create (api/${eLow} client nil)
     (vs/jm
 `)

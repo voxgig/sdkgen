@@ -1,5 +1,5 @@
 import { featureApplies } from '../helpers/applicability'
-import { alternatives, isAnyOf } from '../helpers/canonSpec'
+import { fact } from '../helpers/facts'
 
 import { each } from 'jostraca'
 
@@ -11,9 +11,13 @@ type FeatureDoc = {
   name: string
   Name: string
   title: string
+  titleCell: string
   transport: string
   wraps: boolean
-  options: Array<{ name: string, value: string }>
+  on: boolean
+  // Active hooks, which a wrapping feature such as cost may also declare.
+  hooks: string[]
+  options: Array<{ name: string, code: string }>
 
   extras: Array<{ name: string, type: string }>
 }
@@ -21,40 +25,6 @@ type FeatureDoc = {
 
 function isWrapping(feat: any): boolean {
   return 'wrap' === feat.transport
-}
-
-
-// A struct.validate sentinel as a reader's word for it: '`$FUNCTION`' ->
-// 'function'. A union renders its members, so netsim's latency reads
-// 'number | map'. Anything unrecognised renders verbatim rather than being
-// dropped — a doc table that silently omits an option is the failure this
-// whole path exists to fix.
-function sentinelName(v: any): string {
-  if (Array.isArray(v)) {
-    const members = (isAnyOf(v) ? alternatives(v) : v.slice(1))
-      .map((m: any) => sentinelName(m))
-    return 0 === members.length ? 'any' : members.join(' | ')
-  }
-
-  if ('string' !== typeof v) {
-    return 'any'
-  }
-
-  const bare = v.replace(/[`$]/g, '').trim().toLowerCase()
-  return '' === bare ? 'any' : bare
-}
-
-
-function renderValue(v: any): string {
-  if (null == v) { return '' }
-  if (Array.isArray(v)) { return '[' + v.map((x) => renderValue(x)).join(', ') + ']' }
-  if ('object' === typeof v) {
-    const keys = Object.keys(v)
-    return 0 === keys.length ? '{}' :
-      '{' + keys.map((k) => k + ': ' + renderValue(v[k])).join(', ') + '}'
-  }
-  if ('string' === typeof v) { return `'${v}'` }
-  return String(v)
 }
 
 
@@ -68,20 +38,23 @@ function featureDocs(model: any, target?: any): FeatureDoc[] {
       const opts = (f.config && f.config.options) || {}
       const options = Object.keys(opts).sort().map((k) => ({
         name: k,
-        value: renderValue(opts[k]),
+        code: fact(f, 'option')[k].value.codecell,
       }))
 
       const extra = (f.config && f.config.optspec) || {}
       const extras = Object.keys(extra)
         .filter((k) => null == opts[k])
         .sort()
-        .map((k) => ({ name: k, type: sentinelName(extra[k]) }))
+        .map((k) => ({ name: k, type: fact(f, 'option')[k].type.cell }))
       return {
         name: f.name,
         Name: f.Name || f.name,
-        title: f.title || '',
+        title: fact(f, 'title').inline,
+        titleCell: fact(f, 'title').cell,
         transport: f.transport || 'none',
         wraps: isWrapping(f),
+        on: true === fact(f, 'on'),
+        hooks: Object.keys(f.hook || {}).filter((h: string) => true === f.hook[h]?.active).sort(),
         options,
         extras,
       }
@@ -90,6 +63,14 @@ function featureDocs(model: any, target?: any): FeatureDoc[] {
 }
 
 
+
+
+// `a`, `a` and `b`, `a`, `b` and `c`.
+function codeList(names: string[]): string {
+  const code = names.map((n: string) => '`' + n + '`')
+  return code.length < 2 ? code.join('') :
+    code.slice(0, -1).join(', ') + ' and ' + code[code.length - 1]
+}
 
 
 const FIXED_ORDER_TARGETS = ['lean']
@@ -101,8 +82,7 @@ function honoursActivationOrder(target: any): boolean {
 
 export {
   featureDocs,
-  renderValue,
-  sentinelName,
+  codeList,
   honoursActivationOrder,
 }
 

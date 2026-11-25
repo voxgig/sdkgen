@@ -4,7 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.SDKGEN_ROOT = exports.PLACEHOLDERS = void 0;
+exports.textGuard = exports.SDKGEN_ROOT = exports.PLACEHOLDERS = void 0;
 exports.volumeKey = volumeKey;
 exports.stageConsumer = stageConsumer;
 exports.generateInto = generateInto;
@@ -17,6 +17,8 @@ const sdkgen_1 = require("./sdkgen");
 const package_1 = require("./action/package");
 const dispatch_1 = require("./action/dispatch");
 const types_1 = require("./types");
+const textguard_1 = require("./helpers/textguard");
+Object.defineProperty(exports, "textGuard", { enumerable: true, get: function () { return textguard_1.textGuard; } });
 // This package's own root — `<...>/node_modules/@voxgig/sdkgen` for a
 // consumer, or the checkout when sdkgen tests itself. Computed from this
 // module's location rather than by `require.resolve`, which would go through
@@ -298,6 +300,7 @@ async function generateInto(consumer, opts) {
         folder: consumer.root,
         root: '',
         pino: consumer.log,
+        external: opts.external,
     });
     const prevcwd = process.cwd();
     process.chdir(consumer.sdk);
@@ -305,7 +308,7 @@ async function generateInto(consumer, opts) {
     try {
         res = await sdkgen.generate({
             model: opts.model,
-            root: opts.root ?? defaultRoot(),
+            root: opts.root ?? defaultRoot({ top: opts.top }),
         });
     }
     finally {
@@ -398,9 +401,9 @@ function layeredFs(mem) {
         realpathSync: readThrough('realpathSync'),
     };
 }
-function defaultRoot() {
+function defaultRoot(opts = {}) {
     const { cmp, each, names, Project, Folder } = require('jostraca');
-    const { Main, Entity, Feature, Test, Readme, AgentGuide, SdkGenError, } = require('./sdkgen');
+    const { Main, Entity, Feature, Test, Readme, AgentGuide, fact, ReadmeTop, AgentGuideTop, License, Security, Changelog, Deploy, PublishWorkflow, } = require('./sdkgen');
     return cmp(function Root(props) {
         const { model, ctx$ } = props;
         model.const = model.const || { name: model.name };
@@ -411,22 +414,26 @@ function defaultRoot() {
         ctx$.model = model;
         ctx$.stdrep = ctx$.stdrep || {};
         names(ctx$.stdrep, model.Name, 'Project' + 'Name');
-        const target = model.main[types_1.KIT].target || {};
-        const feature = model.main[types_1.KIT].feature || {};
-        const entity = model.main[types_1.KIT].entity || {};
+        const kit = model.main[types_1.KIT];
+        const target = kit.target || {};
+        const feature = kit.feature || {};
+        const entity = kit.entity || {};
         const active = each(target).filter((t) => t && false !== t.active);
-        const atRoot = active.filter((t) => true === t.output?.root);
-        if (1 < atRoot.length) {
-            throw new SdkGenError('Only one target can be generated at the ' +
-                'project root: ' + atRoot.map((t) => t.name).join(', '));
-        }
         Project({}, () => {
+            if (true === opts.top && fact(kit, 'top')) {
+                ReadmeTop({});
+                AgentGuideTop({});
+                License({});
+                Security({});
+                Changelog({});
+                Deploy({});
+                PublishWorkflow({});
+            }
             active.map((t) => {
                 names(t, t.name);
-                const phase = t.phase || {};
-                const on = (n) => false !== (phase[n] && phase[n].active);
+                const phase = fact(t, 'phase');
                 const phases = () => {
-                    if (on('entity')) {
+                    if (phase.entity) {
                         each(entity)
                             .filter((e) => e && false !== e.active)
                             .map((e) => {
@@ -434,7 +441,7 @@ function defaultRoot() {
                             Entity({ target: t, entity: e });
                         });
                     }
-                    if (on('feature')) {
+                    if (phase.feature) {
                         each(feature)
                             .filter((f) => f && f.active)
                             .map((f) => {
@@ -443,14 +450,14 @@ function defaultRoot() {
                         });
                     }
                     Main({ target: t });
-                    if (on('readme'))
+                    if (phase.readme)
                         Readme({ target: t });
-                    if (on('agentguide'))
+                    if (phase.agentguide)
                         AgentGuide({ target: t });
-                    if (on('test'))
+                    if (phase.test)
                         Test({ target: t });
                 };
-                if (true === t.output?.root) {
+                if ('root' === fact(t, 'place')) {
                     phases();
                 }
                 else {

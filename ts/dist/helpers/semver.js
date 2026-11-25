@@ -2,6 +2,8 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.satisfies = satisfies;
 exports.parseVersion = parseVersion;
+exports.compareVersions = compareVersions;
+exports.admitsBelow = admitsBelow;
 const COMPARATOR_RE = /^(>=|<=|>|<|=|\^|~)?v?(\d+)(?:\.(\d+))?(?:\.(\d+))?$/;
 const ANY_RE = /^(\*|x|X)$/;
 function parseVersion(v) {
@@ -66,6 +68,12 @@ function satisfiesOne(version, comparator) {
         return version[0] === p[0] && version[1] === p[1];
     return version[0] === p[0];
 }
+// Undefined when either is not a plain version, so no order is claimed.
+function compareVersions(a, b) {
+    const pa = parseVersion(a);
+    const pb = parseVersion(b);
+    return null == pa || null == pb ? undefined : compare(pa, pb);
+}
 // Does `version` satisfy `range`?
 //
 // `true` / `false` / `undefined` — see the note at the top: undefined means
@@ -111,5 +119,25 @@ function satisfies(version, range) {
         }
     }
     return unknown ? undefined : false;
+}
+// Does `range` admit a release older than `version`? Tried at the versions the
+// range names and the release just below; undefined when nothing is understood.
+function admitsBelow(range, version) {
+    const v = parseVersion(version);
+    if (null == v) {
+        return undefined;
+    }
+    const named = (String(range ?? '').match(/\d+(?:\.\d+){0,2}/g) ?? [])
+        .map((m) => {
+        const p = m.split('.').map(Number);
+        return [p[0], p[1] ?? 0, p[2] ?? 0];
+    });
+    const top = Number.MAX_SAFE_INTEGER;
+    const below = 0 < v[2] ? [v[0], v[1], v[2] - 1] :
+        0 < v[1] ? [v[0], v[1] - 1, top] : 0 < v[0] ? [v[0] - 1, top, top] : undefined;
+    const tried = [...named, ...(null == below ? [] : [below])]
+        .filter((p) => 0 > compare(p, v))
+        .map((p) => satisfies(p.join('.'), range));
+    return tried.includes(true) ? true : tried.includes(undefined) ? undefined : false;
 }
 //# sourceMappingURL=semver.js.map

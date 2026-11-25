@@ -338,11 +338,22 @@ local function origin(u)
     tostring(parsed.port or (scheme == "https" and 443 or 80))
 end
 
+-- What another origin is not sent: the names every client drops, and
+-- whatever the SDK holds as a secret, by its name or by its value.
+local function is_credential(ctx, name, value)
+  if CREDENTIAL_HEADERS[string.lower(name)] then
+    return true
+  end
+  local secret = type(ctx) == "table" and type(ctx.utility) == "table" and ctx.utility.clean_secret or nil
+  return type(secret) == "function" and secret(ctx, name, value) == true
+end
+
 -- luasocket follows no 308 and refuses a relative Location from https, so a
 -- GET or HEAD follows a redirect here, unless the fetch definition says
--- "manual", each hop passing the GET-only guard first; past REDIRECT_MAX hops
--- the last 3xx is the answer. Another origin is not sent the credentials.
-local function default_http_fetch(fullurl, fetchdef)
+-- "manual", each hop passing the GET-only guard first; past REDIRECT_MAX hops,
+-- or where a body would go to another origin, the 3xx is the answer. Another
+-- origin is not sent the credentials.
+local function default_http_fetch(ctx, fullurl, fetchdef)
   local method = string.upper(tostring(fetchdef["method"] or "GET"))
   local follow = (method == "GET" or method == "HEAD") and fetchdef["redirect"] ~= "manual"
   local url = fullurl
@@ -360,9 +371,12 @@ local function default_http_fetch(fullurl, fetchdef)
     end
     local nexturl = string.gsub(require("socket.url").absolute(url, (string.gsub(location, "%s", ""))), "#.*$", "")
     if origin(nexturl) ~= origin(url) then
+      if fetchdef["body"] ~= nil then
+        return res, err
+      end
       local headers = {}
       for k, v in pairs(fetchdef["headers"] or {}) do
-        if not CREDENTIAL_HEADERS[string.lower(k)] then
+        if not is_credential(ctx, k, v) then
           headers[k] = v
         end
       end
@@ -396,7 +410,7 @@ local function fetcher_util(ctx, fullurl, fetchdef)
   local sys_fetch = vs.getpath(options, "system.fetch")
 
   if sys_fetch == nil then
-    return default_http_fetch(fullurl, fetchdef)
+    return default_http_fetch(ctx, fullurl, fetchdef)
   end
 
   if type(sys_fetch) == "function" then

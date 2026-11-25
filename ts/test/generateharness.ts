@@ -11,8 +11,12 @@ import {
   cmp,
   Main, Entity, Feature, Readme, Test as TestCmp, AgentGuide,
   ReadmeTop, AgentGuideTop, License, Security, Changelog, Deploy,
-  registerComponent,
+  registerComponent, applyFacts, fact,
 } from '../dist/sdkgen.js'
+import { provenanceReplace } from '../dist/helpers/stdrep.js'
+import { BUNDLED } from '../dist/action/resolve.js'
+import { kindDef } from '../dist/action/kind.js'
+import { aliasCmpText } from '../dist/action/target.js'
 
 
 const KIT = 'kit'
@@ -1487,6 +1491,42 @@ main: kit: flow: BasicFruitFlow: {
 }
 
 
+// Artil's access rules: matched by `agent_id`, updated per channel at a route that also needs `id`.
+function parentKeyedUpdate(): string {
+  const param = (n: string) => `{ k: "param", n: "${n}", or: "${n}", r: true, t: "\`$STRING\`" }`
+  return entityOnly(`
+main: kit: entity: access: {
+  alias: field: {}
+  name: "access"
+  id: { field: "agent_id", name: "id" }
+  fields: {
+    "admit": { h: 'Admit', n: "admit", r: false, t: "\`$STRING\`" }
+    "agent_id": { h: 'AgentId', n: "agent_id", r: false, t: "\`$STRING\`" }
+  }
+  op: {
+    load: { name: "load", points: [ {
+      g: { params: [ ${param('agent_id')} ] }
+      m: "GET", o: "/agents/{agent_id}/access", s: [{ lit: "agents" }, { var: "agent_id" }, { lit: "access" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" }
+      q: { exist: ["agent_id"] } } ] }
+    update: { name: "update", points: [ {
+      bf: ["admit"]
+      g: { params: [ ${param('agent_id')}, ${param('id')} ] }
+      m: "PUT", o: "/agents/{agent_id}/access/{id}"
+      s: [{ lit: "agents" }, { var: "agent_id" }, { lit: "access" }, { var: "id" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" }
+      q: { exist: ["agent_id", "id"] } } ] }
+  }
+}
+
+main: kit: flow: BasicAccessFlow: {
+  entity: "access", kind: "basic", name: "BasicAccessFlow"
+  step: [ { o: "load", i: { ref: "access_ref01" } } ]
+}
+`)
+}
+
+
 // A create whose routes are each nested under a parent of their own, so the
 // parameter every route needs reaches none of them, as loppee's attachment URL.
 function parentedCreate(): string {
@@ -2064,12 +2104,32 @@ main: kit: entity: planet: op: patch: {
 
 const CRUD_MODEL = PLANET_FIRST + PLANET_PATCH
 
+// The constructor fields a README prints: a secret, and a server URL with one
+// variable the caller must supply and one defaulted.
+const BASIC_TEMPLATED = `
+main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'header', name: 'Authorization' }
+main: kit: info: servers: [{ url: 'https://{tenant}.example.test/{region}', variables: { tenant: { default: '' }, region: { default: 'eu' } } }]
+`
+
+// Basic declared with the key in the query, where no runtime reads a secret.
+const BASIC_QUERY = `
+main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'query', name: 'api_key' }
+`
+
 const DOC_MODELS: [string, string | undefined][] = [
   ['singleton', undefined],
   ['list', 'main: kit: entity: ambient: active: false'],
   ['crud', CRUD_MODEL],
   ['nested', PLANET_FIRST + SATELLITE],
+  ['basic-templated', BASIC_TEMPLATED],
+  ['basic-query', BASIC_QUERY],
 ]
+
+
+// A target only the project defines: its model file records no provenance.
+const OWNED_TARGET = `
+main: kit: target: bash: { title: 'Bash', ext: 'sh', comment: line: "#", module: name: 'demo' }
+`
 
 
 const BUILTIN_TYPE_ENTITY = `
@@ -2132,13 +2192,14 @@ main: kit: entity: mfa_type: {
 
 function makeModel(
   targetNames: string[], name?: string, extra?: string, features?: string[],
+  targetDir = 'target', api = API_MODEL,
 ): any {
   const src = [
     '@"@voxgig/apidef/model/apidef.aontu"',
     '@"../../../model/sdkgen.aontu"',
-    ...targetNames.map((t) => `@"target/${t}.aontu"`),
+    ...targetNames.map((t) => `@"${targetDir}/${t}.aontu"`),
     ...(features || ['test', 'log']).map((f) => `@"feature/${f}.aontu"`),
-    null == name ? API_MODEL : API_MODEL.replace(/^name: '[^']*'/m, `name: '${name}'`),
+    null == name ? api : api.replace(/^name: '[^']*'/m, `name: '${name}'`),
     extra || '',
   ].join('\n')
 
@@ -2152,7 +2213,66 @@ function makeModel(
     'fixture model did not compile: ' +
     errs.map((e: any) => `[${e.why}] ${e.msg}`).join(' | '))
 
+  return applyFacts(model)
+}
+
+
+// The fixture's target files as `target add` writes them, beside the owned
+// target. Unstamped, every file carries `base: 'BASE'`, so no provenance rule
+// can fail on the plain fixture.
+function makeStampedModel(targetNames: string[], extra?: string): any {
+  const stamped = Path.join(STAGE, '.sdk', 'model', 'stamped')
+  Fs.mkdirSync(stamped, { recursive: true })
+
+  for (const t of targetNames) {
+    const replace = provenanceReplace(
+      { base: BUNDLED, name: t, origname: t, package: '@voxgig/sdkgen' })
+    let src = Fs.readFileSync(Path.join(STAGE, '.sdk', 'model', 'target', t + '.aontu'), 'utf8')
+    for (const [from, to] of Object.entries(replace)) {
+      src = src.split(from).join(to)
+    }
+    writeFileSync(Path.join(stamped, t + '.aontu'), src)
+  }
+
+  return makeModel(targetNames, undefined, OWNED_TARGET + (extra || ''), undefined, 'stamped')
+}
+
+
+// The model file `target add <origin>~<alias>` writes: keyed by the alias,
+// with its origin recorded.
+function aliasModel(origin: string, alias: string): string {
+  let model = kindDef('target').rename!(
+    Fs.readFileSync(Path.join(SCAFFOLD, 'model', 'target', origin + '.aontu'), 'utf8'), origin, alias)
+  const replace = provenanceReplace(
+    { base: BUNDLED, name: alias, origname: origin, package: '@voxgig/sdkgen' })
+  for (const [at, to] of Object.entries(replace)) {
+    model = model.split(at).join(to)
+  }
   return model
+}
+
+
+// What the same add installs, staged for a generate run: the components
+// renamed to the alias, their fragments, and the model file. `remove` deletes
+// the staged trees.
+function stageAlias(origin: string, alias: string): { model: string, remove: () => void } {
+  const sdk = Path.join(STAGE, '.sdk')
+  const from = Path.join(sdk, 'dist', 'cmp', origin)
+  const dirs = [Path.join(sdk, 'dist', 'cmp', alias), Path.join(sdk, 'src', 'cmp', alias)]
+  Fs.mkdirSync(dirs[0], { recursive: true })
+  for (const file of Fs.readdirSync(from).filter((name: string) => name.endsWith('.js'))) {
+    writeFileSync(Path.join(dirs[0], file.replace('_' + origin + '.js', '_' + alias + '.js')),
+      aliasCmpText(Fs.readFileSync(Path.join(from, file), 'utf8'), origin, alias))
+  }
+  const fragment = Path.join(sdk, 'src', 'cmp', origin, 'fragment')
+  if (Fs.existsSync(fragment)) {
+    Fs.cpSync(fragment, Path.join(dirs[1], 'fragment'), { recursive: true })
+  }
+
+  return {
+    model: aliasModel(origin, alias),
+    remove: () => dirs.forEach((dir) => Fs.rmSync(dir, { recursive: true, force: true })),
+  }
 }
 
 
@@ -2163,7 +2283,7 @@ const RegisteredQuick = registerComponent('ReadmeTopQuick')
 const RegisteredAbsent = registerComponent('NoSuchThing')
 
 
-function makeRoot(): any {
+function makeRoot(registered: any[] = []): any {
   return cmp(function Root(props: any) {
     const { model, ctx$ } = props
 
@@ -2176,37 +2296,38 @@ function makeRoot(): any {
     ctx$.stdrep = {}
     names(ctx$.stdrep, model.Name, 'ProjectName')
 
-    const target = model.main[KIT].target || {}
-    const feature = model.main[KIT].feature || {}
-    const entity = model.main[KIT].entity || {}
+    const kit = model.main[KIT]
+    const target = kit.target || {}
+    const feature = kit.feature || {}
+    const entity = kit.entity || {}
 
     Project({}, () => {
 
       // The repo-root phase, which the real Root reaches through Top(). It is
       // not optional coverage: ReadmeTop is the ONLY route to the
       // ReadmeTopQuick_<lang> components, where the elixir defect lived.
-      ReadmeTop({})
-      AgentGuideTop({})
-      License({})
-      Security({})
-      Changelog({})
-      Deploy({})
+      if (fact(kit, 'top')) {
+        ReadmeTop({})
+        AgentGuideTop({})
+        License({})
+        Security({})
+        Changelog({})
+        Deploy({})
+      }
 
-      each(target, (target: any) => {
+      each(target).filter((target: any) => false !== target.active).map((target: any) => {
         names(target, target.name)
 
-        Folder({ name: target.name }, () => {
-          const phase = target.phase || {}
-          const on = (name: string) => false !== (phase[name] && phase[name].active)
-
-          if (on('entity')) {
+        const phase = fact(target, 'phase')
+        const phases = () => {
+          if (phase.entity) {
             each(entity).filter((entity: any) => entity.active).map((entity: any) => {
               names(entity, entity.name)
               Entity({ target, entity })
             })
           }
 
-          if (on('feature')) {
+          if (phase.feature) {
             each(feature)
               .filter((f: any) => f.active)
               .map((f: any) => {
@@ -2219,11 +2340,19 @@ function makeRoot(): any {
 
           RegisteredQuick({ target })
           RegisteredAbsent({ target })
+          registered.forEach((Registered: any) => Registered({ target }))
 
-          if (on('readme')) Readme({ target })
-          if (on('agentguide')) AgentGuide({ target })
-          if (on('test')) TestCmp({ target })
-        })
+          if (phase.readme) Readme({ target })
+          if (phase.agentguide) AgentGuide({ target })
+          if (phase.test) TestCmp({ target })
+        }
+
+        if ('root' === fact(target, 'place')) {
+          phases()
+        }
+        else {
+          Folder({ name: target.name }, phases)
+        }
       })
     })
   })
@@ -2385,6 +2514,7 @@ export {
   parentedCreate,
   underscoreKeyed,
   idlessUpdate,
+  parentKeyedUpdate,
   namedFieldEntity,
   retypedList,
   seedableList,
@@ -2400,6 +2530,9 @@ export {
   NEW_PREFIX_ENTITY,
   CRUD_MODEL,
   DOC_MODELS,
+  BASIC_TEMPLATED,
+  BASIC_QUERY,
+  OWNED_TARGET,
   OPLESS_ENTITY,
   CREATE_ONLY_ENTITY,
   PATCH_ONLY_ENTITY,
@@ -2407,6 +2540,9 @@ export {
   makeLog,
   layeredFs,
   makeModel,
+  makeStampedModel,
+  aliasModel,
+  stageAlias,
   makeRoot,
   namedEntity,
 }

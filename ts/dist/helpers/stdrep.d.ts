@@ -1,4 +1,4 @@
-declare function ensureStdrep(ctx$: any): any;
+declare function ensureStdrep(ctx$: any, target?: any): any;
 declare function templateReplacements(model: any, tname: string): Record<string, string>;
 type Provenance = {
     base: string;

@@ -3,6 +3,7 @@ package core
 type Utility struct {
 	Clean             func(ctx *Context, val any) any
 	CleanAdd          func(ctx *Context, val any)
+	CleanSecret       func(ctx *Context, key string, val any) bool
 	CleanExplain      func(ctx *Context)
 	Done              func(ctx *Context) (any, error)
 	MakeError         func(ctx *Context, err error) (any, error)

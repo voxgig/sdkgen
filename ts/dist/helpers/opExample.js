@@ -12,6 +12,8 @@ exports.matchArg = matchArg;
 exports.listMatchArg = listMatchArg;
 exports.seededList = seededList;
 exports.dataArg = dataArg;
+exports.dataItems = dataItems;
+exports.exampleArgItems = exampleArgItems;
 exports.javaMap = javaMap;
 exports.javaMapOf = javaMapOf;
 exports.javaMapItems = javaMapItems;
@@ -166,7 +168,7 @@ function seededList(lang, ent, idF, key) {
     };
 }
 // An update or patch addressed only by id and route also changes a field.
-function dataArg(lang, ent, op, idF) {
+function dataItems(ent, op, idF) {
     const routed = new Set((0, opShape_1.opParams)(ent?.op?.[op]).map((p) => p.n));
     const addresses = (it) => it.name === idF || it.name === 'id' || routed.has(it.name);
     const items = requestExampleItems(ent, op)
@@ -174,7 +176,10 @@ function dataArg(lang, ent, op, idF) {
     const required = items.filter((it) => !it.optional);
     const changed = ('update' === op || 'patch' === op) && required.every(addresses) ?
         items.filter((it) => it.optional && !addresses(it)).slice(0, 1) : [];
-    const chosen = required.length ? [...required, ...changed] : items.slice(0, 3);
+    return required.length ? [...required, ...changed] : items.slice(0, 3);
+}
+function dataArg(lang, ent, op, idF) {
+    const chosen = dataItems(ent, op, idF);
     const pairs = chosen.map((it) => litPair(lang, it.name, litFor(lang, it.type)));
     switch (lang) {
         case 'php': return `[${pairs.join(', ')}]`;
@@ -182,6 +187,21 @@ function dataArg(lang, ent, op, idF) {
         case 'go': return `map[string]any{${pairs.join(', ')}}`;
         default: return `{ ${pairs.join(', ')} }`;
     }
+}
+// The members a primary-op example sends: those matchArg, listMatchArg and
+// dataArg write, each marked when it carries the entity's id.
+function exampleArgItems(ent, op, idF) {
+    const item = (it, id) => ({ name: it.name, type: it.type, id });
+    if ('list' === op) {
+        return requiredItems(ent, 'list').map((it) => item(it, false));
+    }
+    if ('load' === op || 'remove' === op) {
+        return requiredItems(ent, op).map((it) => item(it, it.name === idF));
+    }
+    if ('create' === op || 'update' === op || 'patch' === op) {
+        return dataItems(ent, op, idF).map((it) => item(it, false));
+    }
+    return [];
 }
 // Render the entity's PRIMARY-op invocation in `lang`. `eName` is the
 // Capitalised entity name, `eLower` the variable-safe lowercase name, `op` the

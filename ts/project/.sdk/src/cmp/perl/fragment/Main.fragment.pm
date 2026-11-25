@@ -257,7 +257,12 @@ sub _raw_request {
   my $url = defined $fetchdef->{url} ? $fetchdef->{url} : '';
   my ($fetched, $fetch_err) = $utility->{fetcher}->($ctx, $url, $fetchdef);
 
-  return { 'ok' => 0, 'err' => $utility->{clean}->($ctx, $fetch_err) } if $fetch_err;
+  if ($fetch_err) {
+    # An error object of another class is the fetcher's own, and is handed
+    # back as it is: clean would hand back a copy of it.
+    my $own = Scalar::Util::blessed($fetch_err) && !$fetch_err->isa('ProjectNameError');
+    return { 'ok' => 0, 'err' => $own ? $fetch_err : $utility->{clean}->($ctx, $fetch_err) };
+  }
 
   if (!defined $fetched) {
     return {

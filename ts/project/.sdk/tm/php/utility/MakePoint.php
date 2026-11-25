@@ -53,12 +53,17 @@ class ProjectNameMakePoint
                 "Operation \"{$op->name}\" has no endpoint definitions.")];
         }
 
-        if (count($op->points) === 1) {
+        $reqselector = $op->input === 'data' ? $ctx->reqdata : $ctx->reqmatch;
+        $selector = $op->input === 'data' ? $ctx->data : $ctx->match;
+
+        // A lone point still needs the call's action to agree with its own;
+        // the selection below refuses a mismatch either way.
+        if (count($op->points) === 1 &&
+            \Voxgig\Struct\Struct::getprop($reqselector, '$action') ===
+            \Voxgig\Struct\Struct::getprop(
+                \Voxgig\Struct\Struct::getprop($op->points[0], 'select'), '$action')) {
             $ctx->point = $op->points[0];
         } else {
-            $reqselector = $op->input === 'data' ? $ctx->reqdata : $ctx->reqmatch;
-            $selector = $op->input === 'data' ? $ctx->data : $ctx->match;
-
             $point = null;
             $matched = false;
             foreach ($op->points as $p) {

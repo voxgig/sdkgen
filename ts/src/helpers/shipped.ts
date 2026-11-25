@@ -19,8 +19,26 @@ function scaffoldFolder(): string {
 }
 
 
+function factRulesFile(): string {
+  return Path.join(packageRoot(), 'model', 'fact.aontu')
+}
+
+
+// This generator's own version, from the package.json beside `dist`. Not from
+// the consumer's model: `engines.sdkgen` is about the generator running.
+const SDKGEN_VERSION: string = (() => {
+  try {
+    return require(Path.join(packageRoot(), 'package.json')).version
+  }
+  catch (err: any) {
+    return '0.0.0'
+  }
+})()
+
 export {
+  SDKGEN_VERSION,
   packageRoot,
   schemaFile,
   scaffoldFolder,
+  factRulesFile,
 }

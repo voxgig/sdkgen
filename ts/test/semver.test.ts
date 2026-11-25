@@ -2,7 +2,7 @@
 import { test, describe } from 'node:test'
 import { strictEqual, deepStrictEqual } from 'node:assert'
 
-import { satisfies, parseVersion } from '../dist/helpers/semver.js'
+import { satisfies, parseVersion, admitsBelow } from '../dist/helpers/semver.js'
 
 
 describe('parseVersion', () => {
@@ -220,5 +220,28 @@ describe('satisfies: what it refuses to guess at', () => {
     strictEqual(satisfies('3.6.0', '>=3.5 ~>4'), undefined)
     strictEqual(satisfies('3.6.0', '>= 3.5 ~> 4'), undefined)
     strictEqual(satisfies('3.4.0', '>= 3.5 ~> 4'), undefined)
+  })
+})
+
+
+describe('admitsBelow', () => {
+
+  test('a range admitting a release older than the version', () => {
+    strictEqual(admitsBelow('>=4.40.0', '4.47.0'), true)
+    strictEqual(admitsBelow('>=3.0.0 <4.10.0', '4.47.0'), true)
+    strictEqual(admitsBelow('~4.46.2', '4.47.0'), true)
+    strictEqual(admitsBelow('', '4.47.0'), true)
+  })
+
+  test('a range starting at or above the version', () => {
+    strictEqual(admitsBelow('>=4.47.0', '4.47.0'), false)
+    strictEqual(admitsBelow('^4.47.0', '4.47.0'), false)
+    strictEqual(admitsBelow('>=5', '4.47.0'), false)
+    strictEqual(admitsBelow('>=0.0.0', '0.0.0'), false)
+  })
+
+  test('what is not understood answers nothing', () => {
+    strictEqual(admitsBelow('>=4.40.0', 'banana'), undefined)
+    strictEqual(admitsBelow('4.40.0 - 4.50.0', '4.47.0'), undefined)
   })
 })

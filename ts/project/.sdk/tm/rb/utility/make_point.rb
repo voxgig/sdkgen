@@ -41,12 +41,16 @@ module ProjectNameUtilities
         "Operation \"#{op.name}\" has no endpoint definitions.")
     end
 
-    if op.points.length == 1
+    reqselector = op.input == "data" ? ctx.reqdata : ctx.reqmatch
+    selector = op.input == "data" ? ctx.data : ctx.match
+
+    # A lone point still needs the call's action to agree with its own; the
+    # selection below refuses a mismatch either way.
+    if op.points.length == 1 &&
+        VoxgigStruct.getprop(reqselector, "$action") ==
+          VoxgigStruct.getprop(VoxgigStruct.getprop(op.points[0], "select"), "$action")
       ctx.point = op.points[0]
     else
-      reqselector = op.input == "data" ? ctx.reqdata : ctx.reqmatch
-      selector = op.input == "data" ? ctx.data : ctx.match
-
       point = nil
       matched = false
       op.points.each do |p|

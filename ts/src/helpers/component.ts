@@ -6,11 +6,21 @@ import * as Jostraca from 'jostraca'
 const COMPONENT = 'cmp'
 
 
-// jostraca's cmp, labelling each node it makes with the component's name.
+// The components that write one target's own files, a project's registered
+// ones included.
+const PER_TARGET = ['Main', 'Entity', 'Feature', 'Readme', 'Test', 'AgentGuide', 'Registered']
+
+
+// jostraca's cmp, labelling each node it makes with the component's name. A
+// target a run override relocates writes nothing in the in-tree pass.
 const cmp: typeof Jostraca.cmp = ((component: any) => {
   const labelled = (props: any, children?: any) => {
     if (null != props?.ctx$?.node?.meta) {
       props.ctx$.node.meta[COMPONENT] = component.name
+    }
+    if (PER_TARGET.includes(component.name) &&
+      true === props?.ctx$?.meta?.relocated?.includes(props?.target?.name)) {
+      return
     }
     return component(props, children)
   }

@@ -26,7 +26,7 @@ const client = sdk.${model.Name}SDK.new(h.jo(&.{
 
   publishedOptions.map((option: any) => {
     if ('apikey' === option.name) {
-      Content(`    .{ "${option.name}", h.vstr(std.posix.getenv("${envName(model)}_APIKEY") orelse "") },
+      Content(`    .{ "${option.name}", h.vstr(init.environ_map.get("${envName(model)}_APIKEY") orelse "") },
 `)
     }
     else {

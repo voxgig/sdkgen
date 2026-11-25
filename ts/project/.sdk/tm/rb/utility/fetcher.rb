@@ -103,10 +103,18 @@ module ProjectNameUtilities
     [uri.scheme, uri.host, uri.port]
   end
 
+  # What another origin is not sent: the names every client drops, and
+  # whatever the SDK holds as a secret, by its name or by its value.
+  def self.credential?(ctx, name, value)
+    return true if CREDENTIAL_HEADERS.include?(name.to_s.downcase)
+    secret = ctx.utility.respond_to?(:clean_secret) ? ctx.utility.clean_secret : nil
+    secret.respond_to?(:call) && secret.call(ctx, name, value) == true
+  end
+
   # Net::HTTP never follows a redirect. A GET or HEAD follows one, unless the
   # fetch definition says "manual", each hop passing the GET-only guard first;
-  # past REDIRECT_MAX hops the last 3xx is the answer. Another origin is not
-  # sent the request's credentials.
+  # past REDIRECT_MAX hops, or where a body would go to another origin, the
+  # 3xx is the answer. Another origin is not sent the request's credentials.
   def self.follow_redirects(ctx, fullurl, fetchdef)
     method = fetchdef["method"].to_s.upcase
     follow = ["", "GET", "HEAD"].include?(method) && fetchdef["redirect"] != "manual"
@@ -126,7 +134,8 @@ module ProjectNameUtilities
       end
       return res, err if nxt.nil?
       if redirect_origin(nxt) != redirect_origin(url)
-        headers = (fetchdef["headers"] || {}).reject { |k, _| CREDENTIAL_HEADERS.include?(k.to_s.downcase) }
+        return res, err unless fetchdef["body"].nil?
+        headers = (fetchdef["headers"] || {}).reject { |k, v| credential?(ctx, k, v) }
         fetchdef = fetchdef.merge("headers" => headers)
       end
       url = nxt

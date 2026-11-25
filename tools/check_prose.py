@@ -128,6 +128,7 @@ REQUIRED_PAGES = (
     "docs/how-to/release-and-tag.md",
     "docs/how-to/run-a-live-suite.md",
     "docs/how-to/simulate-network.md",
+    "docs/how-to/upgrade-the-generator.md",
     "docs/how-to/use-an-sdkgen-package.md",
     "docs/how-to/use-station.md",
     "docs/how-to/use-the-api.md",

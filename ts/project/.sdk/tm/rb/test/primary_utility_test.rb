@@ -324,6 +324,120 @@ class PrimaryUtilityTest < Minitest::Test
     server&.close
   end
 
+  REDIRECT_SECRET = "REDIRECT-SECRET-q7w3e9r1"
+  REDIRECT_CREDENTIALS = %w[authorization cookie x-api-key private-token x-acme-auth].freeze
+
+  # x-acme-auth is not a sensitive name: a credential by the value it holds.
+  def redirect_headers
+    {
+      "authorization" => "Bearer #{REDIRECT_SECRET}",
+      "cookie" => "sid=#{REDIRECT_SECRET}",
+      "x-api-key" => REDIRECT_SECRET,
+      "private-token" => "pt-12345",
+      "x-acme-auth" => "v1 #{REDIRECT_SECRET}",
+      "x-tenant" => "acme",
+    }
+  end
+
+  # Records what reaches it, and answers a path in `routes` with its redirect.
+  def redirect_listener(arrived, where, routes)
+    server = TCPServer.new("127.0.0.1", 0)
+    thread = Thread.new do
+      loop do
+        sock = server.accept
+        method, path = sock.gets.to_s.split(" ")
+        headers = {}
+        while (line = sock.gets) && !["\r\n", "\n"].include?(line)
+          name, value = line.chomp.split(":", 2)
+          headers[name.downcase] = value.to_s.strip
+        end
+        sent = sock.read(headers["content-length"].to_i).to_s
+        arrived << { "where" => where, "method" => method, "path" => path, "headers" => headers, "body" => sent }
+        hop = routes[path]
+        body = hop ? "" : '{"id":"r1"}'
+        sock.write("HTTP/1.1 #{hop ? hop[0] : 200} X\r\n#{hop ? "Location: #{hop[1]}\r\n" : ""}" \
+          "Content-Type: application/json\r\nContent-Length: #{body.bytesize}\r\n" \
+          "Connection: close\r\n\r\n#{body}")
+        sock.close
+      end
+    end
+    [server, thread]
+  end
+
+  # The API's origin redirects; the other origin, another port, records what
+  # reaches it. The secret is registered as a caller's is: as the apikey.
+  def with_redirect_origins(options = {})
+    arrived = Queue.new
+    other, otherthread = redirect_listener(arrived, "other", {})
+    otherbase = "http://127.0.0.1:#{other.addr[1]}"
+    api, apithread = redirect_listener(arrived, "api", {
+      "/out" => [302, "#{otherbase}/landed"],
+      "/out307" => [307, "#{otherbase}/landed"],
+      "/in" => [302, "/landed"],
+    })
+    apibase = "http://127.0.0.1:#{api.addr[1]}"
+    client = ProjectNameSDK.new({ "base" => apibase, "apikey" => REDIRECT_SECRET }.merge(options))
+    utility = client.get_utility
+    ctx = utility.make_context.call({ "opname" => "load" }, client.get_root_ctx)
+    fetch = lambda do |path, fetchdef|
+      res, err = utility.fetcher.call(ctx, "#{apibase}#{path}", fetchdef)
+      [res, err, Array.new(arrived.size) { arrived.pop }]
+    end
+    yield fetch
+  ensure
+    [otherthread, apithread].each { |t| t&.kill }
+    [other, api].each { |s| s&.close }
+  end
+
+  def assert_redirect_other_origin(options)
+    with_redirect_origins(options) do |fetch|
+      res, err, arrived = fetch.call("/out", { "method" => "GET", "headers" => redirect_headers })
+      assert_nil err
+      assert_equal 200, res["status"]
+      assert_equal ["api /out", "other /landed"], arrived.map { |a| "#{a['where']} #{a['path']}" }
+      REDIRECT_CREDENTIALS.each do |name|
+        refute_nil arrived[0]["headers"][name], "the API itself was not sent #{name}"
+        assert_nil arrived[1]["headers"][name], "another origin was sent #{name}"
+      end
+      assert_equal "acme", arrived[1]["headers"]["x-tenant"]
+      refute_includes arrived[1]["headers"].to_s, REDIRECT_SECRET
+    end
+  end
+
+  def test_fetcher_redirect_other_origin_carries_no_credential
+    assert_redirect_other_origin({})
+  end
+
+  def test_fetcher_redirect_other_origin_with_clean_off
+    assert_redirect_other_origin({ "clean" => { "active" => false } })
+  end
+
+  def test_fetcher_redirect_same_origin_keeps_headers
+    with_redirect_origins do |fetch|
+      res, err, arrived = fetch.call("/in", { "method" => "GET", "headers" => redirect_headers })
+      assert_nil err
+      assert_equal 200, res["status"]
+      assert_equal ["api /in", "api /landed"], arrived.map { |a| "#{a['where']} #{a['path']}" }
+      (REDIRECT_CREDENTIALS + ["x-tenant"]).each do |name|
+        refute_nil arrived[1]["headers"][name], "the same origin lost #{name}"
+      end
+    end
+  end
+
+  # A PUT follows nothing. A GET follows, and Net::HTTP sends the body it is given.
+  def test_fetcher_redirect_body_stays_on_its_origin
+    with_redirect_origins do |fetch|
+      %w[PUT GET].each do |method|
+        res, err, arrived = fetch.call("/out307",
+          { "method" => method, "headers" => redirect_headers, "body" => "BODY-#{REDIRECT_SECRET}" })
+        assert_nil err
+        assert_equal 307, res["status"], method
+        assert_equal ["api /out307"], arrived.map { |a| "#{a['where']} #{a['path']}" }, method
+        assert_equal "BODY-#{REDIRECT_SECRET}", arrived[0]["body"]
+      end
+    end
+  end
+
   # Nothing listens on port 9: a request the guard let through fails there.
   def test_fetcher_getonly_guard
     live_client = ProjectNameSDK.new({ "base" => "http://127.0.0.1:9" })

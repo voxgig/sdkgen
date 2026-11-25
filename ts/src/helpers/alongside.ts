@@ -1,26 +1,24 @@
 import { KIT } from '@voxgig/apidef'
 
-
-const PHASES = ['entity', 'feature', 'readme', 'agentguide', 'test']
-
-
-// A consumer (py-data) switches every phase off and has no ReadmeTop components.
-function isConsumer(target: any): boolean {
-  return PHASES.every((name: string) => false === target?.phase?.[name]?.active)
-}
+import { fact } from './facts'
+import { surfaceOf } from './surface'
 
 
-// Names only the active surfaces, so a project with go-mcp off is not promised one.
-function alongsideNote(model: any, self: string): string {
+// Names only the active surfaces, so a project with go-mcp off is not promised
+// one. `link` is the root README from this target's folder, and without one
+// there is no note.
+function alongsideNote(model: any, self: string, link?: string): string {
   const target = model?.main?.[KIT]?.target || {}
-  const others = Object.entries(target)
-    .filter(([name, t]: [string, any]) => name !== self && null != t && false !== t.active)
+  const readme = link ?? (null == target[self] ? '' : fact(target[self], 'link').readme)
+  if ('' === readme) return ''
 
-  const has = (name: string) => others.some(([other]) => other === name)
-  const cli = has('go-cli')
-  const mcp = has('go-mcp')
-  const langs = others.some(([name, t]: [string, any]) =>
-    'go-cli' !== name && 'go-mcp' !== name && !isConsumer(t))
+  const others = fact(model.main[KIT], 'active')
+    .filter((name: string) => name !== self)
+    .map((name: string) => surfaceOf(target[name]))
+
+  const cli = others.includes('cli')
+  const mcp = others.includes('mcp')
+  const langs = others.includes('sdk')
 
   const parts: string[] = []
   if (langs) parts.push('Other languages')
@@ -34,13 +32,12 @@ function alongsideNote(model: any, self: string): string {
   const verb = 1 === parts.length && !langs ? 'lives' : 'live'
 
   return `> ${list[0].toUpperCase() + list.slice(1)} ${verb} alongside this one — see
-> the [top-level README](../README.md).
+> the [top-level README](${readme}).
 
 `
 }
 
 
 export {
-  isConsumer,
   alongsideNote,
 }

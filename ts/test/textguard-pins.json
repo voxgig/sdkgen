@@ -1,0 +1,558 @@
+{
+  "suspended": [],
+  "pins": [
+    {
+      "relation": "fence",
+      "chain": "Readme > ReadmeEntity",
+      "cause": "ts",
+      "reason": "N11: the js copies fence their entity blocks as ts; WP37 fences them as js in the copy wave.",
+      "line": "```ts",
+      "variations": [
+        "auth-basic",
+        "auth-basic-query",
+        "auth-off",
+        "baseline",
+        "entities-lone",
+        "entity-zqa",
+        "entity-zqb",
+        "entity-zqc",
+        "entity-zqd",
+        "entity-zqe",
+        "entity-zqf",
+        "entity-zqg",
+        "feature-audit",
+        "feature-cache",
+        "feature-clienttrack",
+        "feature-cost",
+        "feature-debug",
+        "feature-idempotency",
+        "feature-log",
+        "feature-metrics",
+        "feature-netsim",
+        "feature-paging",
+        "feature-proxy",
+        "feature-ratelimit",
+        "feature-rbac",
+        "feature-retry",
+        "feature-secrets",
+        "feature-streaming",
+        "feature-telemetry",
+        "feature-timeout",
+        "feature-validate",
+        "features-empty",
+        "features-lone",
+        "phase-agentguide-off-ts",
+        "phase-build-off",
+        "phase-readme-off-ts",
+        "phase-top-off",
+        "server-defaulted",
+        "server-plain",
+        "server-required",
+        "target-c",
+        "target-clojure",
+        "target-cpp",
+        "target-csharp",
+        "target-elixir",
+        "target-go",
+        "target-go-cli",
+        "target-go-mcp",
+        "target-java",
+        "target-kotlin",
+        "target-lua",
+        "target-ocaml",
+        "target-perl",
+        "target-php",
+        "target-py",
+        "target-py-data",
+        "target-rb",
+        "target-rust",
+        "target-scala",
+        "target-swift",
+        "target-ts",
+        "target-zig"
+      ]
+    },
+    {
+      "relation": "fence",
+      "chain": "Readme > ReadmeRef",
+      "cause": "ts",
+      "reason": "N11: the js copies fence their reference blocks as ts; WP37 fences them as js in the copy wave.",
+      "line": "```ts",
+      "variations": [
+        "auth-basic",
+        "auth-basic-query",
+        "auth-off",
+        "baseline",
+        "entities-empty",
+        "entities-lone",
+        "entity-zqa",
+        "entity-zqb",
+        "entity-zqc",
+        "entity-zqd",
+        "entity-zqe",
+        "entity-zqf",
+        "entity-zqg",
+        "feature-audit",
+        "feature-cache",
+        "feature-clienttrack",
+        "feature-cost",
+        "feature-debug",
+        "feature-idempotency",
+        "feature-log",
+        "feature-metrics",
+        "feature-netsim",
+        "feature-paging",
+        "feature-proxy",
+        "feature-ratelimit",
+        "feature-rbac",
+        "feature-retry",
+        "feature-secrets",
+        "feature-streaming",
+        "feature-telemetry",
+        "feature-timeout",
+        "feature-validate",
+        "features-empty",
+        "features-lone",
+        "phase-agentguide-off-ts",
+        "phase-build-off",
+        "phase-readme-off-ts",
+        "phase-top-off",
+        "server-defaulted",
+        "server-plain",
+        "server-required",
+        "target-c",
+        "target-clojure",
+        "target-cpp",
+        "target-csharp",
+        "target-elixir",
+        "target-go",
+        "target-go-cli",
+        "target-go-mcp",
+        "target-java",
+        "target-kotlin",
+        "target-lua",
+        "target-ocaml",
+        "target-perl",
+        "target-php",
+        "target-py",
+        "target-py-data",
+        "target-rb",
+        "target-rust",
+        "target-scala",
+        "target-swift",
+        "target-ts",
+        "target-zig"
+      ]
+    },
+    {
+      "relation": "link",
+      "chain": "Readme > ReadmeHowto",
+      "cause": "cd ts",
+      "reason": "Known stale, S41: `cd ts` assumes the target has its own directory; WP32.",
+      "line": "cd ts && npm test",
+      "variations": [
+        "root-ts"
+      ]
+    },
+    {
+      "relation": "off",
+      "chain": "AgentGuideTop > AgentGuideTopCustomise",
+      "cause": "target",
+      "reason": "Generic word: TypeScript is the language of the generator's components, not the ts target.",
+      "line": "| **Components** | `.sdk/src/cmp/<lang>/` | TypeScript that **generates** source by walking the model. Edit when the file's shape **depends on the API** (entity classes, the constructor, README, tests). |",
+      "variations": [
+        "target-ts"
+      ]
+    },
+    {
+      "relation": "off",
+      "chain": "AgentGuideTop > AgentGuideTopLayout",
+      "cause": "target",
+      "reason": "Generic word: TypeScript is the language of the generator's components, not the ts target.",
+      "line": "  src/cmp/<lang>/  components — TypeScript that generates API-specific source",
+      "variations": [
+        "target-ts"
+      ]
+    },
+    {
+      "relation": "off",
+      "chain": "AgentGuide",
+      "cause": "target",
+      "reason": "Generic word: TypeScript is the language of the generator's components, not the ts target.",
+      "line": "| Components | `.sdk/src/cmp/c/` | the file's shape **depends on the API** (entities, constructor, README, tests) — TypeScript that walks the model |",
+      "variations": [
+        "target-ts"
+      ]
+    },
+    {
+      "relation": "off",
+      "chain": "Readme > ReadmeExplanation",
+      "cause": "target",
+      "reason": "Generic word: \"Java-backed\" describes the JVM runtime of kotlin, scala and clojure, not the java target.",
+      "line": "value model (ordered, Java-backed maps and lists) rather than typed",
+      "variations": [
+        "target-java"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeHowto@clojure",
+      "cause": "auth",
+      "reason": "Found by the guard: clojure's how-to builds the client with no credential, where every other how-to reads the API key; to be catalogued.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeModel@clojure",
+      "cause": "servers",
+      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeModel@cpp",
+      "cause": "servers",
+      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeModel@csharp",
+      "cause": "servers",
+      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeModel@c",
+      "cause": "servers",
+      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeModel@elixir",
+      "cause": "servers",
+      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeModel@go",
+      "cause": "servers",
+      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeModel@java",
+      "cause": "servers",
+      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeModel@js",
+      "cause": "servers",
+      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeModel@kotlin",
+      "cause": "servers",
+      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeModel@lua",
+      "cause": "servers",
+      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeModel@ocaml",
+      "cause": "servers",
+      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeModel@perl",
+      "cause": "servers",
+      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeModel@php",
+      "cause": "servers",
+      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeModel@py",
+      "cause": "servers",
+      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeModel@rb",
+      "cause": "servers",
+      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeModel@rust",
+      "cause": "servers",
+      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeModel@scala",
+      "cause": "servers",
+      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeModel@swift",
+      "cause": "servers",
+      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeModel@zig",
+      "cause": "servers",
+      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeQuick@clojure",
+      "cause": "servers",
+      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeQuick@cpp",
+      "cause": "servers",
+      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeQuick@csharp",
+      "cause": "servers",
+      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeQuick@c",
+      "cause": "servers",
+      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeQuick@elixir",
+      "cause": "servers",
+      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeQuick@js",
+      "cause": "servers",
+      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeQuick@kotlin",
+      "cause": "servers",
+      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeQuick@lua",
+      "cause": "servers",
+      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeQuick@ocaml",
+      "cause": "servers",
+      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeQuick@perl",
+      "cause": "servers",
+      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeQuick@php",
+      "cause": "servers",
+      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeQuick@rb",
+      "cause": "servers",
+      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeQuick@rust",
+      "cause": "servers",
+      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeQuick@scala",
+      "cause": "servers",
+      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeQuick@swift",
+      "cause": "servers",
+      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeQuick@zig",
+      "cause": "servers",
+      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    }
+  ]
+}

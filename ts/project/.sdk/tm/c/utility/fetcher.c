@@ -137,8 +137,16 @@ static int same_origin(const char* a, const char* b) {
   return 1;
 }
 
+// What another origin is not sent: the names every client drops, and
+// whatever the SDK holds as a secret, by its name or by its value.
+static int is_credential(Context* ctx, const char* name, voxgig_value* value) {
+  return same_text(name, "authorization") || same_text(name, "cookie") ||
+    same_text(name, "proxy-authorization") ||
+    clean_secret_util(ctx, name, voxgig_is_string(value) ? voxgig_as_string(value) : NULL);
+}
+
 // The request as another origin may see it: without its credentials.
-static voxgig_value* without_credentials(voxgig_value* fetchdef) {
+static voxgig_value* without_credentials(Context* ctx, voxgig_value* fetchdef) {
   voxgig_value* copy = voxgig_clone(fetchdef);
   voxgig_value* headers = getp(copy, "headers");
   if (voxgig_is_map(headers)) {
@@ -146,8 +154,7 @@ static voxgig_value* without_credentials(voxgig_value* fetchdef) {
     voxgig_value* kept = cmap(0);
     for (size_t i = 0; i < hm->len; i++) {
       const char* name = hm->entries[i].key;
-      if (!same_text(name, "authorization") && !same_text(name, "cookie") &&
-          !same_text(name, "proxy-authorization")) {
+      if (!is_credential(ctx, name, hm->entries[i].value)) {
         setp(kept, name, hm->entries[i].value);
       }
     }
@@ -158,8 +165,9 @@ static voxgig_value* without_credentials(voxgig_value* fetchdef) {
 
 // The default transport follows no redirect. A GET or HEAD follows one here,
 // unless the fetch definition says "manual", each hop passing the GET-only
-// guard first; past REDIRECT_MAX hops the last 3xx is the answer. Another
-// origin is not sent the request's credentials.
+// guard first; past REDIRECT_MAX hops, or where a body would go to another
+// origin, the 3xx is the answer. Another origin is not sent the request's
+// credentials.
 static voxgig_value* follow_redirects(Context* ctx, const char* fullurl,
                                       voxgig_value* fetchdef, PNError** err) {
   const char* method = get_str(fetchdef, "method");
@@ -180,7 +188,15 @@ static voxgig_value* follow_redirects(Context* ctx, const char* fullurl,
       free(url);
       return res;
     }
-    if (!same_origin(url, next)) fetchdef = without_credentials(fetchdef);
+    if (!same_origin(url, next)) {
+      voxgig_value* body = getp(fetchdef, "body");
+      if (!v_is_noval(body) && !v_is_null(body)) {
+        free(next);
+        free(url);
+        return res;
+      }
+      fetchdef = without_credentials(ctx, fetchdef);
+    }
     free(url);
     url = next;
   }

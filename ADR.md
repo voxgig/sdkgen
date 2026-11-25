@@ -16,13 +16,18 @@ Each entry states the decision, the context that forced it, the
 consequences we accept in exchange, and how the decision is enforced in
 practice. Entries are append-only and numbered in order. A decision that
 no longer holds is not deleted: its status changes to **Superseded by
-ADR-NNN**, so the reasoning that led there stays readable.
+ADR-NNN**, so the reasoning that led there stays readable. An entry marked
+**Proposed** states a decision that is made and not yet enforced: it
+becomes Accepted when the enforcement it names exists.
 
 | ADR | Decision | Status |
 |-----|----------|--------|
 | [ADR-001](#adr-001--the-model-is-the-only-input-no-spec-annotations) | The model is the only input; no spec annotations | Accepted |
 | [ADR-002](#adr-002--a-generated-sdk-carries-only-what-it-uses) | A generated SDK carries only what it uses | Accepted |
 | [ADR-003](#adr-003--diagnostics-are-redacted-by-default) | Diagnostics are redacted by default | Accepted |
+| [ADR-004](#adr-004--generated-text-states-only-what-the-model-declares) | Generated text states only what the model declares | Accepted |
+| [ADR-005](#adr-005--every-sdk-target-carries-test-mode-and-its-entities) | Every SDK target carries test mode and its entities | Accepted |
+| [ADR-006](#adr-006--file-bytes-are-neither-data-nor-diagnostics-and-a-string-is-never-a-path) | File bytes are neither data nor diagnostics, and a string is never a path | Proposed |
 
 ---
 
@@ -309,3 +314,188 @@ err)`. That is the right advice, and it printed the key.
 - `ts/test/cleancoverage.test.ts` classifies every target and scans the
   fixed ones for the `clean` call at each egress.
 
+
+---
+
+## ADR-004 — Generated text states only what the model declares
+
+**Status:** Accepted
+
+### Context
+
+The generated documents are written once per project and read as true. A
+sentence that guesses (a target named `go-cli` must be the CLI, every
+feature must start off, a link must lead somewhere) is wrong for the project
+whose model says otherwise, and nothing in its own output shows it. Most of
+the defects the generated-text plan catalogued were guesses of this kind:
+a fixed list standing in for the model, or a name matched where a slot
+should have been read.
+
+### Decision
+
+Generated text states only what the model declares. Each fact a sentence
+depends on is computed once from the model, by a rule in
+`ts/model/fact.aontu`, and written into it beside what it describes. Where
+the model gives no answer, the fact is unknown, and an unknown answer writes
+no sentence: the text says less rather than say something false. A target
+whose surface is unknown is named by its title, never as an SDK, a CLI or an
+MCP server.
+
+### Consequences
+
+A document can grow shorter when a project declares less, and a new slot is
+the remedy for a missing sentence, not a default in a component. A rule that
+aontu cannot yet express is computed by the fact pass in code and still
+written into the model, so every reader sees one answer.
+
+### Enforcement
+
+The text guard regenerates the documents under every single-switch variation
+of the model and reports a sentence that names what a run removed, a link
+that resolves nowhere and a sentence its siblings do not reach. `fact` throws
+on a model that did not pass through the rules, so a component cannot read an
+answer the rules did not give.
+
+---
+
+## ADR-005 — Every SDK target carries test mode and its entities
+
+**Status:** Accepted
+
+### Context
+
+Every generated SDK has a test mode: `test()` and `tester()` build a client
+whose transport is the `test` feature's in-memory mock, and the generated
+suite runs through it. `target add` installs the feature for every target and
+`feature remove test` is refused, so only a hand edit removes it. A project
+that did so got an SDK that compiled and then failed at run time, and a red
+suite of its own. A target whose entity phase is off fails earlier: its main
+module still imports the entity classes the phase writes. Gating each
+document on the two states would put a condition in about forty copies of the
+documents, for projects that cannot build.
+
+### Decision
+
+An active SDK target always carries the active `test` feature and runs its
+entity phase. `generate` refuses a model that breaks either rule, naming the
+target and the repair (`voxgig-sdkgen target add <t>` for the feature), and no
+document is gated on them: a sentence about test mode or the entity classes is
+true by construction.
+
+This is an exception to ADR-002. Every SDK ships test mode, whether or not its
+configuration reaches it.
+
+### Consequences
+
+A hand-edited project without the feature fails `generate` instead of
+producing an SDK that fails at run time. An SDK target cannot switch its entity
+phase off to publish documents alone; a target that generates no entities is
+a different product, a consumer, with its own surface.
+
+### Enforcement
+
+`refuseBrokenTargets` in `ts/src/helpers/targetguard.ts` runs in `generate`
+after the fact pass. `doctor` reports a target without the feature as an
+error, and `package check` a package's SDK target with its entity phase off.
+The text guard keeps the feature in every variation it generates.
+
+---
+
+## ADR-006 — File bytes are neither data nor diagnostics, and a string is never a path
+
+**Status:** Proposed
+
+**Companion:** [the file plan](docs/design/file-transfer.md), which works
+the subsystem out; its section 5 holds the security rules this entry
+rests on.
+
+### Context
+
+A generated SDK moves JSON records, and APIs also move bytes: an episode's
+audio, a document's content, an avatar. Before any of that is built, three
+facts decide where bytes may go.
+
+1. **A record is plain data.** `data()` clones on the way in and out,
+   `toJSON` serialises it, and in `rust`, `c`, `cpp`, `zig` and `ocaml` it
+   is a closed value union with no variant for bytes, a handle or a
+   stream. A design that put a file, or a live handle to one, inside the
+   record would work in fifteen targets and could not exist in five.
+2. **What the SDK sent, it also copied into what it threw.** `makeError`
+   sets `err.spec` to a cleaned copy of the request, and `clean` copied a
+   byte array key by key. A failed upload carried the file into its error,
+   and the same copy reached the explain record, the context a hook
+   serialises and the log feature's output: the sweep of a generated SDK
+   found the bytes on all four. ADR-003 masks secrets in a diagnostic;
+   nothing kept a payload out of one.
+3. **A string that means a path is a vulnerability class.** PHP's cURL
+   binding once read `@/path` in a field value as "upload this file", so
+   any untrusted string that reached a form field could send a local file
+   away. An SDK that opened a path found in request data would rebuild
+   that defect in twenty languages.
+
+### Decision
+
+1. **A file's bytes never enter an entity's record.** They belong to a
+   named slot beside the record, reached as `entity.binary(name)`. The
+   record may hold a slot's metadata, such as its size, type and tag.
+2. **A file's bytes never reach a diagnostic.** In an error, an explain
+   record, a log, an audit record or a span, a body of bytes is a
+   placeholder that states its kind, and its size and media type where
+   they are known. `clean` writes it, by two rules: a value of a byte or
+   stream type is described wherever it sits, and the request body of a
+   point the model marks binary is described whatever carries it.
+3. **A local file is opened only through a source the caller's own code
+   constructed.** A string in request data, an option, a model value, an
+   environment variable or a response is never opened as a path, and a
+   server never chooses a local path.
+
+"Bytes" here means a body the model marks binary. A text body is data: by
+the maintainer's ruling it comes back in the record as a string, within
+the memory bound.
+
+### Consequences we accept
+
+- **An entity has two accessors where one might have done**, `data()` for
+  the record and `binary(name)` for a slot, and a caller holds both.
+- **The five closed-union targets take a source as a typed argument**
+  beside the data. Elsewhere it travels in the data, in a field the model
+  declares binary, and is lifted out before any transform, validation or
+  cleaning sees it.
+- **There is no shorthand for a path.** A caller writes
+  `binary.path(...)`; a bare string is always content.
+- **Debugging an upload shows a placeholder**, never the payload. The one
+  way to see the payload in a diagnostic is ADR-003's own opt-out,
+  `clean.active: false`, which switches all cleaning off. There is no
+  switch for this alone.
+- **Text is the exception, and it is bounded.** A text body larger than
+  the memory bound fails; it is not streamed.
+
+### Enforcement
+
+In part, which is why this entry is still Proposed. It becomes Accepted
+when all of these exist.
+
+What exists, for an uploaded body:
+
+- **The content canary**, in the clean sweep every SDK ships: an operation
+  that sends a binary body carries a marker in every value type the SDK
+  accepts, through success, two HTTP failures and a transport failure,
+  and every surface that leaves is searched for the marker as text, as
+  byte values, as hex and as base64. The sweep checks that the transport
+  received the body whole, that the placeholder stands where the body
+  was, and that with `clean` off the marker shows.
+- `ts/test/generatedcompile.test.ts` generates each target with such an
+  operation, runs that sweep, and requires its
+  `clean: content swept N surface(s), 0 leak(s)` line.
+- `ts/test/cleanbinary.test.ts` runs the shipped `ts` and `js` `clean`,
+  `makeError` and `done` against each of those value types.
+
+What does not exist yet:
+
+- **The same canary for a downloaded body.** No target reads one into a
+  result today. Work items `p0-binary-response` and `p2-corpus-feature`
+  of the plan.
+- **The path guard**: a source scan that finds no file open outside the
+  `fs` plugin, and a corpus case that sends a path-shaped string in a
+  binary field and receives it back as bytes. Work item
+  `p2-plugins-stream-fs`.

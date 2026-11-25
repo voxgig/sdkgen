@@ -76,13 +76,20 @@ are removed. The incoming copies are left in `.sdk/log/conflict/`, which
 git ignores, with conflict markers where both sides changed the same
 lines. The error lists each file and the reason.
 
-Two ways forward:
+When every file it stops on has a base, there are two ways forward:
 
 - Fold the incoming change into the local file by hand, then re-run the add
   with `--keep`. That keeps the local files as they are and records the
   incoming copies as their base, so the next update merges from there.
 - Re-run with `--force` to take the incoming copies and drop the local
   changes. git keeps the local versions for anyone who committed them.
+
+When no base can be found, nothing shows whether the file holds a local
+change or an older copy that the update would replace, so the error
+recommends one path: commit, then re-run with `--force`, and `git diff`
+shows any local change to restore. `--keep` still keeps such a file, but
+records nothing for it, so `doctor` keeps reporting it and the next add
+stops on it again.
 
 ## Deletes
 
@@ -97,13 +104,44 @@ In merge mode, a copy the record shows the project changed is reported as
 A copy with no fingerprint in the record is still reported as forked or
 edited, because no record separates a change from an old copy.
 
+A customized TypeScript copy that lacks a name its source exports is
+reported as **unfolded**, and fails `doctor`. That is a file kept with
+`--keep` before the incoming change was folded in: another copy that
+imports the name does not compile. The add that keeps such a file says so,
+and `generate` warns about it.
+
 ## Projects from before the copy record
 
 A copy the record has no fingerprint for cannot be told from a local
 change. In merge mode, the first add that rewrites such a copy stops on it.
-Re-run with `--force` to overwrite, which is what an add did before merging
-existed, or with `--keep` to keep the files. Either way the add records
-fingerprints, and later adds merge normally.
+Commit, then re-run with `--force` to overwrite, which is what an add did
+before merging existed. The add records fingerprints, and later adds merge
+normally. `--keep` keeps the files but records nothing for them, so they
+stay findings until an add with `--force` replaces them.
+
+## The oldest copies this generator reads
+
+The merge brings a newer source into copies the project already has, so it
+needs copies recent enough to build. Components copied from a release
+before 4.23.0 do not compile against the current generator, and model files
+copied before 1.3.18 use `//` comments, which the model compiler does not
+read. Neither can be merged into: the safe path is to commit, then run
+`npx voxgig-sdkgen target add <name> --force`, and use `git diff` to restore
+any local change by hand.
+
+`doctor` and `generate` name that path wherever they can tell. A copy
+record that dates an item's copies from below the floor is a finding, and
+so is a copied model file that does not compile: the model compile can drop
+such a file without an error, which removes its target from the SDK. A
+project with no copy record has no version to compare, so `doctor` names
+the floor beside the copies that differ.
+
+The opposite skew is reported too. A copy recorded from a newer release
+than the one installed is **ahead**: the package was moved back, perhaps by
+a re-scaffold that lowered its version. `doctor` reports it, and the remedy it
+names is `voxgig-sdkgen package update @voxgig/sdkgen`, which fetches the
+latest release and moves the package up to the copies. A re-add from the installed release would
+put older copies back.
 
 ## The scaffold's own files
 

@@ -12,8 +12,8 @@ import {
 // The canary sweep, as TestClean_ts emits it: every credential slot holds a
 // distinctive value, every diagnostic feature this SDK ships is switched on
 // with a capturing sink, a real operation runs through every outcome, and
-// every string that leaves the SDK is searched for the canaries and their
-// encoded forms. With clean switched off the canary MUST show.
+// every string that leaves is searched for the canaries and their forms; a
+// second sweep does the same for a body of bytes. Clean off MUST show both.
 const TestClean = cmp(function TestClean(props: any) {
   const { model } = props.ctx$
   const { target } = props
@@ -48,8 +48,8 @@ declare(strict_types=1);
 // The canary sweep: every credential slot holds a distinctive value, every
 // diagnostic feature this SDK ships is switched on with a capturing sink, a
 // real operation runs through every outcome, and every string that leaves
-// the SDK is searched for the canaries and their encoded forms. It also
-// proves its own sensitivity: with clean switched off the canary MUST show.
+// is searched for the canaries and their encoded forms; a second sweep does
+// the same for a body of bytes. With clean off the canary MUST show.
 
 require_once __DIR__ . '/../${lower}_sdk.php';
 
@@ -75,6 +75,9 @@ class CleanTest extends TestCase
     ];
 
     private const MASK = '[redacted]';
+
+    // The marker a body of bytes carries.
+    private const CONTENT = 'CANARY-CONTENT-b7n3v9x1c5';
 
     // Every form a canary can travel in.
     private static function forms(): array
@@ -113,6 +116,29 @@ class CleanTest extends TestCase
             if (str_contains($text, $f)) {
                 $found[] = $f;
             }
+        }
+        return $found;
+    }
+
+    // The forms bytes travel in once copied: a string prints as its text,
+    // and a dump of one shows its byte values (which print_r and var_export
+    // key by index), hex or base64.
+    private static function content_leaks(string $text): array
+    {
+        $flat = preg_replace('/\\s+/', '', $text) ?? $text;
+        $values = preg_replace(['/\\[\\d+\\]=>/', '/\\b\\d+=>/'], [',', ''], $flat) ?? $flat;
+        $found = [];
+        if (str_contains($text, self::CONTENT)) {
+            $found[] = 'text';
+        }
+        if (str_contains($values, implode(',', unpack('C*', self::CONTENT)))) {
+            $found[] = 'byte values';
+        }
+        if (str_contains(strtolower($flat), bin2hex(self::CONTENT))) {
+            $found[] = 'hex';
+        }
+        if (str_contains($flat, base64_encode(self::CONTENT))) {
+            $found[] = 'base64';
         }
         return $found;
     }
@@ -266,6 +292,42 @@ class CleanTest extends TestCase
                 if ($ctx->ctrl->err instanceof ${Name}Error) {
                     $this->take('ctrl.err@PreUnexpected', $ctx->ctrl->err);
                 }
+            }
+        };
+    }
+
+    // Captures the request data as a hook would log it, before the spec
+    // exists and after: the other place a raw body sits, and the only one a
+    // stream does.
+    private static function reqdata_feature(\\ArrayObject $sinks): ${Name}BaseFeature
+    {
+        $key = count(self::$captures);
+        self::$captures[$key] = $sinks;
+        return new class ($key) extends ${Name}BaseFeature {
+            public function __construct(private int $sinkkey)
+            {
+                parent::__construct();
+                $this->name = 'reqdata';
+                $this->version = '0.0.1';
+                $this->active = true;
+            }
+
+            private function take(string $name, ${Name}Context $ctx): void
+            {
+                $sinks = CleanTest::$captures[$this->sinkkey];
+                foreach (CleanTest::surfaces($name, ($ctx->utility->clean)($ctx, $ctx->reqdata)) as $s) {
+                    $sinks[] = $s;
+                }
+            }
+
+            public function PreSpec(${Name}Context $ctx): void
+            {
+                $this->take('reqdata@PreSpec', $ctx);
+            }
+
+            public function PreRequest(${Name}Context $ctx): void
+            {
+                $this->take('reqdata@PreRequest', $ctx);
             }
         };
     }
@@ -452,21 +514,10 @@ class CleanTest extends TestCase
         return [self::construct($opts), $watcher];
     }
 
-    // The first operation that completes against a plain 200: with no
-    // arguments, else with every path parameter its points declare filled
-    // in. An entity accessor is a capitalised client method whose result
-    // answers get_name(), as the feature corpus runner finds them.
-    private static function usable_op(): ?array
+    // An entity accessor is a capitalised client method whose result answers
+    // get_name(), as the feature corpus runner finds them.
+    private static function accessors(object $plain): array
     {
-        $plain = self::construct([
-            'apikey' => self::CANARY['apikey'],
-            'utility' => [
-                'fetcher' => function (${Name}Context $_ctx, string $_url, array $_fetchdef): array {
-                    return [self::response(200, ['id' => 'i1']), null];
-                },
-            ],
-        ]);
-
         $found = [];
         foreach (get_class_methods($plain) as $m) {
             if (!preg_match('/^[A-Z]/', $m)) {
@@ -483,6 +534,24 @@ class CleanTest extends TestCase
             $found[$ent->get_name()] = $m;
         }
         ksort($found);
+        return $found;
+    }
+
+    // The first operation that completes against a plain 200: with no
+    // arguments, else with every path parameter its points declare filled
+    // in.
+    private static function usable_op(): ?array
+    {
+        $plain = self::construct([
+            'apikey' => self::CANARY['apikey'],
+            'utility' => [
+                'fetcher' => function (${Name}Context $_ctx, string $_url, array $_fetchdef): array {
+                    return [self::response(200, ['id' => 'i1']), null];
+                },
+            ],
+        ]);
+
+        $found = self::accessors($plain);
 
         $rank = ['list' => 0, 'load' => 1];
         $entities = ${Name}Config::shared_config()['entity'] ?? [];
@@ -517,7 +586,61 @@ class CleanTest extends TestCase
         return null;
     }
 
-    private static function drive(object $sdk, object $watcher, array $target, array $ctrl, \\ArrayObject $sinks): array
+    // The first operation with a point that sends a raw body the model marks
+    // binary, with every path parameter of that point filled in.
+    private static function binary_op(): ?array
+    {
+        $plain = self::construct(['apikey' => self::CANARY['apikey']]);
+        $entities = ${Name}Config::shared_config()['entity'] ?? [];
+        foreach (self::accessors($plain) as $entname => $accessor) {
+            $ops = (array)($entities[$entname]['op'] ?? []);
+            ksort($ops);
+            foreach ($ops as $op => $opdef) {
+                if (!method_exists($plain->$accessor(), (string)$op)) {
+                    continue;
+                }
+                foreach ((array)($opdef['points'] ?? []) as $point) {
+                    $body = $point['body'] ?? null;
+                    if (!is_array($body) || 'raw' !== ($body['kind'] ?? null)
+                        || true !== ($body['binary'] ?? null)) {
+                        continue;
+                    }
+                    $match = [];
+                    foreach ((array)($point['args']['params'] ?? []) as $p) {
+                        if (is_string($p['name'] ?? null)) {
+                            $match[$p['name']] = 'p1';
+                        }
+                    }
+                    if (null !== ($point['select']['$action'] ?? null)) {
+                        $match['$action'] = $point['select']['$action'];
+                    }
+                    return ['accessor' => $accessor, 'op' => (string)$op, 'match' => $match,
+                        'media' => $body['media'] ?? null];
+                }
+            }
+        }
+        return null;
+    }
+
+    // Every value this SDK accepts as a raw body. A stream is read once, so
+    // each run is handed its own.
+    private static function carriers(string $path): array
+    {
+        return [
+            'string' => fn () => self::CONTENT,
+            'stream' => function () {
+                $stream = fopen('php://memory', 'r+b');
+                fwrite($stream, self::CONTENT);
+                rewind($stream);
+                return $stream;
+            },
+            'file' => fn () => fopen($path, 'rb'),
+        ];
+    }
+
+    private static function drive(
+        object $sdk, object $watcher, array $target, array $ctrl, \\ArrayObject $sinks, array $data = []
+    ): array
     {
         // What the caller passed and keeps; an array, so the call cannot
         // change it, but it is searched like the record the watcher reads.
@@ -528,7 +651,7 @@ class CleanTest extends TestCase
         $out = null;
         $err = null;
         try {
-            $out = $entity->$op($target['match'], $ctrl);
+            $out = $entity->$op(array_merge($target['match'], $data), $ctrl);
         } catch (\\Throwable $e) {
             $err = $e;
         }
@@ -567,6 +690,11 @@ class CleanTest extends TestCase
 
     public function test_no_credential_leaves_the_sdk_in_any_form(): void
     {
+        $this->with_trace_args(fn () => $this->sweep());
+    }
+
+    private function with_trace_args(callable $run): void
+    {
         // PHP records a frame's arguments unless the ini says otherwise, and
         // they hold every context the failing frames were handed: clean strips
         // them, which the sweep sees only with them recorded. A production ini
@@ -578,7 +706,7 @@ class CleanTest extends TestCase
             throw new \\ErrorException($str, 0, $no, $file, $line);
         });
         try {
-            $this->sweep();
+            $run();
         } finally {
             restore_error_handler();
             if (false !== $args) {
@@ -586,6 +714,12 @@ class CleanTest extends TestCase
             }
         }
     }
+
+    private const VARIANTS = [
+        'throw' => [],
+        'explain' => ['explain' => ['on' => true]],
+        'nothrow' => ['throw' => false, 'explain' => ['on' => true]],
+    ];
 
     private function sweep(): void
     {
@@ -598,14 +732,8 @@ class CleanTest extends TestCase
         $errors = [];
         $explains = [];
 
-        $variants = [
-            'throw' => [],
-            'explain' => ['explain' => ['on' => true]],
-            'nothrow' => ['throw' => false, 'explain' => ['on' => true]],
-        ];
-
         foreach (self::scenarios() as $sname => $respond) {
-            foreach ($variants as $vname => $ctrl) {
+            foreach (self::VARIANTS as $vname => $ctrl) {
                 [$sdk, $watcher] = self::make_sdk($respond, $sinks);
                 [$err, $explain] = self::drive($sdk, $watcher, $target, $ctrl, $sinks);
                 $key = $sname . '/' . $vname;
@@ -812,13 +940,18 @@ class CleanTest extends TestCase
 
     public function test_the_sweep_can_see_a_leak_clean_switched_off_shows_the_credential(): void
     {
+        $this->without_trace_args(fn () => $this->leak_control());
+    }
+
+    private function without_trace_args(callable $run): void
+    {
         // With clean off nothing strips the trace arguments, and var_export
         // renders the whole context through them: 43 MB of text on a
         // 31-operation API (#292). The control proves the sweep sees a raw
         // value, which the arguments are not needed for.
         $args = ini_set('zend.exception_ignore_args', '1');
         try {
-            $this->leak_control();
+            $run();
         } finally {
             if (false !== $args) {
                 ini_set('zend.exception_ignore_args', $args);
@@ -858,6 +991,151 @@ class CleanTest extends TestCase
                 str_contains($text, self::CANARY['apikey'])
                 || str_contains($text, base64_encode(self::CANARY['apikey'] . ':' . self::CANARY['secret'])),
                 'the raw spec should carry the credential when clean is off');
+        }
+    }
+
+    public function test_no_body_of_bytes_leaves_the_sdk_in_any_form(): void
+    {
+        $this->with_trace_args(fn () => $this->content_sweep());
+    }
+
+    private function content_sweep(): void
+    {
+        $target = self::binary_op();
+        if (null === $target) {
+            $this->markTestSkipped('no operation of this SDK sends a binary body; nothing to sweep');
+        }
+
+        $sinks = new \\ArrayObject();
+        $given = [];
+        $sent = [];
+        $errors = [];
+        $explains = [];
+
+        $path = (string)tempnam(sys_get_temp_dir(), 'clean');
+        file_put_contents($path, self::CONTENT);
+        try {
+            $carriers = self::carriers($path);
+            foreach ($carriers as $carrier => $make) {
+                foreach (array_slice(self::scenarios(), 0, 4, true) as $sname => $respond) {
+                    foreach (self::VARIANTS as $vname => $ctrl) {
+                        $key = $carrier . '/' . $sname . '/' . $vname;
+                        // The transport is where the bytes are meant to arrive, whole.
+                        $seen = function (string $url, array $fetchdef) use ($respond, $key, &$sent): array {
+                            $sent[$key] = $fetchdef['body'] ?? null;
+                            return $respond($url, $fetchdef);
+                        };
+                        [$sdk, $watcher] = self::make_sdk($seen, $sinks, null, [self::reqdata_feature($sinks)]);
+                        $given[$key] = $make();
+                        [$err, $explain] = self::drive($sdk, $watcher, $target, $ctrl, $sinks,
+                            ['$body' => $given[$key]]);
+                        if (null !== $err) {
+                            $errors[$key] = $err;
+                        }
+                        if (null !== $explain) {
+                            $explains[$key] = $explain;
+                        }
+                        foreach (self::surfaces('sdk', $sdk) as $s) {
+                            $sinks[] = $s;
+                        }
+                    }
+                }
+            }
+
+            $leaked = [];
+            foreach ($sinks as $s) {
+                $found = self::content_leaks($s['text']);
+                if (0 < count($found)) {
+                    $leaked[] = $s['name'] . ' [' . implode(', ', $found) . ']';
+                }
+            }
+
+            // The one line the generator's compile lane reads.
+            fwrite(STDERR, sprintf("clean: content swept %d surface(s), %d leak(s)\\n",
+                count($sinks), count($leaked)));
+
+            $this->assertSame(0, count($leaked),
+                'a body of bytes leaked through: ' . implode('; ', array_unique($leaked)));
+
+            // The request itself is untouched: what the transport was handed
+            // is the body.
+            foreach (array_keys($carriers) as $carrier) {
+                $body = $sent[$carrier . '/notfound/throw'] ?? null;
+                $this->assertSame(self::CONTENT, is_resource($body) ? stream_get_contents($body) : $body,
+                    $carrier . ': the transport was not handed the body');
+            }
+
+            // The positive half: where the body was, what describes it now
+            // is. A stream is read into the spec before the first attempt, so
+            // there it is bytes.
+            $desc = ['binary$' => 'bytes', 'size' => strlen(self::CONTENT), 'type' => $target['media']];
+            $stream = ['binary$' => 'stream', 'type' => $target['media']];
+            foreach (array_keys($carriers) as $carrier) {
+                $failed = $errors[$carrier . '/notfound/throw'] ?? null;
+                $this->assertInstanceOf(${Name}Error::class, $failed, $carrier . ': the 404 scenario must throw');
+                $this->assertSame($desc, $failed->spec['body'] ?? null, $carrier . ': the thrown spec');
+                $explained = $explains[$carrier . '/ok/explain'] ?? [];
+                $this->assertSame($desc, $explained['spec']['body'] ?? null, $carrier . ': the explain record');
+                $this->assertSame($desc, $explained['fetchdef']['body'] ?? null,
+                    $carrier . ': the explained fetch definition');
+
+                // The request data holds what the caller gave: a stream is a
+                // stream there, and an equal string is the body wherever it
+                // sits.
+                $ctx = $failed->ctx();
+                $body = $given[$carrier . '/notfound/throw'];
+                $held = ($ctx->utility->clean)($ctx, ['reqdata' => $ctx->reqdata, 'copy' => self::CONTENT]);
+                $this->assertSame(is_string($body) ? $desc : $stream, $held['reqdata']['$body'] ?? null,
+                    $carrier . ': the request data');
+                $this->assertSame($desc, $held['copy'] ?? null, $carrier . ': an equal string');
+                $this->assertSame($body, $ctx->reqdata['$body'] ?? null, $carrier . ': the live request data');
+            }
+        } finally {
+            foreach ($given as $body) {
+                if (is_resource($body)) {
+                    fclose($body);
+                }
+            }
+            unlink($path);
+        }
+    }
+
+    public function test_the_sweep_can_see_a_body_clean_switched_off_shows_the_bytes(): void
+    {
+        $this->without_trace_args(fn () => $this->content_control());
+    }
+
+    private function content_control(): void
+    {
+        $target = self::binary_op();
+        if (null === $target) {
+            $this->markTestSkipped('no operation of this SDK sends a binary body; nothing to sweep');
+        }
+
+        $path = (string)tempnam(sys_get_temp_dir(), 'clean');
+        file_put_contents($path, self::CONTENT);
+        try {
+            foreach (self::carriers($path) as $carrier => $make) {
+                $sinks = new \\ArrayObject();
+                [$sdk, $watcher] = self::make_sdk(self::scenarios()['notfound'], $sinks, ['active' => false]);
+                $body = $make();
+                [$err, $_explain] = self::drive($sdk, $watcher, $target, [], $sinks, ['$body' => $body]);
+                if (is_resource($body)) {
+                    fclose($body);
+                }
+                $this->assertNotNull($err, $carrier . ': the 404 scenario must throw');
+
+                $leaked = 0;
+                foreach ($sinks as $s) {
+                    if (0 < count(self::content_leaks($s['text']))) {
+                        $leaked++;
+                    }
+                }
+                $this->assertGreaterThan(0, $leaked,
+                    $carrier . ': with clean off, nothing showed the bytes: the sweep is blind');
+            }
+        } finally {
+            unlink($path);
         }
     }
 }

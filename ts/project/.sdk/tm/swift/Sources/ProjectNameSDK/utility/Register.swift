@@ -6,6 +6,7 @@ import Foundation
 func registerAll(_ u: Utility) {
   u.clean = cleanUtil
   u.cleanAdd = cleanAddUtil
+  u.cleanSecret = cleanSecretUtil
   u.done = doneUtil
   u.makeError = makeErrorUtil
   u.featureAdd = featureAddUtil

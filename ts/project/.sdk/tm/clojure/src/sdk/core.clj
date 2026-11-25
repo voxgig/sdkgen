@@ -605,34 +605,69 @@
         (let [c (str n "#" i)]
           (if (has? c) (recur (inc i)) c))))))
 
+(declare RAW-BODY)
+
+;; The live request body of a point the model marks binary, and its type.
+;; A string shorter than the registry accepts is not told from ordinary text.
+(defn- binary-body [ctx cfg]
+  (when (instance? clojure.lang.IDeref ctx)
+    (let [body (mget (oget ctx :point) "body")]
+      (when (and (= "raw" (mget body "kind")) (true? (mget body "binary")))
+        (let [spec (oget ctx :spec)
+              minlen (long (or (mget cfg "min") 4))
+              live (filterv #(and (some? %) (or (not (string? %)) (<= minlen (count %))))
+                            [(when (instance? clojure.lang.IDeref spec) (:body (deref spec)))
+                             (mget (oget ctx :reqdata) RAW-BODY)])
+              media (mget body "media")]
+          (when (seq live)
+            {:live live :type (when (string? media) media)}))))))
+
+;; Bytes are described, never copied (ADR-006): the kind, and the size and
+;; media type where they are known. A string is bytes only as the body of a
+;; point the model marks binary.
+(defn- describe-binary [val bin]
+  (let [declared (boolean (some #(or (identical? % val) (and (string? val) (= % val))) (:live bin)))
+        desc (cond
+               (string? val)
+               (when declared
+                 (vs/jm "binary$" "bytes" "size" (long (alength (.getBytes ^String val "UTF-8")))))
+               (bytes? val) (vs/jm "binary$" "bytes" "size" (long (alength ^bytes val)))
+               (instance? java.io.InputStream val) (vs/jm "binary$" "stream"))]
+    (when (and desc declared (:type bin))
+      (.put ^java.util.Map desc "type" (:type bin)))
+    desc))
+
 ;; A masked plain-data COPY (string-keyed struct nodes): an entity serialises
 ;; as its record, an atom-object as its map, functions are dropped, cycles
 ;; cut, and nothing is shared with the live value, whose spec must stay raw.
-(defn- clean-snapshot [cfg val key depth seen]
+(defn- clean-snapshot [cfg bin val key depth seen]
   (cond
     (nil? val) nil
-    (string? val) (if (sensitive-key? cfg key) (mask-value cfg val) (clean-string cfg val))
+    (string? val) (if (sensitive-key? cfg key)
+                    (mask-value cfg val)
+                    (or (describe-binary val bin) (clean-string cfg val)))
     (fn? val) DROP
     (or (number? val) (boolean? val) (keyword? val) (symbol? val) (char? val))
     (if (sensitive-key? cfg key) (mget cfg "mask") val)
     (or (<= CLEAN-MAXDEPTH depth) (some #(identical? % val) seen)) CLEAN-CIRCULAR
     (sensitive-key? cfg key) (mget cfg "mask")
+    (or (bytes? val) (instance? java.io.InputStream val)) (describe-binary val bin)
     :else
     (let [seen (conj seen val)]
       (cond
-        (entity-instance? val) (clean-snapshot cfg (deref (:_data val)) key (inc depth) seen)
-        (instance? clojure.lang.IAtom val) (clean-snapshot cfg (deref val) key (inc depth) seen)
+        (entity-instance? val) (clean-snapshot cfg bin (deref (:_data val)) key (inc depth) seen)
+        (instance? clojure.lang.IAtom val) (clean-snapshot cfg bin (deref val) key (inc depth) seen)
         (instance? Throwable val)
         (let [out (vs/jm "message" (clean-string cfg (str (.getMessage ^Throwable val))))]
           (when (instance? clojure.lang.IExceptionInfo val)
-            (let [d (clean-snapshot cfg (ex-data val) "data" (inc depth) seen)]
+            (let [d (clean-snapshot cfg bin (ex-data val) "data" (inc depth) seen)]
               (when-not (identical? DROP d) (.put ^java.util.Map out "data" d))))
           out)
         (instance? java.util.Map val)
         (let [out (vs/jm)]
           (doseq [^java.util.Map$Entry e (.entrySet ^java.util.Map val)]
             (let [k (.getKey e)
-                  v (clean-snapshot cfg (.getValue e) k (inc depth) seen)]
+                  v (clean-snapshot cfg bin (.getValue e) k (inc depth) seen)]
               (when-not (identical? DROP v)
                 (.put ^java.util.Map out
                       (clean-name cfg #(.containsKey ^java.util.Map out %) k) v))))
@@ -640,17 +675,18 @@
         (or (instance? java.util.Collection val) (sequential? val))
         (let [out (vs/jt)]
           (doseq [[i v] (map-indexed vector (seq val))]
-            (let [c (clean-snapshot cfg v i (inc depth) seen)]
+            (let [c (clean-snapshot cfg bin v i (inc depth) seen)]
               (.add ^java.util.List out (if (identical? DROP c) nil c))))
           out)
         :else (clean-string cfg (str val))))))
 
 ;; An error map is immutable, so "in place" is a cleaned copy carrying the
-;; same metadata (the context stays reachable through err-ctx).
-(defn- clean-error [cfg err]
+;; same metadata (the context stays reachable through err-ctx). Its own
+;; strings stay strings: the message is what ex-info is given.
+(defn- clean-error [cfg bin err]
   (with-meta
     (reduce (fn [out [k v]]
-              (let [c (clean-snapshot cfg v k 1 [])
+              (let [c (clean-snapshot cfg (when-not (string? v) bin) v k 1 [])
                     n (clean-name cfg #(contains? out %) k)]
                 (assoc out (if (= n (keyname k)) k n) (if (identical? DROP c) nil c))))
             {} err)
@@ -661,8 +697,9 @@
     (cond
       (= false (mget cfg "active")) val
       (string? val) (clean-string cfg val)
-      (sdk-error? val) (clean-error cfg val)
-      :else (let [out (clean-snapshot cfg val nil 0 [])] (if (identical? DROP out) nil out)))))
+      (sdk-error? val) (clean-error cfg (binary-body ctx cfg) val)
+      :else (let [out (clean-snapshot cfg (binary-body ctx cfg) val nil 0 [])]
+              (if (identical? DROP out) nil out)))))
 
 ;; A Throwable is immutable, so one that never passed through make-error (a
 ;; hook's, a fetcher's) leaves as a cleaned copy with the original's trace.
@@ -672,11 +709,12 @@
     (if (= false (mget cfg "active"))
       t
       (let [sdkerr (ex->sdk t)
+            bin (binary-body ctx cfg)
             out (if (sdk-error? sdkerr)
-                  (let [e (clean-error cfg sdkerr)]
+                  (let [e (clean-error cfg bin sdkerr)]
                     (ex-info (err-msg e) {::sdk-error e}))
                   (let [data (when (instance? clojure.lang.IExceptionInfo t)
-                               (clean-snapshot cfg (ex-data t) nil 0 []))]
+                               (clean-snapshot cfg bin (ex-data t) nil 0 []))]
                     (ex-info (clean-string cfg (str (.getMessage t)))
                              (if (instance? java.util.Map data) (into {} data) {}))))]
         (.setStackTrace ^Throwable out (.getStackTrace t))
@@ -712,6 +750,14 @@
         (.clear ^java.util.Map ex)
         (.putAll ^java.util.Map ex ^java.util.Map cleaned))
       (let [er (mget ex "result")] (when (vs/ismap er) (vs/delprop er "err"))))))
+
+;; Whether a named value is a secret: by its name, or by a registered value
+;; it holds. Answered with clean off too: a redirect asks, not a diagnostic.
+(defn u-clean-secret [ctx key value]
+  (let [cfg (clean-config ctx)]
+    (boolean (or (sensitive-key? cfg key)
+                 (and (string? value)
+                      (some (fn [v] (and (string? v) (str/includes? value v))) (registered cfg)))))))
 
 ;; The API definition is authoritative: a POST-only or PATCH-based API
 ;; exposes `update` as POST or PATCH, not the PUT the op name implies.
@@ -761,6 +807,14 @@
 (defn json-media? [media]
   (let [m (-> (if (string? media) media "") (str/split #";" 2) first (or "") str/trim str/lower-case)]
     (or (= "application/json" m) (= "text/json" m) (str/ends-with? m "+json"))))
+
+(def ^:private TEXT-MEDIA ["json" "xml" "html" "javascript" "ecmascript" "yaml" "urlencoded" "graphql"])
+
+;; A type whose body is text: none declared, text/*, or a structured text
+;; format. A body of any other type is bytes, which no message quotes.
+(defn text-media? [media]
+  (let [m (-> (if (string? media) media "") (str/split #";" 2) first (or "") str/trim str/lower-case)]
+    (boolean (or (= "" m) (str/starts-with? m "text/") (some #(str/includes? m %) TEXT-MEDIA)))))
 
 ;; The declared JSON type alone, else every declared type in the model's
 ;; order; nil when no success response declares a body.
@@ -1188,7 +1242,13 @@
           (zero? (vs/size (op-points op)))
           [nil (ctx-error ctx "point_no_points"
                           (str "Operation \"" (op-name op) "\" has no endpoint definitions."))]
-          (= 1 (vs/size (op-points op)))
+          ;; A lone point still needs the call's action to agree with its
+          ;; own; the selection below refuses a mismatch either way.
+          (and (= 1 (vs/size (op-points op)))
+               (= (vs/getprop (if (= (op-input op) "data") (oget ctx :reqdata) (oget ctx :reqmatch))
+                              "$action")
+                  (vs/getprop (to-map (vs/getprop (vs/getelem (op-points op) 0) "select"))
+                              "$action")))
           (do (oset! ctx :point (vs/getelem (op-points op) 0)) [(oget ctx :point) nil])
           :else
           (let [datainput (= (op-input op) "data")
@@ -1482,9 +1542,12 @@
 (defn unreadable-body [ctx status headers text sent failed]
   (let [ctype (header-value headers "content-type")
         ua (str (ucall ctx :clean (header-value sent "user-agent")))
+        ;; Only text is quoted: bytes are a file's, by the model or by their type.
+        quoted (and (some? text) (text-media? ctype)
+                    (not (true? (mget (mget (oget ctx :point) "response") "binary"))))
         detail (str "HTTP " status ", content-type " (if (= "" ctype) "none" ctype)
                     ", user-agent " (if (= "" ua) "transport default" ua)
-                    (if (nil? text) "" (str ", body: " (body-preview ctx text))))]
+                    (if quoted (str ", body: " (body-preview ctx text)) ""))]
     (cond
       (sdk-error? failed) (assoc failed :msg (str (:msg failed) " (" detail ")"))
       (some? failed) (ctx-error ctx (or (err-code failed) "") (str (err-msg failed) " (" detail ")"))
@@ -1831,13 +1894,16 @@
           (.readAllBytes ^java.io.InputStream in)))
       :else body)))
 
-(defn- body-publisher [body]
-  (cond
-    (string? body) (HttpRequest$BodyPublishers/ofString body)
-    (bytes? body) (HttpRequest$BodyPublishers/ofByteArray body)
-    (instance? java.io.InputStream body)
-    (HttpRequest$BodyPublishers/ofByteArray (.readAllBytes ^java.io.InputStream body))
-    :else (HttpRequest$BodyPublishers/noBody)))
+;; A stream is read once: the definition keeps its bytes, for a redirect that
+;; sends them again.
+(defn- body-publisher [fetchdef]
+  (let [given (vs/getprop fetchdef "body")
+        body (if (instance? java.io.InputStream given) (.readAllBytes ^java.io.InputStream given) given)]
+    (when-not (identical? body given) (vs/setprop fetchdef "body" body))
+    (cond
+      (string? body) (HttpRequest$BodyPublishers/ofString body)
+      (bytes? body) (HttpRequest$BodyPublishers/ofByteArray body)
+      :else (HttpRequest$BodyPublishers/noBody))))
 
 ;; A GET-only live run refuses any other method before it is sent. The error
 ;; names the path alone: the query can carry a credential.
@@ -1858,7 +1924,7 @@
     (try
       (let [builder (HttpRequest/newBuilder (URI/create fullurl))
             has-ua (atom false)]
-        (.method builder (str/upper-case method-str) (body-publisher (vs/getprop fetchdef "body")))
+        (.method builder (str/upper-case method-str) (body-publisher fetchdef))
         (doseq [item (or (vs/items headers) [])]
           (let [k (vs/getprop item 0) v (vs/getprop item 1)]
             (when (string? v)
@@ -1888,6 +1954,74 @@
         [nil (make-error-obj "fetch_transport"
                              (str (.getName (class e)) (when-let [m (.getMessage e)] (str ": " m))))]))))
 
+(def ^:private REDIRECT-STATUS #{301 302 303 307 308})
+(def ^:private REDIRECT-MAX 5)
+(def ^:private CREDENTIAL-HEADERS #{"authorization" "cookie" "proxy-authorization"})
+
+(defn- origin-of [^URI uri]
+  (let [scheme (.toLowerCase (str (.getScheme uri)) java.util.Locale/ROOT)
+        port (.getPort uri)]
+    [scheme
+     (.toLowerCase (str (or (.getHost uri) (.getAuthority uri))) java.util.Locale/ROOT)
+     (if (neg? port) (get {"http" 80 "https" 443} scheme -1) (long port))]))
+
+;; What another origin is not sent: the names every client drops, and whatever
+;; the SDK holds as a secret, by its name or by its value.
+(defn- credential? [ctx name value]
+  (let [u (oget ctx :utility)
+        secret (when (instance? clojure.lang.IDeref u) (:clean-secret (deref u)))]
+    (boolean (or (contains? CREDENTIAL-HEADERS (.toLowerCase (str name) java.util.Locale/ROOT))
+                 ((if (fn? secret) secret u-clean-secret) ctx name value)))))
+
+;; The request a followed redirect sends next, or nil where the response is the
+;; answer. As the client rewrote it: a 303, and a 301 or 302 answering a POST,
+;; become a GET without the body. A body is not sent on to another origin.
+(defn- next-hop [ctx url fetchdef res]
+  (let [status (to-int (vs/getprop res "status"))
+        location (mget (vs/getprop res "headers") "location")
+        from (URI/create url)
+        ^URI to (when (and (contains? REDIRECT-STATUS status) (string? location))
+                  (try (.resolve from (URI/create location)) (catch Exception _ nil)))
+        scheme (when to (.getScheme to))]
+    ;; As the client's NORMAL policy: never from https to http.
+    (when (and scheme (or (.equalsIgnoreCase ^String scheme (.getScheme from))
+                          (.equalsIgnoreCase ^String scheme "https")))
+      (let [method (.toUpperCase (str (or (vs/getprop fetchdef "method") "GET")) java.util.Locale/ROOT)
+            toget (or (= 303 status) (and (= "POST" method) (contains? #{301 302} status)))
+            cross (not= (origin-of to) (origin-of from))
+            body (when-not toget (vs/getprop fetchdef "body"))]
+        (when-not (and cross (some? body))
+          (let [headers (vs/jm)
+                hop (java.util.LinkedHashMap. ^java.util.Map fetchdef)]
+            (doseq [item (or (vs/items (vs/getprop fetchdef "headers")) [])]
+              (let [k (vs/getprop item 0) v (vs/getprop item 1)]
+                (when-not (or (and toget (str/starts-with? (.toLowerCase (str k) java.util.Locale/ROOT)
+                                                           "content-"))
+                              (and cross (credential? ctx k v)))
+                  (.put ^java.util.Map headers k v))))
+            (.put hop "method" (if toget "GET" method))
+            (.put hop "headers" headers)
+            (when (nil? body) (.remove hop "body"))
+            [(str to) hop]))))))
+
+;; java.net.http has no hook on a redirect, so the hops its NORMAL policy took
+;; are taken here. Each passes the GET-only guard; at the limit, which counts
+;; requests as the client's did, the 3xx is the answer.
+(defn- follow-redirects [ctx fullurl fetchdef]
+  (let [manual (= "manual" (vs/getprop fetchdef "redirect"))
+        ^java.util.Map given (if (vs/ismap fetchdef) fetchdef {})]
+    (loop [url fullurl
+           fdef (doto (java.util.LinkedHashMap. given) (.put "redirect" "manual"))
+           sent 1]
+      (let [[res err :as answer] (default-http-fetch url fdef)
+            [next-url next-def :as hop] (when (and (nil? err) (not manual) (< sent REDIRECT-MAX))
+                                          (next-hop ctx url fdef res))
+            refused (when hop (getonly-refusal ctx next-url (vs/getprop next-def "method")))]
+        (cond
+          (nil? hop) answer
+          refused [nil refused]
+          :else (recur next-url next-def (inc sent)))))))
+
 (defn u-fetcher [ctx fullurl fetchdef]
   (let [client (oget ctx :client)]
     (if (not= (client-mode client) "live")
@@ -1901,7 +2035,7 @@
             (cond
               (nil? sys-fetch) (if-let [refused (getonly-refusal ctx fullurl (vs/getprop fetchdef "method"))]
                                  [nil refused]
-                                 (default-http-fetch fullurl fetchdef))
+                                 (follow-redirects ctx fullurl fetchdef))
               (vs/isfunc sys-fetch) (sys-fetch fullurl fetchdef)
               :else [nil (ctx-error ctx "fetch_invalid" "system.fetch is not a valid function")])))))))
 
@@ -1910,7 +2044,7 @@
 ;; ---------------------------------------------------------------------------
 
 (defn base-utility-map []
-  {:clean u-clean :clean-add u-clean-add :done u-done :make-error u-make-error
+  {:clean u-clean :clean-add u-clean-add :clean-secret u-clean-secret :done u-done :make-error u-make-error
    :feature-add feature-add :feature-hook feature-hook :feature-init feature-init
    :fetcher u-fetcher :make-fetch-def u-make-fetch-def :make-context (fn [cm bc] (make-context cm bc))
    :make-options u-make-options :make-request u-make-request :make-response u-make-response

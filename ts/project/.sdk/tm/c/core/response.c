@@ -54,6 +54,28 @@ static bool names_json(const char* type) {
   return false;
 }
 
+// Only text is quoted: bytes are a file's, by the model or by their type.
+// Text is no declared type, text/*, or a structured text format.
+static bool body_quotable(Context* ctx, const char* type) {
+  static const char* const TEXT_MEDIA[] = { "json", "xml", "html", "javascript",
+    "ecmascript", "yaml", "urlencoded", "graphql", NULL };
+  bool binary = false;
+  if (get_bool(getp(ctx->point, "response"), "binary", &binary) && binary) return false;
+
+  while (isspace((unsigned char)*type)) type++;
+  size_t len = strcspn(type, ";");
+  while (0 < len && isspace((unsigned char)type[len - 1])) len--;
+  if (0 == len || (5 <= len && strncasecmp(type, "text/", 5) == 0)) return true;
+
+  for (size_t i = 0; i < len; i++) {
+    for (const char* const* part = TEXT_MEDIA; *part; part++) {
+      size_t n = strlen(*part);
+      if (i + n <= len && strncasecmp(type + i, *part, n) == 0) return true;
+    }
+  }
+  return false;
+}
+
 // Whitespace runs as one space, trimmed. Returns malloc'd.
 static char* flatten_space(const char* s) {
   char* out = (char*)malloc(strlen(s) + 1);
@@ -100,7 +122,8 @@ PNError* unreadable_body(Context* ctx, int64_t status, voxgig_value* headers,
                          voxgig_value* text, voxgig_value* sent, PNError* failed) {
   const char* type = header_value(headers, "content-type");
   char* agent = clean_str(ctx, header_value(sent, "user-agent"));
-  char* preview = (v_is_noval(text) || v_is_null(text)) ? NULL : body_preview(ctx, text);
+  char* preview = (v_is_noval(text) || v_is_null(text) || !body_quotable(ctx, type))
+    ? NULL : body_preview(ctx, text);
 
   size_t size = strlen(type) + strlen(agent) + (preview ? strlen(preview) : 0) + 128;
   char* detail = (char*)malloc(size);

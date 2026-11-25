@@ -12,6 +12,7 @@ const node_path_1 = __importDefault(require("node:path"));
 const node_fs_1 = require("node:fs");
 const node_child_process_1 = require("node:child_process");
 const jostraca_1 = require("jostraca");
+const exportnames_1 = require("./exportnames");
 const MERGE = 'merge';
 exports.MERGE = MERGE;
 const OVERWRITE = 'overwrite';
@@ -259,7 +260,9 @@ class CopyGuard {
         return node_path_1.default.join(this.root, ...dir.split('/'), ...rel.split('/'));
     }
     finish() {
-        const outcome = { merged: [], kept: [], retained: [], spared: this.spared };
+        const outcome = {
+            merged: [], kept: [], unrecorded: [], lacking: {}, retained: [], spared: this.spared,
+        };
         const conflicts = [];
         const writes = [];
         const bases = new Map();
@@ -290,7 +293,19 @@ class CopyGuard {
             }
             if (null != conflict && true === this.spec.keep) {
                 outcome.kept.push(rel);
-                bases.set(rel, incoming);
+                // Recording the incoming copy as a base would pass a stale copy off as
+                // a customization.
+                if ('nobase' === conflict.why) {
+                    outcome.unrecorded.push(rel);
+                }
+                else {
+                    bases.set(rel, incoming);
+                }
+                const names = (0, exportnames_1.isTypeScript)(rel) ?
+                    (0, exportnames_1.missingExports)(incoming.toString('utf8'), local.toString('utf8')) : [];
+                if (0 < names.length) {
+                    outcome.lacking[rel] = names;
+                }
             }
             else if (null != conflict) {
                 conflicts.push(conflict);
@@ -312,6 +327,9 @@ class CopyGuard {
             }
         }
         this.keepBases(bases);
+        if (0 < outcome.unrecorded.length) {
+            this.spec.forget?.(outcome.unrecorded);
+        }
         clearConflicts(this.spec);
         this.report(outcome);
         return outcome;
@@ -383,16 +401,25 @@ class CopyGuard {
             binary: 'a binary file, which is never merged',
         };
         const shown = this.spec.conflictdir;
+        const nobase = conflicts.filter((c) => 'nobase' === c.why).length;
         const msg = this.spec.what + ': ' + conflicts.length +
             ' locally changed file(s) cannot take the incoming copy, so nothing was changed:\n  ' +
             conflicts.map((c) => c.rel + ' (' + why[c.why] + ')').join('\n  ') +
             '\n\n  The incoming copies are in ' + shown + '/, with conflict markers where ' +
-            'both sides changed the same lines. Then either:' +
-            '\n    - fold the incoming change into the local file by hand and re-run with ' +
-            '--keep, which keeps the local files and records the incoming copies as ' +
-            'their base;' +
-            '\n    - or re-run with --force, which takes the incoming copies and discards ' +
-            'the local changes.';
+            'both sides changed the same lines. ' +
+            (0 < nobase ?
+                'Nothing records what an add wrote to ' +
+                    (nobase === conflicts.length ? 'them' : nobase + ' of them') +
+                    ', so nothing shows whether they hold a local change or an older ' +
+                    'copy this update would replace, and --keep would leave them as they ' +
+                    'are, unrecorded. Commit, then re-run with --force, which takes the ' +
+                    'incoming copies; `git diff` then shows any local change to restore.' :
+                'Then either:' +
+                    '\n    - fold the incoming change into the local file by hand and re-run with ' +
+                    '--keep, which keeps the local files and records the incoming copies as ' +
+                    'their base;' +
+                    '\n    - or re-run with --force, which takes the incoming copies and discards ' +
+                    'the local changes.');
         return null == this.spec.error ? new Error(msg) : this.spec.error(msg);
     }
     report(outcome) {
@@ -406,9 +433,15 @@ class CopyGuard {
         }
         if (0 < outcome.kept.length) {
             log.warn({
-                point: 'copy-merge-kept', files: outcome.kept,
+                point: 'copy-merge-kept', files: outcome.kept, unrecorded: outcome.unrecorded,
+                lacking: outcome.lacking,
                 note: this.spec.what + ': --keep, kept ' + outcome.kept.length +
-                    ' local file(s) as they are: ' + outcome.kept.join(', ')
+                    ' local file(s) as they are: ' + outcome.kept.join(', ') +
+                    (0 === outcome.unrecorded.length ? '' :
+                        '; nothing records what an add wrote to ' + outcome.unrecorded.join(', ') +
+                            ', so they stay unrecorded until an add with --force replaces them') +
+                    Object.entries(outcome.lacking).map(([rel, names]) => '; ' + rel + ' lacks ' + names.join(', ') + ', which the incoming copy ' +
+                        'exports').join('')
             });
         }
         if (0 < outcome.retained.length) {

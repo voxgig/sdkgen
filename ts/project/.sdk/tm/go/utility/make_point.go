@@ -95,20 +95,24 @@ func makePointUtil(ctx *core.Context) (map[string]any, error) {
 			"Operation \""+op.Name+"\" has no endpoint definitions.")
 	}
 
-	if len(op.Points) == 1 {
+	var reqselector map[string]any
+	var selector map[string]any
+
+	if op.Input == "data" {
+		reqselector = ctx.Reqdata
+		selector = ctx.Data
+	} else {
+		reqselector = ctx.Reqmatch
+		selector = ctx.Match
+	}
+
+	// A lone point still needs the call's action to agree with its own; the
+	// selection below refuses a mismatch either way.
+	if len(op.Points) == 1 &&
+		vs.GetProp(reqselector, "$action") ==
+			vs.GetProp(vs.GetProp(op.Points[0], "select"), "$action") {
 		ctx.Point = op.Points[0]
 	} else {
-		var reqselector map[string]any
-		var selector map[string]any
-
-		if op.Input == "data" {
-			reqselector = ctx.Reqdata
-			selector = ctx.Data
-		} else {
-			reqselector = ctx.Reqmatch
-			selector = ctx.Match
-		}
-
 		var point map[string]any
 		matched := false
 		for i := 0; i < len(op.Points); i++ {

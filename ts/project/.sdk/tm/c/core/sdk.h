@@ -522,6 +522,7 @@ char* clean_str(Context* ctx, const char* val); // returns malloc'd
 void clean_add_util(Context* ctx, const char* value);
 void clean_add_opts(voxgig_value* options, const char* value);
 bool clean_key_util(Context* ctx, const char* key);
+bool clean_secret_util(Context* ctx, const char* key, const char* value);
 voxgig_value* clean_opts(voxgig_value* options, voxgig_value* val);
 voxgig_value* clean_make_config(voxgig_value* cleanopts);
 voxgig_value* clean_split_values(voxgig_value* values);

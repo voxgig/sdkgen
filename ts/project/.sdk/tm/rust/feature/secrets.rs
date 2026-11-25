@@ -762,12 +762,18 @@ fn buy_once(state: &Rc<RefCell<SecretsState>>) -> Result<String, ProjectNameErro
     Ok(token)
 }
 
+// One agent for every exchange: ureq pools keep-alive connections per agent.
+fn exchange_agent() -> ureq::Agent {
+    static AGENT: std::sync::OnceLock<ureq::Agent> = std::sync::OnceLock::new();
+    AGENT.get_or_init(|| ureq::AgentBuilder::new().build()).clone()
+}
+
 fn raw_exchange_fetch(fullurl: &str, fetchdef: &Value) -> Result<Value, ProjectNameError> {
     let method = get_str(fetchdef, "method")
         .filter(|m| !m.is_empty())
         .unwrap_or_else(|| "POST".to_string());
 
-    let agent = crate::utility::fetcher::default_agent();
+    let agent = exchange_agent();
     let mut req = agent.request(&method, fullurl);
 
     if let Value::Map(m) = getp(fetchdef, "headers") {

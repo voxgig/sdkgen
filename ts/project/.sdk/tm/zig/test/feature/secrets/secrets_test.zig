@@ -54,6 +54,15 @@ fn vnull() Value {
     return Value{ .null = {} };
 }
 
+// A route the call cannot fill is refused before the chain is consulted.
+fn refusedBeforeChain(code: []const u8) bool {
+    const codes = [_][]const u8{ "url_param_missing", "point_no_match", "point_action_required" };
+    for (codes) |c| {
+        if (std.mem.eql(u8, code, c)) return true;
+    }
+    return false;
+}
+
 // Every block runs only when the feature is in THIS SDK - build.zig lists
 // this file only then, so this is belt and braces rather than a gate.
 fn present() bool {
@@ -294,14 +303,14 @@ fn drive_entity(client: *sdk.SDK) Drive {
                         if (h.getp(ops, "load") == .object) {
                             const res = ent.load(h.jo(&.{.{ "id", h.vstr("s01") }}), vnull());
                             switch (res) {
-                                .err => |e| if (!std.mem.eql(u8, e.code, "url_param_missing"))
+                                .err => |e| if (!refusedBeforeChain(e.code))
                                     return .{ .ran = true, .ok = false, .msg = e.msg },
                                 .ok => return .{ .ran = true, .ok = true, .msg = "" },
                             }
                         } else if (h.getp(ops, "list") == .object) {
                             const res = ent.list(h.omap(), vnull());
                             switch (res) {
-                                .err => |e| if (!std.mem.eql(u8, e.code, "url_param_missing"))
+                                .err => |e| if (!refusedBeforeChain(e.code))
                                     return .{ .ran = true, .ok = false, .msg = e.msg },
                                 .ok => return .{ .ran = true, .ok = true, .msg = "" },
                             }

@@ -10,9 +10,15 @@ const NONJSON_NO_AGENT = 'transport default'
 const CHALLENGE = '<!DOCTYPE html><html><head><title>Just a moment...</title></head>' +
   '<body>key ' + NONJSON_SECRET + ' ' + 'x'.repeat(300) + '</body></html>'
 
+// A file's bytes, which no message may hold: a marker between bytes that are not UTF-8.
+const NONJSON_CONTENT = 'CANARY-RESPONSE-BYTES-p4s8d2f6'
+const BINARY = Buffer.concat([Buffer.from('RIFF'), Buffer.from([0x00, 0xff, 0xfe, 0x80]),
+  Buffer.from(NONJSON_CONTENT), Buffer.from([0xff, 0x00, 0xc3, 0x28])]).toString('base64')
+
 // `readable` says whether the body parses as JSON; a stub transport, standing
 // in for one the caller supplies, marks the response from it. `encoding`
 // compresses the body unasked; `negotiate` answers XML unless asked for JSON.
+// `base64` holds bytes no string can, which only a socket carries (`wire`).
 type NonjsonCase = {
   name: string
   status: number
@@ -22,6 +28,8 @@ type NonjsonCase = {
   agent?: string
   encoding?: 'gzip' | 'deflate'
   negotiate?: boolean
+  base64?: boolean
+  wire?: boolean
 }
 
 const NONJSON_CASES: NonjsonCase[] = [
@@ -40,7 +48,15 @@ const NONJSON_CASES: NonjsonCase[] = [
     readable: true, encoding: 'deflate' },
   { name: 'accept', status: 200, type: 'application/json', body: '[{"id":"x01","title":"x"}]',
     readable: true, negotiate: true },
+  { name: 'binary', status: 200, type: 'audio/wav', body: BINARY, readable: false,
+    base64: true, wire: true },
 ]
+
+
+// The cases a run is given: a stub transport cannot be handed bytes.
+function nonjsonCases(seam: boolean): NonjsonCase[] {
+  return NONJSON_CASES.filter((c) => !(seam && true === c.wire))
+}
 
 // What each case's message must hold, beside the code it must carry.
 const NONJSON_EXPECT: Record<string, { code: string, parts: string[], absent: string[] }> = {
@@ -71,6 +87,11 @@ const NONJSON_EXPECT: Record<string, { code: string, parts: string[], absent: st
   gzip: { code: 'ok', parts: [], absent: [] },
   deflate: { code: 'ok', parts: [], absent: [] },
   accept: { code: 'ok', parts: [], absent: [] },
+  binary: {
+    code: 'response_content_type',
+    parts: ['expected JSON, got audio/wav', 'HTTP 200', 'content-type audio/wav'],
+    absent: [NONJSON_CONTENT, 'RIFF', 'body:'],
+  },
 }
 
 
@@ -98,7 +119,7 @@ function nonjsonFailures(out: string, target: string, seam: boolean,
   const fails: string[] = []
   for (const path of paths) {
     const found = nonjsonOutcomes(out, path)
-    for (const c of NONJSON_CASES) {
+    for (const c of nonjsonCases(seam)) {
       const want = NONJSON_EXPECT[c.name]
       const got = found[c.name]
       const name = path + ' ' + c.name
@@ -127,8 +148,8 @@ function nonjsonFailures(out: string, target: string, seam: boolean,
 
 // The cases one per line, for a probe without a JSON reader: name, status,
 // content type, agent and body, tab-separated, an absent value empty.
-function nonjsonTsv(): string {
-  return NONJSON_CASES.map((c) =>
+function nonjsonTsv(seam: boolean): string {
+  return nonjsonCases(seam).map((c) =>
     [c.name, String(c.status), c.type ?? '', c.agent ?? '', c.body].join('\t')).join('\n') + '\n'
 }
 
@@ -147,7 +168,7 @@ const server = http.createServer((req, res) => {
       res.writeHead(404, { 'content-type': 'text/plain' })
       return res.end('no case')
     }
-    let body = Buffer.from(c.body)
+    let body = c.base64 ? Buffer.from(c.body, 'base64') : Buffer.from(c.body)
     let type = c.type
     if (c.negotiate && !/application\\/json/i.test(String(req.headers.accept || ''))) {
       body = Buffer.from('<?xml version="1.0" encoding="UTF-8"?><cats/>')
@@ -1466,6 +1487,7 @@ const NONJSON_PROBES: Record<string, string> = {
 
 export {
   NONJSON_CASES,
+  nonjsonCases,
   NONJSON_PROBES,
   NONJSON_SECRET,
   NONJSON_SERVER,

@@ -230,9 +230,27 @@ describe('makePoint', () => {
     })
 
 
-    test(lang + ': a lone action route is still taken without one', () => {
+    // A lone action route is no exception: a call that names no action
+    // never reaches it.
+    test(lang + ': a lone action route needs its action', () => {
       const only = { parts: ['signal', 'strong'], select: { exist: [], $action: 'strong' } }
-      strictEqual(makePoint(makeCtx([only], {})), only)
+
+      const out = makePoint(makeCtx([only], {}))
+      strictEqual(out.code, 'point_action_required')
+      strictEqual(out.message,
+        'Operation "load" has only action endpoints; pass $action to choose one.')
+
+      strictEqual(makePoint(makeCtx([only], { $action: 'strong' })), only)
+      strictEqual(makePoint(makeCtx([only], { $action: 'weak' })).code, 'point_action_invalid')
+    })
+
+
+    test(lang + ': a lone plain route refuses an action it does not have', () => {
+      const only = { parts: ['thing', '{id}'], select: {} }
+
+      const out = makePoint(makeCtx([only], { id: 'x', $action: 'nope' }))
+      strictEqual(out.code, 'point_action_invalid')
+      strictEqual(out.message, 'Operation "load" action "nope" is not valid.')
     })
 
 
@@ -320,6 +338,18 @@ describe('makePoint in every target', () => {
       }
     }
     deepStrictEqual(missing, [], 'targets that send an action-only call to a guessed route')
+  })
+
+  test('every target checks the action before taking a lone point', () => {
+    const missing: string[] = []
+    for (const [lang, [rel, def]] of Object.entries(TEMPLATES)) {
+      const src = readFileSync(Path.join(TM, rel), 'utf8')
+      const body = src.slice(Math.max(0, src.indexOf(def) - 1200), src.indexOf(def) + 8000)
+      if (!/A lone point still needs the call's action to agree with its\s+(\S+\s+)?own/.test(body)) {
+        missing.push(lang)
+      }
+    }
+    deepStrictEqual(missing, [], 'targets that take a lone point whatever the call\'s action')
   })
 
 

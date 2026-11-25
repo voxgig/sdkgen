@@ -4,6 +4,7 @@ import { KIT, getModelPath } from '@voxgig/apidef'
 import type { ModelEntity, SdkModel } from '../types'
 
 import { entityOps } from './opShape'
+import { surfaceOf } from './surface'
 
 
 type McpTool = {
@@ -20,7 +21,7 @@ const MCP_WRITE_OPS = ['create', 'update', 'patch', 'remove']
 // The tools the go-mcp server registers, each for the entities a plain call of
 // its operation runs on, in name order. A tool no entity can serve is left
 // out. The write tools need the target's `tool.write`.
-function mcpTools(model: SdkModel, target: string = 'go-mcp'): McpTool[] {
+function mcpTools(model: SdkModel, target: string = mcpTarget(model)): McpTool[] {
   const write = true === model.main?.[KIT]?.target?.[target]?.tool?.write
   const slug = String(model.name ?? '').toLowerCase()
   const entities: ModelEntity[] = each(getModelPath(model, `main.${KIT}.entity`) || {})
@@ -36,12 +37,21 @@ function mcpTools(model: SdkModel, target: string = 'go-mcp'): McpTool[] {
 }
 
 
+// The installed name of the MCP server, which an alias or a package can change.
+function mcpTarget(model: SdkModel): string {
+  const targets: any = model.main?.[KIT]?.target || {}
+  return Object.keys(targets).sort().find((name: string) =>
+    false !== targets[name]?.active && 'mcp' === surfaceOf(targets[name])) ?? 'go-mcp'
+}
+
+
 export type {
   McpTool,
 }
 
 export {
   mcpTools,
+  mcpTarget,
   MCP_READ_OPS,
   MCP_WRITE_OPS,
 }

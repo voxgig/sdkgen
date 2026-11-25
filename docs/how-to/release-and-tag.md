@@ -4,9 +4,18 @@
 make publish V=3.8.0
 ```
 
-Bumps `ts/package.json` (and its lockfile), runs `make all`, commits, pushes
-`main`, and dispatches the publish workflow — which publishes to npm and
-writes the `v<V>` tag.
+Bumps `ts/package.json` (and its lockfile), stamps the version, commits,
+pushes `main`, and dispatches the publish workflow — which builds and tests on
+CI, publishes to npm and writes the `v<V>` tag.
+
+Nothing runs the suite on your machine. The release gate is the publish
+workflow's own build and test, with the languages its runner has installed. The full
+run, with every target's toolchain installed, is the nightly workflow: once a
+day, or on demand:
+
+```sh
+gh workflow run nightly.yml --ref main
+```
 
 Every guard runs **before** anything is written, because a release cannot be
 taken back: npm never allows republishing a version. It refuses unless `V` is

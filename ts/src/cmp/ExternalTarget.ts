@@ -6,6 +6,9 @@ import { Project } from 'jostraca'
 
 import { KIT } from '@voxgig/apidef'
 
+import { fact } from '../helpers/facts'
+import { repoInfo } from '../helpers/packageMeta'
+
 import { Main } from './Main'
 import { Entity } from './Entity'
 import { Feature } from './Feature'
@@ -39,15 +42,18 @@ const ExternalTarget = cmp(function ExternalTarget(props: any) {
   ctx$.stdrep = ctx$.stdrep || {}
   names(ctx$.stdrep, model.Name, 'Project' + 'Name')
 
+  if ('' !== (target.output?.repo || '')) {
+    const { host, path } = repoInfo(model, target.name)
+    ctx$.model = { ...model, main: { ...model.main, [KIT]: { ...model.main[KIT], repo: { host, path } } } }
+  }
+
   const entity = model.main[KIT].entity || {}
   const feature = model.main[KIT].feature || {}
 
-  // Defaults are inclusive: a phase runs unless the target's model turns it
-  // off. Consumer targets (go-cli, go-mcp, py-data, seneca-provider) switch
-  // every phase off and emit everything from Main.
-  const phase = target.phase || {}
-  const phaseActive = (name: string): boolean =>
-    false !== (phase[name] && phase[name].active)
+  // Consumer targets (go-cli, go-mcp, py-data, seneca-provider) switch every
+  // phase off and emit everything from Main.
+  const phase = fact(target, 'phase')
+  const phaseActive = (name: string): boolean => true === phase[name]
 
   Project({}, () => {
     names(target, target.name)

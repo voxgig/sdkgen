@@ -63,6 +63,22 @@ Three of those rows are the failure modes worth naming:
 `output.path` is not a consumer-target feature: point a language target
 at another repo and it generates there exactly as it would in-tree.
 
+## What the SDK repo still says about it
+
+Leaving the in-tree pass takes the target out of the model the project's
+`Root.ts` receives, not out of the project. The root README and the root
+agent guide describe the whole project, so both still name the target: by
+its title, linked to `output.repo` when the model sets one and unlinked when
+it does not, and as generated into its own repository rather than as a
+folder of this one. The fact pass takes what they say from the full model,
+before the target is dropped, so a run that skips the target
+(`create: false`) or moves it (an override) names it the same way.
+
+The files about the packages this repository releases leave it out: the
+scope in SECURITY.md, the changelog, the release Makefile and the publish
+workflows. They describe what this repository publishes, and the target is
+released from its own.
+
 ## The destination is a decision, not a typo
 
 The path is taken verbatim from the model, generation overwrites, and
@@ -91,7 +107,8 @@ main: kit: target: 'seneca-provider': output: {
 
 `create: false` says that the other repo is an optional checkout. The target
 remains active and remains excluded from the in-tree pass, but sdkgen skips
-its external pass while the destination folder is absent. Once that folder
+its external pass while the destination folder is absent, with a warning
+(`generate-external-skip`) on each run that does. Once that folder
 exists, generation proceeds without another model change and all ordinary
 destination-safety checks still apply. The default is `true`, which preserves
 the original behaviour of creating a missing destination and its parents.
@@ -113,8 +130,9 @@ anything ascending further. A project declaring
 `'../../seneca/solardemo-provider'` derived
 `'../../voxgig-sdk/voxgig-solardemo-sdk'`, where `voxgig-sdk` is the name
 of the *workspace directory* on one machine and no part of the model —
-committed into the destination's README and three test files. Generation
-warns until such a project declares it.
+committed into the destination's README and three test files. So declare
+`sdkrel` for every out-of-tree target; generation warns until it is
+declared.
 
 ## One model, two layouts
 
@@ -156,6 +174,12 @@ identical, and nothing can tell which was meant.
 
 An override relocates an item. It can also send an item out of tree that
 the model generates in tree, and every destination guard still runs on it.
+
+The SDK repository's committed files describe the model's layout either
+way. The root README, the agent guides, the deploy Makefile and the publish
+workflows are the same with and without an override, and only the relocated
+item's own files move. Its earlier in-tree output is left as it was, and
+generation warns (`generate-external-stale`) that it is stale.
 
 ## Writing into a folder that holds the project
 

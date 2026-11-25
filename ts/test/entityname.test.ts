@@ -5,12 +5,19 @@ import { strictEqual, deepStrictEqual, ok } from 'node:assert'
 import { readFileSync, readdirSync } from 'node:fs'
 import Path from 'node:path'
 
+import { memfs } from 'memfs'
+import { Project } from 'jostraca'
+
 import {
+  SdkGen,
+  applyFacts,
   entityClassName,
   entityTypeCollisions,
   deriveEntityNames,
   entityCollection,
+  guardModel,
 } from '../dist/sdkgen.js'
+import { FOLD_ENTITY, makeModel as makeGenModel } from './generateharness'
 
 const { KIT } = require('../dist/types.js')
 
@@ -157,5 +164,32 @@ describe('entityCollection resolves once, unfiltered', () => {
   test('tolerates a model with no entity collection', () => {
     deepStrictEqual(entityCollection({ main: {} }), {})
     deepStrictEqual(entityCollection(null), {})
+  })
+})
+
+
+describe('guardModel', () => {
+
+  const plain = (m: any) => JSON.parse(JSON.stringify(m))
+
+  test('applying it twice changes nothing more than applying it once', () => {
+    const model = makeGenModel(['ts'], undefined, FOLD_ENTITY)
+    const once = plain(guardModel(plain(model)))
+    deepStrictEqual(plain(guardModel(guardModel(plain(model)))), once)
+    ok(null != once.main[KIT].entity.contactsfield2, 'the fixture is one guardModel renames')
+  })
+
+  test('generate hands Root the model guardModel and the facts prepare', async () => {
+    const model = makeGenModel(['ts'], undefined, FOLD_ENTITY)
+    const expected = plain(applyFacts(guardModel(plain(model))))
+
+    let seen: any
+    const root = (props: any) => {
+      seen = plain(props.model)
+      Project({ folder: 'p' }, () => {})
+    }
+    const { fs } = memfs({})
+    await SdkGen({ fs, folder: '/top', root: '' }).generate({ model: plain(model), root })
+    deepStrictEqual(seen, expected)
   })
 })

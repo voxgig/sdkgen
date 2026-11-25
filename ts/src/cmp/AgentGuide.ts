@@ -3,6 +3,8 @@ import { Content, File } from 'jostraca'
 import { cmp } from '../helpers/component'
 
 import { optionalComponent } from '../helpers/optional'
+import { fact } from '../helpers/facts'
+import { apiName } from '../helpers/packageMeta'
 
 import {
   activeFeatures,
@@ -12,8 +14,11 @@ import {
   claudePointer,
   featuresEnabled,
   isDirLayout,
-  featureRuntimeFile,
+  featureTemplates,
+  writesFeatureGuides,
   featureHooks,
+  regenerationStatement,
+  copiesStatement,
 } from './AgentGuideContent'
 
 import { AgentGuideFeature } from './AgentGuideFeature'
@@ -29,34 +34,47 @@ const AgentGuide = cmp(function AgentGuide(props: any) {
 
   const Name = projectName(model)
   const lang = target.name
-  const title = target.title || lang
-  const surface = langCmd(lang).note
+  const title = fact(target, 'title')
+  const surface = langCmd(lang, model).note
 
   const features = activeFeatures(model, target)
   const featuresOn = featuresEnabled(target)
   const dirLayout = isDirLayout(target)
 
+  const place = fact(target, 'place')
+  const guide = fact(target, 'link').agents
+  const sdk = 'folder' === place ? '../.sdk' : 'root' === place ? '.sdk' :
+    null == ctx$.sdkrelpath ? '' : ctx$.sdkrelpath + '/.sdk'
+  const pathNote = 'folder' === place ?
+    `> Paths below (\`.sdk/…\`) are relative to the **project root** — one level up
+> from this \`${lang}/\` directory.
+
+` : 'external' === place ? `> Paths below (\`.sdk/…\`) are relative to the SDK project that generates
+> this package.
+
+` : ''
+
   File({ name: 'AGENTS.md' }, () => {
     Content(`# ${Name} ${title} — Agent Guide
 
 ${surface
-  ? surface + '\n\nGenerated from the shared model; see the [project guide](../AGENTS.md) for the full workflow.'
-  : `The ${title} client for the ${Name} API. This directory is **generated** — do not edit it by hand; change the model/template/component in \`.sdk/\` and regenerate. See the [project guide](../AGENTS.md) for the full workflow and the aontu model language.`}
+  ? surface + '\n\nGenerated from the shared model' +
+    ('' === guide ? '.' : `; see the [project guide](${guide}) for the full workflow.`)
+  : `The ${title} client for the ${apiName(model)} API. This directory is **generated** — do not edit it by hand; change the model/template/component in \`.sdk/\` and regenerate.` +
+    ('' === guide ? '' : ` See the [project guide](${guide}) for the full workflow and the aontu model language.`)}
 
-> Paths below (\`.sdk/…\`) are relative to the **project root** — one level up
-> from this \`${lang}/\` directory.
+${pathNote}## Regenerate this target
 
-## Regenerate this target
-
-\`\`\`bash
-cd ../.sdk
-npm run build        # only if you changed a component
-npm run generate     # refreshes this ${lang}/ directory
+${'' === sdk ? 'From the SDK project\'s `.sdk/` directory:\n\n' : ''}\`\`\`bash
+${'' === sdk ? '' : 'cd ' + sdk + '\n'}npm run build        # only if you changed a component
+npm run generate     # refreshes this ${'folder' === place ? lang + '/ directory' : 'target'}
 \`\`\`
+
+${regenerationStatement()}
 
 Then build and test the generated output:
 
-${langCommandsBlock(lang)}
+${langCommandsBlock(lang, model)}
 
 ## What generates this target
 
@@ -69,6 +87,7 @@ ${langCommandsBlock(lang)}
 Decision rule: *same for every API → template; depends on the API →
 component.* After editing a component run \`npm run build\` before
 \`npm run generate\`; template-only edits just need \`npm run generate\`.
+${copiesStatement(model)}
 
 `)
 
@@ -88,19 +107,27 @@ Each feature's runtime and its own guide live in \`src/feature/<name>/\`.
 `)
       }
       else {
-        Content(`Each feature is a flat file in the \`feature/\` package. Its hooks and
-default activation come from \`.sdk/model/feature/<name>.aontu\`; customise
-the runtime under \`.sdk/tm/${lang}/feature/\` and regenerate.
+        const templates = featureTemplates(ctx$.fs(), target, features)
+        const shared = 0 === Object.keys(templates).length
+        Content(`Each feature's hooks and default activation come from
+\`.sdk/model/feature/<name>.aontu\`. ${shared
+  ? `This target has no template per
+feature: customise its features in the runtime under \`.sdk/tm/${lang}/\`
+and regenerate.`
+  : `Its runtime is generated from the template
+listed here: customise that and regenerate.`}
 
-| Feature | Runtime file | Active hooks |
-| --- | --- | --- |
+| Feature | ${shared ? '' : 'Template | '}Active hooks |
+| --- | ${shared ? '' : '--- | '}--- |
 `)
         features.forEach((f: any) => {
-          const file = featureRuntimeFile(target, f)
+          const template = templates[f.name]
           const hooks = featureHooks(f)
           const hookList = hooks.length ? hooks.map((h: string) => '\`' + h + '\`').join(', ') : '—'
           const label = f.title ? `**${f.name}** — ${f.title}` : `**${f.name}**`
-          Content(`| ${label} | \`feature/${file}\` | ${hookList} |
+          const where = shared ? '' :
+            (null == template ? '—' : '\`.sdk/tm/' + lang + '/' + template + '\`') + ' | '
+          Content(`| ${label} | ${where}${hookList} |
 `)
         })
         Content(`
@@ -116,8 +143,8 @@ the runtime under \`.sdk/tm/${lang}/feature/\` and regenerate.
 
     Content(`---
 
-Generated by [@voxgig/sdkgen](https://github.com/voxgig/sdkgen). See the
-[project guide](../AGENTS.md).
+Generated by [@voxgig/sdkgen](https://github.com/voxgig/sdkgen).${'' === guide ? '' : ` See the
+[project guide](${guide}).`}
 `)
   })
 
@@ -129,7 +156,7 @@ Generated by [@voxgig/sdkgen](https://github.com/voxgig/sdkgen). See the
   // where each feature has its own directory to hold the guide. Flat-layout
   // targets document features inline above; phase-disabled targets
   // (go-cli/go-mcp) get no feature docs at all.
-  if (featuresOn && dirLayout) {
+  if (writesFeatureGuides(model, target)) {
     features.forEach((feature: any) => {
       AgentGuideFeature({ target, feature })
     })

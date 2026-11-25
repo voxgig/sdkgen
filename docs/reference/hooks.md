@@ -50,6 +50,11 @@ PrePoint → PreSpec → PreRequest → PreResponse → PreResult → PreDone
                                             (exception) → PreUnexpected
 ```
 
+These are the hooks the base schema lists for a feature, and
+`voxgig-sdkgen package check` reports a feature hook outside them as an
+error. The schema also lists `PreTarget` and `PostOperation`, which no
+target fires.
+
 ## Which shipped feature uses which hook
 
 The features that ship with the generator, and the hooks each one declares.
@@ -140,7 +145,9 @@ feature can add a header beside it or rewrite it. Anything the feature
 sends OUT, to a logger, a sink, an exporter, a buffer a caller reads, or a
 record on the client, passes through `ctx.utility.clean(ctx, value)` first.
 The shipped `log`, `debug`, `audit`, `telemetry`, `cost` and `proxy`
-features do this; a feature you add must too. See
+features do this; a feature you add must too. `clean` also replaces a body
+of bytes with a description of it, so a record that includes the spec does
+not carry an upload. See
 [secret redaction](../explanation/secret-redaction.md).
 
 ## Idiomatic error returns

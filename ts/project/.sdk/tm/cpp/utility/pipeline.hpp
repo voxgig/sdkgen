@@ -73,6 +73,9 @@ inline CtxPtr makeContext(const CtxSpec& cs, CtxPtr basectx) {
 
 constexpr int CLEAN_MAXDEPTH = 32;
 
+// The key of what stands in for a body of bytes; its value is the kind.
+constexpr const char* CLEAN_BINARY_KEY = "binary$";
+
 inline std::string cleanBase64(const std::string& in) {
   static const char* ALPHABET =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -271,16 +274,66 @@ inline std::string cleanName(const Value& cfg, const Value& out, const std::stri
   return name + "#" + std::to_string(i);
 }
 
+// The media helpers are defined with prepareBody, later in this header.
+inline bool isRawRequest(const Value& point);
+inline const char* rawBodyKey();
+
+// Where the live request body of a point the model marks binary is held,
+// and its type. Handles, so the body is compared in place, never copied.
+struct CleanBinary {
+  SpecPtr spec;
+  Value reqdata = Value::undef();
+  Value media = Value::undef();
+};
+
+// A string shorter than the registry accepts is not told from ordinary text.
+inline CleanBinary cleanBinaryBody(CtxPtr ctx) {
+  CleanBinary bin;
+  if (!ctx) return bin;
+  Value body = getp(ctx->point, "body");
+  if (!isRawRequest(ctx->point) || !is_true(getp(body, "binary"))) return bin;
+  size_t min = static_cast<size_t>(cleanCount(getp(cleanConfig(ctx), "min"), 4));
+  auto longEnough = [min](const Value* live) {
+    return nullptr != live && live->is_string() && min <= live->as_string().size();
+  };
+  if (ctx->spec && longEnough(&ctx->spec->body)) bin.spec = ctx->spec;
+  if (ctx->reqdata.is_map() && longEnough(ctx->reqdata.as_map()->find(rawBodyKey()))) {
+    bin.reqdata = ctx->reqdata;
+  }
+  bin.media = getp(body, "media");
+  return bin;
+}
+
+inline bool cleanIsLiveBody(const CleanBinary& bin, const std::string& text) {
+  if (bin.spec && bin.spec->body.is_string() && bin.spec->body.as_string() == text) return true;
+  if (!bin.reqdata.is_map()) return false;
+  const Value* given = bin.reqdata.as_map()->find(rawBodyKey());
+  return nullptr != given && given->is_string() && given->as_string() == text;
+}
+
+// Bytes are described, never copied (ADR-006). The value union has no
+// variant for bytes: a string is bytes only as the body of a point the
+// model marks binary, by equal content. Undef when val is not that body.
+inline Value cleanDescribeBinary(const CleanBinary& bin, const Value& val) {
+  if (!val.is_string() || !cleanIsLiveBody(bin, val.as_string())) return Value::undef();
+  Value desc = vmap();
+  map_put(desc, CLEAN_BINARY_KEY, Value("bytes"));
+  map_put(desc, "size", Value(static_cast<long long>(val.as_string().size())));
+  if (bin.media.is_string()) map_put(desc, "type", bin.media);
+  return desc;
+}
+
 // A plain-data copy of what is about to leave: functions are dropped,
 // cycles are cut, and no live container is shared with the copy - masking
 // the copy must never mask the pipeline's own spec.
 inline Value cleanSnapshot(const Value& cfg, const Value& val, const Value& key, int depth,
-                           std::vector<const void*>& seen) {
+                           std::vector<const void*>& seen, const CleanBinary& bin) {
   if (val.is_undef() || val.is_null()) return val;
 
   if (val.is_string()) {
-    return Value(cleanSensitiveKey(cfg, key) ? cleanMaskValue(cfg, val.as_string())
-                                             : cleanString(cfg, val.as_string()));
+    if (cleanSensitiveKey(cfg, key)) return Value(cleanMaskValue(cfg, val.as_string()));
+    Value desc = cleanDescribeBinary(bin, val);
+    return desc.is_undef() ? Value(cleanString(cfg, val.as_string())) : desc;
   }
 
   if (val.is_func() || val.is_sentinel()) return Value::undef();
@@ -303,13 +356,13 @@ inline Value cleanSnapshot(const Value& cfg, const Value& val, const Value& key,
     out = vlist();
     long long i = 0;
     for (const auto& item : *val.as_list()) {
-      Value v = cleanSnapshot(cfg, item, Value(i++), depth + 1, seen);
+      Value v = cleanSnapshot(cfg, item, Value(i++), depth + 1, seen, bin);
       if (!v.is_undef()) out.as_list()->push_back(v);
     }
   } else {
     out = vmap();
     for (const auto& kv : *val.as_map()) {
-      Value v = cleanSnapshot(cfg, kv.second, Value(kv.first), depth + 1, seen);
+      Value v = cleanSnapshot(cfg, kv.second, Value(kv.first), depth + 1, seen, bin);
       if (!v.is_undef()) map_put(out, cleanName(cfg, out, kv.first), v);
     }
   }
@@ -317,17 +370,18 @@ inline Value cleanSnapshot(const Value& cfg, const Value& val, const Value& key,
   return out;
 }
 
-inline Value cleanValue(const Value& cfg, const Value& val) {
+inline Value cleanValue(const Value& cfg, const Value& val,
+                        const CleanBinary& bin = CleanBinary()) {
   if (is_false(getp(cfg, "active"))) return val;
   if (val.is_string()) return Value(cleanString(cfg, val.as_string()));
   std::vector<const void*> seen;
-  return cleanSnapshot(cfg, val, Value::undef(), 0, seen);
+  return cleanSnapshot(cfg, val, Value::undef(), 0, seen, bin);
 }
 
 // Clean a value on its way out: a string is redacted; anything else comes
 // back as a masked plain-data copy.
 inline Value clean(CtxPtr ctx, const Value& val) {
-  return cleanValue(cleanConfig(ctx), val);
+  return cleanValue(cleanConfig(ctx), val, cleanBinaryBody(ctx));
 }
 
 // An SdkError is cleaned IN PLACE: it is about to be thrown, and its
@@ -336,10 +390,11 @@ inline void cleanError(CtxPtr ctx, const SdkErrorPtr& err) {
   if (!err) return;
   Value cfg = cleanConfig(ctx);
   if (is_false(getp(cfg, "active"))) return;
+  CleanBinary bin = cleanBinaryBody(ctx);
   err->msg = cleanString(cfg, err->msg);
   err->code = cleanString(cfg, err->code);
-  err->result = cleanValue(cfg, err->result);
-  err->spec = cleanValue(cfg, err->spec);
+  err->result = cleanValue(cfg, err->result, bin);
+  err->spec = cleanValue(cfg, err->spec, bin);
 }
 
 // Every scalar under a sensitive name, at any depth and of any shape, is
@@ -801,19 +856,23 @@ inline Value makePoint(CtxPtr ctx) {
         "Operation \"" + op->name + "\" has no endpoint definitions.");
   }
 
-  if (op->points.size() == 1) {
+  Value reqselector;
+  Value selector;
+  if (op->input == "data") {
+    reqselector = ctx->reqdata;
+    selector = ctx->data;
+  } else {
+    reqselector = ctx->reqmatch;
+    selector = ctx->match;
+  }
+
+  // A lone point still needs the call's action to agree with its own; the
+  // selection below refuses a mismatch either way.
+  if (op->points.size() == 1 &&
+      getp(reqselector, "$action", Value(nullptr)) ==
+        getp(Helpers::toMapAny(getp(op->points[0], "select")), "$action", Value(nullptr))) {
     ctx->point = op->points[0];
   } else {
-    Value reqselector;
-    Value selector;
-    if (op->input == "data") {
-      reqselector = ctx->reqdata;
-      selector = ctx->data;
-    } else {
-      reqselector = ctx->reqmatch;
-      selector = ctx->match;
-    }
-
     Value point;
     bool matched = false;
     for (size_t i = 0; i < op->points.size(); i++) {

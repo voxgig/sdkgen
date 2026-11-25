@@ -1,2 +1,4 @@
 declare function modelText(model: any): any;
-export { modelText, };
+declare function definitionName(kind: string, full?: boolean): string;
+declare function seriesList(items: string[]): string;
+export { definitionName, modelText, seriesList, };

@@ -9,6 +9,7 @@ class Utility private (noregister: Boolean) {
 
   var clean: CleanFn = null
   var cleanAdd: CleanAddFn = null
+  var cleanSecret: CleanSecretFn = null
   var done: CtxFn[Object] = null
   var makeError: MakeErrorFn = null
   var featureAdd: FeatureFn = null
@@ -55,6 +56,7 @@ class Utility private (noregister: Boolean) {
     val u = new Utility(true)
     u.clean = this.clean
     u.cleanAdd = this.cleanAdd
+    u.cleanSecret = this.cleanSecret
     u.done = this.done
     u.makeError = this.makeError
     u.featureAdd = this.featureAdd

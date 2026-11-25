@@ -30,7 +30,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
 
   const authActive = isAuthActive(model)
   const ctor = authActive
-    ? `sdk.${model.const.Name}SDK.new(h.jo(&.{\n    .{ "apikey", h.vstr(std.posix.getenv("${envName(model)}_APIKEY") orelse "") },\n}))`
+    ? `sdk.${model.const.Name}SDK.new(h.jo(&.{\n    .{ "apikey", h.vstr(init.environ_map.get("${envName(model)}_APIKEY") orelse "") },\n}))`
     : `sdk.${model.const.Name}SDK.new(h.vnull())`
 
   // A type-correct zig expression constructing a voxgig struct Value.
@@ -51,7 +51,7 @@ const std = @import("std");
 const sdk = @import("sdk");
 const h = sdk.h;
 
-const client = ${ctor};
+${authActive ? '// init is the std.process.Init that main receives.\n' : ''}const client = ${ctor};
 \`\`\`
 
 `)
@@ -145,7 +145,7 @@ switch (client.${method}(h.vnull()).load(${loadArg}, h.vnull())) {
     // shape so the docs reference REAL writable fields.
     const examplePairs = (opname: string): string[] => {
       const items = requestExampleItems(exampleEntity, opname)
-        .filter((it: any) => (it.name !== idF && it.name !== 'id') ||
+        .filter((it: any) => (it.name !== idF && (it.name !== 'id' || !it.optional)) ||
           ('create' === opname && !it.optional))
       const required = items.filter((it: any) => !it.optional)
       const optional = items.filter((it: any) => it.optional)

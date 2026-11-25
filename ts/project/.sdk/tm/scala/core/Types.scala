@@ -18,6 +18,9 @@ type CleanFn = (Context, Object) => Object
 // cleanAdd(ctx, value): registers a secret the SDK handles
 type CleanAddFn = (Context, Object) => Unit
 
+// cleanSecret(ctx, key, value): whether a named value is a secret
+type CleanSecretFn = (Context, Object, Object) => Boolean
+
 // makeError(ctx, err) -> value (throws, or returns fallback)
 type MakeErrorFn = (Context, RuntimeException) => Object
 

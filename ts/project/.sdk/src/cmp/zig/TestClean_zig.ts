@@ -16,7 +16,8 @@ import { zigVarName } from './utility_zig'
 
 
 // The canary sweep, the zig port of TestClean_ts.ts: see that component.
-// Each operation carries the path parameters its config points declare.
+// Each operation carries the path parameters its config points declare, and
+// its name, which the second sweep finds a binary body's operation by.
 const TestClean = cmp(function TestClean(props: any) {
   const { model } = props.ctx$
   const { target } = props
@@ -43,7 +44,8 @@ const TestClean = cmp(function TestClean(props: any) {
         .filter((op) => ['list', 'load', 'create', 'update', 'patch', 'remove'].includes(op))
         .sort((a, b) => ((rank[a] ?? 2) - (rank[b] ?? 2)) || a.localeCompare(b))
         .forEach((op) => candidates.push({
-          method, mod: method, cls, op, params: pointParams(configEntity[e.name]?.op?.[op]),
+          name: e.name + '.' + op, method, mod: method, cls, op,
+          params: pointParams(configEntity[e.name]?.op?.[op]),
         }))
     })
 
@@ -51,7 +53,9 @@ const TestClean = cmp(function TestClean(props: any) {
 })
 
 
-type Candidate = { method: string, mod: string, cls: string, op: string, params: string[] }
+type Candidate = {
+  name: string, method: string, mod: string, cls: string, op: string, params: string[]
+}
 
 
 // Every path parameter an operation's points declare, as the generated
@@ -121,8 +125,8 @@ function render(auth: {
   return `// The canary sweep: every credential slot holds a distinctive value, every
 // diagnostic feature this SDK ships is switched on with a capturing sink, a
 // real operation runs through every outcome, and every string that leaves
-// the SDK is searched for the canaries and their encoded forms. It also
-// proves its own sensitivity: with clean switched off the canary MUST show.
+// is searched for the canaries and their encoded forms; a second sweep does
+// the same for a body of bytes. With clean off the canary MUST show.
 
 const std = @import("std");
 const sdk = @import("sdk");
@@ -153,6 +157,9 @@ const CANARY_HEADER = "CANARY-HEADER-z1x4c7v0b3";
 const CANARY_VALUE = "CANARY-VALUE-n5m8b2v9c4";
 
 const MASK = "[redacted]";
+
+// The marker a body of bytes carries.
+const CONTENT = "CANARY-CONTENT-b7n3v9x1c5";
 
 fn base64_std(text: []const u8) []const u8 {
     const enc = std.base64.standard.Encoder;
@@ -408,6 +415,10 @@ fn notJsonThunk(_: *anyopaque, _: std.mem.Allocator, _: Value) anyerror!Value {
 }
 var notjson_dummy: u8 = 0;
 
+// The body the transport was last handed: where the bytes are meant to
+// arrive, whole.
+var sent: Value = .{ .null = {} };
+
 // The system.fetch seam: (url, fetchdef) -> transport-shaped response, or a
 // map carrying __err__ for a transport failure.
 const Transport = struct {
@@ -416,6 +427,7 @@ const Transport = struct {
     fn call(p: *anyopaque, _: std.mem.Allocator, arg: Value) anyerror!Value {
         const self: *Transport = @ptrCast(@alignCast(p));
         const url = h.scalar_str(h.get_elem(arg, h.vnum(0), vnull()));
+        sent = h.getp(h.get_elem(arg, h.vnum(1), vnull()), "body");
         return switch (self.scenario) {
             .ok => response(200, h.jo(&.{ .{ "id", h.vstr("i1") }, .{ "name", h.vstr("n1") } }),
                 h.jo(&.{.{ "x-session-token", h.vstr("RESP-TOKEN-a1b2c3d4e5") }})),
@@ -502,11 +514,12 @@ const Outcome = struct {
 const Candidate = *const fn (client: *sdk.SDK, mtch: Value, ctrl: Value) Outcome;
 const Streamer = *const fn (client: *sdk.SDK, mtch: Value, callopts: Value) sdk.StreamResult;
 ${candidates.map(candidateFn).join('')}${candidates.map(streamFn).join('')}
-const CandidateDef = struct { run: Candidate, stream: Streamer, params: []const []const u8 };
+const CandidateDef = struct { name: []const u8, run: Candidate, stream: Streamer, params: []const []const u8 };
 
 // Generated: every CRUD operation of every active entity, with the path
 // parameters its points declare.
-const CANDIDATES = [_]CandidateDef{${candidates.map((c) => '\n    .{ .run = try_' + c.method + '_' + c.op +
+const CANDIDATES = [_]CandidateDef{${candidates.map((c) => '\n    .{ .name = ' + zigstr(c.name) +
+    ', .run = try_' + c.method + '_' + c.op +
     ', .stream = stream_' + c.method + '_' + c.op +
     ', .params = &.{' + c.params.map(zigstr).join(', ') + '} },').join('')}
 };
@@ -534,10 +547,54 @@ fn usableOp() ?Target {
 
 const NOTHING_TO_SWEEP = "SKIP: no operation of this SDK completes against a plain 200; nothing to sweep\\n";
 
+const NO_BINARY_BODY = "SKIP: no operation of this SDK sends a binary body; nothing to sweep\\n";
+
+const BinaryTarget = struct { target: Target, media: Value };
+
+// The first operation with a point that sends a raw body the model marks
+// binary, with every path parameter of that point filled in, and the media
+// type the point declares.
+fn binaryOp() ?BinaryTarget {
+    const plain = sdk.SDK.new(offline(h.jo(&.{.{ "apikey", h.vstr(CANARY_APIKEY) }})));
+    const entities = h.getp(plain.get_root_ctx().config, "entity");
+    for (CANDIDATES) |cand| {
+        const dot = std.mem.indexOfScalar(u8, cand.name, '.') orelse continue;
+        const ops = h.getp(h.getp(entities, cand.name[0..dot]), "op");
+        const points = h.getp(h.getp(ops, cand.name[dot + 1 ..]), "points");
+        if (points != .array) continue;
+        for (points.array.data.items) |point| {
+            const body = h.getp(point, "body");
+            const kind = h.get_str(body, "kind") orelse continue;
+            if (!std.mem.eql(u8, kind, "raw") or !(h.get_bool(body, "binary") orelse false)) continue;
+            const mtch = h.omap();
+            const params = h.getp(h.getp(point, "args"), "params");
+            if (params == .array) {
+                for (params.array.data.items) |p| {
+                    if (h.get_str(p, "name")) |pname| h.setp(mtch, pname, h.vstr("p1"));
+                }
+            }
+            const action = h.getp(h.getp(point, "select"), "$action");
+            if (!h.is_noval(action)) h.setp(mtch, "$action", action);
+            return .{
+                .target = .{ .run = cand.run, .stream = cand.stream, .mtch = mtch },
+                .media = h.getp(body, "media"),
+            };
+        }
+    }
+    return null;
+}
+
 fn drive(client: *sdk.SDK, target: Target, ctrl: Value, sinks: *Sinks) ?*sdk.h.SdkError {
+    return driveWith(client, target, ctrl, sinks, vnull());
+}
+
+// The same call with a raw body beside the match, when one is given.
+fn driveWith(client: *sdk.SDK, target: Target, ctrl: Value, sinks: *Sinks, body: Value) ?*sdk.h.SdkError {
     // A caller may keep the record it passed rather than read ctrl.explain.
     const held = h.getp(ctrl, "explain");
-    const out = target.run(client, h.clone(target.mtch), ctrl);
+    const args = h.clone(target.mtch);
+    if (body != .null) h.setp(args, "$body", body);
+    const out = target.run(client, args, ctrl);
     if (out.err) |e| sinks.err("error", e);
     if (out.ok) sinks.value("result", out.result);
     // Raw, as a caller copying the match into another query reads it.
@@ -555,6 +612,28 @@ fn leaks(text: []const u8) [][]const u8 {
     for (forms()) |f| {
         if (std.mem.indexOf(u8, text, f) != null) found.append(h.A(), f) catch {};
     }
+    return found.toOwnedSlice(h.A()) catch &.{};
+}
+
+// The forms bytes travel in once copied: the text, and with the whitespace
+// of a pretty print dropped, a list of byte values, hex, base64.
+fn contentLeaks(text: []const u8) [][]const u8 {
+    var flat: std.ArrayList(u8) = .empty;
+    for (text) |c| {
+        if (!std.ascii.isWhitespace(c)) flat.append(h.A(), c) catch {};
+    }
+    var values: std.ArrayList(u8) = .empty;
+    var hex: std.ArrayList(u8) = .empty;
+    for (CONTENT, 0..) |c, i| {
+        if (0 < i) values.append(h.A(), ',') catch {};
+        values.appendSlice(h.A(), fmt("{d}", .{c})) catch {};
+        hex.appendSlice(h.A(), fmt("{x:0>2}", .{c})) catch {};
+    }
+    var found: std.ArrayList([]const u8) = .empty;
+    if (std.mem.indexOf(u8, text, CONTENT) != null) found.append(h.A(), "text") catch {};
+    if (std.mem.indexOf(u8, flat.items, values.items) != null) found.append(h.A(), "byte values") catch {};
+    if (std.ascii.indexOfIgnoreCase(flat.items, hex.items) != null) found.append(h.A(), "hex") catch {};
+    if (std.mem.indexOf(u8, flat.items, base64_std(CONTENT)) != null) found.append(h.A(), "base64") catch {};
     return found.toOwnedSlice(h.A()) catch &.{};
 }
 
@@ -820,6 +899,79 @@ test "clean: a feature's name is read as a name" {
         sdk.utilmod.clean_str_util(ctx, "alias PLAINALIAS-m2n4b6v8"));
     try testing.expectEqualStrings("rule PLAINRULE-k7j5h3g1",
         sdk.utilmod.clean_str_util(ctx, "rule PLAINRULE-k7j5h3g1"));
+}
+
+test "clean: no body of bytes leaves the SDK in any form" {
+    const binary = binaryOp() orelse {
+        std.debug.print(NO_BINARY_BODY, .{});
+        return error.SkipZigTest;
+    };
+
+    var sinks = Sinks{};
+    var handed: Value = vnull();
+    var failed: ?*sdk.h.SdkError = null;
+    var explained: Value = vnull();
+
+    // A string value holding the bytes is the one raw body this SDK accepts.
+    for ([_]Scenario{ .ok, .notfound, .server, .transport }) |scenario| {
+        for ([_]Variant{ .throw, .explain, .nothrow }) |variant| {
+            const client = makeSdk(scenario, &sinks, true, null);
+            const ctrl = ctrlFor(variant);
+            sent = vnull();
+            const err = driveWith(client, binary.target, ctrl, &sinks, h.vstr(CONTENT));
+            if (scenario == .notfound and variant == .throw) {
+                failed = err;
+                handed = sent;
+            }
+            if (scenario == .ok and variant == .explain) explained = h.getp(ctrl, "explain");
+        }
+    }
+
+    var leaked: usize = 0;
+    for (sinks.items.items) |s| {
+        const found = contentLeaks(s.text);
+        if (0 < found.len) {
+            leaked += 1;
+            std.debug.print("clean: a body of bytes leaked through {s}: {s}\\n", .{ s.name, found[0] });
+        }
+    }
+
+    std.debug.print("clean: content swept {d} surface(s), {d} leak(s)\\n", .{ sinks.items.items.len, leaked });
+
+    try testing.expect(0 < sinks.items.items.len);
+    try testing.expect(leaked == 0);
+
+    // The request itself is untouched: what the transport was handed is the body.
+    try testing.expectEqualStrings(CONTENT, if (handed == .string) handed.string else "");
+
+    // The positive half: where the body was, what describes it now is.
+    const desc = h.jo(&.{ .{ "binary$", h.vstr("bytes") }, .{ "size", h.vnum(CONTENT.len) } });
+    if (binary.media == .string) h.setp(desc, "type", binary.media);
+    const nf = failed orelse {
+        std.debug.print("clean: the 404 scenario must fail\\n", .{});
+        try testing.expect(false);
+        return;
+    };
+    try testing.expect(h.veq(h.getp(nf.spec, "body"), desc));
+    try testing.expect(h.veq(h.getp(h.getp(explained, "spec"), "body"), desc));
+}
+
+test "clean: the sweep can see a body: clean switched off shows the bytes" {
+    const binary = binaryOp() orelse {
+        std.debug.print(NO_BINARY_BODY, .{});
+        return error.SkipZigTest;
+    };
+
+    var sinks = Sinks{};
+    const client = makeSdk(.notfound, &sinks, false, null);
+    const err = driveWith(client, binary.target, h.omap(), &sinks, h.vstr(CONTENT));
+    try testing.expect(err != null);
+
+    var seen: usize = 0;
+    for (sinks.items.items) |s| {
+        if (0 < contentLeaks(s.text).len) seen += 1;
+    }
+    try testing.expect(0 < seen);
 }
 `
 }

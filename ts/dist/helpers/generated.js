@@ -307,7 +307,7 @@ function pruneGenerated(ctx) {
     }
     for (const [rel, owner] of known ?? []) {
         if (emitted.has(rel) || seen.has(rel) || declared.has(rel) || injected.has(rel) ||
-            canonical(out, rel) !== rel) {
+            canonical(out, rel) !== rel || true === ctx.keep?.some((prefix) => rel.startsWith(prefix))) {
             continue;
         }
         if (!fs.existsSync(node_path_1.default.resolve(out, rel))) {

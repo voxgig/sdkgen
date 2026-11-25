@@ -10,22 +10,31 @@ import {
 import { entityIdField, pickExampleEntity } from '../helpers/opShape'
 import { helperLang, primaryOpCall } from '../helpers/opExample'
 import type { PrimaryCall } from '../helpers/opExample'
-import { safeVarName, exampleVarName } from '../helpers/naming'
+import { exampleVarName } from '../helpers/naming'
+import { exampleParts, entityName } from '../helpers/exampleCall'
+import type { ExampleInput } from '../helpers/exampleCall'
+import { originName } from '../helpers/packageMeta'
 
 
-type LangErrors = {
-  // prose + snippet for the entity-op convention, given the pre-rendered
-  // primary-op invocation and its op name.
-  entity: (call: PrimaryCall, op: string) => string
-  // prose + snippet for the direct()/prepare() convention
-  direct: string
+type EntityExample = ExampleInput & {
+  // The call in the languages opExample writes.
+  call: PrimaryCall
 }
 
 
-const DEFAULT_LANG: LangErrors = {
-  entity: (call, op) => `Entity operations reject on failure, so wrap them in \`try\` / \`catch\`:
+type LangErrors = {
+  // Prose and snippet for an entity operation's failure. A language without
+  // one writes only its direct() section.
+  entity?: (x: EntityExample) => string
+  // Prose and snippet for the direct()/prepare() convention.
+  direct: string | ((model: any) => string)
+}
 
-\`\`\`ts
+
+const TS_ENTITY = (fence: string) => ({ call, op }: EntityExample) =>
+  `Entity operations reject on failure, so wrap them in \`try\` / \`catch\`:
+
+\`\`\`${fence}
 try {
   const ${call.resultVar} = await ${call.expr}
   console.log(${'list' === op ? call.resultVar + '.map((item) => item.data())' : call.resultVar + '.data()'})
@@ -34,12 +43,13 @@ try {
 }
 \`\`\`
 
-`,
-  direct: `The low-level \`direct()\` method does **not** throw — it returns the
+`
+
+const TS_DIRECT = (fence: string) => `The low-level \`direct()\` method does **not** throw — it returns the
 result envelope. Branch on \`ok\`; on failure \`status\` holds the HTTP status
 (for error responses) and \`err\` holds the error:
 
-\`\`\`ts
+\`\`\`${fence}
 const result = await client.direct({
   path: '/api/resource/{id}',
   method: 'GET',
@@ -51,13 +61,31 @@ if (!result.ok) {
 }
 \`\`\`
 
-`,
+`
+
+
+// The direct() paragraph every row shares, with its own name for the call and for not failing.
+function directLead(call: string, fails: string, returns: string): string {
+  return `\`${call}\` does **not** ${fails} — it
+returns ${returns}. Branch on \`ok\`; on failure \`status\` holds the HTTP
+status (for error responses) and \`err\` holds a transport error:
+
+`
 }
 
 
+// A language with no row writes neutral prose and no code.
+const DEFAULT_LANG: LangErrors = {
+  direct: `The low-level \`direct\` method does not fail on an error response — it
+returns the result envelope. Branch on \`ok\`; on failure \`status\` holds the
+HTTP status (for error responses) and \`err\` holds the error.
+
+`,
+}
+
 const LANGS: Record<string, LangErrors> = {
   py: {
-    entity: (call, op) => `Entity operations raise on failure, so wrap them in \`try\` / \`except\`:
+    entity: ({ call, op }) => `Entity operations raise on failure, so wrap them in \`try\` / \`except\`:
 
 \`\`\`python
 try:
@@ -87,7 +115,7 @@ if not result["ok"]:
   },
 
   php: {
-    entity: (call, op) => `Entity operations throw a \`\\Throwable\` on failure, so wrap them in
+    entity: ({ call, op }) => `Entity operations throw a \`\\Throwable\` on failure, so wrap them in
 \`try\` / \`catch\`:
 
 \`\`\`php
@@ -120,7 +148,7 @@ if (! $result["ok"]) {
   },
 
   rb: {
-    entity: (call, op) => `Entity operations raise on failure, so rescue them:
+    entity: ({ call, op }) => `Entity operations raise on failure, so rescue them:
 
 \`\`\`ruby
 begin
@@ -149,7 +177,7 @@ warn "request failed: #{result["err"] || "HTTP #{result["status"]}"}" unless res
   },
 
   lua: {
-    entity: (call, op) => `Entity operations return \`(value, err)\`. Check \`err\` before using
+    entity: ({ call, op }) => `Entity operations return \`(value, err)\`. Check \`err\` before using
 the value:
 
 \`\`\`lua
@@ -173,7 +201,7 @@ if err then error(err) end
   },
 
   go: {
-    entity: (call, op) => `Every entity operation returns \`(value, error)\`. Check \`err\` before
+    entity: ({ call, op }) => `Every entity operation returns \`(value, error)\`. Check \`err\` before
 using the value — there is no exception to catch:
 
 \`\`\`go
@@ -202,6 +230,506 @@ _ = result
 
 `,
   },
+
+  ts: {
+    entity: TS_ENTITY('ts'),
+    direct: TS_DIRECT('ts'),
+  },
+
+  js: {
+    entity: TS_ENTITY('js'),
+    direct: TS_DIRECT('js'),
+  },
+
+  c: {
+    entity: (x) => {
+      const { v, factory, arg } = exampleParts('c', x)
+      const call = `${v}->vt->${x.op}(${v}, ${arg}, NULL, &err)`
+      const ok = 'list' === x.op ? `    for (size_t i = 0; ${v}s[i]; i++) {
+        printf("%s\\n", voxgig_to_json(${v}s[i]->vt->data(${v}s[i], NULL)));
+    }` : `    printf("%s\\n", voxgig_to_json(${v}->vt->data(${v}, NULL)));`
+      return `Entity operations set \`*err\` on failure, so check \`err\` after each call:
+
+\`\`\`c
+Entity* ${v} = ${factory};
+PNError* err = NULL;
+${'list' === x.op ? `Entity** ${v}s = ${call};` : `${call};`}
+if (err) {
+    fprintf(stderr, "${x.op} failed: %s\\n", err->msg);
+} else {
+${ok}
+}
+\`\`\`
+
+`
+    },
+    direct: directLead('sdk_direct()', 'set `*err` for an error response', 'the result map') +
+      `\`\`\`c
+PNError* err = NULL;
+voxgig_value* result = sdk_direct(client, cmap(3,
+    "path", v_str("/api/resource/{id}"),
+    "method", v_str("GET"),
+    "params", cmap(1, "id", v_str("example_id"))), &err);
+
+if (!voxgig_as_bool(getp(result, "ok"))) {
+    fprintf(stderr, "request failed: %lld %s\\n",
+        (long long)to_int(getp(result, "status")), voxgig_to_json(getp(result, "err")));
+}
+\`\`\`
+
+`,
+  },
+
+  cpp: {
+    entity: (x) => {
+      const { v, factory, arg } = exampleParts('cpp', x)
+      const call = `${factory}->${x.op}(${arg}, Value::undef())`
+      const body = 'list' === x.op ? `  std::vector<SdkEntityPtr> ${v}s = ${call};
+  for (const auto& ${v} : ${v}s) {
+    std::cout << Struct::jsonify(${v}->data()) << std::endl;
+  }` : `  SdkEntityPtr ${v} = ${call};
+  std::cout << Struct::jsonify(${v}->data()) << std::endl;`
+      return `Entity operations throw \`SdkErrorPtr\` on failure, so wrap them in \`try\` / \`catch\`:
+
+\`\`\`cpp
+try {
+${body}
+} catch (const SdkErrorPtr& err) {
+  std::cerr << "${x.op} failed: " << err->msg << std::endl;
+}
+\`\`\`
+
+`
+    },
+    direct: directLead('direct()', 'throw', 'the result `Value`') +
+      `\`\`\`cpp
+Value result = client->direct(vmap({
+    {"path", Value("/api/resource/{id}")},
+    {"method", Value("GET")},
+    {"params", vmap({{"id", Value("example_id")}})},
+}));
+
+if (!(getp(result, "ok") == Value(true))) {
+  std::cerr << "request failed: " << Helpers::toInt(getp(result, "status")) << " "
+            << Struct::jsonify(getp(result, "err")) << std::endl;
+}
+\`\`\`
+
+`,
+  },
+
+  rust: {
+    entity: (x) => {
+      const { v, factory, arg } = exampleParts('rust', x)
+      const ok = 'list' === x.op ? `    Ok(${v}s) => {
+        for ${v} in &${v}s {
+            println!("{:?}", ${v}.data(None));
+        }
+    }` : `    Ok(${v}) => println!("{:?}", ${v}.data(None)),`
+      return `Entity operations return a \`Result\`, so match on \`Ok\` and \`Err\`:
+
+\`\`\`rust
+match ${factory}.${x.op}(${arg}, Value::Noval) {
+${ok}
+    Err(err) => eprintln!("${x.op} failed: {}", err),
+}
+\`\`\`
+
+`
+    },
+    direct: directLead('direct()', 'return `Err` for an error response', '`Ok` with the result map') +
+      `\`\`\`rust
+match client.direct(jo(vec![
+    ("path", Value::str("/api/resource/{id}")),
+    ("method", Value::str("GET")),
+    ("params", jo(vec![("id", Value::str("example_id"))])),
+])) {
+    Ok(result) => {
+        if getp(&result, "ok") != Value::Bool(true) {
+            eprintln!("request failed: {:?} {:?}", getp(&result, "status"), getp(&result, "err"));
+        }
+    }
+    Err(err) => eprintln!("request failed: {}", err),
+}
+\`\`\`
+
+`,
+  },
+
+  zig: {
+    entity: (x) => {
+      const { v, factory, arg } = exampleParts('zig', x)
+      const ok = 'list' === x.op ? `    .ok => |${v}s| {
+        for (${v}s) |${v}| {
+            std.debug.print("{s}\\n", .{h.stringify(${v}.asEntity().data(null))});
+        }
+    },` : ('remove' === x.op ? `    .ok => std.debug.print("removed\\n", .{}),` :
+        `    .ok => |${v}| std.debug.print("{s}\\n", .{h.stringify(${v}.asEntity().data(null))}),`)
+      return `Entity operations return a union of \`.ok\` and \`.err\`, so \`switch\` on the result:
+
+\`\`\`zig
+switch (${factory}.${x.op}(${arg}, h.vnull())) {
+${ok}
+    .err => |e| std.debug.print("${x.op} failed: {s}\\n", .{e.msg}),
+}
+\`\`\`
+
+`
+    },
+    direct: directLead('direct()', 'fail on an error response', 'the result map') +
+      `\`\`\`zig
+const result = client.direct(h.jo(&.{
+    .{ "path", h.vstr("/api/resource/{id}") },
+    .{ "method", h.vstr("GET") },
+    .{ "params", h.jo(&.{.{ "id", h.vstr("example_id") }}) },
+}));
+
+if (!(h.get_bool(result, "ok") orelse false)) {
+    std.debug.print("request failed: {d} {s}\\n", .{
+        h.to_int(h.getp(result, "status")), h.stringify(h.getp(result, "err")),
+    });
+}
+\`\`\`
+
+`,
+  },
+
+  ocaml: {
+    entity: (x) => {
+      const { v, factory, arg } = exampleParts('ocaml', x)
+      const body = 'list' === x.op ? `   let ${v}s = ${factory}.e_list ${arg} Noval in
+   List.iter (fun e -> print_endline (stringify (e.e_data_get ()))) ${v}s` :
+        `   let ${v} = ${factory}.e_${x.op} ${arg} Noval in
+   print_endline (stringify (${v}.e_data_get ()))`
+      return `Entity operations raise \`Sdk_error.E\` on failure, so wrap them in \`try\` ... \`with\`:
+
+\`\`\`ocaml
+(try
+${body}
+ with Sdk_error.E err -> Printf.eprintf "${x.op} failed: %s\\n" (Sdk_error.message err))
+\`\`\`
+
+`
+    },
+    direct: directLead('Sdk_client.direct', 'raise', 'the result map') +
+      `\`\`\`ocaml
+let result = Sdk_client.direct client (jo [
+    ("path", Str "/api/resource/{id}");
+    ("method", Str "GET");
+    ("params", jo [("id", Str "example_id")]);
+]) in
+(match getp result "ok" with
+ | Bool true -> ()
+ | _ ->
+   Printf.eprintf "request failed: %s %s\\n"
+     (stringify (getp result "status")) (stringify (getp result "err")))
+\`\`\`
+
+`,
+  },
+
+  perl: {
+    entity: (x) => {
+      const { v, factory, arg } = exampleParts('perl', x)
+      return `Entity operations die on failure, so wrap them in \`eval\` and check \`$@\`:
+
+\`\`\`perl
+my $${'list' === x.op ? v + 's' : v} = eval { ${factory}->${x.op}(${arg}) };
+if (my $err = $@) {
+    warn "${x.op} failed: $err";
+}
+\`\`\`
+
+`
+    },
+    direct: directLead('direct', 'die', 'the result hashref') +
+      `\`\`\`perl
+my $result = $client->direct({
+    'path' => '/api/resource/{id}',
+    'method' => 'GET',
+    'params' => { 'id' => 'example_id' },
+});
+
+unless ($result->{ok}) {
+    warn 'request failed: ', ($result->{status} // ''), ' ', ($result->{err} // ''), "\\n";
+}
+\`\`\`
+
+`,
+  },
+
+  java: {
+    entity: (x) => {
+      const { v, factory, arg } = exampleParts('java', x)
+      const body = 'list' === x.op ? `    List<?> ${v}s = (List<?>) ${factory}.list(${arg}, null);
+    for (Object item : ${v}s) {
+        System.out.println(((SdkEntity) item).data());
+    }` : `    SdkEntity ${v} = (SdkEntity) ${factory}.${x.op}(${arg}, null);
+    System.out.println(${v}.data());`
+      return `Entity operations throw a \`RuntimeException\` on failure, so wrap them in
+\`try\` / \`catch\`:
+
+\`\`\`java
+try {
+${body}
+}
+catch (RuntimeException err) {
+    System.out.println("${x.op} failed: " + err.getMessage());
+}
+\`\`\`
+
+`
+    },
+    direct: directLead('direct()', 'throw', 'the result map') +
+      `\`\`\`java
+Map<String, Object> result = client.direct(Map.of(
+    "path", "/api/resource/{id}",
+    "method", "GET",
+    "params", Map.of("id", "example_id")));
+
+if (!Boolean.TRUE.equals(result.get("ok"))) {
+    System.out.println("request failed: " + result.get("status") + " " + result.get("err"));
+}
+\`\`\`
+
+`,
+  },
+
+  kotlin: {
+    entity: (x) => {
+      const { v, factory, arg } = exampleParts('kotlin', x)
+      const body = 'list' === x.op ? `    val ${v}s = ${factory}.list(${arg}, null) as List<*>
+    for (item in ${v}s) {
+        println((item as SdkEntity).data())
+    }` : `    val ${v} = ${factory}.${x.op}(${arg}, null) as SdkEntity
+    println(${v}.data())`
+      return `Entity operations throw a \`RuntimeException\` on failure, so wrap them in
+\`try\` / \`catch\`:
+
+\`\`\`kotlin
+try {
+${body}
+}
+catch (err: RuntimeException) {
+    println("${x.op} failed: " + err.message)
+}
+\`\`\`
+
+`
+    },
+    direct: directLead('direct()', 'throw', 'the result map') +
+      `\`\`\`kotlin
+val result = client.direct(mutableMapOf<String, Any?>(
+    "path" to "/api/resource/{id}",
+    "method" to "GET",
+    "params" to mapOf("id" to "example_id")))
+
+if (result["ok"] != true) {
+    println("request failed: " + result["status"] + " " + result["err"])
+}
+\`\`\`
+
+`,
+  },
+
+  scala: {
+    entity: (x) => {
+      const { v, factory, arg } = exampleParts('scala', x)
+      const body = 'list' === x.op ? `    val ${v}s = ${factory}.list(${arg}, null).asInstanceOf[java.util.List[SdkEntity]]
+    ${v}s.forEach(item => println(item.data()))` :
+        `    val ${v} = ${factory}.${x.op}(${arg}, null).asInstanceOf[SdkEntity]
+    println(${v}.data())`
+      return `Entity operations throw a \`RuntimeException\` on failure, so wrap them in
+\`try\` / \`catch\`:
+
+\`\`\`scala
+try {
+${body}
+}
+catch {
+    case err: RuntimeException => println("${x.op} failed: " + err.getMessage)
+}
+\`\`\`
+
+`
+    },
+    direct: directLead('direct()', 'throw', 'the result map') +
+      `\`\`\`scala
+val result = client.direct(java.util.Map.of(
+    "path", "/api/resource/{id}",
+    "method", "GET",
+    "params", java.util.Map.of("id", "example_id")))
+
+if (java.lang.Boolean.TRUE != result.get("ok")) {
+    println("request failed: " + result.get("status") + " " + result.get("err"))
+}
+\`\`\`
+
+`,
+  },
+
+  csharp: {
+    entity: (x) => {
+      const { v, factory, arg } = exampleParts('csharp', x)
+      const method = x.op.charAt(0).toUpperCase() + x.op.slice(1)
+      const body = 'list' === x.op ? `    var ${v}List = (List<object?>)${factory}.List(${arg})!;
+    foreach (var ${v}Item in ${v}List)
+    {
+        Console.WriteLine(StructUtils.Jsonify(((IEntity)${v}Item!).Data()));
+    }` : `    var ${v} = (IEntity)${factory}.${method}(${arg})!;
+    Console.WriteLine(StructUtils.Jsonify(${v}.Data()));`
+      return `Entity operations throw on failure, so wrap them in \`try\` / \`catch\`:
+
+\`\`\`csharp
+try
+{
+${body}
+}
+catch (Exception err)
+{
+    Console.WriteLine($"${x.op} failed: {err.Message}");
+}
+\`\`\`
+
+`
+    },
+    direct: directLead('Direct()', 'throw', 'the result dictionary') +
+      `\`\`\`csharp
+var result = client.Direct(new Dictionary<string, object?>
+{
+    ["path"] = "/api/resource/{id}",
+    ["method"] = "GET",
+    ["params"] = new Dictionary<string, object?> { ["id"] = "example_id" },
+});
+
+if (!Equals(result["ok"], true))
+{
+    result.TryGetValue("status", out var status);
+    result.TryGetValue("err", out var err);
+    Console.WriteLine($"request failed: {status} {err}");
+}
+\`\`\`
+
+`,
+  },
+
+  swift: {
+    entity: (x) => {
+      const { v, factory, arg } = exampleParts('swift', x)
+      const body = 'list' === x.op ? `    let ${v}List = try ${factory}.list(${arg}, nil)
+    for ${v}Item in ${v}List.asList?.items ?? [] {
+        if let ${v}Entity = ${v}Item.asNative as? Entity {
+            print(${v}Entity.data())
+        }
+    }` : `    let ${v} = try ${factory}.${x.op}(${arg}, nil)
+    if let ${v}Entity = ${v}.asNative as? Entity {
+        print(${v}Entity.data())
+    }`
+      return `Entity operations throw on failure, so call them with \`try\` inside \`do\` / \`catch\`:
+
+\`\`\`swift
+do {
+${body}
+}
+catch {
+    print("${x.op} failed: \\(error)")
+}
+\`\`\`
+
+`
+    },
+    direct: directLead('direct()', 'throw', 'the result map') +
+      `\`\`\`swift
+let result = client.direct(VMap([
+    ("path", .string("/api/resource/{id}")),
+    ("method", .string("GET")),
+    ("params", .map([("id", .string("example_id"))])),
+]))
+
+if result.entries["ok"] != .bool(true) {
+    print("request failed:", result.entries["status"] ?? .noval, result.entries["err"] ?? .noval)
+}
+\`\`\`
+
+`,
+  },
+
+  elixir: {
+    entity: (x) => {
+      const { v, factory, arg } = exampleParts('elixir', x)
+      const mod = `${x.model.const.Name}.Entity.${entityName(x.ent)}`
+      const args = '' === arg ? v : `${v}, ${arg}`
+      const body = 'list' === x.op ? `  ${v}s = ${mod}.list(${args})
+  for i <- 0..(Voxgig.Struct.size(${v}s) - 1)//1 do
+    IO.puts(Voxgig.Struct.jsonify(${mod}.data_get(Voxgig.Struct.getelem(${v}s, i))))
+  end` : `  ${v} = ${mod}.${x.op}(${args})
+  IO.puts(Voxgig.Struct.jsonify(${mod}.data_get(${v})))`
+      return `Entity operations raise on failure, so wrap them in \`try\` / \`rescue\`:
+
+\`\`\`elixir
+try do
+  ${v} = ${factory}
+${body}
+rescue
+  err -> IO.puts("${x.op} failed: " <> inspect(err))
+end
+\`\`\`
+
+`
+    },
+    direct: (model) => directLead('direct/2', 'raise', 'a result node') +
+      `\`\`\`elixir
+result = ${model.const.Name}.direct(sdk, ${model.const.Name}.Helpers.deep(%{
+  "path" => "/api/resource/{id}",
+  "method" => "GET",
+  "params" => %{"id" => "example_id"}
+}))
+
+unless Voxgig.Struct.getprop(result, "ok") do
+  IO.puts("request failed: " <> inspect(Voxgig.Struct.getprop(result, "status")) <>
+    " " <> inspect(Voxgig.Struct.getprop(result, "err")))
+end
+\`\`\`
+
+`,
+  },
+
+  clojure: {
+    entity: (x) => {
+      const { v, factory, arg } = exampleParts('clojure', x)
+      const ns = 'e-' + x.ent.name
+      const body = 'list' === x.op ? `  (doseq [${v} (${ns}/list ${factory} ${arg} nil)]
+    (println ((:data-get ${v}))))` : `  (let [${v} (${ns}/${x.op} ${factory} ${arg} nil)]
+    (println ((:data-get ${v}))))`
+      return `Entity operations throw on failure, so wrap them in \`try\` / \`catch\`:
+
+\`\`\`clojure
+(require '[sdk.api :as api]
+         '[sdk.entity.${x.ent.name} :as ${ns}]
+         '[voxgig.struct :as vs])
+
+(try
+${body}
+  (catch Exception err
+    (println "${x.op} failed:" (.getMessage err))))
+\`\`\`
+
+`
+    },
+    direct: directLead('api/direct', 'throw', 'the result map') +
+      `\`\`\`clojure
+(def result
+  (api/direct client
+    (vs/jm "path" "/api/resource/{id}"
+           "method" "GET"
+           "params" (vs/jm "id" "example_id"))))
+
+(when-not (vs/getprop result "ok")
+  (println "request failed:" (vs/getprop result "status") (vs/getprop result "err")))
+\`\`\`
+
+`,
+  },
 }
 
 
@@ -209,7 +737,9 @@ const ReadmeErrors = cmp(function ReadmeErrors(props: any) {
   const { target, ctx$ } = props
   const { model } = ctx$
 
-  const lang = LANGS[target.name] || DEFAULT_LANG
+  // An alias writes its origin's row.
+  const origin = originName(model, target.name)
+  const lang = LANGS[origin] || DEFAULT_LANG
 
   // Pick a real example entity WITH a real op (prefer a read op) so the
   // error-handling snippet never references a phantom entity or fabricates a
@@ -224,15 +754,15 @@ const ReadmeErrors = cmp(function ReadmeErrors(props: any) {
 
 `)
 
-  if (ex && primaryOp) {
-    const eName = ex.Name || (ex.name[0].toUpperCase() + ex.name.slice(1))
-    const eLower = exampleVarName(eName.toLowerCase(), target.name)
+  if (ex && primaryOp && lang.entity) {
+    const eName = entityName(ex)
+    const eLower = exampleVarName(eName.toLowerCase(), origin)
     const idF = entityIdField(ex)
-    const call = primaryOpCall(helperLang(target.name), eName, eLower, primaryOp, idF, ex)
-    Content(lang.entity(call, primaryOp))
+    const call = primaryOpCall(helperLang(origin), eName, eLower, primaryOp, idF, ex)
+    Content(lang.entity({ model, ent: ex, op: primaryOp, idF, call }))
   }
 
-  Content(lang.direct)
+  Content('function' === typeof lang.direct ? lang.direct(model) : lang.direct)
 })
 
 

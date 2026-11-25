@@ -3,6 +3,7 @@ package sdktest
 import (
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -389,6 +390,175 @@ func TestPrimaryUtility(t *testing.T) {
 			map[string]any{"method": "GET", "headers": map[string]any{}, "redirect": "manual"})
 		if resmap, _ = res.(map[string]any); err != nil || resmap["status"] != 301 {
 			t.Errorf("expected a manual redirect answered by its 301, got: %v %v", res, err)
+		}
+	})
+
+	// The API's origin redirects; another port is another origin, and records
+	// what reaches it. A credential, under any name, is sent to neither that
+	// origin nor any hop after it, and a body is not sent on.
+	t.Run("fetcher-redirect-origin", func(t *testing.T) {
+		const secret = "REDIRECT-SECRET-q7w3e9r1"
+		type arrival struct {
+			line   string
+			body   string
+			header http.Header
+		}
+		var mu sync.Mutex
+		arrived := []arrival{}
+		apiURL, otherURL := "", ""
+		record := func(where string) http.HandlerFunc {
+			return func(w http.ResponseWriter, r *http.Request) {
+				body, _ := io.ReadAll(r.Body)
+				mu.Lock()
+				arrived = append(arrived,
+					arrival{where + " " + r.Method + " " + r.URL.Path, string(body), r.Header.Clone()})
+				mu.Unlock()
+				hop, moved := map[string]struct {
+					code int
+					to   string
+				}{
+					"/out": {302, otherURL + "/landed"}, "/out307": {307, otherURL + "/landed"},
+					"/chain": {302, otherURL + "/in"}, "/back": {302, otherURL + "/home"},
+					"/home": {302, apiURL + "/landed"}, "/in": {302, "/landed"},
+					"/in307": {307, "/landed"}, "/round": {302, "/round"},
+				}[r.URL.Path]
+				if moved {
+					w.Header().Set("Location", hop.to)
+					w.WriteHeader(hop.code)
+					return
+				}
+				w.Header().Set("Content-Type", "application/json")
+				fmt.Fprint(w, `{"id":"r1"}`)
+			}
+		}
+		api := httptest.NewServer(record("api"))
+		defer api.Close()
+		other := httptest.NewServer(record("other"))
+		defer other.Close()
+		apiURL, otherURL = api.URL, other.URL
+
+		headers := func(more map[string]any) map[string]any {
+			out := map[string]any{
+				"authorization": "Bearer " + secret,
+				"cookie":        "sid=" + secret,
+				"x-api-key":     secret,
+				"private-token": "pt-12345",
+				// Not a sensitive name: a credential by the value it holds.
+				"x-acme-auth": "v1 " + secret,
+				"x-tenant":    "acme",
+			}
+			for k, v := range more {
+				out[k] = v
+			}
+			return out
+		}
+		credentials := []string{"authorization", "cookie", "x-api-key", "private-token", "x-acme-auth"}
+
+		// The secret is registered as a caller's is: it is the client's apikey.
+		fetch := func(cleanactive bool, path string, fetchdef map[string]any) (int, []arrival) {
+			t.Helper()
+			liveClient := sdk.NewProjectNameSDK(map[string]any{
+				"base": apiURL, "apikey": secret, "clean": map[string]any{"active": cleanactive},
+			})
+			liveUtility := liveClient.GetUtility()
+			ctx := liveUtility.MakeContext(map[string]any{"opname": "load"}, liveClient.GetRootCtx())
+			mu.Lock()
+			arrived = arrived[:0]
+			mu.Unlock()
+			res, err := liveUtility.Fetcher(ctx, apiURL+path, fetchdef)
+			resmap, _ := res.(map[string]any)
+			if err != nil || resmap == nil {
+				t.Fatalf("%s: expected a response, got: %v %v", path, res, err)
+			}
+			mu.Lock()
+			defer mu.Unlock()
+			status, _ := resmap["status"].(int)
+			return status, append([]arrival{}, arrived...)
+		}
+		lines := func(got []arrival) string {
+			out := []string{}
+			for _, a := range got {
+				out = append(out, a.line)
+			}
+			return strings.Join(out, ", ")
+		}
+		// From `from` on, no request carries a credential; each still says
+		// whose it is, and nothing the client adds quotes the secret.
+		stripped := func(path string, got []arrival, from int) {
+			t.Helper()
+			for _, name := range credentials {
+				if "" == got[0].header.Get(name) {
+					t.Errorf("%s: the API itself was not sent %s", path, name)
+				}
+			}
+			for _, a := range got[from:] {
+				for _, name := range credentials {
+					if "" != a.header.Get(name) {
+						t.Errorf("%s: %s was sent %s", path, a.line, name)
+					}
+				}
+				if "acme" != a.header.Get("x-tenant") {
+					t.Errorf("%s: %s lost x-tenant", path, a.line)
+				}
+				if "" != a.header.Get("Referer") {
+					t.Errorf("%s: %s was told where the request came from: %s",
+						path, a.line, a.header.Get("Referer"))
+				}
+				if strings.Contains(fmt.Sprint(a.header), secret) {
+					t.Errorf("%s: %s was sent the secret: %v", path, a.line, a.header)
+				}
+			}
+		}
+
+		for _, cleanactive := range []bool{true, false} {
+			path := "/out?api_key=" + secret
+			status, got := fetch(cleanactive, path, map[string]any{"method": "GET", "headers": headers(nil)})
+			if 200 != status || "api GET /out, other GET /landed" != lines(got) {
+				t.Fatalf("%s: expected the hop to another origin followed, got: %v %s", path, status, lines(got))
+			}
+			stripped(path, got, 1)
+		}
+
+		status, got := fetch(true, "/chain", map[string]any{"method": "GET", "headers": headers(nil)})
+		if 200 != status || "api GET /chain, other GET /in, other GET /landed" != lines(got) {
+			t.Fatalf("/chain: expected both hops followed, got: %v %s", status, lines(got))
+		}
+		stripped("/chain", got, 1)
+
+		status, got = fetch(true, "/back", map[string]any{"method": "GET", "headers": headers(nil)})
+		if 200 != status || "api GET /back, other GET /home, api GET /landed" != lines(got) {
+			t.Fatalf("/back: expected both hops followed, got: %v %s", status, lines(got))
+		}
+		stripped("/back", got, 1)
+
+		status, got = fetch(true, "/in", map[string]any{"method": "GET", "headers": headers(nil)})
+		if 200 != status || "api GET /in, api GET /landed" != lines(got) {
+			t.Fatalf("/in: expected the hop on the same origin followed, got: %v %s", status, lines(got))
+		}
+		for _, name := range append([]string{"x-tenant"}, credentials...) {
+			if "" == got[1].header.Get(name) {
+				t.Errorf("/in: the same origin lost %s", name)
+			}
+		}
+
+		upload := func(body string) map[string]any {
+			return map[string]any{"method": "PUT", "body": body,
+				"headers": headers(map[string]any{"content-type": "audio/wav"})}
+		}
+		status, got = fetch(true, "/out307", upload("BODY-"+secret))
+		if 307 != status || "api PUT /out307" != lines(got) {
+			t.Errorf("/out307: expected the 307 and no body sent on, got: %v %s", status, lines(got))
+		}
+
+		status, got = fetch(true, "/in307", upload("BODY-1"))
+		if 200 != status || "api PUT /in307, api PUT /landed" != lines(got) ||
+			"BODY-1" != got[1].body || "audio/wav" != got[1].header.Get("content-type") {
+			t.Errorf("/in307: expected the method and the body kept, got: %v %s", status, lines(got))
+		}
+
+		status, got = fetch(true, "/round", map[string]any{"method": "GET", "headers": map[string]any{}})
+		if 302 != status || 6 != len(got) {
+			t.Errorf("/round: expected the last 302 past the hop limit, got: %v after %d", status, len(got))
 		}
 	})
 

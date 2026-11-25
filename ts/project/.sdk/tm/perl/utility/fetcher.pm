@@ -80,12 +80,24 @@ sub _origin {
   return join ':', $scheme // '', $host // '', $port // ('https' eq ($scheme // '') ? 443 : 80);
 }
 
+# What another origin is not sent: the names every client drops, and
+# whatever the SDK holds as a secret, by its name or by its value. A call
+# with no context is answered from the schema's sensitive names.
+sub _is_credential {
+  my ($ctx, $name, $value) = @_;
+  return 1 if lc($name) =~ /\A(?:authorization|cookie|proxy-authorization)\z/;
+  my $utility = Voxgig::Struct::ismap($ctx) ? $ctx->{utility} : undef;
+  my $secret = (Voxgig::Struct::ismap($utility) && $utility->{clean_secret}) || $REGISTRY{clean_secret};
+  return ref $secret eq 'CODE' && $secret->($ctx, $name, $value) ? 1 : 0;
+}
+
 # HTTP::Tiny cannot resolve a relative-path Location, so it follows none here.
 # A GET or HEAD follows a redirect, unless the fetch definition says "manual",
-# each hop passing the GET-only guard first; past $REDIRECT_MAX hops the last
-# 3xx is the answer. Another origin is not sent the request's credentials.
+# each hop passing the GET-only guard first; past $REDIRECT_MAX hops, or where
+# a body would go to another origin, the 3xx is the answer. Another origin is
+# not sent the request's credentials.
 our $DefaultHttpFetch = sub {
-  my ($fullurl, $fetchdef) = @_;
+  my ($fullurl, $fetchdef, $ctx) = @_;
   $fetchdef = {} unless defined $fetchdef;
 
   my $method = uc(defined $fetchdef->{method} ? "$fetchdef->{method}" : 'GET');
@@ -101,9 +113,10 @@ our $DefaultHttpFetch = sub {
       && (grep { $_ == $res->{status} } @REDIRECT_STATUS) ? resolve_location($url, $location) : undef;
     return ($res, $err) unless defined $next;
     if (_origin($next) ne _origin($url)) {
+      return ($res, $err) if defined $fetchdef->{body};
       my $headers = Voxgig::Struct::ismap($fetchdef->{headers}) ? $fetchdef->{headers} : {};
       $fetchdef = { %$fetchdef, headers => { map { $_ => $headers->{$_} }
-        grep { lc($_) !~ /\A(?:authorization|cookie|proxy-authorization)\z/ } keys %$headers } };
+        grep { !_is_credential($ctx, $_, $headers->{$_}) } keys %$headers } };
     }
     $url = $next;
   }
@@ -250,7 +263,7 @@ $REGISTRY{fetcher} = sub {
 
   my $sys_fetch = ProjectNameHelpers::gpath($options, 'system.fetch');
 
-  return $DefaultHttpFetch->($fullurl, $fetchdef) if !defined $sys_fetch;
+  return $DefaultHttpFetch->($fullurl, $fetchdef, $ctx) if !defined $sys_fetch;
   return $sys_fetch->($fullurl, $fetchdef) if ref $sys_fetch eq 'CODE';
 
   return (undef, $ctx->make_error('fetch_invalid', 'system.fetch is not a valid function'));

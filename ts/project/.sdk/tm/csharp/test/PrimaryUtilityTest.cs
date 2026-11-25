@@ -497,6 +497,237 @@ public class PrimaryUtilityTest
         }
     }
 
+    private const string RedirectSecret = "REDIRECT-SECRET-q7w3e9r1";
+
+    private static readonly string[] RedirectCredentials =
+    {
+        "authorization", "cookie", "x-api-key", "private-token", "x-acme-auth",
+    };
+
+    private sealed record Arrival(string At, string Method, Dictionary<string, string> Headers, string Body);
+
+    // An origin on a loopback port of its own, which keeps what reaches it
+    // and answers a moved path with its redirect.
+    private sealed class RedirectOrigin : IDisposable
+    {
+        private readonly System.Net.Sockets.TcpListener _listener =
+            new(System.Net.IPAddress.Loopback, 0);
+        private readonly string _name;
+        private readonly List<Arrival> _arrived;
+        private readonly Func<string, string?> _moved;
+
+        public readonly string Base;
+
+        public RedirectOrigin(string name, List<Arrival> arrived, Func<string, string?> moved)
+        {
+            _name = name;
+            _arrived = arrived;
+            _moved = moved;
+            _listener.Start();
+            Base = "http://127.0.0.1:" + ((System.Net.IPEndPoint)_listener.LocalEndpoint).Port;
+            System.Threading.Tasks.Task.Run(Serve);
+        }
+
+        public void Dispose() => _listener.Stop();
+
+        private void Serve()
+        {
+            while (true)
+            {
+                System.Net.Sockets.TcpClient conn;
+                try
+                {
+                    conn = _listener.AcceptTcpClient();
+                }
+                catch (Exception)
+                {
+                    return;
+                }
+                using (conn)
+                {
+                    try
+                    {
+                        Answer(conn.GetStream());
+                    }
+                    catch (System.IO.IOException)
+                    {
+                    }
+                }
+            }
+        }
+
+        private void Answer(System.Net.Sockets.NetworkStream stream)
+        {
+            var reader = new System.IO.StreamReader(stream);
+            var first = (reader.ReadLine() ?? "").Split(' ');
+            var path = 1 < first.Length ? first[1] : "";
+            var headers = new Dictionary<string, string>();
+            for (var line = reader.ReadLine(); !string.IsNullOrEmpty(line); line = reader.ReadLine())
+            {
+                var colon = line.IndexOf(':');
+                if (0 < colon)
+                {
+                    headers[line.Substring(0, colon).ToLowerInvariant()] = line.Substring(colon + 1).Trim();
+                }
+            }
+            var sent = new char[int.TryParse(headers.GetValueOrDefault("content-length"), out var n) ? n : 0];
+            for (var got = 0; got < sent.Length;)
+            {
+                var read = reader.Read(sent, got, sent.Length - got);
+                if (read <= 0)
+                {
+                    break;
+                }
+                got += read;
+            }
+            lock (_arrived)
+            {
+                _arrived.Add(new Arrival(_name + " " + path, first[0], headers, new string(sent)));
+            }
+            var moved = _moved(path);
+            var answer = moved == null ? "{\"id\":\"r1\"}" : "";
+            var reply = System.Text.Encoding.UTF8.GetBytes(
+                "HTTP/1.1 " + (moved ?? "200 X") + "\r\nContent-Type: application/json\r\n" +
+                "Content-Length: " + answer.Length + "\r\nConnection: close\r\n\r\n" + answer);
+            stream.Write(reply, 0, reply.Length);
+        }
+    }
+
+    // The API's origin redirects; the other origin, another port, keeps what
+    // reaches it. The secret is registered as a caller's is: as the apikey.
+    private static (Dictionary<string, object?> Res, List<Arrival> Arrived) RedirectFetch(
+        string method, string path, string? body = null, string? type = null,
+        Dictionary<string, object?>? options = null)
+    {
+        var arrived = new List<Arrival>();
+        using var other = new RedirectOrigin("other", arrived, _ => null);
+        using var api = new RedirectOrigin("api", arrived, at => at switch
+        {
+            "/out" => "302 X\r\nLocation: " + other.Base + "/landed",
+            "/out307" => "307 X\r\nLocation: " + other.Base + "/landed",
+            "/in" => "302 X\r\nLocation: /landed",
+            "/in307" => "307 X\r\nLocation: /landed",
+            "/in303" => "303 X\r\nLocation: /landed",
+            "/round" => "302 X\r\nLocation: /round",
+            _ => null,
+        });
+
+        var liveClient = new ProjectNameSDK(
+            new Dictionary<string, object?>(options ?? new Dictionary<string, object?>())
+            {
+                ["base"] = api.Base,
+                ["apikey"] = RedirectSecret,
+            });
+        var liveUtility = liveClient.GetUtility();
+        var ctx = liveUtility.MakeContext(
+            new Dictionary<string, object?> { ["opname"] = "load" }, liveClient.GetRootCtx());
+
+        // x-acme-auth is not a sensitive name: a credential by the value it holds.
+        var headers = new Dictionary<string, object?>
+        {
+            ["authorization"] = "Bearer " + RedirectSecret,
+            ["cookie"] = "sid=" + RedirectSecret,
+            ["x-api-key"] = RedirectSecret,
+            ["private-token"] = "pt-12345",
+            ["x-acme-auth"] = "v1 " + RedirectSecret,
+            ["x-tenant"] = "acme",
+        };
+        var fetchdef = new Dictionary<string, object?> { ["method"] = method, ["headers"] = headers };
+        if (body != null)
+        {
+            headers["content-type"] = type;
+            fetchdef["body"] = body;
+        }
+
+        var res = (Dictionary<string, object?>)liveUtility.Fetcher(ctx, api.Base + path, fetchdef)!;
+        lock (arrived)
+        {
+            return (res, new List<Arrival>(arrived));
+        }
+    }
+
+    private static void AssertNoCredentialReachesAnotherOrigin(Dictionary<string, object?>? options)
+    {
+        var (res, arrived) = RedirectFetch("GET", "/out", options: options);
+        Assert.Equal(200, res["status"]);
+        Assert.Equal(new[] { "api /out", "other /landed" }, arrived.Select(a => a.At).ToArray());
+        var unsent = RedirectCredentials.Where(name => !arrived[0].Headers.ContainsKey(name));
+        Assert.True(!unsent.Any(), "the API itself was not sent " + string.Join(", ", unsent));
+        var sent = RedirectCredentials.Where(name => arrived[1].Headers.ContainsKey(name));
+        Assert.True(!sent.Any(), "another origin was sent " + string.Join(", ", sent));
+        Assert.Equal("acme", arrived[1].Headers.GetValueOrDefault("x-tenant"));
+        Assert.DoesNotContain(arrived[1].Headers.Values, value => value.Contains(RedirectSecret));
+    }
+
+    [Fact]
+    public void FetcherRedirectToAnotherOriginCarriesNoCredential()
+    {
+        AssertNoCredentialReachesAnotherOrigin(null);
+    }
+
+    [Fact]
+    public void FetcherRedirectToAnotherOriginWithCleanOff()
+    {
+        AssertNoCredentialReachesAnotherOrigin(new Dictionary<string, object?>
+        {
+            ["clean"] = new Dictionary<string, object?> { ["active"] = false },
+        });
+    }
+
+    [Fact]
+    public void FetcherRedirectOnTheSameOriginKeepsHeaders()
+    {
+        var (res, arrived) = RedirectFetch("GET", "/in");
+        Assert.Equal(200, res["status"]);
+        Assert.Equal(new[] { "api /in", "api /landed" }, arrived.Select(a => a.At).ToArray());
+        var lost = RedirectCredentials.Append("x-tenant")
+            .Where(name => !arrived[1].Headers.ContainsKey(name));
+        Assert.True(!lost.Any(), "the same origin lost " + string.Join(", ", lost));
+    }
+
+    [Fact]
+    public void FetcherRedirectSendsNoBodyToAnotherOrigin()
+    {
+        var body = "BODY-" + RedirectSecret;
+        var (res, arrived) = RedirectFetch("PUT", "/out307", body, "audio/wav");
+        Assert.Equal(307, res["status"]);
+        Assert.Equal(new[] { "api /out307 " + body },
+            arrived.Select(a => a.At + " " + a.Body).ToArray());
+    }
+
+    [Fact]
+    public void FetcherRedirectOnItsOwnOriginKeepsTheMethodAndTheBody()
+    {
+        var (res, arrived) = RedirectFetch("PUT", "/in307", "BODY-1", "audio/wav");
+        Assert.Equal(200, res["status"]);
+        Assert.Equal(new[] { "PUT api /in307 BODY-1", "PUT api /landed BODY-1" },
+            arrived.Select(a => a.Method + " " + a.At + " " + a.Body).ToArray());
+        Assert.Equal("audio/wav", arrived[1].Headers.GetValueOrDefault("content-type"));
+    }
+
+    // A 303, and a 302 answering a POST.
+    [Fact]
+    public void FetcherRedirectBecomesAGetWithoutTheBody()
+    {
+        foreach (var (method, path) in new[] { ("PUT", "/in303"), ("POST", "/in") })
+        {
+            var (res, arrived) = RedirectFetch(method, path, "{\"a\":1}", "application/json");
+            Assert.Equal(200, res["status"]);
+            Assert.Equal(new[] { method + " api " + path + " {\"a\":1}", "GET api /landed " },
+                arrived.Select(a => a.Method + " " + a.At + " " + a.Body).ToArray());
+            Assert.False(arrived[1].Headers.ContainsKey("content-type"), method + ": the GET kept content-type");
+            Assert.True(arrived[1].Headers.ContainsKey("x-api-key"), method + ": the same origin lost x-api-key");
+        }
+    }
+
+    [Fact]
+    public void FetcherRedirectPastTheHopLimitIsAnsweredByTheLastOne()
+    {
+        var (res, arrived) = RedirectFetch("GET", "/round");
+        Assert.Equal(302, res["status"]);
+        Assert.Equal(6, arrived.Count);
+    }
+
     // Nothing listens on port 9: a request the guard let through fails there.
     [Fact]
     public void FetcherGetOnlyGuard()

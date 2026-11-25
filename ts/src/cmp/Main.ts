@@ -18,7 +18,7 @@ const Main = cmp(function Main(props: any) {
 
   // Generator-owned placeholders (PROJECTENV) that the project's frozen
   // Root.ts cannot know about.
-  const stdrep = ensureStdrep(ctx$)
+  const stdrep = ensureStdrep(ctx$, target)
 
   // Per target, as `plain` names the target's own release; each Main_<lang>
   // copies its templates with this map before the next target sets it.

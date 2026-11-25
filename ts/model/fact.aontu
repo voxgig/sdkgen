@@ -1,0 +1,165 @@
+# Evaluated over the generated model, where every default is a value:
+# filter and match do not read a default inside a map. A missing input
+# leaves its fact absent, and reading an absent fact fails.
+
+main: kit: feature: &: {
+  fact: {
+    on: match(maybe(..config), { options: { active: true } }, true, false)
+  }
+}
+
+# The root plan: whether a run writes the root documents and the per-entity
+# test data. `top` is quoted: unquoted in a reference, it is a keyword to aontu
+# at the version pinned here.
+main: kit: fact: {
+  top: maybe($.main.kit.phase."top".active)
+  build: maybe($.main.kit.phase.build.active)
+}
+
+# A target's phases run unless its model turns them off. The base model does
+# not declare them, so their defaults are declared here, for this pass only.
+main: kit: target: &: {
+  phase: {
+    entity: active: *true | boolean
+    feature: active: *true | boolean
+    readme: active: *true | boolean
+    agentguide: active: *true | boolean
+    test: active: *true | boolean
+  }
+
+  derive: {
+    origin: match(maybe(..origname), "", maybe(..name), maybe(..origname))
+    legacy: match(maybe(..scaffold), true, match(.origin,
+      "go-cli", { surface: "cli", consumes: "go" },
+      "go-mcp", { surface: "mcp", consumes: "go" },
+      "py-data", { surface: "data", consumes: "py" },
+      { surface: "", consumes: "" }), { surface: "", consumes: "" })
+    wraps: match(maybe(..consumes), "", maybe(.legacy.consumes), maybe(..consumes))
+  }
+  fact: {
+    origin: maybe(..derive.origin)
+    surface: match(maybe(..surface), "", match(maybe(..derive.legacy.surface), "",
+      match(maybe(.phase.entity), false, "", "sdk"), maybe(..derive.legacy.surface)),
+      maybe(..surface))
+    surfaceFrom: match(maybe(..surface), "", match(maybe(..derive.legacy.surface), "",
+      match(maybe(.phase.entity), false, "unknown", "entities"), "legacy"), "slot")
+    place: match(maybe(..output), { root: true }, "root", { path: "" }, "folder", "external")
+    link: {
+      readme: match(maybe(..place), "folder", match(maybe($.main.kit.fact."top"), true, "../README.md", ""), "")
+      agents: match(maybe(..place), "folder", match(maybe($.main.kit.fact."top"), true, "../AGENTS.md", ""), "")
+    }
+    docs: {
+      readme: match(maybe(..place), "folder", maybe(..phase.readme), false)
+      agents: match(maybe(..place), "folder", maybe(..phase.agentguide), false)
+    }
+    phase: {
+      entity: ...phase.entity.active
+      feature: ...phase.feature.active
+      readme: ...phase.readme.active
+      agentguide: ...phase.agentguide.active
+      test: ...phase.test.active
+    }
+  }
+}
+
+
+# An unset slot reads as '' here, and an unset prefix as false, because '' is a
+# prefix a project may declare.
+main: kit: config: auth: {
+  active: *'' | top
+  basic: *'' | top
+  in: *'' | top
+  name: *'' | top
+  prefix: *false | top
+}
+main: kit: info: {
+  auth: *'' | top
+  security: {
+    type: *'' | top
+    in: *'' | top
+    name: *'' | top
+    prefix: *false | top
+  }
+}
+
+main: kit: derive: auth: {
+  declared: match(maybe($.main.kit.info.auth), false, false, true)
+  basic: match(maybe($.main.kit.info.security.type), "http",
+    match(maybe($.main.kit.info.security.prefix), false, false,
+      match(lower(maybe($.main.kit.info.security.prefix)), "basic", true, false)), false)
+  in: match(maybe($.main.kit.info.security.in), "", "header", lower(maybe($.main.kit.info.security.in)))
+  name: match(maybe($.main.kit.info.security.name), "", "Authorization", maybe($.main.kit.info.security.name))
+  prefix: match(maybe($.main.kit.info.security.prefix), false, "Bearer", maybe($.main.kit.info.security.prefix))
+}
+
+main: kit: fact: auth: {
+  apikey: match(maybe($.main.kit.config.auth.active), true, true, false, false,
+    maybe($.main.kit.derive.auth.declared))
+  suppressed: match(maybe($.main.kit.config.auth.active), false, true, false)
+  basic: match(maybe($.main.kit.config.auth.basic), true, true, false, false,
+    "", maybe($.main.kit.derive.auth.basic), true)
+  in: match(maybe($.main.kit.config.auth.in), "", maybe($.main.kit.derive.auth.in),
+    lower(maybe($.main.kit.config.auth.in)))
+  name: match(maybe($.main.kit.config.auth.name), "", maybe($.main.kit.derive.auth.name),
+    maybe($.main.kit.config.auth.name))
+  prefix: match(maybe($.main.kit.config.auth.prefix), false, maybe($.main.kit.derive.auth.prefix),
+    maybe($.main.kit.config.auth.prefix))
+  secret: match(maybe($.main.kit.fact.auth.basic), true,
+    match(maybe($.main.kit.fact.auth.in), "header",
+      match(maybe($.main.kit.fact.auth.suppressed), false, true, false), false), false)
+}
+
+# An out-of-tree target that declares no sdkrel has it derived at generate.
+main: kit: target: &: {
+  fact: {
+    dir: match(maybe(.place), "root", ".", "folder", maybe(..name), maybe(..output.path))
+    sdkrel: match(maybe(.place), "folder", "..", "root", ".", maybe(..output.sdkrel))
+  }
+}
+
+# Spelled as envToken spells them, from the name the pass supplies.
+main: kit: fact: env: {
+  prefix: rep(rep(upper($.name), "[^A-Z0-9]+", "_"), "^_+|_+$", "")
+  apikey: $.main.kit.fact.env.prefix + "_APIKEY"
+  secret: $.main.kit.fact.env.prefix + "_SECRET"
+  base: $.main.kit.fact.env.prefix + "_BASE"
+  live: $.main.kit.fact.env.prefix + "_TEST_LIVE"
+}
+
+# The first server, as the pass supplies it. Only a word-character name can be
+# one the URL uses in braces; re() takes a bare `-`, and an escaped one not.
+server: variables: &: {
+  fact: {
+    word: match(key(2), re("^[A-Za-z0-9_]+$"), true, false)
+    url: match($.server.url, re(".*[{]" + rep(key(2), "[.\\\\+*?()\\[\\]{}|^$/]", "\\$&") + "[}].*"), true, false)
+    used: match(maybe(.word), true, maybe(.url), false)
+    required: match(maybe(..default), "", maybe(.used), false)
+    env: $.main.kit.fact.env.prefix + "_SERVER_" + upper(key(2))
+  }
+}
+
+entity: &: {
+  fact: {
+    entid: $.main.kit.fact.env.prefix + "_TEST_" +
+      rep(rep(upper(key(2)), "[^A-Z0-9]+", "_"), "^_+|_+$", "") + "_ENTID"
+  }
+}
+
+escape: &: {
+  raw: string
+  vendor: boolean
+  text: rep(match(.vendor, true,
+    rep(rep(.raw, "!?\\[([^\\]]*)\\]\\((?:[^#:()/]|/[^/:()])[^:()]*\\)", "$1"), "```", "&#96;&#96;&#96;"),
+    .raw), "[$][$]", "$$&#36;")
+  inline: rep(rep(.text, "[ \t]*\r?\n[ \t]*", " "), "```", "&#96;&#96;&#96;")
+  cell: rep(rep(rep(.text, "[|]", "\\|"), "\r?\n", "<br>"), "```", "&#96;&#96;&#96;")
+  label: rep(rep(.inline, "^https?://", ""), "/$", "")
+  link: rep(rep(rep(rep(.raw, "[(]", "%28"), "[)]", "%29"), " ", "%20"), "[$][$]", "$$&#36;")
+  flat: rep(.raw, "\r?\n", " ")
+  code: match(.flat, "", "",
+    re(".*```.*"), "```` " + .flat + " ````",
+    re(".*``.*"), "``` " + .flat + " ```",
+    re(".*`.*"), "`` " + .flat + " ``",
+    "`" + .flat + "`")
+  codecell: rep(.code, "[|]", "\\|")
+}

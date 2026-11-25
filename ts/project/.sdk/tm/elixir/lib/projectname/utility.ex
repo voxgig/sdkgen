@@ -32,6 +32,7 @@ defmodule ProjectName.Utility do
     reg = [
       {"clean", &clean_impl/2},
       {"clean_add", &clean_add_impl/2},
+      {"clean_secret", &clean_secret_impl/3},
       {"done", &done_impl/1},
       {"make_error", &make_error_impl/2},
       {"feature_add", &feature_add_impl/2},
@@ -89,6 +90,13 @@ defmodule ProjectName.Utility do
   def param(ctx, pd), do: u(ctx, "param").(ctx, pd)
   def clean(ctx, v), do: u(ctx, "clean").(ctx, v)
   def clean_add(ctx, v), do: u(ctx, "clean_add").(ctx, v)
+
+  # The shipped predicate where a caller-built utility carries none.
+  def clean_secret(ctx, k, v) do
+    f = u(ctx, "clean_secret")
+    if S.isfunc(f), do: f.(ctx, k, v), else: clean_secret_impl(ctx, k, v)
+  end
+
   def prepare_auth(ctx), do: u(ctx, "prepare_auth").(ctx)
   def prepare_body(ctx), do: u(ctx, "prepare_body").(ctx)
   def prepare_headers(ctx), do: u(ctx, "prepare_headers").(ctx)
@@ -334,16 +342,48 @@ defmodule ProjectName.Utility do
     end
   end
 
+  # The live request body of a point the model marks binary, and its type.
+  # Text shorter than the registry accepts is not told from ordinary text; it
+  # is measured in bytes, which does not walk an upload.
+  defp binary_body(ctx, cfg) do
+    point = if S.ismap(ctx), do: S.getprop(ctx, "point"), else: nil
+    body = S.getprop(point, "body")
+
+    if S.getprop(body, "kind") == "raw" and S.getprop(body, "binary") == true do
+      minlen = numof(S.getprop(cfg, "min"), 4)
+
+      live =
+        [S.getprop(S.getprop(ctx, "spec"), "body"), raw_body(S.getprop(ctx, "reqdata"))]
+        |> Enum.reject(&(is_nil(&1) or (is_binary(&1) and byte_size(&1) < minlen and String.valid?(&1))))
+
+      media = S.getprop(body, "media")
+      if live != [], do: %{live: live, type: if(is_binary(media), do: media, else: nil)}
+    end
+  end
+
+  # Bytes are described, never copied (ADR-006): the kind, the size, and the
+  # media type the point declares. A binary is the only carrier here, and it
+  # is bytes only as the body of a point the model marks binary.
+  defp describe_binary(val, bin) do
+    if bin != nil and val in bin.live do
+      desc = S.jm(["binary$", "bytes", "size", byte_size(val)])
+      if bin.type != nil, do: S.setprop(desc, "type", bin.type)
+      desc
+    end
+  end
+
   # A masked plain-data COPY: functions dropped, cycles cut, an SDK error as
   # its code and message, and nothing shared with the live value, whose spec
   # must stay raw.
-  defp clean_snapshot(cfg, val, key, depth, seen) do
+  defp clean_snapshot(cfg, bin, val, key, depth, seen) do
     cond do
       val == nil ->
         nil
 
       is_binary(val) ->
-        if sensitive_key?(cfg, key), do: mask_value(cfg, val), else: clean_string(cfg, val)
+        if sensitive_key?(cfg, key),
+          do: mask_value(cfg, val),
+          else: describe_binary(val, bin) || clean_string(cfg, val)
 
       is_function(val) ->
         :__drop__
@@ -361,7 +401,7 @@ defmodule ProjectName.Utility do
         out = S.jm([])
 
         Enum.each(H.entries(val), fn {k, v} ->
-          c = clean_snapshot(cfg, v, k, depth + 1, [val | seen])
+          c = clean_snapshot(cfg, bin, v, k, depth + 1, [val | seen])
           if c != :__drop__, do: S.setprop(out, clean_name(cfg, out, k), c)
         end)
 
@@ -371,7 +411,7 @@ defmodule ProjectName.Utility do
         out = S.jt([])
 
         Enum.each(H.entries(val), fn {i, v} ->
-          c = clean_snapshot(cfg, v, i, depth + 1, [val | seen])
+          c = clean_snapshot(cfg, bin, v, i, depth + 1, [val | seen])
           S.setprop(out, S.size(out), if(c == :__drop__, do: nil, else: c))
         end)
 
@@ -384,14 +424,14 @@ defmodule ProjectName.Utility do
         S.jm(["message", clean_string(cfg, Exception.message(val))])
 
       is_struct(val) ->
-        clean_snapshot(cfg, Map.from_struct(val), key, depth, seen)
+        clean_snapshot(cfg, bin, Map.from_struct(val), key, depth, seen)
 
       is_map(val) ->
         out = S.jm([])
 
         # Sorted, so colliding masked names number the same way every run.
         Enum.each(Enum.sort_by(val, fn {k, _} -> strof(k) end), fn {k, v} ->
-          c = clean_snapshot(cfg, v, k, depth + 1, [val | seen])
+          c = clean_snapshot(cfg, bin, v, k, depth + 1, [val | seen])
           if c != :__drop__, do: S.setprop(out, clean_name(cfg, out, k), c)
         end)
 
@@ -402,7 +442,7 @@ defmodule ProjectName.Utility do
         out = S.jt([])
 
         Enum.each(items, fn v ->
-          c = clean_snapshot(cfg, v, nil, depth + 1, [val | seen])
+          c = clean_snapshot(cfg, bin, v, nil, depth + 1, [val | seen])
           S.setprop(out, S.size(out), if(c == :__drop__, do: nil, else: c))
         end)
 
@@ -413,8 +453,8 @@ defmodule ProjectName.Utility do
     end
   end
 
-  defp clean_field(cfg, v, key) do
-    case clean_snapshot(cfg, v, key, 1, []) do
+  defp clean_field(cfg, bin, v, key) do
+    case clean_snapshot(cfg, bin, v, key, 1, []) do
       :__drop__ -> nil
       c -> c
     end
@@ -423,13 +463,13 @@ defmodule ProjectName.Utility do
   defp clean_code(cfg, code), do: if(is_binary(code), do: clean_string(cfg, code), else: code)
 
   # The error is a struct, so "in place" is a copy carrying the same ctx.
-  defp clean_error(cfg, err) do
+  defp clean_error(cfg, bin, err) do
     %{
       err
       | code: clean_code(cfg, err.code),
         msg: clean_string(cfg, strof(err.msg)),
-        result: clean_field(cfg, err.result, "result"),
-        spec: clean_field(cfg, err.spec, "spec")
+        result: clean_field(cfg, bin, err.result, "result"),
+        spec: clean_field(cfg, bin, err.spec, "spec")
     }
   end
 
@@ -439,8 +479,8 @@ defmodule ProjectName.Utility do
     cond do
       S.getprop(cfg, "active") == false -> val
       is_binary(val) -> clean_string(cfg, val)
-      match?(%ProjectName.Error{}, val) -> clean_error(cfg, val)
-      true -> clean_field(cfg, val, nil)
+      match?(%ProjectName.Error{}, val) -> clean_error(cfg, binary_body(ctx, cfg), val)
+      true -> clean_field(cfg, binary_body(ctx, cfg), val, nil)
     end
   end
 
@@ -453,7 +493,7 @@ defmodule ProjectName.Utility do
 
     cond do
       S.getprop(cfg, "active") == false -> e
-      match?(%ProjectName.Error{}, e) -> clean_error(cfg, e)
+      match?(%ProjectName.Error{}, e) -> clean_error(cfg, binary_body(ctx, cfg), e)
       true -> clean_foreign_exception(cfg, e)
     end
   end
@@ -494,6 +534,16 @@ defmodule ProjectName.Utility do
     end
 
     nil
+  end
+
+  # Whether a named value is a secret: by its name, or by a registered value
+  # it holds. Answered with clean off too: a redirect asks, not a diagnostic.
+  def clean_secret_impl(ctx, key, value) do
+    cfg = clean_config(ctx)
+
+    sensitive_key?(cfg, key) or
+      (is_binary(value) and
+         Enum.any?(list_values(S.getprop(cfg, "values")), &(is_binary(&1) and String.contains?(value, &1))))
   end
 
   # ---- features ------------------------------------------------------------
@@ -947,6 +997,18 @@ defmodule ProjectName.Utility do
     end
   end
 
+  # A lone point still needs the call's action to agree with its own; the
+  # selection below refuses a mismatch either way.
+  defp lone_point_agrees?(ctx, op, point) do
+    reqselector =
+      if S.getprop(op, "input") == "data",
+        do: S.getprop(ctx, "reqdata"),
+        else: S.getprop(ctx, "reqmatch")
+
+    S.getprop(reqselector, "$action") ==
+      S.getprop(H.to_map(S.getprop(point, "select")), "$action")
+  end
+
   def make_point_impl(ctx) do
     out = S.getprop(ctx, "out")
     pre = S.getprop(out, "point")
@@ -979,7 +1041,7 @@ defmodule ProjectName.Utility do
            Context.make_error(ctx, "point_no_points",
              "Operation \"" <> opname <> "\" has no endpoint definitions.")}
 
-        npoints == 1 ->
+        npoints == 1 and lone_point_agrees?(ctx, op, S.getelem(points, 0)) ->
           S.setprop(ctx, "point", S.getelem(points, 0))
           {S.getprop(ctx, "point"), nil}
 
@@ -1714,6 +1776,21 @@ defmodule ProjectName.Utility do
     m == "application/json" or m == "text/json" or String.ends_with?(m, "+json")
   end
 
+  @text_media ~w(json xml html javascript ecmascript yaml urlencoded graphql)
+
+  # A type whose body is text: none declared, text/*, or a structured text
+  # format. A body of any other type is bytes, which no message quotes.
+  def text_media?(media) do
+    m =
+      if(is_binary(media), do: media, else: "")
+      |> String.split(";", parts: 2)
+      |> hd()
+      |> String.trim()
+      |> String.downcase()
+
+    m == "" or String.starts_with?(m, "text/") or String.contains?(m, @text_media)
+  end
+
   # The declared JSON type alone, else every declared type in the model's
   # order; nil when no success response declares a body.
   def accept_of(point) do
@@ -2269,10 +2346,15 @@ defmodule ProjectName.Utility do
     type = body_header(headers, "content-type")
     agent = to_string(clean(ctx, body_header(sent, "user-agent")))
 
+    # Only text is quoted: bytes are a file's, by the model or by their type.
+    quoted =
+      text != nil and text_media?(type) and
+        S.getprop(S.getprop(S.getprop(ctx, "point"), "response"), "binary") != true
+
     detail =
       "HTTP " <> to_string(status) <> ", content-type " <> if(type == "", do: "none", else: type) <>
         ", user-agent " <> if(agent == "", do: "transport default", else: agent) <>
-        if(text == nil, do: "", else: ", body: " <> body_preview(ctx, text))
+        if(quoted, do: ", body: " <> body_preview(ctx, text), else: "")
 
     cond do
       match?(%ProjectName.Error{}, failed) ->
@@ -2458,7 +2540,7 @@ defmodule ProjectName.Utility do
         sys_fetch = S.getpath(options, "system.fetch")
 
         cond do
-          sys_fetch == nil -> getonly_refusal(ctx, fullurl, fetchdef) || default_http_fetch(fullurl, fetchdef)
+          sys_fetch == nil -> getonly_refusal(ctx, fullurl, fetchdef) || follow_redirects(ctx, fullurl, fetchdef, 0)
           S.isfunc(sys_fetch) -> sys_fetch.(fullurl, fetchdef)
           true -> {nil, Context.make_error(ctx, "fetch_invalid", "system.fetch is not a valid function")}
         end
@@ -2482,6 +2564,88 @@ defmodule ProjectName.Utility do
       path = if path == "", do: "/", else: path
       {nil, Context.make_error(ctx, "fetch_getonly_block", "[GET-ONLY GUARD] blocked #{method} #{path}")}
     end
+  end
+
+  @redirect_status [300, 301, 302, 303, 307, 308]
+  @redirect_max 5
+  @credential_headers ~w(authorization cookie proxy-authorization)
+
+  # :httpc follows a redirect with every header but authorization and cookie,
+  # and sends a POST's body on to wherever a 307 points. Followed here
+  # instead, where :httpc followed: each hop passes the GET-only guard; past
+  # @redirect_max hops, or where a body would go to another origin, the 3xx
+  # is the answer.
+  defp follow_redirects(ctx, url, fetchdef, hops) do
+    {res, err} = default_http_fetch(url, fetchdef)
+
+    case next_hop(ctx, url, fetchdef, res, err, hops) do
+      nil -> {res, err}
+      {next, nextdef} -> getonly_refusal(ctx, next, nextdef) || follow_redirects(ctx, next, nextdef, hops + 1)
+    end
+  end
+
+  # The request a redirect leads to, or nil where the response is the answer.
+  defp next_hop(ctx, url, fetchdef, res, err, hops) do
+    status = if err == nil and S.ismap(res), do: S.getprop(res, "status")
+    location = if status != nil, do: S.getprop(S.getprop(res, "headers"), "location")
+    method = H.or_(S.getprop(fetchdef, "method"), "GET") |> to_string() |> String.upcase()
+
+    # As :httpc: a 300 for any method, the others for these alone.
+    followed =
+      S.getprop(fetchdef, "redirect") != "manual" and status in @redirect_status and
+        is_binary(location) and location != "" and hops < @redirect_max and
+        (status == 300 or method in ["GET", "HEAD", "OPTIONS", "TRACE", "POST"])
+
+    next = if followed, do: resolve_location(url, location)
+
+    if next != nil do
+      # A POST answered by a 301, 302 or 303 becomes a GET without its body.
+      toget = method == "POST" and status in [301, 302, 303]
+      cross = origin_of(next) != origin_of(url)
+      body = if toget, do: nil, else: S.getprop(fetchdef, "body")
+
+      if cross and is_binary(body) and method in ["POST", "PUT", "PATCH", "DELETE"] do
+        nil
+      else
+        headers = S.jm([])
+
+        Enum.each(H.entries(H.or_(S.getprop(fetchdef, "headers"), S.jm([]))), fn {name, value} ->
+          dropped =
+            (toget and String.starts_with?(String.downcase(to_string(name)), "content-")) or
+              (cross and credential?(ctx, name, value))
+
+          if not dropped, do: S.setprop(headers, name, value)
+        end)
+
+        nextdef = S.jm([])
+
+        Enum.each(H.entries(fetchdef), fn {key, value} ->
+          if key not in ["method", "headers", "body"], do: S.setprop(nextdef, key, value)
+        end)
+
+        S.setprop(nextdef, "method", if(toget, do: "GET", else: method))
+        S.setprop(nextdef, "headers", headers)
+        if body != nil, do: S.setprop(nextdef, "body", body)
+        {next, nextdef}
+      end
+    end
+  end
+
+  defp resolve_location(url, location) do
+    URI.to_string(URI.merge(url, location))
+  rescue
+    _ -> nil
+  end
+
+  defp origin_of(url) do
+    uri = URI.parse(url)
+    {String.downcase(to_string(uri.scheme)), String.downcase(to_string(uri.host)), uri.port}
+  end
+
+  # What another origin is not sent: the names every client drops, and
+  # whatever the SDK holds as a secret, by its name or by its value.
+  defp credential?(ctx, name, value) do
+    String.downcase(to_string(name)) in @credential_headers or clean_secret(ctx, name, value) == true
   end
 
   defp default_http_fetch(fullurl, fetchdef) do
@@ -2532,16 +2696,10 @@ defmodule ProjectName.Utility do
         {url, hlist}
       end
 
-    # A `redirect: "manual"` annotation (set by the station feature when a
-    # hosts egress policy is active - the same in-band channel go and rust
-    # use) disables :httpc's automatic redirect following, so a 3xx rides
-    # back as a normal response: a Location pointing off an egress
-    # allowlist must never pull an automatic credentialed follow-up
-    # request.
-    http_opts =
-      if S.getprop(fetchdef, "redirect") == "manual", do: [autoredirect: false], else: []
-
-    case :httpc.request(method, request, http_opts, body_format: :binary) do
+    # A 3xx rides back as a normal response: follow_redirects decides the
+    # next request, and a `redirect: "manual"` annotation (set by the station
+    # feature when a hosts egress policy is active) makes the 3xx the answer.
+    case :httpc.request(method, request, [autoredirect: false], body_format: :binary) do
       {:ok, {{_v, status, _reason}, resp_headers, resp_body}} ->
         rh =
           Enum.reduce(resp_headers, S.jm([]), fn {k, v}, acc ->
@@ -2569,7 +2727,7 @@ defmodule ProjectName.Utility do
                "statusText", status_text,
                "headers", rh,
                "json", fn -> json_body end,
-               "body", body_str,
+               "body", lossy_text(body_str),
                "unreadable", unreadable
              ]), nil}
 
@@ -2610,6 +2768,17 @@ defmodule ProjectName.Utility do
       e -> {:error, "response body is not valid " <> enc <> " data: " <> Exception.message(e)}
     end
   end
+
+  # A body that is not valid UTF-8 is kept as text, with a replacement
+  # character for each byte that does not decode: whatever reads the response
+  # afterwards serialises it, and a serialiser raises on such a binary.
+  defp lossy_text(body) do
+    if String.valid?(body), do: body, else: scrub(body, "")
+  end
+
+  defp scrub(<<char::utf8, rest::binary>>, text), do: scrub(rest, <<text::binary, char::utf8>>)
+  defp scrub(<<_, rest::binary>>, text), do: scrub(rest, <<text::binary, 0xFFFD::utf8>>)
+  defp scrub(<<>>, text), do: text
 
   # Parse a JSON string into struct nodes using the vendored struct's own
   # constructors (no third-party dep). Returns {:ok, node} | :error.

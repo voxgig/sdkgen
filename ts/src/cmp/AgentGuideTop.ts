@@ -1,6 +1,9 @@
 
 import { names, Content, File } from 'jostraca'
 import { cmp } from '../helpers/component'
+import { fact } from '../helpers/facts'
+import { externalName, surfaceOf } from '../helpers/surface'
+import { KIT } from '../types'
 
 import {
   activeTargets,
@@ -13,79 +16,103 @@ import {
   aontuSection,
   claudePointer,
   langCmd,
+  writesFeatureGuides,
 } from './AgentGuideContent'
 
 
-const AgentGuideTop = cmp(function AgentGuideTop(props: any) {
-  const { ctx$ } = props
-  const { model } = ctx$
+const AgentGuideTopIntro = cmp(function AgentGuideTopIntro(props: any) {
+  const { Name, model, targets } = props.s
 
-  if (model.name && !model.Name) names(model, model.name)
+  const featureGuides = targets.some((t: any) =>
+    fact(t, 'phase').agentguide && writesFeatureGuides(model, t))
 
-  const Name = projectName(model)
-  const targets = activeTargets(model)
-  const features = activeFeatures(model)
-  const entities = activeEntities(model)
+  // One SDK is named by its title; only several make a multi-language project.
+  const sdks = targets.filter((t: any) => 'sdk' === surfaceOf(t))
+  const project = 1 < sdks.length ? `multi-language SDK project. The client libraries in
+each language directory are` : 1 === sdks.length ? `${fact(sdks[0], 'title')} SDK project. The client library
+is` : `project. Its targets are`
+  const output = 1 < sdks.length ? 'the language directories' : 'the generated code'
 
-  File({ name: 'AGENTS.md' }, () => {
-    Content(`# ${Name} SDK — Agent Guide
+  Content(`# ${Name} SDK — Agent Guide
 
-This is a **generated** multi-language SDK project. The client libraries in
-each language directory are produced by [@voxgig/sdkgen](https://github.com/voxgig/sdkgen)
+This is a **generated** ${project} produced by [@voxgig/sdkgen](https://github.com/voxgig/sdkgen)
 from an API model; the generator, model, templates, and components all live in
-\`.sdk/\`. Treat the language directories as build output — change the model,
+\`.sdk/\`. Treat ${output} as build output — change the model,
 a template, or a component and regenerate.
 
 There are companion guides deeper in the tree: one per language
-(\`<lang>/AGENTS.md\`) and one per feature
-(\`<lang>/src/feature/<name>/AGENTS.md\`).
+(\`<lang>/AGENTS.md\`)${featureGuides ? `, and one per feature in a target that keeps each
+feature in its own directory (\`<lang>/src/feature/<name>/AGENTS.md\`)` : ''}.
 
 ## Project map
 
 `)
+})
 
-    if (0 < targets.length) {
-      Content(`**Targets** (${targets.length}):
+
+const AgentGuideTopTargets = cmp(function AgentGuideTopTargets(props: any) {
+  const { model, targets, external } = props.s
+
+  const rows: [string, string][] = targets.map((t: any) => {
+    const note = langCmd(t.name, model).note ? ' — ' + langCmd(t.name, model).note : ''
+    const dir = 'folder' === fact(t, 'place') ? `\`${t.name}/\`` : '—'
+    const guide = fact(t, 'docs').agents ? `[\`${t.name}/AGENTS.md\`](./${t.name}/AGENTS.md)` : '—'
+    return [t.name, `| \`${t.name}\` | ${dir}${note} | ${guide} |`]
+  }).concat(external.map((t: any) =>
+    [t.name, `| \`${t.name}\` | ${externalName(t)}, generated into its own repository | — |`]))
+    .sort(([a]: [string, string], [b]: [string, string]) => a < b ? -1 : a > b ? 1 : 0)
+
+  if (0 < rows.length) {
+    Content(`**Targets** (${rows.length}):
 
 | Target | Directory | Build guide |
 | --- | --- | --- |
+${rows.map(([, row]) => row + '\n').join('')}
 `)
-      targets.forEach((t: any) => {
-        const note = langCmd(t.name).note ? ' — ' + langCmd(t.name).note : ''
-        Content(`| \`${t.name}\` | \`${t.name}/\`${note} | [\`${t.name}/AGENTS.md\`](./${t.name}/AGENTS.md) |
-`)
-      })
-      Content(`
-`)
-    }
+  }
+})
 
-    if (0 < features.length) {
-      Content(`**Features** (${features.length}): `)
-      Content(features.map((f: any) => `\`${f.name}\``).join(', ') + `.
 
-Each feature is generated into every SDK target — as a directory
-\`<lang>/src/feature/<name>/\` (ts/js) or a flat file in the \`<lang>/feature/\`
-package (other languages). Each target's guide documents its features.
+const AgentGuideTopFeatures = cmp(function AgentGuideTopFeatures(props: any) {
+  const { features } = props.s
+
+  if (0 < features.length) {
+    Content(`**Features** (${features.length}): `)
+    Content(features.map((f: any) => `\`${f.name}\``).join(', ') + `.
+
+Each feature is generated into each SDK target that supports it, and each
+target's guide documents where that target keeps its features.
 
 `)
-    }
+  }
+})
 
-    if (0 < entities.length) {
-      Content(`**Entities** (${entities.length}): `)
-      Content(entities.map((e: any) => `\`${e.Name || e.name}\``).join(', ') + `.
+
+const AgentGuideTopEntities = cmp(function AgentGuideTopEntities(props: any) {
+  const { entities } = props.s
+
+  if (0 < entities.length) {
+    Content(`**Entities** (${entities.length}): `)
+    Content(entities.map((e: any) => `\`${e.Name || e.name}\``).join(', ') + `.
 
 `)
-    }
+  }
+})
 
-    // Station paragraph (station design §9.4; declarative design §11
-    // item 4), only when the model carries the feature: an agent working
-    // on this repo should know the runtime story without leaving
-    // AGENTS.md — and, first, that the application's integrations are
-    // DECLARED in station.json, so that file is where to look.
-    if (features.some((f: any) => 'station' === f.name)) {
-      Content(`**Station**: this SDK is a
+
+const AgentGuideTopStation = cmp(function AgentGuideTopStation(props: any) {
+  const { features } = props.s
+
+  // Station paragraph (station design §9.4; declarative design §11
+  // item 4), only when the model carries the feature: an agent working
+  // on this repo should know the runtime story without leaving
+  // AGENTS.md — and, first, that the application's integrations are
+  // DECLARED in station.json, so that file is where to look.
+  const station = features.find((f: any) => 'station' === f.name)
+  if (null != station) {
+    Content(`**Station**: this SDK is a
 [voxgig/station](https://github.com/voxgig/station) plugin (the
-\`station\` feature, off by default). An application's outbound
+\`station\` feature, ${fact(station, 'on') ? 'on' : 'off'} by default). An application's outbound
 integrations are **declared in \`station.json\`** at its repo root —
 to learn what the application talks to, read that file: every SDK
 instance (\`sdk\`), per-api default (\`api\`), feature setting, and
@@ -101,14 +128,32 @@ with Station" README section and \`src/feature/station/\` (or the
 target's feature container) for the generated adapter.
 
 `)
-    }
+  }
+})
 
-    Content(workflowSection())
-    Content(featureSection())
-    Content(customiseSection())
-    Content(aontuSection())
 
-    Content(`## Where things live
+const AgentGuideTopWorkflow = cmp(function AgentGuideTopWorkflow(props: any) {
+  Content(workflowSection(props.s.model))
+})
+
+
+const AgentGuideTopFeatureGuide = cmp(function AgentGuideTopFeatureGuide() {
+  Content(featureSection())
+})
+
+
+const AgentGuideTopCustomise = cmp(function AgentGuideTopCustomise() {
+  Content(customiseSection())
+})
+
+
+const AgentGuideTopAontu = cmp(function AgentGuideTopAontu(props: any) {
+  Content(aontuSection(props.s.model))
+})
+
+
+const AgentGuideTopLayout = cmp(function AgentGuideTopLayout() {
+  Content(`## Where things live
 
 \`\`\`
 .sdk/
@@ -126,6 +171,34 @@ Makefile          per-target deploy recipes
 Generated by [@voxgig/sdkgen](https://github.com/voxgig/sdkgen). Regenerate
 with \`cd .sdk && npm run generate\`.
 `)
+})
+
+
+const AgentGuideTop = cmp(function AgentGuideTop(props: any) {
+  const { ctx$ } = props
+  const { model } = ctx$
+
+  if (model.name && !model.Name) names(model, model.name)
+
+  const Name = projectName(model)
+  const targets = activeTargets(model)
+  const external = fact(model.main[KIT], 'external')
+  const features = activeFeatures(model)
+  const entities = activeEntities(model)
+
+  const s = { Name, model, targets, external, features, entities }
+
+  File({ name: 'AGENTS.md' }, () => {
+    AgentGuideTopIntro({ s })
+    AgentGuideTopTargets({ s })
+    AgentGuideTopFeatures({ s })
+    AgentGuideTopEntities({ s })
+    AgentGuideTopStation({ s })
+    AgentGuideTopWorkflow({ s })
+    AgentGuideTopFeatureGuide({ s })
+    AgentGuideTopCustomise({ s })
+    AgentGuideTopAontu({ s })
+    AgentGuideTopLayout({ s })
   })
 
   File({ name: 'CLAUDE.md' }, () => {

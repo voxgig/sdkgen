@@ -10,6 +10,7 @@ public final class Register {
   public static void registerAll(Utility u) {
     u.clean = Clean::clean;
     u.cleanAdd = Clean::cleanAdd;
+    u.cleanSecret = Clean::cleanSecret;
     u.done = Done::done;
     u.makeError = MakeError::makeError;
     u.featureAdd = FeatureAdd::featureAdd;
@@ -77,6 +78,9 @@ public final class Register {
         return false;
       case "cleanAdd":
         if (val instanceof Utility.CleanAddFn) { u.cleanAdd = (Utility.CleanAddFn) val; return true; }
+        return false;
+      case "cleanSecret":
+        if (val instanceof Utility.CleanSecretFn) { u.cleanSecret = (Utility.CleanSecretFn) val; return true; }
         return false;
       case "makeError":
         if (val instanceof Utility.MakeErrorFn) { u.makeError = (Utility.MakeErrorFn) val; return true; }

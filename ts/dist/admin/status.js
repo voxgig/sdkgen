@@ -8,6 +8,9 @@ exports.main = main;
 const node_fs_1 = __importDefault(require("node:fs"));
 const node_path_1 = __importDefault(require("node:path"));
 const node_child_process_1 = require("node:child_process");
+const facts_1 = require("../helpers/facts");
+const guardModel_1 = require("../helpers/guardModel");
+const placement_1 = require("../helpers/placement");
 function command(cwd, bin, args) {
     return (0, node_child_process_1.spawnSync)(bin, args, { cwd, encoding: 'utf8', timeout: 15000, windowsHide: true, env: { ...process.env, GIT_OPTIONAL_LOCKS: '0' } });
 }
@@ -27,8 +30,17 @@ function workingTree(folder) {
     const state = git(folder, ['status', '--porcelain=v1', '--untracked-files=normal', '--', '.']);
     return state === null ? 'not a git repository' : state ? 'modified' : 'clean';
 }
+// The model a generate reads, which `sdk.json` is written before.
+function prepare(model) {
+    try {
+        (0, facts_1.applyFacts)((0, guardModel_1.guardModel)(model));
+    }
+    catch (err) {
+        return 'Cannot prepare the compiled model: ' + err.message;
+    }
+}
 // Read the compiled model and working trees. Never fetch, build, test, or publish.
-function repositoryStatus(root) {
+function repositoryStatus(root, env = process.env) {
     root = node_path_1.default.resolve(root);
     const sdk = node_path_1.default.join(root, '.sdk');
     if (!directory(sdk))
@@ -45,7 +57,16 @@ function repositoryStatus(root) {
             modelError = 'Invalid compiled model: ' + err.message;
         }
     }
+    if (model && !modelError)
+        modelError = prepare(model);
     const kit = model?.main?.kit || {};
+    let override = {}, overridden = [], overrideError;
+    try {
+        ({ override, named: overridden } = (0, placement_1.readOverride)(undefined, env.SDKGEN_EXTERNAL, Object.keys(kit.target || {})));
+    }
+    catch (err) {
+        overrideError = err.message;
+    }
     const upstream = git(root, ['rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{upstream}']);
     const counts = upstream && git(root, ['rev-list', '--left-right', '--count', 'HEAD...@{upstream}']);
     const [ahead, behind] = counts ? counts.split(/\s+/).map(Number) : [null, null];
@@ -66,11 +87,15 @@ function repositoryStatus(root) {
         },
         model: { path: file, compiled: !!model && !modelError, error: modelError,
             generatedAt: node_fs_1.default.existsSync(file) ? node_fs_1.default.statSync(file).mtime.toISOString() : null },
+        override: { targets: overridden, error: overrideError },
         toolchain: { node: process.version, packages },
         targets: entries(kit.target).map(([name, target]) => {
-            const folder = node_path_1.default.resolve(root, target.output?.path || name);
+            const place = (0, placement_1.runPlace)(target, override[name]);
+            const folder = (0, placement_1.runFolder)(target, name, root, override[name]);
             const present = directory(folder);
-            return { name, active: target.active !== false, path: folder, present,
+            const intree = node_path_1.default.resolve(root, name);
+            const stale = 'external' === place && intree !== folder && directory(intree) ? intree : null;
+            return { name, active: target.active !== false, place, path: folder, present, stale,
                 state: workingTree(folder), readme: node_fs_1.default.existsSync(node_path_1.default.join(folder, 'README.md')),
                 version: target.publish?.version || null,
                 publication: target.publish?.registry?.state || 'not recorded', };
@@ -115,7 +140,7 @@ function main(args = process.argv.slice(2)) {
     if (!root || args.some(arg => !['--json', '--github'].includes(arg)))
         throw new Error('Usage: status.sh [--json] [--github]');
     const report = repositoryStatus(root);
-    let failed = !!report.model.error;
+    let failed = !!report.model.error || !!report.override.error;
     if (args.includes('--github')) {
         try {
             report.github = githubStatus(report.root);
@@ -133,9 +158,13 @@ function main(args = process.argv.slice(2)) {
         console.log('Upstream: ' + (report.repository.upstream ? report.repository.upstream + ' | ahead ' + report.repository.ahead + ', behind ' + report.repository.behind + ' (local tracking refs)' : 'not configured'));
         console.log('Model: ' + (report.model.error || (report.model.compiled ? 'compiled ' + report.model.generatedAt : 'not generated; run npm run generate from .sdk')));
         console.log('Toolchain: Node ' + report.toolchain.node + '; ' + report.toolchain.packages.map((p) => p.name + ' ' + p.version).join('; '));
+        if (report.override.error)
+            console.log('Override: ' + report.override.error);
+        else if (report.override.targets.length)
+            console.log('Override: SDKGEN_EXTERNAL places ' + report.override.targets.join(', ') + ' for this run');
         console.log('\nSDKs and tools (publication state comes from the model):');
         for (const t of report.targets)
-            console.log('  ' + t.name + ' | ' + (t.active ? 'active' : 'inactive') + ' | ' + t.state + ' | version ' + (t.version || 'not recorded') + ' | ' + t.publication + ' | ' + t.path);
+            console.log('  ' + t.name + ' | ' + (t.active ? 'active' : 'inactive') + ' | ' + t.state + ' | version ' + (t.version || 'not recorded') + ' | ' + t.publication + ' | ' + t.path + (t.stale ? ' | stale in-tree folder ' + t.stale : ''));
         if (!report.targets.length)
             console.log('  No targets in the compiled model.');
         console.log('\nDocumentation:');

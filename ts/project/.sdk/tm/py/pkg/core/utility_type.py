@@ -12,6 +12,7 @@ class ProjectNameUtility:
         # All utility functions are set by the register module
         self.clean = None
         self.clean_add = None
+        self.clean_secret = None
         self.clean_explain = None
         self.done = None
         self.make_error = None
@@ -53,6 +54,7 @@ class ProjectNameUtility:
         u = cls()
         u.clean = src.clean
         u.clean_add = src.clean_add
+        u.clean_secret = src.clean_secret
         u.clean_explain = src.clean_explain
         u.done = src.done
         u.make_error = src.make_error

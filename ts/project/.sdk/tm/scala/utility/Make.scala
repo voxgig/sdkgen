@@ -148,12 +148,16 @@ object MakePoint {
       throw ctx.makeError("point_no_points", "Operation \"" + op.name + "\" has no endpoint definitions.")
     }
 
-    if (op.points.size() == 1) {
+    val reqselector: JMap[String, Object] = if ("data" == op.input) ctx.reqdata else ctx.reqmatch
+    val selector: JMap[String, Object] = if ("data" == op.input) ctx.data else ctx.matchData
+
+    // A lone point still needs the call's action to agree with its own; the
+    // selection below refuses a mismatch either way.
+    if (op.points.size() == 1 && Objects.equals(
+      Struct.getprop(reqselector, "$action", null),
+      Struct.getprop(Helpers.toMapAny(Struct.getprop(op.points.get(0), "select")), "$action", null))) {
       ctx.point = op.points.get(0)
     } else {
-      val reqselector: JMap[String, Object] = if ("data" == op.input) ctx.reqdata else ctx.reqmatch
-      val selector: JMap[String, Object] = if ("data" == op.input) ctx.data else ctx.matchData
-
       var point: JMap[String, Object] = null
       var matched = false
       var i = 0

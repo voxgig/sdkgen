@@ -52,7 +52,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   Content(`### 1. Create a client
 
 \`\`\`c
-#include "core/api.h"
+${authActive ? '#include <stdlib.h>\n' : ''}#include "core/api.h"
 
 ${model.const.Name}SDK* client = ${ctor};
 PNError* err = NULL;
@@ -160,7 +160,7 @@ if (err) {
     // shape so the docs reference REAL writable fields.
     const examplePairs = (opname: string): string[] => {
       const items = requestExampleItems(exampleEntity, opname)
-        .filter((it: any) => (it.name !== idF && it.name !== 'id') ||
+        .filter((it: any) => (it.name !== idF && (it.name !== 'id' || !it.optional)) ||
           ('create' === opname && !it.optional))
       const required = items.filter((it: any) => !it.optional)
       const optional = items.filter((it: any) => it.optional)

@@ -12,8 +12,8 @@ import {
 // The canary sweep: every credential slot holds a distinctive value, every
 // diagnostic feature this SDK ships is switched on with a capturing sink, a
 // real operation runs through every outcome, and every string that leaves
-// the SDK is searched for the canaries and their encoded forms. It also
-// proves its own sensitivity: with clean switched off the canary MUST show.
+// is searched for the canaries and their encoded forms; a second sweep does
+// the same for a body of bytes. With clean off the canary MUST show.
 const TestClean = cmp(function TestClean(props: any) {
   const { model } = props.ctx$
   const { target } = props
@@ -43,6 +43,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Field;
@@ -54,13 +56,16 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.HexFormat;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -102,6 +107,9 @@ public class CleanTest {
   static final String NO_OP =
       "no operation of this SDK completes against a plain 200; nothing to sweep";
 
+  static final String NO_BINARY_OP =
+      "no operation of this SDK sends a binary body; nothing to sweep";
+
   // The logger the log feature builds when handed none.
   static final String LOGGER_NAME = "${sdk}.log";
 
@@ -119,6 +127,19 @@ public class CleanTest {
 
   static String base64(String s) {
     return Base64.getEncoder().encodeToString(s.getBytes(StandardCharsets.UTF_8));
+  }
+
+  // The marker a body of bytes carries.
+  static final String CONTENT = "CANARY-CONTENT-b7n3v9x1c5";
+  static final byte[] CONTENT_BYTES = CONTENT.getBytes(StandardCharsets.UTF_8);
+
+  // Every value this SDK accepts as a raw body.
+  static final Map<String, Supplier<Object>> CARRIERS = new LinkedHashMap<>();
+
+  static {
+    CARRIERS.put("byte[]", () -> CONTENT_BYTES.clone());
+    CARRIERS.put("InputStream", () -> new ByteArrayInputStream(CONTENT_BYTES));
+    CARRIERS.put("String", () -> CONTENT);
   }
 
   static final class Sink {
@@ -163,6 +184,32 @@ public class CleanTest {
     return out;
   }
 
+  // The values of a byte array as a list prints them, unspaced.
+  static String byteValues(byte[] bytes) {
+    String listed = Arrays.toString(bytes).replace(" ", "");
+    return listed.substring(1, listed.length() - 1);
+  }
+
+  // The forms bytes travel in once copied: text, a list of byte values, hex,
+  // base64 with or without its padding.
+  static List<String> contentLeaks(String text) {
+    String flat = text.replaceAll("\\\\s+", "");
+    List<String> found = new ArrayList<>();
+    if (text.contains(CONTENT)) {
+      found.add("text");
+    }
+    if (flat.contains(byteValues(CONTENT_BYTES))) {
+      found.add("byte values");
+    }
+    if (flat.toLowerCase(Locale.ROOT).contains(HexFormat.of().formatHex(CONTENT_BYTES))) {
+      found.add("hex");
+    }
+    if (flat.contains(base64(CONTENT).replace("=", ""))) {
+      found.add("base64");
+    }
+    return found;
+  }
+
   static boolean isFunction(Object v) {
     return v instanceof Function || v instanceof Supplier || v instanceof Consumer
         || v instanceof BiFunction || v instanceof Runnable || v instanceof Utility.CtxFn
@@ -198,6 +245,14 @@ public class CleanTest {
         List<Object> out = new ArrayList<>();
         for (Object e : (List<Object>) v) {
           out.add(plain(e, depth + 1, seen));
+        }
+        return out;
+      }
+      // Bytes print as their values, which is how such a serialiser shows them.
+      if (v instanceof byte[]) {
+        List<Object> out = new ArrayList<>();
+        for (byte b : (byte[]) v) {
+          out.add((int) b);
         }
         return out;
       }
@@ -535,11 +590,25 @@ public class CleanTest {
     final Method accessor;
     final Method call;
     final Map<String, Object> match;
+    // The media type its point declares for a raw body, when it sends one.
+    final Object media;
 
     Op(Method accessor, Method call, Map<String, Object> match) {
+      this(accessor, call, match, null);
+    }
+
+    Op(Method accessor, Method call, Map<String, Object> match, Object media) {
       this.accessor = accessor;
       this.call = call;
       this.match = match;
+      this.media = media;
+    }
+
+    // The same operation passing more data, as an upload passes its body.
+    Op with(Map<String, Object> data) {
+      Map<String, Object> more = new LinkedHashMap<>(this.match);
+      more.putAll(data);
+      return new Op(this.accessor, this.call, more, this.media);
     }
   }
 
@@ -582,14 +651,9 @@ public class CleanTest {
     return out;
   }
 
-  // The first operation that completes against a plain 200: with no
-  // arguments, else with every path parameter its points declare filled in.
-  static Op usableOp() {
-    Utility.FetcherFn ok = (ctx, url, fetchdef) -> response(200, jm("id", "i1"), null);
-    Map<String, Object> plainOpts = jm("apikey", CANARY_APIKEY, "utility", jm("fetcher", ok));
-
+  // The client's entity accessors, by entity name.
+  static Map<String, Method> accessors(${sdk} probe) {
     Map<String, Method> accessors = new TreeMap<>();
-    ${sdk} probe = construct(plainOpts);
     for (Method m : probe.getClass().getMethods()) {
       if (1 != m.getParameterCount() || !Map.class.isAssignableFrom(m.getParameterTypes()[0])) {
         continue;
@@ -608,8 +672,18 @@ public class CleanTest {
         accessors.put(entname, m);
       }
     }
+    return accessors;
+  }
 
-    for (Map.Entry<String, Method> e : accessors.entrySet()) {
+  // The first operation that completes against a plain 200: with no
+  // arguments, else with every path parameter its points declare filled in.
+  static Op usableOp() {
+    Utility.FetcherFn ok = (ctx, url, fetchdef) -> response(200, jm("id", "i1"), null);
+    Map<String, Object> plainOpts = jm("apikey", CANARY_APIKEY, "utility", jm("fetcher", ok));
+
+    ${sdk} probe = construct(plainOpts);
+
+    for (Map.Entry<String, Method> e : accessors(probe).entrySet()) {
       Object ent;
       try {
         ent = e.getValue().invoke(probe, new Object[] {null});
@@ -650,6 +724,79 @@ public class CleanTest {
     }
     assumeTrue(op != null, NO_OP);
     return op;
+  }
+
+  // The first operation with a point that sends a raw body the model marks
+  // binary, with every path parameter of that point filled in.
+  static Op binaryOp() {
+    ${sdk} probe = construct(jm("apikey", CANARY_APIKEY));
+    for (Map.Entry<String, Method> e : accessors(probe).entrySet()) {
+      Map<String, Object> opdefs = Helpers.toMapAny(Struct.getpath(Config.sharedConfig(),
+          List.of("entity", e.getKey(), "op")));
+      if (opdefs == null) {
+        continue;
+      }
+      for (String opname : new TreeSet<>(opdefs.keySet())) {
+        Object points = Struct.getprop(opdefs.get(opname), "points");
+        if (!(points instanceof List)) {
+          continue;
+        }
+        for (Object point : (List<Object>) points) {
+          Object body = Struct.getprop(point, "body");
+          if (!"raw".equals(Struct.getprop(body, "kind"))
+              || !Boolean.TRUE.equals(Struct.getprop(body, "binary"))) {
+            continue;
+          }
+          Map<String, Object> match = new LinkedHashMap<>();
+          Object params = Struct.getpath(point, List.of("args", "params"));
+          if (params instanceof List) {
+            for (Object param : (List<Object>) params) {
+              Object name = Struct.getprop(param, "name");
+              if (name instanceof String) {
+                match.put((String) name, "p1");
+              }
+            }
+          }
+          Object action = Struct.getprop(Struct.getprop(point, "select"), "$action", null);
+          if (action != null) {
+            match.put("$action", action);
+          }
+          try {
+            Object ent = e.getValue().invoke(probe, new Object[] {null});
+            return new Op(e.getValue(), ent.getClass().getMethod(opname, Map.class, Map.class),
+                match, Struct.getprop(body, "media", null));
+          }
+          catch (Exception ex) {
+            // an operation the entity does not expose cannot be driven
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  // No such operation is a visible skip, which prints no content line.
+  static Op binaryOrSkip() {
+    Op op = binaryOp();
+    if (op == null) {
+      System.out.println("clean: skipped: " + NO_BINARY_OP);
+    }
+    assumeTrue(op != null, NO_BINARY_OP);
+    return op;
+  }
+
+  // What the transport was handed, as text.
+  static String sentText(Object body) throws Exception {
+    if (body instanceof InputStream) {
+      body = ((InputStream) body).readAllBytes();
+    }
+    return body instanceof byte[]
+        ? new String((byte[]) body, StandardCharsets.UTF_8) : String.valueOf(body);
+  }
+
+  static Object body(Object record) {
+    Map<String, Object> m = Helpers.toMapAny(record);
+    return m == null ? null : m.get("body");
   }
 
   static Exception drive(${sdk} sdk, Op op, Map<String, Object> ctrl, List<Sink> sinks) {
@@ -876,6 +1023,133 @@ public class CleanTest {
       assertTrue(text.contains(CANARY_APIKEY)
           || text.contains(base64(CANARY_APIKEY + ":" + CANARY_SECRET)),
           "the raw spec should carry the credential when clean is off");
+    }
+  }
+
+  @Test
+  public void noBodyOfBytesLeavesTheSdkInAnyForm() throws Exception {
+    Op op = binaryOrSkip();
+
+    List<Sink> sinks = new ArrayList<>();
+    Map<String, Object> sent = new LinkedHashMap<>();
+    Map<String, Exception> errors = new LinkedHashMap<>();
+    Map<String, Map<String, Object>> explains = new LinkedHashMap<>();
+
+    Handler handler = capture(sinks);
+    try {
+      for (Map.Entry<String, Supplier<Object>> carrier : CARRIERS.entrySet()) {
+        for (Scenario scenario : SCENARIOS.subList(0, 4)) {
+          for (String variant : List.of("throw", "explain", "nothrow")) {
+            String key = carrier.getKey() + "/" + scenario.name + "/" + variant;
+            // The transport is where the bytes are meant to arrive, whole.
+            Scenario seen = new Scenario(scenario.name, (ctx, url, fetchdef) -> {
+              sent.put(key, fetchdef.get("body"));
+              return scenario.respond.fetch(ctx, url, fetchdef);
+            });
+            Map<String, Object> ctrl = new LinkedHashMap<>();
+            if (!"throw".equals(variant)) {
+              ctrl.put("explain", new LinkedHashMap<String, Object>());
+            }
+            if ("nothrow".equals(variant)) {
+              ctrl.put("throw", false);
+            }
+            ${sdk} sdk = makeSdk(seen, sinks, null);
+            Exception err = drive(sdk, op.with(jm("$body", carrier.getValue().get())), ctrl, sinks);
+            if (err != null) {
+              errors.put(key, err);
+            }
+            if (ctrl.get("explain") != null) {
+              explains.put(key, (Map<String, Object>) ctrl.get("explain"));
+            }
+            forms(sinks, "sdk", sdk);
+          }
+        }
+      }
+    }
+    finally {
+      release(handler);
+    }
+
+    List<String> leaked = new ArrayList<>();
+    for (Sink s : sinks) {
+      List<String> found = contentLeaks(s.text);
+      if (!found.isEmpty()) {
+        leaked.add(s.name + " [" + String.join(", ", found) + "]");
+      }
+    }
+
+    System.out.println("clean: content swept " + sinks.size() + " surface(s), "
+        + leaked.size() + " leak(s)");
+
+    assertEquals(0, leaked.size(), "a body of bytes leaked through: " + String.join("; ", leaked));
+
+    // The positive half: where the body was, what describes it now is, and
+    // the request is untouched. A stream is read into bytes before the
+    // request is built, so its body is described as bytes too.
+    Map<String, Object> desc =
+        jm("binary$", "bytes", "size", CONTENT_BYTES.length, "type", op.media);
+    for (String carrier : CARRIERS.keySet()) {
+      assertEquals(CONTENT, sentText(sent.get(carrier + "/notfound/throw")),
+          carrier + ": the transport was handed something else");
+      Exception failed = errors.get(carrier + "/notfound/throw");
+      assertTrue(failed instanceof SdkError,
+          carrier + ": the 404 scenario must throw the SDK error: " + failed);
+      assertEquals(desc, body(((SdkError) failed).spec), carrier + ": the thrown spec");
+      assertEquals(CONTENT, sentText(((SdkError) failed).ctx().spec.body),
+          carrier + ": the live request was changed");
+      Map<String, Object> explained = explains.get(carrier + "/ok/explain");
+      assertNotNull(explained, carrier + ": the explain record");
+      assertEquals(desc, body(explained.get("spec")), carrier + ": the explain record");
+      assertEquals(desc, body(explained.get("fetchdef")), carrier + ": the explained fetch");
+    }
+
+    // By type, wherever it sits and whatever the operation: a stream is
+    // described without being read, and a sensitive name still masks.
+    Map<String, Object> bytes = jm("binary$", "bytes", "size", CONTENT_BYTES.length);
+    ${sdk} probe = makeSdk(SCENARIOS.get(0), new ArrayList<>(), null);
+    InputStream unread = new ByteArrayInputStream(CONTENT_BYTES);
+    assertEquals(
+        jm("upload", jm("binary$", "stream"), "parts", List.of(bytes), "token", MASK),
+        probe.getUtility().clean.apply(probe.getRootCtx(), jm("upload", unread,
+            "parts", List.of(CONTENT_BYTES.clone()), "token", CONTENT_BYTES.clone())));
+    assertEquals(CONTENT_BYTES.length, unread.available(), "clean read from the stream");
+
+    // An error is cleaned in place, and what it holds is described.
+    SdkError held = new SdkError("held", "upload failed", null);
+    held.spec = jm("body", CONTENT_BYTES.clone());
+    held.result = CONTENT_BYTES.clone();
+    assertTrue(held == probe.getUtility().clean.apply(probe.getRootCtx(), held));
+    assertEquals(jm("body", bytes), held.spec);
+    assertEquals(bytes, held.result);
+
+    // By the model: the body is described wherever it sits in what is
+    // cleaned, other text stays, and a string cleaned alone stays a string.
+    Context opctx = ((SdkError) errors.get("String/notfound/throw")).ctx();
+    assertEquals(jm("held", List.of(desc), "note", "kept"),
+        opctx.utility.clean.apply(opctx, jm("held", List.of(CONTENT), "note", "kept")));
+    assertEquals(CONTENT, opctx.utility.clean.apply(opctx, CONTENT));
+    assertEquals(jm("held", CONTENT),
+        probe.getUtility().clean.apply(probe.getRootCtx(), jm("held", CONTENT)));
+  }
+
+  @Test
+  public void theSweepCanSeeABodyCleanSwitchedOffShowsTheBytes() {
+    Op op = binaryOrSkip();
+
+    for (Map.Entry<String, Supplier<Object>> carrier : CARRIERS.entrySet()) {
+      List<Sink> sinks = new ArrayList<>();
+      ${sdk} sdk = makeSdk(SCENARIOS.get(1), sinks, jm("active", false));
+      Exception err = drive(sdk, op.with(jm("$body", carrier.getValue().get())),
+          new LinkedHashMap<>(), sinks);
+      assertNotNull(err, carrier.getKey() + ": the 404 scenario must throw");
+      int leaked = 0;
+      for (Sink s : sinks) {
+        if (!contentLeaks(s.text).isEmpty()) {
+          leaked++;
+        }
+      }
+      assertTrue(0 < leaked,
+          carrier.getKey() + ": with clean off, nothing showed the bytes: the sweep is blind");
     }
   }
 

@@ -1,6 +1,7 @@
 package SCALAPACKAGE.utility
 
-import java.io.{PrintWriter, StringWriter}
+import java.io.{InputStream, PrintWriter, Reader, StringWriter}
+import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.util.{ArrayList, Base64, IdentityHashMap, LinkedHashMap, List => JList, Map => JMap}
 import SCALAPACKAGE.core._
@@ -33,6 +34,16 @@ object Clean {
   private val CIRCULAR = "[circular]"
   private val DROP = new Object()
   private val SPLIT_RE = "\\s*,\\s*"
+
+  // The key of what stands in for a body of bytes; its value is the kind.
+  private val BINARY = "binary$"
+
+  // The live request body of a point the model marks binary, and its type.
+  private final class BinaryBody(val live: List[Object], val media: String) {
+    // The same object, or for a string an equal one.
+    def holds(v: Object): Boolean =
+      live.exists(b => (b eq v) || (v.isInstanceOf[String] && v == b))
+  }
 
   private def normkey(key: Object): String =
     String.valueOf(key).toLowerCase.replace("-", "").replace("_", "")
@@ -167,6 +178,79 @@ object Clean {
     sw.toString
   }
 
+  // The UTF-8 length a string is sent with, counted rather than encoded.
+  private def utf8Length(text: String): Int = {
+    var n = 0
+    var i = 0
+    while (i < text.length) {
+      val c = text.charAt(i)
+      if (c < 0x80) {
+        n += 1
+      } else if (c < 0x800) {
+        n += 2
+      } else if (!Character.isSurrogate(c)) {
+        n += 3
+      } else if (Character.isHighSurrogate(c) && i + 1 < text.length &&
+          Character.isLowSurrogate(text.charAt(i + 1))) {
+        n += 4
+        i += 1
+      } else {
+        // An unpaired half is sent as one replacement byte.
+        n += 1
+      }
+      i += 1
+    }
+    n
+  }
+
+  // A string shorter than the registry accepts is not told from ordinary text.
+  private def binaryBody(ctx: Context, cfg: CleanConfig): BinaryBody = {
+    if (ctx == null) return null
+    val body = Struct.getprop(ctx.point, "body")
+    if ("raw" != Struct.getprop(body, "kind") ||
+        java.lang.Boolean.TRUE != Struct.getprop(body, "binary")) {
+      return null
+    }
+    def isBody(v: Object): Boolean = v match {
+      case null => false
+      case s: String => cfg.min <= s.length
+      case _ => true
+    }
+    var live: List[Object] = Nil
+    if (ctx.spec != null && isBody(ctx.spec.body)) live = live :+ ctx.spec.body
+    val raw = if (ctx.reqdata == null) null else ctx.reqdata.get(Media.RawBody)
+    if (isBody(raw)) live = live :+ raw
+    if (live.isEmpty) return null
+    new BinaryBody(live, Struct.getprop(body, "media") match { case s: String => s; case _ => null })
+  }
+
+  // Bytes are described, never copied (ADR-006): the kind, and the size and
+  // media type where they are known. A string is bytes only as the body of a
+  // point the model marks binary. Null for a value that is not bytes.
+  private def describeBinary(v: Object, bin: BinaryBody): JMap[String, Object] = {
+    val declared = bin != null && bin.holds(v)
+    val desc = new LinkedHashMap[String, Object]()
+
+    v match {
+      case s: String =>
+        if (!declared) return null
+        desc.put(BINARY, "bytes")
+        desc.put("size", java.lang.Integer.valueOf(utf8Length(s)))
+      case b: Array[Byte] =>
+        desc.put(BINARY, "bytes")
+        desc.put("size", java.lang.Integer.valueOf(b.length))
+      case b: ByteBuffer =>
+        desc.put(BINARY, "bytes")
+        desc.put("size", java.lang.Integer.valueOf(b.remaining()))
+      case _: InputStream | _: Reader =>
+        desc.put(BINARY, "stream")
+      case _ => return null
+    }
+
+    if (declared && bin.media != null) desc.put("type", bin.media)
+    desc
+  }
+
   // The SDK's own objects have no serialisation hook, so this is the record
   // each one leaves as. The context stays raw on the error and is not here.
   private def record(v: Object): JMap[String, Object] = {
@@ -234,12 +318,15 @@ object Clean {
 
   // A masked plain-data copy: functions dropped, cycles cut, and nothing
   // shared with the live value, whose spec must stay raw.
-  private def snapshot(cfg: CleanConfig, v: Object, key: Object, depth: Int,
+  private def snapshot(cfg: CleanConfig, bin: BinaryBody, v: Object, key: Object, depth: Int,
       seen: IdentityHashMap[Object, Object]): Object = {
     if (v == null || (v eq Struct.UNDEF)) return v
 
     v match {
-      case s: String => return if (sensitiveKey(cfg, key)) maskValue(cfg, s) else cleanString(cfg, s)
+      case s: String =>
+        if (sensitiveKey(cfg, key)) return maskValue(cfg, s)
+        val described = describeBinary(s, bin)
+        return if (described != null) described else cleanString(cfg, s)
       case _ =>
     }
 
@@ -255,6 +342,9 @@ object Clean {
 
     if (sensitiveKey(cfg, key)) return cfg.mask
 
+    val desc = describeBinary(v, bin)
+    if (desc != null) return desc
+
     seen.put(v, v)
     try {
       v match {
@@ -263,27 +353,27 @@ object Clean {
           var i = 0
           val it = l.asInstanceOf[JList[Object]].iterator()
           while (it.hasNext) {
-            val s = snapshot(cfg, it.next(), java.lang.Integer.valueOf(i), depth + 1, seen)
+            val s = snapshot(cfg, bin, it.next(), java.lang.Integer.valueOf(i), depth + 1, seen)
             if (s ne DROP) out.add(s)
             i += 1
           }
           out
-        case m: JMap[_, _] => plain(cfg, m, depth, seen)
+        case m: JMap[_, _] => plain(cfg, bin, m, depth, seen)
         case _: Throwable | _: Spec | _: Result | _: Response | _: Operation | _: Context | _: Entity =>
-          plain(cfg, record(v), depth, seen)
+          plain(cfg, bin, record(v), depth, seen)
         case _ => cleanString(cfg, v.toString)
       }
     }
     finally seen.remove(v)
   }
 
-  private def plain(cfg: CleanConfig, m: JMap[_, _], depth: Int,
+  private def plain(cfg: CleanConfig, bin: BinaryBody, m: JMap[_, _], depth: Int,
       seen: IdentityHashMap[Object, Object]): JMap[String, Object] = {
     val out = new LinkedHashMap[String, Object]()
     val it = m.asInstanceOf[JMap[Object, Object]].entrySet().iterator()
     while (it.hasNext) {
       val e = it.next()
-      val s = snapshot(cfg, e.getValue, e.getKey, depth + 1, seen)
+      val s = snapshot(cfg, bin, e.getValue, e.getKey, depth + 1, seen)
       if (s ne DROP) out.put(cleanName(cfg, out, String.valueOf(e.getKey)), s)
     }
     out
@@ -299,17 +389,19 @@ object Clean {
     name + "#" + i
   }
 
-  private[utility] def cleanWith(cfg: CleanConfig, value: Object): Object = {
+  // With no context there is no operation's body to name: bytes go by type alone.
+  private[utility] def cleanWith(cfg: CleanConfig, value: Object, ctx: Context = null): Object = {
     if (!cfg.active) return value
 
     value match {
       case s: String => return cleanString(cfg, s)
       case err: SdkError =>
         // Cleaned in place, since it is about to be thrown.
+        val bin = binaryBody(ctx, cfg)
         err.msg = cleanString(cfg, err.msg)
         err.code = cleanString(cfg, err.code)
-        err.result = snapshot(cfg, err.result, "result", 1, new IdentityHashMap[Object, Object]())
-        err.spec = snapshot(cfg, err.spec, "spec", 1, new IdentityHashMap[Object, Object]())
+        err.result = snapshot(cfg, bin, err.result, "result", 1, new IdentityHashMap[Object, Object]())
+        err.spec = snapshot(cfg, bin, err.spec, "spec", 1, new IdentityHashMap[Object, Object]())
         return err
       // A throwable's message is fixed, so a foreign one leaves as a cleaned
       // copy of the SDK's own error, without the raw one as its cause.
@@ -318,11 +410,11 @@ object Clean {
       case _ =>
     }
 
-    val out = snapshot(cfg, value, null, 0, new IdentityHashMap[Object, Object]())
+    val out = snapshot(cfg, binaryBody(ctx, cfg), value, null, 0, new IdentityHashMap[Object, Object]())
     if (out eq DROP) null else out
   }
 
-  def clean(ctx: Context, v: Object): Object = cleanWith(cleanConfig(ctx), v)
+  def clean(ctx: Context, v: Object): Object = cleanWith(cleanConfig(ctx), v, ctx)
 
   def cleanKey(ctx: Context, key: Object): Boolean = sensitiveKey(cleanConfig(ctx), key)
 
@@ -363,6 +455,21 @@ object Clean {
     if (cleaned != null && (cleaned ne explain)) {
       explain.clear()
       explain.putAll(cleaned)
+    }
+  }
+
+  // Whether a named value is a secret: by its name, or by a registered value
+  // it holds. Answered with clean off too: a redirect asks, not a diagnostic.
+  def cleanSecret(ctx: Context, key: Object, value: Object): Boolean = {
+    val cfg = cleanConfig(ctx)
+    if (sensitiveKey(cfg, key)) return true
+    value match {
+      case text: String =>
+        val values = cfg.synchronized { new ArrayList[String](cfg.values) }
+        val it = values.iterator()
+        while (it.hasNext) if (text.contains(it.next())) return true
+        false
+      case _ => false
     }
   }
 }

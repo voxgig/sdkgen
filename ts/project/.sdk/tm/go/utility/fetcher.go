@@ -23,7 +23,7 @@ import (
 // fresh connection every call; a cached one pools like http.DefaultClient.
 var proxyClients sync.Map
 
-func clientFor(fetchdef map[string]any) *http.Client {
+func clientFor(ctx *core.Context, fetchdef map[string]any) *http.Client {
 	client := http.DefaultClient
 
 	if proxy, ok := fetchdef["proxy"].(string); ok && proxy != "" {
@@ -48,7 +48,7 @@ func clientFor(fetchdef map[string]any) *http.Client {
 
 	// A shallow copy shares the pooled Transport; only CheckRedirect differs.
 	policy := *client
-	policy.CheckRedirect = followRedirect
+	policy.CheckRedirect = followRedirect(ctx)
 	if redirect, ok := fetchdef["redirect"].(string); ok && redirect == "manual" {
 		policy.CheckRedirect = func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
@@ -60,13 +60,62 @@ func clientFor(fetchdef map[string]any) *http.Client {
 
 const maxRedirects = 5
 
-// Each redirect passes the GET-only guard before it is sent; past
-// maxRedirects hops the last 3xx is the answer.
-func followRedirect(req *http.Request, via []*http.Request) error {
-	if len(via) > maxRedirects {
-		return http.ErrUseLastResponse
+var credentialHeaders = []string{"authorization", "cookie", "proxy-authorization"}
+
+// What another origin is not sent: the names every client drops, and
+// whatever the SDK holds as a secret, by its name or by its value.
+func isCredential(ctx *core.Context, name string, value string) bool {
+	for _, fixed := range credentialHeaders {
+		if strings.EqualFold(fixed, name) {
+			return true
+		}
 	}
-	return getOnlyRefusal(req.URL.String(), req.Method)
+	return ctx != nil && ctx.Utility != nil && ctx.Utility.CleanSecret != nil &&
+		ctx.Utility.CleanSecret(ctx, name, value)
+}
+
+// Scheme, host and port; a URL that names no port is on its scheme's own.
+func originOf(u *url.URL) string {
+	scheme := strings.ToLower(u.Scheme)
+	port := u.Port()
+	if "" == port {
+		port = map[string]string{"http": "80", "https": "443"}[scheme]
+	}
+	return scheme + "://" + strings.ToLower(u.Hostname()) + ":" + port
+}
+
+// Each redirect passes the GET-only guard before it is sent; past
+// maxRedirects hops, or where a body would go on to another origin, the last
+// 3xx is the answer. net/http copies the first request's headers onto every
+// hop, its Authorization and Cookie too while the host is the same: so once
+// a chain has left its first origin, no request in it keeps a credential.
+func followRedirect(ctx *core.Context) func(req *http.Request, via []*http.Request) error {
+	return func(req *http.Request, via []*http.Request) error {
+		if len(via) > maxRedirects {
+			return http.ErrUseLastResponse
+		}
+
+		home := originOf(via[0].URL)
+		left := home != originOf(req.URL)
+		for _, sent := range via {
+			left = left || home != originOf(sent.URL)
+		}
+
+		if left {
+			if nil != req.Body && http.NoBody != req.Body {
+				return http.ErrUseLastResponse
+			}
+			// net/http adds a Referer naming the URL it came from, query and all.
+			req.Header.Del("Referer")
+			for name, values := range req.Header {
+				if isCredential(ctx, name, strings.Join(values, ", ")) {
+					delete(req.Header, name)
+				}
+			}
+		}
+
+		return getOnlyRefusal(req.URL.String(), req.Method)
+	}
 }
 
 const getOnlyEnv = "VOXGIG_GETONLY_GUARD"
@@ -91,7 +140,7 @@ func getOnlyRefusal(fullurl string, method string) error {
 		"[GET-ONLY GUARD] blocked "+method+" "+path, nil)
 }
 
-func defaultHTTPFetch(fullurl string, fetchdef map[string]any) (map[string]any, error) {
+func defaultHTTPFetch(ctx *core.Context, fullurl string, fetchdef map[string]any) (map[string]any, error) {
 	method, _ := fetchdef["method"].(string)
 	if method == "" {
 		method = "GET"
@@ -140,7 +189,7 @@ func defaultHTTPFetch(fullurl string, fetchdef map[string]any) (map[string]any, 
 		}
 	}
 
-	resp, err := clientFor(fetchdef).Do(req)
+	resp, err := clientFor(ctx, fetchdef).Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -234,7 +283,7 @@ func fetcherUtil(ctx *core.Context, fullurl string, fetchdef map[string]any) (an
 	sysFetch := vs.GetPath(options, []any{"system", "fetch"})
 
 	if sysFetch == nil {
-		return defaultHTTPFetch(fullurl, fetchdef)
+		return defaultHTTPFetch(ctx, fullurl, fetchdef)
 	}
 
 	if fetchFunc, ok := sysFetch.(func(string, map[string]any) (map[string]any, error)); ok {

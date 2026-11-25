@@ -1,5 +1,12 @@
 
+import Fs from 'node:fs'
+
+import { Aontu } from 'aontu'
 import { KIT, getModelPath } from '@voxgig/apidef'
+
+import { definitionPathAny, migrateIncludes } from './definition'
+import { scaffoldFolder } from './shipped'
+import { resolvesBundled } from '../action/resolve'
 
 
 function tags(val: any): string[] {
@@ -23,9 +30,22 @@ function featureApplies(feature: any, target: any): boolean {
     return true
   }
 
-  const provides = tags(target && target.provides)
+  const provides = providedBy(target)
 
   return needs.every((need: string) => provides.includes(need))
+}
+
+
+// An add keeps an alias's own model file, so one that declares no `provides`
+// takes its origin's.
+function providedBy(target: any): string[] {
+  const own = target?.provides
+  const origin = target?.origname
+  if ((null != own && 0 < Object.keys(own).length) || 'string' !== typeof origin ||
+    '' === origin || origin === target.name || !resolvesBundled(target, target.name)) {
+    return tags(own)
+  }
+  return shippedProvides(origin)
 }
 
 
@@ -53,6 +73,27 @@ function targetFeatures(model: any, target: any): Record<string, any> {
 }
 
 
+const shipped = new Map<string, string[]>()
+
+// The tags this package's own copy of a target provides; a project's older
+// copy of the same target may lack them.
+function shippedProvides(origin: string): string[] {
+  if (!shipped.has(origin)) {
+    const path = definitionPathAny(Fs, scaffoldFolder(), 'target', origin)
+    let provides: string[] = []
+    if (Fs.existsSync(path)) {
+      const errs: any[] = []
+      const model = new Aontu().generate(migrateIncludes(Fs.readFileSync(path, 'utf8')), { path, errs })
+      if (0 === errs.length) {
+        provides = tags(model?.main?.[KIT]?.target?.[origin]?.provides)
+      }
+    }
+    shipped.set(origin, provides)
+  }
+  return shipped.get(origin) as string[]
+}
+
+
 const TAGS = [
   // A vendored sekreto port lives in this target's feature container.
   'sekreto',
@@ -69,6 +110,8 @@ function unknownTags(val: any): string[] {
 
 export {
   featureApplies,
+  providedBy,
+  shippedProvides,
   targetFeatures,
   tags as featureTags,
   unknownTags,

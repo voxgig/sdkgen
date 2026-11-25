@@ -12,8 +12,8 @@ import {
 // The canary sweep: every credential slot holds a distinctive value, every
 // diagnostic feature this SDK ships is switched on with a capturing sink, a
 // real operation runs through every outcome, and every string that leaves
-// the SDK is searched for the canaries and their encoded forms. It also
-// proves its own sensitivity: with clean switched off the canary MUST show.
+// is searched for the canaries and their encoded forms; a second sweep does
+// the same for a body of bytes. With clean off the canary MUST show.
 const TestClean = cmp(function TestClean(props: any) {
   const { model } = props.ctx$
 
@@ -60,6 +60,24 @@ for (const v of Object.values(CANARY)) {
 }
 FORMS.push(Buffer.from(CANARY.apikey + ':' + CANARY.secret).toString('base64'))
 
+// The marker a body of bytes carries, short enough that inspect prints all of it.
+const CONTENT = 'CANARY-CONTENT-b7n3v9x1c5'
+const CONTENT_BYTES = [...Buffer.from(CONTENT)]
+
+// The marker a response of bytes carries, as a transport that read the
+// body into text hands it on.
+const RESPONSE = 'CANARY-RESPONSE-k2m8q4w6z0'
+
+// Every value this SDK accepts as a raw body.
+const CARRIERS: Record<string, () => any> = {
+  Uint8Array: () => new Uint8Array(CONTENT_BYTES),
+  Buffer: () => Buffer.from(CONTENT_BYTES),
+  ArrayBuffer: () => new Uint8Array(CONTENT_BYTES).buffer,
+  Blob: () => new Blob([new Uint8Array(CONTENT_BYTES)]),
+  stream: () => new Blob([new Uint8Array(CONTENT_BYTES)]).stream(),
+  string: () => CONTENT,
+}
+
 
 type Sink = { name: string, text: string }
 
@@ -75,6 +93,20 @@ function header(map: any, name: string): any {
 
 function leaks(text: string): string[] {
   return FORMS.filter((f) => text.includes(f))
+}
+
+
+// The forms bytes travel in once copied: text, a list of byte values (also
+// keyed by index, as a typed array copies), hex, base64.
+function contentLeaks(text: string, marker = CONTENT): string[] {
+  const flat = text.replace(/\\s+/g, '')
+  const values = flat.replace(/["']\\d+["']:/g, '')
+  const found: string[] = []
+  if (text.includes(marker)) found.push('text')
+  if (values.includes([...Buffer.from(marker)].join(','))) found.push('byte values')
+  if (flat.includes(Buffer.from(marker).toString('hex'))) found.push('hex')
+  if (flat.includes(Buffer.from(marker).toString('base64'))) found.push('base64')
+  return found
 }
 
 
@@ -123,6 +155,21 @@ function response(status: number, data: any, headers?: Record<string, string>): 
     statusText: status < 400 ? 'OK' : 'ERR',
     json: async () => data,
     text: async () => JSON.stringify(data),
+    headers: {
+      get(key: string) { return h[String(key).toLowerCase()] },
+      forEach(cb: any) { Object.keys(h).forEach((k) => cb(h[k], k, this)) },
+    },
+  }
+}
+
+// A response of bytes under the type it declares, read into text.
+function bytesResponse(status: number, type: string): any {
+  const h: Record<string, string> = { 'content-type': type }
+  return {
+    status,
+    statusText: status < 400 ? 'OK' : 'ERR',
+    body: RESPONSE,
+    text: async () => RESPONSE,
     headers: {
       get(key: string) { return h[String(key).toLowerCase()] },
       forEach(cb: any) { Object.keys(h).forEach((k) => cb(h[k], k, this)) },
@@ -246,6 +293,34 @@ async function usableOp(): Promise<Target | null> {
 }
 
 
+// The first operation with a point that sends a raw body the model marks
+// binary, with every path parameter of that point filled in.
+function binaryOp(): (Target & { media: string }) | null {
+  const plain = construct({ apikey: CANARY.apikey })
+  const entities: Record<string, any> = plain._rootctx.config.entity || {}
+  for (const m of Object.getOwnPropertyNames(Object.getPrototypeOf(plain)).sort()) {
+    if (!/^[A-Z]/.test(m) || 'function' !== typeof plain[m]) { continue }
+    let inst: any
+    try { inst = plain[m]() } catch (_e) { continue }
+    if (null == inst || 'string' !== typeof inst.name || null == entities[inst.name]) { continue }
+    const opdefs = entities[inst.name].op || {}
+    for (const op of Object.keys(opdefs).sort()) {
+      for (const point of opdefs[op].points || []) {
+        if ('raw' !== point?.body?.kind || true !== point.body.binary) { continue }
+        const match: any = {}
+        for (const p of point?.args?.params || []) {
+          if ('string' === typeof p?.name) match[p.name] = 'p1'
+        }
+        const action = point?.select?.$action
+        if (null != action) match.$action = action
+        return { accessor: m, op, match, media: point.body.media }
+      }
+    }
+  }
+  return null
+}
+
+
 // A feature that throws from inside the pipeline, quoting the request it
 // saw: an error makeError never handled.
 class ThrowFeature extends BaseFeature {
@@ -290,14 +365,14 @@ class StreamOkFeature extends BaseFeature {
 }
 
 
-async function drive(sdk: any, target: Target, ctrl: any, sinks: Sink[]) {
+async function drive(sdk: any, target: Target, ctrl: any, sinks: Sink[], data?: any) {
   // A caller may keep the record it passed rather than read ctrl.explain.
   const held = ctrl.explain
   const entity = sdk[target.accessor]()
   let out: any = undefined
   let err: any = undefined
   try {
-    out = await entity[target.op]({ ...target.match }, ctrl)
+    out = await entity[target.op]({ ...target.match, ...(data || {}) }, ctrl)
   }
   catch (e: any) {
     err = e
@@ -498,6 +573,145 @@ describe('clean', () => {
         text.includes(Buffer.from(CANARY.apikey + ':' + CANARY.secret).toString('base64')),
         'the raw spec should carry the credential when clean is off')
     }
+  })
+
+
+  test('no body of bytes leaves the SDK in any form', async (t) => {
+    const target = binaryOp()
+    if (null == target) {
+      return t.skip('no operation of this SDK sends a binary body; nothing to sweep')
+    }
+
+    const sinks: Sink[] = []
+    const sent: Record<string, any> = {}
+    const errors: Record<string, any> = {}
+    const explains: Record<string, any> = {}
+
+    for (const [carrier, make] of Object.entries(CARRIERS)) {
+      for (const scenario of SCENARIOS.slice(0, 4)) {
+        for (const variant of [
+          { name: 'throw', ctrl: () => ({}) },
+          { name: 'explain', ctrl: () => ({ explain: {} }) },
+          { name: 'nothrow', ctrl: () => ({ throw: false, explain: {} }) },
+        ]) {
+          const key = carrier + '/' + scenario.name + '/' + variant.name
+          // The transport is where the bytes are meant to arrive, whole.
+          const seen: Scenario = { name: scenario.name, respond: (url, fetchdef, ctx) => {
+            sent[key] = fetchdef.body
+            return scenario.respond(url, fetchdef, ctx)
+          } }
+          const sdk = makeSdk(seen, sinks)
+          const ctrl: any = variant.ctrl()
+          const err = await drive(sdk, target, ctrl, sinks, { $body: make() })
+          if (null != err) errors[key] = err
+          if (null != ctrl.explain) explains[key] = ctrl.explain
+          sinks.push(...forms('sdk', sdk))
+        }
+      }
+    }
+
+    const leaked = sinks
+      .map((s) => ({ name: s.name, found: contentLeaks(s.text) }))
+      .filter((s) => 0 < s.found.length)
+
+    console.log('clean: content swept ' + sinks.length + ' surface(s), ' + leaked.length + ' leak(s)')
+
+    equal(leaked.length, 0, 'a body of bytes leaked through: ' +
+      leaked.map((l) => l.name + ' [' + l.found.join(', ') + ']').join('; '))
+
+    // The request itself is untouched: what the transport was handed is the body.
+    for (const carrier of Object.keys(CARRIERS)) {
+      const body = sent[carrier + '/notfound/throw']
+      ok(null != body, carrier + ': the transport was not handed a body')
+      const text = 'string' === typeof body ? body : Buffer.from(
+        body instanceof Blob ? await body.arrayBuffer() :
+          ArrayBuffer.isView(body) ? body.buffer.slice(body.byteOffset, body.byteOffset + body.byteLength) :
+            body).toString()
+      equal(text, CONTENT, carrier + ': the transport was handed something else')
+    }
+
+    // The positive half: where the body was, what describes it now is.
+    const desc = { binary$: 'bytes', size: CONTENT_BYTES.length, type: target.media }
+    for (const carrier of ['Uint8Array', 'Buffer', 'ArrayBuffer', 'Blob', 'string']) {
+      const failed = errors[carrier + '/notfound/throw']
+      ok(null != failed, carrier + ': the 404 scenario must throw')
+      deepStrictEqual(failed.spec.body, desc, carrier + ': the thrown spec')
+      deepStrictEqual(explains[carrier + '/ok/explain']?.spec?.body, desc, carrier + ': the explain record')
+    }
+    deepStrictEqual(errors['stream/notfound/throw']?.spec?.body, { binary$: 'stream', type: target.media })
+  })
+
+
+  test('the sweep can see a body: clean switched off shows the bytes', async (t) => {
+    const target = binaryOp()
+    if (null == target) {
+      return t.skip('no operation of this SDK sends a binary body; nothing to sweep')
+    }
+
+    for (const [carrier, make] of Object.entries(CARRIERS)) {
+      if ('Blob' === carrier || 'stream' === carrier) { continue }
+      const sinks: Sink[] = []
+      const sdk = makeSdk(SCENARIOS[1], sinks, { active: false })
+      const err = await drive(sdk, target, {}, sinks, { $body: make() })
+      ok(null != err, carrier + ': the 404 scenario must throw')
+      const leaked = sinks.filter((s) => 0 < contentLeaks(s.text).length)
+      ok(0 < leaked.length, carrier + ': with clean off, nothing showed the bytes: the sweep is blind')
+    }
+  })
+
+
+  test('no response of bytes leaves the SDK in any form', async (t) => {
+    const target = await usableOp()
+    if (null == target) {
+      return t.skip('no operation of this SDK completes against a plain 200; nothing to sweep')
+    }
+
+    const sinks: Sink[] = []
+    const errors: Record<string, any> = {}
+
+    for (const status of [200, 404, 500]) {
+      for (const variant of [
+        { name: 'throw', ctrl: () => ({}) },
+        { name: 'explain', ctrl: () => ({ explain: {} }) },
+        { name: 'nothrow', ctrl: () => ({ throw: false, explain: {} }) },
+      ]) {
+        const scenario = { name: 'bytes', respond: () => bytesResponse(status, 'audio/wav') }
+        const sdk = makeSdk(scenario, sinks)
+        const err = await drive(sdk, target, variant.ctrl(), sinks)
+        if (null != err) errors[status + '/' + variant.name] = err
+        sinks.push(...forms('sdk', sdk))
+      }
+    }
+
+    const leaked = sinks
+      .map((s) => ({ name: s.name, found: contentLeaks(s.text, RESPONSE) }))
+      .filter((s) => 0 < s.found.length)
+
+    console.log('clean: response swept ' + sinks.length + ' surface(s), ' + leaked.length + ' leak(s)')
+
+    equal(leaked.length, 0, 'a response of bytes leaked through: ' +
+      leaked.map((l) => l.name + ' [' + l.found.join(', ') + ']').join('; '))
+
+    // The failure still names what it could not read.
+    const failed = errors['200/throw']
+    ok(null != failed, 'a response of bytes must fail the operation')
+    equal(failed.code, 'response_content_type')
+    ok(String(failed.message).includes('audio/wav'), 'the error does not name the type: ' + failed.message)
+  })
+
+
+  test('the sweep can see a response: clean switched off shows the bytes', async (t) => {
+    const target = await usableOp()
+    if (null == target) {
+      return t.skip('no operation of this SDK completes against a plain 200; nothing to sweep')
+    }
+
+    const sinks: Sink[] = []
+    const scenario = { name: 'bytes', respond: () => bytesResponse(200, 'audio/wav') }
+    const err = await drive(makeSdk(scenario, sinks, { active: false }), target, {}, sinks)
+    ok(null != err, 'a response of bytes must fail the operation')
+    const leaked = sinks.filter((s) => 0 < contentLeaks(s.text, RESPONSE).length)
+    ok(0 < leaked.length, 'with clean off, nothing showed the response: the sweep is blind')
   })
 })
 `

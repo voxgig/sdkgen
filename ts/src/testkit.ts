@@ -14,6 +14,11 @@ import { ACTION_MAP } from './action/dispatch'
 
 import { KIT } from './types'
 
+import type { ExternalOverride } from './helpers/placement'
+
+import { textGuard } from './helpers/textguard'
+import type { TextFinding, TextGuardOptions } from './helpers/textguard'
+
 
 // This package's own root — `<...>/node_modules/@voxgig/sdkgen` for a
 // consumer, or the checkout when sdkgen tests itself. Computed from this
@@ -394,9 +399,17 @@ type GenerateOptions = {
 
   root?: any
 
+  // The root documents (README, AGENTS.md, LICENSE and the rest), written as
+  // the standard Root writes them when the model's top phase is on. Off by
+  // default, so a package's suite sees only its targets' files.
+  top?: boolean
+
   allowPlaceholder?: (path: string, token: string) => boolean
 
   outside?: string[]
+
+  // Generate's `external` option: SDKGEN_EXTERNAL for this call alone.
+  external?: Record<string, ExternalOverride>
 }
 
 
@@ -439,6 +452,7 @@ async function generateInto(
     folder: consumer.root,
     root: '',
     pino: consumer.log,
+    external: opts.external,
   })
 
   const prevcwd = process.cwd()
@@ -448,7 +462,7 @@ async function generateInto(
   try {
     res = await sdkgen.generate({
       model: opts.model,
-      root: opts.root ?? defaultRoot(),
+      root: opts.root ?? defaultRoot({ top: opts.top }),
     })
   }
   finally {
@@ -562,10 +576,11 @@ function layeredFs(mem: any): any {
 }
 
 
-function defaultRoot(): any {
+function defaultRoot(opts: { top?: boolean } = {}): any {
   const { cmp, each, names, Project, Folder } = require('jostraca')
   const {
-    Main, Entity, Feature, Test, Readme, AgentGuide, SdkGenError,
+    Main, Entity, Feature, Test, Readme, AgentGuide, fact,
+    ReadmeTop, AgentGuideTop, License, Security, Changelog, Deploy, PublishWorkflow,
   } = require('./sdkgen')
 
   return cmp(function Root(props: any) {
@@ -580,27 +595,31 @@ function defaultRoot(): any {
     ctx$.stdrep = ctx$.stdrep || {}
     names(ctx$.stdrep, model.Name, 'Project' + 'Name')
 
-    const target = model.main[KIT].target || {}
-    const feature = model.main[KIT].feature || {}
-    const entity = model.main[KIT].entity || {}
+    const kit = model.main[KIT]
+    const target = kit.target || {}
+    const feature = kit.feature || {}
+    const entity = kit.entity || {}
 
     const active = each(target).filter((t: any) => t && false !== t.active)
 
-    const atRoot = active.filter((t: any) => true === t.output?.root)
-    if (1 < atRoot.length) {
-      throw new SdkGenError('Only one target can be generated at the ' +
-        'project root: ' + atRoot.map((t: any) => t.name).join(', '))
-    }
-
     Project({}, () => {
+      if (true === opts.top && fact(kit, 'top')) {
+        ReadmeTop({})
+        AgentGuideTop({})
+        License({})
+        Security({})
+        Changelog({})
+        Deploy({})
+        PublishWorkflow({})
+      }
+
       active.map((t: any) => {
         names(t, t.name)
 
-        const phase = t.phase || {}
-        const on = (n: string) => false !== (phase[n] && phase[n].active)
+        const phase = fact(t, 'phase')
 
         const phases = () => {
-          if (on('entity')) {
+          if (phase.entity) {
             each(entity)
               .filter((e: any) => e && false !== e.active)
               .map((e: any) => {
@@ -609,7 +628,7 @@ function defaultRoot(): any {
               })
           }
 
-          if (on('feature')) {
+          if (phase.feature) {
             each(feature)
               .filter((f: any) => f && f.active)
               .map((f: any) => {
@@ -620,12 +639,12 @@ function defaultRoot(): any {
 
           Main({ target: t })
 
-          if (on('readme')) Readme({ target: t })
-          if (on('agentguide')) AgentGuide({ target: t })
-          if (on('test')) Test({ target: t })
+          if (phase.readme) Readme({ target: t })
+          if (phase.agentguide) AgentGuide({ target: t })
+          if (phase.test) Test({ target: t })
         }
 
-        if (true === t.output?.root) {
+        if ('root' === fact(t, 'place')) {
           phases()
         }
         else {
@@ -650,6 +669,8 @@ export type {
   StageOptions,
   GenerateOptions,
   GenerateResult,
+  TextFinding,
+  TextGuardOptions,
 }
 
 export {
@@ -659,4 +680,5 @@ export {
   stageConsumer,
   generateInto,
   manifestParity,
+  textGuard,
 }

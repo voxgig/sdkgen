@@ -260,11 +260,14 @@ describe('routing: the fallback takes a route the call can fill', () => {
     })
 
 
-    test(lang + ': a lone action route is taken without one', () => {
+    test(lang + ': a lone action route is refused without its action', () => {
       const list = points('signal', 'list', [
         { m: 'GET', o: '/signal/strong', s: seg('/signal/strong'), g: {}, q: { exist: [], $action: 'strong' }, t: TRANSFORM },
       ])
-      strictEqual((call(lang, 'list', list, {}) as any).path, '/signal/strong')
+      const err: any = call(lang, 'list', list, {})
+      ok(err instanceof Error, 'a request was built: ' + JSON.stringify(err))
+      strictEqual((err as any).code, 'point_action_required')
+      strictEqual((call(lang, 'list', list, { $action: 'strong' }) as any).path, '/signal/strong')
     })
 
 

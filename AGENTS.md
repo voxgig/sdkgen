@@ -258,6 +258,34 @@ Full explanation: [components-and-templates](./docs/explanation/components-and-t
 
 ---
 
+## Facts are computed once, in the model; templates only read them
+
+A fact that generated text or code depends on (whether a feature is on by
+default, where a target is placed) is computed ONCE, by an aontu rule in
+`ts/model/fact.aontu`, and written into the model beside what it describes
+as `fact`: `feature.fact.on`, `target.fact.place`, `target.fact.phase`,
+`main.kit.fact.top`. `generate()` runs the rules
+(`applyFacts`, `ts/src/helpers/facts.ts`) after the name guards and before
+Root, so every component, every pack and docgen read the same answer.
+
+- **A component reads a fact with `fact(node, name)` and never computes
+  one.** It may loop over facts and branch on them. A helper function that
+  derives a fact for a template is the pattern this replaces: add a rule.
+- **A missing fact fails loudly.** `fact` throws when the model did not pass
+  through `applyFacts` or lacks what the rule reads; a rule wraps each input
+  in `maybe()`, so a partial test model still evaluates.
+- **The rules run over the GENERATED model, not inside the project's
+  evaluation.** aontu's `filter` and `match` do not read a default inside a
+  map (`*'sdk' | string` reads as unknown), and the base model declares
+  nearly every setting that way. Several features a rule would want are
+  missing in aontu 0.76.3; until they ship, the fact pass works around
+  them, and `docs/design/` records which.
+- **A test that builds a model by hand passes it through `applyFacts`**, as
+  `test/generateharness.ts` and `test/agentguide.test.ts` do. A real
+  `generate()` and the testkit apply it themselves.
+
+---
+
 ## Entity operations return ENTITIES — a fundamental design
 
 **Every entity operation resolves to the Entity INSTANCE**, never to plain
@@ -453,6 +481,7 @@ Rules:
 | Change a feature's hooks / deps | `ts/project/.sdk/model/feature/<name>.aontu` | propagate |
 | Change the **generator core** (CLI, actions, neutral components, helpers) | `ts/src/…` | `cd ts && npm run build && npm test` |
 | Change the base model schema | `ts/model/sdkgen.aontu` (authoritative) | `make check-model build test` |
+| Add a **fact** generated text or code depends on | a rule in `ts/model/fact.aontu` | components read it with `fact(node, name)`; see [Facts are computed once](#facts-are-computed-once-in-the-model-templates-only-read-them) |
 | Add or retype an **SDK client option** | `main: kit: optspec` in `ts/model/sdkgen.aontu` | one place, not twenty: the generated `Schema` module carries it into every SDK target. No `make_options` template holds a spec of its own any more — if you find one, it is a regression |
 | Add or retype a **feature option** | that feature's `config.options` (with a default) or `config.optspec` (a type, for a callback or an option whose default understates it) | the option spec, the README table and the REFERENCE table all derive from these two — see `ts/src/helpers/optspec.ts` and `ts/src/cmp/FeatureDocs.ts` |
 | Add/remove a bundled target or feature | the trees above **and** `ts/project/sdkgen-package.json` | a guard test fails if the manifest and the directories disagree |
@@ -477,13 +506,17 @@ markers on toolchain bumps): [regeneration-overwrite](./docs/explanation/regener
 ```
 edit sdkgen template/component
   └─▶ (consumer .sdk/) npm run add-target <lang>   # copy updated files in
-       └─▶ npm run generate                         # substitute + merge into target dir
+       └─▶ npm run generate                         # substitute + overwrite target dir
 ```
 
-**Merge gotcha:** `generate` merges into existing files, and placeholder
-replacement (`ProjectName`, `GOMODULE`, …) is **not** re-applied to
-merged content. If you see a literal `ProjectName` in output, delete that
-generated file and re-run `generate` to recreate it fresh.
+**Generate overwrites; an add merges.** `generate` rewrites every file it
+generates, substituting the placeholders (`ProjectName`, `GOMODULE`, …) on
+every run, and deletes the files it generated before and no longer emits
+from the targets and phases that ran (`pruneGenerated`). `target add` and
+`feature add` merge toolchain updates into the project's edited copies under
+`.sdk/`, or overwrite them when the project sets `main: kit: copies:
+'overwrite'` (`copyMode`). The generated guides say both, from
+`regenerationStatement` and `copiesStatement` in `AgentGuideContent`.
 
 A PROJECT customises in its own `.sdk`, in this order: edit the template or
 component copy; else define a feature of its own (`.sdk/model/feature/`,
@@ -584,6 +617,46 @@ cd <project>/.sdk && npm run add-target <lang> && npm run generate
 cd ../<lang> && <lang-test-command>             # target builds + tests
 # re-run ts/js target tests too (reference parity)
 ```
+
+### `test/textguard.test.ts` — the documents under every single switch
+
+The text guard regenerates the documentation, with a docs-only Root that
+follows the plan facts, under every single-switch variation of the model:
+each target, feature, entity and operation removed, the empty and lone state
+of each kind, each auth and server shape, each document phase off, a target
+at the root and one out of tree. The variations come from the compiled
+fixture; none is listed by hand, and the fixture's entity names are opaque
+tokens so a mention scan cannot mistake `console` or `record` for prose. It
+reports:
+
+- `link`: a relative link, anchor or `cd` that does not resolve in what the
+  full Root writes for that variation (`.sdk/` counts too).
+- `off`: a line, in the run without X, that names X.
+- `parity`: an SDK target's section that does not read a fact (auth, servers)
+  its siblings read, from the model reads attributed to each component.
+- `reaction`: a prose line that left one target's document under a variation
+  and survives verbatim in a sibling's.
+- `marker`: a `$$path$$` that never fired, outside a code span.
+- `starts-off`: a sentence saying features start off ("inactive until",
+  "off by default", "opt-in") that covers a feature whose `fact.on` is true.
+  A sentence covers the features it names; with "other" or "rest", every
+  feature but those its paragraph names as on; else those its heading names;
+  else every feature the document's target carries.
+- `fence`: a code block in a target's documents tagged with another
+  language; data and shell blocks are neutral, and a consumer writes the
+  language of the target it wraps.
+
+Each finding is keyed on (relation, the chain of labelled components that
+wrote the line, cause) and must match a pin in `test/textguard-pins.json`,
+which carries a reason. A pin that matches nothing fails, so fixing a writer
+means deleting its pin. `npm test` runs `link` and `fence` on a fixed subset; `npm run
+textguard` runs the full matrix, which is a CI lane. `npm run
+textguard-update` rewrites the pins from what it finds, keeping each reason;
+a new pin reads `TODO` and fails until it has one.
+
+A finding keys on the writing component, so split a component that writes
+many sections into labelled ones (`ReadmeTop`, `AgentGuideTop`) rather than
+pinning its whole output.
 
 ### `test/generate.test.ts` — the component layer, generated for real
 
@@ -834,6 +907,21 @@ emitted broken source reached the fleet unchallenged.
   `main.kit.optspec`, once; `active: false` is the only opt-out. The sweep
   every SDK ships proves its own sensitivity by switching clean off and
   finding the canary — keep that negative control when porting.
+- **A body of bytes is DESCRIBED in a cleaned copy, never copied (ADR-006).**
+  `clean` used to copy one like any other value, so a failed upload carried
+  its file into the error, the explain record, the context a hook serialises
+  and the log. The copy now holds `{binary$, size, type}`, by two rules: a
+  value of a byte or stream type, wherever it sits; and the request body of
+  a point the model marks binary (`point.body` is `kind: raw` with
+  `binary: true`), WHATEVER carries it. The second is the only rule that can
+  see a string holding the bytes, which is the one carrier in lua, c, cpp,
+  zig, ocaml and elixir, so a port with the first rule alone protects
+  nothing there. A raw body the model does not mark binary is text and stays
+  data. `clean.active: false` switches this off with the rest; there is no
+  switch of its own. The sweep's content canary needs an operation that
+  sends a binary body: an SDK without one skips it, and the clean lanes add
+  one (`CLEAN_BINARY`) and require the
+  `clean: content swept N surface(s), 0 leak(s)` line.
 - **The HTTP status is on the error, not just in `err.result`.** `err.status`
   (-1 when there was no response) plus a `notFound` predicate, so a consumer
   never couples itself to the internal shape of `result`.
@@ -843,13 +931,19 @@ emitted broken source reached the fleet unchallenged.
   own route — never a custom action folded into `create`. Custom actions are
   reachable only through `$action`, so `ReadmeRef` documents them; an
   undocumented action is an endpoint no reader can call.
-- **A documented example in c, cpp, rust or zig must COMPILE.** Their ops
-  return entity handles, so an example that treats the result as a record is
-  a type error, and their own README suites only check structure.
-  `generatedcompile.test.ts` compiles every block in those languages from the
-  README, REFERENCE and root README against a generated SDK, under four
-  models that each lead with a different entity, since a quick start shows
-  the first. A section's numbered steps compile as one program.
+- **A documented example in c, cpp, rust, zig, ocaml, csharp, scala, swift
+  or clojure must COMPILE.** Their ops return entity handles, so an example
+  that treats the result as a record is a type error; a page that never
+  shows an import its blocks need (swift's `Foundation` for `ProcessInfo`,
+  clojure's `require` of an entity namespace) is one too; and their own
+  README suites only check structure. `generatedcompile.test.ts` compiles
+  every block in those languages from the README, REFERENCE and root README
+  against a generated SDK, under models that each lead with a different
+  entity, since a quick start shows the first. A section's numbered steps
+  compile as one program, and a block that calls a method the SDK lacks must
+  fail each lane naming the method, so a lane that compiled nothing cannot
+  pass. The lanes run where the toolchain is: csharp's and swift's on the
+  push runners, the rest in the nightly.
 - **A project decision belongs in the MODEL, never in a forked component.**
   `target add` merges updates into `.sdk/src/cmp/**`, `.sdk/tm/**` AND
   `.sdk/model/target/<t>.aontu`, and overwrites them in a project set to
@@ -899,7 +993,11 @@ emitted broken source reached the fleet unchallenged.
   scaffold holds a copy of. It says so in its own words rather than repeating
   the standard "move it into `.sdk/model/`", which names the place the file
   already is; `--force` is the only way past it. Do not "fix" one half to
-  match the other — they answer different questions.
+  match the other — they answer different questions. Because the add keeps
+  that file, a slot its origin gains later never reaches it: doctor names
+  each one in `aliasedBehind` (also outside `report.ok`), and
+  `featureApplies` reads the origin's `provides` for an alias of a bundled
+  target that declares none.
 - **Derive an env-var name with `envToken`/`envName`, never from the camel
   form.** `nom(model, 'Name').toUpperCase()` swallows a hyphen, so a slug like
   `voxgig-solardemo` produced BOTH `VOXGIG_SOLARDEMO_TEST_LIVE` and
@@ -934,8 +1032,8 @@ emitted broken source reached the fleet unchallenged.
   (`"paging"` in a context type, `"proxy"` in a fetcher), so widening the
   `featuresource.test.ts` guard to quoted names produces ~25 hits of which
   one is real. Declare it in `fullset` instead; a target that cannot be trimmed at all says
-  `feature: { trim: false }` (currently `clojure`, `lean`, `ocaml`,
-  `scala`, `zig` bundled, plus `lean` in the language pack — see their
+  `feature: { trim: false }` (currently `clojure`, `scala` and `zig`
+  bundled, plus `haskell` and `lean` in the language pack — see their
   model files for what has to change first). Aggregate indexes must be GENERATED, not templated: that is why
   `rust/feature/mod.rs` comes from `Main_rust`. And the shared test harness
   must not live in the file that gets dropped — go and csharp keep it in
@@ -1037,7 +1135,8 @@ updating both, plus the lists in this file, `README.md`,
 `docs/reference/cli.md`, `docs/reference/project-layout.md`,
 `docs/how-to/add-a-target.md` and `docs/explanation/architecture.md`.
 
-Features (all inactive by default — opt in per SDK via
+Features (all inactive by default except `log`, as each model's
+`config.options.active` says — switch one per SDK with
 `options.feature.<name>.active`):
 
 - **Core:** `log` (structured logging), `test` (in-memory mock transport;
@@ -1162,10 +1261,20 @@ make publish V=4.15.0
 
 That is the whole release. It guards (semver, `gh` present, on `main`, clean
 tree, not behind `origin/main`, `vX.Y.Z` not already taken locally OR on
-origin), bumps `ts/package.json`, runs `embed-version`, runs `make all`,
-commits, pushes `main`, waits for the remote to actually show the pushed SHA,
-and then dispatches `publish.yml` pinned to it. The workflow publishes to npm
-and writes the `v<V>` tag.
+origin), bumps `ts/package.json`, runs `embed-version`, commits, pushes
+`main`, waits for the remote to actually show the pushed SHA, and then
+dispatches `publish.yml` pinned to it. The workflow builds and tests, then
+publishes to npm and writes the `v<V>` tag.
+
+**The release runs no suite on the workstation.** Its gate is the publish
+workflow's own `npm run build` and `npm test`, on the toolchains the
+`ubuntu-latest` runner has; a lane whose toolchain is missing there skips
+visibly. The FULL run, every target's toolchain installed, is
+`.github/workflows/nightly.yml`: once a day, and on demand with
+`gh workflow run nightly.yml --ref main`. Dispatch it beside a release that
+touches targets the publish runner cannot build, and read it before the next
+one. The local `make all` takes over an hour where every toolchain is
+present, and a release does not wait for it.
 
 To drive the dispatch by hand — same mechanism, without the bump:
 
@@ -1209,7 +1318,6 @@ it:
 cd ts
 npm version minor --no-git-tag-version   # or patch; see below
 npm run embed-version                    # REQUIRED — nothing else runs this
-npm run build && npm test
 cd .. && git add -A && git commit -m "vX.Y.Z" && git push
 gh workflow run publish.yml --ref main -f expect_sha=$(git rev-parse HEAD)
 ```
