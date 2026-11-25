@@ -1,5 +1,5 @@
 
-import { cmp, Content, installCommand, isPublished, repoInfo } from '@voxgig/sdkgen'
+import { cmp, Content, installCommand, isPublished, repoInfo, collectDeps } from '@voxgig/sdkgen'
 
 import { minPerl, perlVersionLabel } from './utility_perl'
 
@@ -28,16 +28,16 @@ cpanm .
     return
   }
 
-  // Publish pending: not yet on CPAN. This is a pure-Perl SDK with zero
-  // non-core runtime deps, so the simplest install is to add the SDK's
+  // Publish pending: not yet on CPAN. A pure-Perl SDK installs by adding its
   // \`lib\` directory to Perl's module search path (\`@INC\`).
   const { hostName, tagsUrl } = repoInfo(model)
   Content(`This package is not yet published to CPAN. Install it from the ${hostName}
 release tag (\`${target.name}/vX.Y.Z\`, see [Tags](${tagsUrl})) or
 from a source checkout.
 
-The SDK is pure Perl with zero non-core runtime dependencies, so no build
-step is required — just put its \`lib\` directory on \`@INC\`:
+${0 === collectDeps(model, target.name, target.deps).length ?
+  'The SDK is pure Perl with zero non-core runtime dependencies, so no build\nstep is required — just put' :
+  'The SDK is pure Perl, so no build step is required: install the dependencies\n\`Makefile.PL\` lists, and put'} its \`lib\` directory on \`@INC\`:
 
 \`\`\`perl
 use lib 'lib';

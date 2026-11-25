@@ -1,5 +1,5 @@
 
-import { cmp, Content, isPublished, repoInfo, packageVersion, cdTarget } from '@voxgig/sdkgen'
+import { cmp, Content, isPublished, repoInfo, packageVersion, cdTarget, collectDeps } from '@voxgig/sdkgen'
 
 
 const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
@@ -25,14 +25,13 @@ ${cdTarget(target)}swift build
     return
   }
 
-  // Publish pending: not yet on the SwiftPM registry (git-tag only). The
-  // generated SDK is a dependency-free SwiftPM package (Foundation + the
-  // vendored Voxgig Struct port), so install it from the git release tag or a
-  // local source checkout and build with SwiftPM.
+  // Publish pending: not yet on the SwiftPM registry (git-tag only), so
+  // install it from the git release tag or a local source checkout.
   const { hostName, tagsUrl } = repoInfo(model)
-  Content(`This package is not yet published to a SwiftPM registry. The generated SDK
+  const free = 0 === collectDeps(model, target.name, target.deps).length
+  Content(`This package is not yet published to a SwiftPM registry.${free ? ` The generated SDK
 is a dependency-free SwiftPM package (Foundation only, plus the vendored
-Voxgig Struct port). Depend on it from the ${hostName} release tag
+Voxgig Struct port).` : ''} Depend on it from the ${hostName} release tag
 (\`${target.name}/vX.Y.Z\`, see [Tags](${tagsUrl})) by adding it to
 your \`Package.swift\`:
 

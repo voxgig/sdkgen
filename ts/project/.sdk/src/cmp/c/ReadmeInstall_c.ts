@@ -1,7 +1,7 @@
 
 import * as Path from 'node:path'
 
-import { cmp, Content, installCommand, isPublished, repoInfo, cdTarget, readerDir } from '@voxgig/sdkgen'
+import { cmp, Content, installCommand, isPublished, repoInfo, cdTarget, readerDir, collectDeps } from '@voxgig/sdkgen'
 
 import { cIdent } from './utility_c'
 
@@ -44,14 +44,13 @@ ${linking(target, model)}`)
   }
 
   // Publish pending: C has no central package registry — the release IS the
-  // git tag. Build from a source checkout (the vendored voxgig struct means
-  // there are no external dependencies to fetch).
+  // git tag. Build from a source checkout.
   const { tagsUrl } = repoInfo(model)
+  const free = 0 === collectDeps(model, target.name, target.deps).length
   Content(`C has no central package registry — a release is the git tag
 (\`${target.name}/vX.Y.Z\`, see [Tags](${tagsUrl})). Build from a
 source checkout with the bundled \`Makefile\`; the voxgig struct library is
-vendored under \`utility/struct\`, so there are no external dependencies to
-fetch:
+vendored under \`utility/struct\`${free ? ', so there are no external dependencies to\nfetch' : ''}:
 
 \`\`\`bash
 ${cdTarget(target)}make          # builds libsdk.a

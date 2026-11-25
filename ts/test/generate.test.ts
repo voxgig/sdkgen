@@ -934,6 +934,24 @@ describe('generate', () => {
   })
 
 
+  // Bundled content collects no dependency for these targets; a project's own
+  // does, and then the documents stop calling the SDK dependency-free.
+  test('an SDK with a dependency is not called dependency-free', async () => {
+    const targets = ['c', 'ocaml', 'perl', 'scala', 'swift']
+    const claim = /dependency-free|no external dependencies|no third-party runtime|zero non-core runtime/
+    const claims = (out: Record<string, string>) => Object.keys(out)
+      .filter((path) => path.endsWith('.md') && claim.test(out[path])).sort()
+
+    const free = claims(await generate(targets))
+    deepStrictEqual(targets.filter((t) => !free.some((path) => path.startsWith(t + '/'))), [],
+      'a target without dependencies no longer says so')
+    const dep = targets.map((t) => `main: kit: target: ${t}: deps: extralib: { active: true, version: '1.0.0' }`)
+      .join('\n')
+    deepStrictEqual(claims(await generate(targets, undefined, dep)), [],
+      'a target with a dependency is called dependency-free')
+  })
+
+
   test('a manifest description names its target by title and by what it is', async () => {
     const expected: Record<string, string> = {
       ts: 'TypeScript SDK', js: 'JavaScript SDK', py: 'Python SDK', php: 'PHP SDK',

@@ -1,5 +1,5 @@
 
-import { cmp, Content, isPublished, repoInfo, packageVersion, sdkName, cdTarget } from '@voxgig/sdkgen'
+import { cmp, Content, isPublished, repoInfo, packageVersion, sdkName, cdTarget, collectDeps } from '@voxgig/sdkgen'
 
 import { mavenGroupId } from './utility_scala'
 
@@ -34,14 +34,12 @@ ${cdTarget(target)}scala-cli compile .
     return
   }
 
-  // Publish pending: not yet on Maven Central. The generated SDK is a
-  // dependency-free, plain-source scala-cli project (no sbt/mill build, no
-  // third-party runtime deps), so install it from the git release tag or a
-  // local source checkout and compile with scala-cli.
+  // Publish pending: not yet on Maven Central, so install it from the git
+  // release tag or a local source checkout and compile with scala-cli.
   const { hostName, tagsUrl } = repoInfo(model)
+  const free = 0 === collectDeps(model, target.name, target.deps).length
   Content(`This package is not yet published to Maven Central. The generated SDK is a
-plain-source scala-cli project (no build tool, no third-party runtime
-dependencies). Install it from the ${hostName} release tag
+plain-source scala-cli project (no build tool${free ? ', no third-party runtime\ndependencies' : ''}). Install it from the ${hostName} release tag
 (\`${target.name}/vX.Y.Z\`, see [Tags](${tagsUrl})) or from a source
 checkout — compile it with scala-cli:
 

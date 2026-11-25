@@ -21,7 +21,7 @@ src/cmp/c/ReadmeEntity_c.ts b1b24f6b4c2f
 src/cmp/c/ReadmeExamplesTest_c.ts 2e899b115aaa
 src/cmp/c/ReadmeExplanation_c.ts 193fa2c194dd
 src/cmp/c/ReadmeHowto_c.ts 703bbaacbc88
-src/cmp/c/ReadmeInstall_c.ts 756ce102d341
+src/cmp/c/ReadmeInstall_c.ts 8bcdc6df3c38
 src/cmp/c/ReadmeIntro_c.ts 17d6da0d3ab6
 src/cmp/c/ReadmeModel_c.ts a28efdaa99f9
 src/cmp/c/ReadmeOptions_c.ts f305d6f87635
@@ -1127,8 +1127,8 @@ src/cmp/ocaml/ReadmeEntity_ocaml.ts 98af9e5818cb
 src/cmp/ocaml/ReadmeExamplesTest_ocaml.ts fa124db31217
 src/cmp/ocaml/ReadmeExplanation_ocaml.ts a25d52a901d2
 src/cmp/ocaml/ReadmeHowto_ocaml.ts d515cf5a9776
-src/cmp/ocaml/ReadmeInstall_ocaml.ts 33e1323d1aa6
-src/cmp/ocaml/ReadmeIntro_ocaml.ts 47dd558857e2
+src/cmp/ocaml/ReadmeInstall_ocaml.ts f17d5c19f005
+src/cmp/ocaml/ReadmeIntro_ocaml.ts ddaaaeaecd7a
 src/cmp/ocaml/ReadmeModel_ocaml.ts 2f8a64aefa65
 src/cmp/ocaml/ReadmeOptions_ocaml.ts c005aac47258
 src/cmp/ocaml/ReadmeQuick_ocaml.ts 9f7d537ec933
@@ -1189,7 +1189,7 @@ src/cmp/perl/ReadmeEntity_perl.ts 3caae01227dc
 src/cmp/perl/ReadmeExamplesTest_perl.ts 45d8c2903ea0
 src/cmp/perl/ReadmeExplanation_perl.ts 92641c9d1f5c
 src/cmp/perl/ReadmeHowto_perl.ts 786821c64845
-src/cmp/perl/ReadmeInstall_perl.ts 6ae7b2078d0b
+src/cmp/perl/ReadmeInstall_perl.ts 31dfaa3b85cd
 src/cmp/perl/ReadmeIntro_perl.ts 7068d774730b
 src/cmp/perl/ReadmeModel_perl.ts d4c2850a637d
 src/cmp/perl/ReadmeOptions_perl.ts 4afa7ae879d0
@@ -1762,9 +1762,9 @@ src/cmp/scala/Package_scala.ts 8ae04e6b348b
 src/cmp/scala/PrepareAuth_scala.ts b9a5ce33389e
 src/cmp/scala/ReadmeEntity_scala.ts d3d4cf89862b
 src/cmp/scala/ReadmeExamplesTest_scala.ts 29ebfa47559d
-src/cmp/scala/ReadmeExplanation_scala.ts 4aeff743d451
+src/cmp/scala/ReadmeExplanation_scala.ts 52019da816a0
 src/cmp/scala/ReadmeHowto_scala.ts a4baab97f2f4
-src/cmp/scala/ReadmeInstall_scala.ts 8b4852c808ca
+src/cmp/scala/ReadmeInstall_scala.ts c47dd52ab4de
 src/cmp/scala/ReadmeIntro_scala.ts f0ed7e16f36a
 src/cmp/scala/ReadmeModel_scala.ts d7519593b40f
 src/cmp/scala/ReadmeOptions_scala.ts 6c961d32294b
@@ -1930,9 +1930,9 @@ src/cmp/swift/Package_swift.ts 3867408088b4
 src/cmp/swift/PrepareAuth_swift.ts c61d7cfcd37e
 src/cmp/swift/ReadmeEntity_swift.ts e2bc6df72b91
 src/cmp/swift/ReadmeExamplesTest_swift.ts ce2a5ee1841a
-src/cmp/swift/ReadmeExplanation_swift.ts 9d20df0c92d9
+src/cmp/swift/ReadmeExplanation_swift.ts 429379f0fe32
 src/cmp/swift/ReadmeHowto_swift.ts 2c5e56bff513
-src/cmp/swift/ReadmeInstall_swift.ts 62ca1b0c8ab2
+src/cmp/swift/ReadmeInstall_swift.ts 9df3381211ad
 src/cmp/swift/ReadmeIntro_swift.ts a1c0402aab9d
 src/cmp/swift/ReadmeModel_swift.ts 835703794d2f
 src/cmp/swift/ReadmeOptions_swift.ts 6b19e9a71414

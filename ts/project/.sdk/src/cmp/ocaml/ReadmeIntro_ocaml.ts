@@ -1,5 +1,5 @@
 
-import { cmp, Content, introOps } from '@voxgig/sdkgen'
+import { cmp, Content, introOps, collectDeps } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -13,8 +13,8 @@ const ReadmeIntroBody = cmp(function ReadmeIntroBody(props: any) {
   const { target, ctx$: { model } } = props
 
   Content(`The ${target.title} SDK for the ${model.Name} API — an entity-oriented client
-following idiomatic OCaml conventions (a dependency-free library that compiles
-with the stock \`ocamlc\`).
+following idiomatic OCaml conventions (${0 === collectDeps(model, target.name, target.deps).length ?
+  'a dependency-free library that compiles\nwith the stock \`ocamlc\`' : 'a library built with the bundled \`Makefile\`'}).
 
 `)
 
