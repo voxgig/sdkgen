@@ -12,7 +12,7 @@ import { memfs } from 'memfs'
 import { cmp, each, names, Project, Folder } from 'jostraca'
 import * as sucrase from 'sucrase'
 
-import { SdkGen, mcpTools, alongsideNote, applyFacts } from '../dist/sdkgen.js'
+import { SdkGen, mcpTools, alongsideNote, applyFacts, featureDocs, targetFeatures } from '../dist/sdkgen.js'
 import { aliasCmpText } from '../dist/action/target.js'
 
 // Fixture, miniature Root and memfs layering — shared with
@@ -2177,6 +2177,45 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
       }
     }
     deepStrictEqual(found, [])
+  })
+
+
+  // One answer to which features a target documents: featureDocs, the active
+  // features targetFeatures gives the target, less `base`. Every feature list
+  // a document prints is that answer.
+  test('every feature list a document prints is featureDocs for its target', async () => {
+    const all = readdirSync(Path.resolve(__dirname, '..', 'project', '.sdk', 'model', 'feature'))
+      .filter((f: string) => f.endsWith('.aontu') && !f.includes('-index'))
+      .map((f: string) => f.replace(/\.aontu$/, ''))
+    const targets = sdkTargets()
+    const rows = (doc: string, header: string, cell: RegExp): string[] => {
+      const at = doc.indexOf(header)
+      return at < 0 ? [] : doc.slice(at + header.length).split('\n\n')[0].split('\n')
+        .map((line: string) => (cell.exec(line) || [])[1]).filter((name) => null != name) as string[]
+    }
+
+    for (const features of [undefined, ['test'], all]) {
+      const model = makeModel(targets, undefined, undefined, features)
+      const out = await generate(targets, undefined, undefined, undefined, features)
+      const union = new Map<string, string>()
+
+      for (const target of targets) {
+        const docs = featureDocs(model, model.main[KIT].target[target])
+        const applies = targetFeatures(model, target)
+        deepStrictEqual(docs.map((f: any) => f.name),
+          Object.keys(applies).filter((n: string) => 'base' !== n && false !== applies[n].active).sort(),
+          target + ': featureDocs is not the active features the target has, less base')
+        docs.forEach((f: any) => union.set(f.name, f.Name))
+
+        deepStrictEqual(rows(out[target + '/REFERENCE.md'], '| Feature | Version | Description |\n',
+          /^\| `([^`]+)` \|/), docs.map((f: any) => f.name), target + ': the REFERENCE feature table')
+        deepStrictEqual(rows(out[target + '/README.md'], 'The SDK ships with built-in features:\n\n',
+          /^- \*\*(\w+)Feature\*\*: /), docs.map((f: any) => f.Name), target + ': the README feature list')
+      }
+
+      deepStrictEqual(rows(out['README.md'], '| Feature | Purpose |\n', /^\| \*\*(\w+)Feature\*\* \|/),
+        [...union.keys()].sort().map((name: string) => union.get(name)), 'the root README feature table')
+    }
   })
 
 

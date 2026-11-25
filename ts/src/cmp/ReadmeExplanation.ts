@@ -1,7 +1,6 @@
 
-import { targetFeatures } from '../helpers/applicability'
 
-import { each, names, Content } from 'jostraca'
+import { Content } from 'jostraca'
 import { cmp } from '../helpers/component'
 
 import {
@@ -10,7 +9,7 @@ import {
 } from '../types'
 
 import { optionalComponent } from '../helpers/optional'
-import { honoursActivationOrder } from './FeatureDocs'
+import { featureDocs, honoursActivationOrder } from './FeatureDocs'
 import { PIPELINE_STAGES, pipelineLength } from './FeatureHook'
 
 import { entityIdField, pickExampleEntity } from '../helpers/opShape'
@@ -480,8 +479,6 @@ const ReadmeExplanation = cmp(function ReadmeExplanation(props: any) {
   const { target, ctx$ } = props
   const { model } = ctx$
 
-  // Gated: this section describes a TARGET's features.
-  const feature = targetFeatures(model, target)
   // An alias writes its origin's row.
   const origin = originName(model, target.name)
   const lang = LANGS[origin] || DEFAULT_LANG
@@ -551,15 +548,14 @@ in this language.
 
   Content(lang.featureKind)
 
-  const active = each(feature).filter((feat: any) => feat.active)
-  if (0 < active.length) {
+  // This section describes a TARGET's features.
+  const features = featureDocs(model, target)
+  if (0 < features.length) {
     Content(`The SDK ships with built-in features:
 
 `)
-    for (const feat of active) {
-      if (!feat.Name) names(feat, feat.name)
-      const purpose = feat.title || feat.Name || feat.name
-      Content(`- **${feat.Name}Feature**: ${purpose}
+    for (const f of features) {
+      Content(`- **${f.Name}Feature**: ${f.title || f.Name}
 `)
     }
 

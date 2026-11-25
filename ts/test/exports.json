@@ -112,6 +112,7 @@
     "exampleVarName",
     "fact",
     "featureApplies",
+    "featureDocs",
     "featureExcludes",
     "featureOf",
     "featureOptionSpec",

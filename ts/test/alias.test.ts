@@ -9,7 +9,7 @@ import { Aontu } from 'aontu'
 import { Jostraca, Project, Folder, File, names } from 'jostraca'
 import { memfs } from 'memfs'
 
-import { ReadmeErrors, ReadmeExplanation, ReadmeTop, SdkGen, cmp } from '../dist/sdkgen.js'
+import { ReadmeErrors, ReadmeExplanation, ReadmeTop, SdkGen, applyFacts, cmp } from '../dist/sdkgen.js'
 
 import { makeProject, targetRef, target_add, SCAFFOLD, ROOT } from './actionharness'
 import { STAGE, SCAFFOLD as SDK_SCAFFOLD, makeModel, makeRoot, layeredFs, makeLog, aliasModel, stageAlias } from './generateharness'
@@ -315,7 +315,7 @@ describe('aliased target documents', () => {
   const quiet: any = { info() {}, debug() {}, warn() {}, error() {}, trace() {}, fatal() {} }
   quiet.child = () => quiet
 
-  const model = () => ({
+  const model = () => applyFacts({
     name: 'demo',
     const: { name: 'demo', Name: 'Demo' },
     main: { kit: {
@@ -327,7 +327,9 @@ describe('aliased target documents', () => {
           op: { load: { active: true, points: [{ params: [{ n: 'id', t: '$STRING' }] }] } },
         },
       },
-      feature: { test: { active: true, name: 'test', title: 'Test mode (offline)' } },
+      feature: {
+        test: { active: true, name: 'test', title: 'Test mode (offline)', config: { options: { active: false } } },
+      },
     } },
   })
 

@@ -238,6 +238,17 @@ the MCP server, read from the active targets. It returns an empty string when
 the project generates nothing else. A per-language component that writes its
 whole introduction itself can call it for the same note.
 
+### `featureDocs(model, target?) → FeatureDoc[]`
+
+The features a target's documents describe: every active feature of the
+model that applies to the target, leaving out `base`, sorted by name.
+Without a target, every active feature. Each entry carries the feature's
+name, its class name, its version, its title (inline, and escaped for a
+table cell), its transport role, whether it is on by default, its active
+hooks, and its option rows. The shared README and REFERENCE feature
+sections read it, and a per-language component that lists features calls it
+so that it lists the same ones.
+
 ### Typing helpers
 
 The typed-model subsystem (full picture:

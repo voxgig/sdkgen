@@ -1,7 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReadmeExplanation = void 0;
-const applicability_1 = require("../helpers/applicability");
 const jostraca_1 = require("jostraca");
 const component_1 = require("../helpers/component");
 const types_1 = require("../types");
@@ -419,8 +418,6 @@ map, with a function under the name of each pipeline stage it implements
 const ReadmeExplanation = (0, component_1.cmp)(function ReadmeExplanation(props) {
     const { target, ctx$ } = props;
     const { model } = ctx$;
-    // Gated: this section describes a TARGET's features.
-    const feature = (0, applicability_1.targetFeatures)(model, target);
     // An alias writes its origin's row.
     const origin = (0, packageMeta_1.originName)(model, target.name);
     const lang = LANGS[origin] || DEFAULT_LANG;
@@ -485,16 +482,14 @@ in this language.
 
 `);
     (0, jostraca_1.Content)(lang.featureKind);
-    const active = (0, jostraca_1.each)(feature).filter((feat) => feat.active);
-    if (0 < active.length) {
+    // This section describes a TARGET's features.
+    const features = (0, FeatureDocs_1.featureDocs)(model, target);
+    if (0 < features.length) {
         (0, jostraca_1.Content)(`The SDK ships with built-in features:
 
 `);
-        for (const feat of active) {
-            if (!feat.Name)
-                (0, jostraca_1.names)(feat, feat.name);
-            const purpose = feat.title || feat.Name || feat.name;
-            (0, jostraca_1.Content)(`- **${feat.Name}Feature**: ${purpose}
+        for (const f of features) {
+            (0, jostraca_1.Content)(`- **${f.Name}Feature**: ${f.title || f.Name}
 `);
         }
         (0, jostraca_1.Content)((0, FeatureDocs_1.honoursActivationOrder)({ name: origin }) ? `

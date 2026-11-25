@@ -572,7 +572,7 @@ When the entity interface does not cover an endpoint, use \`direct\`:
 
 
 const ReadmeTopAdvanced = cmp(function ReadmeTopAdvanced(props: any) {
-  const { feature } = props.s
+  const { model, sdkTargets } = props.s
 
   Content(`## Advanced
 
@@ -589,16 +589,20 @@ forking the SDK.
 
 `)
 
-  const active = each(feature).filter((feat: any) => feat.active)
-  if (0 < active.length) {
+  // The features some SDK target documents.
+  const documented = new Map<string, FeatureDoc>()
+  for (const tgt of sdkTargets) {
+    for (const f of featureDocs(model, tgt)) documented.set(f.name, f)
+  }
+  const features = [...documented.values()].sort((a: FeatureDoc, b: FeatureDoc) => a.name.localeCompare(b.name))
+  if (0 < features.length) {
     Content(`### Features
 
 | Feature | Purpose |
 | --- | --- |
 `)
-    for (const feat of active) {
-      const purpose = fact(feat, 'title').cell || feat.Name || feat.name
-      Content(`| **${feat.Name || feat.name}Feature** | ${purpose} |
+    for (const f of features) {
+      Content(`| **${f.Name}Feature** | ${f.titleCell || f.Name} |
 `)
     }
     Content(`
@@ -850,7 +854,6 @@ const ReadmeTop = cmp(function ReadmeTop(props: any) {
     apiSummary,
     websiteLine,
     metaSourceLine,
-    feature,
     activeEntities,
     hasCli,
     hasMcp,
