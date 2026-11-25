@@ -8,6 +8,7 @@ import {
   repoInfo,
   packageName,
   pkgDescription,
+  collectDeps,
 } from '@voxgig/sdkgen'
 
 
@@ -53,9 +54,9 @@ authors: "${ocamlString(author.name)}"
 license: "MIT"
 homepage: "${repoUrl}"
 bug-reports: "${issuesUrl}"
-# The generated SDK is dependency-free: it compiles with the stock ocamlc
+${0 === collectDeps(model, target.name, target.deps).length ? `# The generated SDK is dependency-free: it compiles with the stock ocamlc
 # (see the Makefile). No opam packages, no dune.
-depends: [
+` : ''}depends: [
   "ocaml" {>= "4.14"}
 ]
 build: [

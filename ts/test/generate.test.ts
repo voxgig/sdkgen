@@ -940,7 +940,7 @@ describe('generate', () => {
     const targets = ['c', 'ocaml', 'perl', 'scala', 'swift']
     const claim = /dependency-free|no external dependencies|no third-party runtime|zero non-core runtime/
     const claims = (out: Record<string, string>) => Object.keys(out)
-      .filter((path) => path.endsWith('.md') && claim.test(out[path])).sort()
+      .filter((path) => (path.endsWith('.md') || path.endsWith('.opam')) && claim.test(out[path])).sort()
 
     const free = claims(await generate(targets))
     deepStrictEqual(targets.filter((t) => !free.some((path) => path.startsWith(t + '/'))), [],
