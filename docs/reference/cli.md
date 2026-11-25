@@ -375,6 +375,10 @@ gate. What it checks:
 | `model-key-missing` | error | `model/<kind>/<name>.aontu` declares some *other* name — the mistake made when a bundled target is copied as a starting point and the key inside is not renamed. |
 | `model-schema` | error | It does not unify with the base schema: a non-defaulted key is missing (`ext`, `comment.line`, `module.name`, a feature's `title`). This is what a consumer compiles. |
 | `target-publish-pinned` | error | The target model sets a publication value the *project* owns, so the project can no longer set it (concrete-vs-concrete is a conflict) — and the failure would name the project's file. |
+| `manifest-parity-surface` | error | A target's `parity` tier disagrees with its surface: `CONSUMER` on an SDK, or another tier on a target that is not one. A target is graded `CONSUMER` exactly when its surface is not `sdk`. |
+| `target-surface-unknown` | warn | The target declares a `surface` word this release does not know. Generation reads it as unknown and names the target by its title; a later release that introduces the word reads it. |
+| `target-surface-since` | info | The target declares a known `surface` word, and `engines.sdkgen` admits releases older than the one that first reads it. Those releases ignore the slot. |
+| `target-facts` | error | The fact rules fail on the target's model alone, so a project that installs it cannot generate. |
 | `feature-deps-misplaced` | warn | Dependencies under `feature.<f>.target.<t>.deps`, which nothing reads. They go directly under the feature: `deps: <target>: {…}`. |
 | `feature-source-undelivered` | warn | `targetsSupported` claims a target for which no feature source can be found. |
 | `feature-source-unrecognised` | warn | A file named like feature source (`<name>_feature.<ext>`, `<Name>Feature.<ext>`, a directory) that no `model/feature/<name>.aontu` declares — so the trim cannot recognise it and every project receives it whatever its model selects. |
