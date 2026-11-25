@@ -1,7 +1,7 @@
 
 import * as Path from 'node:path'
 
-import { cmp, Content, isPublished, repoInfo, readerDir } from '@voxgig/sdkgen'
+import { cmp, Content, installCommand, isPublished, repoInfo, readerDir } from '@voxgig/sdkgen'
 
 
 const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
@@ -9,9 +9,9 @@ const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
   const { model } = ctx$
 
   if (isPublished(model, target.name)) {
-    Content('```js')
+    Content('```bash')
     Content(`
-npm install ${target.module.name}
+${installCommand(model, target.name)}
 `)
     Content('```')
     return

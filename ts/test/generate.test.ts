@@ -915,6 +915,14 @@ describe('generate', () => {
   })
 
 
+  test('a published js README installs the package its manifest names, in a shell block', async () => {
+    const out = await generate(['js'], undefined, 'main: kit: target: js: publish: registry: active: true')
+    const name = JSON.parse(out['js/package.json']).name
+    ok(out['js/README.md'].includes('```bash\nnpm install ' + name + '\n```'),
+      'the js README does not install ' + name + ':\n' + out['js/README.md'].slice(0, 900))
+  })
+
+
   test('a manifest description names its target by title and by what it is', async () => {
     const expected: Record<string, string> = {
       ts: 'TypeScript SDK', js: 'JavaScript SDK', py: 'Python SDK', php: 'PHP SDK',
