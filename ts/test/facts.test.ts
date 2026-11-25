@@ -335,6 +335,7 @@ describe('auth, server and environment facts', () => {
       "main: kit: info: servers: [{ url: 'https://api.test/{v}/{w}/{v}', variables: { w: { default: 'x', description: 'W' } } }]",
       "main: kit: info: servers: [{ url: '{base}', variables: { base: { description: 'The base URL.' } } }]",
       "main: kit: info: servers: [{ url: 'https://api.test', variables: { spare: { default: '' }, 'a.b': { default: '' } } }]",
+      "main: kit: info: servers: [{ url: 'https://{edge-zone}.{a+b}.test/{c}', variables: { 'edge-zone': { default: '' }, 'a+b': {}, c: {} } }]",
       "main: kit: info: servers: [{ url: 'https://{a.b}.test/{c}' }]",
       '',
     ]
