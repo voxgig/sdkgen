@@ -26,7 +26,7 @@ php/
 ├── features.php                   -- Feature factory
 ├── core/                          -- Core types and context
 ├── entity/                        -- Entity implementations
-├── feature/                       -- Built-in features (Base, Test, Log)
+├── feature/                       -- Feature implementations
 ├── utility/                       -- Utility functions and struct library
 └── test/                          -- Test suites
 \`\`\`

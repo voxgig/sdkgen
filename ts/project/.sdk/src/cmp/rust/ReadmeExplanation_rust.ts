@@ -28,7 +28,7 @@ ${target.name}/
 ├── lib.rs                       -- Crate root (module decls + re-exports)
 ├── core/                        -- Pipeline types, config, client (sdk.rs)
 ├── entity/                      -- Per-entity clients (one module each)
-├── feature/                     -- Built-in features (base, test, log)
+├── feature/                     -- Feature implementations
 └── utility/                     -- Utilities + the vendored voxgig struct port
 \`\`\`
 

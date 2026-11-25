@@ -27,7 +27,7 @@ java/
 ├── pom.xml                     -- Maven project (compiles core/, utility/, feature/, entity/)
 ├── core/                       -- Main SDK client, config, entity base, error type
 ├── entity/                     -- Entity implementations
-├── feature/                    -- Built-in features (Base, Test, Log, ...)
+├── feature/                    -- Feature implementations
 ├── utility/                    -- Utility functions and the vendored struct library
 └── test/                       -- JUnit test suites
 \`\`\`

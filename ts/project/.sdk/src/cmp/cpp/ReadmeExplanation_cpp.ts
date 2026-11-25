@@ -26,7 +26,7 @@ Build maps with \`sdk::vmap({{"key", sdk::Value("v")}})\` and lists with
 ${target.name}/
 ├── core/                        -- Runtime type graph, config, generated client
 ├── entity/                      -- Per-entity client headers
-├── feature/                     -- Built-in features (Base, Test, Log, ...)
+├── feature/                     -- Feature implementations
 ├── utility/                     -- Operation pipeline + vendored struct library
 ├── test/                        -- Test suites
 ├── Makefile                     -- Build & run the tests (C++17)

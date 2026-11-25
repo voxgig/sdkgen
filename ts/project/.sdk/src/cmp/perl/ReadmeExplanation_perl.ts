@@ -24,7 +24,7 @@ ${target.name}/
 ├── features.pm                  -- Feature factory
 ├── core/                        -- Core types and context
 ├── entity/                      -- Entity implementations
-├── feature/                     -- Built-in features (base, test, log)
+├── feature/                     -- Feature implementations
 ├── utility/                     -- Utility functions
 ├── lib/Voxgig/Struct.pm         -- Vendored struct library
 └── t/                           -- Test suites

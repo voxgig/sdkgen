@@ -2160,6 +2160,26 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
   })
 
 
+  // A layout tree is the same whatever the model declares, so the line for
+  // the feature directory or file names no feature.
+  test('no README layout tree names a feature', async () => {
+    const targets = sdkTargets()
+    const out = await generate(targets)
+    const named = new RegExp('\\b(base|' + ['test', 'log'].join('|') + ')\\b', 'i')
+
+    const found: string[] = []
+    for (const target of targets) {
+      const block = /^### [A-Za-z ]*[Ss]tructure\n\n```\n([\s\S]*?)\n```/m.exec(out[target + '/README.md'])
+      ok(null != block, target + ': the README draws no layout tree')
+      for (const line of block![1].split('\n').filter((l: string) => /feature/i.test(l))) {
+        const comment = line.replace(/^.*?(--|#)\s*/, '')
+        if (named.test(comment)) found.push(target + ': ' + line.trim())
+      }
+    }
+    deepStrictEqual(found, [])
+  })
+
+
   test('the root readme says regeneration overwrites', async () => {
     const readme = (await generate(['ts']))['README.md']
     ok(readme.includes('**Regeneration overwrites.**'), 'the overwrite bullet is gone')

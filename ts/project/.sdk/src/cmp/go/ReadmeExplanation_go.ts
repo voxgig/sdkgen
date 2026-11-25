@@ -27,7 +27,7 @@ ${gomodule}/
 \u251c\u2500\u2500 ${model.name}.go        # Root package \u2014 type aliases and constructors
 \u251c\u2500\u2500 core/               # SDK core \u2014 client, types, pipeline
 \u251c\u2500\u2500 entity/             # Entity implementations
-\u251c\u2500\u2500 feature/            # Built-in features (Base, Test, Log)
+\u251c\u2500\u2500 feature/            # Feature implementations
 \u251c\u2500\u2500 utility/            # Utility functions and struct library
 \u2514\u2500\u2500 test/               # Test suites
 \`\`\`

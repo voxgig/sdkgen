@@ -34,7 +34,7 @@ elixir/
 │       ├── context.ex            -- Operation context
 │       ├── entity_base.ex        -- Shared entity behaviour
 │       ├── error.ex              -- SDK error type
-│       ├── feature.ex            -- Built-in features
+│       ├── feature.ex            -- Feature implementations
 │       ├── helpers.ex            -- Value helpers (deep/1, ...)
 │       ├── json.ex               -- JSON encode/decode
 │       └── utility.ex            -- Utility functions

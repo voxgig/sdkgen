@@ -23,7 +23,7 @@ csharp/
 ├── ${model.const.Name}SDK.csproj    -- Library project (compiles everything except test/)
 ├── core/                       -- Main SDK client, config, entity base, error type
 ├── entity/                     -- Entity implementations
-├── feature/                    -- Built-in features (Base, Test, Log, ...)
+├── feature/                    -- Feature implementations
 ├── utility/                    -- Utility functions and the vendored struct library
 └── test/                       -- xUnit test suites
 \`\`\`

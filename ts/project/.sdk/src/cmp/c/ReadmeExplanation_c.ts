@@ -37,7 +37,7 @@ Always initialise \`PNError* err = NULL;\` and branch on it after each call.
 ${target.name}/
 ├── core/          -- Pipeline types, config, client (client.c), api.h + sdk.h
 ├── entity/        -- Per-entity implementations (one .c each)
-├── feature/       -- Built-in features (base, test, log, ...)
+├── feature/       -- Feature implementations
 ├── utility/       -- Utilities + the vendored voxgig struct port (utility/struct)
 ├── tests/         -- Test binaries (each a standalone main())
 └── Makefile       -- Builds libsdk.a and runs every tests/*.c
