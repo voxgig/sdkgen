@@ -3,16 +3,12 @@ import {
   Content,
   File,
   cmp,
-  isHttpBasicAuth,
-  resolveAuthIn,
-  resolveAuthName,
-  resolveAuthPrefix,
+  fact,
 } from '@voxgig/sdkgen'
 
 
 import {
   KIT,
-  getModelPath,
 } from '@voxgig/apidef'
 
 
@@ -24,16 +20,17 @@ import {
 const PrepareAuth = cmp(async function PrepareAuth(props: any) {
   const { target } = props
   const { model } = props.ctx$
+  const authFact = fact(model.main[KIT], 'auth')
 
-  const where = resolveAuthIn(model)
+  const where = authFact.in
 
-  const resolved = resolveAuthName(model)
+  const resolved = authFact.name
   const name = 'header' === where ? resolved.toLowerCase() : resolved
 
-  const prefix = resolveAuthPrefix(model)
+  const prefix = authFact.prefix
 
-  const basic = isHttpBasicAuth(model)
-  const active = authSwitchedOn(model)
+  const basic = authFact.basic
+  const active = !authFact.suppressed
 
   File({ name: 'sdk_prepare_auth.' + target.ext }, () => {
     Content(render({
@@ -41,13 +38,6 @@ const PrepareAuth = cmp(async function PrepareAuth(props: any) {
     }))
   })
 })
-
-
-function authSwitchedOn(model: any): boolean {
-  const auth = getModelPath(model, `main.${KIT}.config.auth`,
-    { only_active: false, required: false })
-  return !(null != auth && false === auth.active)
-}
 
 
 type AuthSpec = {
@@ -95,8 +85,7 @@ let cred_where = "${ocamlString(spec.where)}"
 let cred_name = "${ocamlString(spec.name)}"
 `
 
-  // AUTH SWITCHED OFF BY THE PROJECT (see authSwitchedOn for why only an
-  // EXPLICIT switch counts). The SDK gets a prepare_auth that is honest
+  // AUTH SUPPRESSED, as the auth fact says. The SDK gets a prepare_auth that is honest
   // about it rather than one that deletes a header nobody set. Nothing is
   // read from options, so no constant is emitted either.
   if (!spec.active) {
@@ -286,8 +275,6 @@ const BASIC = `       if (match getpath_s options "auth.basic" with Bool b -> b 
        end
        else
 `
-
-
 
 
 export {

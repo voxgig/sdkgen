@@ -4,12 +4,12 @@ import {
   File,
   Folder,
   cmp,
-  isAuthSuppressed,
-  isHttpBasicAuth,
-  resolveAuthIn,
-  resolveAuthName,
-  resolveAuthPrefix,
+  fact,
 } from '@voxgig/sdkgen'
+
+import {
+  KIT,
+} from '@voxgig/apidef'
 
 
 import { scalaPackage } from './utility_scala'
@@ -18,17 +18,18 @@ import { scalaPackage } from './utility_scala'
 const PrepareAuth = cmp(async function PrepareAuth(props: any) {
   const { target } = props
   const { model } = props.ctx$
+  const authFact = fact(model.main[KIT], 'auth')
 
-  const where = resolveAuthIn(model)
+  const where = authFact.in
 
-  const resolved = resolveAuthName(model)
+  const resolved = authFact.name
   const name = 'header' === where ? resolved.toLowerCase() : resolved
 
-  const basic = isHttpBasicAuth(model)
+  const basic = authFact.basic
 
-  const prefix = resolveAuthPrefix(model)
+  const prefix = authFact.prefix
 
-  const active = !isAuthSuppressed(model)
+  const active = !authFact.suppressed
 
   const scalapackage = scalaPackage(model)
 

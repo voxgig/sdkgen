@@ -3,11 +3,12 @@ import {
   Content,
   File,
   cmp,
-  isAuthSuppressed,
-  isHttpBasicAuth,
-  resolveAuthIn,
-  resolveAuthName,
+  fact,
 } from '@voxgig/sdkgen'
+
+import {
+  KIT,
+} from '@voxgig/apidef'
 
 
 import type { Model } from '@voxgig/apidef'
@@ -20,17 +21,18 @@ import type { Model } from '@voxgig/apidef'
 // A scala-cli main of its own, named in the Makefile's test target.
 const TestClean = cmp(function TestClean(props: any) {
   const model: Model = props.ctx$.model
+  const authFact = fact(model.main[KIT], 'auth')
   const target = props.target
   const scalapackage: string = props.scalapackage
 
   const SDK = model.const.Name + 'SDK'
 
   const auth = {
-    suppressed: isAuthSuppressed(model),
-    where: resolveAuthIn(model),
-    name: 'header' === resolveAuthIn(model)
-      ? resolveAuthName(model).toLowerCase() : resolveAuthName(model),
-    basic: isHttpBasicAuth(model),
+    suppressed: authFact.suppressed,
+    where: authFact.in,
+    name: 'header' === authFact.in
+      ? authFact.name.toLowerCase() : authFact.name,
+    basic: authFact.basic,
   }
 
   File({ name: 'SdkCleanTestMain.' + target.ext }, () => Content(render(scalapackage, SDK, auth)))

@@ -4,11 +4,12 @@ import {
   File,
   Folder,
   cmp,
-  isAuthSuppressed,
-  isHttpBasicAuth,
-  resolveAuthIn,
-  resolveAuthName,
+  fact,
 } from '@voxgig/sdkgen'
+
+import {
+  KIT,
+} from '@voxgig/apidef'
 
 
 import { javaPackage } from './utility_java'
@@ -17,13 +18,14 @@ import { javaPackage } from './utility_java'
 const PrepareAuth = cmp(async function PrepareAuth(props: any) {
   const { target } = props
   const { model } = props.ctx$
+  const authFact = fact(model.main[KIT], 'auth')
 
   const javapackage = javaPackage(model)
 
-  const active = !isAuthSuppressed(model)
-  const where = resolveAuthIn(model)
-  const name = resolveAuthName(model)
-  const basic = isHttpBasicAuth(model)
+  const active = !authFact.suppressed
+  const where = authFact.in
+  const name = authFact.name
+  const basic = authFact.basic
 
   Folder({ name: 'utility' }, () => {
     File({ name: 'PrepareAuth.' + target.ext }, () => {

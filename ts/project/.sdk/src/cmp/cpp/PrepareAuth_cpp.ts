@@ -3,28 +3,25 @@ import {
   File,
   Folder,
   cmp,
-  isHttpBasicAuth,
-  resolveAuthIn,
-  resolveAuthName,
-  resolveAuthPrefix,
+  fact,
 } from '@voxgig/sdkgen'
 
 
 import {
   KIT,
-  getModelPath,
 } from '@voxgig/apidef'
 
 
 const PrepareAuth = cmp(async function PrepareAuth(props: any) {
   const { target } = props
   const { model } = props.ctx$
+  const authFact = fact(model.main[KIT], 'auth')
 
-  const active = authSwitchedOn(model)
-  const where = resolveAuthIn(model)
-  const name = resolveAuthName(model)
-  const prefix = resolveAuthPrefix(model)
-  const basic = isHttpBasicAuth(model)
+  const active = !authFact.suppressed
+  const where = authFact.in
+  const name = authFact.name
+  const prefix = authFact.prefix
+  const basic = authFact.basic
 
   Folder({ name: 'utility' }, () => {
     File({ name: 'prepare_auth.' + target.ext }, () => {
@@ -32,13 +29,6 @@ const PrepareAuth = cmp(async function PrepareAuth(props: any) {
     })
   })
 })
-
-
-function authSwitchedOn(model: any): boolean {
-  const auth = getModelPath(model, `main.${KIT}.config.auth`,
-    { only_active: false, required: false })
-  return !(null != auth && false === auth.active)
-}
 
 
 type AuthSpec = {
@@ -94,8 +84,7 @@ namespace util {
 #endif // SDK_UTILITY_PREPARE_AUTH_HPP
 `
 
-  // AUTH SWITCHED OFF BY THE PROJECT (see authSwitchedOn for why only an
-  // EXPLICIT switch counts). The SDK gets a prepareAuth that is honest
+  // AUTH SUPPRESSED, as the auth fact says. The SDK gets a prepareAuth that is honest
   // about it rather than one that erases a header nobody set. The spec
   // guard stays, because makeSpec calls this unconditionally and the rest
   // of the pipeline relies on the SpecPtr coming back.

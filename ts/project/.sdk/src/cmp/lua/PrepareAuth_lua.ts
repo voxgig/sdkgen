@@ -4,24 +4,25 @@ import {
   File,
   Folder,
   cmp,
-  isAuthSuppressed,
-  isHttpBasicAuth,
-  resolveAuthIn,
-  resolveAuthName,
-  resolveAuthPrefix,
+  fact,
 } from '@voxgig/sdkgen'
+
+import {
+  KIT,
+} from '@voxgig/apidef'
 
 
 const PrepareAuth = cmp(async function PrepareAuth(props: any) {
   const { target } = props
   const { model } = props.ctx$
+  const authFact = fact(model.main[KIT], 'auth')
 
-  const active = !isAuthSuppressed(model)
-  const where = resolveAuthIn(model)
-  const prefix = resolveAuthPrefix(model)
-  const basic = isHttpBasicAuth(model)
+  const active = !authFact.suppressed
+  const where = authFact.in
+  const prefix = authFact.prefix
+  const basic = authFact.basic
 
-  const cred = resolveAuthName(model)
+  const cred = authFact.name
   const name = 'header' === where ? cred.toLowerCase() : cred
 
   Folder({ name: 'utility' }, () => {
