@@ -6,6 +6,7 @@ import {
   configDefinition,
   each,
   targetFeatures,
+  templateSafe,
 } from '@voxgig/sdkgen'
 
 
@@ -31,7 +32,7 @@ const Config = cmp(async function Config(props: any) {
 
   const { json } = configDefinition(model, target.name)
 
-  const configJson = json.replace(/ProjectName/g, model.const.Name)
+  const configJson = templateSafe('json', json).replace(/ProjectName/g, model.const.Name)
 
   const featurePlugins: Record<string, string[]> = {}
   each(feature, (f: any) => {

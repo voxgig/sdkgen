@@ -7,6 +7,7 @@ import {
   configReprSetting,
   each,
   isConfigData,
+  templateSafe,
 } from '@voxgig/sdkgen'
 
 
@@ -40,7 +41,8 @@ const Config = cmp(async function Config(props: any) {
 
   const model: Model = ctx$.model
 
-  const { def: config, json: configJson } = configDefinition(model, target.name)
+  const { def: config, json } = configDefinition(model, target.name)
+  const configJson = templateSafe('json', json)
 
   const asData = isConfigData(configJson, configReprSetting(model))
 
@@ -88,7 +90,7 @@ ${wireBlock}`)
   (:require [voxgig.struct :as vs]${wireRequires}))
 
 (defn make-config []
-  ${formatCljValue(config, 1)})
+  ${templateSafe('clojure', formatCljValue(config, 1))})
 ${wireBlock}`)
   })
 })

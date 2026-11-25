@@ -13,6 +13,7 @@ import {
   each,
   isConfigData,
   targetFeatures,
+  templateSafe,
 } from '@voxgig/sdkgen'
 
 
@@ -75,7 +76,8 @@ const Config = cmp(async function Config(props: any) {
 
   const headers = getModelPath(model, `main.${KIT}.config.headers`) || {}
 
-  const { def: configDef, json: configJson } = configDefinition(model, target.name)
+  const { def: configDef, json } = configDefinition(model, target.name)
+  const configJson = templateSafe('json', json)
   const asData = isConfigData(configJson, configReprSetting(model))
 
   const auth = configDef.options.auth
@@ -203,8 +205,8 @@ ${serverBlock}${authBlock}            "headers": ${formatPyDict(headers, 3)},
 
     Content(`            },
         },
-        "entity": ${formatPyDict(
-configDef.entity, 2)},
+        "entity": ${templateSafe('py', formatPyDict(
+configDef.entity, 2))},
     }
 `)
   })

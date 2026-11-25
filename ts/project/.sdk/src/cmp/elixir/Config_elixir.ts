@@ -9,6 +9,7 @@ import {
   each,
   isConfigData,
   targetFeatures,
+  templateSafe,
 } from '@voxgig/sdkgen'
 
 
@@ -78,7 +79,8 @@ const Config = cmp(async function Config(props: any) {
 `
 
   Folder({ name: 'lib' }, () => {
-    const { def: configDef, json: configJson } = configDefinition(model, target.name)
+    const { def: configDef, json } = configDefinition(model, target.name)
+    const configJson = templateSafe('json', json)
     const asData = isConfigData(configJson, configReprSetting(model))
 
     const entityClean = configDef.entity
@@ -192,8 +194,8 @@ defmodule ${Name}.Config do
       // so a templated server URL described a different config either side of
       // the threshold. Same fix as dart, rust and zig.
       Content(`      },
-      "options" => ${formatElixir(configDef.options, 3)},
-      "entity" => ${formatElixir(entityClean, 3)}
+      "options" => ${templateSafe('elixir', formatElixir(configDef.options, 3))},
+      "entity" => ${templateSafe('elixir', formatElixir(entityClean, 3))}
     })
   end
 

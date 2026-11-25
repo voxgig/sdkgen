@@ -8,6 +8,7 @@ import {
   each,
   isConfigData,
   targetFeatures,
+  templateSafe,
 } from '@voxgig/sdkgen'
 
 
@@ -37,7 +38,8 @@ const Config = cmp(async function Config(props: any) {
   // Gated by helpers/applicability, so no feature without source is named.
   const feature = targetFeatures(model, target)
 
-  const { def: configDef, json: configJson } = configDefinition(model, target.name)
+  const { def: configDef, json } = configDefinition(model, target.name)
+  const configJson = templateSafe('json', json)
 
   const asData = isConfigData(configJson, configReprSetting(model))
 
@@ -164,7 +166,7 @@ public static class SdkConfig
     else {
       Content(`    public static Dictionary<string, object?> MakeConfig()
     {
-        return ${formatCsMap(configDef, 2)};
+        return ${templateSafe('csharp', formatCsMap(configDef, 2))};
     }
 `)
     }

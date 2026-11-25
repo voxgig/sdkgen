@@ -8,6 +8,7 @@ import {
   each,
   isConfigData,
   targetFeatures,
+  templateSafe,
 } from '@voxgig/sdkgen'
 
 
@@ -39,7 +40,8 @@ const Config = cmp(async function Config(props: any) {
   // helpers/applicability.
   const feature = targetFeatures(model, target)
 
-  const { def: config, json: configJson } = configDefinition(model, target.name)
+  const { def: config, json } = configDefinition(model, target.name)
+  const configJson = templateSafe('json', json)
 
   const asData = isConfigData(configJson, configReprSetting(model))
 
@@ -106,7 +108,7 @@ use crate::core::types::FeatureRef;
 use crate::utility::voxgigstruct::Value;
 
 pub fn make_config() -> Value {
-    ${formatRustValue(config, 1)}
+    ${templateSafe('rust', formatRustValue(config, 1))}
 }
 
 // SHARED CONFIG (sdkgen rung L2).

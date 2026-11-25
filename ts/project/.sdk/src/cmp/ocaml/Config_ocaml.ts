@@ -8,6 +8,7 @@ import {
   each,
   isConfigData,
   targetFeatures,
+  templateSafe,
 } from '@voxgig/sdkgen'
 
 
@@ -127,7 +128,8 @@ const Config = cmp(async function Config(props: any) {
 
   const secrets = secretsBuild(model, target)
 
-  const { def: config, json: configJson } = configDefinition(model, target.name)
+  const { def: config, json } = configDefinition(model, target.name)
+  const configJson = templateSafe('json', json)
   const asData = isConfigData(configJson, configReprSetting(model))
 
   File({ name: 'sdk_config.' + target.ext }, () => {
@@ -166,7 +168,7 @@ open Sdk_helpers
 open Sdk_features
 
 let make_config () : value =
-  ${formatOcamlValue(config, 1)}
+  ${templateSafe('ocaml', formatOcamlValue(config, 1))}
 `)
     }
 

@@ -6,6 +6,7 @@ import {
   configDefinition,
   each,
   targetFeatures,
+  templateSafe,
 } from '@voxgig/sdkgen'
 
 
@@ -188,7 +189,7 @@ ${featurePluginsBlock}  private static String configJson() {
     StringBuilder b = new StringBuilder();
 `)
 
-    Content(jsonAppendLines(config, 'b'))
+    Content(templateSafe('java', jsonAppendLines(config, 'b')))
 
     Content(`    return b.toString();
   }

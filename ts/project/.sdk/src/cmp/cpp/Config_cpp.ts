@@ -6,6 +6,7 @@ import {
   configDefinition,
   each,
   targetFeatures,
+  templateSafe,
 } from '@voxgig/sdkgen'
 
 
@@ -282,7 +283,7 @@ namespace sdk {
 
 inline const char* config_json() {
   return
-${cppConfigLiterals(configDef)};
+${templateSafe('cpp', cppConfigLiterals(configDef))};
 }
 
 inline Value makeConfig() { return vs::parse_json(config_json()); }

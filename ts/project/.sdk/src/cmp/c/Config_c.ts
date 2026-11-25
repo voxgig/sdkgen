@@ -9,6 +9,7 @@ import {
   each,
   isConfigData,
   targetFeatures,
+  templateSafe,
 } from '@voxgig/sdkgen'
 
 
@@ -285,7 +286,8 @@ const Config = cmp(async function Config(props: any) {
 
   const headers = getModelPath(model, `main.${KIT}.config.headers`) || {}
 
-  const { def: configDef, json: configJson } = configDefinition(model, target.name)
+  const { def: configDef, json } = configDefinition(model, target.name)
+  const configJson = templateSafe('json', json)
   const asData = isConfigData(configJson, configReprSetting(model))
 
   // The feature block comes from configDefinition's def, not from f.config,
@@ -380,7 +382,7 @@ voxgig_value* shared_config(void) {
 #include <string.h>
 
 voxgig_value* make_config(void) {
-  return ${formatCValue(config, 1)};
+  return ${templateSafe('c', formatCValue(config, 1))};
 }
 
 // SHARED CONFIG (sdkgen rung L2).

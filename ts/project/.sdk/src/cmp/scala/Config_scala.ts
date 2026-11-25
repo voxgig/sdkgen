@@ -6,6 +6,7 @@ import {
   each,
   targetFeatures,
   configDefinition,
+  templateSafe,
 } from '@voxgig/sdkgen'
 
 
@@ -147,7 +148,7 @@ ${featurePluginsBlock}    case _ => Nil
     val b = new StringBuilder()
 `)
 
-    Content(jsonAppendLines(config, 'b'))
+    Content(templateSafe('scala', jsonAppendLines(config, 'b')))
 
     Content(`    b.toString
   }

@@ -9,6 +9,7 @@ import {
   each,
   isConfigData,
   targetFeatures,
+  templateSafe,
 } from '@voxgig/sdkgen'
 
 
@@ -36,7 +37,8 @@ const Config = cmp(async function Config(props: any) {
   // Gated by helpers/applicability, so no feature without source is named.
   const feature = targetFeatures(model, target)
 
-  const { def: config, json: configJson } = configDefinition(model, target.name)
+  const { def: config, json } = configDefinition(model, target.name)
+  const configJson = templateSafe('json', json)
   const asData = isConfigData(configJson, configReprSetting(model))
 
   File({ name: 'config.' + target.ext }, () => {
@@ -102,7 +104,7 @@ const Value = h.Value;
 const Feature = types.Feature;
 
 pub fn make_config() Value {
-    return ${formatZigValue(config, 1)};
+    return ${templateSafe('zig', formatZigValue(config, 1))};
 }
 
 // SHARED CONFIG (sdkgen rung L2).

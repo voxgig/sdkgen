@@ -1467,6 +1467,29 @@ main: kit: target: js: phase: feature: active: false
   }
 
 
+  // The template pass reads `$$path$$` in what a component prints, so text from
+  // the spec reaches generated source with each `$$` escaped for its language.
+  for (const repr of ['literal', 'data']) {
+    test('every target keeps a field description holding $$ in its ' + repr + ' config and tests', async () => {
+      const targets = allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))
+      const out = await generate(targets, undefined,
+        'main: kit: entity: planet: fields: radius: sh: "Cost in $$name$$ or $$x$$ y"\n' +
+        `main: kit: config: repr: '${repr}'\n`)
+      for (const target of targets) {
+        const source = filesFor(out, target).filter(([file]) => !file.endsWith('.md'))
+        deepStrictEqual(source.filter(([, text]) => String(text).includes('Cost in demo'))
+          .map(([file]) => file), [], target + ': the template pass rewrote the description')
+        const config = source.find(([file]) =>
+          /(^|\/)(sdk_)?config\.[a-z]+$/i.test(file) && !file.includes('feature/'))
+        ok(String(config?.[1]).includes('Cost in '), target + ': the description left the config')
+      }
+      const short = (cfg: any) => cfg.entity.planet.fields.find((f: any) => 'radius' === f.name).short
+      const src = tsConfigSrc(filesFor(out, 'ts'))
+      strictEqual(short('literal' === repr ? loadTsConfig(src) : parseTsConfigData(src)), 'Cost in $$name$$ or $$x$$ y')
+    })
+  }
+
+
   // A spec's field description is cell text, and a project's wording of an
   // entity is what every target's entity section says.
   test('every target escapes a field description and words an entity as the project does', async () => {

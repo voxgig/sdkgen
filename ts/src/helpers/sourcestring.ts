@@ -41,7 +41,15 @@ function sourceString(lang: string, text: string): string {
 }
 
 
+// Formatted source with only its `$$` runs escaped, which is all the template
+// pass reads; each such run lies inside a string literal of `lang`.
+function templateSafe(lang: string, text: string): string {
+  return String(text).replace(/\${2,}/g, (run: string) => sourceString(lang, run))
+}
+
+
 export {
   DOLLAR,
   sourceString,
+  templateSafe,
 }

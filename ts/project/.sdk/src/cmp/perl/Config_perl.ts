@@ -6,6 +6,7 @@ import {
   configDefinition,
   each,
   targetFeatures,
+  templateSafe,
 } from '@voxgig/sdkgen'
 
 
@@ -62,7 +63,7 @@ const Config = cmp(async function Config(props: any) {
 
   const { def: configDef } = configDefinition(model, target.name)
 
-  const configJson = JSON.stringify(configDef, null, 2)
+  const configJson = templateSafe('json', JSON.stringify(configDef, null, 2))
 
   const bypath = pluginsByPath(targetFeatures(model, target))
   const features = Object.keys(bypath).sort()

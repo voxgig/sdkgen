@@ -6068,7 +6068,7 @@ main: kit: entity: scan: {
   }
   fields: {
     "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" }
-    "label": { h: 'Label', n: "label", r: false, t: "\`$STRING\`" }
+    "label": { h: 'Label', n: "label", r: false, t: "\`$STRING\`", sh: "Shown as $$name$$ | or $$x$$" }
   }
   op: {
     load: {
