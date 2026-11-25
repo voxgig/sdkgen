@@ -22,7 +22,7 @@ import {
   FOLD_ENTITY, UNGENERATED_OP, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, CREATELESS_ENTITY,
   ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY, DOC_MODELS, namedEntity, toolchain,
   REQUEST_SHAPED_ENTITY, exampleParams, wireNameParams, slashRoutes, getOnlyFlows, getOnlyBuildctx, multiRouteLoad, keylessLoad,
-  directDiscovery, liveFallbacks, slugKeyed, liveIdentities,
+  directDiscovery, liveFallbacks, slugKeyed, liveIdentities, BASIC_TEMPLATED, BASIC_QUERY,
 } from './generateharness'
 
 
@@ -1428,9 +1428,13 @@ main: kit: target: js: phase: feature: active: false
   }
 
 
-  for (const [shape, servers] of [
-    ['no server URL', ''],
-    ['a server URL', "main: kit: info: servers: [ { url: 'https://api.example.com' } ]"],
+  for (const [shape, servers, base] of [
+    ['no server URL', '', ''],
+    ['a server URL', "main: kit: info: servers: [ { url: 'https://api.example.com' } ]", 'https://api.example.com'],
+    ['HTTP Basic and a templated server URL', BASIC_TEMPLATED, 'https://{tenant}.example.test/{region}'],
+    ['HTTP Basic in the query', BASIC_QUERY, ''],
+    ['a key renamed in a cookie',
+      "main: kit: config: auth: { active: true, prefix: '', in: 'cookie', name: 'session' }", ''],
   ]) {
     test('the ts config is the same whichever representation is emitted, with ' +
       shape, async () => {
@@ -1450,8 +1454,7 @@ main: kit: target: js: phase: feature: active: false
         deepStrictEqual(snap(datcfg), snap(litcfg),
           'the two config representations describe different configs')
 
-        strictEqual(litcfg.options.base, '' === servers ? '' : 'https://api.example.com',
-          'the base URL did not survive into the config')
+        strictEqual(litcfg.options.base, base, 'the base URL did not survive into the config')
 
         // `makeFeature` lives on the prototype in both, so assigning the parsed
         // data over an instance must not have shadowed it.
@@ -1464,6 +1467,23 @@ main: kit: target: js: phase: feature: active: false
         }
       })
   }
+
+
+  // Every literal takes its auth block from configDefinition, which flags Basic
+  // only where PrepareAuth composes it: with the key in the header.
+  test('every config flags Basic where the key is in the header, and nowhere else', async () => {
+    const targets = allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))
+    for (const [extra, flagged] of [[BASIC_TEMPLATED, true], [BASIC_QUERY, false]] as [string, boolean][]) {
+      const out = await generate(targets, undefined, "main: kit: config: repr: 'literal'\n" + extra)
+      for (const target of targets) {
+        const config = filesFor(out, target).find(([n]) =>
+          /(^|\/)(sdk_)?config\.[a-z]+$/i.test(n) && !n.includes('feature/'))
+        ok(config, target + ': no config file')
+        strictEqual(/\bbasic\b/.test(String(config![1])), flagged,
+          target + ': ' + config![0] + (flagged ? ' does not flag' : ' flags') + ' Basic')
+      }
+    }
+  })
 
 
   test('no generated config ships jostraca iteration metadata', async () => {

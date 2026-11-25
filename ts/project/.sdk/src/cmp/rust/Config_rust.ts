@@ -6,11 +6,7 @@ import {
   configDefinition,
   configReprSetting,
   each,
-  isAuthActive,
   isConfigData,
-  resolveAuthIn,
-  resolveAuthName,
-  resolveAuthPrefix,
   targetFeatures,
 } from '@voxgig/sdkgen'
 
@@ -43,35 +39,7 @@ const Config = cmp(async function Config(props: any) {
   // helpers/applicability.
   const feature = targetFeatures(model, target)
 
-  const headers = getModelPath(model, `main.${KIT}.config.headers`) || {}
-
-  const authActive = isAuthActive(model)
-  // config.auth.prefix override -> spec-derived info.security.prefix -> 'Bearer'
-  const authPrefix = resolveAuthPrefix(model)
-
-  let baseUrl = ''
-  try { baseUrl = getModelPath(model, `main.${KIT}.info.servers.0.url`) } catch (_e) { }
-
-  const { def: config, json: baseJson } = configDefinition(model, target.name)
-
-  const authIn = resolveAuthIn(model)
-  const authName = resolveAuthName(model)
-  let configJson = baseJson
-
-  if (authActive && null != config.options && null != config.options.auth) {
-    let changed = false
-    if ('header' !== authIn) {
-      config.options.auth.in = authIn
-      changed = true
-    }
-    if ('Authorization' !== authName) {
-      config.options.auth.name = authName
-      changed = true
-    }
-    if (changed) {
-      configJson = JSON.stringify(config)
-    }
-  }
+  const { def: config, json: configJson } = configDefinition(model, target.name)
 
   const asData = isConfigData(configJson, configReprSetting(model))
 

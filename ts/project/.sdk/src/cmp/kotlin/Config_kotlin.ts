@@ -5,11 +5,6 @@ import {
   cmp,
   configDefinition,
   each,
-  isAuthActive,
-  isHttpBasicAuth,
-  resolveAuthIn,
-  resolveAuthName,
-  resolveAuthPrefix,
   targetFeatures,
 } from '@voxgig/sdkgen'
 
@@ -44,15 +39,6 @@ const Config = cmp(async function Config(props: any) {
 
   const headers = getModelPath(model, `main.${KIT}.config.headers`) || {}
 
-  const authActive = isAuthActive(model)
-  const authPrefix = resolveAuthPrefix(model)
-  const authBasic = isHttpBasicAuth(model)
-  const authIn = resolveAuthIn(model)
-  const authName = resolveAuthName(model)
-
-  let baseUrl = ''
-  try { baseUrl = getModelPath(model, `main.${KIT}.info.servers.0.url`) } catch (_e) { }
-
   const { def: configDef } = configDefinition(model, target.name)
 
   // The feature block comes from configDefinition's def, not from
@@ -70,22 +56,14 @@ const Config = cmp(async function Config(props: any) {
   })
 
   const options: Record<string, any> = {
-    base: baseUrl,
+    base: configDef.options.base,
   }
   // The declared defaults makeOptions fills a templated base URL from.
   if (null != configDef.options.server) {
     options.server = configDef.options.server
   }
-  if (authActive) {
-    const auth: Record<string, any> = { prefix: authPrefix }
-    // `basic` joins them for the same reason: the generated prepareAuth
-    // emits the base64(user:pass) branch only for a spec-declared HTTP
-    // Basic scheme, and that branch reads this option at runtime - without
-    // it the branch could never fire.
-    if (authBasic) { auth.basic = true }
-    if ('header' !== authIn) { auth.in = authIn }
-    if ('Authorization' !== authName) { auth.name = authName }
-    options.auth = auth
+  if (null != configDef.options.auth) {
+    options.auth = configDef.options.auth
   }
   options.headers = headers
   options.entity = optionsEntity

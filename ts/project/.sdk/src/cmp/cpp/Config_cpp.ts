@@ -5,9 +5,6 @@ import {
   cmp,
   configDefinition,
   each,
-  isAuthActive,
-  resolveAuthIn,
-  resolveAuthName,
   targetFeatures,
 } from '@voxgig/sdkgen'
 
@@ -256,19 +253,6 @@ const Config = cmp(async function Config(props: any) {
   const feature = targetFeatures(model, target)
 
   const { def: configDef } = configDefinition(model, target.name)
-
-  const authIn = resolveAuthIn(model)
-  const authName = resolveAuthName(model)
-
-  if (isAuthActive(model) && null != configDef.options &&
-    null != configDef.options.auth) {
-    if ('header' !== authIn) {
-      configDef.options.auth.in = authIn
-    }
-    if ('Authorization' !== authName) {
-      configDef.options.auth.name = authName
-    }
-  }
 
   File({ name: 'config.' + target.ext }, () => {
 

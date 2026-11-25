@@ -12,13 +12,7 @@ import {
   configDefinition,
   configReprSetting,
   goModule,
-  isAuthActive,
   isConfigData,
-  resolveAuthIn,
-  resolveAuthName,
-  isHttpBasicAuth,
-  resolveAuthPrefix,
-  serverVariables,
   targetFeatures,
 } from '@voxgig/sdkgen'
 
@@ -49,37 +43,26 @@ const Config = cmp(async function Config(props: any) {
 
   const headers = getModelPath(model, `main.${KIT}.config.headers`) || {}
 
-  const authActive = isAuthActive(model)
-  const authPrefix = resolveAuthPrefix(model)
-
-  let baseUrl = ''
-  try { baseUrl = getModelPath(model, `main.${KIT}.info.servers.0.url`) } catch (_e) { }
-
-  const svars = serverVariables(model)
-  const serverBlock = 0 === svars.length ? '' :
-    '\t\t\t"server": map[string]any{\n' +
-    svars.map((v: any) => `\t\t\t\t${JSON.stringify(v.name)}: ${JSON.stringify(v.dflt)},\n`).join('') +
-    '\t\t\t},\n'
-
-  // `in` and `name` travel with the prefix now. They were resolved by
-  // apidef all along and dropped here, so an apiKey-in-query API got an
-  // Authorization header it does not read. Emitted only when they differ
-  // from the defaults, so a header/Authorization SDK is byte-identical to
-  // what it generated before.
-  const authIn = resolveAuthIn(model)
-  const authName = resolveAuthName(model)
-  const authBasic = isHttpBasicAuth(model)
-  const authBlock = authActive
-    ? `			"auth": map[string]any{
-				"prefix": "${authPrefix}",${authBasic ? `
-				"basic": true,` : ''}${'header' === authIn ? '' : `
-				"in": "${authIn}",`}${'Authorization' === authName ? '' : `
-				"name": "${authName}",`}
-			},\n`
-    : ''
-
   const { def: configDef, json: configJson } = configDefinition(model, target.name)
   const asData = isConfigData(configJson, configReprSetting(model))
+
+  const auth = configDef.options.auth
+  const server = configDef.options.server
+  const baseUrl = configDef.options.base
+
+  const serverBlock = null == server ? '' :
+    '\t\t\t"server": map[string]any{\n' +
+    Object.entries(server).map(([name, dflt]: [string, any]) => `\t\t\t\t${JSON.stringify(name)}: ${JSON.stringify(dflt)},\n`).join('') +
+    '\t\t\t},\n'
+
+  const authBlock = null != auth
+    ? `			"auth": map[string]any{
+				"prefix": "${auth.prefix}",${auth.basic ? `
+				"basic": true,` : ''}${null == auth.in ? '' : `
+				"in": "${auth.in}",`}${null == auth.name ? '' : `
+				"name": "${auth.name}",`}
+			},\n`
+    : ''
 
   const gomodule = goModule(model, target.name)
   const pluginPaths = new Set<string>()

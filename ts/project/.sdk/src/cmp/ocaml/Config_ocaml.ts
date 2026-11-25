@@ -6,11 +6,7 @@ import {
   configDefinition,
   configReprSetting,
   each,
-  isAuthActive,
   isConfigData,
-  resolveAuthIn,
-  resolveAuthName,
-  resolveAuthPrefix,
   targetFeatures,
 } from '@voxgig/sdkgen'
 
@@ -131,21 +127,7 @@ const Config = cmp(async function Config(props: any) {
 
   const secrets = secretsBuild(model, target)
 
-  const { def: config } = configDefinition(model, target.name)
-
-  const authIn = resolveAuthIn(model)
-  const authName = resolveAuthName(model)
-  const authOpts = (config as any).options?.auth
-  if (null != authOpts) {
-    if ('header' !== authIn) {
-      authOpts.in = authIn
-    }
-    if ('Authorization' !== authName) {
-      authOpts.name = authName
-    }
-  }
-
-  const configJson = JSON.stringify(config)
+  const { def: config, json: configJson } = configDefinition(model, target.name)
   const asData = isConfigData(configJson, configReprSetting(model))
 
   File({ name: 'sdk_config.' + target.ext }, () => {
