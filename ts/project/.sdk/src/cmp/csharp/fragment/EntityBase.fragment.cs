@@ -251,8 +251,6 @@ public abstract class ProjectNameEntityBase : IEntity
     // `callopts` parameterises the call:
     //   - inbound (download): iterate the yielded items/chunks (from the
     //     streaming feature when active, else the materialised items);
-    //   - outbound (upload): pass a streamable payload as callopts["body"] - it
-    //     is attached to the request so the transport can send it;
     //   - callopts["ctrl"] threads pipeline control and callopts["signal"] (a
     //     CancellationToken) is honoured between yields.
     public async IAsyncEnumerable<object?> Stream(
@@ -293,15 +291,6 @@ public abstract class ProjectNameEntityBase : IEntity
         }
 
         var ctx = utility.MakeContext(ctxmap, entctx);
-
-        // Outbound: expose the caller's streamable payload so the request
-        // builder / transport can stream it as the request body.
-        var body = StructUtils.GetProp(callopts, "body");
-        if (body != null)
-        {
-            ctx.Reqdata["body$"] = body;
-            ctx.Ctrl.Stream_out = body;
-        }
 
         // Run the same pipeline the op methods run.
         var materialised = RunOp(ctx, () =>
