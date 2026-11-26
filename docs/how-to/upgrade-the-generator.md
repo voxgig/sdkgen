@@ -93,7 +93,8 @@ From 4.48.0, the SDK of an API whose spec declares no authentication places
 no credential, unless the project switches auth on. Earlier releases
 documented no authentication for such an API and still sent an API key the
 caller passed. A caller that relies on that key reaching the API now sends
-none. Where the API takes a key its spec does not declare, switch auth
+none, except through the secrets feature, which still sends the key it
+resolves. Where the API takes a key its spec does not declare, switch auth
 on in the project's model, as
 [`isAuthActive`](../reference/api.md#isauthactivemodel--boolean) describes,
 and regenerate.
