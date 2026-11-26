@@ -844,14 +844,14 @@ func withOrigins(run func(o *redirectOrigins)) {
 		body, _ := io.ReadAll(req.Body)
 		o.mu.Lock()
 		defer o.mu.Unlock()
-		if "/api/auth/token" == req.URL.Path {
+		if "/api/auth/token" == req.URL.Path && "" == req.URL.RawQuery {
 			o.exchanged++
 			res.Header().Set("location", o.location)
 			res.WriteHeader(o.status)
 			return
 		}
 		o.followed = append(o.followed,
-			strings.TrimSpace(req.Method+" "+req.URL.Path+" "+string(body)))
+			strings.TrimSpace(req.Method+" "+req.URL.RequestURI()+" "+string(body)))
 		res.Header().Set("content-type", "application/json")
 		res.Write([]byte(`{"access_token":"MOVED01"}`))
 	}))
@@ -949,17 +949,21 @@ func TestSecretsExchangeRedirectRefused(t *testing.T) {
 		entity, opname := routableOp(t)
 
 		withOrigins(func(o *redirectOrigins) {
-			moved := `POST /api/moved/token {"refresh_token":"REFRESH01"}`
+			sent := ` {"refresh_token":"REFRESH01"}`
+			// Each case: the status, the Location, and the path the exchange is
+			// asked again at, or "" where the redirect is refused.
 			cases := []struct {
 				status   int
 				location string
-				follows  bool
+				path     string
 			}{
-				{307, "/api/moved/token", true},
-				{308, o.origin + "/api/moved/token", true},
-				{307, o.away, false},
-				{302, "/api/moved/token", false},
-				{307, "/api/auth/token", false},
+				{307, "/api/moved/token", "/api/moved/token"},
+				{308, o.origin + "/api/moved/token", "/api/moved/token"},
+				// A Location of a query alone keeps the path that answered.
+				{307, "?step=2", "/api/auth/token?step=2"},
+				{307, o.away, ""},
+				{302, "/api/moved/token", ""},
+				{307, "/api/auth/token", ""},
 			}
 
 			wrong := []string{}
@@ -974,8 +978,8 @@ func TestSecretsExchangeRedirectRefused(t *testing.T) {
 
 				o.mu.Lock()
 				seen := fmt.Sprintf("%d to %s: %s %v", c.status, c.location, message, o.followed)
-				if c.follows {
-					if nil == result && 2 == len(o.followed) && moved == o.followed[0] {
+				if "" != c.path {
+					if nil == result && 2 == len(o.followed) && "POST "+c.path+sent == o.followed[0] {
 						followed++
 					} else {
 						wrong = append(wrong, seen)
@@ -1003,8 +1007,8 @@ func TestSecretsExchangeRedirectRefused(t *testing.T) {
 			if 0 != len(wrong) {
 				t.Errorf("unexpected outcomes: %v", wrong)
 			}
-			if 2 != followed {
-				t.Errorf("expected 2 followed, got %d", followed)
+			if 3 != followed {
+				t.Errorf("expected 3 followed, got %d", followed)
 			}
 			if 3 != refused {
 				t.Errorf("expected 3 refused, got %d", refused)

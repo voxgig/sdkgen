@@ -521,18 +521,22 @@ class TestSecretsReviewPins(unittest.TestCase):
 
     def test_with_the_option_a_redirect_on_the_exchange_s_own_origin_is_followed(self):
         with _origins() as o:
+            # Each case: the status, the Location, and the path the exchange is
+            # asked again at, or None where the redirect is refused.
             cases = [
-                (307, "/api/moved/token", True),
-                (308, o["origin"] + "/api/moved/token", True),
-                (307, o["away"], False),
-                (302, "/api/moved/token", False),
-                (307, "/api/auth/token", False),
+                (307, "/api/moved/token", "/api/moved/token"),
+                (308, o["origin"] + "/api/moved/token", "/api/moved/token"),
+                # A Location of a query alone keeps the path that answered.
+                (307, "?step=2", "/api/auth/token?step=2"),
+                (307, o["away"], None),
+                (302, "/api/moved/token", None),
+                (307, "/api/auth/token", None),
             ]
 
             wrong = []
             followed = refused = looped = 0
 
-            for status, location, follows in cases:
+            for status, location, path in cases:
                 o["answer"][:] = [status, location]
                 o["followed"].clear()
                 o["exchanged"][0] = 0
@@ -543,11 +547,11 @@ class TestSecretsReviewPins(unittest.TestCase):
                 message = str(res if err is None else err)
                 seen = "%d to %s: %s %s" % (status, location, message, o["followed"])
 
-                if follows:
+                if path is not None:
                     first = o["followed"][0] if o["followed"] else None
                     if (isinstance(res, dict) and res.get("ok") is True
                             and 2 == len(o["followed"])
-                            and ("POST", "/api/moved/token") == first[:2]
+                            and ("POST", path) == first[:2]
                             and {"refresh_token": "REFRESH01"} == json.loads(first[2])):
                         followed += 1
                     else:
@@ -568,7 +572,7 @@ class TestSecretsReviewPins(unittest.TestCase):
 
             self.assertEqual([], o["elsewhere"], "the exchange reached another origin")
             self.assertEqual([], wrong)
-            self.assertEqual(2, followed)
+            self.assertEqual(3, followed)
             self.assertEqual(3, refused)
             # A redirect to itself is followed five times and no more.
             self.assertEqual(6, looped)
