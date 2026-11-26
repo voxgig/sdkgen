@@ -4838,7 +4838,8 @@ describe('a secrets suite skips for an SDK that places no credential', () => {
         }
         if (probe.timedOut) return t.skip(lane.target + ': ' + probe.out)
 
-        const out = probe.out.replace(/\r\n/g, '\n')
+        // zig colours its summary where it decides it may, as on the runners.
+        const out = probe.out.replace(/\r\n/g, '\n').replace(/\x1b\[[0-9;]*m/g, '')
         ok(probe.ok, lane.target + ' secrets suite failed with no auth:\n' + tail(out))
         for (const line of lane.skipped) {
           ok(line.test(out), lane.target + ': the run did not print ' + line + ':\n' + tail(out))
@@ -6113,7 +6114,9 @@ const CREDNAME_LANES: CredNameLane[] = [
         name: 'the corpus prepareAuth section',
         corpus: true,
         cmd: () => dotnetTest('PrimaryUtilityTest.PrepareAuthBasic', 'detailed'),
-        ran: /Passed!\s+-\s+Failed:\s+0,\s+Passed:\s+1,\s+Skipped:\s+0/,
+        // The detailed logger, which shows the skip line, names a count only
+        // when it is not zero: one test in all, and that one passed.
+        ran: /^\s*Total tests: 1\s*\n\s*Passed: 1\s*$/m,
         public: /SKIP PrepareAuthBasic: this SDK's config declares no auth, so it places no credential/,
       },
     ],
