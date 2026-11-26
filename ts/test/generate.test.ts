@@ -1804,6 +1804,20 @@ main: kit: target: js: phase: feature: active: false
       'variables: `tenant`, `region` (default `eu`).'), 'the ts options row does not say which variable has a default')
   })
 
+  // A client built over a templated URL is refused without its required variables.
+  test('the ts and js tester and extend constructors pass the server variables a client must supply', async () => {
+    const out = await generate(['ts', 'js'], undefined, BASIC_TEMPLATED)
+    for (const target of ['ts', 'js']) {
+      const readme = String(out[target + '/README.md'])
+      const tester = /const client = (new DemoSDK\([^\n]*\))\nconst testClient = client\.tester\(\)/.exec(readme)
+      ok(null != tester && /tenant: '\.\.\.'/.test(tester[1]) && !/region/.test(tester[1]),
+        target + ': the tester constructor: ' + tester?.[1])
+      const extend = /const client = new DemoSDK\(\{([\s\S]*?)extend: \[logger\],\n\}\)/.exec(readme)
+      ok(null != extend && /tenant: '\.\.\.'/.test(extend[1]) && !/region/.test(extend[1]),
+        target + ': the extend constructor: ' + extend?.[1])
+    }
+  })
+
   test('the go quick start indents its server block as its other keys', async () => {
     const readme = String((await generate(['go'], undefined, BASIC_TEMPLATED))['go/README.md'])
     ok(/\n {8}"apikey": [^\n]*\n( {8}"secret": [^\n]*\n)? {8}"server": map\[string\]any\{\n {12}"tenant": "<tenant>",\n {8}\},/.test(readme),
@@ -1812,7 +1826,7 @@ main: kit: target: js: phase: feature: active: false
 
   // PrepareAuth composes a Basic credential only with the key in the header.
   test('every target\'s documents ask for a secret exactly where PrepareAuth reads one', async () => {
-    const targets = allTargets().filter((t) => !NON_SDK_TARGETS.includes(t) && 'js' !== t)
+    const targets = allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))
     for (const [extra, wanted] of [[BASIC_TEMPLATED, true], [BASIC_QUERY, false]] as [string, boolean][]) {
       const out = await generate(targets, undefined, extra)
       for (const file of ['README.md', ...targets.flatMap((t) => [t + '/README.md', t + '/REFERENCE.md'])]) {

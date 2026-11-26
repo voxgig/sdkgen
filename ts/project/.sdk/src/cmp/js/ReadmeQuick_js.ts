@@ -24,7 +24,8 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
     `\n  // Required: this API's server URL is templated on these.\n  server: {` +
     svars.map((v: any) => `\n    ${v.name}: '<${v.name}>',`).join('') + `\n  },`
   const ctorFields = (isAuthActive(model)
-    ? `\n  apikey: process.env.${envName(model)}_APIKEY,`
+    ? `\n  apikey: process.env.${envName(model)}_APIKEY,${
+      fact(model.main[KIT], 'auth').secret ? `\n  secret: process.env.${envName(model)}_SECRET,` : ''}`
     : '') + serverField
   const ctor = '' === ctorFields
     ? `new ${model.const.Name}SDK()`

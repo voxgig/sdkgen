@@ -89,12 +89,20 @@ ${stateDataLine}
 
   const authActive = isAuthActive(model)
   const authBasic = authActive && fact(model.main[KIT], 'auth').secret
-  const apikeyTesterCtor = authActive
-    ? `new ${model.const.Name}SDK({ apikey: '...'${authBasic ? `, secret: '...'` : ''} })`
-    : `new ${model.const.Name}SDK()`
-  const apikeyExtendField = authActive
+  // A client built over a templated URL needs the variables it has no default for.
+  const svars = fact(model.main[KIT], 'server').filter((v: any) => v.required)
+  const testerFields = [
+    ...(authActive ? [`apikey: '...'`] : []),
+    ...(authBasic ? [`secret: '...'`] : []),
+    ...(0 === svars.length ? [] : [`server: { ${svars.map((v: any) => `${v.name}: '...'`).join(', ')} }`]),
+  ]
+  const apikeyTesterCtor = 0 === testerFields.length
+    ? `new ${model.const.Name}SDK()`
+    : `new ${model.const.Name}SDK({ ${testerFields.join(', ')} })`
+  const apikeyExtendField = (authActive
     ? `\n  apikey: '...',${authBasic ? `\n  secret: '...',` : ''}`
-    : ''
+    : '') + (0 === svars.length ? '' :
+      `\n  server: {${svars.map((v: any) => `\n    ${v.name}: '...',`).join('')}\n  },`)
   const apikeyEnvLine = authActive
     ? `\n${envName(model)}_APIKEY=<your-key>${authBasic ? `\n${envName(model)}_SECRET=<your-secret>` : ''}`
     : ''
