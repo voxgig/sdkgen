@@ -18,8 +18,10 @@ import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assertions.fail
+import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.api.Test
 
+import KOTLINPACKAGE.core.Config
 import KOTLINPACKAGE.core.Context
 import KOTLINPACKAGE.core.Entity
 import KOTLINPACKAGE.core.Helpers
@@ -926,8 +928,15 @@ class PrimaryUtilityTest {
     }
   }
 
+  // Read from the config, never from a probe: a probe that finds no
+  // credential is the regression this section exists to catch.
   @Test
   fun prepareAuthBasic() {
+    Assumptions.assumeTrue(
+      true == Helpers.toMapAny(Config.sharedConfig()["options"])?.containsKey("auth"),
+      "this SDK's config declares no auth, so it places no credential",
+    )
+
     val setupOpts = RunnerSupport.getSpec(run().spec, "prepareAuth", "DEF", "setup", "a")
     val authClient = ProjectNameSDK.testSDK(null, setupOpts)
     val authUtility = authClient.getUtility()

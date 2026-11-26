@@ -68,7 +68,7 @@ open Sdk_helpers
 (* THE PLACEMENT THIS SDK WAS GENERATED FOR, DECLARED rather than left
  * implicit in the code below.
  *
- *   cred_active  false only for main.kit.config.auth.active: false
+ *   cred_active  false when this SDK is configured with authentication off
  *   cred_where   header | query | cookie
  *   cred_name    the key used - ALREADY LOWER-CASED for a header, because
  *                every header key the runtime writes is; verbatim for a
@@ -90,8 +90,8 @@ let cred_name = "${ocamlString(spec.name)}"
   // read from options, so no constant is emitted either.
   if (!spec.active) {
     return head + `
-(* This SDK is configured with authentication off
- * (main.kit.config.auth.active: false), so there is no credential to place.
+(* This SDK is configured with authentication off, so there is no credential
+ * to place.
  * The function stays in the pipeline because make_spec calls it
  * unconditionally. *)
 let prepare_auth_util (ctx : ctx) : (spec option * sdk_error option) =

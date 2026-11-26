@@ -73,9 +73,9 @@
     },
     {
       "relation": "parity",
-      "chain": "ReadmeModel@clojure",
+      "chain": "ReadmeHowto@clojure",
       "cause": "servers",
-      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "reason": "clojure's how-to has no live-test environment to name a server variable in, and its tests build no live client.",
       "line": "",
       "variations": [
         "baseline"
@@ -83,9 +83,9 @@
     },
     {
       "relation": "parity",
-      "chain": "ReadmeModel@cpp",
+      "chain": "ReadmeHowto@cpp",
       "cause": "servers",
-      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "reason": "cpp's entity tests read the live flag but build no live client, so nothing reads a server variable and its live-test environment names none.",
       "line": "",
       "variations": [
         "baseline"
@@ -93,9 +93,9 @@
     },
     {
       "relation": "parity",
-      "chain": "ReadmeModel@csharp",
+      "chain": "ReadmeHowto@c",
       "cause": "servers",
-      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "reason": "c's live-test section documents a suite this target does not have: no generated test reads its environment, so there is no server variable for it to name.",
       "line": "",
       "variations": [
         "baseline"
@@ -103,9 +103,9 @@
     },
     {
       "relation": "parity",
-      "chain": "ReadmeModel@c",
+      "chain": "ReadmeHowto@elixir",
       "cause": "servers",
-      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "reason": "elixir's live-test section documents a suite this target does not have: no generated test reads its environment, so there is no server variable for it to name.",
       "line": "",
       "variations": [
         "baseline"
@@ -113,9 +113,9 @@
     },
     {
       "relation": "parity",
-      "chain": "ReadmeModel@elixir",
+      "chain": "ReadmeHowto@ocaml",
       "cause": "servers",
-      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "reason": "ocaml's live-test section documents a suite this target does not have: no generated test reads its environment, so there is no server variable for it to name.",
       "line": "",
       "variations": [
         "baseline"
@@ -123,9 +123,9 @@
     },
     {
       "relation": "parity",
-      "chain": "ReadmeModel@go",
+      "chain": "ReadmeHowto@scala",
       "cause": "servers",
-      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "reason": "scala's live-test section documents a suite this target does not have: no generated test reads its environment, so there is no server variable for it to name.",
       "line": "",
       "variations": [
         "baseline"
@@ -133,9 +133,9 @@
     },
     {
       "relation": "parity",
-      "chain": "ReadmeModel@java",
+      "chain": "ReadmeHowto@swift",
       "cause": "servers",
-      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "reason": "swift's live-test section documents a suite this target does not have: no generated test reads its environment, so there is no server variable for it to name.",
       "line": "",
       "variations": [
         "baseline"
@@ -143,279 +143,9 @@
     },
     {
       "relation": "parity",
-      "chain": "ReadmeModel@js",
+      "chain": "ReadmeHowto@zig",
       "cause": "servers",
-      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
-      "line": "",
-      "variations": [
-        "baseline"
-      ]
-    },
-    {
-      "relation": "parity",
-      "chain": "ReadmeModel@kotlin",
-      "cause": "servers",
-      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
-      "line": "",
-      "variations": [
-        "baseline"
-      ]
-    },
-    {
-      "relation": "parity",
-      "chain": "ReadmeModel@lua",
-      "cause": "servers",
-      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
-      "line": "",
-      "variations": [
-        "baseline"
-      ]
-    },
-    {
-      "relation": "parity",
-      "chain": "ReadmeModel@ocaml",
-      "cause": "servers",
-      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
-      "line": "",
-      "variations": [
-        "baseline"
-      ]
-    },
-    {
-      "relation": "parity",
-      "chain": "ReadmeModel@perl",
-      "cause": "servers",
-      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
-      "line": "",
-      "variations": [
-        "baseline"
-      ]
-    },
-    {
-      "relation": "parity",
-      "chain": "ReadmeModel@php",
-      "cause": "servers",
-      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
-      "line": "",
-      "variations": [
-        "baseline"
-      ]
-    },
-    {
-      "relation": "parity",
-      "chain": "ReadmeModel@py",
-      "cause": "servers",
-      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
-      "line": "",
-      "variations": [
-        "baseline"
-      ]
-    },
-    {
-      "relation": "parity",
-      "chain": "ReadmeModel@rb",
-      "cause": "servers",
-      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
-      "line": "",
-      "variations": [
-        "baseline"
-      ]
-    },
-    {
-      "relation": "parity",
-      "chain": "ReadmeModel@rust",
-      "cause": "servers",
-      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
-      "line": "",
-      "variations": [
-        "baseline"
-      ]
-    },
-    {
-      "relation": "parity",
-      "chain": "ReadmeModel@scala",
-      "cause": "servers",
-      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
-      "line": "",
-      "variations": [
-        "baseline"
-      ]
-    },
-    {
-      "relation": "parity",
-      "chain": "ReadmeModel@swift",
-      "cause": "servers",
-      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
-      "line": "",
-      "variations": [
-        "baseline"
-      ]
-    },
-    {
-      "relation": "parity",
-      "chain": "ReadmeModel@zig",
-      "cause": "servers",
-      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
-      "line": "",
-      "variations": [
-        "baseline"
-      ]
-    },
-    {
-      "relation": "parity",
-      "chain": "ReadmeQuick@clojure",
-      "cause": "servers",
-      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
-      "line": "",
-      "variations": [
-        "baseline"
-      ]
-    },
-    {
-      "relation": "parity",
-      "chain": "ReadmeQuick@cpp",
-      "cause": "servers",
-      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
-      "line": "",
-      "variations": [
-        "baseline"
-      ]
-    },
-    {
-      "relation": "parity",
-      "chain": "ReadmeQuick@csharp",
-      "cause": "servers",
-      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
-      "line": "",
-      "variations": [
-        "baseline"
-      ]
-    },
-    {
-      "relation": "parity",
-      "chain": "ReadmeQuick@c",
-      "cause": "servers",
-      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
-      "line": "",
-      "variations": [
-        "baseline"
-      ]
-    },
-    {
-      "relation": "parity",
-      "chain": "ReadmeQuick@elixir",
-      "cause": "servers",
-      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
-      "line": "",
-      "variations": [
-        "baseline"
-      ]
-    },
-    {
-      "relation": "parity",
-      "chain": "ReadmeQuick@js",
-      "cause": "servers",
-      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
-      "line": "",
-      "variations": [
-        "baseline"
-      ]
-    },
-    {
-      "relation": "parity",
-      "chain": "ReadmeQuick@kotlin",
-      "cause": "servers",
-      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
-      "line": "",
-      "variations": [
-        "baseline"
-      ]
-    },
-    {
-      "relation": "parity",
-      "chain": "ReadmeQuick@lua",
-      "cause": "servers",
-      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
-      "line": "",
-      "variations": [
-        "baseline"
-      ]
-    },
-    {
-      "relation": "parity",
-      "chain": "ReadmeQuick@ocaml",
-      "cause": "servers",
-      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
-      "line": "",
-      "variations": [
-        "baseline"
-      ]
-    },
-    {
-      "relation": "parity",
-      "chain": "ReadmeQuick@perl",
-      "cause": "servers",
-      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
-      "line": "",
-      "variations": [
-        "baseline"
-      ]
-    },
-    {
-      "relation": "parity",
-      "chain": "ReadmeQuick@php",
-      "cause": "servers",
-      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
-      "line": "",
-      "variations": [
-        "baseline"
-      ]
-    },
-    {
-      "relation": "parity",
-      "chain": "ReadmeQuick@rb",
-      "cause": "servers",
-      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
-      "line": "",
-      "variations": [
-        "baseline"
-      ]
-    },
-    {
-      "relation": "parity",
-      "chain": "ReadmeQuick@rust",
-      "cause": "servers",
-      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
-      "line": "",
-      "variations": [
-        "baseline"
-      ]
-    },
-    {
-      "relation": "parity",
-      "chain": "ReadmeQuick@scala",
-      "cause": "servers",
-      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
-      "line": "",
-      "variations": [
-        "baseline"
-      ]
-    },
-    {
-      "relation": "parity",
-      "chain": "ReadmeQuick@swift",
-      "cause": "servers",
-      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
-      "line": "",
-      "variations": [
-        "baseline"
-      ]
-    },
-    {
-      "relation": "parity",
-      "chain": "ReadmeQuick@zig",
-      "cause": "servers",
-      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
+      "reason": "zig's live-test section documents a suite this target does not have: no generated test reads its environment, so there is no server variable for it to name.",
       "line": "",
       "variations": [
         "baseline"

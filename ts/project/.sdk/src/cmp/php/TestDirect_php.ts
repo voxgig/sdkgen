@@ -1,5 +1,6 @@
 
 import {
+  KIT,
   Model,
   ModelEntity,
   nom,
@@ -13,7 +14,6 @@ import {
   snakify,
   isAuthActive, envName, envToken,
   serverVarEnv,
-  serverVariables,
   pointParts,
   pointSlash,
   pointPlaceholders,
@@ -26,6 +26,7 @@ import {
   liveEntity,
   liveDirectGetOnly, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
   liveDirectDiscovery,
+  fact,
 } from '@voxgig/sdkgen'
 
 import { formatPhpValue } from './utility_php'
@@ -103,18 +104,19 @@ const TestDirect = cmp(function TestDirect(props: any) {
   const PROJECTNAME = envName(model)
 
   const authActive = isAuthActive(model)
+  const authSecret = authActive && fact(model.main[KIT], 'auth').secret
   const apikeyEnvEntry = authActive
-    ? `\n        "${PROJECTNAME}_APIKEY" => "",`
+    ? `\n        "${PROJECTNAME}_APIKEY" => "",${authSecret ? `\n        "${PROJECTNAME}_SECRET" => "",` : ''}`
     : ''
   const apikeyLiveField = authActive
-    ? `\n            "apikey" => $env["${PROJECTNAME}_APIKEY"],`
+    ? `\n            "apikey" => $env["${PROJECTNAME}_APIKEY"],${authSecret ? `\n            "secret" => $env["${PROJECTNAME}_SECRET"],` : ''}`
     : ''
 
   // A templated server URL (OpenAPI server variables) makes a LIVE client
   // impossible to construct without values: makeOptions raises rather than
   // request a URL with a literal `{account_id}` in it. So the live suite
   // takes them from the environment the same way it takes the apikey.
-  const svars = serverVariables(model)
+  const svars = fact(model.main[KIT], 'server')
   const serverEnvEntry = svars
     .map((v: any) => `\n        "${serverVarEnv(PROJECTNAME, v.name)}" => ${formatPhpValue(v.dflt)},`).join('')
   const serverLiveField = 0 === svars.length ? '' : `

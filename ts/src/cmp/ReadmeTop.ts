@@ -80,21 +80,60 @@ function exampleLang(model: any, sdkTargets: any[]): ExampleLang | undefined {
 }
 
 
+// What the constructor needs, as name and value pairs: the credential where
+// the SDK places one, and each server variable the URL has no default for.
+function clientNeeds(model: any): [string, string | [string, string][]][] {
+  const auth = fact(model.main[KIT], 'auth')
+  const svars = fact(model.main[KIT], 'server').filter((v: any) => v.required)
+  return [
+    ...(auth.apikey ? [['apikey', '...'] as [string, string]] : []),
+    ...(auth.secret ? [['secret', '...'] as [string, string]] : []),
+    ...(0 === svars.length ? [] :
+      [['server', svars.map((v: any) => [v.name, '...'] as [string, string])] as [string, [string, string][]]]),
+  ]
+}
+
+
+// A map literal of those needs in an example language, or '' for none.
+function clientArgs(lang: ExampleLang, model: any): string {
+  const needs = clientNeeds(model)
+  if (0 === needs.length) {
+    return ''
+  }
+  const js = 'ts' === lang || 'js' === lang
+  const str = (v: string) => js ? "'" + v + "'" : JSON.stringify(v)
+  const map = (pairs: [string, string | [string, string][]][], open: string, close: string,
+    key: (k: string) => string, sep: string): string =>
+    open + pairs.map(([k, v]) => key(k) + sep +
+      ('string' === typeof v ? str(v) : map(v, open, close, key, sep))).join(', ') + close
+  switch (lang) {
+    case 'ts':
+    case 'js': return map(needs, '{ ', ' }', jsKey, ': ')
+    case 'py': return map(needs, '{', '}', str, ': ')
+    case 'go': return map(needs, 'map[string]any{', '}', str, ': ')
+    case 'php': return map(needs, '[', ']', str, ' => ')
+    case 'rb': return map(needs, '{', '}', str, ' => ')
+    case 'lua': return map(needs, '{', '}', (k) => '[' + str(k) + ']', ' = ')
+    default: return ''
+  }
+}
+
+
 // A client and one call in a language other than ts, whose example
 // ReadmeTop builds itself.
-function entityExample(lang: ExampleLang, Name: string, call: PrimaryCall | null): string {
+function entityExample(lang: ExampleLang, Name: string, call: PrimaryCall | null, args: string): string {
   switch (lang) {
-    case 'js': return `const client = new ${Name}SDK()` +
+    case 'js': return `const client = new ${Name}SDK(${args})` +
       (call ? `\nconst ${call.resultVar} = await ${call.expr}` : '')
-    case 'py': return `client = ${Name}SDK()` +
+    case 'py': return `client = ${Name}SDK(${args})` +
       (call ? `\n${call.resultVar} = ${call.expr}` : '')
-    case 'go': return `client := sdk.New${Name}SDK(nil)` +
+    case 'go': return `client := sdk.New${Name}SDK(${'' === args ? 'nil' : args})` +
       (call ? `\n${call.resultVar}, err := ${call.expr}` : '')
-    case 'php': return `$client = new ${Name}SDK();` +
+    case 'php': return `$client = new ${Name}SDK(${args});` +
       (call ? `\n$${call.resultVar} = ${call.expr};` : '')
-    case 'rb': return `client = ${Name}SDK.new` +
+    case 'rb': return `client = ${Name}SDK.new${'' === args ? '' : '(' + args + ')'}` +
       (call ? `\n${call.resultVar} = ${call.expr}` : '')
-    case 'lua': return `local client = sdk.new()` +
+    case 'lua': return `local client = sdk.new(${args})` +
       (call ? `\nlocal ${call.resultVar}, err = ${call.expr}` : '')
     default: return ''
   }
@@ -270,13 +309,13 @@ const ReadmeTopEntityModel = cmp(function ReadmeTopEntityModel(props: any) {
     const lang = exampleLang(model, sdkTargets)
     let snippet = ''
     if ('ts' === lang) {
-      snippet = `const client = new ${model.Name}SDK()${exCall ? '\n' + exCall : ''}`
+      snippet = `const client = new ${model.Name}SDK(${clientArgs('ts', model)})${exCall ? '\n' + exCall : ''}`
     }
     else if (null != lang) {
       const call = ['list', 'load', 'create', 'update', 'patch'].includes(String(primaryOp))
         ? primaryOpCall(lang, ex, exampleVarName(ex.toLowerCase(), lang), primaryOp!, exIdField, exEnt)
         : null
-      snippet = entityExample(lang, model.Name, call)
+      snippet = entityExample(lang, model.Name, call, clientArgs(lang, model))
     }
     const exBlock = '' === snippet ? '.' :
       `:\n\n\`\`\`${EXAMPLE_FENCE[lang!]}\n${snippet}\n\`\`\``

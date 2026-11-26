@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, entityClassName, entityCollection, fact } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, entityClassName, entityCollection, fact, clientOptions } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -52,33 +52,24 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   const authBasic = authActive && fact(model.main[KIT], 'auth').secret
   const apikeyOptionType = authActive ? `\n  apikey?: string` : ''
   const secretOptionType = authBasic ? `\n  secret?: string` : ''
-  const apikeyOptionRow = authActive
-    ? '| `apikey` | `string` | API key for authentication. |\n'
-    : ''
-  const secretOptionRow = authBasic
-    ? '| `secret` | `string` | API secret for authentication. |\n'
-    : ''
 
-  // A variable the URL uses with no default makes the constructor throw when
-  // it is missing, so the row comes first and says which it is.
   const svars = fact(model.main[KIT], 'server')
-  const required = svars.filter((v: any) => v.required)
-  const defaulted = svars.filter((v: any) => !v.required)
+  const optional = (required: boolean) => required ? '' : '?'
+  const svarsRequired = svars.some((v: any) => v.required)
   const serverOptionType = 0 === svars.length ? '' :
-    `\n  server?: { ${svars.map((v: any) => `${v.name}: string`).join(', ')} }`
-  const serverOptionRow = 0 === svars.length ? '' :
-    '| `server` | `object` | ' + (0 === required.length ? '' : '**Required.** ') +
-    'Values for the server-URL variables: ' +
-    [...required.map((v: any) => '`' + v.name + '`'),
-      ...defaulted.map((v: any) => '`' + v.name + '` (default `' + v.dflt + '`)')].join(', ') +
-    '. The API base URL is a template over them. |\n'
+    `\n  server${optional(svarsRequired)}: { ${svars.map((v: any) =>
+      `${v.name}${optional(v.required)}: string`).join(', ')} }`
+
+  const OPTION_KIND: Record<string, string> = { string: 'string', map: 'object', list: 'Feature[]' }
+  const optionRows = clientOptions(model)
+    .map((o: any) => '| `' + o.name + '` | `' + OPTION_KIND[o.kind] + '` | ' + o.desc + ' |\n').join('')
 
   Content(`### ${model.const.Name}SDK
 
 #### Constructor
 
 \`\`\`ts
-new ${model.const.Name}SDK(options?: {${apikeyOptionType}${secretOptionType}${serverOptionType}
+new ${model.const.Name}SDK(options${optional(svarsRequired)}: {${apikeyOptionType}${secretOptionType}${serverOptionType}
   base?: string
   prefix?: string
   suffix?: string
@@ -89,12 +80,7 @@ new ${model.const.Name}SDK(options?: {${apikeyOptionType}${secretOptionType}${se
 
 | Option | Type | Description |
 | --- | --- | --- |
-${serverOptionRow}${apikeyOptionRow}${secretOptionRow}| \`base\` | \`string\` | Base URL of the API server. |
-| \`prefix\` | \`string\` | URL path prefix prepended to all requests. |
-| \`suffix\` | \`string\` | URL path suffix appended to all requests. |
-| \`feature\` | \`object\` | Feature activation flags (e.g. \`{ test: { active: true } }\`). |
-| \`extend\` | \`Feature[]\` | Additional feature instances to load. |
-
+${optionRows}
 #### Methods
 
 | Method | Returns | Description |

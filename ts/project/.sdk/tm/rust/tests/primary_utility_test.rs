@@ -1175,8 +1175,14 @@ fn auth_retarget(node: &Json, cred: &AuthCred) -> Json {
     }
 }
 
+// Read from the config, never from a probe: a probe that finds no credential
+// is the regression this section exists to catch.
 #[test]
 fn primary_prepare_auth_basic() {
+    if !matches!(getp(&getp(&RUSTCRATE::make_config(), "options"), "auth"), Value::Map(_)) {
+        println!("SKIP prepareAuth: this SDK's config declares no auth, so it places no credential");
+        return;
+    }
     let mut run = primary_run();
     let cred = auth_credential().expect("prepare_auth placed no credential in headers or query");
     if let Json::Map(sections) = &mut run.spec {

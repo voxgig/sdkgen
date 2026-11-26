@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, opRequestShape, matchExampleItems, entityOps } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, opRequestShape, matchExampleItems, entityOps, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -32,9 +32,16 @@ const ReadmeTopQuick = cmp(function ReadmeTopQuick(props: any) {
   const exampleEntity = Object.values(entity).find((e: any) => e.active !== false) as any
 
   const authActive = isAuthActive(model)
-  const ctor = authActive
-    ? `sdk.${model.const.Name}SDK.new(h.jo(&.{\n    .{ "apikey", h.vstr(init.environ_map.get("${envName(model)}_APIKEY") orelse "") },\n}))`
-    : `sdk.${model.const.Name}SDK.new(h.vnull())`
+  const svars = fact(model.main[KIT], 'server').filter((v: any) => v.required)
+  const ctorFields = [
+    ...(authActive ? [`.{ "apikey", h.vstr(init.environ_map.get("${envName(model)}_APIKEY") orelse "") },`] : []),
+    ...(fact(model.main[KIT], 'auth').secret ? [`.{ "secret", h.vstr(init.environ_map.get("${envName(model)}_SECRET") orelse "") },`] : []),
+    ...(0 === svars.length ? [] : [`.{ "server", h.jo(&.{ ` +
+      svars.map((v: any) => `.{ "${v.name}", h.vstr("<${v.name}>") }`).join(', ') + ` }) },`]),
+  ]
+  const ctor = 0 === ctorFields.length
+    ? `sdk.${model.const.Name}SDK.new(h.vnull())`
+    : `sdk.${model.const.Name}SDK.new(h.jo(&.{${ctorFields.map((f: string) => '\n    ' + f).join('')}\n}))`
 
   Content(`\`\`\`zig
 const std = @import("std");

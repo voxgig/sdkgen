@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opNeedsAction, bodyNote, matchExampleItems, requestExampleItems, featureDocs, fact } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opNeedsAction, bodyNote, matchExampleItems, requestExampleItems, featureDocs, fact, clientOptions } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -83,6 +83,10 @@ Complete API reference for the ${model.Name} ${target.title} SDK.
 
 `)
 
+    const OPTION_KIND: Record<string, string> = { string: 'String', map: 'VMap', list: 'VList' }
+    const optionRows = clientOptions(model)
+      .map((o: any) => '| `options["' + o.name + '"]` | `' + OPTION_KIND[o.kind] + '` | ' + o.desc + ' |\n').join('')
+
     Content(`\`\`\`swift
 import ${MODULE}
 
@@ -96,13 +100,7 @@ Create a new SDK client instance. \`options\` is a \`VMap\` of \`Value\`.
 | Name | Type | Description |
 | --- | --- | --- |
 | \`options\` | \`VMap\` | SDK configuration options. |
-${isAuthActive(model) ? '| \`options["apikey"]\` | \`String\` | API key for authentication. |\n' : ''}| \`options["base"]\` | \`String\` | Base URL for API requests. |
-| \`options["prefix"]\` | \`String\` | URL prefix appended after base. |
-| \`options["suffix"]\` | \`String\` | URL suffix appended after path. |
-| \`options["headers"]\` | \`VMap\` | Custom headers for all requests. |
-| \`options["feature"]\` | \`VMap\` | Feature configuration. |
-| \`options["system"]\` | \`VMap\` | System overrides (e.g. custom fetch). |
-
+${optionRows}
 `)
 
 
@@ -321,6 +319,7 @@ let result = try client.${accessor}().create(VMap([
               return `    (${swiftString(it.name)}, ${swiftLit(it.type,
                 it.name === idF ? ent.name + '_id' : it.name)})${comma}\n`
             }).join('')
+
             Content(`\`\`\`swift
 let result = try client.${accessor}().${opname}(VMap([
 ${updateLines}]), nil)

@@ -34,8 +34,6 @@ import {
   each,
   isAuthActive,
   serverVarEnv,
-  serverVariables,
-  isHttpBasicAuth,
   entityDataIdField, entityRecordIdField, envName, envToken,
   jsKey,
   jsProp,
@@ -49,6 +47,7 @@ import {
   flowLoadReadsRecord,
   LIVE_GETONLY_ENV,
   templateSafe,
+  fact,
 } from '@voxgig/sdkgen'
 import type { LiveGate } from '@voxgig/sdkgen'
 
@@ -92,7 +91,7 @@ const TestEntity = cmp(function TestEntity(props: any) {
   const PROJENVNAME = envName(model)
   const ENTENVNAME = envToken(entity.name)
   const authActive = isAuthActive(model)
-  const authBasic = authActive && isHttpBasicAuth(model)
+  const authBasic = authActive && fact(model.main[KIT], 'auth').secret
   const apikeyEnvEntry = authActive
     ? `\n    '${PROJENVNAME}_APIKEY': '',${authBasic ? `\n    '${PROJENVNAME}_SECRET': '',` : ''}`
     : ''
@@ -102,7 +101,7 @@ const TestEntity = cmp(function TestEntity(props: any) {
         secret: env.${PROJENVNAME}_SECRET,` : ''}`
     : ''
 
-  const svars = serverVariables(model)
+  const svars = fact(model.main[KIT], 'server')
   const serverEnvEntry = svars
     .map((v: any) => `\n    '${serverVarEnv(PROJENVNAME, v.name)}': ${templateSafe('ts', JSON.stringify(v.dflt))},`).join('')
   const serverLiveField = 0 === svars.length ? '' : `

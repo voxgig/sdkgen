@@ -12,7 +12,7 @@ import { memfs } from 'memfs'
 import { cmp, each, names, Project, Folder } from 'jostraca'
 import * as sucrase from 'sucrase'
 
-import { SdkGen, mcpTools, alongsideNote, applyFacts, installCommand, packageName, featureDocs, targetFeatures, Main, fact } from '../dist/sdkgen.js'
+import { SdkGen, mcpTools, alongsideNote, applyFacts, installCommand, packageName, featureDocs, targetFeatures, Main, fact, clientOptions } from '../dist/sdkgen.js'
 import { aliasCmpText } from '../dist/action/target.js'
 
 // Fixture, miniature Root and memfs layering — shared with
@@ -1786,9 +1786,10 @@ main: kit: target: js: phase: feature: active: false
 
   // BASIC_TEMPLATED's URL uses `tenant` with no default and `region` with one.
   test('a quick start asks for the server variables a client must supply, and no others', async () => {
-    const out = await generate(['ts', 'go', 'py', 'java'], undefined, BASIC_TEMPLATED)
-    for (const target of ['ts', 'go', 'py', 'java']) {
-      const fence = '```' + ('py' === target ? 'python' : target) + '\n'
+    const targets = allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))
+    const out = await generate(targets, undefined, BASIC_TEMPLATED)
+    for (const target of targets) {
+      const fence = '```' + ({ py: 'python', rb: 'ruby' }[target] ?? target) + '\n'
       for (const file of [target + '/README.md', 'README.md']) {
         const ctors = String(out[file]).split(fence).slice(1).map((b: string) => b.slice(0, b.indexOf('```')))
           .filter((b: string) => /DEMO_APIKEY/.test(b))
@@ -1803,18 +1804,33 @@ main: kit: target: js: phase: feature: active: false
       'variables: `tenant`, `region` (default `eu`).'), 'the ts options row does not say which variable has a default')
   })
 
+  // A client built over a templated URL is refused without its required variables.
+  test('the ts and js tester and extend constructors pass the server variables a client must supply', async () => {
+    const out = await generate(['ts', 'js'], undefined, BASIC_TEMPLATED)
+    for (const target of ['ts', 'js']) {
+      const readme = String(out[target + '/README.md'])
+      const tester = /const client = (new DemoSDK\([^\n]*\))\nconst testClient = client\.tester\(\)/.exec(readme)
+      ok(null != tester && /tenant: '\.\.\.'/.test(tester[1]) && !/region/.test(tester[1]),
+        target + ': the tester constructor: ' + tester?.[1])
+      const extend = /const client = new DemoSDK\(\{([\s\S]*?)extend: \[logger\],\n\}\)/.exec(readme)
+      ok(null != extend && /tenant: '\.\.\.'/.test(extend[1]) && !/region/.test(extend[1]),
+        target + ': the extend constructor: ' + extend?.[1])
+    }
+  })
+
   test('the go quick start indents its server block as its other keys', async () => {
     const readme = String((await generate(['go'], undefined, BASIC_TEMPLATED))['go/README.md'])
-    ok(/\n {8}"apikey": [^\n]*\n {8}"server": map\[string\]any\{\n {12}"tenant": "<tenant>",\n {8}\},/.test(readme),
+    ok(/\n {8}"apikey": [^\n]*\n( {8}"secret": [^\n]*\n)? {8}"server": map\[string\]any\{\n {12}"tenant": "<tenant>",\n {8}\},/.test(readme),
       readme.slice(readme.indexOf('"apikey"') - 80, readme.indexOf('"apikey"') + 200))
   })
 
   // PrepareAuth composes a Basic credential only with the key in the header.
-  test('the ts documents ask for a secret exactly where PrepareAuth reads one', async () => {
+  test('every target\'s documents ask for a secret exactly where PrepareAuth reads one', async () => {
+    const targets = allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))
     for (const [extra, wanted] of [[BASIC_TEMPLATED, true], [BASIC_QUERY, false]] as [string, boolean][]) {
-      const out = await generate(['ts'], undefined, extra)
-      for (const file of ['README.md', 'ts/README.md', 'ts/REFERENCE.md']) {
-        strictEqual(/secret[:?]|options\.secret|_SECRET/.test(String(out[file])), wanted, file + ', ' +
+      const out = await generate(targets, undefined, extra)
+      for (const file of ['README.md', ...targets.flatMap((t) => [t + '/README.md', t + '/REFERENCE.md'])]) {
+        strictEqual(/secret/i.test(String(out[file])), wanted, file + ', ' +
           (wanted ? 'Basic in the header' : 'Basic in the query'))
       }
     }
@@ -1858,6 +1874,25 @@ main: kit: target: js: phase: feature: active: false
       ok(!docs.includes('$$name$$') && !docs.includes('](guide.md)'), target + ': a raw field description')
       for (const doc of ['README.md', 'REFERENCE.md']) {
         ok(String(out[target + '/' + doc]).includes('A worded planet.'), target + '/' + doc + ': not the project\'s wording')
+      }
+    }
+  })
+
+
+  // An API that declares no auth, with no project switch, is the project's
+  // switch-off: the documents say so, and the code places no credential.
+  test('every target generates for an API with no auth what it does with auth switched off', async () => {
+    const targets = allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))
+    const declared = await generate(targets)
+    const off = await generate(targets, undefined, 'main: kit: config: auth: active: false')
+    for (const target of targets) {
+      const files = filesFor(declared, target).map(([file]) => file)
+      deepStrictEqual(filesFor(off, target).map(([file]) => file), files, target + ': the file sets differ')
+      const auth = files.filter((file) => /prepare_?auth|clean|(^|\/)(sdk_)?config\.[a-z]+$/i.test(file) &&
+        !file.includes('feature/'))
+      ok(3 <= auth.length, target + ': no PrepareAuth, TestClean and Config output among ' + auth.length)
+      for (const file of auth) {
+        strictEqual(off[file], declared[file], file)
       }
     }
   })
@@ -7806,6 +7841,72 @@ main: kit: flow: BasicNoteFlow: {
     const plain = await generate(['ts'], undefined, auth("in: header, name: 'Authorization'"))
     ok(!/The client sends the API key/.test(plain['README.md'] + plain['ts/README.md']),
       'the README names the default Authorization header')
+  })
+
+
+  // Every row names an option the optspec declares, or `feature`, which the
+  // option spec adds; and every option clientOptions lists has its row, but
+  // `extend` where a closed value union holds no feature instance.
+  test('every options table lists the options the optspec declares that a caller sets', async () => {
+    const targets = allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))
+    const closed = ['rust', 'c', 'cpp', 'zig', 'ocaml']
+    const out = await generate(targets, undefined, BASIC_TEMPLATED)
+    const model = makeModel(targets, undefined, BASIC_TEMPLATED)
+    const declared = [...Object.keys(model.main[KIT].optspec), 'feature']
+    const listed = clientOptions(model).map((o: any) => o.name)
+    deepStrictEqual(listed.filter((name: string) => !declared.includes(name)), [])
+    deepStrictEqual(listed, ['server', 'apikey', 'secret', 'base', 'prefix', 'suffix', 'headers', 'feature',
+      'extend', 'system'])
+    for (const target of targets) {
+      for (const [file, head] of [[target + '/README.md', /\| Option \| [^|]+\| Description \|/],
+        [target + '/REFERENCE.md', /\| (Name|Key) \| [^|]+\| Description \|/]] as [string, RegExp][]) {
+        const text = String(out[file])
+        const at = text.search(head)
+        ok(-1 < at, file + ': no options table')
+        const rows = text.slice(at).split('\n\n')[0].split('\n').slice(2)
+        const names = rows.map((row: string) => /^\| `(?:\$?options(?:\.|\[\"|->\{))?"?([a-z]+)/.exec(row)?.[1])
+          .filter((name: any) => null != name && 'options' !== name)
+        deepStrictEqual(names, listed.filter((name: string) => !closed.includes(target) || 'extend' !== name),
+          file)
+      }
+    }
+  })
+
+  // BASIC_TEMPLATED's client needs its key, its secret and `tenant`, not `region`.
+  test('the root entities example builds its client with what the constructor needs', async () => {
+    for (const [target, ctor] of [
+      ['ts', "const client = new DemoSDK({ apikey: '...', secret: '...', server: { tenant: '...' } })"],
+      ['js', "const client = new DemoSDK({ apikey: '...', secret: '...', server: { tenant: '...' } })"],
+      ['py', 'client = DemoSDK({"apikey": "...", "secret": "...", "server": {"tenant": "..."}})'],
+      ['go', 'client := sdk.NewDemoSDK(map[string]any{"apikey": "...", "secret": "...", ' +
+        '"server": map[string]any{"tenant": "..."}})'],
+      ['php', '$client = new DemoSDK(["apikey" => "...", "secret" => "...", "server" => ["tenant" => "..."]]);'],
+      ['rb', 'client = DemoSDK.new({"apikey" => "...", "secret" => "...", "server" => {"tenant" => "..."}})'],
+      ['lua', 'local client = sdk.new({["apikey"] = "...", ["secret"] = "...", ["server"] = {["tenant"] = "..."}})'],
+    ]) {
+      const readme = String((await generate([target], undefined, BASIC_TEMPLATED))['README.md'])
+      const at = readme.indexOf('## Entities, not endpoints')
+      ok(readme.slice(at, readme.indexOf('\n## ', at + 3)).includes('\n' + ctor + '\n'), target + ': ' +
+        readme.slice(at, readme.indexOf('\n## ', at + 3)))
+    }
+    const plain = String((await generate(['ts']))['README.md'])
+    ok(plain.includes('\nconst client = new DemoSDK()\n'), 'ts: a public API\'s client takes options')
+  })
+
+  // The live suites read the secret exactly where PrepareAuth reads one.
+  test('every live suite reads a secret exactly where PrepareAuth reads one', async () => {
+    const live = ['ts', 'js', 'go', 'py', 'java', 'kotlin', 'php', 'rb', 'lua', 'rust', 'csharp', 'perl']
+    for (const [extra, wanted] of [[BASIC_TEMPLATED, true], [BASIC_QUERY, false]] as [string, boolean][]) {
+      const out = await generate(live, undefined, extra)
+      for (const target of live) {
+        const tests = Object.entries(out).filter(([file]) => file.startsWith(target + '/') &&
+          /(Entity|Direct)[._]?[Tt]est|_(entity|direct)(_test|\.t$)|test_[a-z_]+_(entity|direct)/.test(file))
+        ok(0 < tests.length, target + ': no live suite')
+        for (const [file, text] of tests) {
+          strictEqual(String(text).includes('DEMO_SECRET'), wanted, file)
+        }
+      }
+    }
   })
 
 

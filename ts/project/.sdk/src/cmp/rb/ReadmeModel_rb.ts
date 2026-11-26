@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, entityClassName, entityCollection, fact } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, entityClassName, entityCollection, fact, clientOptions } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -31,9 +31,9 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   const opRows = ['load', 'list', 'create', 'update', 'patch', 'remove']
     .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o]).join('\n')
 
-  const apikeyOptionRow = isAuthActive(model)
-    ? '| `apikey` | `String` | API key for authentication. |\n'
-    : ''
+  const OPTION_KIND: Record<string, string> = { string: 'String', map: 'Hash', list: 'Array' }
+  const optionRows = clientOptions(model)
+    .map((o: any) => '| `' + o.name + '` | `' + OPTION_KIND[o.kind] + '` | ' + o.desc + ' |\n').join('')
 
   Content(`### ${model.const.Name}SDK
 
@@ -46,13 +46,7 @@ Creates a new SDK client.
 
 | Option | Type | Description |
 | --- | --- | --- |
-${apikeyOptionRow}| \`base\` | \`String\` | Base URL of the API server. |
-| \`prefix\` | \`String\` | URL path prefix prepended to all requests. |
-| \`suffix\` | \`String\` | URL path suffix appended to all requests. |
-| \`feature\` | \`Hash\` | Feature activation flags. |
-| \`extend\` | \`Hash\` | Additional Feature instances to load. |
-| \`system\` | \`Hash\` | System overrides (e.g. custom \`fetch\` lambda). |
-
+${optionRows}
 ### test
 
 \`\`\`ruby

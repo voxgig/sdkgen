@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems, sendsId } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems, sendsId, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -29,9 +29,18 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   ) as any
 
   const authActive = isAuthActive(model)
-  const ctor = authActive
-    ? `${model.const.Name}SDK->new({\n    'apikey' => $ENV{'${envName(model)}_APIKEY'},\n})`
-    : `${model.const.Name}SDK->new`
+  // The constructor refuses a templated URL it has no value for, so the quick
+  // start passes each variable the URL uses with no default.
+  const svars = fact(model.main[KIT], 'server').filter((v: any) => v.required)
+  const ctorFields = [
+    ...(authActive ? [`'apikey' => $ENV{'${envName(model)}_APIKEY'},`] : []),
+    ...(fact(model.main[KIT], 'auth').secret ? [`'secret' => $ENV{'${envName(model)}_SECRET'},`] : []),
+    ...(0 === svars.length ? [] : [`'server' => {` +
+      svars.map((v: any) => `\n        '${v.name}' => '<${v.name}>',`).join('') + `\n    },`]),
+  ]
+  const ctor = 0 === ctorFields.length
+    ? `${model.const.Name}SDK->new`
+    : `${model.const.Name}SDK->new({${ctorFields.map((f: string) => '\n    ' + f).join('')}\n})`
 
   Content(`### 1. Create a client
 

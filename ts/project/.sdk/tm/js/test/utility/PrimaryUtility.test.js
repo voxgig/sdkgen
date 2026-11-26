@@ -13,6 +13,8 @@ const {
   TEST_JSON_FILE
 } = require('./index')
 
+const { config } = require('../..')
+
 
 describe('PrimaryUtility', async () => {
 
@@ -118,7 +120,13 @@ describe('PrimaryUtility', async () => {
     return out
   }
 
-  test('auth-basic', async () => {
+  // Read from the config, never from a probe: a probe that finds no
+  // credential is the regression this section exists to catch.
+  test('auth-basic', async (t) => {
+    if (null == config.options?.auth) {
+      return t.skip("this SDK's config declares no auth, so it places no credential")
+    }
+
     const sdkopts = spec.prepareAuth?.DEF?.setup?.a || {}
     const authClient = SDK.test({}, sdkopts)
 

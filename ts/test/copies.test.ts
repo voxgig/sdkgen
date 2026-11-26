@@ -502,6 +502,132 @@ describe('generate warns about copies', () => {
 })
 
 
+// The ts copy of ReadmeOptions as every add before 4.48.0 wrote it. The
+// fixture lane type-checks it against this package, as a project's build would.
+const RETIRED = 'src/cmp/ts/ReadmeOptions_ts.ts'
+const RETIRED_TEXT = Fs.readFileSync(Path.resolve(__dirname, '..', 'test', 'fixture',
+  'retired', '.sdk', ...RETIRED.split('/')), 'utf8')
+
+
+function retiredCopy(project: any, recorded = true) {
+  project.fs.writeFileSync(ROOT + '/' + RETIRED, RETIRED_TEXT)
+  if (recorded) {
+    project.fs.appendFileSync(ROOT + '/' + COPY_LOG, JSON.stringify(
+      { op: 'add', files: { [RETIRED]: fingerprint(RETIRED_TEXT) } }) + '\n')
+  }
+}
+
+
+describe('a component the scaffold no longer ships', () => {
+
+  test('is stale to doctor when an add wrote it, not the project\'s own', async () => {
+    const project = await added('ts')
+    retiredCopy(project)
+
+    const report: any = (await doctor(project.actx)).report
+
+    deepStrictEqual(report.stale, [RETIRED])
+    deepStrictEqual(report.additive, [])
+    strictEqual(report.ok, false)
+  })
+
+
+  test('goes on the next target add while the project left it as written', async () => {
+    const log = recordLog()
+    const project = await added('ts', { log })
+    retiredCopy(project)
+
+    await target_add([targetRef('ts')], project.actx)
+
+    ok(!project.fs.existsSync(ROOT + '/' + RETIRED))
+    const said = log.lines.find((l: any) => 'target-component-retired' === l.point)
+    strictEqual(said?.file, RETIRED)
+    ok(said.note.includes('no longer ships'), said.note)
+    strictEqual(record(project).files[RETIRED], undefined, 'the record still holds it')
+
+    const report: any = (await doctor(project.actx)).report
+    strictEqual(report.ok, true, JSON.stringify(report.stale))
+  })
+
+
+  test('goes on a package update too, which re-adds through target add', async () => {
+    const project = await added('ts')
+    retiredCopy(project)
+
+    project.actx.flags = { nofetch: true }
+    await package_update(['@voxgig/sdkgen'], project.actx)
+
+    ok(!project.fs.existsSync(ROOT + '/' + RETIRED))
+  })
+
+
+  test('stays when the project changed it, and doctor keeps calling it stale', async () => {
+    const project = await added('ts')
+    retiredCopy(project)
+    editCopy(project, RETIRED)
+
+    await target_add([targetRef('ts')], project.actx)
+
+    ok(project.fs.existsSync(ROOT + '/' + RETIRED))
+    deepStrictEqual(((await doctor(project.actx)).report as any).stale, [RETIRED])
+  })
+
+
+  test('stays on a dry run', async () => {
+    const log = recordLog()
+    const project = await added('ts', { log })
+    retiredCopy(project)
+    project.actx.opts.dryrun = true
+
+    await target_add([targetRef('ts')], project.actx)
+
+    ok(project.fs.existsSync(ROOT + '/' + RETIRED))
+    const said = log.lines.find((l: any) => 'target-component-retired' === l.point)
+    strictEqual(said?.dryrun, true)
+  })
+
+
+  test('is stale from an add before the copy record, and stays', async () => {
+    const project = await added('ts')
+    retiredCopy(project, false)
+
+    deepStrictEqual(((await doctor(project.actx)).report as any).stale, [RETIRED])
+
+    await target_add([targetRef('ts')], project.actx)
+
+    ok(project.fs.existsSync(ROOT + '/' + RETIRED), 'nothing shows it untouched')
+  })
+
+
+  test('leaves a component the project wrote additive, and in place', async () => {
+    const project = await added('ts')
+    const own = 'src/cmp/ts/Extra_ts.ts'
+    project.fs.writeFileSync(ROOT + '/' + own, RETIRED_TEXT)
+
+    await target_add([targetRef('ts')], project.actx)
+
+    ok(project.fs.existsSync(ROOT + '/' + own))
+    const report: any = (await doctor(project.actx)).report
+    deepStrictEqual(report.additive, [own])
+    strictEqual(report.ok, true)
+  })
+
+
+  test('a kept copy still finds what it imports', () => {
+    ok(/^import \{ cmp, each, Content, envName, isAuthActive \} from '@voxgig\/sdkgen'$/m
+      .test(RETIRED_TEXT), 'the fixture is not the retired copy')
+    const sdkgen: any = require('../dist/sdkgen.js')
+    for (const name of ['cmp', 'each', 'Content', 'envName', 'isAuthActive', 'ReadmeOptions']) {
+      strictEqual('function', typeof sdkgen[name], name)
+    }
+
+    // The c copy alone also imported a sibling the c target still ships.
+    const utilityC = Fs.readFileSync(Path.join(PROJECT, '.sdk', 'src', 'cmp', 'c', 'utility_c.ts'), 'utf8')
+    ok(/^export \{[^}]*\bcIdent\b/m.test(utilityC), 'utility_c no longer exports cIdent')
+  })
+})
+
+
 // `generate` is given the project ROOT and reads `.sdk` beneath it, while the
 // harness keeps its `.sdk` at ROOT. This maps one onto the other. `generate`
 // resolves the folder, which on Windows adds a drive and backslashes.

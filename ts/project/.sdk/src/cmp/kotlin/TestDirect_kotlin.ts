@@ -1,5 +1,6 @@
 
 import {
+  KIT,
   Model,
   ModelEntity,
   nom,
@@ -24,6 +25,8 @@ import {
   liveEntity,
   liveDirectGetOnly, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
   liveDirectDiscovery,
+  fact,
+  serverVarEnv,
 } from '@voxgig/sdkgen'
 
 
@@ -95,6 +98,13 @@ const TestDirect = cmp(function TestDirect(props: any) {
   const SDK = model.const.Name + 'SDK'
 
   const authActive = isAuthActive(model)
+  const authSecret = authActive && fact(model.main[KIT], 'auth').secret
+  const svars = fact(model.main[KIT], 'server')
+  const serverEnvEntry = svars.map((v: any) =>
+    `      envm[${kotlinLiteral(serverVarEnv(PROJECTNAME, v.name))}] = ${kotlinLiteral(v.dflt)}\n`).join('')
+  const serverLiveField = 0 === svars.length ? '' :
+    '        mergedOpts["server"] = linkedMapOf<String, Any?>(' + svars.map((v: any) =>
+      kotlinLiteral(v.name) + ' to env[' + kotlinLiteral(serverVarEnv(PROJECTNAME, v.name)) + ']').join(', ') + ')\n'
 
   const opnames = Object.keys(entity.op || {})
   const hasLoad = opnames.includes('load')
@@ -500,7 +510,7 @@ ${loadSkipBlock}    if (setup.live) {
       val envm = linkedMapOf<String, Any?>()
       envm["${entidEnvVar}"] = linkedMapOf<String, Any?>()
       envm["${PROJECTNAME}_TEST_LIVE"] = "FALSE"
-${authActive ? `      envm["${PROJECTNAME}_APIKEY"] = "NONE"\n` : ''}      val env = RunnerSupport.envOverride(envm)
+${authActive ? `      envm["${PROJECTNAME}_APIKEY"] = "NONE"\n` : ''}${authSecret ? `      envm["${PROJECTNAME}_SECRET"] = "NONE"\n` : ''}${serverEnvEntry}      val env = RunnerSupport.envOverride(envm)
 
       val live = "TRUE" == env["${PROJECTNAME}_TEST_LIVE"]
 
@@ -509,7 +519,7 @@ ${authActive ? `      envm["${PROJECTNAME}_APIKEY"] = "NONE"\n` : ''}      val e
 
       if (live) {
         val mergedOpts = linkedMapOf<String, Any?>()
-${authActive ? `        mergedOpts["apikey"] = env["${PROJECTNAME}_APIKEY"]\n` : ''}        setup.client = ${SDK}(mergedOpts)
+${authActive ? `        mergedOpts["apikey"] = env["${PROJECTNAME}_APIKEY"]\n` : ''}${authSecret ? `        mergedOpts["secret"] = env["${PROJECTNAME}_SECRET"]\n` : ''}${serverLiveField}        setup.client = ${SDK}(mergedOpts)
         setup.live = true
 
         var idmap: MutableMap<String, Any?> = linkedMapOf()

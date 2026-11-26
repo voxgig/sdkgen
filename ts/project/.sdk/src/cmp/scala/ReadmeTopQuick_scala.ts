@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, entityIdField, opRequestShape, javaMapOf, matchExampleItems, javaMapItems, entityOps } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, entityIdField, opRequestShape, javaMapOf, matchExampleItems, javaMapItems, entityOps, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -29,18 +29,21 @@ import ${scalaPackage(model)}.core.${SDK}
 ${shown ? `import ${scalaPackage(model)}.core.SdkEntity\n` : ''}
 `)
 
-  if (authActive) {
-    Content(`val options = new java.util.LinkedHashMap[String, Object]()
-options.put("apikey", System.getenv("${envName(model)}_APIKEY"))
-val client = new ${SDK}(options)
+  const svars = fact(model.main[KIT], 'server').filter((v: any) => v.required)
+  const ctorLines = [
+    ...(authActive ? [`options.put("apikey", System.getenv("${envName(model)}_APIKEY"))`] : []),
+    ...(fact(model.main[KIT], 'auth').secret ? [`options.put("secret", System.getenv("${envName(model)}_SECRET"))`] : []),
+    ...(0 === svars.length ? [] : ['val server = new java.util.LinkedHashMap[String, Object]()',
+      ...svars.map((v: any) => `server.put("${v.name}", "<${v.name}>")`), 'options.put("server", server)']),
+  ]
+  const ctor = 0 === ctorLines.length
+    ? `val client = new ${SDK}()`
+    : ['val options = new java.util.LinkedHashMap[String, Object]()', ...ctorLines,
+      `val client = new ${SDK}(options)`].join('\n')
+
+  Content(`${ctor}
 
 `)
-  }
-  else {
-    Content(`val client = new ${SDK}()
-
-`)
-  }
 
   if (exampleEntity) {
     const eVar = scalaVarName(exampleEntity.name)

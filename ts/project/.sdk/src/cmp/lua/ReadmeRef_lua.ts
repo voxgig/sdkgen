@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, safeVarName, exampleVarName, luaKey, opNeedsAction, bodyNote, listMatchArg, matchExampleItems, litString, requestExampleItems, entityClassName, entityCollection, featureDocs, fact } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, safeVarName, exampleVarName, luaKey, opNeedsAction, bodyNote, listMatchArg, matchExampleItems, litString, requestExampleItems, entityClassName, entityCollection, featureDocs, fact, clientOptions } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -79,6 +79,10 @@ Complete API reference for the ${model.Name} ${target.title} SDK.
 
 `)
 
+    const OPTION_KIND: Record<string, string> = { string: 'string', map: 'table', list: 'table' }
+    const optionRows = clientOptions(model)
+      .map((o: any) => '| `options.' + o.name + '` | `' + OPTION_KIND[o.kind] + '` | ' + o.desc + ' |\n').join('')
+
     Content(`\`\`\`lua
 local sdk = require("${model.name}_sdk")
 local client = sdk.new(options)
@@ -91,13 +95,7 @@ Create a new SDK client instance.
 | Name | Type | Description |
 | --- | --- | --- |
 | \`options\` | \`table\` | SDK configuration options. |
-${isAuthActive(model) ? '| \`options.apikey\` | \`string\` | API key for authentication. |\n' : ''}| \`options.base\` | \`string\` | Base URL for API requests. |
-| \`options.prefix\` | \`string\` | URL prefix appended after base. |
-| \`options.suffix\` | \`string\` | URL suffix appended after path. |
-| \`options.headers\` | \`table\` | Custom headers for all requests. |
-| \`options.feature\` | \`table\` | Feature configuration. |
-| \`options.system\` | \`table\` | System overrides (e.g. custom fetch). |
-
+${optionRows}
 `)
 
 
@@ -318,6 +316,7 @@ local result, err = client:${ent.Name}():create({
             const updateLines = updateItems.map((it: any) =>
               `  ${luaKey(it.name)} = ${luaLit(it.type,
                 it.name === idF ? ent.name + '_id' : it.name)},\n`).join('')
+
             Content(`\`\`\`lua
 local result, err = client:${ent.Name}():${opname}({
 ${updateLines}  -- ${'patch' === opname ? 'Only the fields to change' : 'Fields to update'}

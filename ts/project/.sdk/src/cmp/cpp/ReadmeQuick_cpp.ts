@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems, sendsId } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems, sendsId, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -30,12 +30,20 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
 
   const Name = model.const.Name
   const authActive = isAuthActive(model)
-  const ctor = authActive
-    ? `const char* apikey = std::getenv("${envName(model)}_APIKEY");
-auto client = std::make_shared<${Name}SDK>(vmap({
-    {"apikey", Value(apikey ? apikey : "")},
-}));`
-    : `auto client = ${Name}SDK::create();`
+  // The constructor refuses a templated URL it has no value for, so the quick
+  // start passes each variable the URL uses with no default.
+  const svars = fact(model.main[KIT], 'server').filter((v: any) => v.required)
+  const ctorFields = [
+    ...(authActive ? [`{"apikey", Value(apikey ? apikey : "")},`] : []),
+    ...(fact(model.main[KIT], 'auth').secret ? [`{"secret", Value(secret ? secret : "")},`] : []),
+    ...(0 === svars.length ? [] : [`{"server", vmap({` +
+      svars.map((v: any) => `{"${v.name}", Value("<${v.name}>")}`).join(', ') + `})},`]),
+  ]
+  const ctor = 0 === ctorFields.length
+    ? `auto client = ${Name}SDK::create();`
+    : (authActive ? `const char* apikey = std::getenv("${envName(model)}_APIKEY");\n` : '') +
+      (fact(model.main[KIT], 'auth').secret ? `const char* secret = std::getenv("${envName(model)}_SECRET");\n` : '') +
+      `auto client = std::make_shared<${Name}SDK>(vmap({${ctorFields.map((f: string) => '\n    ' + f).join('')}\n}));`
   const ctorIncludes = authActive
     ? `#include <cstdlib>
 #include "core/sdk.hpp"`

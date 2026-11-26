@@ -8,7 +8,7 @@ import { memfs } from 'memfs'
 import { ReadmeExplanation, ReadmeErrors, applyFacts } from '../dist/sdkgen.js'
 import { ReadmeStation } from '../dist/cmp/ReadmeStation.js'
 import { PIPELINE_STAGES, pipelineLength } from '../dist/cmp/FeatureHook'
-import { generateDocs } from './textguard'
+import { generateDocs, TARGETS, SDK_TARGETS } from './textguard'
 
 
 // A logger stub keeps the optional-component warning out of the test
@@ -349,5 +349,43 @@ describe('feature lead-ins', () => {
 
   test('entity access names no operation set', async () => {
     ok(!(await renderExplanation('ts')).includes('CRUD'))
+  })
+})
+
+
+describe('server variables', () => {
+
+  // `tenant` has no default, so a client must pass it; `region` defaults to `eu`.
+  const MIXED = "main: kit: info: servers: [{ url: 'https://{tenant}.example.test/{region}', " +
+    "variables: { tenant: { default: '' }, region: { default: 'eu' } } }]"
+  const DEFAULTED = MIXED.replace("tenant: { default: '' }", "tenant: { default: 'acme' }")
+
+  const docs = async (id: string, extra: string): Promise<[string, string][]> =>
+    Object.entries((await generateDocs({ id, family: id, targets: TARGETS, features: ['test'], extra })).files)
+      .filter(([p]: [string, string]) => p.endsWith('.md'))
+
+  // A code line names a defaulted variable only as an optional member of a type.
+  const passed = (text: string, name: string): string[] =>
+    (text.match(/```[a-z]*\n[\s\S]*?```/g) ?? []).flatMap((b) => b.split('\n'))
+      .filter((l) => new RegExp('\\b' + name + '\\b(?!\\?:)').test(l))
+
+  test('a defaulted variable is never called required', async () => {
+    const all = await docs('svars-mixed', MIXED)
+    for (const [doc, text] of all) {
+      for (const line of text.split('\n').filter((l) => /\bregion\b/.test(l) && /required/i.test(l))) {
+        ok(line.includes('`region` (default `eu`)'), doc + ': ' + line)
+      }
+      deepStrictEqual(passed(text, 'region'), [], doc)
+    }
+    const row = '**Required.** Values for the server-URL variables: `tenant`, `region` (default `eu`).'
+    deepStrictEqual(SDK_TARGETS.filter((t) => !all.some(([doc, text]) =>
+      t + '/README.md' === doc && text.includes(row))), [])
+  })
+
+  test('with every variable defaulted, none is required and no example passes one', async () => {
+    for (const [doc, text] of await docs('svars-defaulted', DEFAULTED)) {
+      ok(!text.includes('**Required.**'), doc)
+      deepStrictEqual([...passed(text, 'tenant'), ...passed(text, 'region')], [], doc)
+    }
   })
 })

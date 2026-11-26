@@ -1,4 +1,4 @@
-import { boundedFacts, pointFacts } from '@voxgig/sdkgen'
+import { boundedFacts, pointFacts, fact } from '@voxgig/sdkgen'
 import { buildIdNames } from '@voxgig/sdkgen'
 import { flowSteps, opReachable, invalidRequest } from '@voxgig/sdkgen'
 
@@ -34,7 +34,6 @@ import {
   each,
   isAuthActive,
   serverVarEnv,
-  serverVariables,
   entityDataIdField, entityRecordIdField, envName, envToken,
   jsKey,
   jsProp,
@@ -93,15 +92,17 @@ const TestEntity = cmp(function TestEntity(props: any) {
   const PROJENVNAME = envName(model)
   const ENTENVNAME = envToken(entity.name)
   const authActive = isAuthActive(model)
+  const authSecret = authActive && fact(model.main[KIT], 'auth').secret
   const apikeyEnvEntry = authActive
-    ? `\n    '${PROJENVNAME}_APIKEY': '',`
+    ? `\n    '${PROJENVNAME}_APIKEY': '',${authSecret ? `\n    '${PROJENVNAME}_SECRET': '',` : ''}`
     : ''
   const apikeyLiveField = authActive
     ? `
-        apikey: env.${PROJENVNAME}_APIKEY,`
+        apikey: env.${PROJENVNAME}_APIKEY,${authSecret ? `
+        secret: env.${PROJENVNAME}_SECRET,` : ''}`
     : ''
 
-  const svars = serverVariables(model)
+  const svars = fact(model.main[KIT], 'server')
   const serverEnvEntry = svars
     .map((v: any) => `\n    '${serverVarEnv(PROJENVNAME, v.name)}': ${templateSafe('js', JSON.stringify(v.dflt))},`).join('')
   const serverLiveField = 0 === svars.length ? '' : `

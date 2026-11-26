@@ -216,8 +216,8 @@ ${authName('COOKIE-AUTH', false)}
 // function stays because core.clj's u-make-spec calls it unconditionally and
 // base-utility-map binds it unconditionally.
 function renderInactive(spec: AuthSpec, head: string): string {
-  return head + `;; This SDK is configured with authentication off
-;; (main.kit.config.auth.active: false), so there is no credential to place.
+  return head + `;; This SDK is configured with authentication off, so there is no credential
+;; to place.
 ;; HEADER-AUTH remains part of sdk.core's public surface because
 ;; feature/secrets reads core/HEADER-AUTH.
 (def HEADER-AUTH ${cljstr(headerAuthConst(spec))})

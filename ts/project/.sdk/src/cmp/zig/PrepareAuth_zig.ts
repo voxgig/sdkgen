@@ -64,9 +64,8 @@ function render(spec: AuthSpec): string {
 
 function renderInactive(): string {
   return HEAD + `//
-// THIS SDK SENDS NO CREDENTIAL: the project set
-// \`main.kit.config.auth.active: false\`, which is the documented, explicit
-// way to say so. The function stays in the pipeline because make_spec calls
+// THIS SDK SENDS NO CREDENTIAL: it is configured with authentication off.
+// The function stays in the pipeline because make_spec calls
 // it unconditionally.
 
 const h = @import("helpers.zig");
@@ -409,7 +408,7 @@ function facts(where: string, basic: boolean, active: boolean): string {
 
   return `
 /// WHERE this SDK places its credential: "header", "query", "cookie", or
-/// "none" when the project set \`main.kit.config.auth.active: false\`.
+/// "none" when this SDK is configured with authentication off.
 pub const PLACEMENT = ${zigstr(placement)};
 
 /// True when the scheme is genuine HTTP Basic - two credentials, base64-joined

@@ -45,10 +45,9 @@ function resolveAuthPrefix(model: any): string {
 }
 
 
+// No credential code where the documents say auth is off.
 function isAuthSuppressed(model: any): boolean {
-  const auth = getModelPath(model, `main.${KIT}.config.auth`,
-    { only_active: false, required: false })
-  return null != auth && false === auth.active
+  return !isAuthActive(model)
 }
 
 

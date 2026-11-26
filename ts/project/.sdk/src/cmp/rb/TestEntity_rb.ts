@@ -1,4 +1,4 @@
-import { flowSteps, opReachable, validateSeeds } from '@voxgig/sdkgen'
+import { flowSteps, opReachable, validateSeeds, fact } from '@voxgig/sdkgen'
 
 import {
   flatten,
@@ -27,7 +27,6 @@ import {
   isAuthActive,
   entityDataIdField, entityRecordIdField, envName, envToken,
   serverVarEnv,
-  serverVariables,
   invalidRequest,
   liveFlowNeeds, liveStrict, liveStrictNote,
   liveRouteExamples, liveStepExamples, flowLoadRoute, flowLoadReadsRecord,
@@ -133,18 +132,19 @@ const TestEntity = cmp(function TestEntity(props: any) {
   const PROJUPPER = envName(model)
 
   const authActive = isAuthActive(model)
+  const authSecret = authActive && fact(model.main[KIT], 'auth').secret
   const apikeyEnvEntry = authActive
-    ? `\n    "${PROJUPPER}_APIKEY" => "",`
+    ? `\n    "${PROJUPPER}_APIKEY" => "",${authSecret ? `\n    "${PROJUPPER}_SECRET" => "",` : ''}`
     : ''
   const apikeyLiveField = authActive
-    ? `\n        "apikey" => env["${PROJUPPER}_APIKEY"],`
+    ? `\n        "apikey" => env["${PROJUPPER}_APIKEY"],${authSecret ? `\n        "secret" => env["${PROJUPPER}_SECRET"],` : ''}`
     : ''
 
   // A templated server URL (OpenAPI server variables) makes a LIVE client
   // impossible to construct without values: makeOptions raises rather than
   // request a URL with a literal `{account_id}` in it. So the live suite
   // takes them from the environment the same way it takes the apikey.
-  const svars = serverVariables(model)
+  const svars = fact(model.main[KIT], 'server')
   const serverEnvEntry = svars
     .map((v: any) => `\n    "${serverVarEnv(PROJUPPER, v.name)}" => ${formatRubyValue(v.dflt)},`).join('')
   const serverLiveField = 0 === svars.length ? '' : `

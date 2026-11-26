@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, elixirAccessor, entityCollection, fact } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, elixirAccessor, entityCollection, fact, clientOptions } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -31,9 +31,9 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   const opRows = ['load', 'list', 'create', 'update', 'patch', 'remove']
     .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o]).join('\n')
 
-  const apikeyOptionRow = isAuthActive(model)
-    ? '| `apikey` | `String.t()` | API key for authentication. |\n'
-    : ''
+  const OPTION_KIND: Record<string, string> = { string: 'String.t()', map: 'map()', list: 'list()' }
+  const optionRows = clientOptions(model)
+    .map((o: any) => '| `' + o.name + '` | `' + OPTION_KIND[o.kind] + '` | ' + o.desc + ' |\n').join('')
 
   Content(`### ${Name}
 
@@ -46,13 +46,7 @@ native map with \`${Name}.Helpers.deep/1\`.
 
 | Option | Type | Description |
 | --- | --- | --- |
-${apikeyOptionRow}| \`base\` | \`String.t()\` | Base URL of the API server. |
-| \`prefix\` | \`String.t()\` | URL path prefix prepended to all requests. |
-| \`suffix\` | \`String.t()\` | URL path suffix appended to all requests. |
-| \`feature\` | \`map()\` | Feature activation flags. |
-| \`extend\` | \`list()\` | Additional feature instances to load. |
-| \`system\` | \`map()\` | System overrides (e.g. custom \`fetch\` function). |
-
+${optionRows}
 ### test
 
 \`\`\`elixir

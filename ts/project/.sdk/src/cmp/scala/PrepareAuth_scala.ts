@@ -59,9 +59,8 @@ function render(spec: AuthSpec): string {
   if (!spec.active) {
     return head + `import ${spec.scalapackage}.core.{Context, Spec}
 
-// This SDK is configured with authentication off
-// (main.kit.config.auth.active: false), so there is no credential to
-// place. The object stays in the pipeline because Register binds
+// This SDK is configured with authentication off, so there is no credential
+// to place. The object stays in the pipeline because Register binds
 // prepareAuth unconditionally and MakeSpec calls it on every request.
 object PrepareAuth {
 

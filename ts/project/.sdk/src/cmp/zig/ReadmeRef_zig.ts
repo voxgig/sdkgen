@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opNeedsAction, bodyNote, matchExampleItems, requestExampleItems, entityClassName, entityCollection, featureDocs, fact } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opNeedsAction, bodyNote, matchExampleItems, requestExampleItems, entityClassName, entityCollection, featureDocs, fact, clientOptions } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -83,6 +83,11 @@ Complete API reference for the ${model.Name} ${target.title} SDK.
 
 `)
 
+    // A closed value union holds no feature instance, so there is no `extend`.
+    const OPTION_KIND: Record<string, string> = { string: 'string', map: 'map', list: '' }
+    const optionRows = clientOptions(model).filter((o: any) => 'extend' !== o.name)
+      .map((o: any) => '| `' + o.name + '` | `' + OPTION_KIND[o.kind] + '` | ' + o.desc + ' |\n').join('')
+
     Content(`\`\`\`zig
 const sdk = @import("sdk");
 const h = sdk.h;
@@ -97,13 +102,7 @@ Create a new SDK client instance. \`options\` is a \`Value\` map
 
 | Key | Value type | Description |
 | --- | --- | --- |
-${isAuthActive(model) ? '| `apikey` | `string` | API key for authentication. |\n' : ''}| \`base\` | \`string\` | Base URL for API requests. |
-| \`prefix\` | \`string\` | URL prefix appended after base. |
-| \`suffix\` | \`string\` | URL suffix appended after path. |
-| \`headers\` | \`map\` | Custom headers for all requests. |
-| \`feature\` | \`map\` | Feature configuration. |
-| \`system\` | \`map\` | System overrides. |
-
+${optionRows}
 `)
 
 
@@ -326,6 +325,7 @@ switch (client.${method}(h.vnull()).create(h.jo(&.{
             const updateLines = updateItems.map((it: any) =>
               `    .{ ${JSON.stringify(it.name)}, ${zigLit(it.type,
                 it.name === idF ? ent.name + '_id' : it.name)} },\n`).join('')
+
             Content(`\`\`\`zig
 switch (client.${method}(h.vnull()).${opname}(h.jo(&.{
 ${updateLines}    // ${'patch' === opname ? 'Only the fields to change' : 'Fields to update'}

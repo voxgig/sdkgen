@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, fact } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, fact, clientOptions } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -33,9 +33,9 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   const opRows = ['load', 'list', 'create', 'update', 'patch', 'remove']
     .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o]).join('\n')
 
-  const apikeyOptionRow = isAuthActive(model)
-    ? '| `apikey` | `String` | API key for authentication. |\n'
-    : ''
+  const OPTION_KIND: Record<string, string> = { string: 'String', map: 'VMap', list: 'VList' }
+  const optionRows = clientOptions(model)
+    .map((o: any) => '| `' + o.name + '` | `' + OPTION_KIND[o.kind] + '` | ' + o.desc + ' |\n').join('')
 
   Content(`### ${SDK}
 
@@ -47,13 +47,7 @@ Creates a new SDK client. \`options\` is a \`VMap\` of \`Value\`.
 
 | Option | Type | Description |
 | --- | --- | --- |
-${apikeyOptionRow}| \`base\` | \`String\` | Base URL of the API server. |
-| \`prefix\` | \`String\` | URL path prefix prepended to all requests. |
-| \`suffix\` | \`String\` | URL path suffix appended to all requests. |
-| \`feature\` | \`VMap\` | Feature activation flags. |
-| \`extend\` | \`VList\` | Additional Feature instances to load. |
-| \`system\` | \`VMap\` | System overrides (e.g. custom \`fetch\` function). |
-
+${optionRows}
 ### testSDK
 
 \`\`\`swift

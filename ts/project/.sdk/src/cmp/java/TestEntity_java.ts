@@ -1,4 +1,4 @@
-import { flowSteps, opReachable, invalidRequest, flowLoadRoute, flowLoadReadsRecord } from '@voxgig/sdkgen'
+import { flowSteps, opReachable, invalidRequest, flowLoadRoute, flowLoadReadsRecord, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -20,7 +20,7 @@ import {
   getMatchEntries,
   isAuthActive,
   serverVarEnv,
-  serverVariables, envName, envToken, entityRecordIdField,
+  envName, envToken, entityRecordIdField,
   liveFlowNeeds, liveStrict, liveStrictNote,
   liveGates, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
   liveRouteExamples, liveStepExamples,
@@ -145,13 +145,14 @@ const TestEntity = cmp(function TestEntity(props: any) {
   const accessor = javaVarName(entity.name)
 
   const authActive = isAuthActive(model)
+  const authSecret = authActive && fact(model.main[KIT], 'auth').secret
 
 
   // A templated server URL (OpenAPI server variables) makes a LIVE client
   // impossible to construct without values: MakeOptions throws rather than
   // request a URL with a literal `{account_id}` in it. Taken from the
   // environment, the same way the apikey is.
-  const svars = serverVariables(model)
+  const svars = fact(model.main[KIT], 'server')
   const serverEnvEntry = svars
     .map((v: any) => `    envm.put("${serverVarEnv(PROJUPPER, v.name)}", ${JSON.stringify(v.dflt)});\n`).join('')
   const serverLiveField = 0 === svars.length ? '' :
@@ -387,7 +388,7 @@ ${fixtureIdentity(entity)}
     envm.put("${entidEnvVar}", idmap);
     envm.put("${PROJUPPER}_TEST_LIVE", "FALSE");
     envm.put("${PROJUPPER}_TEST_EXPLAIN", "FALSE");
-${authActive ? `    envm.put("${PROJUPPER}_APIKEY", "");\n` : ''}${serverEnvEntry}    Map<String, Object> env = RunnerSupport.envOverride(envm);
+${authActive ? `    envm.put("${PROJUPPER}_APIKEY", "");\n` : ''}${authSecret ? `    envm.put("${PROJUPPER}_SECRET", "");\n` : ''}${serverEnvEntry}    Map<String, Object> env = RunnerSupport.envOverride(envm);
 
     Map<String, Object> idmapResolved = Helpers.toMapAny(env.get("${entidEnvVar}"));
     if (idmapResolved == null) {
@@ -411,7 +412,7 @@ ${authActive ? `    envm.put("${PROJUPPER}_APIKEY", "");\n` : ''}${serverEnvEntr
       // client; the generated fields below overwrite anything they name.
       Map<String, Object> liveOpts =
           new LinkedHashMap<>(RunnerSupport.liveClientOptions());
-${authActive ? `      liveOpts.put("apikey", env.get("${PROJUPPER}_APIKEY"));\n` : ''}${serverLiveField}      // An empty map, not a null one: merge answers null when its last
+${authActive ? `      liveOpts.put("apikey", env.get("${PROJUPPER}_APIKEY"));\n` : ''}${authSecret ? `      liveOpts.put("secret", env.get("${PROJUPPER}_SECRET"));\n` : ''}${serverLiveField}      // An empty map, not a null one: merge answers null when its last
       // entry is null, and basicSetup is normally called with no extras -
       // so a bare null silently discarded the apikey and server values
       // above.

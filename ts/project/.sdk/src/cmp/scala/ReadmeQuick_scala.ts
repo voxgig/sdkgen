@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, opRequestShape, entityIdField, entityOps, javaMapOf, matchExampleItems, requiredItems, javaMapItems, requestExampleItems, sendsId } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, opRequestShape, entityIdField, entityOps, javaMapOf, matchExampleItems, requiredItems, javaMapItems, requestExampleItems, sendsId, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -32,32 +32,30 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
 
   const authActive = isAuthActive(model)
 
-  if (authActive) {
-    Content(`### 1. Create a client
+  // The constructor refuses a templated URL it has no value for, so the quick
+  // start passes each variable the URL uses with no default.
+  const svars = fact(model.main[KIT], 'server').filter((v: any) => v.required)
+  const ctorLines = [
+    ...(authActive ? [`options.put("apikey", System.getenv("${envName(model)}_APIKEY"))`] : []),
+    ...(fact(model.main[KIT], 'auth').secret ? [`options.put("secret", System.getenv("${envName(model)}_SECRET"))`] : []),
+    ...(0 === svars.length ? [] : ['val server = new java.util.LinkedHashMap[String, Object]()',
+      ...svars.map((v: any) => `server.put("${v.name}", "<${v.name}>")`), 'options.put("server", server)']),
+  ]
+  const ctor = 0 === ctorLines.length
+    ? `val client = new ${SDK}()`
+    : ['val options = new java.util.LinkedHashMap[String, Object]()', ...ctorLines,
+      `val client = new ${SDK}(options)`].join('\n')
+
+  Content(`### 1. Create a client
 
 \`\`\`scala
 import ${scalaPackage(model)}.core.${SDK}
 import ${scalaPackage(model)}.core.SdkEntity
 
-val options = new java.util.LinkedHashMap[String, Object]()
-options.put("apikey", System.getenv("${envName(model)}_APIKEY"))
-val client = new ${SDK}(options)
+${ctor}
 \`\`\`
 
 `)
-  }
-  else {
-    Content(`### 1. Create a client
-
-\`\`\`scala
-import ${scalaPackage(model)}.core.${SDK}
-import ${scalaPackage(model)}.core.SdkEntity
-
-val client = new ${SDK}()
-\`\`\`
-
-`)
-  }
 
   if (exampleEntity) {
     const eName = nom(exampleEntity, 'Name')

@@ -55,7 +55,7 @@ import ${javaPackage(model)}.core.SdkEntity;
 
 Map<String, Object> options = new java.util.LinkedHashMap<>();
 options.put("apikey", System.getenv("${envName(model)}_APIKEY"));
-${javaServerLines}${SDK} client = new ${SDK}(options);
+${fact(model.main[KIT], 'auth').secret ? `options.put("secret", System.getenv("${envName(model)}_SECRET"));\n` : ''}${javaServerLines}${SDK} client = new ${SDK}(options);
 \`\`\`
 
 `)

@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField, opNeedsAction, bodyNote, elixirAccessor, entityCollection, exampleVarName, matchExampleItems, requestExampleItems, featureDocs, fact } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField, opNeedsAction, bodyNote, elixirAccessor, entityCollection, exampleVarName, matchExampleItems, requestExampleItems, featureDocs, fact, clientOptions } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -50,6 +50,10 @@ const ReadmeRef = cmp(function ReadmeRef(props: any) {
 
   File({ name: 'REFERENCE.md' }, () => {
 
+    const OPTION_KIND: Record<string, string> = { string: 'String.t()', map: 'map()', list: 'list()' }
+    const optionRows = clientOptions(model)
+      .map((o: any) => '| `' + o.name + '` | `' + OPTION_KIND[o.kind] + '` | ' + o.desc + ' |\n').join('')
+
     Content(`# ${model.Name} ${target.title} SDK Reference
 
 Complete API reference for the ${model.Name} ${target.title} SDK.
@@ -70,13 +74,7 @@ native map with \`${Name}.Helpers.deep/1\`.
 
 | Name | Type | Description |
 | --- | --- | --- |
-${isAuthActive(model) ? '| `apikey` | `String.t()` | API key for authentication. |\n' : ''}| \`base\` | \`String.t()\` | Base URL for API requests. |
-| \`prefix\` | \`String.t()\` | URL prefix appended after base. |
-| \`suffix\` | \`String.t()\` | URL suffix appended after path. |
-| \`headers\` | \`map()\` | Custom headers for all requests. |
-| \`feature\` | \`map()\` | Feature configuration. |
-| \`system\` | \`map()\` | System overrides (e.g. custom fetch). |
-
+${optionRows}
 
 ### Constructors
 
@@ -250,6 +248,7 @@ ${eVar} = ${Name}.Entity.${EName}.create(${eVar}, ${Name}.Helpers.deep(%{
             const updateLines = updateItems.map((it: any) =>
               `  ${elixirString(it.name)} => ${elixirLit(it.type,
                 it.name === idF ? ent.name + '_id' : it.name)},\n`).join('')
+
             Content(`\`\`\`elixir
 ${eVar} = ${Name}.Entity.${EName}.${opname}(${eVar}, ${Name}.Helpers.deep(%{
 ${updateLines}  # ${'patch' === opname ? 'Only the fields to change' : 'Fields to update'}

@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opNeedsAction, bodyNote, matchExampleItems, requestExampleItems, featureDocs, fact } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opNeedsAction, bodyNote, matchExampleItems, requestExampleItems, featureDocs, fact, clientOptions } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -91,6 +91,11 @@ Complete API reference for the ${model.Name} ${target.title} SDK.
 
 `)
 
+    // A closed value union holds no feature instance, so there is no `extend`.
+    const OPTION_KIND: Record<string, string> = { string: 'string', map: 'map', list: '' }
+    const optionRows = clientOptions(model).filter((o: any) => 'extend' !== o.name)
+      .map((o: any) => '| `' + o.name + '` | `' + OPTION_KIND[o.kind] + '` | ' + o.desc + ' |\n').join('')
+
     Content(`\`\`\`ocaml
 open Voxgig_struct
 open Sdk_helpers
@@ -107,13 +112,7 @@ Create a new SDK client instance from a \`value\` options map. Use
 | Name | Type | Description |
 | --- | --- | --- |
 | \`options\` | \`value\` | SDK configuration options (a Map). |
-${isAuthActive(model) ? '| `apikey` | `string` | API key for authentication. |\n' : ''}| \`base\` | \`string\` | Base URL for API requests. |
-| \`prefix\` | \`string\` | URL prefix appended after base. |
-| \`suffix\` | \`string\` | URL suffix appended after path. |
-| \`headers\` | \`map\` | Custom headers for all requests. |
-| \`feature\` | \`map\` | Feature configuration. |
-| \`system\` | \`map\` | System overrides (e.g. custom fetch). |
-
+${optionRows}
 `)
 
 
@@ -320,6 +319,7 @@ let result_data = result.e_data_get ()
             const updateLines = updateItems.map((it: any) =>
               `    ("${ocamlString(it.name)}", ${ocamlLit(it.type,
                 it.name === idF ? ent.name + '_id' : it.name)});\n`).join('')
+
             Content(`\`\`\`ocaml
 let result = (Sdk_client.${fn} client Noval).e_${opname} (jo [
 ${updateLines}    (* ${'patch' === opname ? 'Only the fields to change' : 'Fields to update'} *)

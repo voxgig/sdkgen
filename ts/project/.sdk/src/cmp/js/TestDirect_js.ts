@@ -1,5 +1,6 @@
 
 import {
+  KIT,
   Model,
   ModelEntity,
   ModelPoint,
@@ -18,7 +19,6 @@ import {
   snakify,
   isAuthActive,
   serverVarEnv,
-  serverVariables,
   jsProp, jsOptProp, envName, envToken,
   jsKey,
   pointParts,
@@ -35,6 +35,7 @@ import {
   liveGetOnlyReason, LIVE_GETONLY_ENV,
   liveDirectGetOnly, liveExcludedLines, liveExcludedSummary,
   liveDirectDiscovery,
+  fact,
 } from '@voxgig/sdkgen'
 
 
@@ -57,15 +58,17 @@ const TestDirect = cmp(function TestDirect(props: any) {
   const entidEnvVar = `${PROJECTNAME}_TEST_${envToken(entity.name)}_ENTID`
 
   const authActive = isAuthActive(model)
+  const authSecret = authActive && fact(model.main[KIT], 'auth').secret
   const apikeyEnvEntry = authActive
-    ? `\n    '${PROJECTNAME}_APIKEY': '',`
+    ? `\n    '${PROJECTNAME}_APIKEY': '',${authSecret ? `\n    '${PROJECTNAME}_SECRET': '',` : ''}`
     : ''
   const apikeyLiveField = authActive
     ? `
-      apikey: env.${PROJECTNAME}_APIKEY,`
+      apikey: env.${PROJECTNAME}_APIKEY,${authSecret ? `
+      secret: env.${PROJECTNAME}_SECRET,` : ''}`
     : ''
 
-  const svars = serverVariables(model)
+  const svars = fact(model.main[KIT], 'server')
   const serverEnvEntry = svars
     .map((v: any) => `\n    '${serverVarEnv(PROJECTNAME, v.name)}': ${JSON.stringify(v.dflt)},`).join('')
   const serverLiveField = 0 === svars.length ? '' : `

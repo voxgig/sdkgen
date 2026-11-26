@@ -107,8 +107,13 @@ implementation in `ts/project/.sdk/src/cmp/<lang>/`:
 
 `Main`, `Entity`, `Feature`, `Test`, `Readme`, `ReadmeTop`,
 `ReadmeInstall`, `ReadmeQuick`, `ReadmeIntro`, `ReadmeModel`,
-`ReadmeOptions`, `ReadmeEntity`, `ReadmeHowto`, `ReadmeExplanation`,
-`ReadmeRef`, and `FeatureHook`.
+`ReadmeEntity`, `ReadmeHowto`, `ReadmeExplanation`, `ReadmeRef`, and
+`FeatureHook`.
+
+`ReadmeOptions` is still exported and writes nothing. The client options
+table is in the section `ReadmeModel` writes, and in `REFERENCE.md`, both
+from `clientOptions`. No bundled target ships a `ReadmeOptions_<lang>`
+component, and generation loads none that a package ships.
 
 #### `ReadmeIntro`
 
@@ -172,10 +177,21 @@ when it says so explicitly; otherwise the spec-derived signal governs:
 2. `main.kit.info.auth === false` (apidef: the spec declares no
    authentication)
 
-Templates use it to gate API-key code, docs, and examples for public
-APIs that need no authentication. An API whose spec omits its security
-schemes (GitHub's official OpenAPI does) still gets a credential when the
-project sets `config: auth: { active: true, prefix: 'Bearer' }`.
+The generated credential code, documents, and examples all follow it, so
+the SDK of a public API places no credential and documents none. An API
+whose spec omits its security schemes (GitHub's official OpenAPI does) gets
+a credential only when the project sets
+`config: auth: { active: true, prefix: 'Bearer' }`.
+
+### `clientOptions(model) → ClientOption[]`
+
+The rows of a client options table, as `{ name, kind, desc }`, where `kind`
+is `string`, `map` or `list`. The server variables come first where the
+server URL is a template, marked required when one has no default. The API
+key and the Basic secret follow where the generated `PrepareAuth` places
+them, then each option a caller sets that `main.kit.optspec` declares, and
+`feature`. Each language's model and reference sections print these rows in
+their own spelling.
 
 ### `guardModel(model, log?) → model`
 

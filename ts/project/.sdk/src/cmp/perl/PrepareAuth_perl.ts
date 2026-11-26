@@ -71,8 +71,8 @@ package ${spec.Name}Utilities;
 
 our %REGISTRY;
 
-# This API declares no authentication, so there is no credential to
-# place. The entry stays in the registry because make_spec calls it
+# This SDK is configured with authentication off, so there is no credential
+# to place. The entry stays in the registry because make_spec calls it
 # unconditionally, and still guards the spec so the auth_no_spec contract
 # holds for every SDK.
 $REGISTRY{prepare_auth} = sub {

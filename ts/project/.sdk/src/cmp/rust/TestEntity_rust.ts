@@ -1,4 +1,4 @@
-import { flowSteps, opReachable, invalidRequest, flowLoadRoute, flowLoadReadsRecord } from '@voxgig/sdkgen'
+import { flowSteps, opReachable, invalidRequest, flowLoadRoute, flowLoadReadsRecord, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -20,7 +20,6 @@ import {
   getMatchEntries,
   isAuthActive, envName, envToken, entityRecordIdField,
   serverVarEnv,
-  serverVariables,
   liveFlowNeeds, liveStrict, liveStrictNote,
   liveGates, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
   liveRouteExamples, liveStepExamples,
@@ -136,14 +135,15 @@ const TestEntity = cmp(function TestEntity(props: any) {
   const ENTUPPER = envToken(entity.name)
 
   const authActive = isAuthActive(model)
+  const authSecret = authActive && fact(model.main[KIT], 'auth').secret
   const apikeyEnvEntry = authActive
-    ? `\n        ("${PROJUPPER}_APIKEY", Value::str("")),`
+    ? `\n        ("${PROJUPPER}_APIKEY", Value::str("")),${authSecret ? `\n        ("${PROJUPPER}_SECRET", Value::str("")),` : ''}`
     : ''
   const apikeyLiveField = authActive
-    ? `("apikey", getp(&env, "${PROJUPPER}_APIKEY"))`
+    ? `("apikey", getp(&env, "${PROJUPPER}_APIKEY"))${authSecret ? `, ("secret", getp(&env, "${PROJUPPER}_SECRET"))` : ''}`
     : ''
 
-  const svars = serverVariables(model)
+  const svars = fact(model.main[KIT], 'server')
   const serverEnvEntry = svars
     .map((v: any) => `\n        ("${serverVarEnv(PROJUPPER, v.name)}", Value::str(${JSON.stringify(v.dflt)})),`).join('')
   const serverLiveEntry = 0 === svars.length ? '' :

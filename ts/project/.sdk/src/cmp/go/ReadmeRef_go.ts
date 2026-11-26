@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField, entityOps, bodyNote, listMatchArg, matchExampleItems, litString, requestExampleItems, entityClassName, entityCollection, featureDocs, fact } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField, entityOps, bodyNote, listMatchArg, matchExampleItems, litString, requestExampleItems, entityClassName, entityCollection, featureDocs, fact, clientOptions } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -65,6 +65,10 @@ Complete API reference for the ${model.Name} ${target.title} SDK.
 
 `)
 
+    const OPTION_KIND: Record<string, string> = { string: 'string', map: 'map[string]any', list: '[]any' }
+    const optionRows = clientOptions(model)
+      .map((o: any) => '| `options["' + o.name + '"]` | `' + OPTION_KIND[o.kind] + '` | ' + o.desc + ' |\n').join('')
+
     Content(`\`\`\`go
 func New${model.const.Name}SDK(options map[string]any) *${model.const.Name}SDK
 \`\`\`
@@ -76,13 +80,7 @@ Create a new SDK client instance.
 | Name | Type | Description |
 | --- | --- | --- |
 | \`options\` | \`map[string]any\` | SDK configuration options. |
-${isAuthActive(model) ? '| \`options["apikey"]\` | \`string\` | API key for authentication. |\n' : ''}| \`options["base"]\` | \`string\` | Base URL for API requests. |
-| \`options["prefix"]\` | \`string\` | URL prefix appended after base. |
-| \`options["suffix"]\` | \`string\` | URL suffix appended after path. |
-| \`options["headers"]\` | \`map[string]any\` | Custom headers for all requests. |
-| \`options["feature"]\` | \`map[string]any\` | Feature configuration. |
-| \`options["system"]\` | \`map[string]any\` | System overrides (e.g. custom fetch). |
-
+${optionRows}
 `)
 
 
@@ -327,6 +325,7 @@ fmt.Println(result.(sdk.Entity).Data())
             const updateLines = updateItems.map((it: any) =>
               `    ${litString('go', it.name)}: ${exampleValue(ent, ent.op && ent.op[opname], it.name,
                 it.name === idF ? ent.name + '_id' : it.name)},\n`).join('')
+
             Content(`\`\`\`go
 result, err := client.${ent.Name}(nil).${'patch' === opname ? 'Patch' : 'Update'}(map[string]any{
 ${updateLines}    // ${'patch' === opname ? 'Only the fields to change' : 'Fields to update'}

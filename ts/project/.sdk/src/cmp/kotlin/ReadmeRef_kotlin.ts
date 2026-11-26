@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opNeedsAction, bodyNote, matchExampleItems, requestExampleItems, featureDocs, fact } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opNeedsAction, bodyNote, matchExampleItems, requestExampleItems, featureDocs, fact, clientOptions } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -82,6 +82,10 @@ Complete API reference for the ${model.Name} ${target.title} SDK.
 
 `)
 
+    const OPTION_KIND: Record<string, string> = { string: 'String', map: 'Map', list: 'List' }
+    const optionRows = clientOptions(model)
+      .map((o: any) => '| `options["' + o.name + '"]` | `' + OPTION_KIND[o.kind] + '` | ' + o.desc + ' |\n').join('')
+
     Content(`\`\`\`kotlin
 val client = ${SDK}(options)
 \`\`\`
@@ -93,13 +97,7 @@ Create a new SDK client instance. \`options\` is a \`MutableMap<String, Any?>\`.
 | Name | Type | Description |
 | --- | --- | --- |
 | \`options\` | \`Map\` | SDK configuration options. |
-${isAuthActive(model) ? '| \`options["apikey"]\` | \`String\` | API key for authentication. |\n' : ''}| \`options["base"]\` | \`String\` | Base URL for API requests. |
-| \`options["prefix"]\` | \`String\` | URL prefix appended after base. |
-| \`options["suffix"]\` | \`String\` | URL suffix appended after path. |
-| \`options["headers"]\` | \`Map\` | Custom headers for all requests. |
-| \`options["feature"]\` | \`Map\` | Feature configuration. |
-| \`options["system"]\` | \`Map\` | System overrides (e.g. custom fetch). |
-
+${optionRows}
 `)
 
 
@@ -317,6 +315,7 @@ val result = client.${accessor}(null).create(mutableMapOf<String, Any?>(
               return `    ${kotlinString(it.name)} to ${kotlinLit(it.type,
                 it.name === idF ? ent.name + '_id' : it.name)}${comma}\n`
             }).join('')
+
             Content(`\`\`\`kotlin
 val result = client.${accessor}(null).${opname}(mutableMapOf<String, Any?>(
 ${updateLines}), null)

@@ -1,4 +1,4 @@
-import { flowSteps, opReachable } from '@voxgig/sdkgen'
+import { flowSteps, opReachable, fact } from '@voxgig/sdkgen'
 
 import {
   flatten,
@@ -26,7 +26,6 @@ import {
   getMatchEntries,
   isAuthActive,
   serverVarEnv,
-  serverVariables,
   entityDataIdField, entityRecordIdField, envName, envToken,
   invalidRequest,
   liveFlowNeeds, liveStrict, liveStrictNote,
@@ -76,11 +75,12 @@ const TestEntity = cmp(function TestEntity(props: any) {
   const PROJUPPER = envName(model)
 
   const authActive = isAuthActive(model)
+  const authSecret = authActive && fact(model.main[KIT], 'auth').secret
   const apikeyEnvEntry = authActive
-    ? `\n\t\t"${PROJUPPER}_APIKEY":         "",`
+    ? `\n\t\t"${PROJUPPER}_APIKEY":         "",${authSecret ? `\n\t\t"${PROJUPPER}_SECRET":         "",` : ''}`
     : ''
   const apikeyLiveField = authActive
-    ? `\n\t\t\t\t"apikey": env["${PROJUPPER}_APIKEY"],`
+    ? `\n\t\t\t\t"apikey": env["${PROJUPPER}_APIKEY"],${authSecret ? `\n\t\t\t\t"secret": env["${PROJUPPER}_SECRET"],` : ''}`
     : ''
 
 
@@ -88,7 +88,7 @@ const TestEntity = cmp(function TestEntity(props: any) {
   // impossible to construct without values: makeOptions refuses rather than
   // request a URL with a literal `{account_id}` in it. Taken from the
   // environment, the same way the apikey is.
-  const svars = serverVariables(model)
+  const svars = fact(model.main[KIT], 'server')
   const serverEnvEntry = svars
     .map((v: any) => `\n\t\t"${serverVarEnv(PROJUPPER, v.name)}": ${JSON.stringify(v.dflt)},`).join('')
   const serverLiveField = 0 === svars.length ? '' :

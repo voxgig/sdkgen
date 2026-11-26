@@ -1051,7 +1051,14 @@ describe("PrimaryUtility", function()
   end)
 
 
+  -- Read from the config, never from a probe: a probe that finds no
+  -- credential is the regression this section exists to catch.
   it("prepareAuth-basic", function()
+    if nil == (require("config_shared")().options or {}).auth then
+      pending("this SDK's config declares no auth, so it places no credential")
+      return
+    end
+
     local setup_opts = omni.tostruct(get_spec(spec, "prepareAuth", "DEF", "setup", "a"))
     local auth_client = sdk.test(nil, setup_opts)
     local auth_utility = auth_client:get_utility()

@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems, sendsId } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems, sendsId, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -45,32 +45,29 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
     return kotlinString(placeholder)
   }
 
-  if (authActive) {
-    Content(`### 1. Create a client
+  // The constructor refuses a templated URL it has no value for, so the quick
+  // start passes each variable the URL uses with no default.
+  const svars = fact(model.main[KIT], 'server').filter((v: any) => v.required)
+  const ctorFields = [
+    ...(authActive ? [`"apikey" to System.getenv("${envName(model)}_APIKEY"),`] : []),
+    ...(fact(model.main[KIT], 'auth').secret ? [`"secret" to System.getenv("${envName(model)}_SECRET"),`] : []),
+    ...(0 === svars.length ? [] : [`"server" to mutableMapOf<String, Any?>(` +
+      svars.map((v: any) => `"${v.name}" to "<${v.name}>"`).join(', ') + `),`]),
+  ]
+  const ctor = 0 === ctorFields.length
+    ? `${SDK}()`
+    : `${SDK}(mutableMapOf<String, Any?>(${ctorFields.map((f: string) => '\n    ' + f).join('')}\n))`
+
+  Content(`### 1. Create a client
 
 \`\`\`kotlin
 import ${kotlinPackage(model)}.core.${SDK}
 import ${kotlinPackage(model)}.core.SdkEntity
 
-val client = ${SDK}(mutableMapOf<String, Any?>(
-    "apikey" to System.getenv("${envName(model)}_APIKEY"),
-))
+val client = ${ctor}
 \`\`\`
 
 `)
-  }
-  else {
-    Content(`### 1. Create a client
-
-\`\`\`kotlin
-import ${kotlinPackage(model)}.core.${SDK}
-import ${kotlinPackage(model)}.core.SdkEntity
-
-val client = ${SDK}()
-\`\`\`
-
-`)
-  }
 
   if (exampleEntity) {
     const eName = nom(exampleEntity, 'Name')

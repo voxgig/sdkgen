@@ -1092,9 +1092,19 @@ public class PrimaryUtilityTest
         });
     }
 
+    // Read from the config, never from a probe: a probe that finds no
+    // credential is the regression this section exists to catch. xunit 2 has
+    // no runtime skip, so the skip is a printed reason.
     [Fact]
     public void PrepareAuthBasic()
     {
+        if (SdkConfig.SharedConfig()["options"] is not Dictionary<string, object?> options ||
+            !options.ContainsKey("auth"))
+        {
+            Console.WriteLine("SKIP PrepareAuthBasic: this SDK's config declares no auth, so it places no credential");
+            return;
+        }
+
         var setupOpts = TestRunner.GetSpec(Run().Spec, "prepareAuth", "DEF", "setup", "a");
         var authClient = ProjectNameSDK.TestSDK(null, setupOpts);
         var authUtility = authClient.GetUtility();

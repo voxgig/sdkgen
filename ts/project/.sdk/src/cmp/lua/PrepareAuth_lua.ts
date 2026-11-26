@@ -48,8 +48,8 @@ function render(spec: {
 
   if (!spec.active) {
     return head + `
--- This API declares no authentication, so there is no credential to place.
--- The function stays in the pipeline because make_spec calls it
+-- This SDK is configured with authentication off, so there is no credential
+-- to place. The function stays in the pipeline because make_spec calls it
 -- unconditionally.
 local function prepare_auth_util(ctx)
   local spec = ctx.spec

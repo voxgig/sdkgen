@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, fact } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, fact, clientOptions } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -31,9 +31,10 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   const opRows = ['load', 'list', 'create', 'update', 'patch', 'remove']
     .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o]).join('\n')
 
-  const apikeyOptionRow = isAuthActive(model)
-    ? '| `apikey` | `string` | API key for authentication. |\n'
-    : ''
+  // A closed value union holds no feature instance, so there is no `extend`.
+  const OPTION_KIND: Record<string, string> = { string: 'string', map: 'map', list: '' }
+  const optionRows = clientOptions(model).filter((o: any) => 'extend' !== o.name)
+    .map((o: any) => '| `' + o.name + '` | `' + OPTION_KIND[o.kind] + '` | ' + o.desc + ' |\n').join('')
 
   Content(`### Sdk_client
 
@@ -50,13 +51,7 @@ for defaults.
 
 | Option | Type | Description |
 | --- | --- | --- |
-${apikeyOptionRow}| \`base\` | \`string\` | Base URL of the API server. |
-| \`prefix\` | \`string\` | URL path prefix prepended to all requests. |
-| \`suffix\` | \`string\` | URL path suffix appended to all requests. |
-| \`feature\` | \`map\` | Feature activation flags. |
-| \`extend\` | \`list\` | Additional feature instances to load. |
-| \`system\` | \`map\` | System overrides (e.g. custom \`fetch\` function). |
-
+${optionRows}
 ### Sdk_client.test
 
 \`\`\`ocaml
