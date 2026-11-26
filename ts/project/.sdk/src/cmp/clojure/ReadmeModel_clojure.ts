@@ -27,7 +27,7 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
     remove: '| `remove` | `(ent reqmatch ctrl) -> entity` | Remove an entity, and return it marked as deleted. Raises on error. |',
   }
   const opRows = ['load', 'list', 'create', 'update', 'patch', 'remove']
-    .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o]).join('\n')
+    .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o] + '\n').join('')
   const listResult = opUnion.has('list') ? ', and `list` to a `vector` of\nentities, one per record' : ''
 
   const OPTION_KIND: Record<string, string> = { string: 'string', map: 'map', list: 'vector' }
@@ -75,14 +75,14 @@ Creates a test-mode client with mock transport. Both arguments may be \`nil\`.
   Content(`
 ### Entity interface
 
-${sameOps ? 'All entities share the same interface.' : 'Each entity has only the operations its model declares; see its section below.'} Operations are functions in the
+${0 === entityList.length ? '' : (sameOps ? 'All entities share the same interface.' :
+  'Each entity has only the operations its model declares; see its section below.') + ' '}Operations are functions in the
 entity namespace (\`sdk.entity.<name>\`); state accessors are stored on the
 entity map and are called via keyword lookup.
 
 | Member | Signature | Description |
 | --- | --- | --- |
-${opRows}
-| \`:data-get\` | \`() -> map\` | Get entity data. |
+${opRows}| \`:data-get\` | \`() -> map\` | Get entity data. |
 | \`:data-set\` | \`(data)\` | Set entity data. |
 | \`:match-get\` | \`() -> map\` | Get entity match criteria. |
 | \`:match-set\` | \`(match)\` | Set entity match criteria. |
@@ -113,9 +113,11 @@ On error, \`ok\` is \`false\` and \`err\` contains the error value.
 `)
 
   // Entities summary
-  Content(`### Entities
+  if (0 < entityList.length) {
+    Content(`### Entities
 
 `)
+  }
   each(entityList, (ent: any) => {
     const fields = Object.values(ent.fields || {})
     const opnames = entityOps(ent)

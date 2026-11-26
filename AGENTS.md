@@ -645,6 +645,7 @@ reports:
 - `fence`: a code block in a target's documents tagged with another
   language; data and shell blocks are neutral, and a consumer writes the
   language of the target it wraps.
+- `table`: a table header with no row under it, outside a code block.
 
 Each finding is keyed on (relation, the chain of labelled components that
 wrote the line, cause) and must match a pin in `test/textguard-pins.json`,

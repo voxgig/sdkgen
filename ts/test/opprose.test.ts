@@ -9,6 +9,7 @@ import { Jostraca, Project, Folder, File } from 'jostraca'
 
 import { SdkGen, ReadmeModel } from '../dist/sdkgen.js'
 import { STAGE, SCAFFOLD, makeModel, makeRoot, makeLog, layeredFs } from './generateharness'
+import { emptyTables } from './textguard'
 
 
 // The documents of every SDK target follow the operations its entities have.
@@ -112,5 +113,16 @@ describe('operation-dependent prose', () => {
     strictEqual(SAME.test(genericLists), true)
     deepStrictEqual(['load', 'list', 'create', 'update', 'patch', 'remove']
       .filter((op: string) => genericLists.includes('| `' + op + '(')), ['list'])
+  })
+
+
+  test('with no active entity, no table stands without rows and no lead-in without what it leads to', async () => {
+    const docs = await documents(only())
+    const lines = Object.fromEntries(Object.entries(docs).map(([path, text]) =>
+      [path, text.split('\n').map((line: string) => ({ text: line, chain: '' }))]))
+    deepStrictEqual(emptyTables({ id: 'entities-empty', files: docs, present: new Set(), on: {}, applies: {}, lines })
+      .map((f: any) => f.doc + ': ' + f.line), [])
+    deepStrictEqual(TARGETS.filter((t: string) => /reads its record:\n\n(?!-)/.test(docs[t + '/README.md'])), [])
+    deepStrictEqual(TARGETS.filter((t: string) => /^### Entities\n\n(?!#### )/m.test(docs[t + '/README.md'])), [])
   })
 })

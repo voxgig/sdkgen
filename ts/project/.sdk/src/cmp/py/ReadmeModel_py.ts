@@ -28,7 +28,7 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
     remove: '| `remove` | `(reqmatch, ctrl) -> any` | Remove an entity, and return it marked as deleted. Raises on error. |',
   }
   const opRows = ['load', 'list', 'create', 'update', 'patch', 'remove']
-    .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o]).join('\n')
+    .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o] + '\n').join('')
   const listResult = opUnion.has('list') ? ', and `list` a `list` of entities, one\nper record' : ''
 
   const OPTION_KIND: Record<string, string> = { string: 'str', map: 'dict', list: 'list' }
@@ -75,12 +75,10 @@ Creates a test-mode client with mock transport. Both arguments may be \`None\`.
   Content(`
 ### Entity interface
 
-${sameOps ? 'All entities share the same interface.' : 'Each entity has only the operations its model declares; see its section below.'}
-
-| Method | Signature | Description |
+${0 === entityList.length ? '' : (sameOps ? 'All entities share the same interface.' :
+  'Each entity has only the operations its model declares; see its section below.') + '\n\n'}| Method | Signature | Description |
 | --- | --- | --- |
-${opRows}
-| \`data_get\` | \`() -> dict\` | Get entity data. |
+${opRows}| \`data_get\` | \`() -> dict\` | Get entity data. |
 | \`data_set\` | \`(data)\` | Set entity data. |
 | \`match_get\` | \`() -> dict\` | Get entity match criteria. |
 | \`match_set\` | \`(match)\` | Set entity match criteria. |
@@ -107,9 +105,11 @@ On error, \`ok\` is \`False\` and \`err\` contains the error value.
 `)
 
   // Entities summary
-  Content(`### Entities
+  if (0 < entityList.length) {
+    Content(`### Entities
 
 `)
+  }
   each(entityList, (ent: any) => {
     const fields = Object.values(ent.fields || {})
     const opnames = entityOps(ent)

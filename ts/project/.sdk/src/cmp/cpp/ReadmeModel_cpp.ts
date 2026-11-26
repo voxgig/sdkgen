@@ -29,7 +29,7 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
     remove: '| `remove` | `(reqmatch, ctrl) -> SdkEntityPtr` | Remove an entity, which is returned marked as deleted. Throws on error. |',
   }
   const opRows = ['load', 'list', 'create', 'update', 'patch', 'remove']
-    .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o]).join('\n')
+    .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o] + '\n').join('')
   const listResult = opUnion.has('list') ? ', and `list` a `std::vector` of\nentities, one per record' : ''
 
   // A closed value union holds no feature instance, so there is no `extend`.
@@ -82,12 +82,10 @@ also provided.
   Content(`
 ### Entity interface
 
-${sameOps ? 'All entities share the same interface.' : 'Each entity has only the operations its model declares; see its section below.'}
-
-| Method | Signature | Description |
+${0 === entityList.length ? '' : (sameOps ? 'All entities share the same interface.' :
+  'Each entity has only the operations its model declares; see its section below.') + '\n\n'}| Method | Signature | Description |
 | --- | --- | --- |
-${opRows}
-| \`data\` | \`(arg) -> Value\` | Get (no arg) or set (with arg) entity data. |
+${opRows}| \`data\` | \`(arg) -> Value\` | Get (no arg) or set (with arg) entity data. |
 | \`match\` | \`(arg) -> Value\` | Get (no arg) or set (with arg) entity match criteria. |
 | \`make\` | \`() -> EntityPtr\` | Create a new instance with the same options. |
 | \`getName\` | \`() -> std::string\` | Return the entity name. |
@@ -113,9 +111,11 @@ On error, \`ok\` is \`false\` and \`err\` contains the error value.
 `)
 
   // Entities summary
-  Content(`### Entities
+  if (0 < entityList.length) {
+    Content(`### Entities
 
 `)
+  }
   each(entityList, (ent: any) => {
     const fields = Object.values(ent.fields || {})
     const opnames = entityOps(ent)

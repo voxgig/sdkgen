@@ -24,7 +24,7 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
     remove: '| `remove` | `(reqmatch, ctrl) -> any, err` | Remove an entity, and return it marked as deleted. |',
   }
   const opRows = ['load', 'list', 'create', 'update', 'patch', 'remove']
-    .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o]).join('\n')
+    .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o] + '\n').join('')
 
   const recordOps = ['load', 'create', 'update', 'patch', 'remove'].filter((o) => opUnion.has(o))
     .map((o) => '`' + o + '`')
@@ -92,12 +92,10 @@ Creates a test-mode client with mock transport. Both arguments may be \`nil\`.
   Content(`
 ### Entity interface
 
-${sameOps ? 'All entities share the same interface.' : 'Each entity has only the operations its model declares; see its section below.'}
-
-| Method | Signature | Description |
+${0 === entityList.length ? '' : (sameOps ? 'All entities share the same interface.' :
+  'Each entity has only the operations its model declares; see its section below.') + '\n\n'}| Method | Signature | Description |
 | --- | --- | --- |
-${opRows}
-| \`data_get\` | \`() -> table\` | Get entity data. |
+${opRows}| \`data_get\` | \`() -> table\` | Get entity data. |
 | \`data_set\` | \`(data)\` | Set entity data. |
 | \`match_get\` | \`() -> table\` | Get entity match criteria. |
 | \`match_set\` | \`(match)\` | Set entity match criteria. |
@@ -107,11 +105,11 @@ ${opRows}
 ### Result shape
 
 Entity operations return \`(value, err)\`. The \`value\` is the entity
-itself — there is no wrapper:
+itself — there is no wrapper${'' === resultShapeRows ? '.' : `:
 
 | Operation | \`value\` |
 | --- | --- |
-${resultShapeRows}
+${resultShapeRows}`}
 
 ${null == exEnt.name ? '' : `Check \`err\` first (it is non-\`nil\` on failure), then use \`value\`:
 
@@ -125,9 +123,11 @@ ${null == exEnt.name ? '' : `Check \`err\` first (it is non-\`nil\` on failure),
 
 `)
 
-  Content(`### Entities
+  if (0 < entityList.length) {
+    Content(`### Entities
 
 `)
+  }
   each(entityList, (ent: any) => {
     const fields = Object.values(ent.fields || {})
     const opnames = entityOps(ent)

@@ -29,7 +29,7 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
     remove: '| `remove` | `(reqmatch: Value, ctrl: Value) -> Result<Rc<Self>, ' + model.const.Name + 'Error>` | Remove an entity, which is returned marked as deleted. |',
   }
   const opRows = ['load', 'list', 'create', 'update', 'patch', 'remove']
-    .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o]).join('\n')
+    .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o] + '\n').join('')
   const listResult = opUnion.has('list') ? ', and `list` a `Vec` of\nentities, one per record' : ''
 
   // A closed value union holds no feature instance, so there is no `extend`.
@@ -81,12 +81,10 @@ Creates a test-mode client with mock transport. Both arguments may be
   Content(`
 ### Entity interface
 
-${sameOps ? 'All entities share the same interface.' : 'Each entity has only the operations its model declares; see its section below.'}
-
-| Method | Signature | Description |
+${0 === entityList.length ? '' : (sameOps ? 'All entities share the same interface.' :
+  'Each entity has only the operations its model declares; see its section below.') + '\n\n'}| Method | Signature | Description |
 | --- | --- | --- |
-${opRows}
-| \`data\` | \`(args: Option<&Value>) -> Value\` | Get entity data (pass \`Some(&map)\` to set). |
+${opRows}| \`data\` | \`(args: Option<&Value>) -> Value\` | Get entity data (pass \`Some(&map)\` to set). |
 | \`matchv\` | \`(args: Option<&Value>) -> Value\` | Get entity match criteria (pass \`Some(&map)\` to set). |
 | \`make\` | \`() -> Rc<dyn Entity>\` | Create a new instance with the same options. |
 | \`get_name\` | \`() -> String\` | Return the entity name. |
@@ -113,9 +111,11 @@ On error, \`ok\` is \`false\` and \`err\` carries the error value.
 `)
 
   // Entities summary
-  Content(`### Entities
+  if (0 < entityList.length) {
+    Content(`### Entities
 
 `)
+  }
   each(entityList, (ent: any) => {
     const fields = Object.values(ent.fields || {})
     const opnames = entityOps(ent)

@@ -29,7 +29,7 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
     remove: '| `remove` | `(Entity*, reqmatch, ctrl, PNError**) -> Entity*` | Remove an entity, which is returned marked as deleted. |',
   }
   const opRows = ['load', 'list', 'create', 'update', 'patch', 'remove']
-    .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o]).join('\n')
+    .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o] + '\n').join('')
   const listResult = opUnion.has('list') ? ', and `list` a `NULL`-terminated array\nof entities, one per record' : ''
 
   // A closed value union holds no feature instance, so there is no `extend`.
@@ -81,8 +81,7 @@ All entities share the same \`EntityVT\` vtable, reached via \`e->vt->...\`.
 
 | Method | Signature | Description |
 | --- | --- | --- |
-${opRows}
-| \`data\` | \`(Entity*, args) -> voxgig_value*\` | Get entity data (pass a map to set). |
+${opRows}| \`data\` | \`(Entity*, args) -> voxgig_value*\` | Get entity data (pass a map to set). |
 | \`matchv\` | \`(Entity*, args) -> voxgig_value*\` | Get entity match criteria (pass a map to set). |
 | \`make\` | \`(Entity*) -> Entity*\` | Create a new instance with the same options. |
 | \`get_name\` | \`(Entity*) -> const char*\` | Return the entity name. |
@@ -108,9 +107,11 @@ On error, \`ok\` is \`false\` and \`err\` carries the error value.
 `)
 
   // Entities summary
-  Content(`### Entities
+  if (0 < entityList.length) {
+    Content(`### Entities
 
 `)
+  }
   each(entityList, (ent: any) => {
     const fields = Object.values(ent.fields || {})
     const opnames = entityOps(ent)

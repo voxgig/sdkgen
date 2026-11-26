@@ -30,7 +30,7 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
     remove: '| `Remove` | `(reqmatch, ctrl map[string]any) (any, error)` | Remove an entity, and return it marked as deleted. |',
   }
   const opRows = ['load', 'list', 'create', 'update', 'patch', 'remove']
-    .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o]).join('\n')
+    .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o] + '\n').join('')
 
   const recordOps = ['load', 'create', 'update', 'patch', 'remove'].filter((o) => opUnion.has(o))
     .map((o) => '`' + o.charAt(0).toUpperCase() + o.slice(1) + '`')
@@ -125,8 +125,7 @@ All entities implement the \`${model.const.Name}EntityBase\` interface.
 
 | Method | Signature | Description |
 | --- | --- | --- |
-${opRows}
-| \`Data\` | \`(args ...any) any\` | Get or set entity data. |
+${opRows}| \`Data\` | \`(args ...any) any\` | Get or set entity data. |
 | \`Match\` | \`(args ...any) any\` | Get or set entity match criteria. |
 | \`Make\` | \`() Entity\` | Create a new instance with the same options. |
 | \`GetName\` | \`() string\` | Return the entity name. |
@@ -134,20 +133,22 @@ ${opRows}
 ### Result shape
 
 Entity operations return \`(value, error)\`. The \`value\` is the entity
-itself — there is no wrapper:
+itself — there is no wrapper${'' === resultShapeRows ? '.' : `:
 
 | Operation | \`value\` |
 | --- | --- |
-${resultShapeRows}
+${resultShapeRows}`}
 
 ${resultCallExample}Only \`Direct()\` returns a response envelope — a \`map[string]any\` with
 \`"ok"\`, \`"status"\`, \`"headers"\`, and \`"data"\` keys.
 
 `)
 
-  Content(`### Entities
+  if (0 < entityList.length) {
+    Content(`### Entities
 
 `)
+  }
   each(entityList, (ent: any) => {
     const fields = Object.values(ent.fields || {})
     const opnames = entityOps(ent)

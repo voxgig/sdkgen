@@ -28,7 +28,7 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
     remove: '| `remove` | `remove(reqmatch?, ctrl?): Promise<Entity>` | Remove an entity, and return it marked as deleted. |',
   }
   const opRows = ['load', 'list', 'create', 'update', 'patch', 'remove']
-    .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o]).join('\n')
+    .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o] + '\n').join('')
 
   const singleOps = ['load', 'create', 'update', 'patch'].filter((o) => opUnion.has(o))
     .map((o) => '`' + o + '`')
@@ -106,14 +106,12 @@ ${optionRows}
 
 ### Entity interface
 
-${sameOps ? 'All entities share the same interface.' : 'Each entity has only the operations its model declares; see its section below.'}
-
-#### Methods
+${0 === entityList.length ? '' : (sameOps ? 'All entities share the same interface.' :
+  'Each entity has only the operations its model declares; see its section below.') + '\n\n'}#### Methods
 
 | Method | Signature | Description |
 | --- | --- | --- |
-${opRows}
-| \`data\` | \`data(data?: Partial<Entity>): Entity\` | Get or set entity data. |
+${opRows}| \`data\` | \`data(data?: Partial<Entity>): Entity\` | Get or set entity data. |
 | \`match\` | \`match(match?: Partial<Entity>): Partial<Entity>\` | Get or set entity match criteria. |
 | \`make\` | \`make(): Entity\` | Create a new instance with the same options. |
 | \`client\` | \`client(): ${model.const.Name}SDK\` | Return the parent SDK client. |
@@ -122,9 +120,9 @@ ${opRows}
 #### Return values
 
 Entity operations resolve to the entity itself — there is no result
-envelope, and an entity's \`data()\` reads its record:
+envelope, and an entity's \`data()\` reads its record${'' === returnBullets ? '.' : `:
 
-${returnBullets}
+${returnBullets}`}
 
 On a failed request these methods **throw**, so wrap calls in
 \`try\`/\`catch\` to handle errors. Only \`direct()\` returns the result
@@ -158,9 +156,7 @@ The \`prepare()\` method returns:
 }
 \`\`\`
 
-### Entities
-
-`)
+${0 < entityList.length ? '### Entities\n\n' : ''}`)
 
   each(entityList, (ent: any) => {
     const fields = Object.values(ent.fields || {})

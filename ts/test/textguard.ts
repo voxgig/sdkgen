@@ -23,7 +23,8 @@ import {
 // model, read for unresolved links (`link`), lines naming what the run removed
 // (`off`), siblings reading different facts (`parity`), a fix that reached one
 // sibling only (`reaction`), unfired markers (`marker`), features said to start
-// off that start on (`starts-off`) and foreign code (`fence`).
+// off that start on (`starts-off`), foreign code (`fence`) and a table header
+// with no row (`table`).
 
 
 type Line = { text: string, chain: string }
@@ -638,6 +639,26 @@ function startsOff(run: Run): Finding[] {
 }
 
 
+// A table header with no row under it, outside code.
+function emptyTables(run: Run): Finding[] {
+  const out: Finding[] = []
+  for (const [doc, lines] of Object.entries(run.lines)) {
+    let fence = false
+    lines.forEach((l: Line, i: number) => {
+      if (/^\s*(```|~~~)/.test(l.text)) {
+        fence = !fence
+      }
+      else if (!fence && /^\s*\|(\s*:?-{3,}:?\s*\|)+\s*$/.test(l.text) &&
+        !/^\s*\|/.test(lines[i + 1]?.text ?? '')) {
+        const head = lines[i - 1] ?? l
+        out.push({ relation: 'table', chain: head.chain, cause: 'empty', doc, line: head.text, variation: run.id })
+      }
+    })
+  }
+  return out
+}
+
+
 // A test-only component: a stale sentence, a dangling link and an unfired
 // marker, each of which the guard must report.
 function negativeControl(feature: string): () => void {
@@ -679,6 +700,7 @@ export {
   reaction,
   parity,
   startsOff,
+  emptyTables,
   negativeControl,
   key,
 }

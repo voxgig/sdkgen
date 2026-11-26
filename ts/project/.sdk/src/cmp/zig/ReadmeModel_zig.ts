@@ -28,7 +28,7 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
     remove: '| `remove` | `(reqmatch: Value, ctrl: Value) EntResult` | Remove an entity, which is returned marked as deleted. |',
   }
   const opRows = ['load', 'list', 'create', 'update', 'patch', 'remove']
-    .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o]).join('\n')
+    .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o] + '\n').join('')
   const listResult = opUnion.has('list') ? ', or for `list` a slice of entities, one per record\n(`EntListResult`)' : ''
 
   // A closed value union holds no feature instance, so there is no `extend`.
@@ -79,12 +79,10 @@ Creates a test-mode client with mock transport. Both arguments may be
   Content(`
 ### Entity interface
 
-${sameOps ? 'All entities share the same interface.' : 'Each entity has only the operations its model declares; see its section below.'}
-
-| Method | Signature | Description |
+${0 === entityList.length ? '' : (sameOps ? 'All entities share the same interface.' :
+  'Each entity has only the operations its model declares; see its section below.') + '\n\n'}| Method | Signature | Description |
 | --- | --- | --- |
-${opRows}
-| \`stream\` | \`(action: []const u8, args: Value, callopts: Value) StreamResult\` | Run an op through the pipeline: \`.ok\` with its result items, or \`.err\` with the error that failed it. |
+${opRows}| \`stream\` | \`(action: []const u8, args: Value, callopts: Value) StreamResult\` | Run an op through the pipeline: \`.ok\` with its result items, or \`.err\` with the error that failed it. |
 | \`data\` | \`(args: ?Value) Value\` | Get entity data (pass a map to set). |
 | \`matchv\` | \`(args: ?Value) Value\` | Get entity match criteria (pass a map to set). |
 | \`get_name\` | \`() []const u8\` | Return the entity name. |
@@ -111,9 +109,11 @@ On error, \`ok\` is \`false\` and \`err\` carries the error message.
 `)
 
   // Entities summary
-  Content(`### Entities
+  if (0 < entityList.length) {
+    Content(`### Entities
 
 `)
+  }
   each(entityList, (ent: any) => {
     const fields = Object.values(ent.fields || {})
     const opnames = entityOps(ent)

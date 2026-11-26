@@ -27,7 +27,7 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
     remove: '| `e_remove` | `value -> value -> entity_obj` | Remove an entity. Resolves to the entity, marked deleted. Raises on error. |',
   }
   const opRows = ['load', 'list', 'create', 'update', 'patch', 'remove']
-    .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o]).join('\n')
+    .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o] + '\n').join('')
   const listResult = opUnion.has('list') ? ' \u2014 `e_list` to\none entity per record \u2014' : ','
   const removeResult = opUnion.has('remove') ?
     '\n`e_remove` resolves to the entity marked deleted (`e_deleted`); it keeps the\ndata it held.' : ''
@@ -86,8 +86,7 @@ All entities are \`entity_obj\` records sharing the same fields.
 
 | Field | Signature | Description |
 | --- | --- | --- |
-${opRows}
-| \`e_data_get\` | \`unit -> value\` | Get entity data. |
+${opRows}| \`e_data_get\` | \`unit -> value\` | Get entity data. |
 | \`e_data_set\` | \`value -> unit\` | Set entity data. |
 | \`e_match_get\` | \`unit -> value\` | Get entity match criteria. |
 | \`e_match_set\` | \`value -> unit\` | Set entity match criteria. |
@@ -114,9 +113,11 @@ On error, \`ok\` is \`Bool false\` and \`err\` carries the error value.
 `)
 
   // Entities summary
-  Content(`### Entities
+  if (0 < entityList.length) {
+    Content(`### Entities
 
 `)
+  }
   each(entityList, (ent: any) => {
     const fields = Object.values(ent.fields || {})
     const opnames = entityOps(ent)

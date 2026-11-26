@@ -6,7 +6,7 @@ import Path from 'node:path'
 
 import {
   FEATURES, variations, generateDocs, link, off, marker, codeFences, reaction, parity, startsOff,
-  negativeControl, key,
+  emptyTables, negativeControl, key,
 } from './textguard'
 import type { Finding, Pin, Run, Variation } from './textguard'
 import { makeRoot } from './generateharness'
@@ -29,6 +29,7 @@ function findings(base: Run, run: Run, v: Variation, full: boolean): Finding[] {
   if (!full) return out
   out.push(...marker(run))
   out.push(...startsOff(run))
+  out.push(...emptyTables(run))
   if (null != v.subject) out.push(...off(run, v.subject))
   if ('baseline' === v.id) out.push(...parity(run))
   else out.push(...reaction(base, run, v.family))
@@ -116,6 +117,18 @@ describe('textguard', () => {
         null != docs.files[p] ? docs.files[p] !== full.files[p] : !docs.present.has(p))
       deepStrictEqual(differ, [], id + ': documents the docs-only Root writes otherwise, or misses')
     }
+  })
+
+  test('a table header stands only over a row', () => {
+    const tables = (texts: string[]): string[] => emptyTables({
+      id: 'control', files: {}, present: new Set(), on: {}, applies: {},
+      lines: { 'ts/README.md': texts.map((text: string) => ({ text, chain: 'Control' })) },
+    }).map((f: Finding) => f.line)
+
+    deepStrictEqual(tables(['| A | B |', '| --- | --- |', '| 1 | 2 |']), [])
+    deepStrictEqual(tables(['| A | B |', '| --- | --- |', '', '| 1 | 2 |']), ['| A | B |'])
+    deepStrictEqual(tables(['| A |', '|---|']), ['| A |'])
+    deepStrictEqual(tables(['```', '| A |', '| --- |', '```']), [])
   })
 
   test('a sentence says features start off only when every feature it covers does', () => {
