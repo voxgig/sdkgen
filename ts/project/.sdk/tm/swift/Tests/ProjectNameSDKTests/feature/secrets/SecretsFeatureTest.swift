@@ -63,6 +63,7 @@ final class SecretsWire {
     let auth: String
     let hasAuth: Bool
     let body: String
+    let redirect: String
   }
 
   private let lock = NSLock()
@@ -103,7 +104,8 @@ final class SecretsWire {
       }
     }
     let body = gp(fetchdef, "body").asString ?? ""
-    recorded.append(Call(url: url, auth: auth, hasAuth: hasAuth, body: body))
+    let redirect = gp(fetchdef, "redirect").asString ?? ""
+    recorded.append(Call(url: url, auth: auth, hasAuth: hasAuth, body: body, redirect: redirect))
 
     if url.hasSuffix("/" + tokenpath) {
       if issued >= tokenok {
@@ -887,6 +889,7 @@ final class SecretsFeatureTest: XCTestCase {
     XCTAssertEqual(SecretsFeatureTest.BASE + "/auth/token", w.token()[0].url)
     XCTAssertTrue(w.token()[0].body.contains("\"refresh_token\":\"REFRESH01\""),
       "the purchase must carry the refresh token, got body: " + w.token()[0].body)
+    XCTAssertEqual("manual", w.token()[0].redirect, "the purchase must follow no redirect")
 
     // And the API request carries the ACCESS token, never the refresh one.
     XCTAssertEqual(1, w.api().count, "expected one API call: " + w.wire())
@@ -1034,5 +1037,159 @@ final class SecretsFeatureTest: XCTestCase {
     let body = try JSON.parse(w.token()[0].body)
     XCTAssertEqual(nasty, gp(body, "refresh_token").asString,
       "the refresh token did not survive the body encoding: " + w.token()[0].body)
+  }
+
+  // Real listeners and the SDK's own raw fetch: a stub follows nothing.
+  func testARedirectAnsweringTheExchangeIsAFailureAndNothingFollowsIt() {
+    func listener() -> (Int32, String) {
+      #if os(Linux)
+      let fd = socket(AF_INET, Int32(SOCK_STREAM.rawValue), 0)
+      #else
+      let fd = socket(AF_INET, SOCK_STREAM, 0)
+      #endif
+      var addr = sockaddr_in()
+      addr.sin_family = sa_family_t(AF_INET)
+      addr.sin_addr.s_addr = inet_addr("127.0.0.1")
+      var len = socklen_t(MemoryLayout<sockaddr_in>.size)
+      _ = withUnsafeMutablePointer(to: &addr) {
+        $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { sa -> Int32 in
+          #if os(Linux)
+          return bind(fd, sa, len)
+          #else
+          // A bare bind here names an instance method XCTestCase inherits.
+          return Darwin.bind(fd, sa, len)
+          #endif
+        }
+      }
+      listen(fd, 8)
+      _ = withUnsafeMutablePointer(to: &addr) {
+        $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { getsockname(fd, $0, &len) }
+      }
+      return (fd, "http://127.0.0.1:\(UInt16(bigEndian: addr.sin_port))")
+    }
+
+    let (originfd, originbase) = listener()
+    let (otherfd, otherbase) = listener()
+
+    let lock = NSLock()
+    var elsewhere: [String] = []
+    var followed: [String] = []
+    var answer: (Int, String) = (307, "")
+
+    for (fd, isorigin) in [(originfd, true), (otherfd, false)] {
+      Thread.detachNewThread {
+        while true {
+          let conn = accept(fd, nil, nil)
+          if conn < 0 { return }
+          var text = ""
+          var buf = [UInt8](repeating: 0, count: 4096)
+          while !text.contains("\r\n\r\n") {
+            let got = buf.withUnsafeMutableBytes { read(conn, $0.baseAddress, $0.count) }
+            if got <= 0 { break }
+            text += String(decoding: buf[0..<got], as: UTF8.self)
+          }
+          let parts = text.components(separatedBy: "\r\n\r\n")
+          let lines = parts[0].components(separatedBy: "\r\n")
+          let first = lines[0].split(separator: " ")
+          let method = 0 < first.count ? String(first[0]) : ""
+          let target = 1 < first.count ? String(first[1]) : ""
+          var length = 0
+          for line in lines.dropFirst() {
+            guard let colon = line.firstIndex(of: ":") else { continue }
+            if String(line[..<colon]).lowercased() == "content-length" {
+              length = Int(line[line.index(after: colon)...]
+                .trimmingCharacters(in: .whitespaces)) ?? 0
+            }
+          }
+          var sent = parts.dropFirst().joined(separator: "\r\n\r\n")
+          while sent.utf8.count < length {
+            let got = buf.withUnsafeMutableBytes { read(conn, $0.baseAddress, $0.count) }
+            if got <= 0 { break }
+            sent += String(decoding: buf[0..<got], as: UTF8.self)
+          }
+
+          var status = "200 X"
+          var location = ""
+          var reply = ""
+          lock.lock()
+          if target == "/stop" {
+          } else if !isorigin {
+            elsewhere.append(method + " " + target + " " + sent)
+            reply = "{\"access_token\":\"ELSEWHERE01\"}"
+          } else if target == "/api/auth/token" {
+            status = "\(answer.0) X"
+            location = "Location: " + answer.1 + "\r\n"
+          } else {
+            followed.append(method + " " + target)
+            reply = "{\"access_token\":\"MOVED01\"}"
+          }
+          lock.unlock()
+
+          let out = Array(("HTTP/1.1 \(status)\r\nContent-Type: application/json\r\n" + location +
+            "Content-Length: \(reply.utf8.count)\r\nConnection: close\r\n\r\n\(reply)").utf8)
+          _ = out.withUnsafeBytes { write(conn, $0.baseAddress, $0.count) }
+          close(conn)
+          if target == "/stop" { return }
+        }
+      }
+    }
+    defer {
+      for base in [originbase, otherbase] {
+        _ = try? defaultHttpFetch(base + "/stop", vm(("method", .string("GET")), ("headers", .map(VMap()))))
+      }
+      close(originfd)
+      close(otherfd)
+    }
+
+    let base = originbase + "/api"
+    let away = otherbase + "/api/auth/token"
+    let answers: [(Int, String)] = [(307, away), (308, away), (302, away), (307, "/api/moved/token")]
+
+    var allowed: [String] = []
+    var refused = 0
+
+    for next in answers {
+      lock.lock()
+      answer = next
+      lock.unlock()
+
+      let client = withSecrets { extend in
+        let fopts = VMap()
+        fopts.entries["active"] = .bool(true)
+        fopts.entries["name"] = .string("refresh_token")
+        fopts.entries["exchange"] = .map(vm(
+          ("active", .bool(true)), ("refresh", .string("REFRESH01"))))
+        let opts = VMap()
+        opts.entries["base"] = .string(base)
+        opts.entries["allow"] = .map(vm(
+          ("op", .string("create,update,load,list,remove,command,direct,graphql"))))
+        opts.entries["feature"] = .map(vm(("secrets", .map(fopts))))
+        if extend {
+          opts.entries["extend"] = .list([.nat(SecretsFeature())])
+        }
+        return ProjectNameSDK(opts)
+      }
+
+      let res = client.direct(vm(("path", .string("/thing"))))
+      let message = messageOf(errOf(res))
+
+      if message.contains("token exchange failed: \(next.0) from " + base + "/auth/token") {
+        refused += 1
+      } else {
+        allowed.append("\(next.0) to \(next.1): " + message)
+      }
+    }
+
+    lock.lock()
+    let reached = elsewhere
+    let after = followed
+    lock.unlock()
+
+    print("secrets: exchange refused \(refused) redirect(s), \(reached.count + after.count) followed")
+
+    XCTAssertEqual([], reached, "the exchange reached another origin")
+    XCTAssertEqual([], after, "a request followed a refused exchange")
+    XCTAssertEqual([], allowed, "a redirect was not a failed exchange")
+    XCTAssertEqual(answers.count, refused)
   }
 }

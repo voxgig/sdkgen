@@ -79,6 +79,7 @@ internal class WireCall
     public string Auth = "";
     public bool HasAuth;
     public string Body = "";
+    public object? Redirect;
 }
 
 // The recording transport: `system.fetch` for a LIVE client. It scripts one
@@ -115,6 +116,8 @@ internal class Wire
             {
                 call.Body = body;
             }
+
+            call.Redirect = fetchdef.GetValueOrDefault("redirect");
 
             Calls.Add(call);
 
@@ -1326,6 +1329,7 @@ public class SecretsFeatureTest
             Assert.True(2 == w.Token().Count,
                 "expected the initial purchase plus one rebuy, got " + w.Token().Count);
             Assert.Contains("REFRESH01", w.Token()[0].Body);
+            Assert.Equal("manual", w.Token()[0].Redirect);
 
             Assert.True(2 == w.Api().Count,
                 "expected the request to be retried exactly once, got " + w.Api().Count);
@@ -1729,6 +1733,182 @@ public class SecretsFeatureTest
             listener.Close();
             serving.Join(TimeSpan.FromSeconds(5));
         }
+    }
+
+    // An origin on a loopback port of its own: each request is handed to
+    // `answer` as (method, path, body), which returns the status line, a
+    // Location (or null) and the body to send back.
+    private sealed class ExchangeOrigin : IDisposable
+    {
+        private readonly System.Net.Sockets.TcpListener _listener = new(IPAddress.Loopback, 0);
+        private readonly Func<string, string, string, (string Status, string? Location, string Body)> _answer;
+
+        public readonly string Base;
+
+        public ExchangeOrigin(
+            Func<string, string, string, (string Status, string? Location, string Body)> answer)
+        {
+            _answer = answer;
+            _listener.Start();
+            Base = "http://127.0.0.1:" + ((IPEndPoint)_listener.LocalEndpoint).Port;
+            new Thread(Serve) { IsBackground = true }.Start();
+        }
+
+        public void Dispose() => _listener.Stop();
+
+        private void Serve()
+        {
+            while (true)
+            {
+                System.Net.Sockets.TcpClient conn;
+                try
+                {
+                    conn = _listener.AcceptTcpClient();
+                }
+                catch (Exception)
+                {
+                    return;
+                }
+                using (conn)
+                {
+                    try
+                    {
+                        Answer(conn.GetStream());
+                    }
+                    catch (IOException)
+                    {
+                    }
+                }
+            }
+        }
+
+        private void Answer(System.Net.Sockets.NetworkStream stream)
+        {
+            var reader = new StreamReader(stream);
+            var first = (reader.ReadLine() ?? "").Split(' ');
+            var length = 0;
+            for (var line = reader.ReadLine(); !string.IsNullOrEmpty(line); line = reader.ReadLine())
+            {
+                var colon = line.IndexOf(':');
+                if (0 < colon && "content-length" == line.Substring(0, colon).Trim().ToLowerInvariant())
+                {
+                    int.TryParse(line.Substring(colon + 1).Trim(), out length);
+                }
+            }
+            var sent = new char[length];
+            for (var got = 0; got < sent.Length;)
+            {
+                var read = reader.Read(sent, got, sent.Length - got);
+                if (read <= 0)
+                {
+                    break;
+                }
+                got += read;
+            }
+            var (status, location, body) = _answer(first[0],
+                1 < first.Length ? first[1] : "", new string(sent));
+            var reply = Encoding.UTF8.GetBytes(
+                "HTTP/1.1 " + status + "\r\nContent-Type: application/json\r\n" +
+                (null == location ? "" : "Location: " + location + "\r\n") +
+                "Content-Length: " + Encoding.UTF8.GetByteCount(body) +
+                "\r\nConnection: close\r\n\r\n" + body);
+            stream.Write(reply, 0, reply.Length);
+        }
+    }
+
+    // Real listeners and the SDK's own raw fetch: a stub follows nothing.
+    [Fact]
+    public void ARedirectAnsweringTheExchangeIsAFailureAndNothingFollowsIt()
+    {
+        var elsewhere = new List<string>();
+        var followed = new List<string>();
+        (int Status, string Location) answer = (307, "");
+
+        using var other = new ExchangeOrigin((method, path, body) =>
+        {
+            lock (elsewhere)
+            {
+                elsewhere.Add(method + " " + path + " " + body);
+            }
+            return ("200 OK", null, "{\"access_token\":\"ELSEWHERE01\"}");
+        });
+        using var origin = new ExchangeOrigin((method, path, body) =>
+        {
+            if ("/api/auth/token" == path)
+            {
+                return (answer.Status + " X", answer.Location, "");
+            }
+            lock (followed)
+            {
+                followed.Add(method + " " + path);
+            }
+            return ("200 OK", null, "{\"access_token\":\"MOVED01\"}");
+        });
+
+        var basev = origin.Base + "/api";
+        var away = other.Base + "/api/auth/token";
+        var answers = new[] { (307, away), (308, away), (302, away), (307, "/api/moved/token") };
+
+        var allowed = new List<string>();
+        var refused = 0;
+
+        foreach (var next in answers)
+        {
+            answer = next;
+            var client = WithSecrets(extend =>
+            {
+                var opts = new Dictionary<string, object?>
+                {
+                    ["base"] = basev,
+                    ["allow"] = new Dictionary<string, object?>
+                    {
+                        ["op"] = "create,update,load,list,remove,command,direct,graphql",
+                    },
+                    ["feature"] = new Dictionary<string, object?>
+                    {
+                        ["secrets"] = new Dictionary<string, object?>
+                        {
+                            ["active"] = true,
+                            ["name"] = "refresh_token",
+                            ["exchange"] = new Dictionary<string, object?>
+                            {
+                                ["active"] = true,
+                                ["refresh"] = "REFRESH01",
+                            },
+                        },
+                    },
+                };
+                if (extend)
+                {
+                    opts["extend"] = new List<object?> { new SecretsFeature() };
+                }
+                return new ProjectNameSDK(opts);
+            });
+
+            var res = client.Direct(new Dictionary<string, object?> { ["path"] = "/thing" });
+            var message = ErrMessage(res);
+
+            if (message.Contains(
+                "token exchange failed: " + next.Item1 + " from " + basev + "/auth/token"))
+            {
+                refused++;
+            }
+            else
+            {
+                allowed.Add(next.Item1 + " to " + next.Item2 + ": ok=" + res["ok"] + " " + message);
+            }
+        }
+
+        Console.WriteLine("secrets: exchange refused " + refused + " redirect(s), " +
+            (elsewhere.Count + followed.Count) + " followed");
+
+        Assert.True(0 == elsewhere.Count,
+            "the exchange reached another origin: " + string.Join(" | ", elsewhere));
+        Assert.True(0 == followed.Count,
+            "a request followed a refused exchange: " + string.Join(" | ", followed));
+        Assert.True(0 == allowed.Count,
+            "a redirect was not a failed exchange: " + string.Join(" | ", allowed));
+        Assert.Equal(answers.Length, refused);
     }
 
     private static int FreePort()
