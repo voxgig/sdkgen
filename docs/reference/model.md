@@ -576,7 +576,7 @@ the guide never reaches the model, so the pair no longer collides.
 | `title` | string | — | Human description. |
 | `version` | string | `'0.0.1'` | Feature version. |
 | `config.options` | object | — | Option DEFAULTS, one key per option. Also the README's option table, and — read by example — each option's type in the generated option spec. |
-| `config.optspec` | object | `{}` | Types for options a default cannot describe: callbacks and injected values with no default, or an option whose default understates its type (netsim's `latency: 0`, which is also a `{ min, max }` map). Values are `struct.validate` sentinels. A name in both takes its type from here and its default from `config.options`. |
+| `config.optspec` | object | `{}` | Types for options a default cannot describe: callbacks and injected values with no default, or an option whose default understates its type (netsim's `latency: 0`, which is also a `{ min, max }` map). Values are `struct.validate` sentinels. A union is written `` ['`$NOF`', {min: 1}, a, b] ``: struct has no `` `$ONE` ``, and generation refuses a spec that names it. A name in both takes its type from here and its default from `config.options`. |
 | `config.strict` | boolean | `false` | Reject an option neither map declares, instead of passing it through. |
 | `hook.<Hook>.active` | boolean | `false` | Enable a pipeline/lifecycle hook. |
 | `hook.<Hook>.await` | boolean | `false` | Whether the hook is awaited. |

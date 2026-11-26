@@ -30,6 +30,9 @@
 #    OmniBridge's converters, plus a guard: a live context VIEW (below) is
 #    never rewritten. A bare undef result reads as absent, because that is
 #    what a perl sub returning nothing means; a JSON null is JNULL here.
+#    omni reads the corpus as bytes, and the port takes character strings,
+#    so text is decoded on the way in and encoded on the way back - an
+#    error message included.
 #
 # 3. ZERO-ARGUMENT ENTRIES. Entries with no `in`, `args` or `ctx` mean
 #    "call the subject with no value". omni-perl's native rule passes one
@@ -391,6 +394,9 @@ sub livectx {
   return isview($val) ? tied(%$val)->{target} : $val;
 }
 
+sub _text_in { my ($s) = @_; utf8::decode($s); return $s }
+sub _text_out { my ($s) = @_; utf8::encode($s); return $s }
+
 # omni's model -> this port's, rewriting containers in place (decision 2).
 # Safe: resolveargs clones `entry->{in}` and the runner's testspec is a
 # fresh fixjson copy, so the containers rewritten are never the loaded
@@ -406,7 +412,8 @@ sub tostruct {
   if (ref($val) eq 'HASH') {
     return $val if isview($val);
     for my $key (keys %$val) {
-      $val->{$key} = tostruct($val->{$key});
+      my $item = tostruct(delete $val->{$key});
+      $val->{ _text_in($key) } = $item;
     }
     return $val;
   }
@@ -418,7 +425,7 @@ sub tostruct {
     return $val;
   }
 
-  return $val;
+  return Voxgig::Struct::_is_string_sv($val) ? _text_in($val) : $val;
 }
 
 # This port's model -> omni's, as a copy. A bare undef reads as absent: a
@@ -438,7 +445,7 @@ sub toomni {
     return $val if isview($val);
     my %out;
     for my $key (Voxgig::Struct::_map_keys($val)) {
-      $out{$key} = toomni($val->{$key});
+      $out{ _text_out($key) } = toomni($val->{$key});
     }
     return \%out;
   }
@@ -447,7 +454,7 @@ sub toomni {
     return [ map { toomni($_) } @$val ];
   }
 
-  return $val;
+  return Voxgig::Struct::_is_string_sv($val) ? _text_out($val) : $val;
 }
 
 # A subject whose arguments arrive in struct's model and whose result
@@ -457,7 +464,10 @@ sub wrapsubject {
   return $subject if ref($subject) ne 'CODE';
   return sub {
     my @conv = map { tostruct($_) } @_;
-    return toomni($subject->(@conv));
+    my @out;
+    my $ok = eval { @out = $subject->(@conv); 1 };
+    die(ref $@ ? $@ : _text_out($@)) if !$ok;
+    return toomni($out[0]);
   };
 }
 

@@ -1,5 +1,5 @@
 # VENDORED: @voxgig/struct 0.1.1 (python/voxgig_struct/voxgig_struct.py)
-# Source: https://github.com/voxgig/struct @ 621057e24eb5f3e3da6fd3820ff24a36aaacb21b  [tag: sdk-20261016-0845-0]
+# Source: https://github.com/voxgig/struct @ 358af9d51c90b589a295a70b2165dbe4629eaf8e  [tag: sdk-20261125-1959-0]
 # License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 # Copyright (c) 2025 Voxgig Ltd. MIT LICENSE.
 #
@@ -48,6 +48,9 @@ from typing import Any
 # Regex patterns for path processing
 R_META_PATH = re.compile(r'^([^$]+)\$([=~])(.+)$')  # Meta path syntax.
 R_DOUBLE_DOLLAR = re.compile(r'\$\$')  # Double dollar escape sequence.
+R_INJECTION_FULL = re.compile(r'^`(\$[A-Z]+|[^`]*)[0-9]*`$')  # Full string injection pattern.
+R_CHECKER_NAME = re.compile(r'^\$[A-Z]+$')  # Validate checker name.
+R_LIST_KEY = re.compile(r'0|-?[1-9][0-9]*')  # Integer key as String(n) prints it, for fullmatch.
 
 # Mode value for inject step.
 S_MKEYPRE = 'key:pre'
@@ -163,8 +166,8 @@ DELETE = {'`$DELETE`': True}
 # Python collapses the canonical "undefined" (TS `undefined`) and JSON `null`
 # both onto None, which loses a distinction the corpus depends on (e.g.
 # stringify(null) is "null" but stringify(undefined) is ""). _ABSENT is a
-# private sentinel used ONLY as a default argument value so a function can tell
-# "no argument supplied" (undefined) apart from an explicit None (JSON null).
+# private sentinel: a default argument value that tells "no argument supplied"
+# (undefined) from an explicit None, and the $TOP of a trial on a missing value.
 class _Absent:
     __slots__ = ()
 
@@ -214,6 +217,7 @@ class Injection:
         self.modify = modify
         self.extra = extra
         self.prior: Injection | None = None
+        self.named = False  # Current map node names keys of its own (not $ commands).
         self.dparent = UNDEF
         self.dpath = [S_DTOP]
         self.root = (
@@ -274,7 +278,8 @@ class Injection:
     def setval(self, val: Any, ancestor: int | None = None) -> Any:
         """Inject-state setter. Mirrors the canonical TS Injection.setval:
         val of UNDEF (= None in Python — distinguishability is impossible
-        in any of the dynamic-typed ports anyway) deletes the slot, any
+        in any of the dynamic-typed ports anyway) deletes the slot (in a
+        list, a SKIP hole that inject compacts after its loop), any
         other value sets it. setprop itself remains a pure assignment per
         the Group B rule — this delete-on-undef shortcut lives only here
         so transform/validate injectors can signal "no value at this slot"
@@ -287,6 +292,8 @@ class Injection:
             target = getelem(self.nodes, 0 - ancestor)
             key = getelem(self.path, 0 - ancestor)
         if val is None:
+            if (ancestor is None or ancestor < 2) and islist(target):
+                return setprop(target, key, SKIP)
             return delprop(target, key)
         return setprop(target, key, val)
 
@@ -494,6 +501,34 @@ def typify(value: Any = _TYPIFY_NO_ARG) -> int:
     return T_node | T_instance
 
 
+# A list key's index, or None. As JavaScript reads list[key], that is an integral
+# number or the string String(n) prints for one: "1" and "-1", not "01", "+1" or "-0".
+def _listkey(key):
+    if isinstance(key, float) and key.is_integer():
+        return int(key)
+    if isinstance(key, str) and R_LIST_KEY.fullmatch(key):
+        return int(key)
+    if isinstance(key, int) and not isinstance(key, bool):
+        return key
+    return None
+
+
+# The index key reads in a list of size items, or -1. With fromend, as getelem
+# reads it, a negative key counts back from the end.
+def _listindex(key, size, fromend=False):
+    index = _listkey(key)
+    if index is None:
+        return -1
+    if index < 0 and fromend:
+        index += size
+    return index if 0 <= index < size else -1
+
+
+# As in JavaScript, only a string or a number names a map entry: True and [1] do not.
+def _ismapkey(key):
+    return isinstance(key, str) or _isnumber(key)
+
+
 def getelem(val: Any, key: Any, alt: Any = UNDEF) -> Any:
     """
     Get a list element. Group A semantics: a stored None at the slot
@@ -505,14 +540,9 @@ def getelem(val: Any, key: Any, alt: Any = UNDEF) -> Any:
         return alt
 
     if islist(val):
-        try:
-            nkey = int(key)
-            if isinstance(nkey, int) and str(key).strip('-').isdigit():
-                if nkey < 0:
-                    nkey = len(val) + nkey
-                out = val[nkey] if 0 <= nkey < len(val) else UNDEF
-        except (ValueError, IndexError):
-            pass
+        nkey = _listindex(key, len(val), True)
+        if nkey >= 0:
+            out = val[nkey]
 
     if out is UNDEF or out is None:
         return alt() if (T_function & typify(alt)) > 0 else alt
@@ -534,16 +564,12 @@ def getprop(val: Any = UNDEF, key: Any = UNDEF, alt: Any = UNDEF) -> Any:
 
     if ismap(val):
         skey = str(key)
-        if skey in val:
+        if _ismapkey(key) and skey in val:
             out = val[skey]
 
     elif islist(val):
-        try:
-            ki = int(key)
-        except (ValueError, TypeError):
-            return alt
-
-        if 0 <= ki < len(val):
+        ki = _listindex(key, len(val))
+        if ki >= 0:
             out = val[ki]
 
     if out is None:
@@ -560,16 +586,10 @@ def _lookup(val: Any, key: Any) -> Any:
     if val is UNDEF or key is UNDEF:
         return UNDEF
     if ismap(val):
-        skey = str(key)
-        return val.get(skey, UNDEF)
+        return val.get(str(key), UNDEF) if _ismapkey(key) else UNDEF
     if islist(val):
-        try:
-            ki = int(key)
-        except (ValueError, TypeError):
-            return UNDEF
-        if 0 <= ki < len(val):
-            return val[ki]
-        return UNDEF
+        ki = _listindex(key, len(val))
+        return val[ki] if ki >= 0 else UNDEF
     return UNDEF
 
 
@@ -776,19 +796,18 @@ def delprop(parent: Any, key: Any):
     if not iskey(key):
         return parent
 
+    if iscondensed(parent):
+        raise ValueError(S_CONDENSED_IMMUTABLE)
+
     if ismap(parent):
         key = strkey(key)
         if key in parent:
             del parent[key]
 
     elif islist(parent):
-        # Convert key to int
-        try:
-            key_i = int(key)
-        except ValueError:
+        key_i = _listkey(key)
+        if key_i is None:
             return parent
-
-        key_i = int(key_i)  # Floor the value
 
         # Delete list element at position key_i, shifting later elements down
         if 0 <= key_i < len(parent):
@@ -971,6 +990,10 @@ def select_NOT(state, _val, _ref, store):
 
 
 def select_CMP(state, _val, ref, store):
+    # The list form of $LIKE is validate's checker; the key form is this operator.
+    if state.mode == S_MVAL and ref == '$LIKE':
+        return validate_LIKE(state, _val, ref, store)
+
     if state.mode == S_MKEYPRE:
         term = getprop(state.parent, state.key)
         gkey = getelem(state.path, -2)
@@ -1042,13 +1065,7 @@ def select(children: Any, query: Any) -> list[Any]:
 
     q = clone(query)
 
-    # Add $OPEN to all maps in the query
-    def add_open(_k, v, _parent, _path):
-        if ismap(v):
-            setprop(v, '`$OPEN`', getprop(v, '`$OPEN`', True))
-        return v
-
-    walk(q, add_open)
+    _openquery(q)
 
     for child in children:
         injdef['errs'] = []
@@ -1058,6 +1075,23 @@ def select(children: Any, query: Any) -> list[Any]:
             results.append(child)
 
     return results
+
+
+# Open every map in a select query, so a child may hold keys the query does
+# not name, but leave a directive's literals as written: what $EXACT
+# compares, and the count or bound of $NOF, $LEN and $RANGE.
+def _openquery(q: Any) -> None:
+    if ismap(q):
+        setprop(q, '`$OPEN`', getprop(q, '`$OPEN`', True))
+        for key in keysof(q):
+            _openquery(q[key])
+    elif islist(q):
+        head = q[0] if q else UNDEF
+        exact = head == '`$EXACT`'
+        bounded = head in ('`$NOF`', '`$LEN`', '`$RANGE`')
+        for i, item in enumerate(q):
+            if i == 0 or not (exact or (bounded and i == 1)):
+                _openquery(item)
 
 
 def stringify(val: Any = _ABSENT, maxlen: int = UNDEF, pretty: Any = None):
@@ -1225,27 +1259,26 @@ def setprop(parent: Any, key: Any, val: Any):
     if not iskey(key):
         return parent
 
+    if iscondensed(parent):
+        raise ValueError(S_CONDENSED_IMMUTABLE)
+
     if ismap(parent):
         key = str(key)
         parent[key] = val
 
     elif islist(parent):
-        try:
-            key_i = int(key)
-        except ValueError:
+        key_i = _listkey(key)
+        if key_i is None:
             return parent
 
-        if False:
-            pass
-        else:
-            if key_i >= 0:
-                key_i = min(key_i, len(parent))
-                if key_i >= len(parent):
-                    parent.append(val)
-                else:
-                    parent[key_i] = val
+        if key_i >= 0:
+            key_i = min(key_i, len(parent))
+            if key_i >= len(parent):
+                parent.append(val)
             else:
-                parent.insert(0, val)
+                parent[key_i] = val
+        else:
+            parent.insert(0, val)
 
     return parent
 
@@ -1428,13 +1461,29 @@ def getpath(store, path, injdef=UNDEF):
     """
     # Operate on a string array.
     if islist(path):
-        parts = path[:]
+        parts = []
+        for part in path:
+            if _isnumber(part):
+                parts.append(_condensestr(part))
+            elif isinstance(part, str):
+                parts.append(part)
+            else:
+                return UNDEF
     elif isinstance(path, str):
         parts = path.split(S_DT)
-    elif isinstance(path, (int, float)) and not isinstance(path, bool):
-        parts = [strkey(path)]
+    elif _isnumber(path):
+        parts = [_condensestr(path)]
     else:
         return UNDEF
+
+    # A condensed store answers a path as the node it was built from does,
+    # touching only the nodes on the path. A base needs the whole node.
+    if iscondensed(store):
+        base = injdef.base if isinstance(injdef, Injection) else getprop(injdef, S_base)
+        if base is None:
+            # A stored null reads as absent, as through getprop.
+            return condenseMaterialise(store, condenseResolve(store, store[S_condroot], parts))
+        store = expand(store)
 
     val = store
     # Support both dict-style injdef and Injection instance
@@ -1533,6 +1582,10 @@ def getpath(store, path, injdef=UNDEF):
 
 
 def setpath(store, path, val, injdef=UNDEF):
+    # Same contract as setprop/delprop: a condensed store is immutable.
+    if iscondensed(store):
+        raise ValueError(S_CONDENSED_IMMUTABLE)
+
     pathType = typify(path)
 
     if (T_list & pathType) > 0:
@@ -1609,6 +1662,8 @@ def inject(val, store, injdef=UNDEF):
 
     inj.descend()
 
+    inj.named = False
+
     # Descend into node.
     if isnode(val):
         # Keys are sorted alphanumerically to ensure determinism.
@@ -1619,6 +1674,7 @@ def inject(val, store, injdef=UNDEF):
             transform_keys = [k for k in val if S_DS in k]
             transform_keys.sort()
             nodekeys = normal_keys + transform_keys
+            inj.named = len(normal_keys) > 0
         else:
             nodekeys = list(range(len(val)))
 
@@ -1661,6 +1717,9 @@ def inject(val, store, injdef=UNDEF):
 
             nkI += 1
 
+        if islist(val):
+            val[:] = [v for v in val if v is not SKIP]
+
     # Inject paths into string scalars.
     elif isinstance(val, str):
         inj.mode = S_MVAL
@@ -1674,17 +1733,17 @@ def inject(val, store, injdef=UNDEF):
         mparent = inj.parent
         mval = getprop(mparent, mkey)
 
-        inj.modify(mval, mkey, mparent, inj)
+        inj.modify(UNDEF if mval is SKIP else mval, mkey, mparent, inj)
 
     inj.val = val
 
     # Return the (possibly transform-replaced) root only at top level (prior is None).
-    if (
-        getattr(inj, 'prior', None) is None
-        and getattr(inj, 'root', None) is not None
-        and haskey(inj.root, S_DTOP)
-    ):
-        return getprop(inj.root, S_DTOP)
+    # A transform that removed the root, such as a $REF that names nothing, leaves no
+    # value: UNDEF, or the injdef's _noval for a caller that must tell it from a null.
+    if getattr(inj, 'prior', None) is None and getattr(inj, 'root', None) is not None:
+        if _present(inj.root, S_DTOP):
+            return _lookup(inj.root, S_DTOP)
+        return getprop(injdef, '_noval')
     if inj.key == S_DTOP and inj.parent is not UNDEF and haskey(inj.parent, S_DTOP):
         return getprop(inj.parent, S_DTOP)
     return val
@@ -1723,7 +1782,7 @@ def transform_DELETE(inj, val, ref, store):
     """
     Injection handler to delete a key from a map/list.
     """
-    delprop(inj.parent, inj.key)
+    inj.setval(UNDEF)
     return UNDEF
 
 
@@ -1752,16 +1811,6 @@ def transform_COPY(inj, val, ref, store):
                     out = UNDEF
         else:
             out = getprop(inj.dparent, key)
-            # If getprop returned UNDEF and key looks like a list index,
-            # we might be at the item level already - return dparent itself
-            if out is UNDEF and key is not None:
-                try:
-                    int(key)  # key is a list index
-                    # We're at the item level, key is the list index
-                    # This shouldn't happen normally, but handle it
-                    out = inj.dparent
-                except (ValueError, TypeError):
-                    pass
         inj.setval(out)
 
     return out
@@ -2046,17 +2095,15 @@ def transform_PACK(inj, val, ref, store):
     return UNDEF
 
 
-def transform_REF(inj, val, _ref, store):
+def transform_REF(inj, _val, _ref, store):
     """
     Reference original spec (enables recursive transformations)
     Format: ['`$REF`', '`spec-path`']
     """
-    nodes = inj.nodes
-
     if inj.mode != S_MVAL:
         return UNDEF
 
-    # Get arguments: ['`$REF`', 'ref-path']
+    # ['`$REF`', 'ref-path']: a relative path starts where this slot is, so .x is a sibling.
     refpath = getprop(inj.parent, 1)
     inj.keyI = len(inj.keys)
 
@@ -2065,7 +2112,19 @@ def transform_REF(inj, val, _ref, store):
     if not callable(spec_func):
         return UNDEF
     spec = spec_func()
-    ref = getpath(spec, refpath)
+    dpath = slice(inj.path, 1, -2)
+    refinj = {'dpath': dpath, 'dparent': getpath(spec, dpath)}
+    ref = getpath(spec, refpath, refinj)
+
+    # A chain of references that comes back to a path it has named names nothing.
+    seen = [refpath]
+    nxt = ref
+    while islist(nxt) and _lookup(nxt, 0) == '`$REF`':
+        if _lookup(nxt, 1) in seen:
+            ref = UNDEF
+            break
+        seen.append(_lookup(nxt, 1))
+        nxt = getpath(spec, _lookup(nxt, 1), refinj)
 
     # Check if ref has another $REF inside
     hasSubRef = False
@@ -2079,38 +2138,21 @@ def transform_REF(inj, val, _ref, store):
 
         walk(ref, check_subref)
 
-    tref = clone(ref)
+    # A recursive reference stops where the data does.
+    tval = getpath(store, slice(inj.path, 0, len(inj.path) - 1))
+    rval = clone(ref) if not hasSubRef or tval is not UNDEF else UNDEF
 
-    cpath = slice(inj.path, 0, len(inj.path) - 3)
-    tpath = slice(inj.path, 0, len(inj.path) - 1)
-    tcur = getpath(store, cpath)
-    tval = getpath(store, tpath)
-    rval = UNDEF
+    # The enclosing loop injects the referenced spec in this list's place, so
+    # neither this pass nor this element leaves a value for modify to check.
+    grandparent = inj.setval(rval, 2)
 
-    # When ref target not found, omit the key (setval UNDEF). Do not inject UNDEF.
-    if ref is not UNDEF and (not hasSubRef or tval is not UNDEF):
-        # Create child state for the next level
-        child_state = inj.child(0, [getelem(tpath, -1)])
-        child_state.path = tpath
-        child_state.nodes = slice(inj.nodes, 0, len(inj.nodes) - 1)
-        child_state.parent = getelem(nodes, -2)
-        child_state.val = tref
+    prior = inj.prior
+    if prior is not None:
+        prior.modify = None
+        if islist(grandparent) or rval is not UNDEF:
+            prior.keyI -= 1
 
-        # Inject with child state
-        child_state.dparent = tcur
-        inject(tref, store, child_state)
-        rval = child_state.val
-    else:
-        rval = UNDEF
-
-    # Set the value in grandparent, using setval
-    inj.setval(rval, 2)
-
-    # Handle lists by decrementing keyI
-    if islist(inj.parent) and inj.prior:
-        inj.prior.keyI -= 1
-
-    return val
+    return SKIP
 
 
 def _fmt_number(_k, v, *_args):
@@ -2351,6 +2393,10 @@ def transform(data, spec, injdef=UNDEF):
         S_DERRS: errs,
     }
 
+    # Absent data has no $TOP, so that presence tells it from a null.
+    if store[S_DTOP] is _ABSENT:
+        del store[S_DTOP]
+
     if injdef is UNDEF or injdef is None:
         injdef = {}
     if not isinstance(injdef, dict):
@@ -2372,11 +2418,11 @@ def validate_STRING(inj, _val=UNDEF, _ref=UNDEF, _store=UNDEF):
 
     if (T_string & t) == 0:
         inj.errs.append(_invalidTypeMsg(inj.path, S_string, t, out, 'V1010'))
-        return UNDEF
+        return _keepnull(inj, out)
 
     if out == S_MT:
         inj.errs.append('Empty string at ' + pathify(inj.path, 1))
-        return UNDEF
+        return out
 
     return out
 
@@ -2403,17 +2449,27 @@ def validate_TYPE(inj, _val=UNDEF, ref=UNDEF, _store=UNDEF):
     if tname == S_nil:
         typev = typev | T_null
     out = getprop(inj.dparent, inj.key)
-    t = typify(out)
+    # A missing field, or a trial's missing $TOP, is no value, not null.
+    t = typify(out) if _present(inj.dparent, inj.key) else T_noval
 
     if (t & typev) == 0:
         inj.errs.append(_invalidTypeMsg(inj.path, tname, t, out, 'V1001'))
-        return UNDEF
+        return _keepnull(inj, out)
 
-    return out
+    return _keepnull(inj, out)
 
 
 def validate_ANY(inj, _val=UNDEF, _ref=UNDEF, _store=UNDEF):
-    return getprop(inj.dparent, inj.key)
+    return _keepnull(inj, getprop(inj.dparent, inj.key))
+
+
+# A checker's accepted value, where a null the data holds stays in the output:
+# returned as None, inject's setval would delete the slot instead.
+def _keepnull(inj, out):
+    if out is None and inj.mode == S_MVAL and _present(inj.dparent, inj.key):
+        setprop(inj.parent, inj.key, out)
+        return SKIP
+    return out
 
 
 def validate_CHILD(inj, _val=UNDEF, _ref=UNDEF, _store=UNDEF):
@@ -2433,7 +2489,7 @@ def validate_CHILD(inj, _val=UNDEF, _ref=UNDEF, _store=UNDEF):
         if tval == UNDEF:
             tval = {}
         elif not ismap(tval):
-            inj.errs.append(_invalidTypeMsg(path[:-1], S_object, typify(tval), tval, 'V0220'))
+            # _validation reports the mismatch, once.
             return UNDEF
 
         ckeys = keysof(tval)
@@ -2457,8 +2513,6 @@ def validate_CHILD(inj, _val=UNDEF, _ref=UNDEF, _store=UNDEF):
             return UNDEF
 
         if not islist(inj.dparent):
-            msg = _invalidTypeMsg(path[:-1], S_list, typify(inj.dparent), inj.dparent, 'V0230')
-            inj.errs.append(msg)
             inj.keyI = size(parent)
             return inj.dparent
 
@@ -2483,68 +2537,57 @@ def validate_CHILD(inj, _val=UNDEF, _ref=UNDEF, _store=UNDEF):
     return UNDEF
 
 
-def validate_ONE(inj, _val=UNDEF, _ref=UNDEF, store=UNDEF):
+# The members a spec does not name: the map form is a key, the list form a
+# tuple's last item. Each places clones of its spec for the loop to check.
+def validate_REST(inj, _val=UNDEF, _ref=UNDEF, _store=UNDEF):
     mode = inj.mode
+    key = inj.key
     parent = inj.parent
-    keyI = inj.keyI
+    keys = inj.keys
+    path = inj.path
 
-    if mode == S_MVAL:
-        if not islist(parent) or keyI != 0:
-            inj.errs.append(
-                'The $ONE validator at field '
-                + pathify(inj.path, 1, 1)
-                + ' must be the first element of an array.'
-            )
-            return None
+    if mode == S_MKEYPRE:
+        resttm = _lookup(parent, key)
+        tval = getprop(inj.dparent, getelem(path, -2))
 
-        inj.keyI = size(inj.keys)
+        if ismap(tval):
+            for ckey in keysof(tval):
+                if ckey not in keys:
+                    setprop(parent, ckey, clone(resttm))
+                    keys.append(ckey)
 
-        inj.setval(inj.dparent, 2)
+        inj.setval(UNDEF)
+        return UNDEF
 
-        inj.path = inj.path[:-1]
+    prior = inj.prior
+    if mode != S_MVAL or prior is None or not islist(prior.parent) or inj.keyI != 0:
+        inj.errs.append(_restmsg(slice(path, 1), ' must be the last element of an array.'))
+        return UNDEF
 
-        tvals = parent[1:]
-        if size(tvals) == 0:
-            inj.errs.append(
-                'The $ONE validator at field '
-                + pathify(inj.path, 1, 1)
-                + ' must have at least one argument.'
-            )
-            return None
+    inj.keyI = size(keys)
+    prior.modify = None
 
-        for tval in tvals:
-            terrs = []
+    tuple_ = prior.parent
+    slot = _listkey(prior.key)
+    dlist = prior.dparent
+    numitems = size(dlist) if islist(dlist) else 0
 
-            vstore = merge([{}, store], 1)
-            vstore[S_DTOP] = inj.dparent
+    if numitems <= slot:
+        inj.setval(UNDEF, 2)
+        return SKIP
 
-            vcurrent = validate(
-                inj.dparent,
-                tval,
-                {
-                    'extra': vstore,
-                    'errs': terrs,
-                    'meta': inj.meta,
-                },
-            )
+    resttm = _lookup(parent, 1)
+    for i in range(slot, numitems):
+        setprop(tuple_, i, clone(resttm))
+    for i in range(size(prior.keys), numitems):
+        prior.keys.append(strkey(i))
 
-            inj.setval(vcurrent, -2)
+    prior.keyI -= 1
+    return SKIP
 
-            if size(terrs) == 0:
-                return None
 
-        valdesc = ', '.join(stringify(n[1]) for n in items(tvals))
-        valdesc = re.sub(r'`\$([A-Z]+)`', lambda m: m.group(1).lower(), valdesc)
-
-        inj.errs.append(
-            _invalidTypeMsg(
-                inj.path,
-                ('one of ' if size(tvals) > 1 else '') + valdesc,
-                typify(inj.dparent),
-                inj.dparent,
-                'V0210',
-            )
-        )
+def _restmsg(path, problem):
+    return 'The $REST validator at field ' + pathify(path) + problem
 
 
 def validate_EXACT(inj, _val=UNDEF, _ref=UNDEF, _store=UNDEF):
@@ -2562,12 +2605,14 @@ def validate_EXACT(inj, _val=UNDEF, _ref=UNDEF, _store=UNDEF):
             )
             return None
 
+        cval, present = _slotval(inj)
+
         inj.keyI = size(inj.keys)
 
-        inj.setval(inj.dparent, 2)
+        # Replace [$EXACT, ...] with the data value; SKIP keeps inject off the detached list.
+        _setslot(inj, cval, present)
 
         inj.path = inj.path[:-1]
-        inj.key = getelem(inj.path, -1)
 
         tvals = parent[1:]
         if size(tvals) == 0:
@@ -2576,19 +2621,12 @@ def validate_EXACT(inj, _val=UNDEF, _ref=UNDEF, _store=UNDEF):
                 + pathify(inj.path, 1, 1)
                 + ' must have at least one argument.'
             )
-            return None
+            return SKIP
 
-        currentstr = None
+        # An absent value equals no literal, not even null.
         for tval in tvals:
-            exactmatch = tval == inj.dparent
-
-            if not exactmatch and isnode(tval):
-                currentstr = stringify(inj.dparent) if currentstr is None else currentstr
-                tvalstr = stringify(tval)
-                exactmatch = tvalstr == currentstr
-
-            if exactmatch:
-                return None
+            if present and _deepequal(tval, cval):
+                return SKIP
 
         valdesc = ', '.join(stringify(n[1]) for n in items(tvals))
         valdesc = re.sub(r'`\$([A-Z]+)`', lambda m: m.group(1).lower(), valdesc)
@@ -2600,13 +2638,281 @@ def validate_EXACT(inj, _val=UNDEF, _ref=UNDEF, _store=UNDEF):
                 + 'exactly equal to '
                 + ('' if size(tvals) == 1 else 'one of ')
                 + valdesc,
-                typify(inj.dparent),
-                inj.dparent,
+                typify(cval),
+                cval,
                 'V0110',
             )
         )
+
+        return SKIP
     else:
         delprop(parent, key)
+
+
+# Count the specs that admit the value: ['`$NOF`', count, spec, ...], where
+# count is an integer, or a map holding min, max or both.
+def validate_NOF(inj, _val=UNDEF, _ref=UNDEF, store=UNDEF):
+    return _validatecount(inj, store, '$NOF', True)
+
+
+# Every spec admits the value: ['`$ALL`', spec, ...].
+def validate_ALL(inj, _val=UNDEF, _ref=UNDEF, store=UNDEF):
+    return _validatecount(inj, store, '$ALL', False)
+
+
+# The counting list directives. Without a count, every spec has to admit.
+def _validatecount(inj, store, name, counted):
+    mode = inj.mode
+    parent = inj.parent
+    keyI = inj.keyI
+
+    if mode != S_MVAL:
+        return UNDEF
+
+    if not islist(parent) or keyI != 0:
+        inj.errs.append(
+            'The '
+            + name
+            + ' validator at field '
+            + pathify(inj.path, 1, 1)
+            + ' must be the first element of an array.'
+        )
+        return UNDEF
+
+    cval, present = _slotval(inj)
+
+    inj.keyI = size(inj.keys)
+
+    # Replace the directive's list with the data value. Each return is SKIP, so
+    # that inject leaves the detached list alone and validates nothing in it.
+    _setslot(inj, cval, present)
+
+    inj.path = inj.path[:-1]
+
+    count = _lookup(parent, 1) if counted else UNDEF
+    tvals = parent[2:] if counted else parent[1:]
+    numtvals = size(tvals)
+    field = 'The ' + name + ' validator at field ' + pathify(inj.path, 1)
+
+    if numtvals == 0:
+        inj.errs.append(
+            field
+            + (' must have a count and' if counted else ' must have')
+            + ' at least one argument.'
+        )
+        return SKIP
+
+    lo, hi, countdesc = _nofcount(count, numtvals) if counted else (numtvals, numtvals, 'all')
+
+    if countdesc is UNDEF:
+        inj.errs.append(field + ' has an invalid count: ' + stringify(count) + '.')
+        return SKIP
+
+    admitted = 0
+    for tI in range(numtvals):
+        left = numtvals - tI
+
+        # Stop once the specs left cannot change the verdict.
+        if hi < admitted or admitted + left < lo or (lo <= admitted and admitted + left <= hi):
+            break
+
+        if _admits(cval, present, tvals[tI], inj, store):
+            admitted += 1
+
+    if admitted < lo or hi < admitted:
+        valdesc = ', '.join(stringify(n[1]) for n in items(tvals))
+        valdesc = re.sub(r'`\$([A-Z]+)`', lambda m: m.group(1).lower(), valdesc)
+
+        inj.errs.append(
+            _invalidTypeMsg(inj.path, countdesc + ' of ' + valdesc, typify(cval), cval, 'V0310')
+        )
+
+    return SKIP
+
+
+# The value's length is within a bound: ['`$LEN`', bound, spec?], where the
+# bound is as for a $NOF count. A string's length is in code points.
+def validate_LEN(inj, _val=UNDEF, _ref=UNDEF, store=UNDEF):
+    return _validatebound(inj, store, '$LEN')
+
+
+# The value is a number within a bound: ['`$RANGE`', bound, spec?], where the
+# bound holds min or gt, max or lt, or one of each.
+def validate_RANGE(inj, _val=UNDEF, _ref=UNDEF, store=UNDEF):
+    return _validatebound(inj, store, '$RANGE')
+
+
+def validate_LIKE(inj, _val=UNDEF, _ref=UNDEF, store=UNDEF):
+    return _validatebound(inj, store, '$LIKE')
+
+
+# The bounding list directives: a bound or pattern, then at most one spec that also admits.
+def _validatebound(inj, store, name):
+    mode = inj.mode
+    parent = inj.parent
+    keyI = inj.keyI
+
+    if mode != S_MVAL:
+        return UNDEF
+
+    if not islist(parent) or keyI != 0:
+        inj.errs.append(
+            'The '
+            + name
+            + ' validator at field '
+            + pathify(inj.path, 1, 1)
+            + ' must be the first element of an array.'
+        )
+        return UNDEF
+
+    cval, present = _slotval(inj)
+
+    inj.keyI = size(inj.keys)
+
+    # As for the counting directives: SKIP keeps inject off the detached list.
+    _setslot(inj, cval, present)
+
+    inj.path = inj.path[:-1]
+
+    field = 'The ' + name + ' validator at field ' + pathify(inj.path, 1)
+    nargs = size(parent) - 1
+    islen = name == '$LEN'
+    islike = name == '$LIKE'
+    argname = 'pattern' if islike else 'bound'
+
+    if nargs < 1 or nargs > 2:
+        inj.errs.append(field + ' must have a ' + argname + ' and at most one spec.')
+        return SKIP
+
+    bound = _lookup(parent, 1)
+    like = _likere(bound) if islike else UNDEF
+
+    if islen:
+        lo, hi, desc = _lenbound(bound)
+    elif islike:
+        lo, hi, desc = 0, 0, UNDEF if like is UNDEF else 'like /' + bound + '/'
+    else:
+        lo, hi, desc = 0, 0, _rangedesc(bound)
+
+    if desc is UNDEF:
+        inj.errs.append(field + ' has an invalid ' + argname + ': ' + stringify(bound) + '.')
+        return SKIP
+
+    ctype = typify(cval)
+
+    if nargs == 2 and not _admits(cval, present, _lookup(parent, 2), inj, store):
+        specdesc = re.sub(
+            r'`\$([A-Z]+)`', lambda m: m.group(1).lower(), stringify(_lookup(parent, 2))
+        )
+        inj.errs.append(_invalidTypeMsg(inj.path, specdesc, ctype, cval, 'V0410'))
+        return SKIP
+
+    if ((T_string | T_list | T_map if islen else T_string if islike else T_number) & ctype) == 0:
+        needtype = 'string, list or map' if islen else S_string if islike else S_number
+        inj.errs.append(_invalidTypeMsg(inj.path, needtype, ctype, cval, 'V0420'))
+        return SKIP
+
+    length = size(cval) if islen else 0
+
+    if islen:
+        inbound = lo <= length and (hi == -1 or length <= hi)
+    elif islike:
+        inbound = re_test(like, cval)
+    else:
+        inbound = _inrange(bound, cval)
+
+    if not inbound:
+        needtype = ('' if size(inj.path) > 1 else 'value ') + desc
+        inj.errs.append(_invalidTypeMsg(inj.path, needtype, ctype, cval, 'V0430'))
+
+    return SKIP
+
+
+# The bounds of a $LEN bound, with -1 for no maximum, and the words for it,
+# which are absent when the bound is invalid.
+def _lenbound(bound):
+    lo, hi, countdesc = _nofcount(bound, -1)
+
+    if countdesc is UNDEF:
+        return 0, 0, UNDEF
+
+    if lo == hi:
+        desc = str(lo)
+    elif hi == -1:
+        desc = 'at least ' + str(lo)
+    elif lo == 0:
+        desc = 'at most ' + str(hi)
+    else:
+        desc = str(lo) + ' to ' + str(hi)
+
+    return lo, hi, 'of length ' + desc
+
+
+# A $LIKE pattern compiled by the port's own regex engine; absent unless it compiles.
+def _likere(pattern):
+    if not isinstance(pattern, str):
+        return UNDEF
+    try:
+        return re_compile(pattern)
+    except Exception:
+        return UNDEF
+
+
+# The words for a $RANGE bound, which are absent when the bound is invalid.
+def _rangedesc(bound):
+    if not ismap(bound):
+        return UNDEF
+
+    # Every value must be a number, so below a None is a side the bound lacks.
+    valid = size(bound) > 0 and all(
+        k in ('min', 'max', 'gt', 'lt') and (T_number & typify(v)) > 0 for k, v in bound.items()
+    )
+
+    mn = _lookup(bound, 'min')
+    mx = _lookup(bound, 'max')
+    gt = _lookup(bound, 'gt')
+    lt = _lookup(bound, 'lt')
+    lower = gt if mn is UNDEF else mn
+    upper = lt if mx is UNDEF else mx
+
+    valid = (
+        valid
+        and (mn is UNDEF or gt is UNDEF)
+        and (mx is UNDEF or lt is UNDEF)
+        and (lower is UNDEF or upper is UNDEF or lower <= upper)
+    )
+
+    if not valid:
+        return UNDEF
+
+    parts = []
+
+    if mn is not UNDEF:
+        parts.append('at least ' + stringify(mn))
+    elif gt is not UNDEF:
+        parts.append('greater than ' + stringify(gt))
+
+    if mx is not UNDEF:
+        parts.append('at most ' + stringify(mx))
+    elif lt is not UNDEF:
+        parts.append('less than ' + stringify(lt))
+
+    return ' and '.join(parts)
+
+
+# A number within a valid $RANGE bound.
+def _inrange(bound, val):
+    mn = _lookup(bound, 'min')
+    mx = _lookup(bound, 'max')
+    gt = _lookup(bound, 'gt')
+    lt = _lookup(bound, 'lt')
+
+    return (
+        (mn is UNDEF or mn <= val)
+        and (mx is UNDEF or val <= mx)
+        and (gt is UNDEF or gt < val)
+        and (lt is UNDEF or val < lt)
+    )
 
 
 def _validation(pval, key, parent, inj):
@@ -2644,8 +2950,8 @@ def _validation(pval, key, parent, inj):
         ckeys = keysof(cval)
         pkeys = keysof(pval)
 
-        # Empty spec object {} means object can be open (any keys).
-        if len(pkeys) > 0 and getprop(pval, '`$OPEN`') is not True:
+        # Only a spec written as {} is open, even if named keys resolved away.
+        if (len(pkeys) > 0 or inj.named) and getprop(pval, '`$OPEN`') is not True:
             badkeys = []
             for ckey in ckeys:
                 # Literal presence: the shape DECLARES ckey even when its value
@@ -2669,6 +2975,17 @@ def _validation(pval, key, parent, inj):
     elif islist(cval):
         if not islist(pval):
             inj.errs.append(_invalidTypeMsg(inj.path, typename(ptype), ctype, cval, 'V0030'))
+        elif size(pval) > 0:
+            # Closed list, so reject items past the end of the shape.
+            badkeys = [strkey(i) for i in range(size(pval), size(cval))]
+            if size(badkeys) > 0:
+                msg = (
+                    'Unexpected keys at field ' + pathify(inj.path, 1) + S_VIZ + join(badkeys, ', ')
+                )
+                inj.errs.append(msg)
+        else:
+            # Empty spec list [] means list can be open (any items).
+            merge([pval, cval])
 
     elif exact:
         if cval != pval:
@@ -2721,8 +3038,13 @@ def validate(data, spec, injdef=UNDEF):
                 '$INSTANCE': validate_TYPE,
                 '$ANY': validate_ANY,
                 '$CHILD': validate_CHILD,
-                '$ONE': validate_ONE,
                 '$EXACT': validate_EXACT,
+                '$NOF': validate_NOF,
+                '$ALL': validate_ALL,
+                '$LEN': validate_LEN,
+                '$RANGE': validate_RANGE,
+                '$LIKE': validate_LIKE,
+                '$REST': validate_REST,
             },
             ({} if extra is UNDEF or extra is None else extra),
             {
@@ -2735,17 +3057,25 @@ def validate(data, spec, injdef=UNDEF):
     meta = getprop(injdef, 'meta', {})
     setprop(meta, S_BEXACT, getprop(meta, S_BEXACT, False))
 
-    out = transform(
-        data,
-        spec,
-        {
-            'meta': meta,
-            'extra': store,
-            'modify': _validation,
-            'handler': _validatehandler,
-            'errs': errs,
-        },
-    )
+    # A spec that names an unknown checker validates nothing.
+    numerrs = size(errs)
+    _checknames(spec, store, [], errs)
+
+    if numerrs < size(errs):
+        out = clone(data)
+    else:
+        out = transform(
+            data,
+            spec,
+            {
+                'meta': meta,
+                'extra': store,
+                'modify': _validation,
+                'handler': _validatehandler,
+                'errs': errs,
+                '_noval': getprop(injdef, '_noval'),
+            },
+        )
 
     generr = len(errs) > 0 and not collect
     if generr:
@@ -2801,7 +3131,6 @@ def _updateAncestors(_state, target, tkey, tval):
 # optionally allows transforms to be ordered by alphanumeric sorting.
 def _injectstr(val, store, inj=UNDEF):
     # Can't inject into non-strings
-    full_re = re.compile(r'^`(\$[A-Z]+|[^`]*)[0-9]*`$')
     part_re = re.compile(r'`([^`]*)`')
 
     if not isinstance(val, str) or val == S_MT:
@@ -2810,7 +3139,7 @@ def _injectstr(val, store, inj=UNDEF):
     out = val
 
     # Pattern examples: "`a.b.c`", "`$NAME`", "`$NAME1`"
-    m = full_re.match(val)
+    m = R_INJECTION_FULL.match(val)
 
     # Full string of the val is an injection.
     if m:
@@ -2882,13 +3211,219 @@ def _invalidTypeMsg(path, needtype, vt, v, _whence=None):
     )
 
 
+# Names a validate spec may use besides its checkers: transform's that it keeps, and $OPEN.
+VALIDATE_NAMES = [
+    '$TOP',
+    '$SPEC',
+    '$BT',
+    '$DS',
+    '$WHEN',
+    '$ANNO',
+    '$REF',
+    '$FORMAT',
+    '$APPLY',
+    '$OPEN',
+]
+
+
+# Report each checker the spec names that validate lacks, and each misplaced
+# $REST; $EXACT's arguments are literals. Last: spec is a list's last item.
+def _checknames(spec, store, path, errs, last=False):
+    name = _refname(spec)
+    if name is not UNDEF:
+        if _unknownname(name, store):
+            errs.append('Unknown validator ' + name + ' at field ' + pathify(path) + '.')
+        elif name == '$REST':
+            errs.append(_restmsg(path, ' must be the last element of an array.'))
+        return
+
+    head = _refname(_lookup(spec, 0)) if islist(spec) else UNDEF
+    if head == '$EXACT':
+        return
+
+    if head == '$REST':
+        if not last:
+            errs.append(_restmsg(path, ' must be the last element of an array.'))
+        elif size(spec) != 2:
+            errs.append(_restmsg(path, ' must have exactly one spec.'))
+        _checknames(_lookup(spec, 1), store, [*path, 1], errs)
+        return
+
+    restkey = '`$REST`'
+    if ismap(spec) and _present(spec, restkey) and _present(spec, '`$CHILD`'):
+        errs.append(_restmsg(path, ' cannot be used with $CHILD.'))
+
+    lastkey = strkey(size(spec) - 1) if islist(spec) else UNDEF
+    for key in keysof(spec):
+        if ismap(spec) and key != restkey:
+            _checknames(key, store, path, errs)
+        _checknames(_lookup(spec, key), store, [*path, key], errs, key == lastkey)
+
+
+# The name a whole-string reference gives, when it is a checker name in any case.
+def _refname(val):
+    m = re_find(R_INJECTION_FULL, val) if isinstance(val, str) else None
+    return m[1] if m is not None and re_test(R_CHECKER_NAME, m[1].upper()) else UNDEF
+
+
+# Unknown: undefined and upper case, or a defined name in another case. None disables a name.
+def _unknownname(name, store):
+    def known(n):
+        return n in VALIDATE_NAMES or _lookup(store, n) is not None
+
+    upper = name.upper()
+    return not known(name) and (upper == name or known(upper))
+
+
+# Whether a node holds a key or index at all, even with a None value.
+def _present(val, key):
+    if ismap(val):
+        return _ismapkey(key) and str(key) in val
+    if islist(val):
+        return _listindex(key, len(val)) >= 0
+    return False
+
+
+# The data value at a list directive's slot, and whether the slot holds one:
+# a stored null and an absent value are both None, so presence tells them apart.
+def _slotval(inj):
+    prior = inj.prior
+    if prior is None:
+        return inj.dparent, inj.dparent is not None
+    return _lookup(prior.dparent, prior.key), _present(prior.dparent, prior.key)
+
+
+# Put the slot's value in place of the directive's list. Injection.setval
+# deletes on None, which would drop a null the data holds.
+def _setslot(inj, cval, present):
+    if cval is None and present:
+        setprop(getelem(inj.nodes, -2), getelem(inj.path, -2), cval)
+    else:
+        inj.setval(cval, 2)
+
+
+# JSON equality: numbers by value, lists in order, maps by key in any order.
+def _deepequal(a, b):
+    atype = typify(a)
+    btype = typify(b)
+
+    # An integer equals a decimal of the same value; typify keeps bool apart.
+    if (T_number & atype) > 0 and (T_number & btype) > 0:
+        return a == b
+
+    if atype != btype:
+        return False
+
+    # Functions and instances equal only themselves.
+    if ((T_list | T_map) & atype) == 0:
+        return a == b if ((T_string | T_boolean | T_null) & atype) > 0 else a is b
+
+    akeys = keysof(a)
+    bkeys = keysof(b)
+    if size(akeys) != size(bkeys):
+        return False
+
+    for kI in range(size(akeys)):
+        k = akeys[kI]
+        if k != bkeys[kI] or not _deepequal(_lookup(a, k), _lookup(b, k)):
+            return False
+
+    return True
+
+
+# Every member val has is in out, unchanged. A member only out has is a
+# default the spec supplied, and is ignored.
+def _keeps(val, out):
+    if ((T_list | T_map) & typify(val)) == 0 or islist(val) != islist(out) or not isnode(out):
+        return _deepequal(val, out)
+
+    for k in keysof(val):
+        if not _present(out, k) or not _keeps(_lookup(val, k), _lookup(out, k)):
+            return False
+
+    return True
+
+
+# A spec admits a value when validating the value against it finds no error
+# and gives back the value as it is. An absent value has nothing to give back.
+def _admits(val, present, spec, inj, store):
+    terrs = []
+
+    vstore = merge([{}, store], 1)
+    vstore[S_DTOP] = val if present else _ABSENT
+
+    out = validate(
+        val,
+        spec,
+        {
+            'extra': vstore,
+            'errs': terrs,
+            'meta': inj.meta,
+            '_noval': _ABSENT,
+        },
+    )
+
+    return size(terrs) == 0 and (not present or _keeps(val, out))
+
+
+# The bounds of a $NOF count, and the words for it, which are absent when
+# the count is invalid. Without a max, the bound is the number of specs.
+def _nofcount(count, numtvals):
+    def isnat(n):
+        return (T_integer & typify(n)) > 0 and n >= 0
+
+    # JavaScript has one number type, so 2.0 is the count 2.
+    def whole(n):
+        return int(n) if isinstance(n, float) and n.is_integer() else n
+
+    count = whole(count)
+    if isnat(count):
+        return count, count, 'none' if count == 0 else 'exactly ' + str(count)
+
+    hasmin = _present(count, 'min')
+    hasmax = _present(count, 'max')
+    mn = whole(_lookup(count, 'min'))
+    mx = whole(_lookup(count, 'max'))
+
+    valid = (
+        ismap(count)
+        and size(count) > 0
+        and size(count) == (1 if hasmin else 0) + (1 if hasmax else 0)
+        and (not hasmin or isnat(mn))
+        and (not hasmax or isnat(mx))
+        and (not hasmin or not hasmax or mn <= mx)
+    )
+
+    if not valid:
+        return 0, 0, UNDEF
+
+    lo = mn if hasmin else 0
+    hi = mx if hasmax else numtvals
+
+    if not hasmax:
+        desc = 'at least ' + str(lo)
+    elif hi == 0:
+        desc = 'none'
+    elif not hasmin:
+        desc = 'at most ' + str(hi)
+    elif lo == hi:
+        desc = 'exactly ' + str(lo)
+    else:
+        desc = str(lo) + ' to ' + str(hi)
+
+    return lo, hi, desc
+
+
 # Create a StructUtils class with all utility functions as attributes
 class StructUtility:
     def __init__(self):
         self.clone = clone
+        self.condense = condense
+        self.condenseview = condenseview
         self.delprop = delprop
         self.escre = escre
         self.escurl = escurl
+        self.expand = expand
         self.filter = filter
         self.flatten = flatten
         self.getdef = getdef
@@ -2898,6 +3433,7 @@ class StructUtility:
         self.haskey = haskey
         self.inject = inject
         self.isempty = isempty
+        self.iscondensed = iscondensed
         self.isfunc = isfunc
         self.iskey = iskey
         self.islist = islist
@@ -2952,6 +3488,325 @@ class StructUtility:
         self.injectChild = injectChild
 
 
+CONDENSE_VERSION = 1
+
+CONDENSE_MAP = 0
+CONDENSE_LIST = 1
+CONDENSE_STR = 2
+CONDENSE_NUM = 3
+CONDENSE_TRUE = 4
+CONDENSE_FALSE = 5
+CONDENSE_NULL = 6
+
+S_condense = '$condense'
+S_condsym = 'sym'
+S_condnode = 'node'
+S_condroot = 'root'
+
+S_CONDENSED_IMMUTABLE = (
+    'struct: condensed structures are immutable - expand() first, then modify the copy'
+)
+
+
+def _isnumber(val):
+    return isinstance(val, (int, float)) and not isinstance(val, bool)
+
+
+# The item at index i, or None. A negative or fractional i is no item, as in JavaScript.
+def _condenseat(lst, i):
+    if isinstance(i, float) and i.is_integer():
+        i = int(i)
+    if islist(lst) and isinstance(i, int) and not isinstance(i, bool) and 0 <= i < len(lst):
+        return lst[i]
+    return None
+
+
+# An encoding's kind tag, or None. A boolean is no kind: JavaScript compares kinds strictly.
+def _condensekind(enc):
+    kind = _condenseat(enc, 0)
+    return None if isinstance(kind, bool) else kind
+
+
+# A path part's string form, as JavaScript writes it: True is 'true', 1.0 is '1'.
+def _condensestr(key):
+    if isinstance(key, float) and key.is_integer():
+        return str(int(key))
+    return key if isinstance(key, str) else _jsstr(key)
+
+
+def iscondensed(val: Any = UNDEF) -> bool:
+    # The version must MATCH, not merely be numeric: a future profile would
+    # otherwise be decoded under this one's schema.
+    return (
+        ismap(val)
+        and _isnumber(val.get(S_condense))
+        and val.get(S_condense) == CONDENSE_VERSION
+        and islist(val.get(S_condsym))
+        and islist(val.get(S_condnode))
+        and _isnumber(val.get(S_condroot))
+    )
+
+
+# Condense any JSON-shaped node. Pure: the same input always produces a
+# byte-identical result, on every port.
+def condense(val: Any = UNDEF) -> dict[str, Any]:
+    # Pass one: every distinct map key and string value, once, sorted.
+    symset: set[str] = set()
+
+    def collect(n):
+        if ismap(n):
+            for k in keysof(n):
+                symset.add(k)
+                collect(n[k])
+        elif islist(n):
+            for item in n:
+                collect(item)
+        elif isinstance(n, str):
+            symset.add(n)
+
+    collect(val)
+
+    # Python orders strings by code point.
+    sym = sorted(symset)
+    symid = {s: i for i, s in enumerate(sym)}
+
+    # Pass two: build post-order, interning on the encoding. Because children
+    # are built first, identical subtrees have already been interned by the
+    # time a parent references them, so sharing costs nothing extra.
+    node: list[list[Any]] = []
+    seen: dict[tuple[Any, ...], int] = {}
+
+    def intern(enc):
+        # A tuple compares numbers by value, so 1 and 1.0 share a node.
+        enckey = tuple(enc)
+        hit = seen.get(enckey)
+        if hit is not None:
+            return hit
+        idx = len(node)
+        node.append(enc)
+        seen[enckey] = idx
+        return idx
+
+    def build(n):
+        if ismap(n):
+            enc = [CONDENSE_MAP]
+            # keysof sorts, so the key ids ascend and lookup can bisect.
+            for k in keysof(n):
+                enc.append(symid[k])
+                enc.append(build(n[k]))
+            return intern(enc)
+        if islist(n):
+            enc = [CONDENSE_LIST]
+            for item in n:
+                enc.append(build(item))
+            return intern(enc)
+        if isinstance(n, str):
+            return intern([CONDENSE_STR, symid[n]])
+        if n is True:
+            return intern([CONDENSE_TRUE])
+        if n is False:
+            return intern([CONDENSE_FALSE])
+        if _isnumber(n):
+            return intern([CONDENSE_NUM, n])
+        return intern([CONDENSE_NULL])
+
+    root = build(val)
+
+    out: dict[str, Any] = {}
+    out[S_condense] = CONDENSE_VERSION
+    out[S_condsym] = sym
+    out[S_condnode] = node
+    out[S_condroot] = root
+    return out
+
+
+# Resolve a symbol to its id by bisecting the sorted symbol table. -1 when
+# the string does not occur anywhere in the structure, which is itself a fast
+# negative answer for a key lookup.
+def condenseSymId(cond, key):
+    sym = _lookup(cond, S_condsym)
+    lo = 0
+    hi = len(sym) - 1 if islist(sym) else -1
+    while lo <= hi:
+        mid = (lo + hi) >> 1
+        s = sym[mid]
+        if s == key:
+            return mid
+        if isinstance(s, str) and s < key:
+            lo = mid + 1
+        else:
+            hi = mid - 1
+    return -1
+
+
+# The node index of `key` inside node `idx`, or -1. Touches only this node.
+def condenseChild(cond, idx, key):
+    enc = _condenseat(_lookup(cond, S_condnode), idx)
+    kind = _condensekind(enc)
+
+    if kind == CONDENSE_MAP:
+        symid = condenseSymId(cond, _condensestr(key)) if _ismapkey(key) else -1
+        if symid < 0:
+            return -1
+        # Pairs live at [1,2], [3,4], ... with keys ascending: bisect the pairs.
+        lo = 0
+        hi = (len(enc) - 1) // 2 - 1
+        while lo <= hi:
+            mid = (lo + hi) >> 1
+            k = enc[1 + mid * 2]
+            if k == symid:
+                return enc[2 + mid * 2]
+            if _isnumber(k) and k < symid:
+                lo = mid + 1
+            else:
+                hi = mid - 1
+        return -1
+
+    if kind == CONDENSE_LIST:
+        # Read as an ordinary list is, so condensing never changes which value a path selects.
+        i = _listindex(key, len(enc) - 1)
+        return -1 if i < 0 else enc[1 + i]
+
+    return -1
+
+
+# Walk a path from a starting node, returning the node index or -1.
+def condenseResolve(cond, idx, path):
+    if islist(path):
+        parts = path
+    elif isinstance(path, str):
+        parts = [] if path == S_MT else path.split(S_DT)
+    elif path is None:
+        parts = []
+    else:
+        parts = [_condensestr(path)]
+
+    at = idx
+    for part in parts:
+        if not _isnumber(at) or at < 0:
+            return -1
+        if part == S_MT:
+            continue
+        at = condenseChild(cond, at, part)
+    # A child index that is not a number names no node.
+    return at if _isnumber(at) else -1
+
+
+def condenseMaterialise(cond, idx):
+    sym = _lookup(cond, S_condsym)
+    node = _lookup(cond, S_condnode)
+
+    def rebuild(i):
+        enc = _condenseat(node, i)
+        if enc is None:
+            return UNDEF
+        kind = _condensekind(enc)
+        if kind == CONDENSE_MAP:
+            out = {}
+            for j in range(1, len(enc), 2):
+                out[_condenseat(sym, enc[j])] = rebuild(_condenseat(enc, j + 1))
+            return out
+        if kind == CONDENSE_LIST:
+            return [rebuild(enc[j]) for j in range(1, len(enc))]
+        if kind == CONDENSE_STR:
+            return _condenseat(sym, _condenseat(enc, 1))
+        if kind == CONDENSE_NUM:
+            return _condenseat(enc, 1)
+        if kind == CONDENSE_TRUE:
+            return True
+        if kind == CONDENSE_FALSE:
+            return False
+        return None
+
+    return rebuild(idx)
+
+
+# Fully materialise a condensed structure. The escape hatch: correct for any
+# caller, but it gives up every benefit of condensing, so prefer a view or a
+# path read.
+def expand(cond: Any = UNDEF) -> Any:
+    if not iscondensed(cond):
+        return cond
+    return condenseMaterialise(cond, cond[S_condroot])
+
+
+# The keys of node `idx`, WITHOUT materialising any of its values. This is
+# the point of the whole exercise for enumeration: listing the names in a
+# large collection should cost a symbol-table read, not a full decode.
+def condenseKeys(cond, idx):
+    enc = _condenseat(_lookup(cond, S_condnode), idx)
+    kind = _condensekind(enc)
+    if kind == CONDENSE_MAP:
+        sym = _lookup(cond, S_condsym)
+        return [_condenseat(sym, enc[j]) for j in range(1, len(enc), 2)]
+    if kind == CONDENSE_LIST:
+        return [str(j - 1) for j in range(1, len(enc))]
+    return []
+
+
+class CondenseView:
+    """
+    A cursor into a condensed structure. Reads resolve by integer index and
+    touch only the nodes on the path, so the cost of a lookup is proportional
+    to path depth and result size, never to total structure size.
+    """
+
+    def __init__(self, cond: Any, start: Any, refmemo: dict[Any, Any]) -> None:
+        self.cond = cond
+        self.start = start
+        # Shared materialisations, handed out ONLY by ref(). Threaded through
+        # at() so every cursor into the same structure shares one memo.
+        self.refmemo = refmemo
+
+    # The value at path, materialised. Scalars come back directly; a
+    # container comes back as an independent copy.
+    def get(self, path: Any = UNDEF) -> Any:
+        return condenseMaterialise(self.cond, condenseResolve(self.cond, self.start, path))
+
+    # Key names at path, with no value decoding at all.
+    def keys(self, path: Any = UNDEF) -> list[Any]:
+        at = condenseResolve(self.cond, self.start, path)
+        return [] if at < 0 else condenseKeys(self.cond, at)
+
+    def has(self, path: Any = UNDEF) -> bool:
+        return condenseResolve(self.cond, self.start, path) >= 0
+
+    # Chainable cursor. Cheap: no decoding happens here.
+    def at(self, path: Any = UNDEF) -> 'CondenseView':
+        return condenseview(self.cond, condenseResolve(self.cond, self.start, path), self.refmemo)
+
+    def value(self) -> Any:
+        return condenseMaterialise(self.cond, self.start)
+
+    def size(self) -> int:
+        enc = _condenseat(_lookup(self.cond, S_condnode), self.start)
+        kind = _condensekind(enc)
+        if kind == CONDENSE_MAP:
+            return (len(enc) - 1) // 2
+        if kind == CONDENSE_LIST:
+            return len(enc) - 1
+        return 0
+
+    def exists(self) -> bool:
+        return self.start >= 0
+
+    # DANGER, and named to say so. Returns a SHARED materialisation: the same
+    # object for the same node, every time. Mutating it corrupts every other
+    # reader of that node, including ones reached by a different path,
+    # because the structure is a DAG. Use value() unless a profile says this
+    # matters.
+    def ref(self) -> Any:
+        if self.start not in self.refmemo:
+            self.refmemo[self.start] = condenseMaterialise(self.cond, self.start)
+        return self.refmemo[self.start]
+
+
+def condenseview(cond: Any = UNDEF, idx: Any = UNDEF, memo: Any = UNDEF) -> CondenseView:
+    start = (cond[S_condroot] if iscondensed(cond) else -1) if idx is None else idx
+    # A start that is not a number reads as no node, as it does in JavaScript.
+    return CondenseView(cond, start if _isnumber(start) else -1, {} if memo is None else memo)
+
+
 __all__ = [
     'DELETE',
     'MODENAME',
@@ -2978,9 +3833,12 @@ __all__ = [
     'T_symbol',
     'checkPlacement',
     'clone',
+    'condense',
+    'condenseview',
     'delprop',
     'escre',
     'escurl',
+    'expand',
     'filter',
     'flatten',
     'getdef',
@@ -2991,6 +3849,7 @@ __all__ = [
     'inject',
     'injectChild',
     'injectorArgs',
+    'iscondensed',
     'isempty',
     'isfunc',
     'iskey',

@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 // ProjectName SDK utility: make_options
 
+require_once __DIR__ . '/../core/Helpers.php';
+
 class ProjectNameMakeOptions
 {
     private static function to_array_deep(mixed $val): mixed
@@ -190,6 +192,8 @@ class ProjectNameMakeOptions
 
         // Empty [] would be treated as a list and clobber the map under merge;
         // substitute an empty stdClass to preserve map semantics.
+        $cfgopts = ProjectNameHelpers::empty_maps($cfgopts, $optspec);
+        $opts = ProjectNameHelpers::empty_maps($opts, $optspec);
         $cfgopts_merge = empty($cfgopts) ? new \stdClass() : $cfgopts;
         $opts_merge = empty($opts) ? new \stdClass() : $opts;
         $merged = \Voxgig\Struct\Struct::merge([(object)[], $cfgopts_merge, $opts_merge]);

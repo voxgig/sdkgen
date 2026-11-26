@@ -50,6 +50,16 @@ const VENDOR_DIRS = [
   'tm/java/utility/struct',
   'tm/perl/t/vendor/omni',
   'tm/perl/t/vendor/omni/Voxgig',
+  'tm/php/utility/struct',
+  'tm/rb/utility/struct',
+  'tm/rust/utility/voxgigstruct',
+  'tm/c/utility/struct',
+  'tm/clojure/src/voxgig',
+  'tm/cpp/utility/voxgigstruct',
+  'tm/elixir/lib/utility/struct',
+  'tm/ocaml/utility',
+  'tm/scala/utility/struct',
+  'tm/swift/Sources/ProjectNameSDK/Struct',
   'tm/perl/t/vendor/omni/Voxgig/Omni',
   'tm/kotlin/test/vendor/omni',
   'tm/kotlin/utility/struct',
@@ -368,10 +378,13 @@ describe('vendored', () => {
 
 
   test('local deviations from vendored code stay marked', () => {
-    // php and rb are not routed, so they stay hand-patched.
+    // Every vendored file is upstream's as it stands but these, whose
+    // deviation an `adapt` in routes.json applies at each resync.
     const patched: Record<string, number> = {
-      'tm/php/utility/struct/Struct.php': 4,
-      'tm/rb/utility/struct/voxgig_struct.rb': 1,
+      'tm/swift/Sources/ProjectNameSDK/Struct/Inject.swift': 1,
+      'tm/swift/Sources/ProjectNameSDK/Struct/JSON.swift': 1,
+      'tm/swift/Sources/ProjectNameSDK/Struct/Minor.swift': 3,
+      'tm/swift/Sources/ProjectNameSDK/Struct/Value.swift': 5,
     }
 
     for (const [rel, count] of Object.entries(patched)) {

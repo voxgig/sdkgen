@@ -1,5 +1,5 @@
-# VENDORED: @voxgig/plugin sdk-20261016-0845-0 (elixir/lib/voxgig_plugin/env.ex)
-# Source: https://github.com/voxgig/plugin @ caa404b2dfa206d77db6c2869e5b31c2a3202b2d  [tag: sdk-20261016-0845-0]
+# VENDORED: @voxgig/plugin sdk-20261125-1959-0 (elixir/lib/voxgig_plugin/env.ex)
+# Source: https://github.com/voxgig/plugin @ 8605cdc5e68a691130ae9b585baf8c0091a66351  [tag: sdk-20261125-1959-0]
 # License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 defmodule Voxgig.Plugin.Env do
   @moduledoc """

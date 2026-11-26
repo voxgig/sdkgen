@@ -1,3 +1,6 @@
+// VENDORED: @voxgig/struct 0.1.3 (c/src/value_io.c)
+// Source: https://github.com/voxgig/struct @ 358af9d51c90b589a295a70b2165dbe4629eaf8e  [tag: sdk-20261125-1959-0]
+// License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 /* Copyright (c) 2025-2026 Voxgig Ltd. MIT LICENSE.
  *
  * JSON I/O — pure C, no third-party dependency. Replaces an earlier

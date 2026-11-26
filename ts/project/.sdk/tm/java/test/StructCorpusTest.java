@@ -334,7 +334,7 @@ public class StructCorpusTest {
     // ===== validate =====
     add(tests, "validate", "basic", false, in -> Struct.validate(getp(in, "data"), getp(in, "spec")));
     add(tests, "validate", "child", true, in -> Struct.validate(getp(in, "data"), getp(in, "spec")));
-    add(tests, "validate", "one", true, in -> Struct.validate(getp(in, "data"), getp(in, "spec")));
+    add(tests, "validate", "nof", false, in -> Struct.validate(getp(in, "data"), getp(in, "spec")));
     add(tests, "validate", "exact", true, in -> Struct.validate(getp(in, "data"), getp(in, "spec")));
     add(tests, "validate", "invalid", false, in -> Struct.validate(getp(in, "data"), getp(in, "spec")));
     add(tests, "validate", "special", true, in -> {
@@ -347,6 +347,13 @@ public class StructCorpusTest {
       }
       return Struct.validate(getp(in, "data"), getp(in, "spec"), inj);
     });
+    add(tests, "validate", "directive", false, in -> Struct.validate(getp(in, "data"), getp(in, "spec")));
+    add(tests, "validate", "all", false, in -> Struct.validate(getp(in, "data"), getp(in, "spec")));
+    add(tests, "validate", "len", false, in -> Struct.validate(getp(in, "data"), getp(in, "spec")));
+    add(tests, "validate", "range", false, in -> Struct.validate(getp(in, "data"), getp(in, "spec")));
+    add(tests, "validate", "rest", false, in -> Struct.validate(getp(in, "data"), getp(in, "spec")));
+    add(tests, "validate", "like", false, in -> Struct.validate(getp(in, "data"), getp(in, "spec")));
+    add(tests, "validate", "unknown", false, in -> Struct.validate(getp(in, "data"), getp(in, "spec")));
 
     // ===== select =====
     add(tests, "select", "basic", true, in -> Struct.select(getp(in, "obj"), getp(in, "query")));
@@ -354,7 +361,29 @@ public class StructCorpusTest {
     add(tests, "select", "edge", true, in -> Struct.select(getp(in, "obj"), getp(in, "query")));
     add(tests, "select", "alts", true, in -> Struct.select(getp(in, "obj"), getp(in, "query")));
 
+    List<String> names = tests.stream().map(DynamicTest::getDisplayName).toList();
+    tests.add(DynamicTest.dynamicTest("validate-every-group", () -> runsEveryGroup(names, "validate")));
+
     return tests;
+  }
+
+  // Fails on a group the corpus holds in `category` that no test above runs.
+  private static void runsEveryGroup(List<String> names, String category) {
+    Map<String, Object> cat = Helpers.toMapAny(structRun().spec.get(category));
+    assertNotNull(cat, "struct corpus category missing: " + category);
+    List<String> groups = new ArrayList<>();
+    List<String> unrun = new ArrayList<>();
+    for (Map.Entry<String, Object> group : cat.entrySet()) {
+      if (group.getValue() instanceof Map) {
+        groups.add(group.getKey());
+        if (!names.contains(category + "-" + group.getKey())) {
+          unrun.add(group.getKey());
+        }
+      }
+    }
+    assertTrue(!groups.isEmpty(), "the corpus holds no " + category + " group");
+    assertTrue(unrun.isEmpty(),
+        "the corpus holds " + category + " groups this runner does not run: " + unrun);
   }
 
   // The struct.nullsem section: does a PRESENT key holding a JSON null

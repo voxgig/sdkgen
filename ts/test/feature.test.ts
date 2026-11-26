@@ -1190,23 +1190,23 @@ describe('feature:validate', () => {
   // — so each case installs the specs it is about.
   const B = String.fromCharCode(96)
   const T = (n: string) => B + '$' + n + B
-  const OPTSTR = [T('ONE'), T('STRING'), [T('EXACT'), ''], T('NIL')]
+  const OPTSTR = [T('NOF'), { min: 1 }, T('STRING'), [T('EXACT'), ''], T('NIL')]
 
   const WIDGET = {
     data: {
       [T('OPEN')]: true,
-      id: [T('ONE'), T('STRING'), [T('EXACT'), '']],
-      size: [T('ONE'), T('INTEGER'), T('NIL')],
+      id: [T('NOF'), { min: 1 }, T('STRING'), [T('EXACT'), '']],
+      size: [T('NOF'), { min: 1 }, T('INTEGER'), T('NIL')],
     },
     op: {
       create: {
         [T('OPEN')]: true,
-        id: [T('ONE'), T('STRING'), [T('EXACT'), '']],
-        size: [T('ONE'), T('INTEGER'), T('NIL')],
+        id: [T('NOF'), { min: 1 }, T('STRING'), [T('EXACT'), '']],
+        size: [T('NOF'), { min: 1 }, T('INTEGER'), T('NIL')],
       },
       load: {
         [T('OPEN')]: true,
-        id: [T('ONE'), T('STRING'), [T('EXACT'), '']],
+        id: [T('NOF'), { min: 1 }, T('STRING'), [T('EXACT'), '']],
       },
     },
   }

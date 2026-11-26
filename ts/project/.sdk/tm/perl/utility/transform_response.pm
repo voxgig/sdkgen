@@ -36,6 +36,9 @@ $REGISTRY{transform_response} = sub {
     'resdata' => $result->{resdata},
     'resmatch' => $result->{resmatch},
   }, $resform);
+  # A reference that resolves to nothing gives struct's no-value sentinel,
+  # which is truthy: an update would take it for data.
+  $resdata = undef if Voxgig::Struct::is_none($resdata);
   $result->{resdata} = $resdata;
   return $resdata;
 };

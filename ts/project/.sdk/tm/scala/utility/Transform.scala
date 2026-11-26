@@ -81,7 +81,12 @@ object TransformResponse {
     data.put("resdata", result.resdata)
     data.put("resmatch", result.resmatch)
 
-    val resdata = Struct.transform(data, resform)
+    // A reference that resolves to nothing gives struct's UNDEF, which is
+    // not null: an update would take it for data.
+    val resdata = Struct.transform(data, resform) match {
+      case u if u eq Struct.UNDEF => null
+      case v                      => v
+    }
     result.resdata = resdata
     resdata
   }

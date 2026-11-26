@@ -100,7 +100,7 @@ func transformRequestUtil(_ ctx: Context) -> Value {
   let reqform = gp(tfm, "req")
   if isNil(reqform) { return stripAction(reqdata) }
 
-  return stripAction(transform(.map(vm(("reqdata", reqdata))), reqform))
+  return stripAction(transformKept(.map(vm(("reqdata", reqdata))), reqform))
 }
 
 func transformResponseUtil(_ ctx: Context) -> Value {
@@ -123,7 +123,7 @@ func transformResponseUtil(_ ctx: Context) -> Value {
     ("resmatch", result.resmatch == nil ? .noval : .map(result.resmatch!))
   )
 
-  let resdata = transform(.map(dataMap), resform)
+  let resdata = transformKept(.map(dataMap), resform)
   result.resdata = resdata
   return resdata
 }

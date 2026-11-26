@@ -636,6 +636,24 @@ object SdkTestMain {
     eq("featureAdd.fallback", "a,z2,z3,b,z4", names())
   }
 
+  // ---- transformResponse ---------------------------------------------------
+
+  // A 204 has no body: struct's UNDEF is not null, so held as resdata an
+  // update would take it for data and replace the entity's.
+  private def testTransformResponseNoValue(): Unit = {
+    val client = ProjectNameSDK.testSDK()
+    val utility = client.getUtility()
+    val ctxmap = new LinkedHashMap[String, Object]()
+    ctxmap.put("opname", "update"); ctxmap.put("client", client); ctxmap.put("utility", utility)
+    val ctx = utility.makeContext(ctxmap, client.getRootCtx())
+    ctx.result = new Result(om("ok" -> java.lang.Boolean.TRUE, "status" -> Integer.valueOf(204)))
+    ctx.spec = new Spec(om("step" -> ""))
+    ctx.point = om("transform" -> om("res" -> "`body.data`"))
+    val out = utility.transformResponse(ctx)
+    check("transformResponse.noValue", out == null, "returned " + out)
+    check("transformResponse.noValue.resdata", ctx.result.resdata == null, "resdata " + ctx.result.resdata)
+  }
+
   // ---- end-to-end entity CRUD through the mock transport -------------------
 
   private def testEntityCrud(): Unit = {
@@ -979,7 +997,8 @@ object SdkTestMain {
       "redirectOnTheSameOrigin" -> testRedirectOnTheSameOrigin,
       "redirectBody" -> testRedirectBody, "redirectMethods" -> testRedirectMethods,
       "redirectLimit" -> testRedirectLimit,
-      "redirectWithoutAContext" -> testRedirectWithoutAContext)
+      "redirectWithoutAContext" -> testRedirectWithoutAContext,
+      "transformResponseNoValue" -> testTransformResponseNoValue)
 
     suites.foreach { case (name, fn) =>
       try fn()

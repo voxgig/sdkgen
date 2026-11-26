@@ -1,5 +1,5 @@
--- VENDORED: @voxgig/sekreto sdk-20261016-0845-0 (lua/src/sekreto/plugins/aws.lua)
--- Source: https://github.com/voxgig/sekreto @ ee837130bf444ca46a5a46181bdd6743e118898c  [tag: sdk-20261016-0845-0]
+-- VENDORED: @voxgig/sekreto sdk-20261125-1959-0 (lua/src/sekreto/plugins/aws.lua)
+-- Source: https://github.com/voxgig/sekreto @ ee837130bf444ca46a5a46181bdd6743e118898c  [tag: sdk-20261125-1959-0]
 -- License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 -- The aws plugin: Secrets Manager and SSM Parameter Store, two kinds in
 -- one module because they share SigV4 request signing and one signed

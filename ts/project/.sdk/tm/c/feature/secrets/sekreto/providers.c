@@ -1,5 +1,5 @@
-// VENDORED: @voxgig/sekreto sdk-20261016-0845-0 (c/src/providers.c)
-// Source: https://github.com/voxgig/sekreto @ ee837130bf444ca46a5a46181bdd6743e118898c  [tag: sdk-20261016-0845-0]
+// VENDORED: @voxgig/sekreto sdk-20261125-1959-0 (c/src/providers.c)
+// Source: https://github.com/voxgig/sekreto @ ee837130bf444ca46a5a46181bdd6743e118898c  [tag: sdk-20261125-1959-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 /* What a provider is, what its declarative form looks like, how a provider
  * kind becomes a voxgig/plugin definition - and the four BUILT-IN kinds.

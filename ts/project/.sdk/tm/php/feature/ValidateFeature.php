@@ -4,6 +4,7 @@ declare(strict_types=1);
 // ProjectName SDK validate feature
 
 require_once __DIR__ . '/BaseFeature.php';
+require_once __DIR__ . '/../core/Helpers.php';
 require_once __DIR__ . '/../schema.php';
 
 // Payload validation against the model's own field types. The php port of
@@ -11,10 +12,10 @@ require_once __DIR__ . '/../schema.php';
 //
 // The specs are NOT written here and not written in the model either: every
 // entity field already carries a canonical type sentinel ($STRING, $INTEGER,
-// the $ONE union for an OpenAPI multi-type), which is the same vocabulary
-// Struct::validate speaks. The generator maps them once (helpers/canonSpec)
-// and emits ProjectNameSchema::entityspec(), so a field whose type changes in
-// the API spec changes what this feature enforces with no edit anywhere.
+// a union for an OpenAPI multi-type). The generator maps them once
+// (helpers/canonSpec) into the vocabulary Struct::validate speaks and emits
+// ProjectNameSchema::entityspec(), so a field whose type changes in the API
+// spec changes what this feature enforces with no edit anywhere.
 //
 // WHAT IS CHECKED
 //   outbound (PreSpec)  the payload the caller asked to send, against
@@ -265,7 +266,7 @@ class ProjectNameValidateFeature extends ProjectNameBaseFeature
         $injdef = (object)['errs' => $errs];
 
         try {
-            \Voxgig\Struct\Struct::validate($data, $spec, $injdef);
+            \Voxgig\Struct\Struct::validate(ProjectNameHelpers::empty_maps($data, $spec), $spec, $injdef);
         } catch (\Throwable $e) {
             // A spec this port cannot run at all (rather than a payload that
             // fails it) must not take the operation down with it: report it

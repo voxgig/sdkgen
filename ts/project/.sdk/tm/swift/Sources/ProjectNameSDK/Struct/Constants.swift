@@ -1,3 +1,6 @@
+// VENDORED: @voxgig/struct 0.1.3 (swift/Sources/VoxgigStruct/Constants.swift)
+// Source: https://github.com/voxgig/struct @ 358af9d51c90b589a295a70b2165dbe4629eaf8e  [tag: sdk-20261125-1959-0]
+// License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 // Constants — mirror typescript/src/StructUtility.ts. Kept in canonical
 // SCREAMING_SNAKE so cross-port grepping is easy.
 
@@ -15,10 +18,9 @@ public let MODENAME: [Int: String] = [
   M_VAL: "val",
 ]
 
-// The names a PLACEMENT error uses. Distinct from MODENAME: canonical
-// (typescript/src/StructUtility.ts PLACEMENT) calls M_VAL "value" and BOTH
-// key modes just "key", and the corpus pins that wording through
-// transform.apply.
+// What a placement is CALLED in an error message: both key phases read as
+// "key", and the value phase as "value" (canonical's PLACEMENT map). Distinct
+// from MODENAME, which names the phase itself.
 public let PLACEMENT: [Int: String] = [
   M_KEYPRE: "key",
   M_KEYPOST: "key",
@@ -119,5 +121,6 @@ public let R_META_PATH = try! NSRegularExpression(pattern: #"^([^$]+)\$([=~])(.+
 public let R_INJECTION_FULL = try! NSRegularExpression(pattern: #"^`(\$[A-Z]+|[^`]*)[0-9]*`$"#)
 public let R_INJECTION_PARTIAL = try! NSRegularExpression(pattern: #"`([^`]+)`"#)
 public let R_TRANSFORM_NAME = try! NSRegularExpression(pattern: #"`\$([A-Z]+)`"#)
+public let R_CHECKER_NAME = try! NSRegularExpression(pattern: #"^\$[A-Z]+$"#)
 
 public let MAXDEPTH = 32

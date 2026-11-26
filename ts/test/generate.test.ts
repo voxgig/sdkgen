@@ -1295,7 +1295,7 @@ describe('generate', () => {
     const out = await generate(['ts'], undefined, [
       "main: kit: feature: netsim: config: options: sep: 'a|b'",
       "main: kit: feature: netsim: config: options: tick: 'x`y'",
-      "main: kit: feature: netsim: config: optspec: shape: ['`$ONE`', '`$NUMBER`', '`$MAP`']",
+      "main: kit: feature: netsim: config: optspec: shape: ['`$NOF`', { min: 1 }, '`$NUMBER`', '`$MAP`']",
     ].join('\n'), undefined, ['test', 'netsim'])
     for (const doc of ['ts/README.md', 'ts/REFERENCE.md']) {
       deepStrictEqual(wellFormed(out[doc]), [], doc)

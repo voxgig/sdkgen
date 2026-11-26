@@ -31,7 +31,7 @@ main: kit: feature: validate: {
     optspec: {
       onInvalid: '`$FUNCTION`'
 
-      mode: ['`$ONE`', ['`$EXACT`', 'throw'], ['`$EXACT`', 'report']]
+      mode: ['`$NOF`', { min: 1 }, ['`$EXACT`', 'throw'], ['`$EXACT`', 'report']]
     }
   }
 

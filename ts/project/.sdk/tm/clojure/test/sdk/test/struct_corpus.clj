@@ -237,15 +237,28 @@
     (run-set "transform.apply" (gp transformS "apply")
              (fn [vin] (s/transform (vget vin "data") (vget vin "spec"))))
 
-    (run-set "validate.basic" (gp validateS "basic") {"null" false}
-             (fn [vin] (s/validate (vget vin "data") (vget vin "spec"))))
-    (doseq [g ["child" "one" "exact"]]
-      (run-set (str "validate." g) (gp validateS g)
-               (fn [vin] (s/validate (vget vin "data") (vget vin "spec")))))
-    (run-set "validate.invalid" (gp validateS "invalid") {"null" false}
-             (fn [vin] (s/validate (vget vin "data") (vget vin "spec"))))
-    (run-set "validate.special" (gp validateS "special")
-             (fn [vin] (s/validate (vget vin "data") (vget vin "spec") (vget vin "inj"))))
+    ;; Each validate group, and its flags. The check below fails on a group
+    ;; the corpus holds and this table leaves out.
+    (let [validate-groups [["basic" {"null" false}] ["child" {}] ["nof" {"null" false}]
+                           ["exact" {}] ["invalid" {"null" false}] ["special" {}]
+                           ["directive" {"null" false}] ["all" {"null" false}]
+                           ["len" {"null" false}] ["range" {"null" false}]
+                           ["rest" {"null" false}]
+                           ["like" {"null" false}] ["unknown" {"null" false}]]
+          named (set (map first validate-groups))
+          groups (filter #(instance? Map (gp validateS %)) (keys validateS))
+          unrun (remove named groups)]
+      (doseq [[g flags] validate-groups]
+        (run-set (str "validate." g) (gp validateS g) flags
+                 (fn [vin] (s/validate (vget vin "data") (vget vin "spec") (vget vin "inj")))))
+      (cond
+        (empty? groups)
+        (record! "validate" "groups" false "the corpus holds no validate group")
+
+        (seq unrun)
+        (record! "validate" "groups" false
+                 (str "the corpus holds validate groups this runner does not run: "
+                      (str/join ", " unrun)))))
 
     (doseq [g ["basic" "operators" "edge" "alts"]]
       (run-set (str "select." g) (gp selectS g)

@@ -333,7 +333,7 @@ public final class ProjectNameSDK {
     let testopts = clone(.map(testoptsIn ?? ProjectNameSdk.VMap())).asMap ?? ProjectNameSdk.VMap()
     testopts.entries["active"] = .bool(true)
 
-    _ = setpath(.map(sdkopts), jtp("feature", "test"), .map(testopts))
+    _ = try? setpath(.map(sdkopts), jtp("feature", "test"), .map(testopts))
 
     let sdk = ProjectNameSDK(sdkopts)
     sdk.mode = "test"

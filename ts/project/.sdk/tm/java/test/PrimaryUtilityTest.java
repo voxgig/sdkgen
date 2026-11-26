@@ -1165,4 +1165,17 @@ public class PrimaryUtilityTest {
       return result;
     });
   }
+
+  // A 204 has no body: struct's UNDEF is not null, so held as resdata an
+  // update would take it for data and replace the entity's.
+  @Test
+  public void transformResponseNoValue() {
+    Context ctx = OmniResolver.omniCtx(fhMap(
+        "result", fhMap("ok", true, "status", 204, "body", null),
+        "spec", fhMap("step", ""),
+        "point", fhMap("transform", fhMap("res", "`body.data`"))), client(), utility());
+
+    assertNull(utility().transformResponse.apply(ctx));
+    assertNull(ctx.result.resdata);
+  }
 }

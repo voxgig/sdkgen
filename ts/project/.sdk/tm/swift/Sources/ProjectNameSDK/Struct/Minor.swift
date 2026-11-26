@@ -1,3 +1,6 @@
+// VENDORED: @voxgig/struct 0.1.3 (swift/Sources/VoxgigStruct/Minor.swift)
+// Source: https://github.com/voxgig/struct @ 358af9d51c90b589a295a70b2165dbe4629eaf8e  [tag: sdk-20261125-1959-0]
+// License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 // Minor utilities — type predicates, property access, slicing,
 // formatting. Each function mirrors its canonical TS counterpart in
 // typescript/src/StructUtility.ts.
@@ -38,7 +41,7 @@ public func typify(_ v: Value) -> Int {
   case .string: return T_scalar | T_string
   case .list: return T_node | T_list
   case .map, .sentinel: return T_node | T_map
-  case .function, .native: return T_scalar | T_function
+  case .function, .native: return T_scalar | T_function  // PATCH (the SDK's opaque native case, pending upstream fix)
   }
 }
 
@@ -176,21 +179,66 @@ public func strkey(_ key: Value) -> String {
   }
 }
 
+// JavaScript's String(n) for a number.
+func numtext(_ n: Value) -> String {
+  switch n {
+  case .int(let i): return String(i)
+  case .double(let d):
+    if d.isNaN { return "NaN" }
+    if d.isInfinite { return 0 < d ? "Infinity" : "-Infinity" }
+    return JSON.formatDouble(d)
+  default: return ""
+  }
+}
+
+// MARK: - list keys
+
+// "0", or digits with no leading zero, after a "-" when signed: the text
+// JavaScript's String(n) prints for an integer, so "01", "+1", " 1", "-0" and
+// "1.0" name no element.
+func isListIndex(_ key: String, signed: Bool = false) -> Bool {
+  var digits = Array(key.utf8)
+  if signed, UInt8(ascii: "-") == digits.first {
+    digits.removeFirst()
+    if UInt8(ascii: "0") == digits.first { return false }
+  }
+  guard let first = digits.first else { return false }
+  if UInt8(ascii: "0") == first { return 1 == digits.count }
+  return digits.allSatisfy { UInt8(ascii: "0") <= $0 && $0 <= UInt8(ascii: "9") }
+}
+
+// The integer a list key names, read or write: an integral number, or a string
+// isListIndex accepts signed. Past Int's range it saturates, so a read misses
+// and a write appends or prepends, as a JavaScript number that large does.
+func listKey(_ key: Value) -> Int? {
+  switch key {
+  case .int(let n):
+    return Int(exactly: n) ?? (n < 0 ? Int.min : Int.max)
+  case .double(let d):
+    guard d.isFinite, d == d.rounded() else { return nil }
+    return Int(exactly: d) ?? (d < 0 ? Int.min : Int.max)
+  case .string(let s):
+    guard isListIndex(s, signed: true) else { return nil }
+    return Int(s) ?? (s.hasPrefix("-") ? Int.min : Int.max)
+  default:
+    return nil
+  }
+}
+
+// The element a list read selects: a list key that is not negative.
+func listIndex(_ key: Value) -> Int? {
+  guard let i = listKey(key), 0 <= i else { return nil }
+  return i
+}
+
 // MARK: - getelem
 
 public func getelem(_ val: Value, _ key: Value, _ alt: Value = .noval) -> Value {
-  guard case .list(let l) = val else { return alt }
-  var k: Int? = nil
-  switch key {
-  case .int(let n): k = Int(n)
-  case .double(let d): k = Int(d)
-  case .string(let s): k = Int(s)
-  default: break
-  }
-  guard var idx = k else { return alt }
-  if idx < 0 { idx = l.items.count + idx }
-  guard idx >= 0, idx < l.items.count else { return alt }
-  let v = l.items[idx]
+  guard case .list(let l) = val, var i = listKey(key) else { return alt }
+  // A negative key counts from the end.
+  if i < 0 { i += l.items.count }
+  guard 0 <= i, i < l.items.count else { return alt }
+  let v = l.items[i]
   // Group A: a null (or absent) slot counts as "no value" → alt.
   return (v.isNoval || v.isNull) ? alt : v
 }
@@ -200,7 +248,9 @@ public func getelem(_ val: Value, _ key: Value, _ alt: Value = .noval) -> Value 
 public func getprop(_ val: Value, _ key: Value, _ alt: Value = .noval) -> Value {
   switch val {
   case .list(let l):
-    return getelem(.list(l), key, alt)
+    guard let i = listIndex(key), i < l.items.count else { return alt }
+    let v = l.items[i]
+    return (v.isNoval || v.isNull) ? alt : v
   case .map(let m):
     let k = strkey(key)
     if k.isEmpty { return alt }
@@ -216,17 +266,8 @@ public func getprop(_ val: Value, _ key: Value, _ alt: Value = .noval) -> Value 
 public func lookup(_ val: Value, _ key: Value) -> Value {
   switch val {
   case .list(let l):
-    var k: Int? = nil
-    switch key {
-    case .int(let n): k = Int(n)
-    case .double(let d): k = Int(d)
-    case .string(let s): k = Int(s)
-    default: break
-    }
-    guard var idx = k else { return .noval }
-    if idx < 0 { idx = l.items.count + idx }
-    guard idx >= 0, idx < l.items.count else { return .noval }
-    return l.items[idx]
+    guard let i = listIndex(key), i < l.items.count else { return .noval }
+    return l.items[i]
   case .map(let m):
     let k = strkey(key)
     if k.isEmpty { return .noval }
@@ -243,24 +284,35 @@ public func lookup(_ val: Value, _ key: Value) -> Value {
 
 // MARK: - setprop / delprop
 
+/// Throws a `StructError` when `val` is condensed and `key` is a valid key.
 @discardableResult
-public func setprop(_ val: Value, _ key: Value, _ newval: Value) -> Value {
+public func setprop(_ val: Value, _ key: Value, _ newval: Value) throws -> Value {
+  if !iskey(key) { return val }
+  if iscondensed(val) { throw StructError(S_condimmutable) }
+  return _setprop(val, key, newval)
+}
+
+/// Throws a `StructError` when `val` is condensed and `key` is a valid key.
+@discardableResult
+public func delprop(_ val: Value, _ key: Value) throws -> Value {
+  if !iskey(key) { return val }
+  if iscondensed(val) { throw StructError(S_condimmutable) }
+  return _delprop(val, key)
+}
+
+// The library's own writes. They do not refuse a condensed node, so a write
+// inside inject, transform, validate or select never throws.
+@discardableResult
+func _setprop(_ val: Value, _ key: Value, _ newval: Value) -> Value {
   // Sentinel handling.
   if case .sentinel(let s) = newval {
     if s === SKIP { return val }
-    if s === DELETE { return delprop(val, key) }
+    if s === DELETE { return _delprop(val, key) }
   }
-  if newval.isNoval { return delprop(val, key) }
+  if newval.isNoval { return _delprop(val, key) }
   switch val {
   case .list(let l):
-    var k: Int? = nil
-    switch key {
-    case .int(let n): k = Int(n)
-    case .double(let d): k = Int(d)
-    case .string(let s): k = Int(s)
-    default: break
-    }
-    guard let idx = k else { return val }
+    guard let idx = listKey(key) else { return val }
     if idx >= 0 {
       // Set or append; an out-of-range index clamps to the end (no null gap).
       let target = min(idx, l.items.count)
@@ -281,19 +333,11 @@ public func setprop(_ val: Value, _ key: Value, _ newval: Value) -> Value {
 }
 
 @discardableResult
-public func delprop(_ val: Value, _ key: Value) -> Value {
+func _delprop(_ val: Value, _ key: Value) -> Value {
   switch val {
   case .list(let l):
-    var k: Int? = nil
-    switch key {
-    case .int(let n): k = Int(n)
-    case .double(let d): k = Int(d)
-    case .string(let s): k = Int(s)
-    default: break
-    }
-    guard let idx = k else { return val }
     // A negative or out-of-range index is a no-op (no end-relative delete).
-    if idx >= 0, idx < l.items.count { l.items.remove(at: idx) }
+    if let idx = listIndex(key), idx < l.items.count { l.items.remove(at: idx) }
     return val
   case .map(let m):
     let k = strkey(key)
@@ -317,17 +361,8 @@ public func keysof(_ v: Value) -> [String] {
 public func haskey(_ v: Value, _ key: Value) -> Bool {
   switch v {
   case .list(let l):
-    var k: Int? = nil
-    switch key {
-    case .int(let n): k = Int(n)
-    case .double(let d): k = Int(d)
-    case .string(let s): k = Int(s)
-    default: break
-    }
-    guard var idx = k else { return false }
-    if idx < 0 { idx = l.items.count + idx }
-    guard idx >= 0, idx < l.items.count else { return false }
-    let v = l.items[idx]
+    guard let i = listIndex(key), i < l.items.count else { return false }
+    let v = l.items[i]
     return !(v.isNoval || v.isNull)
   case .map(let m):
     let k = strkey(key)
@@ -522,10 +557,10 @@ public func stringify(_ v: Value, _ maxlen: Int? = nil) -> String {
   case .double(let d): s = JSON.formatDouble(d)
   case .string(let str): s = str
   case .sentinel(let sen): s = sen.marker
-  case .function, .native: s = "<function>"
+  case .function, .native: s = "<function>"  // PATCH (the SDK's opaque native case, pending upstream fix)
   case .list, .map:
     s = emitSorted(v)
-    s = s.replacingOccurrences(of: "\"", with: "")
+    s = String(String.UnicodeScalarView(s.unicodeScalars.filter { $0 != "\"" }))
   }
   if let m = maxlen, m > 0, s.count > m {
     if m < 3 {
@@ -538,23 +573,41 @@ public func stringify(_ v: Value, _ maxlen: Int? = nil) -> String {
 }
 
 private func emitSorted(_ v: Value) -> String {
+  // Append into a single buffer instead of concatenating/joining a fresh
+  // string at every level (which re-copied the whole subtree per ancestor —
+  // O(n * depth)). Output is byte-identical; this is O(n).
+  var out = ""
+  emitSortedInto(v, &out)
+  return out
+}
+
+private func emitSortedInto(_ v: Value, _ out: inout String) {
   switch v {
   case .list(let l):
-    if l.items.isEmpty { return "[]" }
-    return "[" + l.items.map { emitSorted($0) }.joined(separator: ",") + "]"
+    if l.items.isEmpty { out += "[]"; return }
+    out += "["
+    for (i, item) in l.items.enumerated() {
+      if i > 0 { out += "," }
+      emitSortedInto(item, &out)
+    }
+    out += "]"
   case .map(let m):
-    if m.entries.isEmpty { return "{}" }
-    let keys = m.entries.keys.sorted()
-    return "{"
-      + keys.map { JSON.quotedKey($0) + ":" + emitSorted(m.entries[$0]!) }.joined(separator: ",")
-      + "}"
-  case .noval, .null: return "null"
-  case .bool(let b): return b ? "true" : "false"
-  case .int(let n): return String(n)
-  case .double(let d): return JSON.formatDouble(d)
-  case .string(let s): return JSON.quotedKey(s)
-  case .sentinel(let s): return "\"" + s.marker + "\""
-  case .function, .native: return "\"<function>\""
+    if m.entries.isEmpty { out += "{}"; return }
+    out += "{"
+    for (i, k) in m.entries.keys.sorted().enumerated() {
+      if i > 0 { out += "," }
+      out += JSON.quotedKey(k)
+      out += ":"
+      emitSortedInto(m.entries[k]!, &out)
+    }
+    out += "}"
+  case .noval, .null: out += "null"
+  case .bool(let b): out += b ? "true" : "false"
+  case .int(let n): out += String(n)
+  case .double(let d): out += JSON.formatDouble(d)
+  case .string(let s): out += JSON.quotedKey(s)
+  case .sentinel(let s): out += "\"" + s.marker + "\""
+  case .function, .native: out += "\"<function>\""  // PATCH (the SDK's opaque native case, pending upstream fix)
   }
 }
 
@@ -592,14 +645,74 @@ private func cloneInner(_ v: Value, _ seen: inout [ObjectIdentifier: Value]) -> 
 extension JSON {
   internal static func quotedKey(_ s: String) -> String { quoted(s) }
 
+  // Canonical's numbers are JS numbers and their text is ECMA-262's
+  // Number::toString, which is NOT `Double.description`. Both pick the same
+  // SHORTEST round-tripping digits - "%.17g" printed 4.4 as 4.4000000000000004,
+  // and `validate/basic` asserts "Expected integer, but found decimal: 4.4."
+  // verbatim - but they place the decimal point differently. Swift goes
+  // exponential from 1e16 and pads the exponent to two digits, so 1e16 printed
+  // as "1e+16" where JS gives "10000000000000000", 1e-6 as "1e-06" where JS
+  // gives "0.000001", and 1e-7 as "1e-07" where JS gives "1e-7". So take the
+  // digits from `description` and re-place the point by ECMA's rules.
   public static func formatDouble(_ d: Double) -> String {
     if d.isNaN || d.isInfinite { return "null" }
     if d == d.rounded() && abs(d) < 1e16 {
       return String(Int64(d))
     }
-    // Shortest round-trip, which is what canonical's `String(n)` gives.
-    // "%.17g" rendered 4.4 as "4.4000000000000004"; the corpus pins the
-    // canonical spelling through validate.basic's decimal type error.
-    return String(d)
+
+    // `description` is "-?<digits>(.<digits>)?(e[+-]<digits>)?".
+    var rep = d.description
+    var sign = ""
+    if rep.hasPrefix("-") {
+      sign = "-"
+      rep.removeFirst()
+    }
+    var exp = 0
+    if let epos = rep.firstIndex(where: { "eE".contains($0) }) {
+      exp = Int(rep[rep.index(after: epos)...]) ?? 0
+      rep = String(rep[..<epos])
+    }
+    var digits: String
+    var point: Int
+    if let dot = rep.firstIndex(of: ".") {
+      point = rep.distance(from: rep.startIndex, to: dot)
+      digits = String(rep[..<dot]) + String(rep[rep.index(after: dot)...])
+    } else {
+      point = rep.count
+      digits = rep
+    }
+
+    // ECMA-262 Number::toString names `s`, `k` and `n`: `s` is the digits with
+    // no leading or trailing zero, `k` its length, and `s * 10^(n-k)` the value.
+    var n = point + exp
+    while digits.hasPrefix("0") {
+      digits.removeFirst()
+      n -= 1
+    }
+    while digits.hasSuffix("0") { digits.removeLast() }
+    let k = digits.count
+    if 0 == k { return "0" }
+
+    // Integral, point past the last digit: pad with zeros.
+    if k <= n && n <= 21 {
+      return sign + digits + String(repeating: "0", count: n - k)
+    }
+    // Point falls inside the digits.
+    if 0 < n && n <= 21 {
+      let cut = digits.index(digits.startIndex, offsetBy: n)
+      return sign + String(digits[..<cut]) + "." + String(digits[cut...])
+    }
+    // Point falls just left of them: "0." and up to five leading zeros.
+    if -6 < n && n <= 0 {
+      return sign + "0." + String(repeating: "0", count: -n) + digits
+    }
+    // Exponential, and the exponent carries no leading zero.
+    let esign = (n - 1) < 0 ? "-" : "+"
+    let emag = String(abs(n - 1))
+    if 1 == k {
+      return sign + digits + "e" + esign + emag
+    }
+    let head = digits.index(after: digits.startIndex)
+    return sign + String(digits[..<head]) + "." + String(digits[head...]) + "e" + esign + emag
   }
 }
