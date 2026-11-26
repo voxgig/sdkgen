@@ -50,10 +50,13 @@ import java.util.function.BiFunction;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import JAVAPACKAGE.core.Config;
 import JAVAPACKAGE.core.Feature;
+import JAVAPACKAGE.core.Helpers;
 import JAVAPACKAGE.core.ProjectNameSDK;
 import JAVAPACKAGE.core.SdkEntity;
 import JAVAPACKAGE.feature.SecretsFeature;
@@ -370,6 +373,15 @@ public class SecretsFeatureTest {
 
   static Map<String, Object> memoryStore(String name, String key, String value) {
     return map("kind", "memory", "name", name, "values", map(key, value));
+  }
+
+  // Read from the config, never from a probe: an SDK whose config declares no
+  // auth places no credential, and these tests assert on the one it places.
+  @BeforeEach
+  public void placesCredential() {
+    Map<String, Object> options = Helpers.toMapAny(Config.sharedConfig().get("options"));
+    Assumptions.assumeTrue(null != options && options.containsKey("auth"),
+        "this SDK's config declares no auth, so it places no credential");
   }
 
   // ------------------------------------------------------------------

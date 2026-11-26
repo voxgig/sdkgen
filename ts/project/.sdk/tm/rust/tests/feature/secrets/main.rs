@@ -11,6 +11,18 @@ use RUSTCRATE::{ProjectNameSDK, Value};
 
 const BASE: &str = "http://secrets.test/api";
 
+// Read from the config, never from a probe: an SDK whose config declares no
+// auth places no credential, and these tests assert on the one it places.
+// The test harness has no skip of its own at run time, so the skip is a
+// printed reason.
+fn skipped_without_auth() -> bool {
+    if matches!(getp(&getp(&RUSTCRATE::make_config(), "options"), "auth"), Value::Map(_)) {
+        return false;
+    }
+    println!("SKIP secrets: this SDK's config declares no auth, so it places no credential");
+    true
+}
+
 // ---- the counted transport ---------------------------------------------
 
 #[derive(Clone)]
@@ -305,6 +317,9 @@ fn entity_request(client: &Rc<ProjectNameSDK>, path: &str) -> Option<String> {
 
 #[test]
 fn inactive_leaves_the_apikey_option_exactly_as_it_was() {
+    if skipped_without_auth() {
+        return;
+    }
     let wire = Wire::new();
 
     // Not `sdk()`: the point is a client with the feature OFF.
@@ -342,6 +357,9 @@ fn inactive_leaves_the_apikey_option_exactly_as_it_was() {
 
 #[test]
 fn apikey_option_still_wins_over_the_chain() {
+    if skipped_without_auth() {
+        return;
+    }
     let wire = Wire::new();
 
     // The explicit credential is a CLIENT option, not a feature option -
@@ -389,6 +407,9 @@ fn apikey_option_still_wins_over_the_chain() {
 
 #[test]
 fn an_omitted_apikey_defers_to_the_chain() {
+    if skipped_without_auth() {
+        return;
+    }
     let wire = Wire::new();
     let client = sdk(&wire, vec![providers(vec![memory("APIKEY", "CHAINKEY01")])]);
 
@@ -413,6 +434,9 @@ fn an_omitted_apikey_defers_to_the_chain() {
 
 #[test]
 fn an_explicitly_empty_apikey_also_defers_to_the_chain() {
+    if skipped_without_auth() {
+        return;
+    }
     let wire = Wire::new();
     let client = ProjectNameSDK::new(jo(vec![
         ("base", Value::str(BASE)),
@@ -443,6 +467,9 @@ fn an_explicitly_empty_apikey_also_defers_to_the_chain() {
 // transport injection must honour too.
 #[test]
 fn auth_null_suppresses_the_credential_chain_or_no_chain() {
+    if skipped_without_auth() {
+        return;
+    }
     let wire = Wire::new();
     let client = ProjectNameSDK::new(jo(vec![
         ("base", Value::str(BASE)),
@@ -483,6 +510,9 @@ fn auth_null_suppresses_the_credential_chain_or_no_chain() {
 
 #[test]
 fn auth_null_suppresses_an_explicit_apikey_too() {
+    if skipped_without_auth() {
+        return;
+    }
     let wire = Wire::new();
     let client = ProjectNameSDK::new(jo(vec![
         ("base", Value::str(BASE)),
@@ -511,6 +541,9 @@ fn auth_null_suppresses_an_explicit_apikey_too() {
 
 #[test]
 fn a_miss_everywhere_leaves_the_header_off() {
+    if skipped_without_auth() {
+        return;
+    }
     let wire = Wire::new();
     let client = sdk(
         &wire,
@@ -531,6 +564,9 @@ fn a_miss_everywhere_leaves_the_header_off() {
 // half that must not be "fixed" by making every miss fail.
 #[test]
 fn a_miss_falls_through_to_the_next_provider() {
+    if skipped_without_auth() {
+        return;
+    }
     let wire = Wire::new();
     let asked: Rc<RefCell<i64>> = Rc::new(RefCell::new(0));
     let n = asked.clone();
@@ -557,6 +593,9 @@ fn a_miss_falls_through_to_the_next_provider() {
 
 #[test]
 fn a_callable_provider_is_accepted_verbatim() {
+    if skipped_without_auth() {
+        return;
+    }
     let wire = Wire::new();
     let asked: Rc<RefCell<Vec<String>>> = Rc::new(RefCell::new(Vec::new()));
     let seen = asked.clone();
@@ -585,6 +624,9 @@ fn a_callable_provider_is_accepted_verbatim() {
 
 #[test]
 fn a_provider_error_fails_direct_rather_than_sending() {
+    if skipped_without_auth() {
+        return;
+    }
     // THE RULE, asserted first so a regression reports the leak itself.
     let wire = Wire::new();
     let res = sdk(&wire, vec![providers(vec![broken()])])
@@ -631,6 +673,9 @@ fn a_provider_error_fails_direct_rather_than_sending() {
 
 #[test]
 fn a_provider_error_fails_graphql_rather_than_sending() {
+    if skipped_without_auth() {
+        return;
+    }
     let wire = Wire::new();
     let res = sdk(&wire, vec![providers(vec![broken()])])
         .graphql("{ thing }", Value::empty_map(), Value::empty_map())
@@ -673,6 +718,9 @@ fn a_provider_error_fails_graphql_rather_than_sending() {
 
 #[test]
 fn a_provider_error_fails_the_entity_path_rather_than_sending() {
+    if skipped_without_auth() {
+        return;
+    }
     let wire = Wire::new();
     let err = entity_request(&sdk(&wire, vec![providers(vec![broken()])]), "/thing");
 
@@ -708,6 +756,9 @@ fn a_provider_error_fails_the_entity_path_rather_than_sending() {
 // request rather than send it without a credential.
 #[test]
 fn an_unknown_provider_kind_refuses_rather_than_sending() {
+    if skipped_without_auth() {
+        return;
+    }
     let wire = Wire::new();
     let res = sdk(
         &wire,
@@ -744,6 +795,9 @@ const MALFORMED_MSG: &str = "sekreto: not a provider or a provider spec";
 
 #[test]
 fn a_malformed_provider_entry_refuses_rather_than_being_dropped() {
+    if skipped_without_auth() {
+        return;
+    }
     // CONTROL first: the same construction with a WORKING provider reaches
     // the transport exactly once, carrying its credential. Without this a
     // zero below could mean UNWIRED rather than REFUSED.
@@ -812,6 +866,9 @@ fn a_malformed_provider_entry_refuses_rather_than_being_dropped() {
 // an empty or duplicated one is a kind nothing can name.
 #[test]
 fn the_selected_plugin_kinds_have_distinct_names() {
+    if skipped_without_auth() {
+        return;
+    }
     let defs = RUSTCRATE::feature::secrets::plugins::definitions();
     let mut names: Vec<String> = defs.iter().map(|d| d.name.clone()).collect();
     let count = names.len();
@@ -827,6 +884,9 @@ fn the_selected_plugin_kinds_have_distinct_names() {
 
 #[test]
 fn a_selected_plugin_kind_is_in_the_sdk_vocabulary() {
+    if skipped_without_auth() {
+        return;
+    }
     let defs = RUSTCRATE::feature::secrets::plugins::definitions();
     if !defs.iter().any(|d| "hashicorp" == d.name) {
         // No vault group in this project's model: nothing to assert.
@@ -860,6 +920,9 @@ fn a_selected_plugin_kind_is_in_the_sdk_vocabulary() {
 // failing with the original error long after the vault recovered.
 #[test]
 fn a_provider_recovers_after_a_transient_failure() {
+    if skipped_without_auth() {
+        return;
+    }
     let wire = Wire::new();
     let calls = Rc::new(RefCell::new(0i64));
     let n = calls.clone();
@@ -897,6 +960,9 @@ fn a_provider_recovers_after_a_transient_failure() {
 // `cache: false` is documented as "every resolve asks the chain again".
 #[test]
 fn cache_false_asks_the_chain_on_every_request() {
+    if skipped_without_auth() {
+        return;
+    }
     let wire = Wire::new();
     let calls = Rc::new(RefCell::new(0i64));
     let n = calls.clone();
@@ -933,6 +999,9 @@ fn cache_false_asks_the_chain_on_every_request() {
 // resolution after a miss meant the chain was never asked again for the life
 #[test]
 fn cache_true_re_asks_after_a_miss() {
+    if skipped_without_auth() {
+        return;
+    }
     let wire = Wire::new();
     let calls = Rc::new(RefCell::new(0i64));
     let present = Rc::new(RefCell::new(false));
@@ -982,6 +1051,9 @@ fn cache_true_re_asks_after_a_miss() {
 // fix above must not turn every request into a chain walk.
 #[test]
 fn cache_true_keeps_a_hit() {
+    if skipped_without_auth() {
+        return;
+    }
     let wire = Wire::new();
     let calls = Rc::new(RefCell::new(0i64));
     let n = calls.clone();
@@ -1011,6 +1083,9 @@ fn cache_true_keeps_a_hit() {
 // stop going out.
 #[test]
 fn an_uncached_miss_retracts_the_credential() {
+    if skipped_without_auth() {
+        return;
+    }
     let wire = Wire::new();
     let calls = Rc::new(RefCell::new(0i64));
     let n = calls.clone();
@@ -1047,6 +1122,9 @@ fn an_uncached_miss_retracts_the_credential() {
 
 #[test]
 fn the_secret_name_is_configurable() {
+    if skipped_without_auth() {
+        return;
+    }
     let wire = Wire::new();
     let client = sdk(
         &wire,
@@ -1065,6 +1143,9 @@ fn the_secret_name_is_configurable() {
 
 #[test]
 fn sekreto_is_live_for_arbitrary_secrets_and_redaction() {
+    if skipped_without_auth() {
+        return;
+    }
     let wire = Wire::new();
     let client = sdk(
         &wire,
@@ -1114,6 +1195,9 @@ fn bodyof(call: &Call) -> Value {
 
 #[test]
 fn the_refresh_token_buys_an_access_token_and_the_request_carries_it() {
+    if skipped_without_auth() {
+        return;
+    }
     let wire = Wire::new();
     let client = exchange_sdk(&wire, vec![exchange(vec![])]);
 
@@ -1133,6 +1217,9 @@ fn the_refresh_token_buys_an_access_token_and_the_request_carries_it() {
 
 #[test]
 fn an_explicit_exchange_refresh_wins_over_the_chain() {
+    if skipped_without_auth() {
+        return;
+    }
     let wire = Wire::new();
     let client = exchange_sdk(
         &wire,
@@ -1151,6 +1238,9 @@ fn an_explicit_exchange_refresh_wins_over_the_chain() {
 
 #[test]
 fn one_purchase_serves_many_requests() {
+    if skipped_without_auth() {
+        return;
+    }
     let wire = Wire::new();
     let client = exchange_sdk(&wire, vec![exchange(vec![])]);
 
@@ -1170,6 +1260,9 @@ fn one_purchase_serves_many_requests() {
 
 #[test]
 fn an_expiry_buys_another_token_and_retries_the_same_request() {
+    if skipped_without_auth() {
+        return;
+    }
     let wire = Wire::new().apistatus(&[401, 200]);
     let client = exchange_sdk(&wire, vec![exchange(vec![])]);
 
@@ -1190,6 +1283,9 @@ fn an_expiry_buys_another_token_and_retries_the_same_request() {
 
 #[test]
 fn the_retry_happens_once_not_in_a_loop() {
+    if skipped_without_auth() {
+        return;
+    }
     // Every API call is refused: a second refusal on a token bought moments
     // ago is a real failure, and spinning on it would hang instead.
     let wire = Wire::new().apistatus(&[401]);
@@ -1205,6 +1301,9 @@ fn the_retry_happens_once_not_in_a_loop() {
 
 #[test]
 fn a_status_outside_exchange_statuses_is_not_an_expiry() {
+    if skipped_without_auth() {
+        return;
+    }
     let wire = Wire::new().apistatus(&[403]);
     let client = exchange_sdk(&wire, vec![exchange(vec![])]);
 
@@ -1218,6 +1317,9 @@ fn a_status_outside_exchange_statuses_is_not_an_expiry() {
 
 #[test]
 fn exchange_statuses_are_configurable() {
+    if skipped_without_auth() {
+        return;
+    }
     let wire = Wire::new().apistatus(&[403, 200]);
     let client = exchange_sdk(
         &wire,
@@ -1236,6 +1338,9 @@ fn exchange_statuses_are_configurable() {
 
 #[test]
 fn the_endpoint_and_field_names_are_configurable_and_the_body_is_serialised() {
+    if skipped_without_auth() {
+        return;
+    }
     // A JSON-HOSTILE refresh token: it must arrive as this literal value,
     // which only holds if the body is serialised rather than concatenated.
     const NASTY: &str = "re\"fresh\\01\nline";
@@ -1274,6 +1379,9 @@ fn the_endpoint_and_field_names_are_configurable_and_the_body_is_serialised() {
 
 #[test]
 fn an_explicit_apikey_is_spent_before_anything_is_bought() {
+    if skipped_without_auth() {
+        return;
+    }
     let wire = Wire::new();
     let client = ProjectNameSDK::new(jo(vec![
         ("base", Value::str(BASE)),
@@ -1304,6 +1412,9 @@ fn an_explicit_apikey_is_spent_before_anything_is_bought() {
 
 #[test]
 fn a_held_apikey_that_has_expired_falls_through_to_the_exchange() {
+    if skipped_without_auth() {
+        return;
+    }
     let wire = Wire::new().apistatus(&[401, 200]);
     let client = ProjectNameSDK::new(jo(vec![
         ("base", Value::str(BASE)),
@@ -1334,6 +1445,9 @@ fn a_held_apikey_that_has_expired_falls_through_to_the_exchange() {
 
 #[test]
 fn no_refresh_token_anywhere_is_an_error_not_an_unauthenticated_call() {
+    if skipped_without_auth() {
+        return;
+    }
     let wire = Wire::new();
     let client = sdk(
         &wire,
@@ -1365,6 +1479,9 @@ fn no_refresh_token_anywhere_is_an_error_not_an_unauthenticated_call() {
 
 #[test]
 fn a_failing_token_endpoint_surfaces_the_api_refusal_not_a_spin() {
+    if skipped_without_auth() {
+        return;
+    }
     // The first purchase succeeds; the second (after the 401) does not.
     let wire = Wire::new().apistatus(&[401]).tokenstatus(&[200, 500]);
     let client = exchange_sdk(&wire, vec![exchange(vec![])]);
@@ -1379,6 +1496,9 @@ fn a_failing_token_endpoint_surfaces_the_api_refusal_not_a_spin() {
 
 #[test]
 fn exchange_auth_null_suppresses_and_is_never_retried() {
+    if skipped_without_auth() {
+        return;
+    }
     let wire = Wire::new().apistatus(&[401]);
     let client = ProjectNameSDK::new(jo(vec![
         ("base", Value::str(BASE)),
@@ -1429,6 +1549,9 @@ fn exchange_auth_null_suppresses_and_is_never_retried() {
 
 #[test]
 fn the_exchange_has_a_raw_transport_when_no_system_fetch_is_given() {
+    if skipped_without_auth() {
+        return;
+    }
     // Port 1 is reserved and never listening, so the connection is refused
     // immediately rather than hanging on a timeout.
     let client = ProjectNameSDK::new(jo(vec![
@@ -1467,6 +1590,9 @@ fn the_exchange_has_a_raw_transport_when_no_system_fetch_is_given() {
 // could not stop.
 #[test]
 fn test_mode_buys_nothing_and_needs_no_token_endpoint() {
+    if skipped_without_auth() {
+        return;
+    }
     let wire = Wire::new();
     let client = RUSTCRATE::test_sdk(
         Value::Noval,
@@ -1504,6 +1630,9 @@ fn test_mode_buys_nothing_and_needs_no_token_endpoint() {
 // The exchange OFF leaves the feature exactly as it was.
 #[test]
 fn exchange_off_leaves_the_feature_exactly_as_it_was() {
+    if skipped_without_auth() {
+        return;
+    }
     let wire = Wire::new();
     let client = sdk(&wire, vec![providers(vec![memory("APIKEY", "PLAINKEY01")])]);
 
@@ -1520,6 +1649,9 @@ fn exchange_off_leaves_the_feature_exactly_as_it_was() {
 // and an unused import would be a warning in a template that ships.
 #[test]
 fn helpers_are_the_ones_the_seam_uses() {
+    if skipped_without_auth() {
+        return;
+    }
     assert_eq!(to_int(&Value::Num(401.0)), 401);
     assert!(matches!(ja(vec![Value::Noval]), Value::List(_)));
 }

@@ -774,6 +774,13 @@ static void t_exchange_test_mode_buys_nothing(void) {
 }
 
 int main(void) {
+  // Read from the config, never from a probe: an SDK whose config declares no
+  // auth places no credential, and these tests assert on the one it places.
+  if (!voxgig_is_map(getpath2(shared_config(), "options", "auth"))) {
+    printf("SKIP [secrets]: this SDK's config declares no auth, so it places no credential\n");
+    return 0;
+  }
+
   RUN(t_inactive_apikey_as_before);
   RUN(t_inactive_no_apikey_no_header);
   RUN(t_apikey_wins_over_chain);

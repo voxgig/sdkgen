@@ -70,6 +70,14 @@ fn present() bool {
     return h.getp(h.getp(cfg, "feature"), "secrets") == .object;
 }
 
+// Read from the config, never from a probe: an SDK whose config declares no
+// auth places no credential, and these tests assert on the one it places.
+fn placesCredential() bool {
+    if (h.getp(h.getp(sdk.make_config(), "options"), "auth") == .object) return true;
+    std.debug.print("\n  SKIP secrets: this SDK's config declares no auth, so it places no credential\n", .{});
+    return false;
+}
+
 // The header the credential travels in: the DEFAULT client's auth.name,
 // lower-cased as prepare_auth sends it. Read from a default client because a
 // test's `auth: null` leaves no name to read. Computed once.
@@ -331,7 +339,7 @@ fn direct_probe(client: *sdk.SDK) Value {
 // ---- inactive --------------------------------------------------------------
 
 test "secrets inactive: apikey option behaves exactly as before" {
-    if (!present()) return error.SkipZigTest;
+    if (!present() or !placesCredential()) return error.SkipZigTest;
     const w = Wire.new();
     const client = live_client(w, h.jo(&.{.{ "apikey", h.vstr("OPTKEY01") }}));
     // No feature options, no install: `extend` hands the feature in, but an
@@ -343,7 +351,7 @@ test "secrets inactive: apikey option behaves exactly as before" {
 }
 
 test "secrets inactive: no apikey means no credential header" {
-    if (!present()) return error.SkipZigTest;
+    if (!present() or !placesCredential()) return error.SkipZigTest;
     const w = Wire.new();
     const client = live_client(w, h.omap());
     _ = direct_probe(client);
@@ -354,7 +362,7 @@ test "secrets inactive: no apikey means no credential header" {
 // ---- the chain ---------------------------------------------------------------
 
 test "secrets active: apikey option still wins over the chain" {
-    if (!present()) return error.SkipZigTest;
+    if (!present() or !placesCredential()) return error.SkipZigTest;
     const w = Wire.new();
     const chain = Scripted.new("CHAINKEY01", null);
     const client = secrets_client(w, h.jo(&.{.{ "apikey", h.vstr("OPTKEY01") }}), secrets_opts(h.ja(&.{chain.fn_val()}), vnull()));
@@ -378,7 +386,7 @@ test "secrets active: apikey option still wins over the chain" {
 }
 
 test "secrets active: an omitted apikey defers to the chain at the transport seam" {
-    if (!present()) return error.SkipZigTest;
+    if (!present() or !placesCredential()) return error.SkipZigTest;
     const w = Wire.new();
     const chain = Scripted.new("CHAINKEY02", null);
     const client = secrets_client(w, h.omap(), secrets_opts(h.ja(&.{chain.fn_val()}), vnull()));
@@ -401,7 +409,7 @@ test "secrets active: an omitted apikey defers to the chain at the transport sea
 }
 
 test "secrets active: the env provider reads the environment handed in" {
-    if (!present()) return error.SkipZigTest;
+    if (!present() or !placesCredential()) return error.SkipZigTest;
     var env = std.process.Environ.Map.init(h.A());
     try env.put("PROJECTENV_TEST_SECRETS_APIKEY", "ENVKEY01");
     sdk.SecretsFeature.set_environ(&env);
@@ -417,7 +425,7 @@ test "secrets active: the env provider reads the environment handed in" {
 }
 
 test "secrets active: a memory spec map is decoded through sekreto's own specof" {
-    if (!present()) return error.SkipZigTest;
+    if (!present() or !placesCredential()) return error.SkipZigTest;
     const w = Wire.new();
     const client = secrets_client(w, h.omap(), secrets_opts(h.ja(&.{
         h.jo(&.{
@@ -436,7 +444,7 @@ test "secrets active: a memory spec map is decoded through sekreto's own specof"
 }
 
 test "secrets active: a miss everywhere leaves the header off" {
-    if (!present()) return error.SkipZigTest;
+    if (!present() or !placesCredential()) return error.SkipZigTest;
     const w = Wire.new();
     const chain = Scripted.new(null, null);
     const client = secrets_client(w, h.omap(), secrets_opts(h.ja(&.{chain.fn_val()}), vnull()));
@@ -450,7 +458,7 @@ test "secrets active: a miss everywhere leaves the header off" {
 }
 
 test "secrets active: a provider ERROR fails the entity op and nothing reaches the wire" {
-    if (!present()) return error.SkipZigTest;
+    if (!present() or !placesCredential()) return error.SkipZigTest;
 
     // CONTROL FIRST, so the zero below is known to be observable at all.
     const control = Wire.new();
@@ -475,7 +483,7 @@ test "secrets active: a provider ERROR fails the entity op and nothing reaches t
 }
 
 test "secrets active: a provider ERROR fails direct() rather than sending" {
-    if (!present()) return error.SkipZigTest;
+    if (!present() or !placesCredential()) return error.SkipZigTest;
 
     const control = Wire.new();
     const good = secrets_client(control, h.omap(), secrets_opts(h.ja(&.{Scripted.new("GOODKEY02", null).fn_val()}), vnull()));
@@ -494,7 +502,7 @@ test "secrets active: a provider ERROR fails direct() rather than sending" {
 }
 
 test "secrets active: a provider ERROR fails graphql() rather than sending" {
-    if (!present()) return error.SkipZigTest;
+    if (!present() or !placesCredential()) return error.SkipZigTest;
 
     const control = Wire.new();
     const good = secrets_client(control, h.omap(), secrets_opts(h.ja(&.{Scripted.new("GOODKEY03", null).fn_val()}), vnull()));
@@ -518,7 +526,7 @@ test "secrets active: a provider ERROR fails graphql() rather than sending" {
 // switch without a fail-closed arm silently DROPS it, the chain gets SHORTER
 // rather than broken, and every request goes out unauthenticated.
 test "secrets active: a malformed providers entry fails closed, never dropped" {
-    if (!present()) return error.SkipZigTest;
+    if (!present() or !placesCredential()) return error.SkipZigTest;
     const notaprovider = "not a provider or a provider spec";
 
     // CONTROL FIRST.
@@ -555,7 +563,7 @@ test "secrets active: a malformed providers entry fails closed, never dropped" {
 }
 
 test "secrets active: an unknown provider kind is refused by name, fail-closed" {
-    if (!present()) return error.SkipZigTest;
+    if (!present() or !placesCredential()) return error.SkipZigTest;
     const w = Wire.new();
     const client = secrets_client(w, h.omap(), secrets_opts(h.ja(&.{
         h.jo(&.{.{ "kind", h.vstr("nosuchkind") }}),
@@ -570,7 +578,7 @@ test "secrets active: an unknown provider kind is refused by name, fail-closed" 
 // reopens it and the operation goes out with the FRESH credential - a failed
 // resolution is never cached.
 test "secrets active: the gate recovers after a transient provider failure" {
-    if (!present()) return error.SkipZigTest;
+    if (!present() or !placesCredential()) return error.SkipZigTest;
     const w = Wire.new();
     const flaky = Scripted.new(null, "vault unreachable");
     const client = secrets_client(w, h.omap(), secrets_opts(h.ja(&.{flaky.fn_val()}), vnull()));
@@ -589,7 +597,7 @@ test "secrets active: the gate recovers after a transient provider failure" {
 }
 
 test "secrets active: an uncached miss retracts a resolved credential" {
-    if (!present()) return error.SkipZigTest;
+    if (!present() or !placesCredential()) return error.SkipZigTest;
     const w = Wire.new();
     const revocable = Scripted.new("REVOCABLE01", null);
     const client = secrets_client(w, h.omap(), secrets_opts(h.ja(&.{revocable.fn_val()}), h.jo(&.{.{ "cache", h.vbool(false) }})));
@@ -606,7 +614,7 @@ test "secrets active: an uncached miss retracts a resolved credential" {
 }
 
 test "secrets active: cache true asks the chain once, cache false every request" {
-    if (!present()) return error.SkipZigTest;
+    if (!present() or !placesCredential()) return error.SkipZigTest;
     const cached = Scripted.new("K", null);
     const cw = Wire.new();
     const cclient = secrets_client(cw, h.omap(), secrets_opts(h.ja(&.{cached.fn_val()}), vnull()));
@@ -628,7 +636,7 @@ test "secrets active: cache true asks the chain once, cache false every request"
 // prepare_auth honours before it ever reads the apikey. Pinned with an
 // explicit apikey AND a resolving chain: nothing may reach the wire.
 test "secrets active: auth null suppresses the credential, chain or no chain" {
-    if (!present()) return error.SkipZigTest;
+    if (!present() or !placesCredential()) return error.SkipZigTest;
     const w = Wire.new();
     const chain = Scripted.new("CHAINKEY03", null);
     const client = secrets_client(w, h.jo(&.{
@@ -649,7 +657,7 @@ test "secrets active: auth null suppresses the credential, chain or no chain" {
 }
 
 test "secrets active: the secret name is configurable" {
-    if (!present()) return error.SkipZigTest;
+    if (!present() or !placesCredential()) return error.SkipZigTest;
     const w = Wire.new();
     const chain = Scripted.new("TOKEN01", null);
     const client = secrets_client(w, h.omap(), secrets_opts(h.ja(&.{chain.fn_val()}), h.jo(&.{.{ "name", h.vstr("api.token") }})));
@@ -660,7 +668,7 @@ test "secrets active: the secret name is configurable" {
 }
 
 test "secrets active: sekreto is live for arbitrary secrets and redaction" {
-    if (!present()) return error.SkipZigTest;
+    if (!present() or !placesCredential()) return error.SkipZigTest;
     const w = Wire.new();
     const client = secrets_client(w, h.omap(), secrets_opts(h.ja(&.{
         h.jo(&.{
@@ -691,7 +699,7 @@ test "secrets active: sekreto is live for arbitrary secrets and redaction" {
 // selected kind fails CLOSED with a reach error, an unselected one fails
 // closed at construction. Either way nothing reaches the wire.
 test "secrets active: a selected plugin kind is in the SDK vocabulary" {
-    if (!present()) return error.SkipZigTest;
+    if (!present() or !placesCredential()) return error.SkipZigTest;
     const w = Wire.new();
     const client = secrets_client(w, h.omap(), secrets_opts(h.ja(&.{
         h.jo(&.{
@@ -717,7 +725,7 @@ test "secrets active: a selected plugin kind is in the SDK vocabulary" {
 }
 
 test "secrets: the extend seam installs a directly constructed feature exactly once" {
-    if (!present()) return error.SkipZigTest;
+    if (!present() or !placesCredential()) return error.SkipZigTest;
     const w = Wire.new();
     const client = secrets_client(w, h.omap(), secrets_opts(h.ja(&.{Scripted.new("K", null).fn_val()}), vnull()));
     try testing.expect(count_named(client, "secrets") == 1);
@@ -742,7 +750,7 @@ fn exchange_opts(providers: Value, extra: Value) Value {
 }
 
 test "secrets exchange: the refresh token buys an access token, and the request carries it" {
-    if (!present()) return error.SkipZigTest;
+    if (!present() or !placesCredential()) return error.SkipZigTest;
     const w = Wire.new();
     const client = secrets_client(w, h.omap(), exchange_opts(h.ja(&.{Scripted.new("REFRESH01", null).fn_val()}), vnull()));
     const res = direct_probe(client);
@@ -756,7 +764,7 @@ test "secrets exchange: the refresh token buys an access token, and the request 
 }
 
 test "secrets exchange: one purchase serves many requests" {
-    if (!present()) return error.SkipZigTest;
+    if (!present() or !placesCredential()) return error.SkipZigTest;
     const w = Wire.new();
     const client = secrets_client(w, h.omap(), exchange_opts(h.ja(&.{Scripted.new("REFRESH01", null).fn_val()}), vnull()));
     _ = direct_probe(client);
@@ -768,7 +776,7 @@ test "secrets exchange: one purchase serves many requests" {
 }
 
 test "secrets exchange: a 401 buys another token and retries the SAME request" {
-    if (!present()) return error.SkipZigTest;
+    if (!present() or !placesCredential()) return error.SkipZigTest;
     const w = Wire.new();
     w.apistatus = &.{ 401, 200 };
     const client = secrets_client(w, h.omap(), exchange_opts(h.ja(&.{Scripted.new("REFRESH01", null).fn_val()}), vnull()));
@@ -782,7 +790,7 @@ test "secrets exchange: a 401 buys another token and retries the SAME request" {
 }
 
 test "secrets exchange: the retry happens once, not in a loop" {
-    if (!present()) return error.SkipZigTest;
+    if (!present() or !placesCredential()) return error.SkipZigTest;
     const w = Wire.new();
     w.apistatus = &.{401};
     const client = secrets_client(w, h.omap(), exchange_opts(h.ja(&.{Scripted.new("REFRESH01", null).fn_val()}), vnull()));
@@ -794,7 +802,7 @@ test "secrets exchange: the retry happens once, not in a loop" {
 }
 
 test "secrets exchange: a status outside exchange.statuses is not an expiry" {
-    if (!present()) return error.SkipZigTest;
+    if (!present() or !placesCredential()) return error.SkipZigTest;
     const w = Wire.new();
     w.apistatus = &.{500};
     const client = secrets_client(w, h.omap(), exchange_opts(h.ja(&.{Scripted.new("REFRESH01", null).fn_val()}), vnull()));
@@ -804,7 +812,7 @@ test "secrets exchange: a status outside exchange.statuses is not an expiry" {
 }
 
 test "secrets exchange: statuses and field names are configurable" {
-    if (!present()) return error.SkipZigTest;
+    if (!present() or !placesCredential()) return error.SkipZigTest;
     const w = Wire.new();
     w.apistatus = &.{ 403, 200 };
     w.tokenpath = "oauth/refresh";
@@ -823,7 +831,7 @@ test "secrets exchange: statuses and field names are configurable" {
 }
 
 test "secrets exchange: an explicit apikey is spent before anything is bought" {
-    if (!present()) return error.SkipZigTest;
+    if (!present() or !placesCredential()) return error.SkipZigTest;
     const w = Wire.new();
     w.apistatus = &.{ 401, 200 };
     const client = secrets_client(w, h.jo(&.{.{ "apikey", h.vstr("HELD01") }}), exchange_opts(h.ja(&.{Scripted.new("REFRESH01", null).fn_val()}), vnull()));
@@ -836,7 +844,7 @@ test "secrets exchange: an explicit apikey is spent before anything is bought" {
 }
 
 test "secrets exchange: an explicit exchange.refresh wins over the chain" {
-    if (!present()) return error.SkipZigTest;
+    if (!present() or !placesCredential()) return error.SkipZigTest;
     const w = Wire.new();
     const client = secrets_client(w, h.omap(), exchange_opts(h.ja(&.{Scripted.new("CHAINREFRESH", null).fn_val()}), h.jo(&.{.{ "refresh", h.vstr("GIVENREFRESH") }})));
     _ = direct_probe(client);
@@ -844,7 +852,7 @@ test "secrets exchange: an explicit exchange.refresh wins over the chain" {
 }
 
 test "secrets exchange: no refresh token anywhere is an error, not an unauthenticated call" {
-    if (!present()) return error.SkipZigTest;
+    if (!present() or !placesCredential()) return error.SkipZigTest;
     const w = Wire.new();
     const client = secrets_client(w, h.omap(), exchange_opts(h.ja(&.{Scripted.new(null, null).fn_val()}), vnull()));
     const res = direct_probe(client);
@@ -854,7 +862,7 @@ test "secrets exchange: no refresh token anywhere is an error, not an unauthenti
 }
 
 test "secrets exchange: a failing token endpoint surfaces the API refusal, not a spin" {
-    if (!present()) return error.SkipZigTest;
+    if (!present() or !placesCredential()) return error.SkipZigTest;
     const w = Wire.new();
     w.apistatus = &.{401};
     w.tokenstatus = &.{ 200, 500 };
@@ -868,7 +876,7 @@ test "secrets exchange: a failing token endpoint surfaces the API refusal, not a
 }
 
 test "secrets exchange: auth null suppresses the credential, refusal or not" {
-    if (!present()) return error.SkipZigTest;
+    if (!present() or !placesCredential()) return error.SkipZigTest;
     const w = Wire.new();
     w.apistatus = &.{401};
     const client = secrets_client(w, h.jo(&.{.{ "auth", h.vnull() }}), exchange_opts(h.ja(&.{Scripted.new("REFRESH01", null).fn_val()}), vnull()));
@@ -878,7 +886,7 @@ test "secrets exchange: auth null suppresses the credential, refusal or not" {
 }
 
 test "secrets exchange: exchange off leaves the feature exactly as it was" {
-    if (!present()) return error.SkipZigTest;
+    if (!present() or !placesCredential()) return error.SkipZigTest;
     const w = Wire.new();
     const client = secrets_client(w, h.omap(), secrets_opts(h.ja(&.{Scripted.new("PLAINKEY01", null).fn_val()}), h.jo(&.{
         .{ "exchange", h.jo(&.{.{ "active", h.vbool(false) }}) },
@@ -889,7 +897,7 @@ test "secrets exchange: exchange off leaves the feature exactly as it was" {
 }
 
 test "secrets exchange: test mode buys nothing and needs no token endpoint" {
-    if (!present()) return error.SkipZigTest;
+    if (!present() or !placesCredential()) return error.SkipZigTest;
     const w = Wire.new();
     const opts = h.jo(&.{
         .{ "system", h.jo(&.{.{ "fetch", w.fetch_fn() }}) },
@@ -907,7 +915,7 @@ test "secrets exchange: test mode buys nothing and needs no token endpoint" {
 // answers with sekreto's own reach error, which proves the path is wired
 // and that its failure is fail-closed - no request reaches the API.
 test "secrets exchange: without system.fetch the bundled HTTP transport buys the token" {
-    if (!present()) return error.SkipZigTest;
+    if (!present() or !placesCredential()) return error.SkipZigTest;
     const opts = h.jo(&.{
         .{ "base", h.vstr("http://127.0.0.1:9/api") },
         .{ "feature", h.jo(&.{.{ "secrets", exchange_opts(h.ja(&.{Scripted.new("REFRESH01", null).fn_val()}), vnull()) }}) },

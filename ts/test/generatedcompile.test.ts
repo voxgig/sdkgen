@@ -1890,6 +1890,42 @@ describe('auth null', () => {
       .filter((l: string) => /^\s*not ok /.test(l))
     ok(probe.ok, 'js secrets suite failed:\n' + failed.join('\n') +
       '\n' + tail(probe.out))
+
+    // A suite that skips exits zero too, so with auth on none may.
+    ok(!/# SKIP/.test(probe.out), 'js: secrets tests were SKIPPED with auth on:\n' +
+      tail(probe.out))
+    const passed = /^# pass (\d+)$/m.exec(probe.out)
+    ok(null != passed && 10 < Number(passed[1]),
+      'js: the secrets suite passed too few tests - it was trimmed, not run:\n' +
+      tail(probe.out))
+  })
+
+
+  test('go: the secrets feature runs with the feature active', async (t) => {
+    const go = toolchain('go')
+    if (null == go) return t.skip('no go toolchain here (go)')
+
+    const sdkroot = Path.join(tmp, 'go-secrets')
+    await generateTo('go', sdkroot,
+      SECRETS_MODEL,
+      ['test', 'log', 'secrets'])
+
+    ok(Fs.existsSync(Path.join(sdkroot, 'test', 'feature', 'secrets', 'secrets_feature_test.go')),
+      'go: the gated secrets suite was not generated')
+
+    const probe = run(go, ['test', './test/feature/secrets/', '-v', '-count=1'], sdkroot)
+    if (probe.timedOut) return t.skip('go: ' + probe.out)
+
+    const failed = probe.out.split(/\r?\n/)
+      .filter((l: string) => /--- FAIL: /.test(l))
+    ok(probe.ok, 'go secrets suite failed:\n' + failed.join('\n') +
+      '\n' + tail(probe.out))
+
+    ok(!/--- SKIP: /.test(probe.out), 'go: secrets tests were SKIPPED with auth on:\n' +
+      tail(probe.out))
+    const passed = (probe.out.match(/^--- PASS: TestSecrets\w+ /gm) || []).length
+    ok(5 < passed, 'go: the secrets suite passed only ' + passed +
+      ' tests - it was trimmed, not run:\n' + tail(probe.out))
   })
 
 
@@ -4567,6 +4603,8 @@ describe('the elixir secrets feature runs from a generated SDK', () => {
       ' tests - it was trimmed, not run:\n' + tail(out))
     strictEqual(counted!.failed, 0,
       'elixir: ' + counted!.failed + ' secrets tests failed:\n' + tail(out))
+    ok(!/\b[1-9]\d* skipped\b/.test(out),
+      'elixir: secrets tests were SKIPPED with auth on:\n' + tail(out))
 
     for (const name of [
       'auth nil suppresses the credential, chain or no chain',
@@ -4579,6 +4617,222 @@ describe('the elixir secrets feature runs from a generated SDK', () => {
   })
 })
 
+
+// The secrets suites assert the credential an SDK places, so for an API that
+// declares no auth each skips and says why; exit zero alone cannot show it.
+// The skip comes before any plugin matters, so this model selects none and
+// no lane needs a TLS or HTTP library.
+const SECRETS_NOAUTH_MODEL = 'main: kit: feature: secrets: active: true'
+
+const SECRETS_SKIP = "this SDK's config declares no auth, so it places no credential"
+  .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+type SecretsSkipLane = {
+  target: string,
+  suite: string,
+  needs: string,
+  // A build step, for targets that have one.
+  prepare?: (sdkroot: string) => Run,
+  command: (sdkroot: string) => { bin: string, args: string[], env?: NodeJS.ProcessEnv } | null,
+  // Every one of these the run prints, and none of what a test that ran prints.
+  skipped: RegExp[],
+  ran: RegExp,
+}
+
+
+function secretsCC(): string | null {
+  const configured = process.env.CC
+  return null == configured || '' === configured
+    ? (toolchain('cc') || toolchain('gcc'))
+    : toolchain(configured)
+}
+
+
+function secretsCXX(): string | null {
+  const configured = process.env.CXX
+  return null == configured || '' === configured
+    ? (toolchain('g++') || toolchain('c++') || toolchain('clang++'))
+    : toolchain(configured)
+}
+
+
+const SECRETS_SKIP_LANES: SecretsSkipLane[] = [
+  {
+    target: 'js',
+    suite: 'test/feature/secrets/Secrets.test.js',
+    needs: 'node',
+    command: (sdkroot) => {
+      linkDeps(sdkroot)
+      return {
+        bin: process.execPath,
+        args: ['--test', '--test-reporter=tap',
+          Path.join('test', 'feature', 'secrets', 'Secrets.test.js')],
+        env: nestedTestEnv(),
+      }
+    },
+    skipped: [
+      new RegExp('^ok \\d+ - secrets # SKIP ' + SECRETS_SKIP + '$', 'm'),
+      new RegExp('^ok \\d+ - secrets exchange # SKIP ' + SECRETS_SKIP + '$', 'm'),
+    ],
+    ran: /^# tests [1-9]/m,
+  },
+  {
+    target: 'go',
+    suite: 'test/feature/secrets/secrets_feature_test.go',
+    needs: 'go',
+    command: () => {
+      const go = toolchain('go')
+      return null == go ? null
+        : { bin: go, args: ['test', './test/feature/secrets/', '-v', '-count=1'] }
+    },
+    skipped: [
+      /^--- SKIP: TestSecretsInactive /m,
+      new RegExp('^\\s+secrets_feature_test\\.go:\\d+: ' + SECRETS_SKIP + '$', 'm'),
+    ],
+    ran: /--- (PASS|FAIL): TestSecrets/,
+  },
+  {
+    target: 'rb',
+    suite: 'test/feature/secrets/secrets_feature_test.rb',
+    needs: 'ruby with minitest',
+    command: () => {
+      const rb = toolchain('ruby')
+      if (null == rb || !probeOk(rb, ['-e', 'require "minitest/autorun"'])) return null
+      return {
+        bin: rb,
+        args: ['-Ilib', '-Itest',
+          Path.join('test', 'feature', 'secrets', 'secrets_feature_test.rb'), '-v'],
+        env: rubyEnv(),
+      }
+    },
+    skipped: [
+      /^([1-9]\d*) runs, 0 assertions, 0 failures, 0 errors, \1 skips$/m,
+      new RegExp('Skipped:\\s*\\nSecretsFeatureTest#\\w+ [^\\n]*\\n' + SECRETS_SKIP + '$', 'm'),
+    ],
+    ran: /^\d+ runs, [1-9]\d* assertions/m,
+  },
+  {
+    target: 'perl',
+    suite: 't/feature/secrets/secrets.t',
+    needs: 'perl with Test::More',
+    command: () => {
+      const perl = toolchain('perl')
+      if (null == perl || !probeOk(perl, ['-MTest::More', '-e', '1'])) return null
+      return { bin: perl, args: ['-Ilib', Path.join('t', 'feature', 'secrets', 'secrets.t')] }
+    },
+    skipped: [new RegExp('^1\\.\\.0 # SKIP ' + SECRETS_SKIP + '$', 'm')],
+    ran: /^(not )?ok \d+/m,
+  },
+  {
+    target: 'zig',
+    suite: 'test/feature/secrets/secrets_test.zig',
+    needs: 'zig 0.16, which the generated build.zig requires',
+    command: () => {
+      const zig = toolchain('zig')
+      if (null == zig) return null
+      const version = run(zig, ['version'], process.cwd())
+      return version.ok && /^0\.16\./.test(version.out.trim())
+        ? { bin: zig, args: ['build', 'test-secrets', '--summary', 'all'] }
+        : null
+    },
+    skipped: [
+      /\b0\/([1-9]\d*) tests passed \(\1 skipped\)/,
+      new RegExp('^ {2}SKIP secrets: ' + SECRETS_SKIP + '$', 'm'),
+    ],
+    ran: /\b[1-9]\d*\/\d+ tests passed/,
+  },
+  {
+    target: 'c',
+    suite: 'tests/feature/secrets/secrets_test.c',
+    needs: 'make and a C compiler',
+    prepare: (sdkroot) => run(toolchain('make')!,
+      ['CC=' + secretsCC(), 'tests/feature/secrets/secrets_test.out'], sdkroot),
+    command: (sdkroot) => null == toolchain('make') || null == secretsCC() ? null
+      : { bin: Path.join(sdkroot, 'tests', 'feature', 'secrets', 'secrets_test.out'), args: [] },
+    skipped: [new RegExp('^SKIP \\[secrets\\]: ' + SECRETS_SKIP + '$', 'm')],
+    ran: /^secrets: ran /m,
+  },
+  {
+    target: 'cpp',
+    suite: 'test/feature/secrets/secrets_test.cpp',
+    needs: 'make and a C++ compiler',
+    prepare: (sdkroot) => run(toolchain('make')!,
+      ['-j2', 'CXX=' + secretsCXX(), 'test/feature/secrets/secrets_test.out'], sdkroot),
+    command: (sdkroot) => null == toolchain('make') || null == secretsCXX() ? null
+      : { bin: Path.join(sdkroot, 'test', 'feature', 'secrets', 'secrets_test.out'), args: [] },
+    skipped: [new RegExp('^ {2}SKIP \\[secrets\\]: ' + SECRETS_SKIP + '$', 'm')],
+    ran: /^secrets: ran /m,
+  },
+  {
+    target: 'ocaml',
+    suite: 'test/feature/secrets/t_secrets.ml',
+    needs: 'ocamlc, make and a C compiler',
+    prepare: (sdkroot) => run(toolchain('make')!,
+      ['CC=' + secretsCC(), 'OCAMLC=' + toolchain('ocamlc'), 'build'], sdkroot),
+    command: () => {
+      const make = toolchain('make')
+      const ocamlc = toolchain('ocamlc')
+      const cc = secretsCC()
+      return null == make || null == ocamlc || null == cc ? null
+        : { bin: make, args: ['CC=' + cc, 'OCAMLC=' + ocamlc, 'test-sdk'] }
+    },
+    skipped: [
+      new RegExp('^SKIP secrets: ' + SECRETS_SKIP + '$', 'm'),
+      /^feature\.secrets: ran 0 check\(s\)$/m,
+      /^SDK PASS [1-9]\d* {2}FAIL 0$/m,
+    ],
+    ran: /^feature\.secrets: ran [1-9]/m,
+  },
+]
+
+
+describe('a secrets suite skips for an SDK that places no credential', () => {
+
+  let tmp = ''
+
+  before(() => {
+    tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-secrets-noauth-'))
+  })
+
+  after(() => {
+    if ('' !== tmp) Fs.rmSync(tmp, { recursive: true, force: true })
+  })
+
+  for (const lane of SECRETS_SKIP_LANES) {
+    test(lane.target + ': the secrets suite skips, saying why, where the API declares no auth',
+      async (t) => {
+        const sdkroot = Path.join(tmp, lane.target)
+        await generateTo(lane.target, sdkroot, SECRETS_NOAUTH_MODEL, ['test', 'log', 'secrets'])
+        ok(Fs.existsSync(Path.join(sdkroot, lane.suite)),
+          lane.target + ': the gated secrets suite was not generated')
+
+        const cmd = lane.command(sdkroot)
+        if (null == cmd) {
+          return t.skip('no usable ' + lane.target + ' toolchain here (' + lane.needs + ')')
+        }
+
+        if (null != lane.prepare) {
+          const built = lane.prepare(sdkroot)
+          if (built.timedOut) return t.skip(lane.target + ': ' + built.out)
+          ok(built.ok, lane.target + ': the secrets suite did not build:\n' + tail(built.out))
+        }
+
+        const probe = run(cmd.bin, cmd.args, sdkroot, cmd.env)
+        if (probe.unlaunchable) {
+          return t.skip(lane.target + ': the toolchain could not be started here: ' +
+            tail(probe.out, 3))
+        }
+        if (probe.timedOut) return t.skip(lane.target + ': ' + probe.out)
+
+        const out = probe.out.replace(/\r\n/g, '\n')
+        ok(probe.ok, lane.target + ' secrets suite failed with no auth:\n' + tail(out))
+        for (const line of lane.skipped) {
+          ok(line.test(out), lane.target + ': the run did not print ' + line + ':\n' + tail(out))
+        }
+        ok(!lane.ran.test(out), lane.target + ': a secrets test ran with no auth:\n' + tail(out))
+      })
+  }
+})
 
 
 
