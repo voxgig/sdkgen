@@ -1096,11 +1096,14 @@ are unused: review folded those packages into WP28 and WP26a.
   `ts/ReadmeExampleTest_ts.ts` (N12; must precede WP29).
   `ts/src/utility.ts:48-52`: `isAuthSuppressed` returns `!isAuthActive(model)`
   (G04), and the twelve `PrepareAuth_<lang>.ts` copies with a local predicate
-  import it (V17, D22). The 20 `Config_<lang>.ts` render auth and server
-  blocks from `configDefinition`'s separate credential field added in WP19
-  (V18). The 30 `ReadmeEntity_<lang>.ts` and `ReadmeRef_<lang>.ts` pass their
-  own language to `canonToType`, and `Schema_<lang>` headers name the language
-  title (N04). `ts/project/.sdk/src/cmp/ts/Entity_ts.ts:55` and
+  import it (V17, D22). Because the default model declares `info.auth: false`,
+  the 20 primary-corpus runners skip `auth-basic`, visibly, when the SDK
+  places no credential, and the compile lanes that assert a sent key declare
+  `config.auth.active: true` (DQ11). The 20 `Config_<lang>.ts` render auth and
+  server blocks from `configDefinition`'s separate credential field added in
+  WP19 (V18). The 30 `ReadmeEntity_<lang>.ts` and `ReadmeRef_<lang>.ts` pass
+  their own language to `canonToType`, and `Schema_<lang>` headers name the
+  language title (N04). `ts/project/.sdk/src/cmp/ts/Entity_ts.ts:55` and
   `js/Entity_js.ts:38` name each entity file with the target's `ext` rather
   than its key, so an aliased ts or js target stops writing `<Class>.<alias>`
   files (A04). `npm run golden`.
@@ -1467,19 +1470,21 @@ are unused: review folded those packages into WP28 and WP26a.
 - **Goal.** Make the constructor's behaviour on a missing required server
   variable a stated contract (DQ17).
 - **Resolves.** M15.
-- **Changes.** Recommended: the go, rust, zig and c READMEs' constructor
-  sections state that the constructor panics (or aborts in c), beside WP29.
-  Otherwise `ts/project/.sdk/tm/go/utility/make_options.go:171-173`,
+- **Changes.** As answered (DQ17, not the recommendation):
+  `ts/project/.sdk/tm/go/utility/make_options.go:171-173`,
   `tm/rust/utility/make_options.rs:144-149`, `tm/zig/core/utility.zig:835-840`
   and `tm/c/utility/make_options.c:124-128` return an error through the
   constructor, a breaking change for generated go and rust SDKs announced as
-  such. `npm run golden`.
+  such. Every generated caller handles it: the README examples, the generated
+  tests, and the go-cli and go-mcp consumers that wrap go. The four READMEs'
+  constructor sections say what the error names. `npm run golden`.
 - **Tests.** `ts/test/generatedcompile.test.ts` `SERVER_LANES` extended to go,
   rust and zig.
 - **Output change.** Docs, or code if changed.
 - **Depends on.** WP29; decision DQ17.
 - **Release.** R3 (sdkgen minor 4.48.0), in sdkgen.
-- **Size.** 4 components or 4 templates, the golden.
+- **Size.** 4 templates, the four constructors and their generated callers,
+  the golden.
 
 ### WP41. Language pack: documents to parity with the wave
 
@@ -1619,11 +1624,12 @@ are independent. After R-AD1, apidef-validate's goldens are refreshed
   other way: The rule lives only in the agent guide's "Where do I make this
   change?" row. Affects WP13.
 - **DQ6. Scope beyond markdown: consumer run-time strings and source comments?
-  (D6)** Recommendation: Include the consumer run-time strings (WP36); one
-  comment pass with no gate (WP38). If answered the other way: Without
-  run-time strings, WP36 keeps only document changes and G08, G09, G10, U81
-  and U82 are not fixed; without comments, WP38 is dropped and its six issues
-  are not fixed. Affects WP36, WP38.
+  (D6)** Answered (2026-11-26): as recommended, both. Recommendation: Include
+  the consumer run-time strings (WP36); one comment pass with no gate (WP38).
+  If answered the other way: Without run-time strings, WP36 keeps only
+  document changes and G08, G09, G10, U81 and U82 are not fixed; without
+  comments, WP38 is dropped and its six issues are not fixed. Affects WP36,
+  WP38.
 - **DQ7. Should generate and doctor fail a target without the `test` feature,
   or with `phase.entity` off?** Answered (2026-11-24): as recommended.
   Recommendation: Yes, a named error with `target add <t>` as the repair. If
@@ -1644,18 +1650,24 @@ are independent. After R-AD1, apidef-validate's goldens are refreshed
   spec in every language, a larger wave plus a parity test. Affects WP19,
   WP29, WP41.
 - **DQ10. Six targets (c, elixir, ocaml, scala, swift, zig) document live
-  tests they lack: delete the sections, or implement the harnesses?**
-  Recommendation: Delete the sections now; harnesses are separate work. If
-  answered the other way: Six live harnesses become new packages after the
-  wave. Affects WP30.
+  tests they lack: delete the sections, or implement the harnesses?** Answered
+  (2026-11-26): as recommended. Recommendation: Delete the sections now;
+  harnesses are separate work. If answered the other way: Six live harnesses
+  become new packages after the wave. Affects WP30.
 - **DQ11. Does `info.auth: false` with no `config.auth` mean no credential
-  code?** Recommendation: Yes: `isAuthSuppressed` returns `!isAuthActive`. If
-  answered the other way: Generated code keeps placing a passed apikey;
-  documents switch to that rule, and G04 becomes a documentation change.
-  Affects WP28.
+  code?** Answered (2026-11-26): as recommended. Landing it found two
+  consumers the question did not name: the 20 primary-corpus runners assert
+  that a credential is placed, and about 14 compile lanes generate the default
+  `info.auth: false` model and assert a sent key. So the runners skip
+  `auth-basic`, visibly, when the SDK places no credential, and those lanes
+  declare `config.auth.active: true` (WP28). Recommendation: Yes:
+  `isAuthSuppressed` returns `!isAuthActive`. If answered the other way:
+  Generated code keeps placing a passed apikey; documents switch to that rule,
+  and G04 becomes a documentation change. Affects WP28.
 - **DQ12. Is the generated `patch` method flow-tested in every language?**
-  Recommendation: Yes, in the wave. If answered the other way: State it in the
-  generated agent guide and warn once per run; no copy change. Affects WP39.
+  Answered (2026-11-26): as recommended. Recommendation: Yes, in the wave. If
+  answered the other way: State it in the generated agent guide and warn once
+  per run; no copy change. Affects WP39.
 - **DQ13. `output.repo`: implement or delete?** Answered (2026-11-24): as
   recommended. Recommendation: Implement in `repoInfo(model, target)`. If
   answered the other way: Delete the slot and its documentation row; package
@@ -1670,14 +1682,17 @@ are independent. After R-AD1, apidef-validate's goldens are refreshed
   false. If answered the other way: U68 is not fixed: the disclosure is always
   written. Affects WP25.
 - **DQ16. Should `feature add secrets` install it active, like every other
-  feature?** Recommendation: Yes: `active: true` in `secrets.aontu`, in the
-  wave. If answered the other way: Document inactive-on-add in
-  `docs/reference/features.md` and print it from `feature add`. Affects WP34.
+  feature?** Answered (2026-11-26): as recommended. Recommendation: Yes:
+  `active: true` in `secrets.aontu`, in the wave. If answered the other way:
+  Document inactive-on-add in `docs/reference/features.md` and print it from
+  `feature add`. Affects WP34.
 - **DQ17. A missing required server variable in go, rust, zig and c: return an
-  error or document the panic?** Recommendation: Document the panic; no API
-  break. If answered the other way: The constructors return an error, a
-  breaking change for generated go and rust SDKs, announced as such. Affects
-  WP40.
+  error or document the panic?** Answered (2026-11-26): the other way. The
+  constructors return an error, a breaking change for generated go and rust
+  SDKs (and for zig or c wherever a signature changes) that the release notes
+  announce. Recommendation: Document the panic; no API break. If answered the
+  other way: The constructors return an error, a breaking change for generated
+  go and rust SDKs, announced as such. Affects WP40.
 - **DQ18. How is `$$` in vendor text protected in generated source?** Answered
   (2026-11-24): as recommended. Recommendation: A per-language string escaper
   in a new sdkgen helper file (the design note excludes jostraca changes). If
@@ -1698,9 +1713,10 @@ are independent. After R-AD1, apidef-validate's goldens are refreshed
   stays undeclared and is named by its title as an unknown surface; WP27 is
   dropped. Affects WP13, WP27.
 - **DQ21. Are feature descriptions definitions of the feature, with docgen
-  filtering by applicability?** Recommendation: Yes; the 20 feature model
-  files are not reworded. If answered the other way: Reword the 20 feature
-  descriptions in the wave (WP34). Affects WP26b.
+  filtering by applicability?** Answered (2026-11-26): as recommended.
+  Recommendation: Yes; the 20 feature model files are not reworded. If
+  answered the other way: Reword the 20 feature descriptions in the wave
+  (WP34). Affects WP26b.
 - **DQ22. One rule for the path from a target back to `.sdk`, computed for
   every pass?** Answered (2026-11-24): as recommended. Recommendation: Yes,
   from `targetPlace` and `output.sdkrel`, `..` in tree. If answered the other
@@ -1712,10 +1728,10 @@ are independent. After R-AD1, apidef-validate's goldens are refreshed
   message naming the pin move. If answered the other way: Only the upgrade
   how-to of WP12 records it. Affects no package.
 - **DQ24. Should py-data's `data()` activate the paging feature when the
-  wrapped py target declares it?** Recommendation: Yes, unless the caller set
-  it; the text says one page when the SDK has no paging. If answered the other
-  way: Text only: py-data documents one page unless the caller activates
-  paging. Affects WP36.
+  wrapped py target declares it?** Answered (2026-11-26): as recommended.
+  Recommendation: Yes, unless the caller set it; the text says one page when
+  the SDK has no paging. If answered the other way: Text only: py-data
+  documents one page unless the caller activates paging. Affects WP36.
 - **DQ25. Do the root documents in the tree list the targets the model places
   out of tree? (V28)** Answered (2026-11-25): yes. The root README and
   AGENTS.md name each active out-of-tree target by title, linked to its
