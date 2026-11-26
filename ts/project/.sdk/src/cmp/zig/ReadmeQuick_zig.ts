@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems, sendsId } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems, sendsId, fact, seriesList } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -12,6 +12,7 @@ import { zigVarName, zigListMatch } from './utility_zig'
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   const { target, ctx$: { model } } = props
+  let step = 0
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
 
@@ -29,9 +30,18 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   ) as any
 
   const authActive = isAuthActive(model)
-  const ctor = authActive
-    ? `sdk.${model.const.Name}SDK.new(h.jo(&.{\n    .{ "apikey", h.vstr(init.environ_map.get("${envName(model)}_APIKEY") orelse "") },\n}))`
-    : `sdk.${model.const.Name}SDK.new(h.vnull())`
+  // The constructor refuses a templated URL it has no value for, so the quick
+  // start passes each variable the URL uses with no default.
+  const svars = fact(model.main[KIT], 'server').filter((v: any) => v.required)
+  const ctorFields = [
+    ...(authActive ? [`.{ "apikey", h.vstr(init.environ_map.get("${envName(model)}_APIKEY") orelse "") },`] : []),
+    ...(fact(model.main[KIT], 'auth').secret ? [`.{ "secret", h.vstr(init.environ_map.get("${envName(model)}_SECRET") orelse "") },`] : []),
+    ...(0 === svars.length ? [] : [`.{ "server", h.jo(&.{ ` +
+      svars.map((v: any) => `.{ "${v.name}", h.vstr("<${v.name}>") }`).join(', ') + ` }) },`]),
+  ]
+  const ctor = 0 === ctorFields.length
+    ? `sdk.${model.const.Name}SDK.new(h.vnull())`
+    : `sdk.${model.const.Name}SDK.new(h.jo(&.{${ctorFields.map((f: string) => '\n    ' + f).join('')}\n}))`
 
   // A type-correct zig expression constructing a voxgig struct Value.
   const zigLit = (type: any, placeholder: string = 'example'): string => {
@@ -44,14 +54,17 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
     return `h.vstr(${JSON.stringify(placeholder)})`
   }
 
-  Content(`### 1. Create a client
+  Content(`### ${++step}. Create a client
 
 \`\`\`zig
 const std = @import("std");
 const sdk = @import("sdk");
 const h = sdk.h;
 
-${authActive ? '// init is the std.process.Init that main receives.\n' : ''}const client = ${ctor};
+${authActive ? '// init is the std.process.Init that main receives.\n' : ''}const client = switch (${ctor}) {
+    .ok => |c| c,
+    .err => |e| std.debug.panic("{s}", .{e.msg}),
+};
 \`\`\`
 
 `)
@@ -65,7 +78,7 @@ ${authActive ? '// init is the std.process.Init that main receives.\n' : ''}cons
     const idF = entityIdField(exampleEntity)
 
     if (opnames.includes('list')) {
-      Content(`### 2. List ${eName.toLowerCase()} records
+      Content(`### ${++step}. List ${eName.toLowerCase()} records
 
 \`list()\`'s \`.ok\` is a slice of entities, one per record — \`switch\` on
 it. \`asEntity().data(null)\` reads an entity's record.
@@ -101,7 +114,7 @@ switch (client.${method}(h.vnull()).list(${zigListMatch(exampleEntity)}, h.vnull
         `.{ ${JSON.stringify(it.name)}, ${zigLit(it.type,
           it.name === neIdF ? 'example_id' : 'example_' + it.name)} }`)
 
-      Content(`### 3. Load ${neArticle} ${neName.toLowerCase()}
+      Content(`### ${++step}. Load ${neArticle} ${neName.toLowerCase()}
 
 ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
 \`load()\`'s \`.ok\` carries the entity; \`asEntity().data(null)\` reads its
@@ -126,7 +139,7 @@ switch (client.${neMethod}(h.vnull()).load(h.jo(&.{${neMatch.join(', ')}}), h.vn
             it.name === idF ? 'example_id' : 'example_' + it.name)} }`).join(', ')}})`
         : 'h.vnull()'
 
-      Content(`### 3. Load ${article} ${eName.toLowerCase()}
+      Content(`### ${++step}. Load ${article} ${eName.toLowerCase()}
 
 \`load()\`'s \`.ok\` carries the entity; \`asEntity().data(null)\` reads its
 record.
@@ -163,7 +176,8 @@ switch (client.${method}(h.vnull()).load(${loadArg}, h.vnull())) {
 
     if (opnames.includes('create') || opnames.includes('update') || opnames.includes('patch') ||
       opnames.includes('remove')) {
-      Content(`### 4. Create, update, and remove
+      Content(`### ${++step}. ${seriesList(['create', 'update', 'patch', 'remove']
+        .filter((o: string) => opnames.includes(o))).replace(/^./, (c: string) => c.toUpperCase())}
 
 \`\`\`zig
 `)

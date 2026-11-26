@@ -1,10 +1,10 @@
 
-import { featureApplies } from '../helpers/applicability'
 import { fact } from '../helpers/facts'
 import { findFeatureSources } from '../helpers/featureSource'
 import { copyMode, MERGE } from '../helpers/copymerge'
 import { originName } from '../helpers/packageMeta'
 import { definitionName } from '../helpers/text'
+import { featureDocs } from './FeatureDocs'
 
 import { each } from 'jostraca'
 
@@ -113,14 +113,10 @@ function activeTargets(model: any): any[] {
   return fact(kit, 'active').map((name: string) => kit.target[name])
 }
 
-// With a target, also drops features that do not APPLY to it — a guide
-// must not document a feature the target has no implementation for.
-// Without one (the repo-level guide) every active feature is listed.
+// The feature models of the features featureDocs documents.
 function activeFeatures(model: any, target?: any): any[] {
-  const feature = getModelPath(model, `main.${KIT}.feature`) || {}
-  return each(feature)
-    .filter((f: any) => f && f.active !== false)
-    .filter((f: any) => null == target || featureApplies(f, target))
+  const feature = getModelPath(model, `main.${KIT}.feature`, { required: false })
+  return null == feature ? [] : featureDocs(model, target).map((f: any) => feature[f.name])
 }
 
 function activeEntities(model: any): any[] {

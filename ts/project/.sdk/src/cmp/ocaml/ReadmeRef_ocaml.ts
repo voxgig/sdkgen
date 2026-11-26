@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonKey, canonScalarKey, File, isAuthActive, entityIdField , targetFeatures, opNeedsAction, bodyNote, matchExampleItems, requestExampleItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonKey, canonScalarKey, File, isAuthActive, entityIdField, entityOps, bodyNote, matchExampleItems, requestExampleItems, featureDocs, fact, clientOptions, requiredItems } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -36,6 +36,8 @@ function ocamlType(type: any): string {
 }
 
 
+const LIST_ALL = ' The match is optional \u2014 pass `(empty_map ())` to list all records.'
+
 const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string }> = {
   load: {
     sig: 'e_load reqmatch ctrl : entity_obj',
@@ -45,7 +47,7 @@ const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string
   list: {
     sig: 'e_list reqmatch ctrl : entity_obj list',
     returns: 'one entity per record',
-    desc: 'List entities matching the given criteria. The match is optional \u2014 pass `(empty_map ())` to list all records. Resolves to one entity per record and raises on error.',
+    desc: 'List entities matching the given criteria.' + LIST_ALL + ' Resolves to one entity per record and raises on error.',
   },
   create: {
     sig: 'e_create reqdata ctrl : entity_obj',
@@ -70,13 +72,12 @@ const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string
 }
 
 
+
 const ReadmeRef = cmp(function ReadmeRef(props: any) {
   const { target } = props
   const { model } = props.ctx$
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
-  const feature = targetFeatures(model, target)
-
   const publishedEntities = each(entity).filter((e: any) => e.active !== false)
 
 
@@ -92,6 +93,11 @@ Complete API reference for the ${model.Name} ${target.title} SDK.
 ### Constructor
 
 `)
+
+    // A closed value union holds no feature instance, so there is no `extend`.
+    const OPTION_KIND: Record<string, string> = { string: 'string', map: 'map', list: '' }
+    const optionRows = clientOptions(model).filter((o: any) => 'extend' !== o.name)
+      .map((o: any) => '| `' + o.name + '` | `' + OPTION_KIND[o.kind] + '` | ' + o.desc + ' |\n').join('')
 
     Content(`\`\`\`ocaml
 open Voxgig_struct
@@ -109,13 +115,7 @@ Create a new SDK client instance from a \`value\` options map. Use
 | Name | Type | Description |
 | --- | --- | --- |
 | \`options\` | \`value\` | SDK configuration options (a Map). |
-${isAuthActive(model) ? '| `apikey` | `string` | API key for authentication. |\n' : ''}| \`base\` | \`string\` | Base URL for API requests. |
-| \`prefix\` | \`string\` | URL prefix appended after base. |
-| \`suffix\` | \`string\` | URL suffix appended after path. |
-| \`headers\` | \`map\` | Custom headers for all requests. |
-| \`feature\` | \`map\` | Feature configuration. |
-| \`system\` | \`map\` | System overrides (e.g. custom fetch). |
-
+${optionRows}
 `)
 
 
@@ -183,7 +183,7 @@ on error.
 
     // Entity reference sections
     publishedEntities.map((ent: any) => {
-      const opnames = Object.keys(ent.op || {})
+      const opnames = entityOps(ent)
       const fields = Object.values(ent.fields || {})
       const idF = entityIdField(ent)
       const fn = ocamlVarName(ent.name)
@@ -195,8 +195,8 @@ on error.
 
 `)
 
-      if (ent.short) {
-        Content(`${ent.short}
+      if (fact(ent, 'desc').inline) {
+        Content(`${fact(ent, 'desc').inline}
 
 `)
       }
@@ -217,7 +217,7 @@ let ${fn} = Sdk_client.${fn} client Noval
 `)
         each(fields, (field: any) => {
           const req = field.r ? 'Yes' : 'No'
-          const desc = field.sh || ''
+          const desc = fact(model.main[KIT], 'field')[ent.name]?.[field.n]?.desc.cell ?? ''
           Content(`| \`${field.n}\` | \`${ocamlType(field.t)}\` | ${req} | ${desc} |
 `)
         })
@@ -229,7 +229,7 @@ let ${fn} = Sdk_client.${fn} client Noval
         const hasFieldOps = fields.some((f: any) => f.op && Object.keys(f.op).length > 0)
         if (hasFieldOps) {
           const opcols = ['load', 'list', 'create', 'update', 'patch', 'remove']
-            .filter((op: string) => opnames.includes(op) && ent.op[op]?.active !== false)
+            .filter((op: string) => opnames.includes(op))
           Content(`### Field Usage by Operation
 
 | Field | ${opcols.join(' | ')} |
@@ -262,16 +262,16 @@ let ${fn} = Sdk_client.${fn} client Noval
         opnames.map((opname: string) => {
           const info = OP_SIGNATURES[opname]
           if (!info) return
+          const needs = requiredItems(ent, opname).map((it: any) => it.name)
+          const desc = info.desc.replace(' The data must include the entity `id`.',
+            null != idF && needs.includes(idF) ? ' The data must include the entity `' + idF + '`.' : '')
+            .replace(LIST_ALL, 0 === needs.length ? LIST_ALL : ' The match must include ' + needs.map((n: string) => '`' + n + '`').join(', ') + '.')
 
           Content(`#### \`${info.sig}\`
 
-${info.desc}
+${desc}
 
 `)
-
-          if (opNeedsAction(ent.op[opname])) {
-            return
-          }
 
           if ('load' === opname || 'remove' === opname) {
             const matchItems = matchExampleItems(ent, opname, idF)
@@ -322,6 +322,7 @@ let result_data = result.e_data_get ()
             const updateLines = updateItems.map((it: any) =>
               `    ("${ocamlString(it.name)}", ${ocamlLit(it.type,
                 it.name === idF ? ent.name + '_id' : it.name)});\n`).join('')
+
             Content(`\`\`\`ocaml
 let result = (Sdk_client.${fn} client Noval).e_${opname} (jo [
 ${updateLines}    (* ${'patch' === opname ? 'Only the fields to change' : 'Fields to update'} *)
@@ -374,7 +375,7 @@ The entity name.
 
 
     // Features section
-    const activeFeatures = each(feature).filter((f: any) => f.active)
+    const activeFeatures = featureDocs(model, target)
     if (activeFeatures.length > 0) {
       Content(`
 ---
@@ -386,7 +387,7 @@ The entity name.
 `)
 
       activeFeatures.map((f: any) => {
-        Content(`| \`${f.name}\` | ${f.version || '0.0.1'} | ${f.title || ''} |
+        Content(`| \`${f.name}\` | ${f.version} | ${f.titleCell} |
 `)
       })
 

@@ -126,7 +126,7 @@ the SDK's own constructor with station-built options:
 
 ```go
 st := station.Open()
-solar := solardemo.NewSolardemoSDK(st.Options())
+solar, err := solardemo.NewSolardemoSDK(st.Options())
 ```
 
 Retrofitting an SDK generated before the feature existed:

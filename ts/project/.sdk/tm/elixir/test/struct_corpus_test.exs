@@ -52,7 +52,7 @@ defmodule ProjectName.StructCorpusTest do
   }
 
   setup_all do
-    testfile = Path.join(File.cwd!(), "../.sdk/test/test.json")
+    testfile = Path.join(File.cwd!(), "SDKREL/.sdk/test/test.json")
     runner = O.make_runner(testfile, ProjectName.test())
     {:ok, run: runner.("struct")}
   end

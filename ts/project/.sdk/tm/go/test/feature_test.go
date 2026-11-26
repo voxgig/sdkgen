@@ -121,7 +121,11 @@ func TestFeatureOptionNumericTypes(t *testing.T) {
 		}
 		ctx.Config = map[string]any{"options": map[string]any{}}
 
-		got := vsGetPath(utility.MakeOptions(ctx), "feature", "retry", "retries")
+		opts, err := utility.MakeOptions(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got := vsGetPath(opts, "feature", "retry", "retries")
 		if n, ok := got.(int64); !ok || n != 4 {
 			t.Fatalf("MakeOptions did not canonicalise the option: %v (%T), want int64(4)", got, got)
 		}

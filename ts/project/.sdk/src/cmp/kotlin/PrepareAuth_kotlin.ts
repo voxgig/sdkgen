@@ -4,12 +4,12 @@ import {
   File,
   Folder,
   cmp,
-  isAuthSuppressed,
-  isHttpBasicAuth,
-  resolveAuthIn,
-  resolveAuthName,
-  resolveAuthPrefix,
+  fact,
 } from '@voxgig/sdkgen'
+
+import {
+  KIT,
+} from '@voxgig/apidef'
 
 
 import { kotlinPackage } from './utility_kotlin'
@@ -18,23 +18,24 @@ import { kotlinPackage } from './utility_kotlin'
 const PrepareAuth = cmp(async function PrepareAuth(props: any) {
   const { target } = props
   const { model } = props.ctx$
+  const authFact = fact(model.main[KIT], 'auth')
 
   const kotlinpackage = kotlinPackage(model)
 
-  const where = resolveAuthIn(model)
+  const where = authFact.in
 
-  const resolved = resolveAuthName(model)
+  const resolved = authFact.name
   const name = 'header' === where ? resolved.toLowerCase() : resolved
 
-  const basic = isHttpBasicAuth(model)
+  const basic = authFact.basic
 
-  const prefix = resolveAuthPrefix(model)
+  const prefix = authFact.prefix
 
   Folder({ name: 'utility' }, () => {
     File({ name: 'PrepareAuth.' + target.ext }, () => {
       Content(render({
         kotlinpackage,
-        suppressed: isAuthSuppressed(model),
+        suppressed: authFact.suppressed,
         where,
         name,
         basic,
@@ -60,8 +61,8 @@ function render(spec: AuthSpec): string {
     return head(spec) + `import ${spec.kotlinpackage}.core.Context
 import ${spec.kotlinpackage}.core.Spec
 
-// This SDK is built with \`config.auth.active: false\`, so there is no
-// credential to place. The function stays in the pipeline because Register
+// This SDK is built with authentication off, so there is no credential
+// to place. The function stays in the pipeline because Register
 // binds it unconditionally and MakeSpecUrl calls it on every request, and a
 // missing spec is still the same error it always was.
 fun prepareAuth(ctx: Context): Spec {

@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField , targetFeatures, opNeedsAction, bodyNote, matchExampleItems, requestExampleItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, entityOps, bodyNote, matchExampleItems, requestExampleItems, featureDocs, fact, clientOptions, requiredItems } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -25,6 +25,8 @@ function csLit(type: any, placeholder: string = 'example'): string {
 }
 
 
+const LIST_ALL = ' The match is optional — call `List(null)` to list all records.'
+
 const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string }> = {
   load: {
     sig: 'Load(reqmatch, ctrl = null) -> object?',
@@ -34,7 +36,7 @@ const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string
   list: {
     sig: 'List(reqmatch, ctrl = null) -> object?',
     returns: 'a list of entities, one per record',
-    desc: 'List entities matching the given criteria. The match is optional — call `List(null)` to list all records. Returns a list of entities, one per record, and raises on error.',
+    desc: 'List entities matching the given criteria.' + LIST_ALL + ' Returns a list of entities, one per record, and raises on error.',
   },
   create: {
     sig: 'Create(reqdata, ctrl = null) -> object?',
@@ -59,13 +61,12 @@ const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string
 }
 
 
+
 const ReadmeRef = cmp(function ReadmeRef(props: any) {
   const { target } = props
   const { model } = props.ctx$
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
-  const feature = targetFeatures(model, target)
-
   const publishedEntities = each(entity).filter((e: any) => e.active !== false)
 
 
@@ -82,6 +83,10 @@ Complete API reference for the ${model.Name} ${target.title} SDK.
 
 `)
 
+    const OPTION_KIND: Record<string, string> = { string: 'string', map: 'Dictionary', list: 'List' }
+    const optionRows = clientOptions(model)
+      .map((o: any) => '| `options["' + o.name + '"]` | `' + OPTION_KIND[o.kind] + '` | ' + o.desc + ' |\n').join('')
+
     Content(`\`\`\`csharp
 using ${model.const.Name}Sdk;
 using Voxgig.Struct;
@@ -97,13 +102,7 @@ Create a new SDK client instance. \`options\` is a
 | Name | Type | Description |
 | --- | --- | --- |
 | \`options\` | \`Dictionary\` | SDK configuration options. |
-${isAuthActive(model) ? '| \`options["apikey"]\` | \`string\` | API key for authentication. |\n' : ''}| \`options["base"]\` | \`string\` | Base URL for API requests. |
-| \`options["prefix"]\` | \`string\` | URL prefix appended after base. |
-| \`options["suffix"]\` | \`string\` | URL suffix appended after path. |
-| \`options["headers"]\` | \`Dictionary\` | Custom headers for all requests. |
-| \`options["feature"]\` | \`Dictionary\` | Feature configuration. |
-| \`options["system"]\` | \`Dictionary\` | System overrides (e.g. custom fetch). |
-
+${optionRows}
 `)
 
 
@@ -177,7 +176,7 @@ Prepare a fetch definition without sending. Returns the \`fetchdef\` and raises 
 
     // Entity reference sections
     publishedEntities.map((ent: any) => {
-      const opnames = Object.keys(ent.op || {})
+      const opnames = entityOps(ent)
       const fields = Object.values(ent.fields || {})
       // Model-driven id key: null when this entity has no id-like field.
       const idF = entityIdField(ent)
@@ -191,8 +190,8 @@ Prepare a fetch definition without sending. Returns the \`fetchdef\` and raises 
 
 `)
 
-      if (ent.short) {
-        Content(`${ent.short}
+      if (fact(ent, 'desc').inline) {
+        Content(`${fact(ent, 'desc').inline}
 
 `)
       }
@@ -213,8 +212,8 @@ var ${eVar} = client.${ent.Name}();
 `)
         each(fields, (field: any) => {
           const req = field.r ? 'Yes' : 'No'
-          const desc = field.sh || ''
-          Content(`| \`${field.n}\` | \`${canonToType(field.t, target.name)}\` | ${req} | ${desc} |
+          const desc = fact(model.main[KIT], 'field')[ent.name]?.[field.n]?.desc.cell ?? ''
+          Content(`| \`${field.n}\` | \`${canonToType(field.t, 'csharp').replace(/\|/g, '\\|')}\` | ${req} | ${desc} |
 `)
         })
 
@@ -225,7 +224,7 @@ var ${eVar} = client.${ent.Name}();
         const hasFieldOps = fields.some((f: any) => f.op && Object.keys(f.op).length > 0)
         if (hasFieldOps) {
           const opcols = ['load', 'list', 'create', 'update', 'patch', 'remove']
-            .filter((op: string) => opnames.includes(op) && ent.op[op]?.active !== false)
+            .filter((op: string) => opnames.includes(op))
           Content(`### Field Usage by Operation
 
 | Field | ${opcols.join(' | ')} |
@@ -258,16 +257,16 @@ var ${eVar} = client.${ent.Name}();
         opnames.map((opname: string) => {
           const info = OP_SIGNATURES[opname]
           if (!info) return
+          const needs = requiredItems(ent, opname).map((it: any) => it.name)
+          const desc = info.desc.replace(' The data must include the entity `id`.',
+            null != idF && needs.includes(idF) ? ' The data must include the entity `' + idF + '`.' : '')
+            .replace(LIST_ALL, 0 === needs.length ? LIST_ALL : ' The match must include ' + needs.map((n: string) => '`' + n + '`').join(', ') + '.')
 
           Content(`#### \`${info.sig}\`
 
-${info.desc}
+${desc}
 
 `)
-
-          if (opNeedsAction(ent.op[opname])) {
-            return
-          }
 
           if ('load' === opname || 'remove' === opname) {
             const matchItems = matchExampleItems(ent, opname, idF)
@@ -303,7 +302,7 @@ var result = client.${ent.Name}().Create(new Dictionary<string, object?>
 {
 `)
             createItems.map((it: any) => {
-              Content(`    [${csStringLiteral(it.name)}] = ${csLit(it.type, 'example_' + it.name)},  // ${canonToType(it.type, target.name)}
+              Content(`    [${csStringLiteral(it.name)}] = ${csLit(it.type, 'example_' + it.name)},  // ${canonToType(it.type, 'csharp')}
 `)
             })
             Content(`});
@@ -319,6 +318,7 @@ var result = client.${ent.Name}().Create(new Dictionary<string, object?>
             const updateLines = updateItems.map((it: any) =>
               `    [${csStringLiteral(it.name)}] = ${csLit(it.type,
                 it.name === idF ? ent.name + '_id' : it.name)},\n`).join('')
+
             Content(`\`\`\`csharp
 var result = client.${ent.Name}().${'patch' === opname ? 'Patch' : 'Update'}(new Dictionary<string, object?>
 {
@@ -364,7 +364,7 @@ Return the entity name.
 
 
     // Features section
-    const activeFeatures = each(feature).filter((f: any) => f.active)
+    const activeFeatures = featureDocs(model, target)
     if (activeFeatures.length > 0) {
       Content(`
 ---
@@ -376,7 +376,7 @@ Return the entity name.
 `)
 
       activeFeatures.map((f: any) => {
-        Content(`| \`${f.name}\` | ${f.version || '0.0.1'} | ${f.title || ''} |
+        Content(`| \`${f.name}\` | ${f.version} | ${f.titleCell} |
 `)
       })
 

@@ -17,8 +17,8 @@ class Result(resmap: Map<String, Any?>?) {
   var resdata: Any? = null
   var resmatch: MutableMap<String, Any?>? = null
 
-  // Feature extensions: pagination signals (paging feature) and the
-  // incremental item iterator (streaming feature).
+  // Feature extensions, set only while their feature is active: pagination
+  // signals (paging) and the incremental item iterator (streaming).
   var paging: MutableMap<String, Any?>? = null
   var streaming: Boolean = false
   var stream: Supplier<Iterator<Any?>>? = null

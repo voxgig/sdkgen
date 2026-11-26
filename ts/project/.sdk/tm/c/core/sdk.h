@@ -260,7 +260,7 @@ bool response_is_binary(voxgig_value* point, const char* type);
 // SdkResult (mirrors core/result.rs)
 // ===========================================================================
 
-// Stream producer attached by the streaming feature.
+// Stream producer, attached by the streaming feature when it is active.
 typedef voxgig_value* (*StreamFn)(void* ud); // returns a List of items
 
 struct SdkResult {
@@ -344,7 +344,7 @@ voxgig_value* utility_fetch(Utility* u, Context* ctx, const char* url,
 
 // Every operation resolves to the ENTITY, not the raw data. `list` resolves
 // to a NULL-terminated array of them, one per record; the record is reached
-// through `data`. See AGENTS.md "Entity operations return ENTITIES".
+// through `data`.
 //
 // `voxgig_value` cannot carry an entity - it is a closed data union
 // (UNDEF|NULL|BOOL|INT|DOUBLE|STRING|LIST|MAP|FUNC|SENTINEL), and adding a
@@ -356,9 +356,9 @@ typedef struct EntityVT {
   voxgig_value* (*data)(Entity*, voxgig_value* args);   // args NULL => none
   voxgig_value* (*matchv)(Entity*, voxgig_value* args); // args NULL => none
 
-  // `remove` resolves to the entity, marked. The instance KEEPS the data it
-  // held - a caller can still read what was deleted - but it is no longer a
-  // live record.
+  // A remove resolves to the entity, marked deleted. The instance KEEPS the
+  // data it held - a caller can still read what was deleted - but it is no
+  // longer a live record.
   void (*mark_deleted)(Entity*);
   bool (*deleted)(Entity*);
 
@@ -485,7 +485,7 @@ Utility* sdk_get_utility(ProjectNameSDK* sdk);      // utility_copy
 Context* sdk_get_root_ctx(ProjectNameSDK* sdk);
 
 // Constructors / prepare / direct are in the generated client.c:
-ProjectNameSDK* projectname_sdk_new(voxgig_value* options);
+ProjectNameSDK* projectname_sdk_new(voxgig_value* options, PNError** err);
 ProjectNameSDK* test_sdk(voxgig_value* testopts, voxgig_value* sdkopts);
 voxgig_value* sdk_prepare(ProjectNameSDK* sdk, voxgig_value* fetchargs, PNError** err);
 voxgig_value* sdk_direct(ProjectNameSDK* sdk, voxgig_value* fetchargs, PNError** err);
@@ -544,7 +544,7 @@ void feature_hook_util(Context* ctx, const char* name);
 void feature_init_util(Context* ctx, Feature* f);
 voxgig_value* make_fetch_def_util(Context* ctx, PNError** err);
 Context* make_context_util(CtxSpec spec, Context* basectx);
-voxgig_value* make_options_util(Context* ctx);
+voxgig_value* make_options_util(Context* ctx, PNError** err);
 Response* make_request_util(Context* ctx, PNError** err);
 Response* make_response_util(Context* ctx, PNError** err);
 SdkResult* make_result_util(Context* ctx, PNError** err);

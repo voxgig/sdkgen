@@ -24,7 +24,7 @@ pub struct EntyClass {
     data: RefCell<Value>,
     mtch: RefCell<Value>,
     entctx: RefCell<Option<Rc<Context>>>,
-    // Set once a successful `remove` resolves on this instance.
+    // Set when a remove marks this instance deleted.
     deleted: RefCell<bool>,
 }
 
@@ -76,7 +76,7 @@ impl EntyClass {
 
     // Runs the pipeline and returns the terminal result VALUE. The entity
     // contract lives one level up, in the op methods below: they call this,
-    // then hand back the entity (see AGENTS.md). It is split that way because
+    // then hand back the entity. It is split that way because
     // `Value` is a closed data union that cannot carry an entity.
     fn run_op(
         &self,

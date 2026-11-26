@@ -7,11 +7,9 @@ import {
   configDefinition,
   configReprSetting,
   each,
-  isAuthActive,
   isConfigData,
-  resolveAuthIn,
-  resolveAuthName,
   targetFeatures,
+  templateSafe,
 } from '@voxgig/sdkgen'
 
 
@@ -36,25 +34,11 @@ const Config = cmp(async function Config(props: any) {
 
   const model: Model = ctx$.model
 
-  // Gated by the applicability tags, so this target never imports or
-  // registers a feature it has no source for. One rule, one place:
-  // helpers/applicability.
+  // Gated by helpers/applicability, so no feature without source is named.
   const feature = targetFeatures(model, target)
 
-  const { def: config } = configDefinition(model, target.name)
-
-  const authIn = resolveAuthIn(model)
-  const authName = resolveAuthName(model)
-  if (null != config.options && null != config.options.auth) {
-    if ('header' !== authIn) {
-      config.options.auth.in = authIn
-    }
-    if ('Authorization' !== authName) {
-      config.options.auth.name = authName
-    }
-  }
-
-  const configJson = JSON.stringify(config)
+  const { def: config, json } = configDefinition(model, target.name)
+  const configJson = templateSafe('json', json)
   const asData = isConfigData(configJson, configReprSetting(model))
 
   File({ name: 'config.' + target.ext }, () => {
@@ -120,7 +104,7 @@ const Value = h.Value;
 const Feature = types.Feature;
 
 pub fn make_config() Value {
-    return ${formatZigValue(config, 1)};
+    return ${templateSafe('zig', formatZigValue(config, 1))};
 }
 
 // SHARED CONFIG (sdkgen rung L2).

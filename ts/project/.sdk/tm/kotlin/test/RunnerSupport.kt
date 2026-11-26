@@ -2,7 +2,7 @@ package KOTLINPACKAGE.sdktest
 
 // Shared test-runner SUPPORT (vendor-tag rollout): env overrides, the
 // sdk-test-control.json skip machinery, live pacing, the
-// ../.sdk/test/test.json spec loader, ctx/entity conversion helpers, and
+// SDKREL/.sdk/test/test.json spec loader, ctx/entity conversion helpers, and
 // the canon comparison helper the feature tests use. The corpus ENGINE
 // that used to live beside them (runset/matchDeep/matchString) is
 // retired: both corpora now run on the vendored omni runner through
@@ -35,7 +35,7 @@ object RunnerSupport {
   private var cachedTestControl: Map<String, Any?>? = null
   private var cachedTestSpec: Map<String, Any?>? = null
 
-  // loadEnvLocal reads ../.env.local (if present) into an overlay map.
+  // loadEnvLocal reads SDKREL/.env.local (if present) into an overlay map.
   @Synchronized
   fun loadEnvLocal() {
     if (envLocalLoaded) {
@@ -43,7 +43,7 @@ object RunnerSupport {
     }
     envLocalLoaded = true
     try {
-      val data = Files.readString(Paths.get("..", ".env.local"))
+      val data = Files.readString(Paths.get("SDKREL", ".env.local"))
       for (lineRaw in data.split("\n")) {
         val line = lineRaw.trim()
         if (line.isEmpty() || line.startsWith("#")) {
@@ -154,6 +154,25 @@ object RunnerSupport {
     return null
   }
 
+  // The extra options every live client is built with, from
+  // sdk-test-control.json `test.client.options`. A reserved name is dropped:
+  // merged under fields the model does not ask for, a `base` would redirect
+  // the whole suite, credential included.
+  private val LIVE_RESERVED = listOf("base", "prefix", "suffix", "server", "apikey", "secret")
+
+  fun liveClientOptions(): MutableMap<String, Any?> {
+    val out = linkedMapOf<String, Any?>()
+    val test = Helpers.toMapAny(loadTestControl()["test"]) ?: return out
+    val client = Helpers.toMapAny(test["client"]) ?: return out
+    val opts = Helpers.toMapAny(client["options"]) ?: return out
+    for ((key, value) in opts) {
+      if (key !in LIVE_RESERVED) {
+        out[key] = value
+      }
+    }
+    return out
+  }
+
   fun liveDelayMs(): Int {
     val ctrl = loadTestControl()
     val test = Helpers.toMapAny(ctrl["test"]) ?: return 500
@@ -172,7 +191,7 @@ object RunnerSupport {
       return cached
     }
     val result = try {
-      val data = Files.readString(Paths.get("..", ".sdk", "test", "test.json"))
+      val data = Files.readString(Paths.get("SDKREL", ".sdk", "test", "test.json"))
       Json.parse(data) as Map<String, Any?>
     } catch (e: Exception) {
       throw AssertionError("Failed to load test.json: " + e.message, e)

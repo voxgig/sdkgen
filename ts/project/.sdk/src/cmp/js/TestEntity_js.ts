@@ -1,4 +1,4 @@
-import { boundedFacts, pointFacts } from '@voxgig/sdkgen'
+import { boundedFacts, pointFacts, fact } from '@voxgig/sdkgen'
 import { buildIdNames } from '@voxgig/sdkgen'
 import { flowSteps, opReachable, invalidRequest } from '@voxgig/sdkgen'
 
@@ -33,9 +33,7 @@ import {
   cmp,
   each,
   isAuthActive,
-  serverVarEnv,
-  serverVariables,
-  entityDataIdField, entityRecordIdField, envName, envToken,
+  entityDataIdField, entityRecordIdField,
   jsKey,
   jsProp,
   hasLiveScenarios,
@@ -47,6 +45,7 @@ import {
   flowLoadRoute,
   flowLoadReadsRecord,
   LIVE_GETONLY_ENV,
+  templateSafe,
 } from '@voxgig/sdkgen'
 import type { LiveGate } from '@voxgig/sdkgen'
 
@@ -89,31 +88,33 @@ const TestEntity = cmp(function TestEntity(props: any) {
   const target = props.target
   const entity: ModelEntity = props.entity
 
-  const PROJENVNAME = envName(model)
-  const ENTENVNAME = envToken(entity.name)
+  const ENVVAR = fact(model.main[KIT], 'env')
+  const PROJENVNAME = ENVVAR.prefix
   const authActive = isAuthActive(model)
+  const authSecret = authActive && fact(model.main[KIT], 'auth').secret
   const apikeyEnvEntry = authActive
-    ? `\n    '${PROJENVNAME}_APIKEY': '',`
+    ? `\n    '${ENVVAR.apikey}': '',${authSecret ? `\n    '${ENVVAR.secret}': '',` : ''}`
     : ''
   const apikeyLiveField = authActive
     ? `
-        apikey: env.${PROJENVNAME}_APIKEY,`
+        apikey: env.${ENVVAR.apikey},${authSecret ? `
+        secret: env.${ENVVAR.secret},` : ''}`
     : ''
 
-  const svars = serverVariables(model)
+  const svars = fact(model.main[KIT], 'server')
   const serverEnvEntry = svars
-    .map((v: any) => `\n    '${serverVarEnv(PROJENVNAME, v.name)}': ${JSON.stringify(v.dflt)},`).join('')
+    .map((v: any) => `\n    '${ENVVAR.server[v.name]}': ${templateSafe('js', JSON.stringify(v.dflt))},`).join('')
   const serverLiveField = 0 === svars.length ? '' : `
         server: {${svars
       .map((v: any) => `
-          ${jsKey(v.name)}: ${jsProp('env', serverVarEnv(PROJENVNAME, v.name))},`).join('')}
+          ${jsKey(v.name)}: ${jsProp('env', ENVVAR.server[v.name])},`).join('')}
         },`
 
   const ff = projectPath('src/cmp/js/fragment/')
 
   Folder({ name: entity.name }, () => {
 
-    File({ name: nom(entity, 'Name') + 'Entity.test.' + target.name }, () => {
+    File({ name: nom(entity, 'Name') + 'Entity.test.' + target.ext }, () => {
 
       Fragment({
         from: ff + 'Entity.test.fragment.js',
@@ -158,7 +159,7 @@ function basicSetup(extra) {
   // TODO: needs test utility to resolve path
   const entityDataFile =
     Path.resolve(__dirname,
-      '../../../../.sdk/test/entity/${entity.name}/${nom(entity, 'Name')}TestData.json')
+      '../../../${ctx$.stdrep.SDKREL}/.sdk/test/entity/${entity.name}/${nom(entity, 'Name')}TestData.json')
 
   // TODO: file ready util needed?
   const entityDataSource = Fs.readFileSync(entityDataFile).toString('utf8')
@@ -183,17 +184,17 @@ ${fixtureIdentity(entity)}
     })
 
   const env = envOverride({
-    '${PROJENVNAME}_TEST_${ENTENVNAME}_ENTID': idmap,
-    '${PROJENVNAME}_TEST_LIVE': 'FALSE',
+    '${ENVVAR.entid[entity.name]}': idmap,
+    '${ENVVAR.live}': 'FALSE',
     '${PROJENVNAME}_TEST_EXPLAIN': 'FALSE',${apikeyEnvEntry}${serverEnvEntry}
   })
 
-  idmap = env['${PROJENVNAME}_TEST_${ENTENVNAME}_ENTID']
+  idmap = env['${ENVVAR.entid[entity.name]}']
 
-  const live = 'TRUE' === env.${PROJENVNAME}_TEST_LIVE
+  const live = 'TRUE' === env.${ENVVAR.live}
   const transport = createLiveTransport()
   if (live) {
-    const rawIds = process.env['${PROJENVNAME}_TEST_${ENTENVNAME}_ENTID']
+    const rawIds = process.env['${ENVVAR.entid[entity.name]}']
     idmap = rawIds && rawIds.trim() ? JSON.parse(rawIds) : {}
     if (!idmap || Array.isArray(idmap) || typeof idmap !== 'object') {
       throw new Error('Live ENTID must be a JSON object')
@@ -238,10 +239,10 @@ ${fixtureIdentity(entity)}
           )
 
           Content(`
-    ${hasLiveScenarios(model) ? `if (process.env.${PROJENVNAME}_TEST_LIVE === 'TRUE') { t.skip('Covered by live operation scenarios'); return }` : ''}
+    ${hasLiveScenarios(model) ? `if (process.env.${ENVVAR.live} === 'TRUE') { t.skip('Covered by live operation scenarios'); return }` : ''}
     const setup = basicSetup()
     if (setup.live) {
-      return runLiveEntity(setup, ${JSON.stringify(liveEntity(ctx$, entity))}, ${JSON.stringify(liveFlowRoutes(entity, basicflow))}, '${nom(entity, 'Name')}', ${JSON.stringify(liveFacts)}, { strict: LIVE_STRICT, t }${excludedArg(entity, basicflow)})
+      return runLiveEntity(setup, ${templateSafe('js', JSON.stringify(liveEntity(ctx$, entity)))}, ${templateSafe('js', JSON.stringify(liveFlowRoutes(entity, basicflow)))}, '${nom(entity, 'Name')}', ${templateSafe('js', JSON.stringify(liveFacts))}, { strict: LIVE_STRICT, t }${excludedArg(entity, basicflow)})
     }
     const client = setup.client
     const struct = setup.struct
@@ -285,7 +286,7 @@ const generateCreate: OpGen = (ctx, step, index) => {
 
   const priorSteps = flowSteps(flow).slice(0, Number(index))
   const needsEnt = !priorSteps.some(s =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
 
   const hasDatvar = priorSteps.some(s => {
     if ('create' === s.o) {
@@ -342,7 +343,7 @@ const generateList: OpGen = (ctx, step, index) => {
 
   const priorSteps = flowSteps(flow).slice(0, Number(index))
   const needsEnt = !priorSteps.some(s =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
 
   Content(`
     // LIST
@@ -394,12 +395,12 @@ const generateUpdate: OpGen = (ctx, step, index) => {
 
   const priorSteps = flowSteps(flow).slice(0, Number(index))
   const needsEnt = !priorSteps.some(s =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
 
   const hasEntIdU = null != entity.id
 
   Content(`
-    // UPDATE
+    // ${step.o.toUpperCase()}
 `)
   if (needsEnt) {
     Content(`    const ${entvar} = client.${nom(entity, 'Name')}()
@@ -435,7 +436,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
   }
 
   Content(`
-    const ${resdatavar} = (await ${entvar}.update(${datavar})).data()
+    const ${resdatavar} = (await ${entvar}.${step.o}(${datavar})).data()
 `)
   if (hasEntIdU) {
     Content(`    assert(${rid(entity, resdatavar)} === ${datavar}.id)
@@ -468,7 +469,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
 
   const priorSteps = flowSteps(flow).slice(0, Number(index))
   const hasEntVar = priorSteps.some(s =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
 
   // Check if srcdatavar was declared by a prior create step or by the
   // preamble bootstrap (which runs when the flow has no create step)
@@ -529,7 +530,7 @@ const generateRemove: OpGen = (ctx, step, index) => {
 
   const priorSteps = flowSteps(flow).slice(0, Number(index))
   const needsEnt = !priorSteps.some(s =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
 
   const hasEntIdR = null != entity.id
 
@@ -614,6 +615,7 @@ const GENERATE_OP: Record<string, OpGen> = {
   create: generateCreate,
   list: generateList,
   update: generateUpdate,
+  patch: generateUpdate,
   load: generateLoad,
   remove: generateRemove,
 }
@@ -693,7 +695,7 @@ function validateTest(model: Model, entity: ModelEntity): string {
       return
     }
     const client = ${SDK}.test(undefined, { feature: { validate: { active: true } } })
-    await assert.rejects(client.${nom(entity, 'Name')}().${bad.op}(${JSON.stringify(bad.args)}),
+    await assert.rejects(client.${nom(entity, 'Name')}().${bad.op}(${templateSafe('js', JSON.stringify(bad.args))}),
       (err) => 'validate_failed' === err.code)
   })
 `

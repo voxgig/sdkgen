@@ -76,10 +76,12 @@ function applyFacts(model) {
     serverFacts(kit.fact, server, out.server.variables);
     kit.fact.env.entid = Object.fromEntries(Object.keys(entity).map((name) => [name, out.entity[name].fact.entid]));
     kit.fact.ops = entityOps(kit.entity);
+    kit.fact.sharedOps = sharedOps(kit.entity, kit.fact.ops);
     kit.fact.package = projectPackages(model);
     kit.fact.option = optionRows(kit.optspec);
     releaseTags(model);
     texts.forEach((t, i) => place(t.at, t.path, out.escape['t' + i]));
+    kit.fact.field = mapOr(kit.fact.field);
     (0, title_1.titleFacts)(kit.target);
     kit.fact.external = externalTargets(model);
     place(kit, ['definitionKind'], (0, graphqlPoint_1.definitionKind)(model));
@@ -95,6 +97,7 @@ function externalTargets(model) {
         name,
         title: target[name].fact.title,
         surface: target[name].fact.surface,
+        dir: target[name].fact.dir,
         url: '' === String(target[name].output?.repo ?? '') ? '' : (0, packageMeta_1.repoInfo)(model, name).repoUrl,
     }));
 }
@@ -140,6 +143,11 @@ function entityOps(entity) {
     return Object.fromEntries(Object.entries(mapOr(entity))
         .filter(([, ent]) => isMap(ent))
         .map(([name, ent]) => [name, opShape_1.CANON_OP_ORDER.filter((op) => isMap(ent.op?.[op]) && false !== ent.op[op].active)]));
+}
+// Every active entity has the same operations: one interface describes all.
+function sharedOps(entity, ops) {
+    const active = Object.keys(ops).filter((name) => false !== entity[name].active);
+    return 0 < active.length && active.every((name) => ops[name].join() === ops[active[0]].join());
 }
 // The JVM package of java, kotlin and scala, and the Python package py and
 // py-data import. py's is jostraca's Name for the project, lower-cased, as the
@@ -217,7 +225,9 @@ function linkConsumers(target, derived) {
     }
     const names = Object.keys(target).sort().filter((name) => isMap(target[name]?.fact));
     for (const name of names) {
-        target[name].fact.consumes = consumed(target, name, derived[name]?.derive?.wraps);
+        const wraps = derived[name]?.derive?.wraps;
+        target[name].fact.wraps = 'string' === typeof wraps ? wraps : '';
+        target[name].fact.consumes = consumed(target, name, wraps);
     }
     for (const name of names) {
         target[name].fact.consumers = names.filter((other) => false !== target[other].active && name === target[other].fact.consumes);

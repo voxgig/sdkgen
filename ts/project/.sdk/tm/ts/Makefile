@@ -16,7 +16,7 @@ clean:
 	rm -rf dist dist-test node_modules
 
 # --- Release: publish to npm ----------------------------------------------
-# Compile, then publish this package to npm and tag ts/vX.Y.Z. Run headless
+# Compile, then publish this package to npm and push its release tag. Run headless
 # under the boru key vault, which injects the npm auth token + the GitHub token
 # (never on disk or argv):
 #   boru vault exec --for=npm=<alias> --for=github=<alias> -- make publish
@@ -24,7 +24,7 @@ clean:
 # publish/tag). set -e + tag-last: a failed publish never leaves a tag behind.
 SHELL := /bin/bash
 VERSION := $(shell node -p "require('./package.json').version")
-TAG := ts/v$(VERSION)
+TAG := RELEASETAG
 BORU_DRY_RUN_FILLER := BORU-DRY-RUN-FILLER-NOT-A-REAL-SECRET
 publish: test
 	@if git rev-parse -q --verify "refs/tags/$(TAG)" >/dev/null; then \
@@ -36,6 +36,7 @@ publish: test
 	  exit 0; \
 	fi; \
 	npm stage publish --access public --registry https://registry.npmjs.org; \
+	if [ -z "$(TAG)" ]; then echo "No release tag: the model cuts none for this package."; exit 0; fi; \
 	git tag -a "$(TAG)" -m "ts v$(VERSION)"; \
 	url=$$(git remote get-url origin | sed -E 's#^git@github.com:#https://github.com/#'); \
 	if [ -n "$$token" ] && printf '%s' "$$url" | grep -q '^https://github.com/'; then \

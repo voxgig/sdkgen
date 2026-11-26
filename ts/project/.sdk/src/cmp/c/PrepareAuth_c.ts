@@ -4,28 +4,25 @@ import {
   File,
   Folder,
   cmp,
-  isHttpBasicAuth,
-  resolveAuthIn,
-  resolveAuthName,
-  resolveAuthPrefix,
+  fact,
 } from '@voxgig/sdkgen'
 
 
 import {
   KIT,
-  getModelPath,
 } from '@voxgig/apidef'
 
 
 const PrepareAuth = cmp(async function PrepareAuth(props: any) {
   const { target } = props
   const { model } = props.ctx$
+  const authFact = fact(model.main[KIT], 'auth')
 
-  const active = authSwitchedOn(model)
-  const where = resolveAuthIn(model)
-  const name = resolveAuthName(model)
-  const prefix = resolveAuthPrefix(model)
-  const basic = isHttpBasicAuth(model)
+  const active = !authFact.suppressed
+  const where = authFact.in
+  const name = authFact.name
+  const prefix = authFact.prefix
+  const basic = authFact.basic
 
   Folder({ name: 'utility' }, () => {
     File({ name: 'prepare_auth.c' }, () => {
@@ -33,13 +30,6 @@ const PrepareAuth = cmp(async function PrepareAuth(props: any) {
     })
   })
 })
-
-
-function authSwitchedOn(model: any): boolean {
-  const auth = getModelPath(model, `main.${KIT}.config.auth`,
-    { only_active: false, required: false })
-  return !(null != auth && false === auth.active)
-}
 
 
 type AuthSpec = {
@@ -58,8 +48,8 @@ function render(spec: AuthSpec): string {
 //
 // GENERATED, not templated - see PrepareAuth_c.
 //
-// This API declares no authentication, so there is no credential to place.
-// The function stays in the pipeline because make_spec calls it
+// This SDK is configured with authentication off, so there is no credential
+// to place. The function stays in the pipeline because make_spec calls it
 // unconditionally.
 
 #include "sdk.h"

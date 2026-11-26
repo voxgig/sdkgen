@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField , targetFeatures, opNeedsAction, bodyNote, matchExampleItems, requestExampleItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, entityOps, bodyNote, matchExampleItems, requestExampleItems, featureDocs, fact, clientOptions, requiredItems } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -25,6 +25,8 @@ function swiftLit(type: any, placeholder: string = 'example'): string {
 }
 
 
+const LIST_ALL = ' The match is optional — call `list(nil, nil)` to list all records.'
+
 const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string }> = {
   load: {
     sig: 'load(reqmatch, ctrl) throws -> Value',
@@ -34,7 +36,7 @@ const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string
   list: {
     sig: 'list(reqmatch, ctrl) throws -> Value',
     returns: 'a `Value` list of entities, one per record',
-    desc: 'List entities matching the given criteria. The match is optional — call `list(nil, nil)` to list all records. Returns a `Value` list of entities, one per record, and throws on error.',
+    desc: 'List entities matching the given criteria.' + LIST_ALL + ' Returns a `Value` list of entities, one per record, and throws on error.',
   },
   create: {
     sig: 'create(reqdata, ctrl) throws -> Value',
@@ -59,6 +61,7 @@ const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string
 }
 
 
+
 const ReadmeRef = cmp(function ReadmeRef(props: any) {
   const { target } = props
   const { model } = props.ctx$
@@ -67,8 +70,6 @@ const ReadmeRef = cmp(function ReadmeRef(props: any) {
   const MODULE = model.const.Name + 'Sdk'
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
-  const feature = targetFeatures(model, target)
-
   const publishedEntities = each(entity).filter((e: any) => e.active !== false)
 
 
@@ -85,6 +86,10 @@ Complete API reference for the ${model.Name} ${target.title} SDK.
 
 `)
 
+    const OPTION_KIND: Record<string, string> = { string: 'String', map: 'VMap', list: 'VList' }
+    const optionRows = clientOptions(model)
+      .map((o: any) => '| `options["' + o.name + '"]` | `' + OPTION_KIND[o.kind] + '` | ' + o.desc + ' |\n').join('')
+
     Content(`\`\`\`swift
 import ${MODULE}
 
@@ -98,13 +103,7 @@ Create a new SDK client instance. \`options\` is a \`VMap\` of \`Value\`.
 | Name | Type | Description |
 | --- | --- | --- |
 | \`options\` | \`VMap\` | SDK configuration options. |
-${isAuthActive(model) ? '| \`options["apikey"]\` | \`String\` | API key for authentication. |\n' : ''}| \`options["base"]\` | \`String\` | Base URL for API requests. |
-| \`options["prefix"]\` | \`String\` | URL prefix appended after base. |
-| \`options["suffix"]\` | \`String\` | URL suffix appended after path. |
-| \`options["headers"]\` | \`VMap\` | Custom headers for all requests. |
-| \`options["feature"]\` | \`VMap\` | Feature configuration. |
-| \`options["system"]\` | \`VMap\` | System overrides (e.g. custom fetch). |
-
+${optionRows}
 `)
 
 
@@ -177,7 +176,7 @@ Prepare a fetch definition without sending. Returns the \`fetchdef\` and throws 
 
     // Entity reference sections
     publishedEntities.map((ent: any) => {
-      const opnames = Object.keys(ent.op || {})
+      const opnames = entityOps(ent)
       const fields = Object.values(ent.fields || {})
       // Model-driven id key: null when this entity has no id-like field.
       const idF = entityIdField(ent)
@@ -192,8 +191,8 @@ Prepare a fetch definition without sending. Returns the \`fetchdef\` and throws 
 
 `)
 
-      if (ent.short) {
-        Content(`${ent.short}
+      if (fact(ent, 'desc').inline) {
+        Content(`${fact(ent, 'desc').inline}
 
 `)
       }
@@ -214,8 +213,8 @@ let ${eVar} = client.${accessor}()
 `)
         each(fields, (field: any) => {
           const req = field.r ? 'Yes' : 'No'
-          const desc = field.sh || ''
-          Content(`| \`${field.n}\` | \`${canonToType(field.t, target.name)}\` | ${req} | ${desc} |
+          const desc = fact(model.main[KIT], 'field')[ent.name]?.[field.n]?.desc.cell ?? ''
+          Content(`| \`${field.n}\` | \`${canonToType(field.t, 'swift').replace(/\|/g, '\\|')}\` | ${req} | ${desc} |
 `)
         })
 
@@ -226,7 +225,7 @@ let ${eVar} = client.${accessor}()
         const hasFieldOps = fields.some((f: any) => f.op && Object.keys(f.op).length > 0)
         if (hasFieldOps) {
           const opcols = ['load', 'list', 'create', 'update', 'patch', 'remove']
-            .filter((op: string) => opnames.includes(op) && ent.op[op]?.active !== false)
+            .filter((op: string) => opnames.includes(op))
           Content(`### Field Usage by Operation
 
 | Field | ${opcols.join(' | ')} |
@@ -259,16 +258,16 @@ let ${eVar} = client.${accessor}()
         opnames.map((opname: string) => {
           const info = OP_SIGNATURES[opname]
           if (!info) return
+          const needs = requiredItems(ent, opname).map((it: any) => it.name)
+          const desc = info.desc.replace(' The data must include the entity `id`.',
+            null != idF && needs.includes(idF) ? ' The data must include the entity `' + idF + '`.' : '')
+            .replace(LIST_ALL, 0 === needs.length ? LIST_ALL : ' The match must include ' + needs.map((n: string) => '`' + n + '`').join(', ') + '.')
 
           Content(`#### \`${info.sig}\`
 
-${info.desc}
+${desc}
 
 `)
-
-          if (opNeedsAction(ent.op[opname])) {
-            return
-          }
 
           if ('load' === opname || 'remove' === opname) {
             const matchItems = matchExampleItems(ent, opname, idF)
@@ -305,7 +304,7 @@ let result = try client.${accessor}().create(VMap([
 `)
             createItems.map((it: any, i: number) => {
               const comma = i < createItems.length - 1 ? ',' : ''
-              Content(`    (${swiftString(it.name)}, ${swiftLit(it.type, 'example_' + it.name)})${comma}  // ${canonToType(it.type, target.name)}
+              Content(`    (${swiftString(it.name)}, ${swiftLit(it.type, 'example_' + it.name)})${comma}  // ${canonToType(it.type, 'swift')}
 `)
             })
             Content(`]), nil)
@@ -323,6 +322,7 @@ let result = try client.${accessor}().create(VMap([
               return `    (${swiftString(it.name)}, ${swiftLit(it.type,
                 it.name === idF ? ent.name + '_id' : it.name)})${comma}\n`
             }).join('')
+
             Content(`\`\`\`swift
 let result = try client.${accessor}().${opname}(VMap([
 ${updateLines}]), nil)
@@ -365,7 +365,7 @@ Return the entity name.
 
 
     // Features section
-    const activeFeatures = each(feature).filter((f: any) => f.active)
+    const activeFeatures = featureDocs(model, target)
     if (activeFeatures.length > 0) {
       Content(`
 ---
@@ -377,7 +377,7 @@ Return the entity name.
 `)
 
       activeFeatures.map((f: any) => {
-        Content(`| \`${f.name}\` | ${f.version || '0.0.1'} | ${f.title || ''} |
+        Content(`| \`${f.name}\` | ${f.version} | ${f.titleCell} |
 `)
       })
 

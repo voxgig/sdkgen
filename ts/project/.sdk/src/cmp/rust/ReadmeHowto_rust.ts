@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, requiredItems, matchExampleItems, requestExampleItems } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, canonScalarKey, entityIdField, pickExampleEntity, requiredItems, matchExampleItems, requestExampleItems, envLocalAt, cdTarget, fact, directRoute } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -24,6 +24,8 @@ function rustLit(type: any): string {
 
 const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   const { target, ctx$: { model } } = props
+  const dx = directRoute(model)
+  const ENVVAR = fact(model.main[KIT], 'env')
 
   const rustcrate = crateIdent(model)
   const entity = getModelPath(model, `main.${KIT}.entity`)
@@ -72,8 +74,18 @@ let ${eVar} = client.${method}(Value::Noval).${primaryOp}(${testArg}, Value::Nov
 println!("{:?}", result);`
 
   const apikeyEnvLine = isAuthActive(model)
-    ? `\n${envName(model)}_APIKEY=<your-key>`
+    ? `\n${ENVVAR.apikey}=<your-key>${fact(model.main[KIT], 'auth').secret ? `\n${ENVVAR.secret}=<your-secret>` : ''}`
     : ''
+  const serverEnvLine = fact(model.main[KIT], 'server').filter((v: any) => v.required)
+    .map((v: any) => `\n${ENVVAR.server[v.name]}=<${v.name}>`).join('')
+  const defaulted = fact(model.main[KIT], 'server').filter((v: any) => !v.required)
+  const liveEnvNote = (0 === defaulted.length ? '' :
+    defaulted.map((v: any) => '`' + ENVVAR.server[v.name] + '`').join(', ') +
+    (1 === defaulted.length ? ', when set, replaces its server variable\'s default.\n'
+      : ', when set, replace their server variables\' defaults.\n')) +
+    'Each entity\'s tests also read `' + ENVVAR.prefix + '_TEST_<ENTITY>_ENTID`, with the\n' +
+    'entity\'s name in capitals: a JSON object of the ids of existing records, for\n' +
+    'the tests that do not create their own.\n\n'
 
   Content(`### Make a direct HTTP request
 
@@ -81,9 +93,9 @@ For endpoints not covered by entity methods:
 
 \`\`\`rust
 let result = client.direct(jo(vec![
-    ("path", Value::str("/api/resource/{id}")),
-    ("method", Value::str("GET")),
-    ("params", jo(vec![("id", Value::str("example"))])),
+    ("path", Value::str("${dx.path}")),
+    ("method", Value::str("${dx.method}")),
+    ("params", jo(vec![("${dx.param}", Value::str("example"))])),
 ])).unwrap();
 
 if getp(&result, "ok") == Value::Bool(true) {
@@ -101,9 +113,9 @@ if getp(&result, "ok") == Value::Bool(true) {
 \`\`\`rust
 // prepare() returns the fetch definition on Ok and Err on failure.
 let fetchdef = client.prepare(jo(vec![
-    ("path", Value::str("/api/resource/{id}")),
-    ("method", Value::str("DELETE")),
-    ("params", jo(vec![("id", Value::str("example"))])),
+    ("path", Value::str("${dx.path}")),
+    ("method", Value::str("${dx.method}")),
+    ("params", jo(vec![("${dx.param}", Value::str("example"))])),
 ])).unwrap();
 
 println!("{:?}", getp(&fetchdef, "url"));
@@ -130,21 +142,22 @@ Override the base URL to reach a local or staging server:
 \`\`\`rust
 let client = ${model.const.Name}SDK::new(jo(vec![
     ("base", Value::str("http://localhost:8080")),
-]));
+]))
+.expect("valid client options");
 \`\`\`
 
 ### Run live tests
 
-Create a \`.env.local\` file at the crate root:
+Create a \`.env.local\` file ${envLocalAt(props.ctx$, target)}:
 
 \`\`\`
-${envName(model)}_TEST_LIVE=TRUE${apikeyEnvLine}
+${ENVVAR.live}=TRUE${apikeyEnvLine}${serverEnvLine}
 \`\`\`
 
-Then run:
+${liveEnvNote}Then run:
 
 \`\`\`bash
-cd ${target.name} && cargo test
+${cdTarget(target)}cargo test
 \`\`\`
 
 `)

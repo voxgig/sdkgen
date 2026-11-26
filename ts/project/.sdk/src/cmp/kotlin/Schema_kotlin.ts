@@ -2,6 +2,7 @@ import {
   Content,
   File,
   cmp,
+  fact,
   entitySpecMap,
   optionSpec,
 } from '@voxgig/sdkgen'
@@ -37,7 +38,7 @@ const Schema = cmp(async function Schema(props: any) {
 import ${kotlinpackage}.utility.Json
 
 /**
- * ${model.const.Name} ${target.Name} SDK: generated schemas. Do not edit.
+ * ${model.const.Name} ${fact(target, 'title')} SDK: generated schemas. Do not edit.
  *
  * Generated from the model: \`main.kit.optspec\` and each feature's
  * \`config.options\` for the option spec; entity \`fields{}.type\` for the

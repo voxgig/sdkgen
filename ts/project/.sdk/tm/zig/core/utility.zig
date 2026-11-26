@@ -2,8 +2,8 @@
 // core/utility_type.go + tm/go/utility, and rust core/utility_type.rs +
 // utility/*.rs). Go carries the utilities as swappable function pointers;
 // here they are free functions, and the two members that genuinely vary per
-// client stay swappable: the transport (`fetcher`, wrapped by
-// retry/cache/netsim/proxy) and the `custom` map of caller-supplied
+// client stay swappable: the transport (`fetcher`, which transport-wrapping
+// features wrap) and the `custom` map of caller-supplied
 // callables.
 
 const std = @import("std");
@@ -131,7 +131,7 @@ pub const Utility = struct {
         _ = self;
         return Context.new(ctxspec, basectx);
     }
-    pub fn make_options(self: *Utility, ctx: *Context) Value {
+    pub fn make_options(self: *Utility, ctx: *Context) E!Value {
         _ = self;
         return make_options_util(ctx);
     }
@@ -602,10 +602,10 @@ pub fn make_error_util(ctx: *Context) E!Value {
 
     c.err = sdk_err;
 
-    // Fire PreUnexpected so observability features (metrics, telemetry, audit,
-    // debug) close/record error paths that never reach PreDone (e.g. a PrePoint
-    // rbac short-circuit). Fires after ctrl.err is set so hooks can read the
-    // error; features guard against double-recording when PreDone already fired.
+    // Fire PreUnexpected so features hooked on it close/record error paths that
+    // never reach PreDone (e.g. a PrePoint short-circuit). Fires after ctrl.err
+    // is set so hooks can read the error; features guard against
+    // double-recording when PreDone already fired.
     feature_hook_util(ctx, "PreUnexpected");
 
     if (c.throw != null and c.throw.? == false) {
@@ -729,14 +729,14 @@ fn mo_without(opts: Value, keys: []const []const u8) Value {
     return out;
 }
 
-pub fn make_options_util(ctx: *Context) Value {
+pub fn make_options_util(ctx: *Context) E!Value {
     const options: Value = switch (ctx.options) {
         .object => ctx.options,
         else => h.omap(),
     };
 
     // Merge custom utility overrides onto the utility object (function values
-    // are shared by reference — gotcha #8).
+    // are shared by reference).
     const custom_utils = h.to_map(h.getp(options, "utility"));
     if (custom_utils == .object) {
         if (ctx.utility) |utility| {
@@ -845,8 +845,7 @@ pub fn make_options_util(ctx: *Context) Value {
     // (user), else the Config default. A placeholder that resolves to "" is a
     // construction ERROR in live mode - the URL cannot work - but in test mode
     // substitutes the deterministic value "test-<name>" so offline tests need
-    // no configuration. The SDK constructor has no error return, so a missing
-    // required variable PANICS: construction-time misconfiguration.
+    // no configuration.
     //
     // Scanned by hand: a placeholder is `{` followed by [A-Za-z0-9_]+ and `}`;
     // anything else is literal text, so a stray brace in a URL is left alone.
@@ -889,12 +888,12 @@ pub fn make_options_util(ctx: *Context) Value {
                             out.appendSlice(h.A(), "test-") catch {};
                             out.appendSlice(h.A(), name) catch {};
                         } else {
-                            std.debug.panic(
+                            return ctx.fail("server_var_required", fmt(
                                 "{s}: the server variable '{s}' is required: the API " ++
                                     "base URL is '{s}' - pass .server = .{{ .{s} = \"...\" }} " ++
                                     "in the SDK options",
                                 .{ sdkname, name, base, name },
-                            );
+                            ));
                         }
                     } else {
                         out.appendSlice(h.A(), val) catch {};
@@ -950,7 +949,7 @@ pub fn make_options_util(ctx: *Context) Value {
 }
 
 // ============================================================================
-// make_point (gotcha #2: rbac PrePoint short-circuit)
+// make_point (and the rbac PrePoint short-circuit)
 // ============================================================================
 
 // How many path segments a point has.

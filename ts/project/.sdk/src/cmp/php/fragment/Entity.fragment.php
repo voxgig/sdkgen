@@ -67,9 +67,9 @@ class EntyClass
     }
 
     /**
-     * A `remove` marks the entity deleted. The instance KEEPS the data it
+     * A remove marks the entity deleted. The instance KEEPS the data it
      * held — a caller can still read what was removed — but it is no longer a
-     * live record. See AGENTS.md "Entity operations return ENTITIES".
+     * live record.
      *
      * The remove path below already called markDeleted(); php was the one
      * target that never declared it (cpp and swift both do), so any SDK whose
@@ -135,10 +135,10 @@ class EntyClass
     }
 
     /**
-     * Feature #4: run `action` through the full pipeline and yield result
-     * items, so the `streaming` feature's incremental output is reachable from
-     * a generated entity (a normal op call materialises the whole result).
-     * `callopts` parameterises the call:
+     * Run `action` through the full pipeline and yield result
+     * items, so the `streaming` feature's incremental output, when that
+     * feature is active, is reachable from a generated entity (a normal op
+     * call materialises the whole result). `callopts` parameterises the call:
      *   - inbound (download): yield items/chunks (from the streaming feature
      *     when active, else the materialised items);
      *   - outbound (upload): an iterable `body` in callopts is attached to the
@@ -390,9 +390,9 @@ class EntyClass
         // instance, and the caller reaches the record through data(). Two
         // structural exceptions: `list` resolves to the ARRAY of entity
         // instances make_result built, and a failed op with throwing disabled
-        // hands back the error payload unchanged. `remove` additionally marks
+        // hands back the error payload unchanged. A remove additionally marks
         // the entity deleted; it KEEPS its data, so a caller can still read
-        // what was removed. See AGENTS.md "Entity operations return ENTITIES".
+        // what was removed.
         $opname = $ctx->op === null ? null : $ctx->op->name;
 
         if ($ctx->result !== null && $ctx->result->ok && $opname !== 'list') {

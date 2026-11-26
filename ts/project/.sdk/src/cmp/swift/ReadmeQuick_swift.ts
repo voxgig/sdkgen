@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems, sendsId } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems, sendsId, fact, seriesList } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -12,6 +12,7 @@ import { swiftVarName, swiftListMatch, swiftString } from './utility_swift'
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   const { target, ctx$: { model } } = props
+  let step = 0
 
   const SDK = model.const.Name + 'SDK'
   const MODULE = model.const.Name + 'Sdk'
@@ -46,32 +47,29 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
     return `.string(${swiftString(placeholder)})`
   }
 
-  if (authActive) {
-    Content(`### 1. Create a client
+  // The constructor refuses a templated URL it has no value for, so the quick
+  // start passes each variable the URL uses with no default.
+  const svars = fact(model.main[KIT], 'server').filter((v: any) => v.required)
+  const ctorLines = [
+    ...(authActive ? [`options.entries["apikey"] = .string(\n    ProcessInfo.processInfo.environment["${envName(model)}_APIKEY"] ?? "")`] : []),
+    ...(fact(model.main[KIT], 'auth').secret ? [`options.entries["secret"] = .string(\n    ProcessInfo.processInfo.environment["${envName(model)}_SECRET"] ?? "")`] : []),
+    ...(0 === svars.length ? [] : ['let server = VMap()',
+      ...svars.map((v: any) => `server.entries["${v.name}"] = .string("<${v.name}>")`),
+      'options.entries["server"] = .map(server)']),
+  ]
+  const ctor = 0 === ctorLines.length
+    ? `let client = ${SDK}()`
+    : ['let options = VMap()', ...ctorLines, `let client = ${SDK}(options)`].join('\n')
+
+  Content(`### ${++step}. Create a client
 
 \`\`\`swift
 import ${MODULE}
-import Foundation
-
-let options = VMap()
-options.entries["apikey"] = .string(
-    ProcessInfo.processInfo.environment["${envName(model)}_APIKEY"] ?? "")
-let client = ${SDK}(options)
+${authActive ? 'import Foundation\n' : ''}
+${ctor}
 \`\`\`
 
 `)
-  }
-  else {
-    Content(`### 1. Create a client
-
-\`\`\`swift
-import ${MODULE}
-
-let client = ${SDK}()
-\`\`\`
-
-`)
-  }
 
   if (exampleEntity) {
     const eName = nom(exampleEntity, 'Name')
@@ -84,7 +82,7 @@ let client = ${SDK}()
     const idF = entityIdField(exampleEntity)
 
     if (opnames.includes('list')) {
-      Content(`### 2. List ${eName.toLowerCase()} records
+      Content(`### ${++step}. List ${eName.toLowerCase()} records
 
 \`list(nil, nil)\` returns a \`Value\` list of entities, one per record, and
 throws on error; \`asNative as? Entity\` unwraps an item, and its \`data()\`
@@ -126,7 +124,7 @@ catch {
         `(${swiftString(it.name)}, ${swiftLit(it.type,
           it.name === neIdF ? 'example_id' : 'example_' + it.name)})`)
 
-      Content(`### 3. Load ${neArticle} ${neName.toLowerCase()}
+      Content(`### ${++step}. Load ${neArticle} ${neName.toLowerCase()}
 
 ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
 \`load()\` returns the ENTITY — call data() for the record — and throws on error.
@@ -156,7 +154,7 @@ catch {
             it.name === idF ? 'example_id' : 'example_' + it.name)})`).join(', ')}])`
         : 'nil'
 
-      Content(`### 3. Load ${article} ${eName.toLowerCase()}
+      Content(`### ${++step}. Load ${article} ${eName.toLowerCase()}
 
 \`load()\` returns the ENTITY — call data() for the record — and throws on error.
 
@@ -196,7 +194,8 @@ catch {
 
     if (opnames.includes('create') || opnames.includes('update') || opnames.includes('patch') ||
       opnames.includes('remove')) {
-      Content(`### 4. Create, update, and remove
+      Content(`### ${++step}. ${seriesList(['create', 'update', 'patch', 'remove']
+        .filter((o: string) => opnames.includes(o))).replace(/^./, (c: string) => c.toUpperCase())}
 
 \`\`\`swift
 `)

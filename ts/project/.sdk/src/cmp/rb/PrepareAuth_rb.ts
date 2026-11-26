@@ -4,26 +4,24 @@ import {
   File,
   Folder,
   cmp,
-  isHttpBasicAuth,
-  resolveAuthIn,
-  resolveAuthName,
+  fact,
 } from '@voxgig/sdkgen'
 
 
 import {
   KIT,
-  getModelPath,
 } from '@voxgig/apidef'
 
 
 const PrepareAuth = cmp(async function PrepareAuth(props: any) {
   const { target } = props
   const { model } = props.ctx$
+  const authFact = fact(model.main[KIT], 'auth')
 
-  const active = authSwitchedOn(model)
-  const where = resolveAuthIn(model)
-  const name = resolveAuthName(model)
-  const basic = isHttpBasicAuth(model)
+  const active = !authFact.suppressed
+  const where = authFact.in
+  const name = authFact.name
+  const basic = authFact.basic
 
   Folder({ name: 'utility' }, () => {
     File({ name: 'prepare_auth.' + target.ext }, () => {
@@ -49,9 +47,9 @@ ${'cookie' === spec.where ? "require_relative 'prepare_headers'\n" : ''}module $
   // NO AUTH AT ALL. A public API's SDK gets a prepare_auth that is honest
   // about it rather than one that deletes a header nobody set.
   if (!spec.active) {
-    return head + `  # This API declares no authentication, so there is no credential to
-  # place. The utility stays in the pipeline because make_spec calls it
-  # unconditionally, and register.rb binds it unconditionally.
+    return head + `  # This SDK is configured with authentication off, so there is no
+  # credential to place. The utility stays in the pipeline because make_spec
+  # calls it unconditionally, and register.rb binds it unconditionally.
 ${guard}
     return spec, nil
   }
@@ -208,13 +206,6 @@ function place(where: string, clear: string): string {
         auth_prefix.empty? ? apikey_val : "#{auth_prefix} #{apikey_val}"
     end
 `
-}
-
-
-function authSwitchedOn(model: any): boolean {
-  const auth = getModelPath(model, `main.${KIT}.config.auth`,
-    { only_active: false, required: false })
-  return !(null != auth && false === auth.active)
 }
 
 

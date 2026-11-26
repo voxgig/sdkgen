@@ -2,7 +2,8 @@
 import * as Path from 'node:path'
 
 import {
-  cmp, each, deriveEntityNames, entityOps,
+  cmp, each, deriveEntityNames, entityOps, consumedTarget, fact,
+  entityIdField, matchArg, listMatchArg, dataArg, idLiteral,
   File, Content, Fragment, Slot, goModule, goVersion
 } from '@voxgig/sdkgen'
 
@@ -18,8 +19,8 @@ import {
 
 const BORU_ENG_VERSION = 'v0.0.2-0.20260804163932-0d66b55c5110'
 
-// go.sum entries for BORU_ENG_VERSION and its transitive deps. The sibling
-// SDK dep needs no entry (path replace). Deterministic because the version
+// go.sum entries for BORU_ENG_VERSION and its transitive deps. The Go SDK
+// dep needs no entry (path replace). Deterministic because the version
 // is pinned above — regenerate with `go mod tidy` and update BOTH constants
 // together when bumping BORU_ENG_VERSION.
 const BORU_ENG_GOSUM = `github.com/boru-lang/boru/eng/go v0.0.2-0.20260804163932-0d66b55c5110 h1:iwMbEPhByhVhJgt6xhyhT+jXMiARvbG4wHIrc4OPcvU=
@@ -39,13 +40,102 @@ github.com/tabnas/parser/go v0.4.0/go.mod h1:WrlfEVyZ1QjEIowWiyEu3K1iHj7wxuPut5z
 `
 
 
+// A boru map of what an example sends, from the JSON the SDK documents'
+// examples are built from; '' when it sends nothing.
+function boruMap(json: string): string {
+  const members = Object.entries(JSON.parse(json))
+  return 0 === members.length ? '' : '{' + members.map(([key, val]) =>
+    (/^[A-Za-z_][A-Za-z0-9_]*$/.test(key) ? key : JSON.stringify(key)) + ':' +
+    JSON.stringify(val)).join(',') + '}'
+}
+
+
+function queryOf(ent: any, op: string): string {
+  const idF = entityIdField(ent)
+  return boruMap('list' === op ? listMatchArg('json', ent) :
+    'update' === op ? dataArg('json', ent, 'update', idF) :
+    matchArg('json', ent, op, idF, idLiteral(ent, op, idF)))
+}
+
+
+// One command for an operation of an entity, as the shell passes it and as
+// the REPL reads it, and the scalar that stands for its query, if one does.
+function commandOf(ent: any, op: string):
+  { query: string, shell: string, repl: string, scalar: string } {
+  const query = queryOf(ent, op)
+  const name = String(ent.name).toLowerCase()
+  const scalar = /^\{id:-?\d+(\.\d+)?\}$/.test(query) ? query.slice(4, -1) : ''
+  return {
+    query,
+    shell: [op, ...('' === query ? [] : ["'" + query.replace(/'/g, "'\\''") + "'"]), name].join(' '),
+    repl: [op, ...('' === query ? [] : [query]), name].join(' '),
+    scalar,
+  }
+}
+
+
+function phrase(items: string[]): string {
+  return items.length < 2 ? items.join('') :
+    items.slice(0, -1).join(', ') + ' and ' + items[items.length - 1]
+}
+
+
+type Need = { kind: string, name: string, value: string, note: string, row: string, help: string }
+
+// What a run reads from the environment beyond the base URL: the credential
+// and each server variable the API requires, with an example value each.
+function environment(model: any): Need[] {
+  const kit = model.main[KIT]
+  const auth = fact(kit, 'auth')
+  const env = fact(kit, 'env')
+  return [
+    ...(auth.apikey ? [{ kind: 'apikey', name: env.apikey, value: 'apikey_xxx', note: 'API key',
+      row: 'API key sent with every request.', help: 'api key' }] : []),
+    ...(auth.secret ? [{ kind: 'secret', name: env.secret, value: 'secret_xxx', note: 'API secret',
+      row: 'Secret sent with the API key, as HTTP Basic credentials.', help: 'api secret' }] : []),
+    ...(fact(kit, 'server') as any[]).filter((v: any) => v.required).map((v: any) => ({
+      kind: 'server', name: env.server[v.name],
+      value: 'your-' + v.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+      note: `the ${v.name} of the API URL`,
+      row: `The \`${v.name}\` variable of the API's server URL, which has no default.`,
+      help: `${v.name} in the url`,
+    })),
+  ]
+}
+
+
+// Go that reads the credential and the server variables into the SDK options.
+function readOptions(model: any): string {
+  const kit = model.main[KIT]
+  const env = fact(kit, 'env')
+  const set = (key: string, val: string) =>
+    `\t\tif opts == nil {\n\t\t\topts = map[string]any{}\n\t\t}\n\t\topts[${JSON.stringify(key)}] = ${val}\n`
+  const servers = (fact(kit, 'server') as any[]).filter((v: any) => v.required)
+  const apikey = !fact(kit, 'auth').apikey ? '' :
+    `\tif apikey := os.Getenv(${JSON.stringify(env.apikey)}); apikey != "" {\n` +
+    `\t\topts = map[string]any{"apikey": apikey}\n\t}\n`
+  const secret = !fact(kit, 'auth').secret ? '' :
+    `\tif secret := os.Getenv(${JSON.stringify(env.secret)}); secret != "" {\n` +
+    set('secret', 'secret') + '\t}\n'
+  const vars = 0 === servers.length ? '' :
+    '\tserverVars := map[string]any{}\n' +
+    `\tfor name, key := range map[string]string{${servers.map((v: any) =>
+      JSON.stringify(v.name) + ': ' + JSON.stringify(env.server[v.name])).join(', ')}} {\n` +
+    '\t\tif val := os.Getenv(key); val != "" {\n\t\t\tserverVars[name] = val\n\t\t}\n\t}\n' +
+    '\tif 0 < len(serverVars) {\n' + set('server', 'serverVars') + '\t}\n'
+  return apikey + secret + vars
+}
+
+
 const Main = cmp(function Main(props: any) {
   const { target } = props
   const { model } = props.ctx$
 
-  const org = model.origin || 'voxgig-sdk'
-  const sdkModule = goModule(model, 'go')
+  const sdk = consumedTarget(model, target, props.ctx$.stdrep.SDKREL)
+  const sdkModule = goModule(model, sdk.name)
   const cliModule = goModule(model, target.name)
+  // What `go build` names the binary when no -o is given.
+  const built = Path.posix.basename(cliModule)
 
   const entityMap: any = getModelPath(model, `main.${KIT}.entity`)
   deriveEntityNames(entityMap)
@@ -55,35 +145,24 @@ const Main = cmp(function Main(props: any) {
 
   File({ name: '.gitignore' }, () => Content(`/dist/
 /${model.name}-cli
-/go-cli
+/${built}
 .jostraca/
 `))
 
   const bin = `${model.name}-cli`
-  const entityList = entityNames.length > 0 ? entityNames.join(' ') : '(none)'
   const entityCount = entityNames.length
 
-  const projUpper = String(model.name).toUpperCase().replace(/[^A-Z0-9]/g, '_')
-  const apiKeyEnv = projUpper + '_APIKEY'
-  const baseEnv = projUpper + '_BASE'
+  const env = fact(model.main[KIT], 'env')
+  const baseEnv = env.base
+  const needs = environment(model)
+  const keyed = needs.some((need) => 'apikey' === need.kind)
+  const servered = needs.some((need) => 'server' === need.kind)
 
   const CLI_VERB_ROWS: Record<string, string> = {
     list:   '| `list`   | `list <entity>` · `list <query> <entity>`     | First page of records          |',
     load:   '| `load`   | `load <entity>` · `load <query> <entity>`     | A single record                |',
     update: '| `update` | `update <query> <entity>`                     | Update a record, return it     |',
   }
-  const supportedOps = new Set<string>()
-  each(entityMap, (entity: any) => {
-    if (entity && entity.active === false) return
-    const ops = (entity && entity.op) || {}
-    for (const opname of Object.keys(ops)) {
-      if (ops[opname] && ops[opname].active !== false) supportedOps.add(opname)
-    }
-  })
-  const verbRows = ['list', 'load', 'update']
-    .filter(op => supportedOps.has(op))
-    .map(op => CLI_VERB_ROWS[op])
-    .join('\n')
 
   // Concrete examples, each gated on the ops the entity it names can run
   // without an action, so no example is refused.
@@ -95,89 +174,113 @@ const Main = cmp(function Main(props: any) {
     : (entityNames[0] || 'entity')
   const hasOp = (entity: any, op: string) => entityOps(entity).includes(op)
   const firstHas = (op: string) => hasOp(firstEntityObj, op)
+  const wordsOf = (entity: any) => ['list', 'load', 'update'].filter((op) => hasOp(entity, op))
+  const wordless = activeEntityObjs.filter((ent: any) => 0 === wordsOf(ent).length)
+  // The words the binary registers: those an active entity runs.
+  const words = ['list', 'load', 'update'].filter((op) => activeEntityObjs.some((ent: any) => hasOp(ent, op)))
+  const wordList = words.map((op) => '\`' + op + '\`').join(' / ')
+  const verbRows = words.map((op) => CLI_VERB_ROWS[op]).join('\n')
+  const usage = [...needs.map((need) => `${need.name} (${need.help})`), `${baseEnv} (base url override)`]
   const otherLister = activeEntityObjs.slice(1).find((e: any) => hasOp(e, 'list'))
   const entityNoun = entityCount === 1 ? 'entity' : 'entities'
   // The best single example expression this SDK can actually run, for the
   // tutorial/REPL walkthroughs (never demonstrates an unsupported op).
-  const exampleOp =
-    firstHas('list') ? `list ${firstEntity}` :
-    firstHas('load') ? `load 1 ${firstEntity}` :
-    firstHas('update') ? `update '{id:1}' ${firstEntity}` : ''
+  const exampleWord = ['list', 'load', 'update'].find((op) => firstHas(op))
+  const example = null == exampleWord ? null : commandOf(firstEntityObj, exampleWord)
+  const exampleOp = null == example ? '' : example.repl
   // Fallback differs by context: a COMMAND-LINE arg uses the `--help` flag;
   // the `/`-prefixed meta-command is only valid INSIDE the REPL.
-  const cliExampleExpr = exampleOp || '--help'
+  const cliExampleExpr = null == example ? '--help' : example.shell
   const replExampleExpr = exampleOp || '/help'
 
+  const list = firstHas('list') ? commandOf(firstEntityObj, 'list') : null
+  const load = firstHas('load') ? commandOf(firstEntityObj, 'load') : null
+  const update = firstHas('update') ? commandOf(firstEntityObj, 'update') : null
+  // A query a scalar stands for, shown both ways, with the comments aligned.
+  const loads: [string, string][] = null == load ? [] : '' === load.scalar ? [[load.shell, '']] : [
+    [`load ${load.scalar} ${firstEntity}`, `{id:${load.scalar}} shorthand`],
+    [load.shell, 'explicit match map'],
+  ]
+  const loadWidth = Math.max(0, ...loads.map(([cmd]) => cmd.length))
+  const loadLines = (pad: number) => loads.map(([cmd, note]) =>
+    `./${bin} ` + ('' === note ? cmd : cmd.padEnd(loadWidth + pad) + ' # ' + note))
+
   const ex: string[] = []
-  ex.push(`# 1. Build a native binary (-> dist/<os>-<arch>/${bin})`)
+  let step = 0
+  ex.push(`# ${++step}. Build a native binary (-> dist/<os>-<arch>/${bin})`)
   ex.push('make build')
   ex.push('')
-  ex.push('# 2. See usage (words, entities, env vars)')
+  ex.push(`# ${++step}. See usage (words, entities, env vars)`)
   ex.push(`./${bin} --help`)
   ex.push('')
-  ex.push('# 3. Provide credentials once, via the environment')
-  ex.push(`export ${apiKeyEnv}=apikey_xxx`)
-  ex.push('')
-  ex.push('# 4. Each command line is ONE boru expression, run against the API:')
-  if (firstHas('list')) ex.push(`./${bin} list ${firstEntity}`)
-  if (firstHas('load')) {
-    ex.push(`./${bin} load 1 ${firstEntity}            # {id:1} shorthand`)
-    ex.push(`./${bin} load '{id:1}' ${firstEntity}       # explicit match map`)
+  if (0 < needs.length) {
+    ex.push(`# ${++step}. ${keyed ? 'Provide credentials' : 'Configure it'} once, via the environment`)
+    needs.forEach((need) => ex.push(`export ${need.name}=${need.value}`))
+    ex.push('')
   }
-  if (firstHas('update')) ex.push(`./${bin} update '{name:"x"}' ${firstEntity}`)
+  ex.push(`# ${++step}. Each command line is ONE boru expression, run against the API:`)
+  if (null != list) ex.push(`./${bin} ${list.shell}`)
+  ex.push(...loadLines(11))
+  if (null != update) ex.push(`./${bin} ${update.shell}`)
   if (null != otherLister) {
-    ex.push(`./${bin} list ${String(otherLister.name).toLowerCase()}`)
+    ex.push(`./${bin} ${commandOf(otherLister, 'list').shell}`)
   }
   ex.push('')
-  ex.push('# 5. Override the API base URL for a single call')
+  ex.push(`# ${++step}. Override the API base URL for a single call`)
   ex.push(`${baseEnv}=https://api.example.com ./${bin} ${cliExampleExpr}`)
   ex.push('')
-  ex.push('# 6. No arguments -> interactive REPL')
+  ex.push(`# ${++step}. No arguments -> interactive REPL`)
   ex.push(`./${bin}`)
   ex.push(`${model.name}> ${replExampleExpr}`)
   ex.push(`${model.name}> /quit`)
   const exampleBlock = ex.join('\n')
 
   const howtos: string[] = []
-  if (firstHas('list')) howtos.push(`### List the records of an entity
+  if (null != list) howtos.push(`### List the records of an entity
 
 \`\`\`sh
-./${bin} list ${firstEntity}
+./${bin} ${list.shell}
 \`\`\`
 
-\`list <entity>\` returns the first page of records. \`<entity>\` is a bareword —
+${'' === list.query ? '\`list <entity>\` returns the first page of records.' :
+    '\`list <query> <entity>\` returns the first page of records under the parent the query names.'} \`<entity>\` is a bareword —
 it is auto-quoted as an boru atom, so no quotes are needed.`)
 
-  if (firstHas('load')) howtos.push(`### Load a single record
+  if (null != load) howtos.push(`### Load a single record
 
 \`\`\`sh
-./${bin} load 1 ${firstEntity}          # scalar shorthand for {id:1}
-./${bin} load '{id:1}' ${firstEntity}     # explicit match map
+${loadLines(5).map((line) => line.replace(/ # \{id:(.*)\} shorthand$/, ' # scalar shorthand for {id:$1}')).join('\n')}
 \`\`\`
 
-The query is either a **scalar** (\`1\`, treated as \`{id:1}\`) or a **match map**
-(\`{id:1}\`, \`{slug:"acme"}\`). Quote the map so your shell passes it through intact.`)
+${'' === load.query ?
+    `\`load <entity>\` needs no query for \`${firstEntity}\`, which has one record.` :
+    `The query is a **match map** naming the record (\`${load.query}\`)${'' === load.scalar ? '' :
+      ', or a **scalar**, treated as \`{id:<scalar>}\`'}. Quote the map so your shell passes it through intact.`}`)
 
-  if (firstHas('update')) howtos.push(`### Update a record
+  if (null != update) howtos.push(`### Update a record
 
 \`\`\`sh
-./${bin} update '{id:1,name:"new"}' ${firstEntity}
+./${bin} ${update.shell}
 \`\`\`
 
 The match map carries both the selector and the new field values; the updated
 record is printed back.`)
 
-  howtos.push(`### Authenticate and choose an environment
+  const exports = [...needs.map((need) => [`export ${need.name}=${need.value}`, need.note]),
+    [`export ${baseEnv}=https://api.example.com`,
+      servered ? 'or: the whole API base URL' : 'optional: override the API base URL']]
+  const width = Math.max(...exports.map(([line]) => line.length)) + 1
+  howtos.push(`### ${keyed ? 'Authenticate and choose' : 'Choose'} an environment
 
 Configuration is read from the environment — nothing is written to disk:
 
 \`\`\`sh
-export ${apiKeyEnv}=apikey_xxx             # API key
-export ${baseEnv}=https://api.example.com  # optional: override the API base URL
+${exports.map(([line, note]) => line.padEnd(width) + ' # ' + note).join('\n')}
 ./${bin} ${cliExampleExpr}
 \`\`\`
 
-Both are injectable by a secrets vault, so the key never has to be typed inline.`)
+${1 === exports.length ? 'It is' : 2 === exports.length ? 'Both are' : 'Each is'} injectable by a secrets vault${keyed ?
+    ', so the key never has to be typed inline' : ''}.`)
 
   howtos.push(`### Explore interactively with the REPL
 
@@ -199,18 +302,38 @@ make build-all   # linux/darwin/windows x amd64/arm64, under dist/<os>-<arch>/
 
   howtos.push(`### Discover the available entities
 
-\`/help\` in the REPL prints the full entity list, or see [Entities](#entities)
-below — this SDK exposes ${entityCount} ${entityNoun}.`)
+\`/help\` in the REPL lists the entities a word runs on, as [Entities](#entities)
+below does — this SDK exposes ${entityCount} ${entityNoun}.`)
 
   const howtoBlock = howtos.join('\n\n')
+
+  const tutorialEnv = 0 === needs.length ? '' : `2. **Set ${phrase([
+    ...(keyed ? ['your API key'] : []),
+    ...(needs.some((need) => 'secret' === need.kind) ? ['secret'] : []),
+    ...(servered ? ['the server variables'] : []),
+  ])}** (read from the environment):
+
+   \`\`\`sh
+${needs.map((need) => `   export ${need.name}=${need.value}`).join('\n')}
+   \`\`\`
+
+`
+  const tutorialStep = 0 === needs.length ? 1 : 2
+
+  const goSdk = '' !== sdk.dir ? `the sibling Go SDK at \`${sdk.path}\`` :
+    sdk.away ? 'the Go SDK in ' + ('' === sdk.url ? 'its own repository' :
+      `[its own repository](${sdk.url})`) : `the Go SDK at \`${sdk.path}\``
+  const here = 'folder' === fact(target, 'place') ? `this \`${target.name}/\` directory` :
+    'the repository root'
+  const source = 'external' === fact(target, 'place') ? 'the SDK project' : 'this repo'
 
   File({ name: 'README.md' }, () => Content(`# ${model.name}-cli
 
 boru-driven command-line client **and** interactive REPL for the ${model.Name}
 SDK. Each command line is parsed as a single [boru](https://github.com/boru-lang/boru)
 expression and evaluated against the live API; run it with no arguments to drop
-into a REPL. Built on \`github.com/boru-lang/boru/eng/go\` and the sibling Go SDK
-at \`../go\`.
+into a REPL. Built on \`github.com/boru-lang/boru/eng/go\` and
+${goSdk}.
 
 ## Examples
 
@@ -224,29 +347,23 @@ ${exampleBlock}
 
 ## Tutorial: your first query in under a minute
 
-1. **Build the binary.** From this \`go-cli/\` directory:
+1. **Build the binary.** From ${here}:
 
    \`\`\`sh
    make build          # -> dist/<os>-<arch>/${bin}
    \`\`\`
 
-2. **Set your API key** (read from the environment):
-
-   \`\`\`sh
-   export ${apiKeyEnv}=apikey_xxx
-   \`\`\`
-
-3. **Run a query.** Evaluate an boru expression against the API (or run with no
+${tutorialEnv}${tutorialStep + 1}. **Run a query.** Evaluate an boru expression against the API (or run with no
    arguments to open the REPL):
 
    \`\`\`sh
    ./dist/*/${bin} ${cliExampleExpr}
    \`\`\`
 
-4. **Go interactive.** Run the binary with no arguments to open the REPL, then
+${tutorialStep + 2}. **Go interactive.** Run the binary with no arguments to open the REPL, then
    type \`/help\` for the word and entity lists and \`/quit\` to leave.
 
-That is the whole loop: *build → set key → evaluate boru expressions*.
+That is the whole loop: *build → ${keyed ? 'set key → ' : 0 < needs.length ? 'configure → ' : ''}evaluate boru expressions*.
 
 ## How-to guides
 
@@ -256,24 +373,26 @@ ${howtoBlock}
 
 ### Words
 
-The CLI registers these boru words, each bound to the SDK:
+${0 === words.length ? 'The CLI registers no boru words: no entity has a list, load or update.' :
+    `The CLI registers these boru words, each bound to the SDK:
 
 | Word     | Signatures                                    | Returns                        |
 |----------|-----------------------------------------------|--------------------------------|
-${verbRows}
+${verbRows}`}
 
 - \`<entity>\` is a bareword, auto-quoted as an boru atom (e.g. \`${firstEntity}\`).
-- \`<query>\` is either a **Map** (\`{id:1}\`) or a **Scalar** (\`1\`, treated as
-  \`{id:1}\`). A scalar is always wrapped as \`{id:<value>}\`.
+- \`<query>\` is either a **Map** naming the record, or a **Scalar**, which is
+  always wrapped as \`{id:<value>}\`.
 
 ### Environment variables
 
 | Variable | Purpose |
 |----------|---------|
-| \`${apiKeyEnv}\` | API key sent with every request. |
-| \`${baseEnv}\` | Optional override of the API base URL. |
+${needs.map((need) => `| \`${need.name}\` | ${need.row} |\n`).join('')}| \`${baseEnv}\` | ${servered ?
+    'The whole API base URL, in place of the server variables.' :
+    'Optional override of the API base URL.'} |
 
-Unset variables fall back to the SDK's built-in defaults.
+Unset variables fall back to the SDK's built-in defaults${servered ? ', and a server variable has none' : ''}.
 
 ### CLI flags
 
@@ -303,10 +422,17 @@ Meta-commands use the \`/\` prefix (everything else on a line is evaluated as bo
 
 ### Entities
 
-The ${entityCount} ${entityNoun} this SDK exposes (any is valid as \`<entity>\`):
+${wordless.length === activeEntityObjs.length ? 'No word runs on any entity of this SDK.' :
+    `The entities a word runs on, each with its words:
 
-${entityList}
-
+| Entity | Words |
+|--------|-------|
+${activeEntityObjs.filter((ent: any) => !wordless.includes(ent)).map((ent: any) =>
+      `| \`${String(ent.name).toLowerCase()}\` | ${wordsOf(ent).map((op) => '\`' + op + '\`').join(', ')} |`).join('\n')}`}
+${0 === wordless.length ? '' : `
+The SDK's other ${1 === wordless.length ? 'entity' : 'entities'}, ${phrase(wordless.map((ent: any) =>
+    '\`' + String(ent.name).toLowerCase() + '\`'))}, ${1 === wordless.length ? 'has' : 'have'} no list, load or update.
+`}
 ## Explanation
 
 ### Why boru?
@@ -314,14 +440,17 @@ ${entityList}
 The whole command line is one [boru](https://github.com/boru-lang/boru) expression,
 not a fixed \`verb --flag\` grammar. That means the same binary works one-shot
 (\`./${bin} <expr>\`) and interactively (the REPL), and expressions compose the
-same way in both. \`list\` / \`load\` / \`update\` are ordinary boru *words* bound to
+same way in both. ${0 === words.length ? 'Each' : `${wordList} ${1 < words.length ? 'are' : 'is an'}`} ordinary boru *word${1 < words.length ? 's' : ''}* bound to
 the SDK — adding SDK operations is adding words, not re-parsing flags.
 
 ### How it is wired
 
 \`main.go\` builds the SDK client (configured from the environment), creates an
-boru registry, and \`words.go\` registers \`list\` / \`load\` / \`update\` as native
-words that dispatch on the entity atom and call the sibling Go SDK at \`../go\`.
+boru registry, and ${0 === words.length ?
+    `\`words.go\` registers no words, as no entity has a list, load or update; the
+binary is built on ${goSdk}.` :
+    `\`words.go\` registers ${wordList} as native
+word${1 < words.length ? 's that dispatch' : ' that dispatches'} on the entity atom and call${1 < words.length ? '' : 's'} ${goSdk}.`}
 Results are unwrapped from their \`Entity\` wrappers to plain data before being
 printed.
 
@@ -333,12 +462,12 @@ stderr with a non-zero exit code.
 
 ## Generated by
 
-sdkgen \`go-cli\` target. See the target source under \`.sdk/src/cmp/go-cli/\` in
-this repo, or upstream at
-\`github.com/voxgig/sdkgen/project/.sdk/src/cmp/go-cli/\`.
+sdkgen \`${target.name}\` target. See the target source under \`.sdk/src/cmp/${target.name}/\` in
+${source}, or upstream at
+\`github.com/voxgig/sdkgen/project/.sdk/src/cmp/${fact(target, 'origin')}/\`.
 `))
 
-  // go.mod — sibling SDK via relative replace; boru/eng/go from the
+  // go.mod — the Go SDK via relative replace; boru/eng/go from the
   // public Go module proxy. The go directive must be >= boru/eng/go's own
   // (go 1.24.7) — keep in step with BORU_ENG_VERSION.
   File({ name: 'go.mod' }, () => Content(`module ${cliModule}
@@ -355,15 +484,15 @@ require (
 	github.com/tabnas/parser/go v0.4.0 // indirect
 )
 
-replace ${sdkModule} => ../go
+replace ${sdkModule} => ${sdk.path}
 `))
 
   // go.sum — required for `go build` to accept the boru/eng/go dependency
-  // (the path-replaced sibling SDK needs no entry). Pinned alongside
+  // (the path-replaced Go SDK needs no entry). Pinned alongside
   // BORU_ENG_VERSION above.
   File({ name: 'go.sum' }, () => Content(BORU_ENG_GOSUM))
 
-  File({ name: 'Makefile' }, () => Content(`# ${model.name}-cli build. GENERATED by @voxgig/sdkgen go-cli target.
+  File({ name: 'Makefile' }, () => Content(`# ${model.name}-cli build. GENERATED by @voxgig/sdkgen ${target.name} target.
 BINARY := ${model.name}-cli
 DIST := dist
 GOOS := $(shell go env GOOS)
@@ -387,7 +516,7 @@ build-all: clean
 \tGOOS=windows GOARCH=arm64 go build -o $(DIST)/windows-arm64/$(BINARY).exe .
 
 clean:
-\trm -rf $(DIST) $(BINARY) go-cli
+\trm -rf $(DIST) $(BINARY) ${built}
 `))
 
   File({ name: 'main.go' }, () => {
@@ -397,15 +526,22 @@ clean:
         replace: {
           ...props.ctx$.stdrep,
           GOMODULE: sdkModule,
-          // Env vars the CLI reads: <PROJ>_APIKEY for the key and <PROJ>_BASE
-          // to override the API base URL (both injectable by a secrets vault).
-          APIKEYENVVAR: String(model.name).toUpperCase().replace(/[^A-Z0-9]/g, '_') + '_APIKEY',
-          BASEENVVAR: String(model.name).toUpperCase().replace(/[^A-Z0-9]/g, '_') + '_BASE',
+          CLIBINNAME: bin,
+          TARGETNAME: target.name,
+          BASEENVVAR: env.base,
+          '/[ \\t]*\\/\\/ #Options\\n/': () => Content(readOptions(model)),
+          '/[ \\t]*\\/\\/ #UsageWords\\n/': () => Content(0 === words.length ? '' :
+            `\tfmt.Fprintln(out, "Words:    ${words.join(' / ')} <query?> <entity>")\n`),
+          '/[ \\t]*\\/\\/ #UsageEnv\\n/': () => Content(`\tfmt.Fprintln(out, "Env:      ${usage.join(', ')}")\n`),
+          '/[ \\t]*\\/\\/ #ReplWords\\n/': () => Content(0 === words.length ? '' :
+            `\t\t\tfmt.Fprintln(out, "words:    ${words.join(' / ')} <query?> <entity>")\n`),
         },
       },
       () => {
         Slot({ name: 'promptName' }, () => Content(model.name))
-        Slot({ name: 'entityNamesSpaced' }, () => Content(entityNames.join(' ')))
+        Slot({ name: 'entityNamesSpaced' }, () => Content(activeEntityObjs
+          .filter((ent: any) => !wordless.includes(ent))
+          .map((ent: any) => String(ent.name).toLowerCase()).join(' ')))
       },
     )
   })
@@ -417,6 +553,12 @@ clean:
         replace: {
           ...props.ctx$.stdrep,
           GOMODULE: sdkModule,
+          TARGETNAME: target.name,
+          CLIWORDS: words.map((op) => JSON.stringify(op)).join(', '),
+          // With no word, a case still reads ent and arg, which Go requires.
+          '/[ \\t]*\\/\\/ #WordCases\\n/': () => Content(words.map((op) =>
+            `\tcase ${JSON.stringify(op)}:\n\t\tresult, err = ent.${op.charAt(0).toUpperCase() + op.slice(1)}(arg, nil)\n`)
+            .join('') || '\tcase "":\n\t\tresult = []any{ent, arg}\n'),
         },
       },
       () => {

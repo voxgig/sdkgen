@@ -82,15 +82,7 @@ ${f.title}.
 `)
 
     if (0 < f.options.length) {
-      Content(`| Option | Default |
-|---|---|
-`)
-      for (const o of f.options) {
-        Content(`| \`${o.name}\` | ${o.code} |
-`)
-      }
-      Content(`
-`)
+      ReadmeFeatureOptions({ feature: f })
     }
 
     Content(`Set \`feature.${f.name}.active\` to enable it${
@@ -106,6 +98,21 @@ activated earlier.
 `)
     }
   }
+})
+
+
+const ReadmeFeatureOptions = cmp(function ReadmeFeatureOptions(props: any) {
+  const f: FeatureDoc = props.feature
+
+  Content(`| Option | Default |
+|---|---|
+`)
+  for (const o of f.options) {
+    Content(`| \`${o.name}\` | ${o.code} |
+`)
+  }
+  Content(`
+`)
 })
 
 

@@ -93,7 +93,7 @@ pub const EXISTSMARK = omni.EXISTSMARK;
 
 /// The shared corpus, compiled by the project build. Relative to the target
 /// directory, which is where `zig build test` runs.
-pub const TEST_JSON_FILE = "../.sdk/test/test.json";
+pub const TEST_JSON_FILE = "SDKREL/.sdk/test/test.json";
 
 /// The running census, across every group this test binary drove. A suite
 /// asserts a floor on these at the end: a file whose test blocks were

@@ -12,8 +12,8 @@ public final class Result {
   public var resdata: Value = .noval
   public var resmatch: VMap? = nil
 
-  // Feature extensions: pagination signals (paging feature) and the
-  // incremental item iterator (streaming feature).
+  // Feature extensions, set only while their feature is active: pagination
+  // signals (paging) and the incremental item iterator (streaming).
   public var paging: VMap? = nil
   public var streaming: Bool = false
   public var stream: (() -> [Value])? = nil

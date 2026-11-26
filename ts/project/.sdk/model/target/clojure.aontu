@@ -29,6 +29,7 @@ main: kit: feature: &: target: clojure: deps: &: {
 
 
 main: kit: target: clojure: publish: {
+  recipe: false
   registry: {
     name: 'clojars'
     url: 'https://clojars.org'

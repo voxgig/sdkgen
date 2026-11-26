@@ -1,9 +1,10 @@
-import { cmp, File, Content, entityCollection, envName, serverVariables, serverVarEnv, liveHint, pointFacts, liveStrict, liveStrictNote } from '@voxgig/sdkgen'
-import { nom } from '@voxgig/apidef'
+import { cmp, File, Content, entityCollection, liveHint, pointFacts, liveStrict, liveStrictNote, fact } from '@voxgig/sdkgen'
+import { KIT, nom } from '@voxgig/apidef'
 
 const TestLive = cmp(function TestLive(props: any) {
   const model = props.ctx$.model
   const plan: any[] = []
+  const ENVVAR = fact(model.main[KIT], 'env')
   for (const entity of Object.values(entityCollection(model)) as any[]) {
     if (entity.active === false) continue
     for (const [op, operation] of Object.entries(entity.op || {}) as any[]) {
@@ -25,15 +26,15 @@ const TestLive = cmp(function TestLive(props: any) {
     }
   }
   if (!plan.some(p => p.facts.live)) return
-  const server = serverVariables(model).map((v: any) => JSON.stringify(v.name) + ': process.env[' + JSON.stringify(serverVarEnv(envName(model), v.name)) + '] ?? ' + JSON.stringify(v.dflt)).join(', ')
+  const server = fact(model.main[KIT], 'server').map((v: any) => JSON.stringify(v.name) + ': process.env[' + JSON.stringify(ENVVAR.server[v.name]) + '] ?? ' + JSON.stringify(v.dflt)).join(', ')
   File({ name: 'live.test.js' }, () => Content(`const { test } = require('node:test')
 const { SDK } = require('..')
 const { runLiveScenarios } = require('./live-scenarios')
 const { loadEnvLocal } = require('./utility')
-loadEnvLocal(__dirname + '/../.env.local')
+loadEnvLocal(__dirname + '/../${props.ctx$.stdrep.SDKREL}/.env.local')
 ${liveStrictNote(liveStrict(model, props.target.name), '//')}
-test('live operation coverage', { skip: process.env.${envName(model)}_TEST_LIVE !== 'TRUE' }, async (t) => {
-  await runLiveScenarios(SDK, ${JSON.stringify(plan, null, 2)}, '${envName(model)}', { server: { ${server} }, secret: process.env.${envName(model)}_SECRET }, { strict: ${liveStrict(model, props.target.name)}, t })
+test('live operation coverage', { skip: process.env.${ENVVAR.live} !== 'TRUE' }, async (t) => {
+  await runLiveScenarios(SDK, ${JSON.stringify(plan, null, 2)}, '${ENVVAR.prefix}', { server: { ${server} }, secret: process.env.${ENVVAR.secret} }, { strict: ${liveStrict(model, props.target.name)}, t })
 })
 `))
 })

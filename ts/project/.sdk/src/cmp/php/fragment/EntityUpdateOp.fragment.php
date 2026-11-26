@@ -10,7 +10,7 @@ require_once __DIR__ . '/../core/Helpers.php';
      *   a typed EntityNameUpdateData names the shape.
      * @param mixed $ctrl Optional per-call control overrides.
      * @return EntyClass The updated EntityName entity, whose data_get() reads
-     *   its record; throws ProjectNameError on failure (item-5 convention).
+     *   its record; throws ProjectNameError on failure.
      */
     public function update(?array $reqdata = null, $ctrl = null): mixed
     {

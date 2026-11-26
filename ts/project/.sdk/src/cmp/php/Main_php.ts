@@ -7,7 +7,9 @@ import {
   inactiveFeatureExcludes,
   pluginExcludes,
   targetFeatures,
-  TEST_CONTROL_EXCLUDE
+  TEST_CONTROL_EXCLUDE,
+  TargetLicense,
+  TargetVersion,
 } from '@voxgig/sdkgen'
 
 
@@ -45,6 +47,8 @@ const Main = cmp(async function Main(props: any) {
   Package({ target })
 
   Gitignore({})
+  TargetLicense({ target })
+  TargetVersion({ target })
 
   // Copy tm/php files with replacements
   Copy({
@@ -63,14 +67,6 @@ const Main = cmp(async function Main(props: any) {
         from: Path.normalize(__dirname + '/../../../src/cmp/php/fragment/Main.fragment.php'),
         replace: {
           ...props.ctx$.stdrep,
-
-          '#BuildFeatures': ({ indent }: any) => {
-            each(feature, (feat: any) => {
-              const fname = feat.name.charAt(0).toUpperCase() + feat.name.slice(1)
-              Content({ indent }, `  // feature: ${feat.name}
-`)
-            })
-          },
 
           '#Feature-Hook': ({ name, indent }: any) => Content({ indent }, `
 ($utility->feature_hook)($this->_rootctx, "${name}");

@@ -14,7 +14,7 @@ typedef struct entyvar_entity {
   voxgig_value* data;     // Map
   voxgig_value* mtch;     // Map
   Context* entctx;
-  // Set once a successful `remove` resolves on this instance.
+  // Set when a remove marks this instance deleted.
   bool deleted;
 } entyvar_entity;
 
@@ -134,11 +134,11 @@ static voxgig_value* entyvar_stream_items(voxgig_value* data, PNError** err) {
 }
 
 // Streaming operation. Runs `action` through the full pipeline and returns a
-// List of the result items, so the `streaming` feature's incremental output
-// is reachable from a generated entity (a normal op call materialises the
-// whole result). This runtime is synchronous and C has no lazy iterators, so
-// the returned value is a List cursor the caller walks (voxgig_as_list).
-// `callopts` parameterises the call:
+// List of the result items, so the `streaming` feature's incremental output,
+// when that feature is active, is reachable from a generated entity (a
+// normal op call materialises the whole result). This runtime is synchronous
+// and C has no lazy iterators, so the returned value is a List cursor the
+// caller walks (voxgig_as_list). `callopts` parameterises the call:
 //   - inbound (download): the items/chunks the streaming feature produces when
 //     active, else the materialised items;
 //   - outbound (upload): a `body` in `callopts` is attached to the request
@@ -272,9 +272,9 @@ static voxgig_value* entyvar_matchv(Entity* e, voxgig_value* args) {
 
 // #RemoveOp
 
-// `remove` resolves to the entity, marked. The instance KEEPS the data it
-// held - a caller can still read what was deleted - but it is no longer a
-// live record.
+// A remove resolves to the entity, marked deleted. The instance KEEPS the
+// data it held - a caller can still read what was deleted - but it is no
+// longer a live record.
 static void entyvar_mark_deleted(Entity* e) {
   ((entyvar_entity*)e)->deleted = true;
 }

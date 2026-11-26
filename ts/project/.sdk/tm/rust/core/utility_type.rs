@@ -109,7 +109,7 @@ impl Utility {
         u::make_context::make_context_util(spec, basectx)
     }
 
-    pub fn make_options(&self, ctx: &Rc<Context>) -> Value {
+    pub fn make_options(&self, ctx: &Rc<Context>) -> Result<Value, ProjectNameError> {
         u::make_options::make_options_util(ctx)
     }
 

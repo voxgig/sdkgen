@@ -1,4 +1,4 @@
-// Driver for the struct half of the shared JSON corpus (../.sdk/test/test.json).
+// Driver for the struct half of the shared JSON corpus (SDKREL/.sdk/test/test.json).
 //
 // The ENGINE is the vendored @voxgig/omni runner (sdktest/vendor/omni),
 // reached through the adapter in sdktest/OmniResolver.scala. What is left
@@ -322,7 +322,7 @@ object Runner {
   }
 
   def main(args: Array[String]): Unit = {
-    val testfile = if (args.length > 0) args(0) else "../.sdk/test/test.json"
+    val testfile = if (args.length > 0) args(0) else "SDKREL/.sdk/test/test.json"
     val report = new OmniReport("")
     val all = OmniResolver.loadspec(testfile)
     val run = OmniResolver.section(OmniResolver.makeRunner(all), all, "struct", report)

@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, opRequestShape, entityIdField, entityOps , serverVariables, javaMapOf, matchExampleItems, requiredItems, javaMapItems, requestExampleItems, sendsId } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, opRequestShape, entityIdField, entityOps , javaMapOf, matchExampleItems, requiredItems, javaMapItems, requestExampleItems, sendsId, fact, seriesList } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -12,6 +12,7 @@ import { javaVarName, javaPackage, javaListMatch, javaLit } from './utility_java
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   const { target, ctx$: { model } } = props
+  let step = 0
 
   const SDK = model.const.Name + 'SDK'
 
@@ -36,7 +37,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   // - the SDK throws rather than request a URL with a literal
   // {account_id} in it - so a quickstart that omits them is a quickstart
   // that fails on its first line.
-  const svars = serverVariables(model)
+  const svars = fact(model.main[KIT], 'server').filter((v: any) => v.required)
   const javaServerLines = 0 === svars.length ? '' :
     'Map<String, Object> server = new java.util.LinkedHashMap<>();\n' +
     svars.map((v: any) =>
@@ -45,7 +46,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
 
 
   if (authActive) {
-    Content(`### 1. Create a client
+    Content(`### ${++step}. Create a client
 
 \`\`\`java
 import java.util.List;
@@ -55,13 +56,13 @@ import ${javaPackage(model)}.core.SdkEntity;
 
 Map<String, Object> options = new java.util.LinkedHashMap<>();
 options.put("apikey", System.getenv("${envName(model)}_APIKEY"));
-${javaServerLines}${SDK} client = new ${SDK}(options);
+${fact(model.main[KIT], 'auth').secret ? `options.put("secret", System.getenv("${envName(model)}_SECRET"));\n` : ''}${javaServerLines}${SDK} client = new ${SDK}(options);
 \`\`\`
 
 `)
   }
   else {
-    Content(`### 1. Create a client
+    Content(`### ${++step}. Create a client
 
 \`\`\`java
 import java.util.List;
@@ -88,7 +89,7 @@ ${'' === javaServerLines
     const idF = entityIdField(exampleEntity)
 
     if (opnames.includes('list')) {
-      Content(`### 2. List ${eName.toLowerCase()} records
+      Content(`### ${++step}. List ${eName.toLowerCase()} records
 
 \`list(null, null)\` returns a list of entities, one per record (as \`Object\`),
 and raises on error; an entity's \`data()\` reads its record.
@@ -127,7 +128,7 @@ catch (RuntimeException err) {
         `${JSON.stringify(it.name)}, ${javaLit(it.type,
           it.name === neIdF ? 'example_id' : 'example_' + it.name)}`)
 
-      Content(`### 3. Load ${neArticle} ${neName.toLowerCase()}
+      Content(`### ${++step}. Load ${neArticle} ${neName.toLowerCase()}
 
 ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
 \`load()\` returns the ENTITY — call data() for the record — and raises on error.
@@ -154,7 +155,7 @@ catch (RuntimeException err) {
             it.name === idF ? 'example_id' : 'example_' + it.name)}`))
         : 'null'
 
-      Content(`### 3. Load ${article} ${eName.toLowerCase()}
+      Content(`### ${++step}. Load ${article} ${eName.toLowerCase()}
 
 \`load()\` returns the ENTITY — call data() for the record — and raises on error.
 
@@ -192,7 +193,8 @@ catch (RuntimeException err) {
 
     if (opnames.includes('create') || opnames.includes('update') || opnames.includes('patch') ||
       opnames.includes('remove')) {
-      Content(`### 4. Create, update, and remove
+      Content(`### ${++step}. ${seriesList(['create', 'update', 'patch', 'remove']
+        .filter((o: string) => opnames.includes(o))).replace(/^./, (c: string) => c.toUpperCase())}
 
 \`\`\`java
 `)

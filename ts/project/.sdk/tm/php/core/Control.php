@@ -21,8 +21,9 @@ class ProjectNameControl
     // passed. The shared feature corpus caught it.
     public mixed $actor;
 
-    // Per-call paging record: read by the paging feature before the request
-    // and written back after it. Declared for the same reason as `$actor`.
+    // Per-call paging record: when the paging feature is active, it reads
+    // this before the request and writes it back after. Declared for the
+    // same reason as `$actor`.
     public mixed $paging;
 
     public function __construct(array $opts = [])

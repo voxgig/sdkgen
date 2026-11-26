@@ -35,7 +35,7 @@ defmodule ProjectName.PrimaryUtilityTest do
   alias ProjectName.Utility, as: U
 
   setup_all do
-    testfile = Path.join(File.cwd!(), "../.sdk/test/test.json")
+    testfile = Path.join(File.cwd!(), "SDKREL/.sdk/test/test.json")
     sdk = ProjectName.test()
     runner = O.make_runner(testfile, sdk)
     {:ok, run: runner.("primary"), sdk: sdk}
@@ -411,8 +411,19 @@ defmodule ProjectName.PrimaryUtilityTest do
 
   # prepare_auth reads its options off the CLIENT (as the reference does, via
   # client.options()), so the client is built from the section's DEF.setup.a.
+  # Whether it places one at all is read from the config: a probe that finds
+  # none is the regression this section exists to catch.
   @tag :prepare_auth
   test "the prepareAuth corpus section, on this SDK's own credential", %{run: run} do
+    if nil == S.getprop(S.getprop(ProjectName.Config.shared_config(), "options"), "auth") do
+      IO.puts("SKIP the prepareAuth corpus section, on this SDK's own credential: " <>
+        "this SDK's config declares no auth, so it places no credential")
+    else
+      prepare_auth_section(run)
+    end
+  end
+
+  defp prepare_auth_section(run) do
     O.reset_cases()
 
     cred = auth_credential()

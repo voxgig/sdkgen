@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems, sendsId } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems, sendsId, fact, seriesList } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -12,6 +12,7 @@ import { cIdent, cVarName, cListMatch, cString } from './utility_c'
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   const { target, ctx$: { model } } = props
+  let step = 0
 
   const ident = cIdent(model)
   const entity = getModelPath(model, `main.${KIT}.entity`)
@@ -30,9 +31,18 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   ) as any
 
   const authActive = isAuthActive(model)
-  const ctor = authActive
-    ? `${ident}_sdk_new(cmap(1,\n    "apikey", v_str(getenv("${envName(model)}_APIKEY"))))`
-    : `${ident}_sdk_new(NULL)`
+  // The constructor refuses a templated URL it has no value for, so the quick
+  // start passes each variable the URL uses with no default.
+  const svars = fact(model.main[KIT], 'server').filter((v: any) => v.required)
+  const ctorFields = [
+    ...(authActive ? [`"apikey", v_str(getenv("${envName(model)}_APIKEY"))`] : []),
+    ...(fact(model.main[KIT], 'auth').secret ? [`"secret", v_str(getenv("${envName(model)}_SECRET"))`] : []),
+    ...(0 === svars.length ? [] : [`"server", cmap(${svars.length}, ` +
+      svars.map((v: any) => `"${v.name}", v_str("<${v.name}>")`).join(', ') + `)`]),
+  ]
+  const ctor = 0 === ctorFields.length
+    ? `${ident}_sdk_new(NULL, &err)`
+    : `${ident}_sdk_new(cmap(${ctorFields.length},${ctorFields.map((f: string) => '\n    ' + f).join(',')}), &err)`
 
   // A type-correct C expression constructing a voxgig struct Value.
   const cLit = (type: any, placeholder: string = 'example'): string => {
@@ -49,13 +59,19 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   const cmapExpr = (pairs: string[]): string =>
     pairs.length ? `cmap(${pairs.length}, ${pairs.join(', ')})` : 'NULL'
 
-  Content(`### 1. Create a client
+  Content(`### ${++step}. Create a client
 
 \`\`\`c
-${authActive ? '#include <stdlib.h>\n' : ''}#include "core/api.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include "core/api.h"
 
-${model.const.Name}SDK* client = ${ctor};
 PNError* err = NULL;
+${model.const.Name}SDK* client = ${ctor};
+if (NULL == client) {
+    fprintf(stderr, "%s\\n", err->msg);
+    exit(1);
+}
 \`\`\`
 
 `)
@@ -72,7 +88,7 @@ PNError* err = NULL;
     const dataIdF = entityDataIdField(exampleEntity)
 
     if (opnames.includes('list')) {
-      Content(`### 2. List ${eName.toLowerCase()} records
+      Content(`### ${++step}. List ${eName.toLowerCase()} records
 
 \`list()\` returns a \`NULL\`-terminated array of entities, one per record,
 and sets \`*err\` on failure — check \`err\` after the call. \`vt->data\`
@@ -110,7 +126,7 @@ if (err) {
         `${cString(it.name)}, ${cLit(it.type,
           it.name === neIdF ? 'example_id' : 'example_' + it.name)}`))
 
-      Content(`### 3. Load ${neArticle} ${neName.toLowerCase()}
+      Content(`### ${++step}. Load ${neArticle} ${neName.toLowerCase()}
 
 ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
 \`load()\` returns the entity and sets \`*err\` on failure; \`vt->data\` reads
@@ -139,7 +155,7 @@ if (err) {
         ? ''
         : `Entity* ${evar} = ${acc}(client, NULL);\n`
 
-      Content(`### 3. Load ${article} ${eName.toLowerCase()}
+      Content(`### ${++step}. Load ${article} ${eName.toLowerCase()}
 
 \`load()\` returns the entity and sets \`*err\` on failure; \`vt->data\` reads
 its record.
@@ -187,7 +203,8 @@ if (err) {
       const acquire = (opnames.includes('list') || opnames.includes('load'))
         ? ''
         : `Entity* ${evar} = ${acc}(client, NULL);\n`
-      Content(`### 4. Create, update, and remove
+      Content(`### ${++step}. ${seriesList(['create', 'update', 'patch', 'remove']
+        .filter((o: string) => opnames.includes(o))).replace(/^./, (c: string) => c.toUpperCase())}
 
 \`\`\`c
 ${acquire}`)

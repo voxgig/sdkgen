@@ -1,16 +1,17 @@
 
-import { cmp, Content } from '@voxgig/sdkgen'
+import { cmp, Content, directRoute } from '@voxgig/sdkgen'
 
 
 const ReadmeTopHowto = cmp(function ReadmeTopHowto(props: any) {
   const { target } = props
+  const dx = directRoute(props.ctx$.model)
 
   Content(`**Kotlin:**
 \`\`\`kotlin
 val result = client.direct(mutableMapOf<String, Any?>(
-    "path" to "/api/resource/{id}",
-    "method" to "GET",
-    "params" to mapOf("id" to "example")))
+    "path" to "${dx.path}",
+    "method" to "${dx.method}",
+    "params" to mapOf("${dx.param}" to "example")))
 \`\`\`
 
 `)

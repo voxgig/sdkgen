@@ -153,6 +153,7 @@ const TargetRoot = (0, jostraca_1.cmp)(function TargetRoot(props) {
                 });
                 return;
             }
+            pruneRetiredComponents(ctx$, tfolder + '/src/cmp/' + torigname, 'src/cmp/' + tname, torigname, tname, dryrun);
             if (aliased) {
                 aliasCmpTree(ctx$, tfolder + '/src/cmp/' + torigname, 'src/cmp/' + tname, torigname, tname);
             }
@@ -250,39 +251,64 @@ function unresolvedFeatures(features, ctx$) {
         }
     });
 }
+function treeFiles(fs, root) {
+    const out = [];
+    const walk = (dir, rel) => {
+        let entries;
+        try {
+            entries = fs.readdirSync(dir, { withFileTypes: true });
+        }
+        catch (e) {
+            return;
+        }
+        for (const ent of entries) {
+            if ((0, junk_1.isJunk)(ent.name)) {
+                continue;
+            }
+            const child = node_path_1.default.join(dir, ent.name);
+            const childRel = '' === rel ? ent.name : rel + '/' + ent.name;
+            if (ent.isDirectory()) {
+                walk(child, childRel);
+            }
+            else {
+                out.push(childRel);
+            }
+        }
+    };
+    walk(root, '');
+    return out;
+}
+// Removes each component copy the record shows untouched that the source does
+// not ship; doctor reports a changed one as stale.
+function pruneRetiredComponents(ctx$, fromDir, toRel, torigname, tname, dryrun) {
+    const { log } = ctx$;
+    const fs = ctx$.fs();
+    const folder = ctx$.folder ?? '.';
+    const sourceFiles = treeFiles(fs, fromDir);
+    if (0 === sourceFiles.length) {
+        return;
+    }
+    const want = new Set(sourceFiles.map((rel) => node_path_1.default.posix.join(node_path_1.default.posix.dirname(rel), aliasCmpName(node_path_1.default.posix.basename(rel), torigname, tname))));
+    const record = (0, copies_1.readCopies)(fs, folder);
+    const retired = treeFiles(fs, node_path_1.default.join(folder, toRel)).filter((rel) => !want.has(rel) && true === (0, copies_1.untouched)(fs, folder, record, toRel + '/' + rel));
+    for (const rel of retired) {
+        if (!dryrun) {
+            fs.unlinkSync(node_path_1.default.join(folder, toRel, rel));
+        }
+        log.info({
+            point: 'target-component-retired', target: toRel, file: toRel + '/' + rel,
+            dryrun: true === dryrun,
+            note: (dryrun ? 'would remove ' : 'removed ') + toRel + '/' + rel +
+                ', which this version of its source no longer ships'
+        });
+    }
+}
 function pruneStaleTemplates(ctx$, fromDir, toRel, trim, dryrun, keep) {
     const { log } = ctx$;
     const fs = ctx$.fs();
     const folder = ctx$.folder ?? '.';
     const destDir = node_path_1.default.join(folder, toRel);
-    const listRel = (root) => {
-        const out = [];
-        const walk = (dir, rel) => {
-            let entries;
-            try {
-                entries = fs.readdirSync(dir, { withFileTypes: true });
-            }
-            catch (e) {
-                return;
-            }
-            for (const ent of entries) {
-                if ((0, junk_1.isJunk)(ent.name)) {
-                    continue;
-                }
-                const child = node_path_1.default.join(dir, ent.name);
-                const childRel = '' === rel ? ent.name : rel + '/' + ent.name;
-                if (ent.isDirectory()) {
-                    walk(child, childRel);
-                }
-                else {
-                    out.push(childRel);
-                }
-            }
-        };
-        walk(root, '');
-        return out;
-    };
-    const sourceFiles = listRel(fromDir);
+    const sourceFiles = treeFiles(fs, fromDir);
     // An unreadable source tree must not be read as "everything is stale" — that
     // would empty the destination.
     if (0 === sourceFiles.length) {
@@ -294,7 +320,7 @@ function pruneStaleTemplates(ctx$, fromDir, toRel, trim, dryrun, keep) {
     const trimmed = (rel) => trim.some((re) => re.test(rel));
     const want = new Set(sourceFiles.filter((rel) => !trimmed(rel)));
     const kept = (rel) => true === keep?.patterns.some((re) => re.test(rel));
-    const unwanted = listRel(destDir).filter((rel) => !want.has(rel));
+    const unwanted = treeFiles(fs, destDir).filter((rel) => !want.has(rel));
     const held = unwanted.filter(kept);
     const stale = unwanted.filter((rel) => !kept(rel));
     if (0 < held.length) {

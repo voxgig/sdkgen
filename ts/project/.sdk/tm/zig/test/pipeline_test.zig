@@ -531,7 +531,7 @@ fn makeOptsFeature(feature: Value) Value {
         .options = h.jo(&.{.{ "feature", feature }}),
         .config = h.jo(&.{.{ "options", h.omap() }}),
     }, null);
-    return utility.make_options(ctx);
+    return utility.make_options(ctx) catch unreachable;
 }
 
 fn orderJoin(opts: Value) []const u8 {

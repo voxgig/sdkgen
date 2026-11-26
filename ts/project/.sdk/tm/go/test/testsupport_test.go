@@ -17,13 +17,23 @@ import (
 	sdk "GOMODULE"
 )
 
+// newClient builds a client, and stops the run where construction refuses one,
+// as it does a live client whose server variable the environment leaves unset.
+func newClient(opts map[string]any) *sdk.ProjectNameSDK {
+	client, err := sdk.NewProjectNameSDK(opts)
+	if err != nil {
+		panic(err)
+	}
+	return client
+}
+
 var envLocalOnce sync.Once
 
 func loadEnvLocal() {
 	envLocalOnce.Do(func() {
 		_, filename, _, _ := runtime.Caller(0)
 		dir := filepath.Dir(filename)
-		envFile := filepath.Join(dir, "..", "..", ".env.local")
+		envFile := filepath.Join(dir, "..", "SDKREL", ".env.local")
 
 		data, err := os.ReadFile(envFile)
 		if err != nil {
@@ -214,7 +224,7 @@ func loadTestSpec(t *testing.T) map[string]any {
 	if cachedTestSpec != nil {
 		return cachedTestSpec
 	}
-	data, err := os.ReadFile("../../.sdk/test/test.json")
+	data, err := os.ReadFile("../SDKREL/.sdk/test/test.json")
 	if err != nil {
 		t.Fatalf("Failed to load test.json: %v", err)
 	}
@@ -243,7 +253,7 @@ func getSpec(spec map[string]any, keys ...string) map[string]any {
 
 // entityData extracts the data map from an op result.
 //
-// Every entity operation resolves to the ENTITY (see AGENTS.md), so a flow
+// Every entity operation resolves to the ENTITY, so a flow
 // test that wants the record takes this hop. A plain map passes through
 // unchanged, so this is safe for the direct/prepare results too.
 func entityData(v any) any {

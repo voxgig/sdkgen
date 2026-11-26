@@ -1,5 +1,5 @@
 
-import { cmp, Content, introOps } from '@voxgig/sdkgen'
+import { cmp, Content, introOps, collectDeps } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -13,31 +13,29 @@ const ReadmeIntroBody = cmp(function ReadmeIntroBody(props: any) {
   const { target, ctx$: { model } } = props
 
   Content(`The ${target.title} SDK for the ${model.Name} API — an entity-oriented client
-following idiomatic OCaml conventions (a dependency-free library that compiles
-with the stock \`ocamlc\`).
+following idiomatic OCaml conventions (${0 === collectDeps(model, target.name, target.deps).length ?
+  'a dependency-free library that compiles\nwith the stock \`ocamlc\`' : 'a library built with the bundled \`Makefile\`'}).
 
 `)
 
   // Emphasise the entity-oriented design: the SDK surfaces the API as
-  // capitalised, semantic Entities with a small, uniform verb set rather
+  // semantic Entities with a small, uniform verb set rather
   // than raw URL paths and query strings. The example entity name is
   // derived from the model, never hardcoded.
   const entity = getModelPath(model, `main.${KIT}.entity`)
   const exampleEntity = Object.values(entity || {})
     .find((e: any) => e.active !== false) as any
-  const example = exampleEntity
-    ? `for example \`Sdk_client.${ocamlVarName(exampleEntity.name)} client Noval\` — each`
-    : 'each'
-
   const opList = introOps(model)
     .map((o) => '`' + o + '`').join(', ')
 
-  Content(`The SDK exposes the API as capitalised, semantic **Entities** — ${example}
-carrying a small, uniform set of operations (${opList}) instead of raw URL
+  if (exampleEntity) {
+    Content(`The SDK exposes the API as semantic **Entities** — for example \`Sdk_client.${ocamlVarName(exampleEntity.name)} client Noval\` —${'' === opList ? '' : ` each
+carrying a small, uniform set of operations (${opList})`} instead of raw URL
 paths and query strings. You work with named resources and verbs, which
 keeps the cognitive load low.
 
 `)
+  }
 })
 
 

@@ -7,7 +7,8 @@ import {
   inactiveFeatureExcludes,
   pluginExcludes,
   targetFeatures,
-  TEST_CONTROL_EXCLUDE
+  TEST_CONTROL_EXCLUDE,
+  TargetLicense,
 } from '@voxgig/sdkgen'
 
 
@@ -45,6 +46,7 @@ const Main = cmp(async function Main(props: any) {
   Package({ target })
 
   Gitignore({})
+  TargetLicense({ target })
 
   // Copy tm/rb files with replacements
   Copy({
@@ -65,14 +67,6 @@ const Main = cmp(async function Main(props: any) {
         from: Path.normalize(__dirname + '/../../../src/cmp/rb/fragment/Main.fragment.rb'),
         replace: {
           ...props.ctx$.stdrep,
-
-          '#BuildFeatures': ({ indent }: any) => {
-            each(feature, (feat: any) => {
-              const fname = feat.name.charAt(0).toUpperCase() + feat.name.slice(1)
-              Content({ indent }, `  # feature: ${feat.name}
-`)
-            })
-          },
 
           '#Feature-Hook': ({ name, indent }: any) => Content({ indent }, `
 utility.feature_hook.call(@_rootctx, "${name}")

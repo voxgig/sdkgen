@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.License = void 0;
+exports.TargetVersion = exports.TargetLicense = exports.License = void 0;
 const jostraca_1 = require("jostraca");
 const component_1 = require("../helpers/component");
 const packageMeta_1 = require("../helpers/packageMeta");
@@ -21,12 +21,9 @@ const packageMeta_1 = require("../helpers/packageMeta");
 // The disclosure is not lost. It leads the README, and it now has its own
 // NOTICE file, which is the conventional home for exactly this and is not
 // parsed as a licence.
-const License = (0, component_1.cmp)(function License(props) {
-    const { ctx$ } = props;
-    const { model } = ctx$;
+function licenseText(model) {
     const year = (model.const && model.const.year) || new Date().getFullYear();
-    (0, jostraca_1.File)({ name: 'LICENSE' }, () => {
-        (0, jostraca_1.Content)(`MIT License
+    return `MIT License
 
 Copyright (c) ${year} ${(0, packageMeta_1.publisherInfo)(model).name}
 
@@ -47,7 +44,13 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-`);
+`;
+}
+const License = (0, component_1.cmp)(function License(props) {
+    const { ctx$ } = props;
+    const { model } = ctx$;
+    (0, jostraca_1.File)({ name: 'LICENSE' }, () => {
+        (0, jostraca_1.Content)(licenseText(model));
     });
     (0, jostraca_1.File)({ name: 'NOTICE' }, () => {
         (0, jostraca_1.Content)(`${(0, packageMeta_1.nonAffiliation)(model)}
@@ -55,4 +58,19 @@ SOFTWARE.
     });
 });
 exports.License = License;
+// A port's own LICENSE and VERSION, written at every generate: a template copied
+// at add would keep the year and the version it was copied with.
+const TargetLicense = (0, component_1.cmp)(function TargetLicense(props) {
+    (0, jostraca_1.File)({ name: 'LICENSE' }, () => {
+        (0, jostraca_1.Content)(licenseText(props.ctx$.model));
+    });
+});
+exports.TargetLicense = TargetLicense;
+const TargetVersion = (0, component_1.cmp)(function TargetVersion(props) {
+    const { target, ctx$ } = props;
+    (0, jostraca_1.File)({ name: 'VERSION' }, () => {
+        (0, jostraca_1.Content)((0, packageMeta_1.packageVersion)(ctx$.model, target.name) + '\n');
+    });
+});
+exports.TargetVersion = TargetVersion;
 //# sourceMappingURL=License.js.map

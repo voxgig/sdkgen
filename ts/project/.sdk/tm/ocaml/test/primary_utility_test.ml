@@ -185,7 +185,7 @@ let rec auth_retarget (cred : auth_cred) (node : O.json) : O.json =
   | other -> other
 
 let () =
-  let testfile = if Array.length Sys.argv > 1 then Sys.argv.(1) else "../.sdk/test/test.json" in
+  let testfile = if Array.length Sys.argv > 1 then Sys.argv.(1) else "SDKREL/.sdk/test/test.json" in
   let r = R.make_run testfile "primary" in
 
   let cl = client () in
@@ -213,14 +213,19 @@ let () =
   primary_ctx_with (client_for r "makeSpec") "makeSpec"
     (fun c -> match make_spec_util c with
        | (Some s, _) -> spec_to_value s | _ -> Noval);
-  (match auth_credential () with
-   | None ->
-     r.R.failures <- "prepareAuth: prepare_auth placed no credential in headers or query"
-                     :: r.R.failures
-   | Some cred ->
-     primary_ctx_with ~prep:(auth_retarget cred) (client_for r "prepareAuth") "prepareAuth"
-       (fun c -> ignore (prepare_auth_util c);
-         match c.c_spec with Some s -> spec_to_value s | None -> Noval));
+  (* Read from the config, never from a probe: a probe that finds no
+   * credential is the regression this section exists to catch. *)
+  (match getp (getp (Sdk_config.make_config ()) "options") "auth" with
+   | Map _ ->
+     (match auth_credential () with
+      | None ->
+        r.R.failures <- "prepareAuth: prepare_auth placed no credential in headers or query"
+                        :: r.R.failures
+      | Some cred ->
+        primary_ctx_with ~prep:(auth_retarget cred) (client_for r "prepareAuth") "prepareAuth"
+          (fun c -> ignore (prepare_auth_util c);
+            match c.c_spec with Some s -> spec_to_value s | None -> Noval))
+   | _ -> r.R.skipped <- "prepareAuth (this SDK's config declares no auth, so it places no credential)" :: r.R.skipped);
   primary_ctx "prepareBody" (fun c -> prepare_body_util c);
   primary_ctx "prepareHeaders" (fun c -> prepare_headers_util c);
   primary_ctx "prepareMethod"

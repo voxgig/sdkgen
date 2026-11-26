@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField , targetFeatures, opNeedsAction, bodyNote, elixirAccessor, entityCollection, exampleVarName, matchExampleItems, requestExampleItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField, entityOps, bodyNote, elixirAccessor, entityCollection, exampleVarName, matchExampleItems, requestExampleItems, featureDocs, fact, clientOptions, requiredItems } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -11,6 +11,8 @@ import {
 import { elixirLit, elixirListArgs, elixirString } from './utility_elixir'
 
 
+const LIST_ALL = ' The match is optional — call `list(entity)` to list all records.'
+
 const OP_SIGNATURES: Record<string, { sig: string, desc: string }> = {
   load: {
     sig: 'load(entity, reqmatch, ctrl \\\\ nil) :: entity',
@@ -18,7 +20,7 @@ const OP_SIGNATURES: Record<string, { sig: string, desc: string }> = {
   },
   list: {
     sig: 'list(entity, reqmatch \\\\ nil, ctrl \\\\ nil) :: list()',
-    desc: 'List entities matching the given criteria. The match is optional — call `list(entity)` to list all records. Returns a list of entities, one per record, and raises on error.',
+    desc: 'List entities matching the given criteria.' + LIST_ALL + ' Returns a list of entities, one per record, and raises on error.',
   },
   create: {
     sig: 'create(entity, reqdata, ctrl \\\\ nil) :: entity',
@@ -39,18 +41,21 @@ const OP_SIGNATURES: Record<string, { sig: string, desc: string }> = {
 }
 
 
+
 const ReadmeRef = cmp(function ReadmeRef(props: any) {
   const { target } = props
   const { model } = props.ctx$
 
   const Name = model.const.Name
   const entity = getModelPath(model, `main.${KIT}.entity`)
-  const feature = targetFeatures(model, target)
-
   const publishedEntities = each(entity).filter((e: any) => e.active !== false)
 
 
   File({ name: 'REFERENCE.md' }, () => {
+
+    const OPTION_KIND: Record<string, string> = { string: 'String.t()', map: 'map()', list: 'list()' }
+    const optionRows = clientOptions(model)
+      .map((o: any) => '| `' + o.name + '` | `' + OPTION_KIND[o.kind] + '` | ' + o.desc + ' |\n').join('')
 
     Content(`# ${model.Name} ${target.title} SDK Reference
 
@@ -72,13 +77,7 @@ native map with \`${Name}.Helpers.deep/1\`.
 
 | Name | Type | Description |
 | --- | --- | --- |
-${isAuthActive(model) ? '| `apikey` | `String.t()` | API key for authentication. |\n' : ''}| \`base\` | \`String.t()\` | Base URL for API requests. |
-| \`prefix\` | \`String.t()\` | URL prefix appended after base. |
-| \`suffix\` | \`String.t()\` | URL suffix appended after path. |
-| \`headers\` | \`map()\` | Custom headers for all requests. |
-| \`feature\` | \`map()\` | Feature configuration. |
-| \`system\` | \`map()\` | System overrides (e.g. custom fetch). |
-
+${optionRows}
 
 ### Constructors
 
@@ -144,7 +143,7 @@ on error.
       const EName = ent.Name
       const eVar = exampleVarName(ent.name, 'elixir')
       const eCall = elixirAccessor(ent, entityCollection(model))
-      const opnames = Object.keys(ent.op || {})
+      const opnames = entityOps(ent)
       const fields = Object.values(ent.fields || {})
       const idF = entityIdField(ent)
 
@@ -155,8 +154,8 @@ on error.
 
 `)
 
-      if (ent.short) {
-        Content(`${ent.short}
+      if (fact(ent, 'desc').inline) {
+        Content(`${fact(ent, 'desc').inline}
 
 `)
       }
@@ -177,8 +176,8 @@ ${eVar} = ${Name}.${eCall}(sdk)
 `)
         each(fields, (field: any) => {
           const req = field.r ? 'Yes' : 'No'
-          const desc = field.sh || ''
-          Content(`| \`${field.n}\` | \`${canonToType(field.t, target.name)}\` | ${req} | ${desc} |
+          const desc = fact(model.main[KIT], 'field')[ent.name]?.[field.n]?.desc.cell ?? ''
+          Content(`| \`${field.n}\` | \`${canonToType(field.t, 'elixir').replace(/\|/g, '\\|')}\` | ${req} | ${desc} |
 `)
         })
 
@@ -196,16 +195,16 @@ ${eVar} = ${Name}.${eCall}(sdk)
         opnames.map((opname: string) => {
           const info = OP_SIGNATURES[opname]
           if (!info) return
+          const needs = requiredItems(ent, opname).map((it: any) => it.name)
+          const desc = info.desc.replace(' The data must include the entity `id`.',
+            null != idF && needs.includes(idF) ? ' The data must include the entity `' + idF + '`.' : '')
+            .replace(LIST_ALL, 0 === needs.length ? LIST_ALL : ' The match must include ' + needs.map((n: string) => '`' + n + '`').join(', ') + '.')
 
           Content(`#### \`${info.sig}\`
 
-${info.desc}
+${desc}
 
 `)
-
-          if (opNeedsAction(ent.op[opname])) {
-            return
-          }
 
           if ('load' === opname || 'remove' === opname) {
             const matchItems = matchExampleItems(ent, opname, idF)
@@ -236,7 +235,7 @@ ${eVar}s = ${Name}.Entity.${EName}.list(${eVar}${elixirListArgs(ent, Name)})
 ${eVar} = ${Name}.Entity.${EName}.create(${eVar}, ${Name}.Helpers.deep(%{
 `)
             createItems.map((it: any) => {
-              Content(`  ${elixirString(it.name)} => ${elixirLit(it.type, 'example_' + it.name)},  # ${canonToType(it.type, target.name)}
+              Content(`  ${elixirString(it.name)} => ${elixirLit(it.type, 'example_' + it.name)},  # ${canonToType(it.type, 'elixir')}
 `)
             })
             Content(`}))
@@ -252,6 +251,7 @@ ${eVar} = ${Name}.Entity.${EName}.create(${eVar}, ${Name}.Helpers.deep(%{
             const updateLines = updateItems.map((it: any) =>
               `  ${elixirString(it.name)} => ${elixirLit(it.type,
                 it.name === idF ? ent.name + '_id' : it.name)},\n`).join('')
+
             Content(`\`\`\`elixir
 ${eVar} = ${Name}.Entity.${EName}.${opname}(${eVar}, ${Name}.Helpers.deep(%{
 ${updateLines}  # ${'patch' === opname ? 'Only the fields to change' : 'Fields to update'}
@@ -303,7 +303,7 @@ Return the entity name.
 
 
     // Features section
-    const activeFeatures = each(feature).filter((f: any) => f.active)
+    const activeFeatures = featureDocs(model, target)
     if (activeFeatures.length > 0) {
       Content(`
 ---
@@ -315,7 +315,7 @@ Return the entity name.
 `)
 
       activeFeatures.map((f: any) => {
-        Content(`| \`${f.name}\` | ${f.version || '0.0.1'} | ${f.title || ''} |
+        Content(`| \`${f.name}\` | ${f.version} | ${f.titleCell} |
 `)
       })
 

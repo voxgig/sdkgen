@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, requiredItems, matchExampleItems, requestExampleItems } from '@voxgig/sdkgen'
+import { cmp, Content, canonScalarKey, entityIdField, pickExampleEntity, requiredItems, matchExampleItems, requestExampleItems, cdTarget, directRoute } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -24,6 +24,7 @@ function swiftLit(type: any): string {
 
 const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   const { target, ctx$: { model } } = props
+  const dx = directRoute(model)
 
   const SDK = model.const.Name + 'SDK'
 
@@ -81,19 +82,15 @@ if let ${eVar}Entity = ${eVar}.asNative as? Entity {
 ]))
 print(result)`
 
-  const apikeyEnvLine = isAuthActive(model)
-    ? `\n${envName(model)}_APIKEY=<your-key>`
-    : ''
-
   Content(`### Make a direct HTTP request
 
 For endpoints not covered by entity methods:
 
 \`\`\`swift
 let result = client.direct(VMap([
-    ("path", .string("/api/resource/{id}")),
-    ("method", .string("GET")),
-    ("params", .map([("id", .string("example"))])),
+    ("path", .string("${dx.path}")),
+    ("method", .string("${dx.method}")),
+    ("params", .map([("${dx.param}", .string("example"))])),
 ]))
 
 if result.entries["ok"] == .bool(true) {
@@ -113,9 +110,9 @@ else {
 \`\`\`swift
 // prepare() returns the fetch definition and throws on error.
 let fetchdef = try client.prepare(VMap([
-    ("path", .string("/api/resource/{id}")),
-    ("method", .string("DELETE")),
-    ("params", .map([("id", .string("example"))])),
+    ("path", .string("${dx.path}")),
+    ("method", .string("${dx.method}")),
+    ("params", .map([("${dx.param}", .string("example"))])),
 ]))
 
 print(fetchdef.entries["url"] ?? .noval)
@@ -155,18 +152,13 @@ options.entries["system"] = .map(system)
 let client = ${SDK}(options)
 \`\`\`
 
-### Run live tests
+### Run the test suite
 
-Create a \`.env.local\` file at the project root:
-
-\`\`\`
-${envName(model)}_TEST_LIVE=TRUE${apikeyEnvLine}
-\`\`\`
-
-Then run:
+The generated suite runs offline, against the mock transport. This SDK
+has no live tests.
 
 \`\`\`bash
-cd swift && make test
+${cdTarget(target)}make test
 \`\`\`
 
 `)

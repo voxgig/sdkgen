@@ -5,9 +5,8 @@ import {
   cmp,
   configDefinition,
   each,
-  resolveAuthIn,
-  resolveAuthName,
   targetFeatures,
+  templateSafe,
 } from '@voxgig/sdkgen'
 
 
@@ -64,20 +63,7 @@ const Config = cmp(async function Config(props: any) {
 
   const { def: configDef } = configDefinition(model, target.name)
 
-  if (null != configDef.options && null != configDef.options.auth) {
-    const authIn = resolveAuthIn(model)
-    const authName = resolveAuthName(model)
-
-    if ('header' !== authIn) {
-      configDef.options.auth.in = authIn
-    }
-
-    if ('Authorization' !== authName) {
-      configDef.options.auth.name = authName
-    }
-  }
-
-  const configJson = JSON.stringify(configDef, null, 2)
+  const configJson = templateSafe('json', JSON.stringify(configDef, null, 2))
 
   const bypath = pluginsByPath(targetFeatures(model, target))
   const features = Object.keys(bypath).sort()

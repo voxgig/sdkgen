@@ -1,5 +1,6 @@
 
 import {
+  KIT,
   Model,
   ModelEntity,
   ModelPoint,
@@ -17,11 +18,8 @@ import {
   cmp,
   snakify,
   isAuthActive,
-  serverVarEnv,
-  serverVariables,
-  isHttpBasicAuth,
   jsProp,
-  jsOptProp, envName, envToken, liveStrict, liveStrictNote,
+  jsOptProp, liveStrict, liveStrictNote,
   jsKey,
   pointParts,
   pointSlash,
@@ -36,6 +34,7 @@ import {
   liveGetOnlyReason, LIVE_GETONLY_ENV,
   liveDirectGetOnly, liveExcludedLines, liveExcludedSummary,
   liveDirectDiscovery, liveIdKey,
+  fact,
 } from '@voxgig/sdkgen'
 
 
@@ -56,27 +55,28 @@ const TestDirect = cmp(function TestDirect(props: any) {
 
   const strict = liveStrict(model, target.name)
 
-  const PROJECTNAME = envName(model)
-  const entidEnvVar = `${PROJECTNAME}_TEST_${envToken(entity.name)}_ENTID`
+  const ENVVAR = fact(model.main[KIT], 'env')
+  const PROJECTNAME = ENVVAR.prefix
+  const entidEnvVar = ENVVAR.entid[entity.name]
 
   const authActive = isAuthActive(model)
-  const authBasic = authActive && isHttpBasicAuth(model)
+  const authBasic = authActive && fact(model.main[KIT], 'auth').secret
   const apikeyEnvEntry = authActive
-    ? `\n    '${PROJECTNAME}_APIKEY': '',${authBasic ? `\n    '${PROJECTNAME}_SECRET': '',` : ''}`
+    ? `\n    '${ENVVAR.apikey}': '',${authBasic ? `\n    '${ENVVAR.secret}': '',` : ''}`
     : ''
   const apikeyLiveField = authActive
     ? `
-      apikey: env.${PROJECTNAME}_APIKEY,${authBasic ? `
-      secret: env.${PROJECTNAME}_SECRET,` : ''}`
+      apikey: env.${ENVVAR.apikey},${authBasic ? `
+      secret: env.${ENVVAR.secret},` : ''}`
     : ''
 
-  const svars = serverVariables(model)
+  const svars = fact(model.main[KIT], 'server')
   const serverEnvEntry = svars
-    .map((v: any) => `\n    '${serverVarEnv(PROJECTNAME, v.name)}': ${JSON.stringify(v.dflt)},`).join('')
+    .map((v: any) => `\n    '${ENVVAR.server[v.name]}': ${JSON.stringify(v.dflt)},`).join('')
   const serverLiveField = 0 === svars.length ? '' : `
       server: {${svars
       .map((v: any) => `
-        ${jsKey(v.name)}: ${jsProp('env', serverVarEnv(PROJECTNAME, v.name))},`).join('')}
+        ${jsKey(v.name)}: ${jsProp('env', ENVVAR.server[v.name])},`).join('')}
       },`
 
   const opnames = Object.keys(entity.op || {})
@@ -97,7 +97,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
 
   Folder({ name: entity.name }, () => {
 
-    File({ name: nom(entity, 'Name') + 'Direct.test.' + target.name }, () => {
+    File({ name: nom(entity, 'Name') + 'Direct.test.' + target.ext }, () => {
 
       Fragment({
         from: ff + 'Direct.test.fragment.ts',
@@ -116,16 +116,16 @@ const TestDirect = cmp(function TestDirect(props: any) {
 ${liveStrictNote(strict, '//')}
 const LIVE_STRICT = ${strict}
 
-function liveScenariosActive() { return ${hasLiveScenarios(model)} && process.env.${PROJECTNAME}_TEST_LIVE === 'TRUE' }
+function liveScenariosActive() { return ${hasLiveScenarios(model)} && process.env.${ENVVAR.live} === 'TRUE' }
 function directSetup(mockres?: any) {
   const calls: any[] = []
 
   const env = envOverride({
     '${entidEnvVar}': {},
-    '${PROJECTNAME}_TEST_LIVE': 'FALSE',${apikeyEnvEntry}${serverEnvEntry}
+    '${ENVVAR.live}': 'FALSE',${apikeyEnvEntry}${serverEnvEntry}
   })
 
-  const live = 'TRUE' === env.${PROJECTNAME}_TEST_LIVE
+  const live = 'TRUE' === env.${ENVVAR.live}
 
   if (live) {
     const transport = createLiveTransport()

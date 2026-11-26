@@ -81,11 +81,11 @@ static void mo_append(char** out, size_t* len, size_t* cap, const char* s, size_
 }
 
 /* A templated base URL takes each {name} from options.server. An empty value
- * cannot make a working URL, so construction stops, as a rust or zig panic
- * does, except in test mode, where it becomes test-<name>. */
-static void mo_resolve_base(voxgig_value* opts, voxgig_value* config) {
+ * cannot make a working URL, so construction is refused, except in test mode,
+ * where it becomes test-<name>. */
+static bool mo_resolve_base(voxgig_value* opts, voxgig_value* config, PNError** err) {
   const char* base = get_str(opts, "base");
-  if (NULL == base || NULL == strchr(base, '{')) return;
+  if (NULL == base || NULL == strchr(base, '{')) return true;
 
   bool testmode = mo_true(getpath2(opts, "test", "active"))
     || mo_true(getpath3(opts, "feature", "test", "active"));
@@ -121,20 +121,26 @@ static void mo_resolve_base(voxgig_value* opts, voxgig_value* config) {
       mo_append(&out, &len, &cap, "test-", 5);
       mo_append(&out, &len, &cap, name, nlen);
     } else {
-      fprintf(stderr, "%s: the server variable '%s' is required: the API base URL is '%s'"
-              " - pass cmap(1, \"server\", cmap(1, \"%s\", v_str(\"...\"))) in the SDK options\n",
-              sdkname, name, base, name);
-      fflush(stderr);
-      abort();
+      const char* fmt = "%s: the server variable '%s' is required: the API base URL is '%s'"
+        " - pass cmap(1, \"server\", cmap(1, \"%s\", v_str(\"...\"))) in the SDK options";
+      int mlen = snprintf(NULL, 0, fmt, sdkname, name, base, name);
+      char* msg = (char*)malloc((size_t)mlen + 1);
+      snprintf(msg, (size_t)mlen + 1, fmt, sdkname, name, base, name);
+      if (err) *err = pn_error_new("server_var_required", msg);
+      free(msg);
+      free(name);
+      free(out);
+      return false;
     }
     free(name);
     i = j + 1;
   }
   setp(opts, "base", v_str(out));
   free(out);
+  return true;
 }
 
-voxgig_value* make_options_util(Context* ctx) {
+voxgig_value* make_options_util(Context* ctx, PNError** err) {
   voxgig_value* options = voxgig_is_map(ctx->options) ? ctx->options : voxgig_new_map();
 
   // Merge custom utility overrides onto the utility object.
@@ -256,7 +262,7 @@ voxgig_value* make_options_util(Context* ctx) {
     }
   }
 
-  mo_resolve_base(opts, config);
+  if (!mo_resolve_base(opts, config, err)) return NULL;
 
   // Resolve the feature add-order: an explicit list order (above) wins;
   // otherwise order the map test-first, then the remaining names sorted, so
@@ -278,11 +284,11 @@ voxgig_value* make_options_util(Context* ctx) {
           voxgig_list_push(voxgig_as_list(feature_order), v_str("test"));
         }
         // Station special case, mirroring test's: its transport wrap must
-        // sit immediately outside the base transport (inside retry/cache/
-        // netsim), so map-form activation hoists it to just after test -
-        // or first, when no test entry exists. Without this the sorted
-        // default would init station last and wrap OUTSIDE the recording
-        // features, turning its wire-truth events into fiction.
+        // sit immediately outside the base transport (inside every other
+        // transport wrap), so map-form activation hoists it to just after
+        // test - or first, when no test entry exists. Without this the
+        // sorted default would init station last and wrap OUTSIDE the
+        // recording features, turning its wire-truth events into fiction.
         for (size_t i = 0; i < fn; i++) {
           if (strcmp(names[i], "station") == 0) {
             voxgig_list_push(voxgig_as_list(feature_order), v_str("station"));

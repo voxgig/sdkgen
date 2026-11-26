@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonKey, canonScalarKey, File, isAuthActive, entityIdField , targetFeatures, opNeedsAction, bodyNote, entityClassName, entityCollection, matchExampleItems, requestExampleItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonKey, canonScalarKey, File, isAuthActive, entityIdField, entityOps, bodyNote, entityClassName, entityCollection, matchExampleItems, requestExampleItems, featureDocs, fact, clientOptions, requiredItems } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -33,6 +33,8 @@ function perlType(type: any): string {
 }
 
 
+const LIST_ALL = ' The match is optional — call `list` with no argument to list all records.'
+
 const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string }> = {
   load: {
     sig: 'load($reqmatch, $ctrl) -> EntyClass',
@@ -42,7 +44,7 @@ const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string
   list: {
     sig: 'list($reqmatch, $ctrl) -> arrayref',
     returns: 'an arrayref of entities, one per record',
-    desc: 'List entities matching the given criteria. The match is optional — call `list` with no argument to list all records. Returns an arrayref of entities, one per record (`data_get` reads each record), and dies on error.',
+    desc: 'List entities matching the given criteria.' + LIST_ALL + ' Returns an arrayref of entities, one per record (`data_get` reads each record), and dies on error.',
   },
   create: {
     sig: 'create($reqdata, $ctrl) -> EntyClass',
@@ -67,13 +69,12 @@ const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string
 }
 
 
+
 const ReadmeRef = cmp(function ReadmeRef(props: any) {
   const { target } = props
   const { model } = props.ctx$
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
-  const feature = targetFeatures(model, target)
-
   const publishedEntities = each(entity).filter((e: any) => e.active !== false)
 
 
@@ -90,6 +91,10 @@ Complete API reference for the ${model.Name} ${target.title} SDK.
 
 `)
 
+    const OPTION_KIND: Record<string, string> = { string: 'string', map: 'hashref', list: 'arrayref' }
+    const optionRows = clientOptions(model)
+      .map((o: any) => '| `$options->{' + o.name + '}` | `' + OPTION_KIND[o.kind] + '` | ' + o.desc + ' |\n').join('')
+
     Content(`\`\`\`perl
 use lib 'lib';
 use ${model.const.Name}SDK;
@@ -104,13 +109,7 @@ Create a new SDK client instance.
 | Name | Type | Description |
 | --- | --- | --- |
 | \`$options\` | \`hashref\` | SDK configuration options. |
-${isAuthActive(model) ? '| \`$options->{apikey}\` | \`string\` | API key for authentication. |\n' : ''}| \`$options->{base}\` | \`string\` | Base URL for API requests. |
-| \`$options->{prefix}\` | \`string\` | URL prefix appended after base. |
-| \`$options->{suffix}\` | \`string\` | URL suffix appended after path. |
-| \`$options->{headers}\` | \`hashref\` | Custom headers for all requests. |
-| \`$options->{feature}\` | \`hashref\` | Feature configuration. |
-| \`$options->{system}\` | \`hashref\` | System overrides (e.g. custom fetch). |
-
+${optionRows}
 `)
 
 
@@ -180,7 +179,7 @@ Prepare a fetch definition without sending. Returns the \`fetchdef\` and dies on
 
     // Entity reference sections
     publishedEntities.map((ent: any) => {
-      const opnames = Object.keys(ent.op || {})
+      const opnames = entityOps(ent)
       const fields = Object.values(ent.fields || {})
       // Model-driven id key: null when this entity has no id-like field.
       const idF = entityIdField(ent)
@@ -193,8 +192,8 @@ Prepare a fetch definition without sending. Returns the \`fetchdef\` and dies on
 
 `)
 
-      if (ent.short) {
-        Content(`${ent.short}
+      if (fact(ent, 'desc').inline) {
+        Content(`${fact(ent, 'desc').inline}
 
 `)
       }
@@ -215,7 +214,7 @@ my $${eVar} = $client->${ent.Name};
 `)
         each(fields, (field: any) => {
           const req = field.r ? 'Yes' : 'No'
-          const desc = field.sh || ''
+          const desc = fact(model.main[KIT], 'field')[ent.name]?.[field.n]?.desc.cell ?? ''
           Content(`| \`${field.n}\` | \`${perlType(field.t)}\` | ${req} | ${desc} |
 `)
         })
@@ -227,7 +226,7 @@ my $${eVar} = $client->${ent.Name};
         const hasFieldOps = fields.some((f: any) => f.op && Object.keys(f.op).length > 0)
         if (hasFieldOps) {
           const opcols = ['load', 'list', 'create', 'update', 'patch', 'remove']
-            .filter((op: string) => opnames.includes(op) && ent.op[op]?.active !== false)
+            .filter((op: string) => opnames.includes(op))
           Content(`### Field Usage by Operation
 
 | Field | ${opcols.join(' | ')} |
@@ -260,16 +259,16 @@ my $${eVar} = $client->${ent.Name};
         opnames.map((opname: string) => {
           const info = OP_SIGNATURES[opname]
           if (!info) return
+          const needs = requiredItems(ent, opname).map((it: any) => it.name)
+          const desc = info.desc.replace(' The data must include the entity `id`.',
+            null != idF && needs.includes(idF) ? ' The data must include the entity `' + idF + '`.' : '')
+            .replace(LIST_ALL, 0 === needs.length ? LIST_ALL : ' The match must include ' + needs.map((n: string) => '`' + n + '`').join(', ') + '.')
 
           Content(`#### \`${info.sig.replace('EntyClass', entityClassName(ent, entityCollection(model)))}\`
 
-${info.desc}
+${desc}
 
 `)
-
-          if (opNeedsAction(ent.op[opname])) {
-            return
-          }
 
           if ('load' === opname || 'remove' === opname) {
             const matchItems = matchExampleItems(ent, opname, idF)
@@ -319,6 +318,7 @@ my $result = $client->${ent.Name}->create({
             const updateLines = updateItems.map((it: any) =>
               `    ${perlStringLiteral(it.name)} => ${perlLit(it.type,
                 it.name === idF ? ent.name + '_id' : it.name)},\n`).join('')
+
             Content(`\`\`\`perl
 my $result = $client->${ent.Name}->${opname}({
 ${updateLines}    # ${'patch' === opname ? 'Only the fields to change' : 'Fields to update'}
@@ -371,7 +371,7 @@ Return the entity name.
 
 
     // Features section
-    const activeFeatures = each(feature).filter((f: any) => f.active)
+    const activeFeatures = featureDocs(model, target)
     if (activeFeatures.length > 0) {
       Content(`
 ---
@@ -383,7 +383,7 @@ Return the entity name.
 `)
 
       activeFeatures.map((f: any) => {
-        Content(`| \`${f.name}\` | ${f.version || '0.0.1'} | ${f.title || ''} |
+        Content(`| \`${f.name}\` | ${f.version} | ${f.titleCell} |
 `)
       })
 

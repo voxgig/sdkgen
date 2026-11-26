@@ -55,7 +55,7 @@ let () =
 `)
       if (hasList) {
         Content(`      (* The op resolves to one ENTITY per record; the record is reached
-         with e_data_get. See AGENTS.md "Entity operations return ENTITIES". *)
+         with e_data_get. *)
       let listed = ent.e_list (empty_map ()) Noval in
       check_int "list size" (List.length listed) 1;
       List.iter (fun en -> check "list entry data is a map" (ismap (en.e_data_get ()))) listed;

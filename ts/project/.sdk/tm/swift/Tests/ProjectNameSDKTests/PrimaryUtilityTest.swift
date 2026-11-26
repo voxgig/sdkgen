@@ -1,5 +1,5 @@
 // Primary utility test suite - drives every utility on the client utility
-// object against the shared corpus in ../../../.sdk/test/test.json
+// object against the shared corpus in ../../SDKREL/.sdk/test/test.json
 // ("primary" section) through the VENDORED omni runner (OmniResolver over
 // Tests/vendor/omni), plus direct checks. Swift twin of
 // tm/csharp/test/PrimaryUtilityTest.cs and tm/go/test/primary_utility_test.go.
@@ -939,7 +939,13 @@ final class PrimaryUtilityTest: XCTestCase {
     }
   }
 
+  // Read from the config, never from a probe: a probe that finds no
+  // credential is the regression this section exists to catch.
   func testPrepareAuthBasic() throws {
+    guard nil != gp(SdkConfig.sharedConfig(), "options").asMap?.entries["auth"] else {
+      throw XCTSkip("this SDK's config declares no auth, so it places no credential")
+    }
+
     let setupOpts = try setupOptions("prepareAuth", "a")
     let authClient = ProjectNameSDK.testSDK(nil, setupOpts)
     let authUtility = authClient.getUtility()

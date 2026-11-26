@@ -8,6 +8,7 @@ import {
 } from '../types'
 
 import { fact } from '../helpers/facts'
+import { entityClassName, entityCollection, introOps } from '../helpers/opShape'
 import { optionalComponent } from '../helpers/optional'
 
 
@@ -41,6 +42,16 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
 })
 
 
+const GENERIC_OP_ROWS: Record<string, string> = {
+  load: '| `load(reqmatch?, ctrl?)` | Load a single entity by match criteria. |',
+  list: '| `list(reqmatch?, ctrl?)` | List entities matching the criteria. |',
+  create: '| `create(reqdata?, ctrl?)` | Create a new entity. |',
+  update: '| `update(reqdata?, ctrl?)` | Update an existing entity. |',
+  patch: '| `patch(reqdata?, ctrl?)` | Change part of an existing entity. |',
+  remove: '| `remove(reqmatch?, ctrl?)` | Remove an entity. |',
+}
+
+
 const ReadmeModelGeneric = cmp(function ReadmeModelGeneric(props: any) {
   const { target, model, entityList, authActive } = props
   const apikeyRow = authActive
@@ -67,7 +78,7 @@ ${apikeyRow}| \`base\` | \`string\` | Base URL of the API server. |
 
   each(entityList, (ent: any) => {
     const article = /^[aeiou]/i.test(ent.Name) ? 'an' : 'a'
-    Content(`| \`${ent.Name}(data?)\` | \`${ent.Name}Entity\` | Create ${article} ${ent.Name} entity instance. |
+    Content(`| \`${ent.Name}(data?)\` | \`${entityClassName(ent, entityCollection(model))}\` | Create ${article} ${ent.Name} entity instance. |
 `)
   })
 
@@ -85,17 +96,12 @@ ${apikeyRow}| \`base\` | \`string\` | Base URL of the API server. |
 
 ### Entity interface
 
-All entities share the same interface.
+${fact(model.main[KIT], 'sharedOps') ? 'All entities share the same interface.' :
+    'Each entity has only the operations its model declares; see its section below.'}
 
 | Method | Description |
 | --- | --- |
-| \`load(reqmatch?, ctrl?)\` | Load a single entity by match criteria. |
-| \`list(reqmatch?, ctrl?)\` | List entities matching the criteria. |
-| \`create(reqdata?, ctrl?)\` | Create a new entity. |
-| \`update(reqdata?, ctrl?)\` | Update an existing entity. |
-| \`patch(reqdata?, ctrl?)\` | Change part of an existing entity. |
-| \`remove(reqmatch?, ctrl?)\` | Remove an entity. |
-| \`data(data?)\` | Get or set entity data. |
+${introOps(model).map((op: string) => GENERIC_OP_ROWS[op] + '\n').join('')}| \`data(data?)\` | Get or set entity data. |
 | \`match(match?)\` | Get or set entity match criteria. |
 | \`make()\` | Create a new instance with the same options. |
 | \`client()\` | Return the parent SDK client. |

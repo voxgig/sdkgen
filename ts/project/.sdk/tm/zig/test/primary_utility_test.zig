@@ -116,7 +116,7 @@ test "primary utility exists" {
     try testing.expect(utility.prepare_headers(ctx) == .object);
     try testing.expect(util.prepare_query_util(ctx) == .object);
     try testing.expect(util.prepare_params_util(ctx) == .object);
-    try testing.expect(utility.make_options(ctx) == .object);
+    try testing.expect((try utility.make_options(ctx)) == .object);
     _ = utility.clean(ctx, h.vstr("x"));
 }
 
@@ -143,7 +143,7 @@ test "primary make_options basic" {
     const client = baseClient();
     const utility = client.get_utility();
     const ctx = makeTestCtx(client, utility);
-    const opts = utility.make_options(ctx);
+    const opts = try utility.make_options(ctx);
     try testing.expect(opts == .object);
     try testing.expect(!h.is_noval(h.getp(opts, "base")));
 }
@@ -319,7 +319,7 @@ test "primary feature_init inactive" {
 
 test "primary fetcher live" {
     const rec = FetchRec.new();
-    const client = sdk.SDK.new(h.jo(&.{.{ "system", h.jo(&.{.{ "fetch", rec.fn_val() }}) }}));
+    const client = fh.live_client(h.jo(&.{.{ "system", h.jo(&.{.{ "fetch", rec.fn_val() }}) }}));
     const utility = client.get_utility();
     const ctx = utility.make_context(sdk.CtxSpec{ .opname = "load", .client = client, .utility = utility }, client.get_root_ctx());
     const fetchdef = h.jo(&.{ .{ "method", h.vstr("GET") }, .{ "headers", h.omap() } });
@@ -331,7 +331,7 @@ test "primary fetcher live" {
 
 test "primary fetcher blocked test mode" {
     const rec = FetchRec.new();
-    const client = sdk.SDK.new(h.jo(&.{.{ "system", h.jo(&.{.{ "fetch", rec.fn_val() }}) }}));
+    const client = fh.live_client(h.jo(&.{.{ "system", h.jo(&.{.{ "fetch", rec.fn_val() }}) }}));
     client.mode = "test";
     const utility = client.get_utility();
     const ctx = utility.make_context(sdk.CtxSpec{ .opname = "load", .client = client, .utility = utility }, client.get_root_ctx());
@@ -351,7 +351,7 @@ test "primary fetcher getonly guard" {
     threaded.environ.process_environ = .{ .block = .{ .slice = &flagged } };
     defer threaded.environ.process_environ = saved;
 
-    const client = sdk.SDK.new(h.jo(&.{.{ "base", h.vstr("http://127.0.0.1:9") }}));
+    const client = fh.live_client(h.jo(&.{.{ "base", h.vstr("http://127.0.0.1:9") }}));
     const utility = client.get_utility();
     const ctx = utility.make_context(sdk.CtxSpec{ .opname = "create", .client = client, .utility = utility }, client.get_root_ctx());
     const url = "http://127.0.0.1:9/planet/p1?apikey=GUARDKEY01";
@@ -369,8 +369,11 @@ test "primary fetcher getonly guard" {
 }
 
 test "primary new sdk smoke" {
-    const client = sdk.new();
-    try testing.expect(std.mem.eql(u8, client.mode, "live"));
+    // A templated base URL with no default refuses a client with no options.
+    switch (sdk.new()) {
+        .ok => |client| try testing.expect(std.mem.eql(u8, client.mode, "live")),
+        .err => |e| try testing.expectEqualStrings("server_var_required", e.code),
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -601,7 +604,6 @@ test "primary corpus: the shared cases drive this SDK's utilities" {
         }
 
         fn makeOptions(a: std.mem.Allocator, args: []const StdJson, po: *?StdJson, em: *?[]const u8) anyerror!StdJson {
-            _ = em;
             // `in` is {config, options}, not a ctx — the utility reads them off
             // the context, so split them out rather than passing the wrapper.
             const inv = entryarg(args, 0);
@@ -610,7 +612,7 @@ test "primary corpus: the shared cases drive this SDK's utilities" {
                 if (inv.object.get("config")) |c| ctx.config = try vs.fromStdJson(a, c);
                 if (inv.object.get("options")) |o| ctx.options = try vs.fromStdJson(a, o);
             }
-            const v = util.make_options_util(ctx);
+            const v = util.make_options_util(ctx) catch |er| return sdkfail(ctx, em, er);
             po.* = try publishCtx(a, ctx);
             return try vs.toStdJson(a, v);
         }
@@ -901,7 +903,13 @@ fn authSubject(a: std.mem.Allocator, args: []const StdJson, po: *?StdJson, em: *
 
 // prepare_auth reads its defaults off the CLIENT, so the section's own
 // DEF.setup block configures it.
+// Read from the config, never from a probe: a probe that finds no credential
+// is the regression this section exists to catch.
 test "primary corpus: prepareAuth, on this SDK's own credential" {
+    if (h.getp(h.getp(sdk.make_config(), "options"), "auth") != .object) {
+        std.debug.print("\n  SKIP primary prepareAuth: this SDK's config declares no auth, so it places no credential\n", .{});
+        return error.SkipZigTest;
+    }
     var arena = std.heap.ArenaAllocator.init(testing.allocator);
     defer arena.deinit();
     var run = try omnirun.makeRunner(testing.allocator, "primary");

@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, entityClassName, entityCollection, fact, clientOptions, entityOps, entityPath, introOps, requiredItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -17,23 +17,25 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   // load/list/create/update/remove row only for operations at least one active
   // entity actually exposes (a read-only entity has just list+load) — never
   // document an operation no entity has.
-  const opUnion = new Set<string>()
-  entityList.forEach((e: any) => Object.keys(e.op || {})
-    .forEach((o: string) => { if (e.op[o] && e.op[o].active !== false) opUnion.add(o) }))
+  const opUnion = new Set<string>(introOps(model))
+  const sameOps = fact(model.main[KIT], 'sharedOps')
+  const listAll = !entityList.some((e: any) =>
+    entityOps(e).includes('list') && 0 < requiredItems(e, 'list').length)
   const opRowDefs: Record<string, string> = {
     load: '| `load` | `(reqmatch, ctrl) -> any` | Load a single entity by match criteria, and return it. Raises on error. |',
-    list: '| `list` | `(reqmatch = nil, ctrl) -> Array` | List entities matching the criteria (call with no argument to list all), one per record. Raises on error. |',
+    list: '| `list` | `(reqmatch = nil, ctrl) -> Array` | List entities matching the criteria' + (listAll ? ' (call with no argument to list all)' : '') + ', one per record. Raises on error. |',
     create: '| `create` | `(reqdata, ctrl) -> any` | Create a new entity, and return it. Raises on error. |',
     update: '| `update` | `(reqdata, ctrl) -> any` | Update an existing entity, and return it. Raises on error. |',
     patch: '| `patch` | `(reqdata, ctrl) -> any` | Change part of an existing entity, and return it. Raises on error. |',
     remove: '| `remove` | `(reqmatch, ctrl) -> any` | Remove an entity, and return it marked as deleted. Raises on error. |',
   }
   const opRows = ['load', 'list', 'create', 'update', 'patch', 'remove']
-    .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o]).join('\n')
+    .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o] + '\n').join('')
+  const listResult = opUnion.has('list') ? ', and `list` an `Array` of entities, one\nper record' : ''
 
-  const apikeyOptionRow = isAuthActive(model)
-    ? '| `apikey` | `String` | API key for authentication. |\n'
-    : ''
+  const OPTION_KIND: Record<string, string> = { string: 'String', map: 'Hash', list: 'Array' }
+  const optionRows = clientOptions(model)
+    .map((o: any) => '| `' + o.name + '` | `' + OPTION_KIND[o.kind] + '` | ' + o.desc + ' |\n').join('')
 
   Content(`### ${model.const.Name}SDK
 
@@ -46,13 +48,7 @@ Creates a new SDK client.
 
 | Option | Type | Description |
 | --- | --- | --- |
-${apikeyOptionRow}| \`base\` | \`String\` | Base URL of the API server. |
-| \`prefix\` | \`String\` | URL path prefix prepended to all requests. |
-| \`suffix\` | \`String\` | URL path suffix appended to all requests. |
-| \`feature\` | \`Hash\` | Feature activation flags. |
-| \`extend\` | \`Hash\` | Additional Feature instances to load. |
-| \`system\` | \`Hash\` | System overrides (e.g. custom \`fetch\` lambda). |
-
+${optionRows}
 ### test
 
 \`\`\`ruby
@@ -73,19 +69,17 @@ Creates a test-mode client with mock transport. Both arguments may be \`nil\`.
 
   each(entityList, (ent: any) => {
     const article = /^[aeiou]/i.test(ent.Name) ? 'an' : 'a'
-    Content(`| \`${ent.Name}\` | \`(data) -> ${ent.Name}Entity\` | Create ${article} ${ent.Name} entity instance. |
+    Content(`| \`${ent.Name}\` | \`(data) -> ${entityClassName(ent, entityCollection(model))}\` | Create ${article} ${ent.Name} entity instance. |
 `)
   })
 
   Content(`
 ### Entity interface
 
-All entities share the same interface.
-
-| Method | Signature | Description |
+${0 === entityList.length ? '' : (sameOps ? 'All entities share the same interface.' :
+  'Each entity has only the operations its model declares; see its section below.') + '\n\n'}| Method | Signature | Description |
 | --- | --- | --- |
-${opRows}
-| \`data_get\` | \`() -> Hash\` | Get entity data. |
+${opRows}| \`data_get\` | \`() -> Hash\` | Get entity data. |
 | \`data_set\` | \`(data)\` | Set entity data. |
 | \`match_get\` | \`() -> Hash\` | Get entity match criteria. |
 | \`match_set\` | \`(match)\` | Set entity match criteria. |
@@ -94,8 +88,7 @@ ${opRows}
 
 ### Result shape
 
-Entity operations return the entity, and \`list\` an \`Array\` of entities, one
-per record; an entity's \`data_get\` reads its record. On failure they raise a
+Entity operations return the entity${listResult}; an entity's \`data_get\` reads its record. On failure they raise a
 \`${model.const.Name}Error\` (a \`StandardError\` subclass), so wrap calls in
 \`begin\`/\`rescue\` where you need to handle errors.
 
@@ -113,34 +106,32 @@ returns a result \`Hash\` with these keys:
 `)
 
   // Entities summary
-  Content(`### Entities
+  if (0 < entityList.length) {
+    Content(`### Entities
 
 `)
+  }
   each(entityList, (ent: any) => {
     const fields = Object.values(ent.fields || {})
-    const opnames = Object.keys(ent.op || {})
-    const ops = ent.op || {}
-    const points = each(ops).map((op: any) =>
-      op.points ? each(op.points) : []
-    ).flat()
-    const path = points.length > 0 ? (points[0] as any).o || '' : ''
+    const opnames = entityOps(ent)
+    const path = entityPath(ent)
 
     Content(`#### ${ent.Name}
 
-| Field | Description |
+${0 === fields.length ? '' : `| Field | Description |
 | --- | --- |
-`)
+`}`)
     each(fields, (field: any) => {
-      Content(`| \`${field.n}\` | ${field.sh || ''} |
+      Content(`| \`${field.n}\` | ${fact(model.main[KIT], 'field')[ent.name]?.[field.n]?.desc.cell ?? ''} |
 `)
     })
 
     Content(`
-Operations: ${opnames.map((n: string) => n.charAt(0).toUpperCase() + n.slice(1)).join(', ')}.
+${0 === opnames.length ? '' : `Operations: ${opnames.join(', ')}.
 
-API path: \`${path}\`
+`}${'' === path ? '' : `API path: \`${path}\`
 
-`)
+`}`)
   })
 
 })

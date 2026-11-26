@@ -2,7 +2,7 @@
 // feature/netsim.rs). Wraps the active transport and injects realistic
 // network conditions so offline unit tests can exercise slowness, transient
 // failures, rate limiting and outages deterministically. Every mode is
-// counter-driven per client; `failRate` uses a seeded LCG (gotcha #6):
+// counter-driven per client; `failRate` uses a seeded LCG:
 //   seed = (seed*1103515245 + 12345) & 0x7fffffff.
 // Error codes are exactly `netsim_offline` / `netsim_conn`.
 

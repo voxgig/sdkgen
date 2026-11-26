@@ -515,7 +515,7 @@ fn make_opts_with_feature(utility: &Rc<Utility>, feature: Value) -> Value {
         },
         None,
     );
-    utility.make_options(&ctx)
+    utility.make_options(&ctx).unwrap()
 }
 
 fn feature_order_str(opts: &Value) -> String {

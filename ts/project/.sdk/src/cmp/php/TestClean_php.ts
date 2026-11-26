@@ -2,11 +2,12 @@ import {
   cmp,
   File,
   Content,
-  isAuthSuppressed,
-  isHttpBasicAuth,
-  resolveAuthIn,
-  resolveAuthName,
+  fact,
 } from '@voxgig/sdkgen'
+
+import {
+  KIT,
+} from '@voxgig/apidef'
 
 
 // The canary sweep, as TestClean_ts emits it: every credential slot holds a
@@ -16,14 +17,15 @@ import {
 // second sweep does the same for a body of bytes. Clean off MUST show both.
 const TestClean = cmp(function TestClean(props: any) {
   const { model } = props.ctx$
+  const authFact = fact(model.main[KIT], 'auth')
   const { target } = props
 
   const auth = {
-    suppressed: isAuthSuppressed(model),
-    where: resolveAuthIn(model),
-    name: 'header' === resolveAuthIn(model)
-      ? resolveAuthName(model).toLowerCase() : resolveAuthName(model),
-    basic: isHttpBasicAuth(model),
+    suppressed: authFact.suppressed,
+    where: authFact.in,
+    name: 'header' === authFact.in
+      ? authFact.name.toLowerCase() : authFact.name,
+    basic: authFact.basic,
   }
 
   File({ name: 'CleanTest.' + target.ext }, () => Content(render(model.const.Name, auth)))
@@ -964,7 +966,7 @@ class CleanTest extends TestCase
     {
         // With clean off nothing strips the trace arguments, and var_export
         // renders the whole context through them: 43 MB of text on a
-        // 31-operation API (#292). The control proves the sweep sees a raw
+        // 31-operation API. The control proves the sweep sees a raw
         // value, which the arguments are not needed for.
         $args = ini_set('zend.exception_ignore_args', '1');
         try {

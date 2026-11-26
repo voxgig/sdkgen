@@ -8,7 +8,9 @@ import {
   inactiveFeatureExcludes,
   pluginExcludes,
   targetFeatures,
-  TEST_CONTROL_EXCLUDE
+  TEST_CONTROL_EXCLUDE,
+  TargetLicense,
+  TargetVersion,
 } from '@voxgig/sdkgen'
 
 
@@ -51,6 +53,8 @@ const Main = cmp(async function Main(props: any) {
   Package({ target })
 
   Gitignore({})
+  TargetLicense({ target })
+  TargetVersion({ target })
 
   // Copy tm/rust files with replacements. The tm src/ subtree only stages
   // the per-feature custom-source dirs (target add), so it is excluded
@@ -221,7 +225,7 @@ pub use crate::utility::voxgigstruct::Value;
 // \`${rustcrate}::test()\` for the common no-options case.
 use std::rc::Rc;
 
-pub fn new() -> Rc<${model.const.Name}SDK> {
+pub fn new() -> Result<Rc<${model.const.Name}SDK>, ${model.const.Name}Error> {
     ${model.const.Name}SDK::new(Value::Noval)
 }
 

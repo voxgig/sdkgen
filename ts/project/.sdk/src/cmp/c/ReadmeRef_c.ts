@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonKey, canonScalarKey, File, isAuthActive, entityIdField , targetFeatures, opNeedsAction, bodyNote, matchExampleItems, requestExampleItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonKey, canonScalarKey, File, isAuthActive, entityIdField, entityOps, bodyNote, matchExampleItems, requestExampleItems, featureDocs, fact, clientOptions, requiredItems } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -41,6 +41,9 @@ function cmapExpr(pairs: string[]): string {
 }
 
 
+
+const LIST_ALL = ' The match is optional — pass `NULL` to list all records.'
+
 const ReadmeRef = cmp(function ReadmeRef(props: any) {
   const { target } = props
   const { model } = props.ctx$
@@ -48,8 +51,6 @@ const ReadmeRef = cmp(function ReadmeRef(props: any) {
   const ident = cIdent(model)
   const Name = model.const.Name
   const entity = getModelPath(model, `main.${KIT}.entity`)
-  const feature = targetFeatures(model, target)
-
   const publishedEntities = each(entity).filter((e: any) => e.active !== false)
 
   const OP_SIGNATURES: Record<string, { sig: string, desc: string }> = {
@@ -59,7 +60,7 @@ const ReadmeRef = cmp(function ReadmeRef(props: any) {
     },
     list: {
       sig: 'Entity** vt->list(Entity* e, voxgig_value* reqmatch, voxgig_value* ctrl, PNError** err)',
-      desc: 'List entities matching the given criteria. The match is optional — pass `NULL` to list all records. Returns a `NULL`-terminated array of entities, one per record, or `NULL` with `*err` set on failure.',
+      desc: 'List entities matching the given criteria.' + LIST_ALL + ' Returns a `NULL`-terminated array of entities, one per record, or `NULL` with `*err` set on failure.',
     },
     create: {
       sig: 'Entity* vt->create(Entity* e, voxgig_value* reqdata, voxgig_value* ctrl, PNError** err)',
@@ -93,26 +94,33 @@ Complete API reference for the ${model.Name} ${target.title} SDK.
 
 `)
 
+    // A closed value union holds no feature instance, so there is no `extend`.
+    const OPTION_KIND: Record<string, string> = { string: 'string', map: 'map', list: '' }
+    const optionRows = clientOptions(model).filter((o: any) => 'extend' !== o.name)
+      .map((o: any) => '| `' + o.name + '` | `' + OPTION_KIND[o.kind] + '` | ' + o.desc + ' |\n').join('')
+    const required = fact(model.main[KIT], 'server').filter((v: any) => v.required)
+      .map((v: any) => '`' + v.name + '`')
+    const refusal = 0 === required.length ? '' : `
+Construction refuses \`options\` without a \`server\` value for ${required.join(' or ')}:
+\`${ident}_sdk_new\` returns \`NULL\` and sets \`*err\` to a \`PNError\` whose
+\`code\` is \`server_var_required\` and whose message names the variable.
+`
+
     Content(`\`\`\`c
 #include "core/api.h"
 
-${Name}SDK* client = ${ident}_sdk_new(options);
+PNError* err = NULL;
+${Name}SDK* client = ${ident}_sdk_new(options, &err);
 \`\`\`
 
 Create a new SDK client instance. \`options\` is a \`voxgig_value*\` map
 (\`NULL\` for none).
-
+${refusal}
 **Parameters (\`options\` map keys):**
 
 | Key | Value type | Description |
 | --- | --- | --- |
-${isAuthActive(model) ? '| `apikey` | `string` | API key for authentication. |\n' : ''}| \`base\` | \`string\` | Base URL for API requests. |
-| \`prefix\` | \`string\` | URL prefix appended after base. |
-| \`suffix\` | \`string\` | URL suffix appended after path. |
-| \`headers\` | \`map\` | Custom headers for all requests. |
-| \`feature\` | \`map\` | Feature configuration. |
-| \`system\` | \`map\` | System overrides. |
-
+${optionRows}
 `)
 
 
@@ -178,7 +186,7 @@ Prepare a fetch definition without sending. Returns the fetchdef and sets
 
     // Entity reference sections
     publishedEntities.map((ent: any) => {
-      const opnames = Object.keys(ent.op || {})
+      const opnames = entityOps(ent)
       const fields = Object.values(ent.fields || {})
       const idF = entityIdField(ent)
       const evar = cVarName(ent.name)
@@ -191,8 +199,8 @@ Prepare a fetch definition without sending. Returns the fetchdef and sets
 
 `)
 
-      if (ent.short) {
-        Content(`${ent.short}
+      if (fact(ent, 'desc').inline) {
+        Content(`${fact(ent, 'desc').inline}
 
 `)
       }
@@ -213,7 +221,7 @@ Entity* ${evar} = ${acc}(client, NULL);
 `)
         each(fields, (field: any) => {
           const req = field.r ? 'Yes' : 'No'
-          const desc = field.sh || ''
+          const desc = fact(model.main[KIT], 'field')[ent.name]?.[field.n]?.desc.cell ?? ''
           Content(`| \`${field.n}\` | \`${cType(field.t)}\` | ${req} | ${desc} |
 `)
         })
@@ -225,7 +233,7 @@ Entity* ${evar} = ${acc}(client, NULL);
         const hasFieldOps = fields.some((f: any) => f.op && Object.keys(f.op).length > 0)
         if (hasFieldOps) {
           const opcols = ['load', 'list', 'create', 'update', 'patch', 'remove']
-            .filter((op: string) => opnames.includes(op) && ent.op[op]?.active !== false)
+            .filter((op: string) => opnames.includes(op))
           Content(`### Field Usage by Operation
 
 | Field | ${opcols.join(' | ')} |
@@ -258,16 +266,16 @@ Entity* ${evar} = ${acc}(client, NULL);
         opnames.map((opname: string) => {
           const info = OP_SIGNATURES[opname]
           if (!info) return
+          const needs = requiredItems(ent, opname).map((it: any) => it.name)
+          const desc = info.desc.replace(' The data must include the entity id.',
+            null != idF && needs.includes(idF) ? ' The data must include the entity `' + idF + '`.' : '')
+            .replace(LIST_ALL, 0 === needs.length ? LIST_ALL : ' The match must include ' + needs.map((n: string) => '`' + n + '`').join(', ') + '.')
 
           Content(`#### \`${info.sig}\`
 
-${info.desc}
+${desc}
 
 `)
-
-          if (opNeedsAction(ent.op[opname])) {
-            return
-          }
 
           if ('load' === opname || 'remove' === opname) {
             const matchItems = matchExampleItems(ent, opname, idF)
@@ -371,7 +379,7 @@ Return the entity name.
 
 
     // Features section
-    const activeFeatures = each(feature).filter((f: any) => f.active)
+    const activeFeatures = featureDocs(model, target)
     if (activeFeatures.length > 0) {
       Content(`
 ---
@@ -383,7 +391,7 @@ Return the entity name.
 `)
 
       activeFeatures.map((f: any) => {
-        Content(`| \`${f.name}\` | ${f.version || '0.0.1'} | ${f.title || ''} |
+        Content(`| \`${f.name}\` | ${f.version} | ${f.titleCell} |
 `)
       })
 
@@ -394,6 +402,7 @@ Features are activated via the \`feature\` option:
 `)
 
       Content(`\`\`\`c
+PNError* err = NULL;
 ${Name}SDK* client = ${ident}_sdk_new(cmap(1,
     "feature", cmap(${activeFeatures.length},
 `)
@@ -402,7 +411,7 @@ ${Name}SDK* client = ${ident}_sdk_new(cmap(1,
         Content(`        "${f.name}", cmap(1, "active", v_bool(true))${comma}
 `)
       })
-      Content(`));
+      Content(`), &err);
 \`\`\`
 
 `)

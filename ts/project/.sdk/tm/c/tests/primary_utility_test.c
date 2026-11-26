@@ -1,5 +1,5 @@
 // Primary utility tests (C port of tm/rust/tests/primary_utility_test.rs).
-// The rust suite drives the shared `primary` subtree of ../.sdk/test/test.json
+// The rust suite drives the shared `primary` subtree of SDKREL/.sdk/test/test.json
 // through the pipeline utilities; the C port exercises the same utility surface
 // with deterministic, directly-constructed contexts (one focused unit test per
 // utility) so every make_*/prepare_*/result_*/transform_*/feature_* entry point
@@ -106,7 +106,7 @@ static void test_primary_utility_exists(void) {
   CHECK(voxgig_is_map(prepare_headers_util(ctx)), "prepare_headers is map");
   CHECK(voxgig_is_map(prepare_query_util(ctx)), "prepare_query is map");
   CHECK(voxgig_is_map(prepare_params_util(ctx)), "prepare_params is map");
-  CHECK(voxgig_is_map(make_options_util(ctx)), "make_options is map");
+  CHECK(voxgig_is_map(make_options_util(ctx, NULL)), "make_options is map");
   clean_util(ctx, v_str("x"));
 }
 
@@ -184,7 +184,7 @@ static void test_primary_prepare_body_basic(void) {
 static void test_primary_make_options_basic(void) {
   base_client();
   Context* ctx = test_ctx();
-  voxgig_value* opts = make_options_util(ctx);
+  voxgig_value* opts = make_options_util(ctx, NULL);
   CHECK(voxgig_is_map(opts), "make_options map");
   CHECK(!v_is_noval(getp(opts, "base")), "make_options has base");
 }
@@ -488,7 +488,7 @@ static void test_primary_feature_init_inactive(void) {
 static void test_primary_fetcher_live(void) {
   voxgig_value* calls = v_list();
   ProjectNameSDK* live = projectname_sdk_new(cmap(2, "base", v_str(PU_LIVE_BASE),
-      "system", cmap(1, "fetch", vfn(pu_sysfetch, calls))));
+      "system", cmap(1, "fetch", vfn(pu_sysfetch, calls))), NULL);
   Utility* util = sdk_get_utility(live);
   CtxSpec cs;
   memset(&cs, 0, sizeof(cs));
@@ -508,7 +508,7 @@ static void test_primary_fetcher_live(void) {
 
 static void test_primary_fetcher_blocked_test_mode(void) {
   ProjectNameSDK* blocked = projectname_sdk_new(cmap(2, "base", v_str(PU_LIVE_BASE),
-      "system", cmap(1, "fetch", vfn(pu_sysfetch, v_list()))));
+      "system", cmap(1, "fetch", vfn(pu_sysfetch, v_list()))), NULL);
   free(blocked->mode);
   blocked->mode = strdup("test");
   Utility* util = sdk_get_utility(blocked);
@@ -529,7 +529,7 @@ static void test_primary_fetcher_blocked_test_mode(void) {
 
 // Nothing listens on port 9: a request the guard let through fails there.
 static void test_primary_fetcher_getonly_guard(void) {
-  ProjectNameSDK* live = projectname_sdk_new(cmap(1, "base", v_str("http://127.0.0.1:9")));
+  ProjectNameSDK* live = projectname_sdk_new(cmap(1, "base", v_str("http://127.0.0.1:9")), NULL);
   Utility* util = sdk_get_utility(live);
   CtxSpec cs;
   memset(&cs, 0, sizeof(cs));
@@ -564,7 +564,7 @@ static void test_primary_fetcher_getonly_guard(void) {
 }
 
 static void test_primary_new_sdk_smoke(void) {
-  ProjectNameSDK* client = projectname_sdk_new(cmap(1, "base", v_str(PU_LIVE_BASE)));
+  ProjectNameSDK* client = projectname_sdk_new(cmap(1, "base", v_str(PU_LIVE_BASE)), NULL);
   CHECK_STR_EQ(client->mode, "live", "new sdk mode live");
 }
 

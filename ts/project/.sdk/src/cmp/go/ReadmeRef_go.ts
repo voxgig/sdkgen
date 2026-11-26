@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField, entityOps, targetFeatures, bodyNote, listMatchArg, matchExampleItems, litString, requestExampleItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField, entityOps, bodyNote, listMatchArg, matchExampleItems, litString, requestExampleItems, entityClassName, entityCollection, featureDocs, fact, clientOptions, requiredItems } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -49,8 +49,6 @@ const ReadmeRef = cmp(function ReadmeRef(props: any) {
   const { model } = props.ctx$
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
-  const feature = targetFeatures(model, target)
-
   const publishedEntities = each(entity).filter((e: any) => e.active !== false)
 
 
@@ -67,24 +65,29 @@ Complete API reference for the ${model.Name} ${target.title} SDK.
 
 `)
 
+    const OPTION_KIND: Record<string, string> = { string: 'string', map: 'map[string]any', list: '[]any' }
+    const optionRows = clientOptions(model)
+      .map((o: any) => '| `options["' + o.name + '"]` | `' + OPTION_KIND[o.kind] + '` | ' + o.desc + ' |\n').join('')
+    const required = fact(model.main[KIT], 'server').filter((v: any) => v.required)
+      .map((v: any) => '`' + v.name + '`')
+    const refusal = 0 === required.length ? '' : `
+Construction refuses \`options["server"]\` without a value for ${required.join(' or ')}:
+it returns a nil client and an error whose code is \`server_var_required\`
+and whose message names the variable.
+`
+
     Content(`\`\`\`go
-func New${model.const.Name}SDK(options map[string]any) *${model.const.Name}SDK
+func New${model.const.Name}SDK(options map[string]any) (*${model.const.Name}SDK, error)
 \`\`\`
 
 Create a new SDK client instance.
-
+${refusal}
 **Parameters:**
 
 | Name | Type | Description |
 | --- | --- | --- |
 | \`options\` | \`map[string]any\` | SDK configuration options. |
-${isAuthActive(model) ? '| \`options["apikey"]\` | \`string\` | API key for authentication. |\n' : ''}| \`options["base"]\` | \`string\` | Base URL for API requests. |
-| \`options["prefix"]\` | \`string\` | URL prefix appended after base. |
-| \`options["suffix"]\` | \`string\` | URL suffix appended after path. |
-| \`options["headers"]\` | \`map[string]any\` | Custom headers for all requests. |
-| \`options["feature"]\` | \`map[string]any\` | Feature configuration. |
-| \`options["system"]\` | \`map[string]any\` | System overrides (e.g. custom fetch). |
-
+${optionRows}
 `)
 
 
@@ -176,12 +179,12 @@ same parameters as \`Direct()\`.
       Content(`
 ---
 
-## ${ent.Name}Entity
+## ${entityClassName(ent, entityCollection(model))}
 
 `)
 
-      if (ent.short) {
-        Content(`${ent.short}
+      if (fact(ent, 'desc').inline) {
+        Content(`${fact(ent, 'desc').inline}
 
 `)
       }
@@ -202,8 +205,8 @@ fmt.Println(${eVar}.GetName()) // "${ent.name}"
 `)
         each(fields, (field: any) => {
           const req = field.r ? 'Yes' : 'No'
-          const desc = field.sh || ''
-          Content(`| \`${field.n}\` | \`${canonToType(field.t, target.name)}\` | ${req} | ${desc} |
+          const desc = fact(model.main[KIT], 'field')[ent.name]?.[field.n]?.desc.cell ?? ''
+          Content(`| \`${field.n}\` | \`${canonToType(field.t, 'go').replace(/\|/g, '\\|')}\` | ${req} | ${desc} |
 `)
         })
 
@@ -248,10 +251,13 @@ fmt.Println(${eVar}.GetName()) // "${ent.name}"
         opnames.map((opname: string) => {
           const info = OP_SIGNATURES[opname]
           if (!info) return
+          const needs = requiredItems(ent, opname).map((it: any) => it.name)
+          const desc = info.desc.replace(' The data must include the entity `id`.',
+            null != idF && needs.includes(idF) ? ' The data must include the entity `' + idF + '`.' : '')
 
           Content(`#### \`${info.sig}\`
 
-${info.desc}
+${desc}
 
 `)
 
@@ -329,6 +335,7 @@ fmt.Println(result.(sdk.Entity).Data())
             const updateLines = updateItems.map((it: any) =>
               `    ${litString('go', it.name)}: ${exampleValue(ent, ent.op && ent.op[opname], it.name,
                 it.name === idF ? ent.name + '_id' : it.name)},\n`).join('')
+
             Content(`\`\`\`go
 result, err := client.${ent.Name}(nil).${'patch' === opname ? 'Patch' : 'Update'}(map[string]any{
 ${updateLines}    // ${'patch' === opname ? 'Only the fields to change' : 'Fields to update'}
@@ -367,7 +374,7 @@ Get or set the entity match criteria. Works the same as \`Data()\`.
 
 #### \`Make() Entity\`
 
-Create a new \`${ent.Name}Entity\` instance with the same client and
+Create a new \`${entityClassName(ent, entityCollection(model))}\` instance with the same client and
 options.
 
 #### \`Stream(action string, args map[string]any, callopts map[string]any) <-chan StreamItem\`
@@ -386,7 +393,7 @@ Return the entity name.
     })
 
 
-    const activeFeatures = each(feature).filter((f: any) => f.active)
+    const activeFeatures = featureDocs(model, target)
     if (activeFeatures.length > 0) {
       Content(`
 ---
@@ -398,7 +405,7 @@ Return the entity name.
 `)
 
       activeFeatures.map((f: any) => {
-        Content(`| \`${f.name}\` | ${f.version || '0.0.1'} | ${f.title || ''} |
+        Content(`| \`${f.name}\` | ${f.version} | ${f.titleCell} |
 `)
       })
 
@@ -409,7 +416,7 @@ Features are activated via the \`feature\` option:
 `)
 
       Content(`\`\`\`go
-client := sdk.New${model.const.Name}SDK(map[string]any{
+client, err := sdk.New${model.const.Name}SDK(map[string]any{
     "feature": map[string]any{
 `)
       activeFeatures.map((f: any) => {
@@ -418,6 +425,9 @@ client := sdk.New${model.const.Name}SDK(map[string]any{
       })
       Content(`    },
 })
+if err != nil {
+    panic(err)
+}
 \`\`\`
 
 `)

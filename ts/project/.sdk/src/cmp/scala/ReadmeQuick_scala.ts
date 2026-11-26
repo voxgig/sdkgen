@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, opRequestShape, entityIdField, entityOps, javaMapOf, matchExampleItems, requiredItems, javaMapItems, requestExampleItems, sendsId } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, opRequestShape, entityIdField, entityOps, javaMapOf, matchExampleItems, requiredItems, javaMapItems, requestExampleItems, sendsId, fact, seriesList } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -12,6 +12,7 @@ import { scalaVarName, scalaPackage, scalaListMatch, scalaLit } from './utility_
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   const { target, ctx$: { model } } = props
+  let step = 0
 
   const SDK = model.const.Name + 'SDK'
 
@@ -32,32 +33,30 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
 
   const authActive = isAuthActive(model)
 
-  if (authActive) {
-    Content(`### 1. Create a client
+  // The constructor refuses a templated URL it has no value for, so the quick
+  // start passes each variable the URL uses with no default.
+  const svars = fact(model.main[KIT], 'server').filter((v: any) => v.required)
+  const ctorLines = [
+    ...(authActive ? [`options.put("apikey", System.getenv("${envName(model)}_APIKEY"))`] : []),
+    ...(fact(model.main[KIT], 'auth').secret ? [`options.put("secret", System.getenv("${envName(model)}_SECRET"))`] : []),
+    ...(0 === svars.length ? [] : ['val server = new java.util.LinkedHashMap[String, Object]()',
+      ...svars.map((v: any) => `server.put("${v.name}", "<${v.name}>")`), 'options.put("server", server)']),
+  ]
+  const ctor = 0 === ctorLines.length
+    ? `val client = new ${SDK}()`
+    : ['val options = new java.util.LinkedHashMap[String, Object]()', ...ctorLines,
+      `val client = new ${SDK}(options)`].join('\n')
+
+  Content(`### ${++step}. Create a client
 
 \`\`\`scala
 import ${scalaPackage(model)}.core.${SDK}
 import ${scalaPackage(model)}.core.SdkEntity
 
-val options = new java.util.LinkedHashMap[String, Object]()
-options.put("apikey", System.getenv("${envName(model)}_APIKEY"))
-val client = new ${SDK}(options)
+${ctor}
 \`\`\`
 
 `)
-  }
-  else {
-    Content(`### 1. Create a client
-
-\`\`\`scala
-import ${scalaPackage(model)}.core.${SDK}
-import ${scalaPackage(model)}.core.SdkEntity
-
-val client = new ${SDK}()
-\`\`\`
-
-`)
-  }
 
   if (exampleEntity) {
     const eName = nom(exampleEntity, 'Name')
@@ -72,7 +71,7 @@ val client = new ${SDK}()
     const idF = entityIdField(exampleEntity)
 
     if (opnames.includes('list')) {
-      Content(`### 2. List ${eName.toLowerCase()} records
+      Content(`### ${++step}. List ${eName.toLowerCase()} records
 
 \`list(null, null)\` returns a list of entities, one per record (as \`Object\`),
 and raises on error; an entity's \`data()\` reads its record.
@@ -109,7 +108,7 @@ catch {
         `${JSON.stringify(it.name)}, ${scalaLit(it.type,
           it.name === neIdF ? 'example_id' : 'example_' + it.name)}`)
 
-      Content(`### 3. Load ${neArticle} ${neName.toLowerCase()}
+      Content(`### ${++step}. Load ${neArticle} ${neName.toLowerCase()}
 
 ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
 \`load()\` returns the ENTITY — call data() for the record — and raises on error.
@@ -137,7 +136,7 @@ catch {
             it.name === idF ? 'example_id' : 'example_' + it.name)}`), 'java.util.')
         : 'null'
 
-      Content(`### 3. Load ${article} ${eName.toLowerCase()}
+      Content(`### ${++step}. Load ${article} ${eName.toLowerCase()}
 
 \`load()\` returns the ENTITY — call data() for the record — and raises on error.
 
@@ -175,7 +174,8 @@ catch {
 
     if (opnames.includes('create') || opnames.includes('update') || opnames.includes('patch') ||
       opnames.includes('remove')) {
-      Content(`### 4. Create, update, and remove
+      Content(`### ${++step}. ${seriesList(['create', 'update', 'patch', 'remove']
+        .filter((o: string) => opnames.includes(o))).replace(/^./, (c: string) => c.toUpperCase())}
 
 \`\`\`scala
 `)

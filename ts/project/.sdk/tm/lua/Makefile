@@ -23,18 +23,18 @@ clean:
 	@if [ -n "$(NATIVE)" ]; then rm -f $(NATIVE); echo "removed $(NATIVE)"; else echo "No clean step for Lua"; fi
 
 # --- Release: publish to LuaRocks -----------------------------------------
-# Upload the rockspec to LuaRocks, then tag lua/vX.Y.Z. LuaRocks has no boru
+# Upload the rockspec to LuaRocks, then push its release tag. LuaRocks has no boru
 # recipe, so inject its API key + the GitHub token as custom env vars
 # (all-positional — boru cannot mix --for recipes with positional env):
 #   boru vault exec '<alias>=LUAROCKS_API_KEY,<gh-alias>=GITHUB_TOKEN' -- make publish
 # --skip-pack uploads only the rockspec (its git+https source is fetched at the
-# lua/vX.Y.Z tag on install; that tag is pushed in the LAST step, so we must not
+# release tag on install; that tag is pushed in the LAST step, so we must not
 # pack here). LuaRocks requires the rockspec filename to be
 # <package>-<version>.rockspec, so we upload a canonically-named copy. boru
 # `--dry-run` rehearses (no upload/tag). set -e + tag-last: a failed upload
 # never leaves a tag behind.
 VERSION := $(shell sed -nE 's/^version *= *"([0-9.]+).*/\1/p' *.rockspec | head -1)
-TAG := lua/v$(VERSION)
+TAG := RELEASETAG
 BORU_DRY_RUN_FILLER := BORU-DRY-RUN-FILLER-NOT-A-REAL-SECRET
 publish: test
 	@if git rev-parse -q --verify "refs/tags/$(TAG)" >/dev/null; then \
@@ -51,6 +51,7 @@ publish: test
 	cp "$$rock" "$$pkg-$$rev.rockspec"; \
 	luarocks upload --skip-pack "$$pkg-$$rev.rockspec" --temp-key="$$LUAROCKS_API_KEY"; \
 	rm -f "$$pkg-$$rev.rockspec"; \
+	if [ -z "$(TAG)" ]; then echo "No release tag: the model cuts none for this package."; exit 0; fi; \
 	git tag -a "$(TAG)" -m "lua v$(VERSION)"; \
 	url=$$(git remote get-url origin | sed -E 's#^git@github.com:#https://github.com/#'); \
 	if [ -n "$$token" ] && printf '%s' "$$url" | grep -q '^https://github.com/'; then \

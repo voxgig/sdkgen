@@ -41,6 +41,11 @@ use Scalar::Util ();
 
 use ProjectNameSDK;
 
+# Read from the config, never from a probe: an SDK whose config declares no
+# auth places no credential, and these tests assert on the one it places.
+plan skip_all => "this SDK's config declares no auth, so it places no credential"
+  unless exists ProjectNameConfig::make_config()->{options}{auth};
+
 my $ENVPREFIX = 'PROJECTENV_TEST_SECRETS_';
 
 my $RAWBASE = 'http://raw.test/api';

@@ -37,7 +37,7 @@ import { ReadmeTop } from './cmp/ReadmeTop'
 import { AgentGuideTop } from './cmp/AgentGuideTop'
 import { AgentGuide } from './cmp/AgentGuide'
 import { AgentGuideFeature } from './cmp/AgentGuideFeature'
-import { License } from './cmp/License'
+import { License, TargetLicense, TargetVersion } from './cmp/License'
 import { Security } from './cmp/Security'
 import { PublishWorkflow } from './cmp/PublishWorkflow'
 import { npmTrustScript } from './admin/npm-trust'
@@ -55,6 +55,8 @@ import { ReadmeHowto } from './cmp/ReadmeHowto'
 import { ReadmeExplanation } from './cmp/ReadmeExplanation'
 import { ReadmeRef } from './cmp/ReadmeRef'
 import { ReadmeRefFeatures } from './cmp/ReadmeRefFeatures'
+import { featureDocs } from './cmp/FeatureDocs'
+import type { FeatureDoc } from './cmp/FeatureDocs'
 import { FeatureHook } from './cmp/FeatureHook'
 import { registerComponent } from './cmp/Registered'
 
@@ -69,7 +71,8 @@ import { collectDeps } from './helpers/collectDeps'
 import { guardModelNames } from './helpers/modelNames'
 import { guardFlowSteps } from './helpers/flowGuard'
 import { guardModel } from './helpers/guardModel'
-import { sourceString } from './helpers/sourcestring'
+import { sourceString, templateSafe } from './helpers/sourcestring'
+import { cdTarget, envLocalAt, readerDir } from './helpers/readerdir'
 import { applyFacts, fact, refuseRootPlan } from './helpers/facts'
 import { docFindings } from './helpers/doccheck'
 import { claimedFiles, pruneGenerated } from './helpers/generated'
@@ -78,11 +81,14 @@ import type { DepEntry } from './helpers/collectDeps'
 import { canonToType, canonToDtype, canonKey, canonScalarKey } from './helpers/canonType'
 import { canonToSpec, entityDataSpec, entityOpSpec, entitySpecs, validateSeeds } from './helpers/canonSpec'
 import { optionSpec, featureOptionSpec, entitySpecMap } from './helpers/optspec'
-import { OP_SUFFIX, opTypeName, opParams, opReachable, opNeedsAction, ownPoint, opActions, entityActions, entityPath, opRequestShape, entityIdField, entityDataIdField, entityRecordIdField, entityOps, introOps, invalidRequest, entityPrimaryOp, pickExampleEntity, entityClassName, entityConstructorName, entityTypeCollisions, warnEntityTypeCollisions, ungeneratedOps, warnUngeneratedOps, deriveEntityNames, entityCollection } from './helpers/opShape'
+import { OP_SUFFIX, opTypeName, opParams, opReachable, opNeedsAction, ownPoint, opActions, entityActions, entityPath, directRoute, opRequestShape, entityIdField, entityDataIdField, entityRecordIdField, entityOps, introOps, invalidRequest, entityPrimaryOp, pickExampleEntity, entityClassName, entityConstructorName, entityTypeCollisions, warnEntityTypeCollisions, ungeneratedOps, warnUngeneratedOps, deriveEntityNames, entityCollection } from './helpers/opShape'
 import { isReservedName, safeVarName, exampleVarName, phpEntityAccessor, entityCacheField, isRbCoreConstant, isRbSdkConstant, rbSafeTypeName, isSwiftSdkType, swiftSafeTypeName, isPhpReservedType, isPhpSdkClass, phpSafeTypeName, isTsReservedType, isTsSdkType, tsSafeTypeName, isElixirReservedType, elixirSafeTypeName, elixirTypeNames, elixirTypeName, elixirAccessorNames, elixirAccessor, tsTypeName, rbTypeName, phpTypeName, swiftTypeName, jsProp, jsOptProp, jsKey, jsQuote, luaKey, luaString, prefixLeadingDigit } from './helpers/naming'
 import { serverVariables, hasServerVariables, serverVarEnv } from './helpers/serverVars'
+import { clientOptions } from './helpers/clientOptions'
 import { mcpTools, MCP_READ_OPS, MCP_WRITE_OPS } from './helpers/mcpTools'
 import type { McpTool } from './helpers/mcpTools'
+import { consumedTarget } from './helpers/consumer'
+import type { Consumed } from './helpers/consumer'
 import {
   primaryOpCall, idLiteral, requiredItems, requestExampleItems, sendsId, matchExampleItems, matchArg, listMatchArg, seededList, dataArg, javaMap, javaMapOf, javaMapItems, litFor,
   litPair, litString,
@@ -138,6 +144,7 @@ import {
   sdkName,
   installCommand,
   registryState,
+  registryNote,
   isPublished,
   registryName,
   vendorCommand,
@@ -165,7 +172,7 @@ import {
   SECURITY_EMAIL,
   GENERATOR_URL,
 } from './helpers/packageMeta'
-import { modelText } from './helpers/text'
+import { modelText, seriesList } from './helpers/text'
 import { alongsideNote } from './helpers/alongside'
 import {
   npmScriptRm,
@@ -1009,6 +1016,7 @@ export type {
   ExampleLang,
   LiteralLang,
   McpTool,
+  Consumed,
   DepEntry,
   LiveFlowNeeds,
   LiveIdentity,
@@ -1025,6 +1033,7 @@ export type {
   RegisterOptions,
   Manifest,
   ManifestRead,
+  FeatureDoc,
 }
 
 export type {
@@ -1075,6 +1084,8 @@ export {
   Main,
   Deploy,
   License,
+  TargetLicense,
+  TargetVersion,
   Security,
   PublishWorkflow,
   npmTrustScript,
@@ -1177,6 +1188,7 @@ export {
   opActions,
   entityActions,
   entityPath,
+  directRoute,
   opRequestShape,
   entityIdField,
   entityDataIdField,
@@ -1197,6 +1209,10 @@ export {
   guardFlowSteps,
   guardModel,
   sourceString,
+  templateSafe,
+  envLocalAt,
+  readerDir,
+  cdTarget,
   applyFacts,
   fact,
   projectConst,
@@ -1230,6 +1246,7 @@ export {
   MCP_READ_OPS,
   MCP_WRITE_OPS,
   serverVariables,
+  clientOptions,
   hasServerVariables,
   serverVarEnv,
   liveStrict,
@@ -1287,6 +1304,7 @@ export {
 
   featureApplies,
   targetFeatures,
+  featureDocs,
   featureTags,
   unknownTags,
   TAGS,
@@ -1313,6 +1331,7 @@ export {
   sdkName,
   installCommand,
   registryState,
+  registryNote,
   isPublished,
   registryName,
   vendorCommand,
@@ -1340,7 +1359,9 @@ export {
   SECURITY_EMAIL,
   GENERATOR_URL,
   modelText,
+  seriesList,
   alongsideNote,
+  consumedTarget,
   npmScriptRm,
   npmScriptEnv,
   npmScriptTestSome,

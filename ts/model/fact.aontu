@@ -95,7 +95,7 @@ main: kit: derive: auth: {
 main: kit: fact: auth: {
   apikey: match(maybe($.main.kit.config.auth.active), true, true, false, false,
     maybe($.main.kit.derive.auth.declared))
-  suppressed: match(maybe($.main.kit.config.auth.active), false, true, false)
+  suppressed: match(maybe($.main.kit.fact.auth.apikey), true, false, true)
   basic: match(maybe($.main.kit.config.auth.basic), true, true, false, false,
     "", maybe($.main.kit.derive.auth.basic), true)
   in: match(maybe($.main.kit.config.auth.in), "", maybe($.main.kit.derive.auth.in),

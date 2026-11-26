@@ -2,11 +2,12 @@ import {
   cmp,
   File,
   Content,
-  isAuthSuppressed,
-  isHttpBasicAuth,
-  resolveAuthIn,
-  resolveAuthName,
+  fact,
 } from '@voxgig/sdkgen'
+
+import {
+  KIT,
+} from '@voxgig/apidef'
 
 
 // The canary sweep: every credential slot holds a distinctive value, every
@@ -16,14 +17,15 @@ import {
 // the same for a body of bytes. With clean off the canary MUST show.
 const TestClean = cmp(function TestClean(props: any) {
   const { model } = props.ctx$
+  const authFact = fact(model.main[KIT], 'auth')
   const { target, gomodule } = props
 
   const auth = {
-    suppressed: isAuthSuppressed(model),
-    where: resolveAuthIn(model),
-    name: 'header' === resolveAuthIn(model)
-      ? resolveAuthName(model).toLowerCase() : resolveAuthName(model),
-    basic: isHttpBasicAuth(model),
+    suppressed: authFact.suppressed,
+    where: authFact.in,
+    name: 'header' === authFact.in
+      ? authFact.name.toLowerCase() : authFact.name,
+    basic: authFact.basic,
   }
 
   File({ name: 'clean_test.' + target.ext }, () => Content(render(gomodule, model.const.Name, auth)))
@@ -384,7 +386,7 @@ func cleanNew(opts map[string]any) *sdk.${Name}SDK {
 			panic(cleanHarnessError{r})
 		}
 	}()
-	return sdk.New${Name}SDK(cleanOffline(opts))
+	return newClient(cleanOffline(opts))
 }
 
 func cleanHarness(t *testing.T) {
@@ -780,7 +782,7 @@ func TestCleanSweep(t *testing.T) {
 	// sweep what the constructor produced, and what clean makes of the value
 	// should anything later quote it.
 	cleanCatch("mistyped", &sinks, func() error {
-		client := sdk.New${Name}SDK(cleanOffline(map[string]any{
+		client := newClient(cleanOffline(map[string]any{
 			"apikey": map[string]any{"value": cleanCanary["apikey"]},
 			"clean":  map[string]any{"values": cleanCanary["value"]},
 		}))
@@ -870,11 +872,15 @@ func TestCleanSweep(t *testing.T) {
 	// and is not changed by it.
 	cfgclean := map[string]any{"keys": "zzsens", "values": cleanCanary["config"]}
 	util := probe.GetUtility()
-	cfgctx := &core.Context{Options: util.MakeOptions(&core.Context{
+	cfgopts, err := util.MakeOptions(&core.Context{
 		Utility: util,
 		Config:  map[string]any{"options": map[string]any{"clean": cfgclean}},
 		Options: map[string]any{"clean": map[string]any{"values": cleanCanary["value"]}},
-	})}
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfgctx := &core.Context{Options: cfgopts}
 	seeded, _ := util.Clean(cfgctx, "config "+cleanCanary["config"]+" caller "+cleanCanary["value"]).(string)
 	sinks = append(sinks, cleanSink{"config-clean", seeded})
 	if want := "config " + cleanMask + " caller " + cleanMask; seeded != want {

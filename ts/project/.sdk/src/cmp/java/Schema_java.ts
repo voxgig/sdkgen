@@ -2,6 +2,7 @@ import {
   Content,
   File,
   cmp,
+  fact,
   entitySpecMap,
   optionSpec,
 } from '@voxgig/sdkgen'
@@ -39,7 +40,7 @@ import java.util.Map;
 import ${javapackage}.utility.Json;
 
 /**
- * ${model.const.Name} ${target.Name} SDK: generated schemas. Do not edit.
+ * ${model.const.Name} ${fact(target, 'title')} SDK: generated schemas. Do not edit.
  *
  * <p>Generated from the model: {@code main.kit.optspec} and each feature's
  * {@code config.options} for OPTSPEC; entity {@code fields{}.type} for

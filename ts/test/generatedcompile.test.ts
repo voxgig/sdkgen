@@ -4,6 +4,7 @@ import { ok, strictEqual, deepStrictEqual, throws } from 'node:assert'
 
 import { X509Certificate } from 'node:crypto'
 import Fs from 'node:fs'
+import Http from 'node:http'
 import Net from 'node:net'
 import Os from 'node:os'
 import Path from 'node:path'
@@ -368,6 +369,38 @@ async function generateTo(
 }
 
 
+// A target generated out of tree, with `sdkrel` its declared path back to the
+// project, written to root.
+async function generateAway(
+  target: string, root: string, sdkrel: string, features?: string[],
+): Promise<Record<string, string>> {
+  const { fs, vol } = memfs({})
+  const sdkgen = SdkGen({ fs: layeredFs(fs), folder: STAGE, root: '', pino: makeLog() })
+  const dest = '/away/' + target
+  const cwd = process.cwd()
+  process.chdir(SCAFFOLD)
+  try {
+    const res = await sdkgen.generate({ root: makeRoot(), model: makeModel([target], undefined,
+      `main: kit: target: '${target}': output: { path: '${dest}', sdkrel: '${sdkrel}' }`, features) })
+    strictEqual(res.ok, true, target + ': generation did not report ok')
+  }
+  finally {
+    process.chdir(cwd)
+  }
+
+  const out: Record<string, string> = {}
+  for (const [path, content] of Object.entries(vol.toJSON() as Record<string, string>)) {
+    const rel = path.split(Path.sep).join('/').replace(/^[A-Za-z]:/, '')
+    if (rel.startsWith(dest + '/') && !rel.includes('/.jostraca/')) {
+      out[rel.slice(dest.length + 1)] = content
+    }
+  }
+  ok(0 < Object.keys(out).length, 'nothing generated out of tree for ' + target)
+  materialise(out, root)
+  return out
+}
+
+
 // Several targets of one model, each in its own directory under root, as a
 // consumer target's `replace ../go` expects of the SDK it wraps.
 async function generateBeside(targets: string[], root: string, extra?: string): Promise<void> {
@@ -691,6 +724,11 @@ describe('dotnet test failure reports', () => {
     ].join('\n'))
   })
 })
+
+
+// The secrets suites assert the key the SDK sends, so the API takes one.
+const SECRETS_MODEL = 'main: kit: feature: secrets: { active: true plugin: vault: active: true }\n' +
+  'main: kit: config: auth: active: true'
 
 
 describe('generated SDK compiles', () => {
@@ -1123,10 +1161,13 @@ pub fn main() void {
         ok(Fs.readFileSync(Path.join(sdkroot, 'REFERENCE.md'), 'utf8').includes('.patch({'),
           'the reference has no patch example')
       }
-      if (BASIC_TEMPLATED === extra) {
+      if (BASIC_TEMPLATED === extra || BASIC_QUERY === extra) {
         const readme = Fs.readFileSync(Path.join(sdkroot, 'README.md'), 'utf8')
-        ok(/apikey:/.test(readme) && /secret:/.test(readme) && /tenant:/.test(readme),
-          'the README constructor shows no apikey, secret and server variable')
+        const code = (readme.match(/```[a-z]*\n[\s\S]*?```/g) ?? []).join('\n')
+        ok(BASIC_TEMPLATED === extra ?
+          /apikey:/.test(code) && /secret:/.test(code) && /tenant:/.test(code) && !/region:/.test(code) :
+          /apikey:/.test(code) && !/secret:/.test(code),
+          'the README examples do not pass exactly what the constructor needs')
       }
 
       const built = run(process.execPath, [TSC, '--build', 'src', 'test'], sdkroot)
@@ -1178,6 +1219,28 @@ pub fn main() void {
       'the report does not give the failing block its own error at its own line:\n' + tail(suite.out, 60))
     ok(!/TS2693|_snippet\d+\.gen\.cts/.test(suite.out),
       'the report quotes an allowed illustration\'s errors, or a temp file:\n' + tail(suite.out, 60))
+  })
+
+
+  test('typescript: the README example tests run a constructor whose arguments hold a call', async () => {
+    ok(Fs.existsSync(TSC), 'no local typescript — run `npm install`')
+
+    const sdkroot = Path.join(tmp, 'ts-readme-ctor-call', 'ts')
+    await generateTo('ts', sdkroot, undefined, undefined, { top: true })
+    linkDeps(sdkroot)
+    Fs.appendFileSync(Path.join(sdkroot, 'README.md'),
+      '\n```ts\nconst client = new DemoSDK({ apikey: String(process.env.DEMO_APIKEY ?? \'none\') })\n' +
+      'console.log(String(client))\n```\n')
+
+    const built = run(process.execPath, [TSC, '--build', 'src', 'test'], sdkroot)
+    ok(built.ok, 'the generated SDK does not build:\n' + built.out)
+
+    const suite = run(process.execPath,
+      ['--test', '--test-reporter=tap', Path.join('dist-test', 'readme_examples.test.js')],
+      sdkroot, nestedTestEnv())
+    ok(suite.ok, 'the README example tests failed:\n' + tail(suite.out, 60))
+    ok(/^\s*ok \d+ - .*every runnable example executes/m.test(suite.out),
+      'the README example tests did not run the examples:\n' + tail(suite.out, 40))
   })
 
 
@@ -1373,9 +1436,39 @@ pub fn main() void {
     })
 
 
+  // What the binaries read and register follows the model: no auth and no
+  // update, HTTP Basic with a templated URL, and no entity a word runs on.
+  test('go-cli and go-mcp: the binaries vet clean whatever credentials, servers and words the model has',
+    async (t) => {
+      const go = toolchain('go')
+      if (null == go) {
+        return t.skip('no go toolchain here')
+      }
+
+      const off = (names: string[]) => names.map((name) => `main: kit: entity: ${name}: active: false\n`).join('')
+      const variants: [string, string][] = [
+        ['readonly', 'main: kit: entity: planet: op: update: active: false\n'],
+        ['basic', BASIC_TEMPLATED],
+        ['wordless', CREATE_ONLY_ENTITY +
+          off(['ambient', 'console', 'graph_ql', 'history', 'planet', 'record', 'utility']) +
+          'main: kit: flow: BasicZincFlow: { entity: "zinc", kind: "basic", name: "BasicZincFlow", ' +
+          'step: [ { o: "create", i: { ref: "zinc_ref01" } } ] }\n'],
+      ]
+      for (const [name, extra] of variants) {
+        const root = Path.join(tmp, 'consumers-' + name)
+        await generateBeside(['go', 'go-cli', 'go-mcp'], root, extra)
+        for (const target of ['go-cli', 'go-mcp']) {
+          const vet = run(go, ['vet', './...'], Path.join(root, target))
+          ok(vet.ok, name + ': ' + target + ' does not vet clean:\n' + tail(vet.out))
+        }
+      }
+    })
+
+
   // go-mcp builds on the go SDK it wraps, and an agent host reads each tool's
   // schema and hints from tools/list. ROUTING_MODEL's signal and ambient load
-  // without a plain list, and planet alone creates, updates and removes.
+  // without a plain list, and planet alone creates, updates, patches and
+  // removes.
   test('go-mcp: the server builds, and lists each tool with its entities and hints',
     async (t) => {
       const go = toolchain('go')
@@ -1418,6 +1511,9 @@ pub fn main() void {
           hints: { destructiveHint: false }, required: ['entity', 'data'], ...served(['planet']),
         },
         demo_update: {
+          hints: { destructiveHint: true }, required: ['entity', 'data'], ...served(['planet']),
+        },
+        demo_patch: {
           hints: { destructiveHint: true }, required: ['entity', 'data'], ...served(['planet']),
         },
         demo_remove: {
@@ -1506,7 +1602,7 @@ import (
 func TestReqformProbe(t *testing.T) {
 	sent := 0
 
-	client := sdk.NewDemoSDK(map[string]any{
+	client := newClient(map[string]any{
 		"utility": map[string]any{
 			// Stands in for \`vs.Transform\` reporting an error: an error
 			// VALUE out of the seam, which is exactly what
@@ -1561,7 +1657,6 @@ func TestReqformProbe(t *testing.T) {
 import (
 	"testing"
 
-	sdk "github.com/voxgig-sdk/demo-sdk/go"
 	"github.com/voxgig-sdk/demo-sdk/go/core"
 )
 
@@ -1572,7 +1667,7 @@ import (
 // result.Ok already true. resultBasic never sets Ok, so the makeResponse call
 // returns at the !result.Ok guard and only the makeResult call gets this far.
 func TestResformProbe(t *testing.T) {
-	client := sdk.NewDemoSDK(map[string]any{})
+	client := newClient(map[string]any{})
 	utility := client.GetUtility()
 
 	result := core.NewResult(map[string]any{})
@@ -1622,7 +1717,7 @@ func TestResformProbe(t *testing.T) {
     }
 
     const sdkroot = Path.join(tmp, 'go-authnull')
-    await generateTo('go', sdkroot)
+    await generateTo('go', sdkroot, AUTHNULL_MODEL)
 
     Fs.writeFileSync(
       Path.join(sdkroot, 'test', 'authnull_probe_test.go'),
@@ -1662,7 +1757,7 @@ func TestAuthNullProbe(t *testing.T) {
 			}),
 		}
 
-		client := sdk.NewDemoSDK(full)
+		client := newClient(full)
 		_, _ = client.Planet(nil).Create(map[string]any{"name": "p1"}, map[string]any{})
 
 		str, _ := seen.(string)
@@ -1682,7 +1777,7 @@ func TestAuthNullProbe(t *testing.T) {
 
 	// And the option survives validation rather than being replaced by the
 	// optspec's default auth map.
-	client := sdk.NewDemoSDK(map[string]any{"apikey": "OPTKEY01", "auth": nil})
+	client := newClient(map[string]any{"apikey": "OPTKEY01", "auth": nil})
 	if av, ok := client.OptionsMap()["auth"]; !ok || av != nil {
 		t.Errorf("FAIL: options.auth is %#v, not nil - validate replaced the suppression", av)
 	}
@@ -1696,7 +1791,7 @@ func TestAuthNullProbe(t *testing.T) {
 
   test('js: auth null suppresses the credential', async () => {
     const sdkroot = Path.join(tmp, 'js-authnull')
-    await generateTo('js', sdkroot)
+    await generateTo('js', sdkroot, AUTHNULL_MODEL)
     linkDeps(sdkroot)
 
     Fs.mkdirSync(Path.join(sdkroot, 'test', 'utility'), { recursive: true })
@@ -1779,7 +1874,7 @@ describe('auth null', () => {
   test('js: the secrets feature runs with the feature active', async () => {
     const sdkroot = Path.join(tmp, 'js-secrets')
     await generateTo('js', sdkroot,
-      'main: kit: feature: secrets: { active: true plugin: vault: active: true }',
+      SECRETS_MODEL,
       ['test', 'log', 'secrets'])
     linkDeps(sdkroot)
 
@@ -1796,6 +1891,14 @@ describe('auth null', () => {
     ok(probe.ok, 'js secrets suite failed:\n' + failed.join('\n') +
       '\n' + tail(probe.out))
     exchangeRefused('js', probe.out)
+
+    // A suite that skips exits zero too, so with auth on none may.
+    ok(!/# SKIP/.test(probe.out), 'js: secrets tests were SKIPPED with auth on:\n' +
+      tail(probe.out))
+    const passed = /^# pass (\d+)$/m.exec(probe.out)
+    ok(null != passed && 10 < Number(passed[1]),
+      'js: the secrets suite passed too few tests - it was trimmed, not run:\n' +
+      tail(probe.out))
   })
 
 
@@ -1812,7 +1915,7 @@ describe('auth null', () => {
 
     const sdkroot = Path.join(tmp, 'lua-secrets')
     await generateTo('lua', sdkroot,
-      'main: kit: feature: secrets: { active: true plugin: vault: active: true }',
+      SECRETS_MODEL,
       ['test', 'log', 'secrets'])
 
     // The shipped suite must actually be there: busted over a directory
@@ -1899,7 +2002,7 @@ describe('auth null', () => {
 
     const sdkroot = Path.join(tmp, 'rb-secrets')
     await generateTo('rb', sdkroot,
-      'main: kit: feature: secrets: { active: true plugin: vault: active: true }',
+      SECRETS_MODEL,
       ['test', 'log', 'secrets'])
 
     // The shipped suite must actually be there: a `ruby <path>` on a
@@ -2000,7 +2103,7 @@ abort("FAIL: a multi-segment envelope was not synthesised - #{n} of 3 records") 
 
     const sdkroot = Path.join(tmp, 'c-secrets')
     await generateTo('c', sdkroot,
-      'main: kit: feature: secrets: { active: true plugin: vault: active: true }',
+      SECRETS_MODEL,
       ['test', 'log', 'secrets'])
 
     ok(Fs.existsSync(Path.join(sdkroot, 'feature', 'secrets', 'kinds.c')) &&
@@ -2126,7 +2229,8 @@ static voxgig_value* answer(void* ud, voxgig_value* args) {
 
 int ${name}_part(void) {
   PNError* err = NULL;
-  ${pascal(name)}SDK* client = ${name}_sdk_new(cmap(1, "system", cmap(1, "fetch", vfn(answer, NULL))));
+  ${pascal(name)}SDK* client = ${name}_sdk_new(cmap(1, "system", cmap(1, "fetch", vfn(answer, NULL))), &err);
+  if (NULL == client) { printf("${name}: %s\\n", err->msg); return 1; }
   Entity* planet = ${name}_planet(client, NULL);
   Entity* got = planet->vt->load(planet, cmap(1, "id", v_str("p01")), NULL, &err);
   if (err) { printf("${name}: %s\\n", err->msg); return 1; }
@@ -2403,7 +2507,7 @@ int main(void) {
   test('perl: the secrets feature runs with the feature active', async (t) => {
     const sdkroot = Path.join(tmp, 'perl-secrets')
     await generateTo('perl', sdkroot,
-      'main: kit: feature: secrets: { active: true plugin: vault: active: true }',
+      SECRETS_MODEL,
       ['test', 'log', 'secrets'])
 
     // The shipped suite must actually be there: `perl <path>` on a missing
@@ -2473,7 +2577,7 @@ int main(void) {
   test('zig: the secrets feature runs with the feature active', async (t) => {
     const sdkroot = Path.join(tmp, 'zig-secrets')
     await generateTo('zig', sdkroot,
-      'main: kit: feature: secrets: { active: true plugin: vault: active: true }',
+      SECRETS_MODEL,
       ['test', 'log', 'secrets'])
 
     // The shipped suite and the module root must actually be there: build.zig
@@ -2539,7 +2643,7 @@ int main(void) {
 
     const sdkroot = Path.join(tmp, 'swift-secrets')
     await generateTo('swift', sdkroot,
-      'main: kit: feature: secrets: { active: true plugin: vault: active: true }',
+      SECRETS_MODEL,
       ['test', 'log', 'secrets'])
 
     // The shipped suite must actually be there: a --filter that matches
@@ -2677,7 +2781,7 @@ func TestTypesProbe(t *testing.T) {
 
     const sdkroot = Path.join(tmp, 'csharp-secrets')
     await generateTo('csharp', sdkroot,
-      'main: kit: feature: secrets: { active: true plugin: vault: active: true }',
+      SECRETS_MODEL,
       ['test', 'log', 'secrets'])
 
     // The shipped suite must actually be there: a --filter that matches
@@ -2739,7 +2843,7 @@ func TestTypesProbe(t *testing.T) {
 
     const sdkroot = Path.join(tmp, 'cpp-secrets')
     await generateTo('cpp', sdkroot,
-      'main: kit: feature: secrets: { active: true plugin: vault: active: true }',
+      SECRETS_MODEL,
       ['test', 'log', 'secrets'])
 
     ok(Fs.existsSync(Path.join(sdkroot, 'feature', 'secrets', 'kinds.cpp')) &&
@@ -3089,7 +3193,7 @@ echo get_class($client->ContactsField(null)), ' ',
 
     const sdkroot = Path.join(tmp, 'clojure-secrets')
     await generateTo('clojure', sdkroot,
-      'main: kit: feature: secrets: { active: true plugin: vault: active: true }',
+      SECRETS_MODEL,
       ['test', 'log', 'secrets'])
 
     // The shipped suite and the feature must actually be there: the
@@ -3144,7 +3248,7 @@ echo get_class($client->ContactsField(null)), ' ',
 
     const sdkroot = Path.join(tmp, 'ocaml-secrets')
     await generateTo('ocaml', sdkroot,
-      'main: kit: feature: secrets: { active: true plugin: vault: active: true }',
+      SECRETS_MODEL,
       ['test', 'log', 'secrets'])
 
     ok(Fs.existsSync(Path.join(sdkroot, 'feature', 'secrets', 'feature.mk')),
@@ -4080,7 +4184,7 @@ fn wire(opts: Vec<(&str, Value)>) -> (bool, Value, bool) {
     let mut all = opts;
     all.push(("base", Value::str("http://localhost:8080")));
     all.push(("system", jo(vec![("fetch", mock)])));
-    let client = DemoSDK::new(jo(all));
+    let client = DemoSDK::new(jo(all)).unwrap();
     let _ = client.planet(Value::Noval).create(jo(vec![("name", Value::str("p1"))]), Value::Noval);
 
     let h = seen.borrow().clone();
@@ -4114,7 +4218,7 @@ fn authnull_probe() {
     let client = DemoSDK::new(jo(vec![
         ("apikey", Value::str("OPTKEY01")),
         ("auth", Value::Null),
-    ]));
+    ])).unwrap();
     let om = client.options_map();
     let a = match &om {
         Value::Map(m) => m.borrow().get("auth").cloned(),
@@ -4462,7 +4566,7 @@ describe('the elixir secrets feature runs from a generated SDK', () => {
   test('elixir: the secrets feature runs with the feature active', async (t) => {
     const sdkroot = Path.join(tmp, 'elixir-secrets')
     await generateTo('elixir', sdkroot,
-      'main: kit: feature: secrets: { active: true plugin: vault: active: true }',
+      SECRETS_MODEL,
       ['test', 'log', 'secrets'])
 
     // The shipped suite must actually be there, and the trim must have
@@ -4525,6 +4629,8 @@ describe('the elixir secrets feature runs from a generated SDK', () => {
     strictEqual(counted!.failed, 0,
       'elixir: ' + counted!.failed + ' secrets tests failed:\n' + tail(out))
     exchangeRefused('elixir', out)
+    ok(!/\b[1-9]\d* skipped\b/.test(out),
+      'elixir: secrets tests were SKIPPED with auth on:\n' + tail(out))
 
     for (const name of [
       'auth nil suppresses the credential, chain or no chain',
@@ -4537,6 +4643,223 @@ describe('the elixir secrets feature runs from a generated SDK', () => {
   })
 })
 
+
+// The secrets suites assert the credential an SDK places, so for an API that
+// declares no auth each skips and says why; exit zero alone cannot show it.
+// The skip comes before any plugin matters, so this model selects none and
+// no lane needs a TLS or HTTP library.
+const SECRETS_NOAUTH_MODEL = 'main: kit: feature: secrets: active: true'
+
+const SECRETS_SKIP = "this SDK's config declares no auth, so it places no credential"
+  .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+type SecretsSkipLane = {
+  target: string,
+  suite: string,
+  needs: string,
+  // A build step, for targets that have one.
+  prepare?: (sdkroot: string) => Run,
+  command: (sdkroot: string) => { bin: string, args: string[], env?: NodeJS.ProcessEnv } | null,
+  // Every one of these the run prints, and none of what a test that ran prints.
+  skipped: RegExp[],
+  ran: RegExp,
+}
+
+
+function secretsCC(): string | null {
+  const configured = process.env.CC
+  return null == configured || '' === configured
+    ? (toolchain('cc') || toolchain('gcc'))
+    : toolchain(configured)
+}
+
+
+function secretsCXX(): string | null {
+  const configured = process.env.CXX
+  return null == configured || '' === configured
+    ? (toolchain('g++') || toolchain('c++') || toolchain('clang++'))
+    : toolchain(configured)
+}
+
+
+const SECRETS_SKIP_LANES: SecretsSkipLane[] = [
+  {
+    target: 'js',
+    suite: 'test/feature/secrets/Secrets.test.js',
+    needs: 'node',
+    command: (sdkroot) => {
+      linkDeps(sdkroot)
+      return {
+        bin: process.execPath,
+        args: ['--test', '--test-reporter=tap',
+          Path.join('test', 'feature', 'secrets', 'Secrets.test.js')],
+        env: nestedTestEnv(),
+      }
+    },
+    skipped: [
+      new RegExp('^ok \\d+ - secrets # SKIP ' + SECRETS_SKIP + '$', 'm'),
+      new RegExp('^ok \\d+ - secrets exchange # SKIP ' + SECRETS_SKIP + '$', 'm'),
+    ],
+    ran: /^# tests [1-9]/m,
+  },
+  {
+    target: 'go',
+    suite: 'test/feature/secrets/secrets_feature_test.go',
+    needs: 'go',
+    command: () => {
+      const go = toolchain('go')
+      return null == go ? null
+        : { bin: go, args: ['test', './test/feature/secrets/', '-v', '-count=1'] }
+    },
+    skipped: [
+      /^--- SKIP: TestSecretsInactive /m,
+      new RegExp('^\\s+secrets_feature_test\\.go:\\d+: ' + SECRETS_SKIP + '$', 'm'),
+    ],
+    ran: /--- (PASS|FAIL): TestSecrets/,
+  },
+  {
+    target: 'rb',
+    suite: 'test/feature/secrets/secrets_feature_test.rb',
+    needs: 'ruby with minitest',
+    command: () => {
+      const rb = toolchain('ruby')
+      if (null == rb || !probeOk(rb, ['-e', 'require "minitest/autorun"'])) return null
+      return {
+        bin: rb,
+        args: ['-Ilib', '-Itest',
+          Path.join('test', 'feature', 'secrets', 'secrets_feature_test.rb'), '-v'],
+        env: rubyEnv(),
+      }
+    },
+    skipped: [
+      /^([1-9]\d*) runs, 0 assertions, 0 failures, 0 errors, \1 skips$/m,
+      new RegExp('Skipped:\\s*\\nSecretsFeatureTest#\\w+ [^\\n]*\\n' + SECRETS_SKIP + '$', 'm'),
+    ],
+    ran: /^\d+ runs, [1-9]\d* assertions/m,
+  },
+  {
+    target: 'perl',
+    suite: 't/feature/secrets/secrets.t',
+    needs: 'perl with Test::More',
+    command: () => {
+      const perl = toolchain('perl')
+      if (null == perl || !probeOk(perl, ['-MTest::More', '-e', '1'])) return null
+      return { bin: perl, args: ['-Ilib', Path.join('t', 'feature', 'secrets', 'secrets.t')] }
+    },
+    skipped: [new RegExp('^1\\.\\.0 # SKIP ' + SECRETS_SKIP + '$', 'm')],
+    ran: /^(not )?ok \d+/m,
+  },
+  {
+    target: 'zig',
+    suite: 'test/feature/secrets/secrets_test.zig',
+    needs: 'zig 0.16, which the generated build.zig requires',
+    command: () => {
+      const zig = toolchain('zig')
+      if (null == zig) return null
+      const version = run(zig, ['version'], process.cwd())
+      return version.ok && /^0\.16\./.test(version.out.trim())
+        ? { bin: zig, args: ['build', 'test-secrets', '--summary', 'all'] }
+        : null
+    },
+    skipped: [
+      /\b0\/([1-9]\d*) tests passed \(\1 skipped\)/,
+      new RegExp('^ {2}SKIP secrets: ' + SECRETS_SKIP + '$', 'm'),
+    ],
+    ran: /\b[1-9]\d*\/\d+ tests passed/,
+  },
+  {
+    target: 'c',
+    suite: 'tests/feature/secrets/secrets_test.c',
+    needs: 'make and a C compiler',
+    prepare: (sdkroot) => run(toolchain('make')!,
+      ['CC=' + secretsCC(), 'tests/feature/secrets/secrets_test.out'], sdkroot),
+    command: (sdkroot) => null == toolchain('make') || null == secretsCC() ? null
+      : { bin: Path.join(sdkroot, 'tests', 'feature', 'secrets', 'secrets_test.out'), args: [] },
+    skipped: [new RegExp('^SKIP \\[secrets\\]: ' + SECRETS_SKIP + '$', 'm')],
+    ran: /^secrets: ran /m,
+  },
+  {
+    target: 'cpp',
+    suite: 'test/feature/secrets/secrets_test.cpp',
+    needs: 'make and a C++ compiler',
+    prepare: (sdkroot) => run(toolchain('make')!,
+      ['-j2', 'CXX=' + secretsCXX(), 'test/feature/secrets/secrets_test.out'], sdkroot),
+    command: (sdkroot) => null == toolchain('make') || null == secretsCXX() ? null
+      : { bin: Path.join(sdkroot, 'test', 'feature', 'secrets', 'secrets_test.out'), args: [] },
+    skipped: [new RegExp('^ {2}SKIP \\[secrets\\]: ' + SECRETS_SKIP + '$', 'm')],
+    ran: /^secrets: ran /m,
+  },
+  {
+    target: 'ocaml',
+    suite: 'test/feature/secrets/t_secrets.ml',
+    needs: 'ocamlc, make and a C compiler',
+    prepare: (sdkroot) => run(toolchain('make')!,
+      ['CC=' + secretsCC(), 'OCAMLC=' + toolchain('ocamlc'), 'build'], sdkroot),
+    command: () => {
+      const make = toolchain('make')
+      const ocamlc = toolchain('ocamlc')
+      const cc = secretsCC()
+      return null == make || null == ocamlc || null == cc ? null
+        : { bin: make, args: ['CC=' + cc, 'OCAMLC=' + ocamlc, 'test-sdk'] }
+    },
+    skipped: [
+      new RegExp('^SKIP secrets: ' + SECRETS_SKIP + '$', 'm'),
+      /^feature\.secrets: ran 0 check\(s\)$/m,
+      /^SDK PASS [1-9]\d* {2}FAIL 0$/m,
+    ],
+    ran: /^feature\.secrets: ran [1-9]/m,
+  },
+]
+
+
+describe('a secrets suite skips for an SDK that places no credential', () => {
+
+  let tmp = ''
+
+  before(() => {
+    tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-secrets-noauth-'))
+  })
+
+  after(() => {
+    if ('' !== tmp) Fs.rmSync(tmp, { recursive: true, force: true })
+  })
+
+  for (const lane of SECRETS_SKIP_LANES) {
+    test(lane.target + ': the secrets suite skips, saying why, where the API declares no auth',
+      async (t) => {
+        const sdkroot = Path.join(tmp, lane.target)
+        await generateTo(lane.target, sdkroot, SECRETS_NOAUTH_MODEL, ['test', 'log', 'secrets'])
+        ok(Fs.existsSync(Path.join(sdkroot, lane.suite)),
+          lane.target + ': the gated secrets suite was not generated')
+
+        const cmd = lane.command(sdkroot)
+        if (null == cmd) {
+          return t.skip('no usable ' + lane.target + ' toolchain here (' + lane.needs + ')')
+        }
+
+        if (null != lane.prepare) {
+          const built = lane.prepare(sdkroot)
+          if (built.timedOut) return t.skip(lane.target + ': ' + built.out)
+          ok(built.ok, lane.target + ': the secrets suite did not build:\n' + tail(built.out))
+        }
+
+        const probe = run(cmd.bin, cmd.args, sdkroot, cmd.env)
+        if (probe.unlaunchable) {
+          return t.skip(lane.target + ': the toolchain could not be started here: ' +
+            tail(probe.out, 3))
+        }
+        if (probe.timedOut) return t.skip(lane.target + ': ' + probe.out)
+
+        // zig colours its summary where it decides it may, as on the runners.
+        const out = probe.out.replace(/\r\n/g, '\n').replace(/\x1b\[[0-9;]*m/g, '')
+        ok(probe.ok, lane.target + ' secrets suite failed with no auth:\n' + tail(out))
+        for (const line of lane.skipped) {
+          ok(line.test(out), lane.target + ': the run did not print ' + line + ':\n' + tail(out))
+        }
+        ok(!lane.ran.test(out), lane.target + ': a secrets test ran with no auth:\n' + tail(out))
+      })
+  }
+})
 
 
 
@@ -4778,6 +5101,72 @@ describe('auth null suppresses the credential', () => {
 })
 
 
+// Runs a lane's runner in a generated SDK whose corpus is in place, and reads
+// the line each section prints.
+function runCorpus(t: any, lane: CorpusLane, sdkroot: string, files: Record<string, string>) {
+  ok(null != files[lane.runner],
+    'the corpus runner was not generated into the SDK: expected ' +
+    lane.runner + ' among ' + Object.keys(files).length + ' files')
+
+  const cmd = lane.command()
+  if (null == cmd) {
+    return t.skip(
+      'no usable ' + lane.target + ' toolchain here (' + lane.needs + ')')
+  }
+
+  const notready = null == lane.prepare ? null : lane.prepare(sdkroot)
+  ok(null == notready, lane.target + ': ' + notready)
+
+  const ran = run(cmd.bin, cmd.args, sdkroot, cmd.env)
+
+  if (ran.unlaunchable) {
+    return t.skip(lane.target + ': the toolchain could not be started ' +
+      'here: ' + tail(ran.out, 3))
+  }
+
+  const gap = UNUSABLE.find((re) => re.test(ran.out))
+  if (null != gap && !ran.ok) {
+    return t.skip(lane.target + ': toolchain present but not usable (' +
+      gap.source + '):\n' + tail(ran.out))
+  }
+
+  ok(ran.ok, 'the feature corpus FAILED against the generated ' +
+    lane.target + ' SDK:\n' + tail(ran.out))
+
+  // Exit zero is not enough: every runner skips a feature the SDK was
+  // not generated with, and a fully-skipped suite exits zero in every
+  // one of these frameworks. Each runner prints how many cases it ran,
+  // in the same wording, precisely so this can read it - once per
+  // section, so a section that silently skips still fails.
+  for (const name of CORPUS_INERT) {
+    ok(inertLine(name).test(ran.out),
+      'the ' + lane.target + ' corpus runner did not say that ' +
+      'feature.' + name + ' is inert:\n' + tail(ran.out))
+  }
+
+  for (const name of Object.keys(CORPUS_FIXTURE.feature)) {
+    if (CORPUS_INERT.includes(name)) continue
+    const counted = ran.out.match(ranLine(name))
+    ok(null != counted,
+      'the ' + lane.target + ' corpus runner did not report running ' +
+      'feature.' + name + ' - it SKIPPED the section, so the generated ' +
+      'client is missing the feature or has no operation the cases can ' +
+      'drive:\n' + tail(ran.out))
+    ok(0 < Number(counted![1]),
+      'the ' + lane.target + ' corpus ran zero feature.' + name +
+      ' cases:\n' + tail(ran.out))
+  }
+
+  ok(SKIPPED_LINE.test(ran.out),
+    'the ' + lane.target + ' corpus runner did not skip, by name, a case ' +
+    'composing a feature the SDK does not generate:\n' + tail(ran.out))
+  const retry = ran.out.match(ranLine('retry'))!
+  ok(Number(retry[1]) < Number(retry[2]),
+    'the ' + lane.target + ' corpus runner counted the skipped case as run: ' +
+    retry[0])
+}
+
+
 describe('the feature corpus runs from a generated SDK', () => {
 
   let tmp = ''
@@ -4802,70 +5191,40 @@ describe('the feature corpus runs from a generated SDK', () => {
         const files = await generateTo(
           lane.target, sdkroot, undefined, CORPUS_FEATURES)
 
-        ok(null != files[lane.runner],
-          'the corpus runner was not generated into the SDK: expected ' +
-          lane.runner + ' among ' + Object.keys(files).length + ' files')
-
         writeCorpus(tmp)
-
-        const cmd = lane.command()
-        if (null == cmd) {
-          return t.skip(
-            'no usable ' + lane.target + ' toolchain here (' + lane.needs + ')')
-        }
-
-        const notready = null == lane.prepare ? null : lane.prepare(sdkroot)
-        ok(null == notready, lane.target + ': ' + notready)
-
-        const ran = run(cmd.bin, cmd.args, sdkroot, cmd.env)
-
-        if (ran.unlaunchable) {
-          return t.skip(lane.target + ': the toolchain could not be started ' +
-            'here: ' + tail(ran.out, 3))
-        }
-
-        const gap = UNUSABLE.find((re) => re.test(ran.out))
-        if (null != gap && !ran.ok) {
-          return t.skip(lane.target + ': toolchain present but not usable (' +
-            gap.source + '):\n' + tail(ran.out))
-        }
-
-        ok(ran.ok, 'the feature corpus FAILED against the generated ' +
-          lane.target + ' SDK:\n' + tail(ran.out))
-
-        // Exit zero is not enough: every runner skips a feature the SDK was
-        // not generated with, and a fully-skipped suite exits zero in every
-        // one of these frameworks. Each runner prints how many cases it ran,
-        // in the same wording, precisely so this can read it - once per
-        // section, so a section that silently skips still fails.
-        for (const name of CORPUS_INERT) {
-          ok(inertLine(name).test(ran.out),
-            'the ' + lane.target + ' corpus runner did not say that ' +
-            'feature.' + name + ' is inert:\n' + tail(ran.out))
-        }
-
-        for (const name of Object.keys(CORPUS_FIXTURE.feature)) {
-          if (CORPUS_INERT.includes(name)) continue
-          const counted = ran.out.match(ranLine(name))
-          ok(null != counted,
-            'the ' + lane.target + ' corpus runner did not report running ' +
-            'feature.' + name + ' - it SKIPPED the section, so the generated ' +
-            'client is missing the feature or has no operation the cases can ' +
-            'drive:\n' + tail(ran.out))
-          ok(0 < Number(counted![1]),
-            'the ' + lane.target + ' corpus ran zero feature.' + name +
-            ' cases:\n' + tail(ran.out))
-        }
-
-        ok(SKIPPED_LINE.test(ran.out),
-          'the ' + lane.target + ' corpus runner did not skip, by name, a case ' +
-          'composing a feature the SDK does not generate:\n' + tail(ran.out))
-        const retry = ran.out.match(ranLine('retry'))!
-        ok(Number(retry[1]) < Number(retry[2]),
-          'the ' + lane.target + ' corpus runner counted the skipped case as run: ' +
-          retry[0])
+        return runCorpus(t, lane, sdkroot, files)
       })
   }
+
+
+  // Out of tree the runner reaches the corpus through the declared path back.
+  test('ts generated out of tree: the feature corpus executes against the generated client',
+    async (t) => {
+      const lane = CORPUS_LANES.find((l) => 'ts' === l.target)!
+      const away = Path.join(tmp, 'away')
+      const sdkroot = Path.join(away, 'ts')
+      const files = await generateAway('ts', sdkroot, '../project', CORPUS_FEATURES)
+
+      writeCorpus(Path.join(away, 'project'))
+      return runCorpus(t, lane, sdkroot, files)
+    })
+
+
+  // Out of tree no root README sits beside the target, so the quick start the
+  // README example test runs is the tutorial in the target's own README.
+  test('ts generated out of tree: the README example test runs its own README', async () => {
+    const sdkroot = Path.join(tmp, 'away-readme', 'ts')
+    await generateAway('ts', sdkroot, '../project')
+    linkDeps(sdkroot)
+    for (const tree of ['src', 'test']) {
+      const built = tsc(sdkroot, tree)
+      ok(built.ok, 'ts: the relocated ' + tree + ' does not compile:\n' + tail(built.out))
+    }
+    const res = run(process.execPath, ['--test', '--test-reporter=tap',
+      Path.join('dist-test', 'ReadmeExample.test.js')], sdkroot, nestedTestEnv())
+    ok(res.ok, 'ts: the README example test failed out of tree:\n' + tail(res.out))
+    ok(/^# pass 1$/m.test(res.out), 'ts: the README example test did not run:\n' + tail(res.out))
+  })
 
 
 })
@@ -5333,11 +5692,11 @@ describe('prepareAuth compiles for a placement it does not recognise', () => {
 
 // The entries naming `lanes` hold only the ports whose runners keep every
 // other header and query parameter in place. A public API places no
-// credential, so the corpus case, which asserts one, does not apply to it.
+// credential, so its corpus step must skip the section and say why.
 const CREDNAME_STRICT = ['c', 'cpp', 'rust', 'csharp', 'kotlin', 'swift', 'zig', 'elixir', 'ocaml']
 
 const CREDNAME_MODELS: {
-  name: string, extra: string, lanes?: string[], pipelineOnly?: boolean,
+  name: string, extra: string, lanes?: string[], public?: boolean,
 }[] = [
   {
     name: 'a credential named by the API, not `authorization`',
@@ -5382,8 +5741,7 @@ main: kit: config: auth: { active: true, in: 'header', name: 'cookie' }
     extra: `
 main: kit: config: auth: { active: false }
 `,
-    lanes: CREDNAME_STRICT,
-    pipelineOnly: true,
+    public: true,
   },
 ]
 
@@ -5438,6 +5796,9 @@ type CredNameStep = {
   byline?: boolean,
   // What `ran` reads besides the output, where the runner prints no counts.
   report?: (sdkroot: string) => string,
+  // For a public API, what the step prints in place of `ran`: the corpus
+  // step skips the section and says why. Null where the step cannot run.
+  public?: RegExp | null,
 }
 
 type CredNameLane = {
@@ -5487,6 +5848,7 @@ const CREDNAME_LANES: CredNameLane[] = [
           }
           : null,
         ran: /^\s*ok \d+ - auth-basic/m,
+        public: /^\s*ok \d+ - auth-basic # SKIP this SDK's config declares no auth, so it places no credential$/m,
       },
     ],
   },
@@ -5517,6 +5879,7 @@ const CREDNAME_LANES: CredNameLane[] = [
           env: nestedTestEnv(),
         }),
         ran: /^\s*ok \d+ - auth-basic/m,
+        public: /^\s*ok \d+ - auth-basic # SKIP this SDK's config declares no auth, so it places no credential$/m,
       },
     ],
   },
@@ -5547,6 +5910,7 @@ const CREDNAME_LANES: CredNameLane[] = [
           }
         },
         ran: /--- PASS: TestPrimaryUtility\/prepareAuth-basic/,
+        public: /^(?=[\s\S]*--- SKIP: TestPrimaryUtility\/prepareAuth-basic)(?=[\s\S]*: this SDK's config declares no auth, so it places no credential$)/m,
       },
     ],
   },
@@ -5562,8 +5926,9 @@ const CREDNAME_LANES: CredNameLane[] = [
       {
         name: 'the corpus prepareAuth section',
         corpus: true,
-        cmd: () => pytest(['test/test_primary_utility.py', '-k', 'prepare_auth', '-q']),
+        cmd: () => pytest(['test/test_primary_utility.py', '-k', 'prepare_auth', '-q', '-rs']),
         ran: /1 passed/,
+        public: /^SKIPPED \[1\] [^\n]*: this SDK's config declares no auth, so it places no credential$/m,
       },
     ],
   },
@@ -5579,8 +5944,9 @@ const CREDNAME_LANES: CredNameLane[] = [
       {
         name: 'the corpus prepareAuth section',
         corpus: true,
-        cmd: () => minitest(['test/primary_utility_test.rb', '-n', 'test_prepare_auth_basic']),
+        cmd: () => minitest(['test/primary_utility_test.rb', '-v', '-n', 'test_prepare_auth_basic']),
         ran: /1 runs, \d+ assertions, 0 failures, 0 errors/,
+        public: /Skipped:\s*\nPrimaryUtilityTest#test_prepare_auth_basic [^\n]*\nthis SDK's config declares no auth, so it places no credential$/m,
       },
     ],
   },
@@ -5598,6 +5964,9 @@ const CREDNAME_LANES: CredNameLane[] = [
         corpus: true,
         cmd: () => phpunit(['--filter', 'test_prepare_auth_basic', 'test/PrimaryUtilityTest.php']),
         ran: /OK \(1 test/,
+        // phpunit names a skip's reason only under a flag its versions spell
+        // differently, so the summary is what is read.
+        public: /Tests: 1, Assertions: \d+, Skipped: 1\./,
       },
     ],
   },
@@ -5617,6 +5986,7 @@ const CREDNAME_LANES: CredNameLane[] = [
         corpus: true,
         cmd: () => busted(['--filter', 'prepareAuth', 'test/primary_utility_test.lua']),
         ran: /1 success \/ 0 failures \/ 0 errors/,
+        public: /^(?=[\s\S]*0 successes \/ 0 failures \/ 0 errors \/ 1 pending)(?=[\s\S]*this SDK's config declares no auth, so it places no credential)/,
       },
     ],
   },
@@ -5632,6 +6002,7 @@ const CREDNAME_LANES: CredNameLane[] = [
         },
         // A cookie credential reports its placement on a line of its own.
         ran: /^ok \d+ - prepare_auth places the apikey (where this API puts it|as a cookie pair)$/m,
+        public: /^ok \d+ - prepare_auth places no credential for a public API$/m,
       },
       {
         name: 'the corpus prepareAuth section',
@@ -5643,6 +6014,7 @@ const CREDNAME_LANES: CredNameLane[] = [
             : { bin: perl, args: ['-Ilib', 't/primary_utility.t'] }
         },
         ran: /^ok \d+ - prepareAuth\.basic/m,
+        public: /^ok \d+ # skip this SDK's config declares no auth, so it places no credential$/m,
         byline: true,
       },
     ],
@@ -5659,8 +6031,10 @@ const CREDNAME_LANES: CredNameLane[] = [
       {
         name: 'the corpus prepareAuth section',
         corpus: true,
-        cmd: () => cargoTest(['--test', 'primary_utility_test', 'primary_prepare_auth_basic']),
+        cmd: () => cargoTest(['--test', 'primary_utility_test', 'primary_prepare_auth_basic',
+          '--', '--nocapture']),
         ran: /test result: ok\. 1 passed; 0 failed/,
+        public: /^SKIP prepareAuth: this SDK's config declares no auth, so it places no credential$/m,
       },
     ],
   },
@@ -5695,6 +6069,7 @@ const CREDNAME_LANES: CredNameLane[] = [
           bin: Path.join(sdkroot, 'tests', 'primary_corpus_test.out'), args: ['prepareAuth'],
         }),
         ran: /^PRIMARY CORPUS: 1 cases in 1 sections, 0 section\(s\) FAILED$/m,
+        public: /^PRIMARY-SKIP prepareAuth - this SDK's config declares no auth, so it places no credential$/m,
       },
     ],
   },
@@ -5726,6 +6101,7 @@ const CREDNAME_LANES: CredNameLane[] = [
           bin: Path.join(sdkroot, 'test', 'primary_utility_test.out'), args: ['--prepare-auth'],
         }),
         ran: /^primary_utility_test: 1 tests, [1-9]\d* checks, 0 failures$/m,
+        public: /^ {2}SKIP \[prepareAuth\]: this SDK's config declares no auth, so it places no credential$/m,
       },
     ],
   },
@@ -5749,8 +6125,11 @@ const CREDNAME_LANES: CredNameLane[] = [
       {
         name: 'the corpus prepareAuth section',
         corpus: true,
-        cmd: () => dotnetTest('PrimaryUtilityTest.PrepareAuthBasic'),
-        ran: /Passed!\s+-\s+Failed:\s+0,\s+Passed:\s+1,\s+Skipped:\s+0/,
+        cmd: () => dotnetTest('PrimaryUtilityTest.PrepareAuthBasic', 'detailed'),
+        // The detailed logger, which shows the skip line, names a count only
+        // when it is not zero: one test in all, and that one passed.
+        ran: /^\s*Total tests: 1\s*\n\s*Passed: 1\s*$/m,
+        public: /SKIP PrepareAuthBasic: this SDK's config declares no auth, so it places no credential/,
       },
     ],
   },
@@ -5770,6 +6149,7 @@ const CREDNAME_LANES: CredNameLane[] = [
         cmd: () => gradleTest('*PrimaryUtilityTest.prepareAuthBasic'),
         report: (sdkroot) => junitReport(sdkroot, 'PrimaryUtilityTest'),
         ran: /<testsuite name="[^"]*\.PrimaryUtilityTest" tests="1" skipped="0" failures="0" errors="0"/,
+        public: /^(?=[\s\S]*<testsuite name="[^"]*\.PrimaryUtilityTest" tests="1" skipped="1" failures="0" errors="0")(?=[\s\S]*config declares no auth, so it places no credential)/,
       },
     ],
   },
@@ -5794,6 +6174,7 @@ const CREDNAME_LANES: CredNameLane[] = [
         corpus: true,
         cmd: () => swiftTest('PrimaryUtilityTest/testPrepareAuthBasic'),
         ran: /Executed 1 test, with 0 failures/,
+        public: /^(?=[\s\S]*Executed 1 test, with 1 test skipped and 0 failures)(?=[\s\S]*this SDK's config declares no auth, so it places no credential)/,
       },
     ],
   },
@@ -5811,6 +6192,7 @@ const CREDNAME_LANES: CredNameLane[] = [
         corpus: true,
         cmd: () => zigTest('primary corpus: prepareAuth'),
         ran: /primary prepareAuth: [1-9]\d* case/,
+        public: /SKIP primary prepareAuth: this SDK's config declares no auth, so it places no credential/,
       },
     ],
   },
@@ -5828,6 +6210,7 @@ const CREDNAME_LANES: CredNameLane[] = [
         corpus: true,
         cmd: () => mixTest([Path.join('test', 'primary_utility_test.exs'), '--only', 'prepare_auth']),
         ran: /^PRIMARY prepareAuth: CASES [1-9]\d* /m,
+        public: /^SKIP the prepareAuth corpus section, on this SDK's own credential: this SDK's config declares no auth, so it places no credential$/m,
       },
     ],
   },
@@ -5845,6 +6228,9 @@ const CREDNAME_LANES: CredNameLane[] = [
         corpus: true,
         cmd: () => ocamlMake('test-primary'),
         ran: /^PRIMARY CORPUS: PASS 1 {2}FAIL 0$/m,
+        // The runner fails a run that executes no case, and this corpus holds
+        // no case but the one a public API skips.
+        public: null,
       },
     ],
   },
@@ -5861,7 +6247,9 @@ const CREDNAME_LANES: CredNameLane[] = [
         name: 'the corpus prepareAuth section',
         corpus: true,
         cmd: () => maven(['-Dtest=PrimaryUtilityTest#prepareAuthBasic']),
-        ran: /Tests run: 1, Failures: 0, Errors: 0/,
+        report: (sdkroot) => surefireReport(sdkroot, 'PrimaryUtilityTest'),
+        ran: /Tests run: 1, Failures: 0, Errors: 0, Skipped: 0/,
+        public: /^(?=[\s\S]*Tests run: 1, Failures: 0, Errors: 0, Skipped: 1)(?=[\s\S]*config declares no auth, so it places no credential)/,
       },
     ],
   },
@@ -5910,6 +6298,16 @@ function gradleTest(filter: string) {
 }
 
 
+// surefire writes the reason a test was skipped into its report alone.
+function surefireReport(sdkroot: string, suite: string): string {
+  const dir = Path.join(sdkroot, 'target', 'surefire-reports')
+  return Fs.existsSync(dir)
+    ? Fs.readdirSync(dir).filter((f) => f.endsWith('.' + suite + '.xml'))
+      .map((f) => Fs.readFileSync(Path.join(dir, f), 'utf8')).join('\n')
+    : ''
+}
+
+
 function junitReport(sdkroot: string, suite: string): string {
   const dir = Path.join(sdkroot, 'build', 'test-results', 'test')
   return Fs.existsSync(dir)
@@ -5919,12 +6317,12 @@ function junitReport(sdkroot: string, suite: string): string {
 }
 
 
-function dotnetTest(filter: string) {
+function dotnetTest(filter: string, verbosity = 'minimal') {
   const dotnet = toolchain('dotnet')
   return null == dotnet ? null : {
     bin: dotnet,
     args: ['test', '--nologo', '--no-build', '-v', 'quiet',
-      '--logger', 'console;verbosity=minimal',
+      '--logger', 'console;verbosity=' + verbosity,
       '--filter', 'FullyQualifiedName~' + filter, 'test'],
   }
 }
@@ -6010,7 +6408,7 @@ describe('generated auth tests discover the credential name', () => {
     const strict = CREDNAME_STRICT.includes(lane.target)
     for (const model of CREDNAME_MODELS) {
       if (null != model.lanes && !model.lanes.includes(lane.target)) continue
-      const steps = lane.steps.filter((step) => !(model.pipelineOnly && step.corpus))
+      const steps = lane.steps.filter((step) => !(model.public && null === step.public))
 
     test(lane.target + ': ' + model.name,
       async (t) => {
@@ -6053,6 +6451,12 @@ describe('generated auth tests discover the credential name', () => {
             'where prepareAuth put it:\n' + tail(ran.out))
 
           const seen = ran.out + (null == step.report ? '' : '\n' + step.report(sdkroot))
+          if (model.public && null != step.public) {
+            ok(step.public.test(seen),
+              lane.target + ': ' + step.name + ' did not report what a public API ' +
+              'gets (' + step.public.source + '):\n' + tail(ran.out))
+            continue
+          }
           ok(step.ran.test(seen),
             lane.target + ': ' + step.name + ' did not report a passing ' +
             'prepareAuth case (' + step.ran.source + ') - it matched nothing ' +
@@ -6097,7 +6501,7 @@ main: kit: entity: scan: {
   }
   fields: {
     "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" }
-    "label": { h: 'Label', n: "label", r: false, t: "\`$STRING\`" }
+    "label": { h: 'Label', n: "label", r: false, t: "\`$STRING\`", sh: "Shown as $$name$$ | or $$x$$" }
   }
   op: {
     load: {
@@ -6659,6 +7063,39 @@ function cxxCompiler(): string | null {
 
 const SERVER_LANES: ServerLane[] = [
   {
+    target: 'go',
+    runner: 'test/server_variable_test.go',
+    needs: 'go',
+    command: () => {
+      const go = toolchain('go')
+      return null == go ? null
+        : { bin: go, args: ['test', '-v', '-count=1', '-run', '^TestServerVariable', './test/'] }
+    },
+    ran: [
+      /^--- PASS: TestServerVariableMissingOrEmptyRefusesConstruction /m,
+      /^--- PASS: TestServerVariableFillsTheBase /m,
+      /^--- PASS: TestServerVariableTestModeFillsTheBase /m,
+    ],
+  },
+  {
+    target: 'rust',
+    runner: 'tests/server_variable_test.rs',
+    needs: 'cargo',
+    command: () => cargoTest(['--test', 'server_variable_test']),
+    ran: [
+      /^test server_variable_missing_or_empty_refuses_construction \.\.\. ok$/m,
+      /^test server_variable_fills_the_base \.\.\. ok$/m,
+      /^test server_variable_test_mode_fills_the_base \.\.\. ok$/m,
+    ],
+  },
+  {
+    target: 'zig',
+    runner: 'test/server_variable_test.zig',
+    needs: 'zig 0.16',
+    command: () => zigTest('server variable:'),
+    ran: [/\b3\/3 tests passed/],
+  },
+  {
     target: 'kotlin',
     runner: 'test/ServerVariableTest.kt',
     needs: 'gradle (which resolves the Kotlin plugin from the network)',
@@ -6733,10 +7170,7 @@ const SERVER_LANES: ServerLane[] = [
       return null == toolchain('make') || null == cCompiler() || null == sh ? null
         : { bin: sh, args: ['-c', './tests/server_variable_test.out'] }
     },
-    // Without fork() the stopped construction cannot be watched, and is left out.
-    ran: ['win32' === process.platform
-      ? /server_variable_test: [1-9]\d* checks, 0 failed/
-      : /server_variable_test: 11 checks, 0 failed/],
+    ran: [/server_variable_test: 11 checks, 0 failed/],
   },
   {
     target: 'cpp',
@@ -6808,6 +7242,125 @@ describe('a templated server URL is resolved by the generated SDK', () => {
   }
 })
 
+
+
+// A live suite builds its client from the environment its README names: the
+// key, the secret and each server variable, over the options
+// sdk-test-control.json adds, less the names a live client takes from the
+// model. A local server stands in for the API.
+describe('a live suite builds its client from the environment', () => {
+
+  const LONG = 30 * 60 * 1000
+  const LIVE_ENV = { DEMO_TEST_LIVE: 'TRUE', DEMO_APIKEY: 'livekey', DEMO_SECRET: 'livesecret' }
+  const BASIC = 'Basic ' + Buffer.from('livekey:livesecret').toString('base64')
+
+  let tmp = ''
+  let server: Http.Server
+  let port = 0
+  const seen: string[] = []
+
+  before(async () => {
+    tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-liveenv-'))
+    server = Http.createServer(async (req, res) => {
+      let body = ''
+      for await (const chunk of req) body += chunk
+      seen.push([req.method, req.url, req.headers['x-live-opt'] ?? '-', req.headers.authorization ?? '-'].join(' '))
+      const parts = new URL(req.url || '/', 'http://localhost').pathname.split('/').filter(Boolean)
+      const id = 'POST' === req.method ? 'created01' : parts[parts.length - 1]
+      res.writeHead(200, { 'content-type': 'application/json' })
+      res.end(JSON.stringify(2 === parts.length && 'GET' === req.method
+        ? [{ id: 'existing01', title: 'existing' }]
+        : { title: 'existing', ...JSON.parse(body || '{}'), id }))
+    })
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
+    port = (server.address() as any).port
+  })
+
+  after(async () => {
+    if (server) {
+      server.closeAllConnections()
+      await new Promise<void>((resolve) => server.close(() => resolve()))
+    }
+    if ('' !== tmp) Fs.rmSync(tmp, { recursive: true, force: true })
+  })
+
+  // Basic in the header, over a URL templated on a tenant, with a header and a
+  // base in test.client.options: the header reaches the API, the base does not.
+  async function generateLive(target: string): Promise<string> {
+    const extra = "main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, " +
+      "in: 'header', name: 'Authorization' }\n" +
+      `main: kit: info: servers: [{ url: 'http://127.0.0.1:${port}/{tenant}', ` +
+      "variables: { tenant: { default: '' } } }]\n"
+    const root = Path.join(tmp, target)
+    await generateTo(target, root, extra)
+    for (const entity of Object.values(makeModel([target], undefined, extra).main.kit.entity) as any[]) {
+      if (false === entity.active) continue
+      const Name = entity.name.split('_').map((w: string) => w[0].toUpperCase() + w.slice(1)).join('')
+      const dir = Path.join(tmp, '.sdk', 'test', 'entity', entity.name)
+      Fs.mkdirSync(dir, { recursive: true })
+      Fs.writeFileSync(Path.join(dir, Name + 'TestData.json'), JSON.stringify(entityTestData(entity)))
+    }
+    Fs.writeFileSync(Path.join(root, 'test', 'sdk-test-control.json'), JSON.stringify({ version: 1,
+      test: { live: { delayMs: 0 }, client: { options: {
+        headers: { 'x-live-opt': 'on' }, base: 'http://127.0.0.1:9/redirected' } } } }))
+    return root
+  }
+
+  function liveEnv(tenant?: string): NodeJS.ProcessEnv {
+    const env: NodeJS.ProcessEnv = { ...process.env, ...LIVE_ENV }
+    delete env.DEMO_SERVER_TENANT
+    return null == tenant ? env : { ...env, DEMO_SERVER_TENANT: tenant }
+  }
+
+  test('kotlin: the live suites send the key, the secret and the server variable, with test.client.options',
+    async (t) => {
+      const root = await generateLive('kotlin')
+      const gradle = toolchain('gradle')
+      if ('win32' === process.platform || null == gradle) {
+        return t.skip('needs gradle (and not windows, where it hangs)')
+      }
+      const args = ['--console=plain', 'test', '--tests', '*PlanetDirectTest*', '--tests', '*PlanetEntityTest*']
+
+      const refused = await runWatched(gradle, args, root, '', liveEnv(), LONG)
+      if (refused.timedOut) return t.skip('kotlin: ' + tail(refused.out))
+      const gap = UNUSABLE.find((re) => re.test(refused.out))
+      if (null != gap && '' === junitReport(root, 'PlanetEntityTest')) {
+        return t.skip('kotlin: toolchain present but not usable (' + gap.source + '):\n' + tail(refused.out))
+      }
+      ok(!refused.ok && /the server variable 'tenant' is required/.test(junitReport(root, 'PlanetEntityTest')),
+        'kotlin: a live run with no tenant built its client:\n' + tail(refused.out))
+
+      seen.length = 0
+      const res = await runWatched(gradle, args, root, '', liveEnv('acme'), LONG)
+      if (res.timedOut) return t.skip('kotlin: ' + tail(res.out))
+      ok(res.ok && /tests="[1-9]\d*" skipped="\d+" failures="0" errors="0"/.test(junitReport(root, 'PlanetEntityTest')),
+        'kotlin: the live suites failed:\n' + tail(res.out, 80))
+      ok(0 < seen.length, 'kotlin: no live request reached the API')
+      deepStrictEqual(seen.filter((line) => !/^[A-Z]+ \/acme\/planet\S* on /.test(line) || !line.endsWith(BASIC)), [],
+        'kotlin: a live request missed the tenant, the control file\'s header or the credential')
+    })
+
+  test('cpp: the live entity suite builds its client from the environment', async (t) => {
+    const root = await generateLive('cpp')
+    const make = toolchain('make')
+    const cxx = cleanCxx()
+    if (null == make || null == cxx) return t.skip('needs make and a C++ compiler')
+    const built = run(make, ['CXX=' + cxx, 'test/planet_entity_test.out'], root, undefined, LONG)
+    ok(built.ok, 'cpp: the planet entity test does not build:\n' + tail(built.out))
+    const bin = Path.join(root, 'test', 'planet_entity_test.out')
+
+    const refused = await runWatched(bin, [], root, '', liveEnv())
+    ok(/the server variable 'tenant' is required/.test(refused.out),
+      'cpp: a live run with no tenant built its client:\n' + tail(refused.out))
+
+    // The SDK has no transport of its own, so the client it builds sends nothing.
+    seen.length = 0
+    const res = await runWatched(bin, [], root, '', liveEnv('acme'))
+    ok(/live HTTP transport not available/.test(res.out),
+      'cpp: the live client was not the one built from the environment:\n' + tail(res.out))
+    deepStrictEqual(seen, [], 'cpp: a request reached the API')
+  })
+})
 
 type Command = { bin: string, args: string[], env?: NodeJS.ProcessEnv }
 
@@ -7861,9 +8414,6 @@ describe('the feature suite runs from a generated SDK', () => {
 
 
 // The secrets suite of each target that has no secrets lane of its own above.
-const SECRETS_MODEL =
-  'main: kit: feature: secrets: { active: true plugin: vault: active: true }'
-
 type SecretsLane = {
   target: string,
   runner: string,
@@ -8239,6 +8789,200 @@ int main() {
       ok(new RegExp('^' + name + '_test: [1-9]\\d* tests, [1-9]\\d* checks, 0 failures$', 'm').test(res.out),
         'cpp: ' + name + '_test printed no clean summary:\n' + tail(res.out))
     }
+  })
+})
+
+
+// The fixture's planet flow patches the record it created, marking a field,
+// so every target whose entity test runs a flow calls patch, takes the data
+// hop and checks the record it gets back.
+describe('a basic flow calls patch where the entity has it', () => {
+
+  let tmp = ''
+  const LONG = 30 * 60 * 1000
+
+  // Every entity's data, since scala runs every entity's test in one main.
+  before(() => {
+    tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-patchflow-'))
+    for (const entity of Object.values(makeModel(['ts']).main.kit.entity) as any[]) {
+      const Name = entity.name.split('_').map((w: string) => w[0].toUpperCase() + w.slice(1)).join('')
+      const dir = Path.join(tmp, '.sdk', 'test', 'entity', entity.name)
+      Fs.mkdirSync(dir, { recursive: true })
+      Fs.writeFileSync(Path.join(dir, Name + 'TestData.json'), JSON.stringify(entityTestData(entity)))
+    }
+  })
+
+  after(() => {
+    if ('' !== tmp) Fs.rmSync(tmp, { recursive: true, force: true })
+  })
+
+  // The flow's patch step, whatever the target names its variables.
+  async function generatePatching(target: string, test: string, top?: boolean): Promise<string> {
+    const root = Path.join(tmp, target)
+    await generateTo(target, root, undefined, undefined, { top })
+    const src = Fs.readFileSync(Path.join(root, test), 'utf8')
+    ok(/(\.|->|:)[Pp]atch\(/.test(src) && /planet_?[Rr]ef01_?[Dd]ata_?[Pp]t0/.test(src),
+      target + ': the planet flow test makes no patch call:\n' + src.slice(0, 2000))
+    return root
+  }
+
+
+  for (const target of ['ts', 'js']) {
+    test(target + ': the planet flow patches its record', async () => {
+      const root = await generatePatching(target,
+        Path.join('test', 'entity', 'planet', 'PlanetEntity.test.' + target))
+      linkDeps(root)
+      if ('ts' === target) {
+        for (const tree of ['src', 'test']) {
+          const built = tsc(root, tree)
+          ok(built.ok, 'ts: the generated ' + tree + ' does not compile:\n' + built.out)
+        }
+      }
+      const res = run(process.execPath, ['--test', '--test-reporter=tap',
+        Path.join('ts' === target ? 'dist-test' : 'test', 'entity', 'planet', 'PlanetEntity.test.js')],
+      root, nestedTestEnv())
+      ok(res.ok && /^\s*ok \d+ - basic\b/m.test(res.out), target + ': the planet flow failed:\n' + tail(res.out))
+    })
+  }
+
+
+  test('go: the planet flow patches its record', async (t) => {
+    const root = await generatePatching('go', Path.join('test', 'planet_entity_test.go'))
+    const go = toolchain('go')
+    if (null == go) return t.skip('needs go')
+    const res = run(go, ['test', './test/', '-count=1', '-v', '-run', '^TestPlanetEntity$'], root, undefined, LONG)
+    if (res.timedOut) return t.skip('go: ' + res.out)
+    ok(res.ok && res.out.includes('--- PASS: TestPlanetEntity/basic'), 'go: the planet flow failed:\n' + tail(res.out))
+  })
+
+
+  test('py: the planet flow patches its record', async (t) => {
+    const root = await generatePatching('py', Path.join('test', 'test_planet_entity.py'))
+    const cmd = pytest(['-v', 'test_planet_entity.py'])
+    if (null == cmd) return t.skip('needs python3 with pytest')
+    const res = run(cmd.bin, cmd.args, Path.join(root, 'test'), cmd.env)
+    if (res.timedOut) return t.skip('py: ' + res.out)
+    ok(res.ok && /::test_should_run_basic_flow PASSED/.test(res.out), 'py: the planet flow failed:\n' + tail(res.out))
+  })
+
+
+  test('rb: the planet flow patches its record', async (t) => {
+    const root = await generatePatching('rb', Path.join('test', 'planet_entity_test.rb'))
+    const rb = minitest([])
+    if (null == rb) return t.skip('needs ruby with minitest')
+    const res = run(rb.bin, ['test/planet_entity_test.rb', '-v'], root, rb.env)
+    if (res.timedOut) return t.skip('rb: ' + res.out)
+    ok(res.ok && /#test_basic_flow = [\d.]+ s = \./.test(res.out), 'rb: the planet flow failed:\n' + tail(res.out))
+  })
+
+
+  test('lua: the planet flow patches its record', async (t) => {
+    const root = await generatePatching('lua', Path.join('test', 'planet_entity_test.lua'))
+    const lua = toolchain('lua5.4') || toolchain('lua')
+    const cmd = busted(['-o', 'TAP', 'test/planet_entity_test.lua'])
+    if (null == cmd || null == lua || !probeOk(lua, ['-e', 'require "dkjson"'])) {
+      return t.skip('needs lua 5.4 with busted and the dkjson rock')
+    }
+    const res = run(cmd.bin, cmd.args, root)
+    if (res.timedOut) return t.skip('lua: ' + res.out)
+    ok(res.ok && !/^not ok/m.test(res.out) && /^ok \d+ .*basic/m.test(res.out),
+      'lua: the planet flow failed:\n' + tail(res.out))
+  })
+
+
+  test('perl: the planet flow patches its record', async (t) => {
+    const root = await generatePatching('perl', Path.join('t', 'planet_entity.t'))
+    const perl = toolchain('perl')
+    if (null == perl) return t.skip('needs perl')
+    if (!probeOk(perl, ['-MTest::More', '-e', '1'])) return t.skip('perl is here but Test::More is not')
+    const res = run(perl, ['-Ilib', 't/planet_entity.t'], root)
+    if (res.timedOut) return t.skip('perl: ' + res.out)
+    ok(res.ok && !/^not ok/m.test(res.out) && /^ok \d+ - planet patch: mark$/m.test(res.out),
+      'perl: the planet flow failed:\n' + tail(res.out))
+  })
+
+
+  test('php: the planet flow patches its record', async (t) => {
+    const root = await generatePatching('php', Path.join('test', 'PlanetEntityTest.php'))
+    const cmd = phpunitViaComposer(['--filter', 'test_basic_flow', 'test/PlanetEntityTest.php'])
+    if (null == cmd) return t.skip('needs php with phpunit (on PATH, PHPUNIT=<path to phpunit.phar>, or composer to install it)')
+    const res = run(cmd.bin, cmd.args, root)
+    if (res.timedOut) return t.skip('php: ' + res.out)
+    ok(res.ok && /OK \(1 test/.test(res.out), 'php: the planet flow failed:\n' + tail(res.out))
+  })
+
+
+  test('rust: the planet flow patches its record', async (t) => {
+    const root = await generatePatching('rust', Path.join('tests', 'planet_entity_test.rs'))
+    const cmd = cargoTest(['--test', 'planet_entity_test'])
+    if (null == cmd) return t.skip('needs cargo')
+    const res = run(cmd.bin, cmd.args, root, cmd.env, LONG)
+    if (res.timedOut) return t.skip('rust: ' + res.out)
+    ok(res.ok && /^test planet_entity_basic \.\.\. ok$/m.test(res.out), 'rust: the planet flow failed:\n' + tail(res.out))
+  })
+
+
+  test('java: the planet flow patches its record', async (t) => {
+    const root = await generatePatching('java', Path.join('test', 'PlanetEntityTest.java'))
+    const cmd = maven(['-Dtest=PlanetEntityTest'])
+    if (null == cmd) return t.skip('needs java and maven')
+    const res = run(cmd.bin, cmd.args, root, undefined, LONG)
+    if (res.timedOut) return t.skip('java: ' + res.out)
+    ok(res.ok && /Tests run: [1-9]\d*, Failures: 0, Errors: 0, Skipped: \d+, .* in [\w.]*PlanetEntityTest/.test(res.out),
+      'java: the planet flow failed:\n' + tail(res.out, 80))
+  })
+
+
+  test('kotlin: the planet flow patches its record', async (t) => {
+    const root = await generatePatching('kotlin', Path.join('test', 'PlanetEntityTest.kt'))
+    const cmd = gradleTest('*PlanetEntityTest*')
+    if (null == cmd) return t.skip('needs gradle (and not windows, where it hangs)')
+    const res = run(cmd.bin, cmd.args, root, undefined, LONG)
+    if (res.timedOut) return t.skip('kotlin: ' + res.out)
+    ok(res.ok && /tests="[1-9]\d*" skipped="\d+" failures="0" errors="0"/.test(junitReport(root, 'PlanetEntityTest')),
+      'kotlin: the planet flow failed:\n' + tail(res.out, 80))
+  })
+
+
+  test('csharp: the planet flow patches its record', async (t) => {
+    const root = await generatePatching('csharp', Path.join('test', 'PlanetEntityTest.cs'))
+    const dotnet = toolchain('dotnet')
+    if (null == dotnet) return t.skip('needs dotnet')
+    const built = run(dotnet, ['build', '--nologo', '-v', 'quiet', 'test'], root, undefined, LONG)
+    ok(built.ok, 'csharp: the generated test project does not build:\n' + tail(built.out))
+    const cmd = dotnetTest('PlanetEntityTest')!
+    const res = run(cmd.bin, cmd.args, root, undefined, LONG)
+    if (res.timedOut) return t.skip('csharp: ' + res.out)
+    ok(res.ok && /Passed!\s+-\s+Failed:\s+0,\s+Passed:\s+[1-9]\d*/.test(res.out),
+      'csharp: the planet flow failed:\n' + tail(res.out, 80))
+  })
+
+
+  test('scala: the planet flow patches its record', async (t) => {
+    // Its one main also reads the root README.
+    const root = await generatePatching('scala', Path.join('sdktest', 'PlanetEntityTest.scala'), true)
+    const scalacli = toolchain('scala-cli')
+    if (null == scalacli) return t.skip('needs scala-cli (which resolves the Scala compiler from the network)')
+    const res = run(scalacli, ['run', '.', '--main-class', 'SdkEntityTestMain'], root, undefined, LONG)
+    if (res.timedOut) return t.skip('scala: ' + res.out)
+    ok(res.ok && /ENTITY PASS [1-9]\d* {2}FAIL 0/.test(res.out), 'scala: the planet flow failed:\n' + tail(res.out))
+  })
+
+
+  test('cpp: the planet flow patches its record', async (t) => {
+    const root = await generatePatching('cpp', Path.join('test', 'planet_entity_test.cpp'))
+    const make = toolchain('make')
+    const cxx = cleanCxx()
+    if (null == make || null == cxx) {
+      return t.skip('needs make and a C++ compiler (make: ' + make + ', cxx: ' + cxx + ')')
+    }
+    const out = 'test/planet_entity_test.out'
+    const built = run(make, ['-j2', 'CXX=' + cxx, out], root, undefined, LONG)
+    if (built.timedOut) return t.skip('cpp: ' + built.out)
+    ok(built.ok, 'cpp: planet_entity_test did not build:\n' + tail(built.out))
+    const res = run(Path.join(root, out), [], root)
+    ok(res.ok && /^planet_entity_test: [1-9]\d* tests, [1-9]\d* checks, 0 failures$/m.test(res.out),
+      'cpp: the planet flow failed:\n' + tail(res.out))
   })
 })
 
@@ -9106,6 +9850,8 @@ const README_LANES: {
   command: () => { bin: string, args: string[], env?: NodeJS.ProcessEnv } | null,
   // A runnable block added to the README, whose output is not ASCII.
   example?: string,
+  // A runnable block whose client constructor holds a call among its arguments.
+  ctor?: string,
   // The module every example loads, and what the suite reports when it does not parse.
   entry: RegExp,
   unloaded: RegExp,
@@ -9117,6 +9863,8 @@ const README_LANES: {
     ran: /\d+ runs, \d+ assertions, 0 failures, 0 errors, 0 skips/,
     command: () => minitest(['test/readme_examples_test.rb']),
     example: '```ruby\nputs "naïve café — #{client.class}"\n```',
+    ctor: '```ruby\nclient = MultifonClientSDK.new({ "apikey" => ENV.fetch("MULTIFON_CLIENT_APIKEY", "none") })\n' +
+      'puts client.class\n```',
     entry: /^[^/]+_sdk\.rb$/,
     unloaded: /SyntaxError/,
   },
@@ -9154,6 +9902,9 @@ const README_LANES: {
     ran: /[1-9]\d* passed/,
     command: () => pytest(['test/test_readme_examples.py', '-q']),
     example: '```python\nprint("naïve café — " + client.__class__.__name__)\n```',
+    ctor: '```python\nimport os\n' +
+      'client = MultifonClientSDK({"apikey": os.environ.get("MULTIFON_CLIENT_APIKEY", "none")})\n' +
+      'print(client.__class__.__name__)\n```',
     entry: /^(?!test\/)[^/]+\/__init__\.py$/,
     unloaded: /SyntaxError/,
   },
@@ -9166,6 +9917,8 @@ const README_LANES: {
       const perl = toolchain('perl')
       return null == perl ? null : { bin: perl, args: ['-Ilib', 't/readme_examples.t'] }
     },
+    ctor: '```perl\nmy $client = MultifonClientSDK->new({ \'apikey\' => ($ENV{\'MULTIFON_CLIENT_APIKEY\'} // \'none\') });\n' +
+      'print ref($client), "\\n";\n```',
     entry: /^lib\/[^/]+SDK\.pm$/,
     unloaded: /syntax error/,
   },
@@ -9175,6 +9928,8 @@ const README_LANES: {
     needs: 'php with phpunit, or composer to install it',
     ran: /OK \([1-9]\d* tests?, \d+ assertions?\)/,
     command: () => phpunitViaComposer(['test/ReadmeExamplesTest.php']),
+    ctor: '```php\n<?php\n$client = new MultifonClientSDK([\'apikey\' => (getenv(\'MULTIFON_CLIENT_APIKEY\') ?: \'none\')]);\n' +
+      'echo get_class($client), "\\n";\n```',
     entry: /^[^/]+_sdk\.php$/,
     unloaded: /Unmatched '\)'|syntax error|ParseError/,
   },
@@ -9200,7 +9955,7 @@ describe('the README examples run for a slug carrying the word client', () => {
   })
 
   const readmeLane = async (t: any, lane: any, dir: string, extra?: string, mark = /engine/,
-    shows = 'list example with its required parameters') => {
+    shows = 'list example with its required parameters', code?: RegExp) => {
     const sdkroot = Path.join(tmp, dir, lane.target)
     const files = await generateTo(lane.target, sdkroot, extra, undefined,
       { name: README_SLUG, top: true })
@@ -9209,6 +9964,8 @@ describe('the README examples run for a slug carrying the word client', () => {
       lane.target + ': the README does not carry the slug, so it tests nothing')
     ok(null == extra || mark.test(String(files['README.md'])),
       lane.target + ': the README has no ' + shows)
+    const blocks = (String(files['README.md']).match(/```[a-z]*\n[\s\S]*?```/g) ?? []).join('\n')
+    ok(null == code || code.test(blocks), lane.target + ': the README code shows no ' + shows)
     if (null != lane.example) {
       Fs.appendFileSync(Path.join(sdkroot, 'README.md'), '\n' + lane.example + '\n')
     }
@@ -9234,6 +9991,18 @@ describe('the README examples run for a slug carrying the word client', () => {
     test(lane.target + ': every README example is classified, and run', async (t) => {
       await readmeLane(t, lane, lane.target)
     })
+
+    // php prints the key as a call, getenv("...").
+    test(lane.target + ': the README examples run where the constructor reads an API key', async (t) => {
+      await readmeLane(t, lane, lane.target + '-apikey', 'main: kit: config: auth: active: true', /APIKEY/,
+        'constructor reading an API key')
+    })
+
+    if (null != lane.ctor) {
+      test(lane.target + ': the README examples run where a constructor\'s arguments hold a call', async (t) => {
+        await readmeLane(t, { ...lane, example: lane.ctor }, lane.target + '-ctor-call')
+      })
+    }
 
     // The crud model's tutorial patches an entity as well.
     test(lane.target + ': every README example is classified, and run, with a patch', async (t) => {
@@ -9300,13 +10069,14 @@ describe('the README examples run for a slug carrying the word client', () => {
     test(lane.target + ': the README examples run with HTTP Basic in the header and a templated server URL',
       { todo: README_PENDING[lane.target + ' basic-templated'] }, async (t) => {
         await readmeLane(t, lane, lane.target + '-basic-templated', BASIC_TEMPLATED, /APIKEY/,
-          'constructor with its credential')
+          'constructor with its key, its secret and its required server variable',
+          /^(?=[\s\S]*APIKEY)(?=[\s\S]*SECRET)(?=[\s\S]*tenant)(?![\s\S]*region)/)
       })
 
     test(lane.target + ': the README examples run with HTTP Basic in the query',
       { todo: README_PENDING[lane.target + ' basic-query'] }, async (t) => {
         await readmeLane(t, lane, lane.target + '-basic-query', BASIC_QUERY, /APIKEY/,
-          'constructor with its credential')
+          'constructor with its key and no secret', /^(?=[\s\S]*APIKEY)(?![\s\S]*SECRET)/)
       })
 
     // `)(` parses in no target.
@@ -10028,6 +10798,15 @@ describe('the documented c, cpp, rust, zig, ocaml, csharp, scala, swift and cloj
       for (const doc of DOC_PAGES) {
         ok(blocks.some((b) => b.doc === doc),
           lane.target + ': ' + doc + ' shows no ' + lane.fence + ' example, so nothing checks it')
+      }
+      const code = blocks.map((b) => b.code).join('\n')
+      if ('basic-templated' === shape) {
+        ok(/APIKEY/.test(code) && /SECRET/.test(code) && /"tenant"/.test(code) && !/region/.test(code),
+          lane.target + ': the examples do not build the client with its key, secret and server variable')
+      }
+      if ('basic-query' === shape) {
+        ok(/APIKEY/.test(code) && !/SECRET/.test(code),
+          lane.target + ': the examples ask for a secret no PrepareAuth reads, or for no key')
       }
 
       const compiles = lane.compile(sdkroot, blocks)

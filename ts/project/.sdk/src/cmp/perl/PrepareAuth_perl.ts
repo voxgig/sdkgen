@@ -4,11 +4,12 @@ import {
   File,
   Folder,
   cmp,
-  isAuthSuppressed,
-  isHttpBasicAuth,
-  resolveAuthIn,
-  resolveAuthName,
+  fact,
 } from '@voxgig/sdkgen'
+
+import {
+  KIT,
+} from '@voxgig/apidef'
 
 
 import {
@@ -18,11 +19,12 @@ import {
 
 const PrepareAuth = cmp(async function PrepareAuth(props: any) {
   const { model } = props.ctx$
+  const authFact = fact(model.main[KIT], 'auth')
 
-  const active = !isAuthSuppressed(model)
-  const where = resolveAuthIn(model)
-  const name = resolveAuthName(model)
-  const basic = isHttpBasicAuth(model)
+  const active = !authFact.suppressed
+  const where = authFact.in
+  const name = authFact.name
+  const basic = authFact.basic
 
   Folder({ name: 'utility' }, () => {
     File({ name: 'prepare_auth.pm' }, () => {
@@ -69,8 +71,8 @@ package ${spec.Name}Utilities;
 
 our %REGISTRY;
 
-# This API declares no authentication, so there is no credential to
-# place. The entry stays in the registry because make_spec calls it
+# This SDK is configured with authentication off, so there is no credential
+# to place. The entry stays in the registry because make_spec calls it
 # unconditionally, and still guards the spec so the auth_no_spec contract
 # holds for every SDK.
 $REGISTRY{prepare_auth} = sub {

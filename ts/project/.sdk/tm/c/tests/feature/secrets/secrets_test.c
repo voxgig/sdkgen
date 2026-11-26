@@ -41,6 +41,9 @@
 #if !defined(_WIN32) && !defined(_POSIX_C_SOURCE)
 #define _POSIX_C_SOURCE 200809L
 #endif
+#if defined(__APPLE__) && !defined(_DARWIN_C_SOURCE)
+#define _DARWIN_C_SOURCE
+#endif
 
 #include "feature_harness.h" /* test_sdk + Fetcher helpers + ctest.h */
 
@@ -189,7 +192,7 @@ static ProjectNameSDK* live(Rec* r, voxgig_value* secretsopts, voxgig_value* ext
     voxgig_map* m = voxgig_as_map(extra);
     for (size_t i = 0; i < m->len; i++) setp(opts, m->entries[i].key, m->entries[i].value);
   }
-  return projectname_sdk_new(opts);
+  return projectname_sdk_new(opts, NULL);
 }
 
 static voxgig_value* direct(ProjectNameSDK* sdk) {
@@ -931,7 +934,7 @@ static void redirect_run(int status, int where, const char* redirect, RedirectRu
     "feature", cmap(1, "secrets", cmap(3,
       "active", v_bool(true),
       "name", v_str("refresh_token"),
-      "exchange", exchange))));
+      "exchange", exchange))), NULL);
   r->res = direct(sdk);
 
   kill(origin, SIGTERM);
@@ -1038,6 +1041,13 @@ static void t_exchange_redirect_same_origin(void) {
 #endif
 
 int main(void) {
+  // Read from the config, never from a probe: an SDK whose config declares no
+  // auth places no credential, and these tests assert on the one it places.
+  if (!voxgig_is_map(getpath2(shared_config(), "options", "auth"))) {
+    printf("SKIP [secrets]: this SDK's config declares no auth, so it places no credential\n");
+    return 0;
+  }
+
   RUN(t_inactive_apikey_as_before);
   RUN(t_inactive_no_apikey_no_header);
   RUN(t_apikey_wins_over_chain);

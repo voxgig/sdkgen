@@ -39,10 +39,10 @@ class ProjectNameEntityBase {
   }
 
 
-  // True once a successful `remove` resolves on this instance. `remove`
+  // True once a remove has marked this instance deleted. A remove
   // resolves to the entity like every other operation, and the instance KEEPS
   // the data it held — a caller can still read what was deleted — but it is
-  // no longer a live record. See AGENTS.md.
+  // no longer a live record.
   markDeleted() {
     this._deleted = true
   }
@@ -96,8 +96,9 @@ class ProjectNameEntityBase {
 
   // Streaming operations. Runs `action` through the full pipeline and returns
   // an async iterator over result items, so the `streaming` feature's
-  // incremental output is reachable from a generated entity (a normal op call
-  // materialises the whole result). `callopts` parameterises the call:
+  // incremental output, when that feature is active, is reachable from a
+  // generated entity (a normal op call materialises the whole result).
+  // `callopts` parameterises the call:
   //   - iterate the yielded items/chunks (from the streaming feature when
   //     active, else the materialised items);
   //   - `ctrl` (pipeline control) and `signal` (AbortSignal) are honoured:

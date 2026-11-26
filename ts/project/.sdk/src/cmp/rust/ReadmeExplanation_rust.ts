@@ -14,7 +14,9 @@ The Rust SDK uses a single dynamic \`Value\` type throughout rather than a
 typed struct per entity. \`Value\` is the vendored voxgig struct port (a
 JSON-shaped enum: \`Str\`, \`Num\`, \`Bool\`, \`List\`, \`Map\`, \`Null\`,
 \`Noval\`). This mirrors the dynamic nature of the API and keeps the SDK
-flexible — no code generation is needed when the API schema changes.
+flexible: code that works with \`Value\` needs no regeneration when the
+API schema changes. The typed models in \`entity/types.rs\` follow the
+schema only when the SDK is regenerated.
 
 Build request maps with the \`jo\` / \`ja\` helpers and read fields back with
 \`getp\`; use \`to_map\` to safely coerce a value to a map.
@@ -26,7 +28,7 @@ ${target.name}/
 ├── lib.rs                       -- Crate root (module decls + re-exports)
 ├── core/                        -- Pipeline types, config, client (sdk.rs)
 ├── entity/                      -- Per-entity clients (one module each)
-├── feature/                     -- Built-in features (base, test, log)
+├── feature/                     -- Feature implementations
 └── utility/                     -- Utilities + the vendored voxgig struct port
 \`\`\`
 

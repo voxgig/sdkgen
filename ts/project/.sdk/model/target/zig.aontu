@@ -33,6 +33,7 @@ main: kit: feature: &: target: zig: deps: &: {
 
 
 main: kit: target: zig: publish: {
+  recipe: false
   registry: {
     name: 'none'
     url: ''

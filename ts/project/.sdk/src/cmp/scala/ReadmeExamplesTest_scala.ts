@@ -1,9 +1,16 @@
 
-import { cmp, File, Content } from '@voxgig/sdkgen'
+import { cmp, File, Content, fact } from '@voxgig/sdkgen'
 
 
 const ReadmeExamplesTest = cmp(function ReadmeExamplesTest(props: any) {
   const { target, ctx$: { model } } = props
+  // The root README where the run writes one beside this target, and the
+  // target's own documents where it writes them.
+  const link = fact(target, 'link').readme
+  const own = fact(target, 'phase').readme
+  if ('' === link && !own) {
+    return
+  }
 
   const Name = model.const.Name
 
@@ -36,9 +43,9 @@ object ReadmeExamplesTest {
   // directory (the working directory when scala-cli runs the tests). Each row
   // is {label, relative path}.
   private def docs(): Array[Array[String]] = Array(
-    Array("root README", ".." + java.io.File.separator + "README.md"),
-    Array("scala README.md", "README.md"),
-    Array("scala REFERENCE.md", "REFERENCE.md")
+${[...('' === link ? [] : [`    Array("root README", ${link.split('/').map((seg: string) => JSON.stringify(seg))
+      .join(' + java.io.File.separator + ')})`]),
+  ...(own ? ['    Array("scala README.md", "README.md")', '    Array("scala REFERENCE.md", "REFERENCE.md")'] : [])].join(',\n')}
   )
 
   // Extract every scala fenced block. Split on the triple-backtick fence:

@@ -1,13 +1,16 @@
 
-import { cmp, Content, isPublished, repoInfo, packageVersion, sdkName } from '@voxgig/sdkgen'
+import * as Path from 'node:path'
+
+import { cmp, Content, isPublished, repoInfo, packageVersion, sdkName, readerDir, registryNote, fact } from '@voxgig/sdkgen'
+
+import { elixirApp } from './app_elixir'
 
 
 const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
   const { target, ctx$ } = props
   const { model } = ctx$
 
-  // Match the app atom in mix.exs: snake_case, since `:a-b` is not a valid atom.
-  const app = model.const.name.toLowerCase().replace(/-/g, '_')
+  const app = elixirApp(model, target)
 
   if (isPublished(model, target.name)) {
     // Live on Hex: add the dependency to mix.exs deps/0.
@@ -34,24 +37,25 @@ mix deps.get
   // Publish pending: not yet on Hex. Install from the git release tag or a
   // local path checkout.
   const { hostName, repoUrl, tagsUrl } = repoInfo(model)
-  Content(`This package is not yet published to [Hex](https://hex.pm). Install it from
-the ${hostName} release tag (\`${target.name}/vX.Y.Z\`, see [Tags](${tagsUrl}))
+  const tag = fact(target, 'tag')
+  Content(`${registryNote(model, target.name)}${'' === tag ? ' Install it from' : ` Install it from
+the ${hostName} release tag (\`${tag}X.Y.Z\`, see [Tags](${tagsUrl}))
 by adding a git dependency to your \`mix.exs\`:
 
 \`\`\`elixir
 def deps do
   [
-    {:${app}, git: "${repoUrl}.git", tag: "${target.name}/vX.Y.Z"}
+    {:${app}, git: "${repoUrl}.git", tag: "${tag}X.Y.Z"}
   ]
 end
 \`\`\`
 
-Or from a local source checkout:
+Or from`} a local source checkout:
 
 \`\`\`elixir
 def deps do
   [
-    {:${app}, path: "../${sdkName(model.const.name.toLowerCase())}/${target.name}"}
+    {:${app}, path: "${Path.posix.join('..', repoInfo(model).repo, readerDir(target))}"}
   ]
 end
 \`\`\`

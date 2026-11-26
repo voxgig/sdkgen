@@ -6,11 +6,12 @@ import {
   Content,
   entityClassName,
   entityCollection,
-  isAuthSuppressed,
-  isHttpBasicAuth,
-  resolveAuthIn,
-  resolveAuthName,
+  fact,
 } from '@voxgig/sdkgen'
+
+import {
+  KIT,
+} from '@voxgig/apidef'
 
 import { zigVarName } from './utility_zig'
 
@@ -20,14 +21,15 @@ import { zigVarName } from './utility_zig'
 // its name, which the second sweep finds a binary body's operation by.
 const TestClean = cmp(function TestClean(props: any) {
   const { model } = props.ctx$
+  const authFact = fact(model.main[KIT], 'auth')
   const { target } = props
 
   const auth = {
-    suppressed: isAuthSuppressed(model),
-    where: resolveAuthIn(model),
-    name: 'header' === resolveAuthIn(model)
-      ? resolveAuthName(model).toLowerCase() : resolveAuthName(model),
-    basic: isHttpBasicAuth(model),
+    suppressed: authFact.suppressed,
+    where: authFact.in,
+    name: 'header' === authFact.in
+      ? authFact.name.toLowerCase() : authFact.name,
+    basic: authFact.basic,
   }
 
   const entityColl = entityCollection(model)
@@ -517,8 +519,8 @@ fn makeSdkWith(scenario: Scenario, sinks: *Sinks, clean_active: bool, extra: ?sd
     }));
     if (auth == .object) h.setp(options, "auth", auth);
 
-    if (extra) |f| return sdk.SDK.new_with(options, &.{ CaptureFeature.make(sinks), f });
-    return sdk.SDK.new_with(options, &.{CaptureFeature.make(sinks)});
+    if (extra) |f| return sdk.SDK.new_with(options, &.{ CaptureFeature.make(sinks), f }).ok;
+    return sdk.SDK.new_with(options, &.{CaptureFeature.make(sinks)}).ok;
 }
 
 // ---- the candidate operations, from the model ---------------------------
@@ -556,7 +558,7 @@ fn usableOp() ?Target {
             const plain = sdk.SDK.new(offline(h.jo(&.{
                 .{ "apikey", h.vstr(CANARY_APIKEY) },
                 .{ "system", h.jo(&.{.{ "fetch", Transport.make(.ok) }}) },
-            })));
+            }))).ok;
             if (cand.run(plain, h.clone(mtch), h.omap()).ok) {
                 return .{ .run = cand.run, .stream = cand.stream, .mtch = mtch };
             }
@@ -575,7 +577,7 @@ const BinaryTarget = struct { target: Target, media: Value };
 // binary, with every path parameter of that point filled in, and the media
 // type the point declares.
 fn binaryOp() ?BinaryTarget {
-    const plain = sdk.SDK.new(offline(h.jo(&.{.{ "apikey", h.vstr(CANARY_APIKEY) }})));
+    const plain = sdk.SDK.new(offline(h.jo(&.{.{ "apikey", h.vstr(CANARY_APIKEY) }}))).ok;
     const entities = h.getp(plain.get_root_ctx().config, "entity");
     for (CANDIDATES) |cand| {
         const dot = std.mem.indexOfScalar(u8, cand.name, '.') orelse continue;
@@ -714,7 +716,7 @@ test "clean: no credential leaves the SDK in any form" {
     const mistyped = sdk.SDK.new(offline(h.jo(&.{
         .{ "apikey", h.jo(&.{.{ "value", h.vstr(CANARY_APIKEY) }}) },
         .{ "clean", h.jo(&.{.{ "values", h.vstr(CANARY_VALUE) }}) },
-    })));
+    }))).ok;
     sinks.push("mistyped:quoted", sdk.utilmod.clean_str_util(
         mistyped.get_root_ctx(),
         fmt("apikey: expected string, got {{\\"value\\":\\"{s}\\"}}", .{CANARY_APIKEY}),
@@ -757,7 +759,7 @@ test "clean: no credential leaves the SDK in any form" {
         .{ "secret", h.vstr(CANARY_SECRET) },
         .{ "headers", h.jo(&.{.{ "X-Custom-Token", h.vstr(CANARY_HEADER) }}) },
         .{ "system", h.jo(&.{.{ "fetch", Transport.make(.notfound) }}) },
-    })));
+    }))).ok;
     const barerr = drive(bare, target, h.omap(), &sinks);
     try testing.expect(barerr != null);
 
@@ -843,7 +845,7 @@ test "clean: the sweep can see a leak: clean switched off shows the credential" 
 test "clean: a registered value used as a property name is masked, collisions kept" {
     const client = sdk.SDK.new(offline(h.jo(&.{
         .{ "clean", h.jo(&.{.{ "values", h.vstr("ZZVAL-abc123,ZZVAL-xyz789") }}) },
-    })));
+    }))).ok;
     const out = sdk.utilmod.clean_util(client.get_root_ctx(), h.jo(&.{
         .{ "ZZVAL-abc123", h.vnum(1) },
         .{ "ZZVAL-xyz789", h.vnum(2) },
@@ -870,7 +872,7 @@ test "clean: the generated config's own clean block is honoured" {
         .options = h.jo(&.{.{ "clean", h.jo(&.{.{ "values", h.vstr("CALLER-SEEDED-2") }}) }}),
         .config = config,
     }, null);
-    ctx.options = utility.make_options(ctx);
+    ctx.options = try utility.make_options(ctx);
     try testing.expectEqualStrings("a " ++ MASK ++ " b " ++ MASK,
         sdk.utilmod.clean_str_util(ctx, "a CONFIG-SEEDED-1 b CALLER-SEEDED-2"));
     const out = sdk.utilmod.clean_util(ctx, h.jo(&.{ .{ "my_zzsens", h.vstr("x") }, .{ "other", h.vstr("y") } }));
@@ -909,7 +911,7 @@ test "clean: a feature's name is read as a name" {
         .{ "entity", h.jo(&.{.{ "zztoken", h.jo(&.{.{ "alias", h.jo(&.{
             .{ "zzkey", h.vstr("PLAINALIAS-m2n4b6v8") },
         }) }}) }}) },
-    })));
+    }))).ok;
     const ctx = client.get_root_ctx();
     try testing.expectEqualStrings("ZZNAME-feat123 " ++ MASK,
         sdk.utilmod.clean_str_util(ctx, "ZZNAME-feat123 ZZTOKEN-feat456"));

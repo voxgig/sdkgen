@@ -2,12 +2,12 @@
 #
 # Offline feature-test harness for the generated SDK.
 #
-# Feature behaviour (retry, cache, rbac, telemetry, ...) is unit-tested by
-# driving each feature class through a faithful miniature of the real
-# operation pipeline against a configurable mock transport — the same hook
-# order and short-circuit rules as the generated entity op code, but with
-# no live server and no API-specific fixtures. Feature instances are built
-# via the generated `features._make_feature`, so only features actually
+# Feature behaviour is unit-tested by driving each feature class through a
+# faithful miniature of the real operation pipeline against a configurable
+# mock transport — the same hook order and short-circuit rules as the
+# generated entity op code, but with no live server and no API-specific
+# fixtures. Feature instances are built via the generated
+# `features._make_feature`, so only features actually
 # present in this SDK are exercised (see `has_feature`).
 
 from __future__ import annotations

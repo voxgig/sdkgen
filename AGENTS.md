@@ -645,14 +645,16 @@ reports:
 - `fence`: a code block in a target's documents tagged with another
   language; data and shell blocks are neutral, and a consumer writes the
   language of the target it wraps.
+- `table`: a table header with no row under it, outside a code block.
+- `numbering`: numbered headings under one parent that skip a number.
 
 Each finding is keyed on (relation, the chain of labelled components that
 wrote the line, cause) and must match a pin in `test/textguard-pins.json`,
 which carries a reason. A pin that matches nothing fails, so fixing a writer
-means deleting its pin. `npm test` runs `link` and `fence` on a fixed subset; `npm run
-textguard` runs the full matrix, which is a CI lane. `npm run
-textguard-update` rewrites the pins from what it finds, keeping each reason;
-a new pin reads `TODO` and fails until it has one.
+means deleting its pin. `npm test` runs `link`, `fence` and `numbering` on a
+fixed subset; `npm run textguard` runs the full matrix, which is a CI lane.
+`npm run textguard-update` rewrites the pins from what it finds, keeping each
+reason; a new pin reads `TODO` and fails until it has one.
 
 A finding keys on the writing component, so split a component that writes
 many sections into labelled ones (`ReadmeTop`, `AgentGuideTop`) rather than

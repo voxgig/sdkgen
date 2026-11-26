@@ -15,7 +15,7 @@ const BY_ID = ['load', 'update', 'patch', 'remove']
 const STORES = ['create', 'load', 'update', 'patch']
 
 // Ops a generated flow test can call; every TestEntity emits these alone.
-const GENERATED = ['create', 'list', 'load', 'update', 'remove']
+const GENERATED = ['create', 'list', 'load', 'update', 'patch', 'remove']
 
 
 // A generated flow test calls each step's op with its own match and data,

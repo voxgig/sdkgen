@@ -7,7 +7,7 @@ import Path from 'node:path'
 
 import { memfs } from 'memfs'
 
-import { SdkGen, registerComponent } from '../dist/sdkgen.js'
+import { SdkGen, fact, registerComponent } from '../dist/sdkgen.js'
 
 import { makeModel, makeRoot, layeredFs, makeLog, STAGE, SCAFFOLD } from './generateharness'
 
@@ -17,6 +17,11 @@ const OUT = '/elsewhere/acme-cli'
 const OUT2 = '/elsewhere/acme-sdk'
 
 const REL = '../elsewhere/rel-cli'
+
+
+// The in-tree walk from a target back to the project's `.sdk` or
+// `.env.local`: `../.sdk`, `"..", ".sdk"`, or `push("..")` then `push(".sdk")`.
+const IN_TREE_BACK = /\.\.(?:\/|["'],\s*["']|["']\);\s*\w+\.push\(["'])\.(?:sdk|env\.local)\b/
 
 
 const norm = (path: string) =>
@@ -176,6 +181,14 @@ describe('external target', () => {
   })
 
 
+  test('a relocated rockspec builds from the root of its own repository', async () => {
+    const { outside } = await generate(['lua'], 'lua', "main: kit: target: lua: output: repo: 'acme/demo-lua'")
+    const spec = outside['demo.rockspec']
+    ok(spec.includes('url = "git+https://github.com/acme/demo-lua.git"'), spec)
+    ok(/^  dir = "demo-lua"$/m.test(spec), spec)
+  })
+
+
   test('a relative output path resolves against the SDK project, not the CWD',
     async () => {
       const gen = setup(['go', 'go-cli'], { 'go-cli': REL })
@@ -291,6 +304,30 @@ describe('external target', () => {
       Fs.rmSync(file, { force: true })
     }
   })
+
+
+  // A consumer in tree names the target it wraps by where the model puts it.
+  test('a consumer generates in tree while the target it wraps is out of tree', async () => {
+    const py = await generate(['py', 'py-data'], 'py')
+    ok(py.inside['py-data/README.md'].includes('Built on the Python SDK in its own repository.'),
+      py.inside['py-data/README.md'])
+    ok(/^\tpython3 -m pip install -e \/elsewhere\/acme-cli$/m.test(py.inside['py-data/Makefile']),
+      py.inside['py-data/Makefile'])
+    ok(null != py.outside['setup.py'] || null != py.outside['pyproject.toml'], 'py was not written out of tree')
+
+    const go = await generate(['go', 'go-cli'], 'go')
+    ok(/^replace \S+ => \/elsewhere\/acme-cli$/m.test(go.inside['go-cli/go.mod']), go.inside['go-cli/go.mod'])
+  })
+
+
+  test('an override that moves the target a consumer wraps leaves the consumer on the declared layout',
+    async () => {
+      const moved = setup(['py', 'py-data'], {}, { external: { py: { path: OUT2, sdkrel: '../sdk' } } })
+      strictEqual((await moved.run()).ok, true)
+      const inside = under(moved.files(), norm(STAGE))
+      ok(inside['py-data/README.md'].includes('Built on the sibling [Python SDK](../py) in this repo.'),
+        inside['py-data/README.md'])
+    })
 
 
   test('relocating the only SDK prunes nothing and names the stale folder', async () => {
@@ -544,7 +581,7 @@ describe('external target', () => {
       const readme = inside['README.md']
       const agents = inside['AGENTS.md']
 
-      ok(readme.includes('> TypeScript, Golang SDKs, and the ' + LINKED + ' — all generated from one'), readme)
+      ok(readme.includes('> TypeScript, Go SDKs, and the ' + LINKED + ' — all generated from one'), readme)
       ok(readme.includes('| **' + LINKED + '** | generated into its own repository |'), readme)
       ok(agents.includes('**Targets** (3):'), agents)
       ok(agents.includes('| `go-cli` | ' + LINKED + ', generated into its own repository | — |'), agents)
@@ -560,7 +597,7 @@ describe('external target', () => {
       const readme = inside['README.md']
       const agents = inside['AGENTS.md']
 
-      ok(readme.includes('> TypeScript, Golang SDKs, and the Go CLI — all generated from one'), readme)
+      ok(readme.includes('> TypeScript, Go SDKs, and the Go CLI — all generated from one'), readme)
       ok(readme.includes('| **Go CLI** | generated into its own repository |'), readme)
       ok(agents.includes('| `go-cli` | Go CLI, generated into its own repository | — |'), agents)
       ok(!(readme + agents).includes('[Go CLI]('), 'a link with no repository to link')
@@ -588,12 +625,12 @@ describe('external target', () => {
       ok(/^TARGETS := .*\bgo\b/m.test(both.inside['Makefile']), 'control: go is not released in tree')
 
       const { inside } = await generate(['ts', 'go'], 'go', "main: kit: target: go: output: repo: 'acme/demo-go'")
-      ok(inside['README.md'].includes('| **[Golang SDK](https://github.com/acme/demo-go)** | generated into its own repository |'),
+      ok(inside['README.md'].includes('| **[Go SDK](https://github.com/acme/demo-go)** | generated into its own repository |'),
         inside['README.md'])
       ok(inside['SECURITY.md'].includes('repository (npm).'), inside['SECURITY.md'])
       ok(!inside['SECURITY.md'].includes('Go module'), inside['SECURITY.md'])
       ok(/^TARGETS := ts$/m.test(inside['Makefile']), 'the release Makefile acts on go')
-      ok(!inside['CHANGELOG.md'].includes('Golang'), inside['CHANGELOG.md'])
+      ok(!/\bGo\b/.test(inside['CHANGELOG.md']), inside['CHANGELOG.md'])
     })
 
 
@@ -648,6 +685,97 @@ describe('external target', () => {
       const warn = sink.find((e: any) => 'external-sdkrel-derived' === e.point)
       strictEqual(warn, undefined,
         'a destination one level from the SDK project should derive cleanly')
+    })
+
+
+    // Outside its documents, a target generated out of tree is the target
+    // generated in tree, but for the path back, which every reader of the
+    // project's `.sdk` and `.env.local` takes from the run.
+    test('every SDK target reads the project through its declared path back', async () => {
+      const all = Fs.readdirSync(Path.join(SCAFFOLD, 'model', 'target'))
+        .filter((f: string) => f.endsWith('.aontu') && !f.includes('-index'))
+        .map((f: string) => f.replace(/\.aontu$/, ''))
+      const kit = makeModel(all).main.kit
+      const sdks = all.filter((t: string) => 'sdk' === fact(kit.target[t], 'surface'))
+      ok(15 < sdks.length, 'expected every bundled SDK target: ' + sdks.join(', '))
+
+      // A README example test reads whichever README the placement writes.
+      const README_TEST = /(^|\/)(ReadmeExamples?(Test)?\.\w+|ReadmeExample\.test\.ts|readme_examples(\.test|_test)?\.\w+|test_readme_examples\.py)$/
+      const code = (tree: Record<string, string>) => Object.keys(tree)
+        .filter((path: string) => !path.endsWith('.md') && !README_TEST.test(path)).sort()
+      // A document list's root README entry, which only a tree beside one carries.
+      const ROOT_ENTRY = /["']root[ -]README(\.md)?["']\s*[,=:]|\["root-README" "/
+      const readers = (tree: Record<string, string>) => Object.keys(tree).sort()
+        .filter((path: string) => !path.endsWith('.md') && ROOT_ENTRY.test(tree[path]))
+      let reading = 0
+
+      for (const t of sdks) {
+        const tree = under((await generate([t], {})).inside, t)
+        const away = (await generate([t], t,
+          `main: kit: target: '${t}': output: sdkrel: '../../zzproj'`)).outside
+
+        deepStrictEqual(code(away), code(tree), t + ': out of tree writes other files')
+        // A target out of tree is not the tree's one npm package, its release
+        // tag follows the tag fact, and its rockspec builds from the root of
+        // the clone.
+        const placed = (text: string) => text.replace(/^TAG := .*$/m, 'TAG :=')
+          .replace(/^  dir = ".*"$/m, '  dir =')
+          .replace(/\["root-README" "[^"]*"\]\n\s*/, '')
+        const differ = code(tree).filter((path: string) =>
+          placed(away[path].split('../../zzproj').join('..')) !== placed(tree[path]))
+        deepStrictEqual(differ, [], t + ': these differ from the in-tree files by more than the path back')
+        ok(code(away).some((path: string) => away[path].includes('zzproj')),
+          t + ': no file names the declared path back')
+        deepStrictEqual(code(away).filter((path: string) => IN_TREE_BACK.test(away[path])), [],
+          t + ': these still walk back to the project as they do in tree')
+        reading += readers(tree).length
+        deepStrictEqual(readers(away), [], t + ': out of tree these still read a root README')
+      }
+      ok(15 < reading, 'in tree only ' + reading + ' README tests read the root README')
+    })
+
+
+    // The live tests read `.env.local` from the project, so the how-to says
+    // where that is from the README's own directory.
+    test('a how-to puts .env.local where the live tests read it', async () => {
+      for (const t of ['ts', 'go', 'rust']) {
+        const tree = under((await generate([t], {})).inside, t)
+        const away = (await generate([t], t,
+          `main: kit: target: '${t}': output: sdkrel: '../../zzproj'`)).outside
+
+        ok(tree['README.md'].includes('Create a `.env.local` file at the project root:'),
+          t + ': in tree the file is not at the project root')
+        ok(away['README.md'].includes('Create a `.env.local` file in the SDK project that ' +
+          'generates this package, `../../zzproj/` from this directory:'),
+          t + ': out of tree the README does not name the path back')
+      }
+    })
+
+
+    // Out of tree the reader of a target's README stands in its directory.
+    test('a relocated target\'s documents enter no folder of the SDK repository', async () => {
+      for (const t of ['ts', 'go', 'c']) {
+        const away = (await generate([t], t,
+          `main: kit: target: '${t}': output: sdkrel: '../../zzproj'`)).outside
+        const entered = Object.keys(away).flatMap((path: string) => away[path].split('\n')
+          .filter((line: string) => new RegExp('\\bcd ' + t + '\\b|(?<![\\w/.-])' + t + '/core\\b').test(line))
+          .map((line: string) => path + ': ' + line))
+        deepStrictEqual(entered, [], t + ': a relocated tree enters ' + t + '/')
+      }
+    })
+
+
+    test('a relocated ts runs the quick start of its own README', async () => {
+      const read = "const readmePath = Path.join(__dirname, '..', "
+      const tree = under((await generate(['ts'], {})).inside, 'ts')
+      ok(tree['test/ReadmeExample.test.ts'].includes(read + "'../README.md')"),
+        'in tree the test does not read the root README')
+      const away = (await generate(['ts'], 'ts',
+        "main: kit: target: ts: output: sdkrel: '../../zzproj'")).outside
+      ok(away['test/ReadmeExample.test.ts'].includes(read + "'README.md')"),
+        'out of tree the test does not read its own README')
+      ok(away['test/ReadmeExample.test.ts'].includes("'Tutorial: your first API call'"),
+        'out of tree the test does not read the tutorial')
     })
 
 

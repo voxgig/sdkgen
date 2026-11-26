@@ -18,6 +18,12 @@ declare function entityActions(entity: any): {
     path: string;
 }[];
 declare function entityPath(entity: any): string;
+type DirectRoute = {
+    path: string;
+    method: string;
+    param: string;
+};
+declare function directRoute(model: any): DirectRoute;
 declare function ownPoint(points: any[]): any;
 declare function opReachable(op: any, given: string[]): boolean;
 declare function opNeedsAction(op: any): boolean;
@@ -57,5 +63,5 @@ declare function pickExampleEntity(entity: any): {
 };
 declare function entityDataIdField(ent: any): string | null;
 declare function entityRecordIdField(ent: any): string;
-export { CANON_OP_ORDER, OP_SUFFIX, bodyFieldNames, deriveEntityNames, entityCollection, opTypeName, opParams, selectablePoints, pointRequires, opReachable, opNeedsAction, ownPoint, opActions, entityActions, entityPath, opRequestShape, entityIdField, entityDataIdField, entityRecordIdField, entityOps, introOps, generatedOps, invalidRequest, entityPrimaryOp, pickExampleEntity, entityClassName, entityConstructorName, entityTypeCollisions, warnEntityTypeCollisions, ungeneratedOps, warnUngeneratedOps, };
-export type { OpShapeItem, UngeneratedOp, };
+export { CANON_OP_ORDER, OP_SUFFIX, bodyFieldNames, deriveEntityNames, entityCollection, opTypeName, opParams, selectablePoints, pointRequires, opReachable, opNeedsAction, ownPoint, opActions, entityActions, entityPath, directRoute, opRequestShape, entityIdField, entityDataIdField, entityRecordIdField, entityOps, introOps, generatedOps, invalidRequest, entityPrimaryOp, pickExampleEntity, entityClassName, entityConstructorName, entityTypeCollisions, warnEntityTypeCollisions, ungeneratedOps, warnUngeneratedOps, };
+export type { DirectRoute, OpShapeItem, UngeneratedOp, };

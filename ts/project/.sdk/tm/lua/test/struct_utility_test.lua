@@ -18,7 +18,7 @@ local makeRunner, nullModifier = runnerModule.makeRunner, runnerModule.nullModif
 local JSON_NULL = runnerModule.JSON_NULL
 local tostructval = runnerModule.tostruct
 
-local TEST_JSON_FILE = "../../.sdk/test/test.json"
+local TEST_JSON_FILE = "../SDKREL/.sdk/test/test.json"
 
 ----------------------------------------------------------
 -- Helper Functions

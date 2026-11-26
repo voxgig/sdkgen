@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, entityClassName, entityCollection, fact, clientOptions, entityOps, entityPath, introOps } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -18,9 +18,8 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
 
   // Model-driven op rows for the shared entity interface: emit a row only for
   // operations at least one active entity actually exposes.
-  const opUnion = new Set<string>()
-  entityList.forEach((e: any) => Object.keys(e.op || {})
-    .forEach((o: string) => { if (e.op[o] && e.op[o].active !== false) opUnion.add(o) }))
+  const opUnion = new Set<string>(introOps(model))
+  const sameOps = fact(model.main[KIT], 'sharedOps')
   const opRowDefs: Record<string, string> = {
     load: '| `load` | `(reqmatch: Value, ctrl: Value) -> Result<Rc<Self>, ' + model.const.Name + 'Error>` | Load a single entity by match criteria. |',
     list: '| `list` | `(reqmatch: Value, ctrl: Value) -> Result<Vec<Rc<Self>>, ' + model.const.Name + 'Error>` | List entities matching the criteria, one per record. |',
@@ -30,18 +29,27 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
     remove: '| `remove` | `(reqmatch: Value, ctrl: Value) -> Result<Rc<Self>, ' + model.const.Name + 'Error>` | Remove an entity, which is returned marked as deleted. |',
   }
   const opRows = ['load', 'list', 'create', 'update', 'patch', 'remove']
-    .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o]).join('\n')
+    .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o] + '\n').join('')
+  const listResult = opUnion.has('list') ? ', and `list` a `Vec` of\nentities, one per record' : ''
 
-  const apikeyOptionRow = isAuthActive(model)
-    ? '| `apikey` | `string` | API key for authentication. |\n'
-    : ''
+  // A closed value union holds no feature instance, so there is no `extend`.
+  const OPTION_KIND: Record<string, string> = { string: 'string', map: 'map', list: '' }
+  const optionRows = clientOptions(model).filter((o: any) => 'extend' !== o.name)
+    .map((o: any) => '| `' + o.name + '` | `' + OPTION_KIND[o.kind] + '` | ' + o.desc + ' |\n').join('')
+  const required = fact(model.main[KIT], 'server').filter((v: any) => v.required)
+    .map((v: any) => '`' + v.name + '`')
+  const refusal = 0 === required.length ? '' : `
+Construction refuses \`options\` without a \`server\` value for ${required.join(' or ')}:
+\`new\` returns an \`Err\` holding a \`${model.const.Name}Error\` whose \`code\` is
+\`server_var_required\` and whose message names the variable.
+`
 
   Content(`### ${model.const.Name}SDK
 
 \`\`\`rust
 use ${rustcrate}::{${model.const.Name}SDK, Value};
 
-let client = ${model.const.Name}SDK::new(options);
+let client = ${model.const.Name}SDK::new(options).expect("valid client options");
 \`\`\`
 
 Creates a new SDK client. \`options\` is a \`Value\` map (\`Value::Noval\` for
@@ -49,12 +57,7 @@ none) carrying any of the following keys:
 
 | Option | Value type | Description |
 | --- | --- | --- |
-${apikeyOptionRow}| \`base\` | \`string\` | Base URL of the API server. |
-| \`prefix\` | \`string\` | URL path prefix prepended to all requests. |
-| \`suffix\` | \`string\` | URL path suffix appended to all requests. |
-| \`feature\` | \`map\` | Feature activation flags. |
-| \`system\` | \`map\` | System overrides (e.g. a custom fetcher). |
-
+${optionRows}${refusal}
 ### test_sdk
 
 \`\`\`rust
@@ -78,27 +81,24 @@ Creates a test-mode client with mock transport. Both arguments may be
 
   each(entityList, (ent: any) => {
     const article = /^[aeiou]/i.test(ent.Name) ? 'an' : 'a'
-    Content(`| \`${rustMethodName(ent.name)}\` | \`(entopts: Value) -> Rc<${ent.Name}Entity>\` | Create ${article} ${ent.Name} entity instance. |
+    Content(`| \`${rustMethodName(ent.name)}\` | \`(entopts: Value) -> Rc<${entityClassName(ent, entityCollection(model))}>\` | Create ${article} ${ent.Name} entity instance. |
 `)
   })
 
   Content(`
 ### Entity interface
 
-All entities share the same interface.
-
-| Method | Signature | Description |
+${0 === entityList.length ? '' : (sameOps ? 'All entities share the same interface.' :
+  'Each entity has only the operations its model declares; see its section below.') + '\n\n'}| Method | Signature | Description |
 | --- | --- | --- |
-${opRows}
-| \`data\` | \`(args: Option<&Value>) -> Value\` | Get entity data (pass \`Some(&map)\` to set). |
+${opRows}| \`data\` | \`(args: Option<&Value>) -> Value\` | Get entity data (pass \`Some(&map)\` to set). |
 | \`matchv\` | \`(args: Option<&Value>) -> Value\` | Get entity match criteria (pass \`Some(&map)\` to set). |
 | \`make\` | \`() -> Rc<dyn Entity>\` | Create a new instance with the same options. |
 | \`get_name\` | \`() -> String\` | Return the entity name. |
 
 ### Result shape
 
-Entity operations return the entity on \`Ok\`, and \`list\` a \`Vec\` of
-entities, one per record; \`data(None)\` reads an entity's record. \`Err\` is
+Entity operations return the entity on \`Ok\`${listResult}; \`data(None)\` reads an entity's record. \`Err\` is
 the branded error. The operations are methods of the
 \`${model.const.Name}EntityBase\` trait and \`data\` of the \`Entity\` trait, so
 import both.
@@ -118,34 +118,32 @@ On error, \`ok\` is \`false\` and \`err\` carries the error value.
 `)
 
   // Entities summary
-  Content(`### Entities
+  if (0 < entityList.length) {
+    Content(`### Entities
 
 `)
+  }
   each(entityList, (ent: any) => {
     const fields = Object.values(ent.fields || {})
-    const opnames = Object.keys(ent.op || {})
-    const ops = ent.op || {}
-    const points = each(ops).map((op: any) =>
-      op.points ? each(op.points) : []
-    ).flat()
-    const path = points.length > 0 ? (points[0] as any).o || '' : ''
+    const opnames = entityOps(ent)
+    const path = entityPath(ent)
 
     Content(`#### ${ent.Name}
 
-| Field | Description |
+${0 === fields.length ? '' : `| Field | Description |
 | --- | --- |
-`)
+`}`)
     each(fields, (field: any) => {
-      Content(`| \`${field.n}\` | ${field.sh || ''} |
+      Content(`| \`${field.n}\` | ${fact(model.main[KIT], 'field')[ent.name]?.[field.n]?.desc.cell ?? ''} |
 `)
     })
 
     Content(`
-Operations: ${opnames.map((n: string) => n.charAt(0).toUpperCase() + n.slice(1)).join(', ')}.
+${0 === opnames.length ? '' : `Operations: ${opnames.join(', ')}.
 
-API path: \`${path}\`
+`}${'' === path ? '' : `API path: \`${path}\`
 
-`)
+`}`)
   })
 
 })

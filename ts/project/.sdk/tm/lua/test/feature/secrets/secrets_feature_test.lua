@@ -263,6 +263,13 @@ end
 
 describe("secrets", function()
 
+  -- Read from the config, never from a probe: an SDK whose config declares no
+  -- auth places no credential, and these tests assert on the one it places.
+  if nil == (require("config_shared")().options or {}).auth then
+    pending("this SDK's config declares no auth, so it places no credential")
+    return
+  end
+
   -- The feature-inactive baseline: bit-identical behaviour.
   describe("inactive", function()
 

@@ -59,8 +59,6 @@ import (
 	"fmt"
 	"os"
 	"testing"
-
-	sdk "GOMODULE"
 )
 
 type envelopeCase struct {
@@ -77,7 +75,7 @@ func TestEnvelopeProbe(t *testing.T) {
 		t.Fatal(err)
 	}
 	for i, c := range cases {
-		client := sdk.NewDemoSDK(map[string]any{"base": fmt.Sprintf("%s/c%d", os.Getenv("ENVELOPE_BASE"), i)})
+		client := newClient(map[string]any{"base": fmt.Sprintf("%s/c%d", os.Getenv("ENVELOPE_BASE"), i)})
 		res, err := client.Cat(nil).List(map[string]any{}, nil)
 		if err != nil {
 			fmt.Printf("envelope-probe: %s: %v\n", c.Name, err)

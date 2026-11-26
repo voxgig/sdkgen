@@ -23,7 +23,7 @@ use Scalar::Util ();
 
 use ProjectNameSDK;
 
-my $TEST_JSON = Cwd::abs_path("$FindBin::Bin/../../.sdk/test/test.json");
+my $TEST_JSON = Cwd::abs_path("$FindBin::Bin/../SDKREL/.sdk/test/test.json");
 
 unless (defined $TEST_JSON && -e $TEST_JSON) {
   plan skip_all => 'test.json corpus not found';

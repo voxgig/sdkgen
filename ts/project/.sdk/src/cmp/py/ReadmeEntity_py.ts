@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, entityIdField, safeVarName, exampleVarName, opNeedsAction, listMatchArg, matchExampleItems, litString, requestExampleItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, entityIdField, safeVarName, exampleVarName, entityOps, listMatchArg, matchExampleItems, litString, requestExampleItems, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -48,9 +48,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 `)
 
   publishedEntities.map((entity: any) => {
-    const opnames = Object.keys(entity.op || {})
-    // An op that needs an action has no plain call to show.
-    const callable = opnames.filter((o: string) => !opNeedsAction(entity.op[o]))
+    const opnames = entityOps(entity)
     const fields = Object.values(entity.fields || {})
     // Model-driven id key: null when this entity has no id-like field.
     const idF = entityIdField(entity)
@@ -63,8 +61,8 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 
 `)
 
-    if (entity.short) {
-      Content(`${entity.short}
+    if (fact(entity, 'desc').inline) {
+      Content(`${fact(entity, 'desc').inline}
 
 `)
     }
@@ -99,8 +97,8 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 `)
 
       each(fields, (field: any) => {
-        const desc = field.sh || ''
-        Content(`| \`${field.n}\` | \`${canonToType(field.t, target.name)}\` | ${desc} |
+        const desc = fact(model.main[KIT], 'field')[entity.name]?.[field.n]?.desc.cell ?? ''
+        Content(`| \`${field.n}\` | \`${canonToType(field.t, 'py').replace(/\|/g, '\\|')}\` | ${desc} |
 `)
       })
 
@@ -108,7 +106,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 `)
     }
 
-    if (callable.includes('load')) {
+    if (opnames.includes('load')) {
       // The id key plus every REQUIRED match key (parent path params like
       // page_id) — the same shape the runtime resolves path params from, so
       // the example always works.
@@ -129,7 +127,7 @@ ${eVar} = client.${entity.Name}().load(${loadArg})
 `)
     }
 
-    if (callable.includes('list')) {
+    if (opnames.includes('list')) {
       Content(`#### Example: List
 
 \`\`\`python
@@ -139,7 +137,7 @@ ${eVar}s = client.${entity.Name}().list(${listMatchArg('py', entity)})
 `)
     }
 
-    if (callable.includes('create')) {
+    if (opnames.includes('create')) {
       // Members come from the SAME shape the runtime validates
       // (opRequestShape): every required member must appear — including a
       // required id and parent keys like page_id — with a real, executable
@@ -153,7 +151,7 @@ ${eVar}s = client.${entity.Name}().list(${listMatchArg('py', entity)})
 ${eVar} = client.${entity.Name}().create({
 `)
       createItems.map((it: any) => {
-        Content(`    ${litString('py', it.name)}: ${pyLit(it.type, 'example_' + it.name)},  # ${canonToType(it.type, target.name)}
+        Content(`    ${litString('py', it.name)}: ${pyLit(it.type, 'example_' + it.name)},  # ${canonToType(it.type, 'py')}
 `)
       })
       Content(`})

@@ -2,7 +2,8 @@
 import * as Path from 'node:path'
 
 import {
-  cmp, each, deriveEntityNames, entityIdField, mcpTools, matchArg, dataArg, idLiteral,
+  cmp, each, deriveEntityNames, entityIdField, mcpTools, matchArg, listMatchArg, dataArg, idLiteral,
+  consumedTarget, fact, targetFeatures,
   File, Content, Fragment, Slot, goModule, goVersion, packageVersion, MCP_WRITE_OPS
 } from '@voxgig/sdkgen'
 
@@ -20,8 +21,8 @@ import {
 
 const MCP_GO_SDK_VERSION = 'v1.6.0'
 
-// go.sum entries for MCP_GO_SDK_VERSION and its transitive deps. The sibling
-// SDK dep needs no entry (path replace). Deterministic because the version
+// go.sum entries for MCP_GO_SDK_VERSION and its transitive deps. The Go SDK
+// dep needs no entry (path replace). Deterministic because the version
 // is pinned above — regenerate with `go mod tidy` and update BOTH constants
 // together when bumping MCP_GO_SDK_VERSION.
 const MCP_GO_SDK_GOSUM = `github.com/golang-jwt/jwt/v5 v5.3.1 h1:kYf81DTWFe7t+1VvL7eS+jKFVWaUnK9cB1qbwn63YCY=
@@ -47,20 +48,23 @@ golang.org/x/tools v0.42.0/go.mod h1:Ma6lCIwGZvHK6XtgbswSoWroEkhugApmsXyrUmBhfr0
 `
 
 
-// What each tool takes and says. `field` is the argument the operation reads.
-const TOOL_SPEC: Record<string, {
+type ToolSpec = {
   type: string, field: string, key: string, optional: boolean, help: string,
   summary: string, verb: string, returns: string, annotations: string,
-}> = {
+}
+
+// What each tool takes and says. `field` is the argument the operation reads.
+// The list, load and remove help depends on the entities a tool serves; see specOf.
+const TOOL_SPEC: Record<string, ToolSpec> = {
   list: {
     type: 'ListArgs', field: 'Query', key: 'query', optional: true,
-    help: 'optional filter map; omit it for the first page',
-    summary: 'first page of records', verb: 'List records from',
-    returns: 'the first page of records', annotations: 'ReadOnlyHint: true',
+    help: 'optional filter map',
+    summary: 'records', verb: 'List records from',
+    returns: 'the records', annotations: 'ReadOnlyHint: true',
   },
   load: {
     type: 'LoadArgs', field: 'Query', key: 'query', optional: false,
-    help: 'match map naming the record, such as {"id":1}',
+    help: 'match map naming the record',
     summary: 'one record', verb: 'Load one record from',
     returns: 'the record', annotations: 'ReadOnlyHint: true',
   },
@@ -84,10 +88,41 @@ const TOOL_SPEC: Record<string, {
   },
   remove: {
     type: 'RemoveArgs', field: 'Query', key: 'query', optional: false,
-    help: 'match map naming the record, such as {"id":1}',
+    help: 'match map naming the record',
     summary: 'delete a record', verb: 'Remove a record from',
     returns: 'the removed record', annotations: 'DestructiveHint: hint(true)',
   },
+}
+
+
+// A tool's spec for the entities it serves: a list says which of them need a
+// parent, and the first page only when the SDK pages; a load or remove shows
+// the match its entities share, if they share one.
+function specOf(tool: McpTool, paging: boolean): ToolSpec {
+  const spec = { ...TOOL_SPEC[tool.op] }
+  const names = entityNames(tool)
+  if ('list' === tool.op) {
+    const parented = tool.entities.filter((ent: any) => '{}' !== listMatchArg('json', ent))
+      .map((ent: any) => String(ent.name).toLowerCase())
+    const rest = paging ? 'omit it for the first page' : 'omit it to list without a filter'
+    spec.optional = parented.length < names.length
+    spec.help = 0 === parented.length ? 'optional filter map; ' + rest :
+      !spec.optional ? 'filter map naming the parent the records are listed under' :
+        'filter map; ' + phrase(parented) + (1 < parented.length ? ' need' : ' needs') +
+        ' one naming the parent, and for the others ' + rest
+    spec.summary = paging ? 'first page of records' : 'records'
+    spec.returns = paging ? 'the first page of records' : 'the records'
+  }
+  else if ('load' === tool.op || 'remove' === tool.op) {
+    const matches = [...new Set(tool.entities.map((ent: any) => {
+      const idF = entityIdField(ent)
+      return JSON.stringify(JSON.parse(matchArg('json', ent, tool.op, idF, idLiteral(ent, tool.op, idF))))
+    }))]
+    spec.help = 1 !== matches.length ? spec.help + ' by its identifying fields' :
+      '{}' === matches[0] ? 'empty match map, as the record needs no naming' :
+        spec.help + ', such as ' + matches[0]
+  }
+  return spec
 }
 
 
@@ -122,12 +157,62 @@ function tagText(text: string): string {
 }
 
 
+type Need = { kind: string, name: string, value: string, note: string, row: string, help: string }
+
+// What a run reads from the environment beyond the base URL: the credential
+// and each server variable the API requires, with an example value each.
+function environment(model: any): Need[] {
+  const kit = model.main[KIT]
+  const auth = fact(kit, 'auth')
+  const env = fact(kit, 'env')
+  return [
+    ...(auth.apikey ? [{ kind: 'apikey', name: env.apikey, value: 'apikey_xxx', note: 'API key',
+      row: 'API key sent with every request.', help: 'api key' }] : []),
+    ...(auth.secret ? [{ kind: 'secret', name: env.secret, value: 'secret_xxx', note: 'API secret',
+      row: 'Secret sent with the API key, as HTTP Basic credentials.', help: 'api secret' }] : []),
+    ...(fact(kit, 'server') as any[]).filter((v: any) => v.required).map((v: any) => ({
+      kind: 'server', name: env.server[v.name],
+      value: 'your-' + v.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+      note: `the ${v.name} of the API URL`,
+      row: `The \`${v.name}\` variable of the API's server URL, which has no default.`,
+      help: `${v.name} in the url`,
+    })),
+  ]
+}
+
+
+// Go that reads the credential and the server variables into the SDK options.
+function readOptions(model: any): string {
+  const kit = model.main[KIT]
+  const env = fact(kit, 'env')
+  const set = (key: string, val: string) =>
+    `\t\tif opts == nil {\n\t\t\topts = map[string]any{}\n\t\t}\n\t\topts[${JSON.stringify(key)}] = ${val}\n`
+  const servers = (fact(kit, 'server') as any[]).filter((v: any) => v.required)
+  const apikey = !fact(kit, 'auth').apikey ? '' :
+    `\tif apikey := os.Getenv(${JSON.stringify(env.apikey)}); apikey != "" {\n` +
+    `\t\topts = map[string]any{"apikey": apikey}\n\t}\n`
+  const secret = !fact(kit, 'auth').secret ? '' :
+    `\tif secret := os.Getenv(${JSON.stringify(env.secret)}); secret != "" {\n` +
+    set('secret', 'secret') + '\t}\n'
+  const vars = 0 === servers.length ? '' :
+    '\tserverVars := map[string]any{}\n' +
+    `\tfor name, key := range map[string]string{${servers.map((v: any) =>
+      JSON.stringify(v.name) + ': ' + JSON.stringify(env.server[v.name])).join(', ')}} {\n` +
+    '\t\tif val := os.Getenv(key); val != "" {\n\t\t\tserverVars[name] = val\n\t\t}\n\t}\n' +
+    '\tif 0 < len(serverVars) {\n' + set('server', 'serverVars') + '\t}\n'
+  return apikey + secret + vars
+}
+
+
 const Main = cmp(function Main(props: any) {
   const { target } = props
   const { model } = props.ctx$
 
-  const sdkModule = goModule(model, 'go')
+  const sdk = consumedTarget(model, target, props.ctx$.stdrep.SDKREL)
+  const sdkModule = goModule(model, sdk.name)
   const mcpModule = goModule(model, target.name)
+  // What `go build` names the binary when no -o is given.
+  const built = Path.posix.basename(mcpModule)
 
   const entityMap: any = getModelPath(model, `main.${KIT}.entity`)
   deriveEntityNames(entityMap)
@@ -138,12 +223,13 @@ const Main = cmp(function Main(props: any) {
   const slugLower = model.name.toLowerCase()
   const tools = mcpTools(model, target.name)
   const write = true === target.tool?.write
+  const paging = null != targetFeatures(model, sdk.name).paging
 
   const FRAGMENT = Path.normalize(__dirname + '/../../../src/cmp/go-mcp/fragment')
 
   File({ name: '.gitignore' }, () => Content(`/dist/
 /${model.name}-mcp
-/go-mcp
+/${built}
 `))
 
   const bin = `${model.name}-mcp`
@@ -151,28 +237,59 @@ const Main = cmp(function Main(props: any) {
   const toolNoun = 1 === tools.length ? 'tool' : 'tools'
   const first = tools[0]
 
-  const projUpper = String(model.name).toUpperCase().replace(/[^A-Z0-9]/g, '_')
-  const apiKeyEnv = projUpper + '_APIKEY'
-  const baseEnv = projUpper + '_BASE'
+  const env = fact(model.main[KIT], 'env')
+  const baseEnv = env.base
+  const needs = environment(model)
+  const keyed = needs.some((need) => 'apikey' === need.kind)
+  const servered = needs.some((need) => 'server' === need.kind)
 
   const toggle = `\`main: kit: target: '${target.name}': tool: write: true\``
   const writeOps = tools.map((tool) => tool.op).filter((op) => MCP_WRITE_OPS.includes(op))
   const writeNames = phrase(writeOps)
+  // The write tools the toggle would add, which the model may have none of.
+  const writable = mcpTools(model, target.name, true).map((tool) => tool.op)
+    .filter((op) => MCP_WRITE_OPS.includes(op))
+  const writableNames = phrase(writable)
   const writeText = 0 < writeOps.length ?
     `${writeNames.charAt(0).toUpperCase() + writeNames.slice(1)} ${1 < writeOps.length ? 'are' : 'is'} on, as the SDK's model sets
 ${toggle}. Each tool carries the MCP hints an agent host reads before calling
-it, listed in the reference below.` : write ?
+it, listed in the reference below.` : 0 === writable.length ? (write ?
       `The server only reads: the SDK's model sets ${toggle}, but no entity
 has a create, update, patch or remove a plain call runs.` :
-      `The server only reads. Create, update, patch and remove become tools too when the
-SDK's own model sets ${toggle}; they are off by default, as an agent calling
-them changes the API's data.`
+      'The server only reads: no entity has a create, update, patch or remove a plain call runs.') :
+      `The server only reads. ${writableNames.charAt(0).toUpperCase() + writableNames.slice(1)} ${1 < writable.length ?
+        'become tools' : 'becomes a tool'} too when the
+SDK's own model sets ${toggle}; ${1 < writable.length ? 'they are' : 'it is'} off by default, as an agent calling
+${1 < writable.length ? 'them' : 'it'} changes the API's data.`
+
+  const toggleHowto = 0 === writable.length ? '' : `### ${write ? 'Turn the write tools off' : 'Turn on the write tools'}
+
+In the SDK's own model (\`.sdk/model/sdk.aontu\`), then regenerate:
+
+\`\`\`
+main: kit: target: '${target.name}': tool: write: ${write ? 'false' : 'true'}
+\`\`\`
+
+`
+
+  const goSdk = '' !== sdk.dir ? `the sibling Go SDK at \`${sdk.path}\`` :
+    sdk.away ? 'the Go SDK in ' + ('' === sdk.url ? 'its own repository' :
+      `[its own repository](${sdk.url})`) : `the Go SDK at \`${sdk.path}\``
+  const here = 'folder' === fact(target, 'place') ? `this \`${target.name}/\` directory` :
+    'the repository root'
+  const source = 'external' === fact(target, 'place') ? 'the SDK project' : 'this repo'
+
+  const exports = [...needs.map((need) => [`export ${need.name}=${need.value}`, need.note]),
+    [`export ${baseEnv}=https://api.example.com`,
+      servered ? 'or: the whole API base URL' : 'optional: override the API base URL']]
+  const width = Math.max(...exports.map(([line]) => line.length)) + 1
+  const exportLines = exports.map(([line, note]) => line.padEnd(width) + ' # ' + note).join('\n')
 
   const exampleCalls = tools.map((tool) =>
-    `// ${tool.name}: ${TOOL_SPEC[tool.op].summary}\n${toolExample(tool)}`).join('\n\n')
+    `// ${tool.name}: ${specOf(tool, paging).summary}\n${toolExample(tool)}`).join('\n\n')
 
   const howtoCalls = tools.map((tool) => {
-    const spec = TOOL_SPEC[tool.op]
+    const spec = specOf(tool, paging)
     return `### Call the \`${tool.name}\` tool
 
 Args: \`entity\` (required), \`${spec.key}\` (${spec.optional ? 'optional' : 'required'}: ${spec.help}).
@@ -185,7 +302,7 @@ ${toolExample(tool)}
   }).join('\n')
 
   const toolRows = tools.map((tool) => {
-    const spec = TOOL_SPEC[tool.op]
+    const spec = specOf(tool, paging)
     const hints = 'ReadOnlyHint: true' === spec.annotations ? 'read-only' :
       'DestructiveHint: hint(false)' === spec.annotations ? 'additive' : 'destructive'
     return `| \`${tool.name}\` | \`entity\`, \`${spec.key}\` (${spec.optional ? 'optional' : 'required'} map) | ${spec.returns.charAt(0).toUpperCase() + spec.returns.slice(1)} as JSON | ${hints} |`
@@ -203,10 +320,24 @@ ${exampleCalls}
 
 `
 
+  // The tutorial's steps, numbered by what the API needs set first.
+  const tutorialEnv = 0 === needs.length ? '' : `2. **Set ${phrase([
+    ...(keyed ? ['your API key'] : []),
+    ...(needs.some((need) => 'secret' === need.kind) ? ['secret'] : []),
+    ...(servered ? ['the server variables'] : []),
+  ])}:**
+
+   \`\`\`sh
+${needs.map((need) => `   export ${need.name}=${need.value}`).join('\n')}
+   \`\`\`
+
+`
+  const installStep = 0 === needs.length ? 2 : 3
+
   const restart = null == first ?
-    `4. **Restart Claude Code.** The server registers no tools for this SDK, so
+    `${installStep + 1}. **Restart Claude Code.** The server registers no tools for this SDK, so
    none appear.` :
-    `4. **Restart Claude Code.** The ${toolNames} ${toolNoun} now appear in new
+    `${installStep + 1}. **Restart Claude Code.** The ${toolNames} ${toolNoun} now appear in new
    sessions. Ask the agent to *"${first.op} ${entityNames(first)[0]} using ${slugLower}"*
    and it calls \`${first.name}\` with \`${toolExample(first).replace(/ /g, '')}\`.`
 
@@ -265,8 +396,8 @@ curl -sN -X POST http://localhost:18080 \\
 [MCP](https://modelcontextprotocol.io) server exposing the ${model.Name} SDK as
 ${0 === tools.length ? 'no agent tools, as no entity has an operation a plain call runs,' :
   tools.length + ' agent ' + toolNoun + ', ' + toolNames + ','} built on the
-[official Go MCP SDK](https://github.com/modelcontextprotocol/go-sdk) and the
-sibling Go SDK at \`../go\`. Runs over **stdio** (default, for spawnable installs)
+[official Go MCP SDK](https://github.com/modelcontextprotocol/go-sdk) and
+${goSdk}. Runs over **stdio** (default, for spawnable installs)
 or **streamable HTTP** (one shared server for several agents).
 
 ${writeText}
@@ -277,14 +408,14 @@ ${writeText}
 # 1. Build a native binary (-> dist/<os>-<arch>/${bin})
 make build
 
-# 2. Provide credentials via the environment
-export ${apiKeyEnv}=apikey_xxx
+${0 === needs.length ? '' : `# 2. ${keyed ? 'Provide credentials' : 'Configure it'} via the environment
+${needs.map((need) => `export ${need.name}=${need.value}`).join('\n')}
 
-# 3a. Install into Claude Code over stdio (most common)
+`}# ${installStep}a. Install into Claude Code over stdio (most common)
 claude mcp add --scope user ${slugLower} \\
   -- /absolute/path/to/${bin} -transport stdio
 
-# 3b. …or run a shared HTTP server instead
+# ${installStep}b. …or run a shared HTTP server instead
 ./${bin} -transport http -addr :8080
 \`\`\`
 
@@ -294,19 +425,13 @@ ${callText}> The rest of this guide follows the [Diátaxis](https://diataxis.fr)
 
 ## Tutorial: install and call a tool
 
-1. **Build** the server from this \`go-mcp/\` directory:
+1. **Build** the server from ${here}:
 
    \`\`\`sh
    make build          # -> dist/<os>-<arch>/${bin}
    \`\`\`
 
-2. **Set your API key:**
-
-   \`\`\`sh
-   export ${apiKeyEnv}=apikey_xxx
-   \`\`\`
-
-3. **Install it into Claude Code** (stdio transport):
+${tutorialEnv}${installStep}. **Install it into Claude Code** (stdio transport):
 
    \`\`\`sh
    claude mcp add --scope user ${slugLower} \\
@@ -317,17 +442,16 @@ ${restart}
 
 ## How-to guides
 
-### Authenticate and choose an environment
+### ${keyed ? 'Authenticate and choose' : 'Choose'} an environment
 
 Configuration is read from the environment — nothing is written to disk:
 
 \`\`\`sh
-export ${apiKeyEnv}=apikey_xxx             # API key
-export ${baseEnv}=https://api.example.com  # optional: override the API base URL
+${exportLines}
 \`\`\`
 
-Set these in the shell that launches the server (or in the \`claude mcp add\`
-environment) so every tool call is authenticated.
+Set ${1 < exports.length ? 'these' : 'it'} in the shell that launches the server (or in the \`claude mcp add\`
+environment) so every tool call ${keyed ? 'is authenticated' : 'reaches the API'}.
 
 ### Run as a shared HTTP server
 
@@ -339,15 +463,7 @@ Streamable HTTP lets several agents share one running process; stdio (the
 default) spawns a fresh process per client.
 
 ${howtoCalls}
-### ${write ? 'Turn the write tools off' : 'Turn on the write tools'}
-
-In the SDK's own model (\`.sdk/model/sdk.aontu\`), then regenerate:
-
-\`\`\`
-main: kit: target: '${target.name}': tool: write: ${write ? 'false' : 'true'}
-\`\`\`
-
-### Cross-compile release binaries
+${toggleHowto}### Cross-compile release binaries
 
 \`\`\`sh
 make build       # native binary for this machine
@@ -367,8 +483,9 @@ ${toolRef}### Transports & flags
 
 | Variable | Purpose |
 |----------|---------|
-| \`${apiKeyEnv}\` | API key sent with every request. |
-| \`${baseEnv}\` | Optional override of the API base URL. |
+${needs.map((need) => `| \`${need.name}\` | ${need.row} |\n`).join('')}| \`${baseEnv}\` | ${servered ?
+    'The whole API base URL, in place of the server variables.' :
+    'Optional override of the API base URL.'} |
 ${smoke}
 ## Explanation
 
@@ -376,7 +493,7 @@ ${smoke}
 
 \`main.go\` builds the SDK client (configured from the environment) and registers
 one tool per operation the SDK's entities have. Each dispatches on the
-\`entity\` argument to the matching entity in the sibling Go SDK at \`../go\`,
+\`entity\` argument to the matching entity in ${goSdk},
 calls its operation, unwraps the \`Entity\` wrappers to plain data, and returns
 it as pretty-printed JSON.
 
@@ -395,9 +512,9 @@ same list the tool is registered for.
 
 ## Generated by
 
-sdkgen \`go-mcp\` target. See the target source under \`.sdk/src/cmp/go-mcp/\` in
-this repo, or upstream at
-\`github.com/voxgig/sdkgen/project/.sdk/src/cmp/go-mcp/\`.
+sdkgen \`${target.name}\` target. See the target source under \`.sdk/src/cmp/${target.name}/\` in
+${source}, or upstream at
+\`github.com/voxgig/sdkgen/project/.sdk/src/cmp/${fact(target, 'origin')}/\`.
 `))
 
   File({ name: 'go.mod' }, () => Content(`module ${mcpModule}
@@ -417,12 +534,12 @@ require (
 	golang.org/x/sys v0.41.0 // indirect
 )
 
-replace ${sdkModule} => ../go
+replace ${sdkModule} => ${sdk.path}
 `))
 
   File({ name: 'go.sum' }, () => Content(MCP_GO_SDK_GOSUM))
 
-  File({ name: 'Makefile' }, () => Content(`# ${model.name}-mcp build. GENERATED by @voxgig/sdkgen go-mcp target.
+  File({ name: 'Makefile' }, () => Content(`# ${model.name}-mcp build. GENERATED by @voxgig/sdkgen ${target.name} target.
 BINARY := ${model.name}-mcp
 DIST := dist
 GOOS := $(shell go env GOOS)
@@ -446,7 +563,7 @@ build-all: clean
 \tGOOS=windows GOARCH=arm64 go build -o $(DIST)/windows-arm64/$(BINARY).exe .
 
 clean:
-\trm -rf $(DIST) $(BINARY) go-mcp
+\trm -rf $(DIST) $(BINARY) ${built}
 `))
 
   File({ name: 'main.go' }, () => {
@@ -456,8 +573,8 @@ clean:
         replace: {
           ...props.ctx$.stdrep,
           GOMODULE: sdkModule,
-          APIKEYENVVAR: String(model.name).toUpperCase().replace(/[^A-Z0-9]/g, '_') + '_APIKEY',
-          BASEENVVAR: String(model.name).toUpperCase().replace(/[^A-Z0-9]/g, '_') + '_BASE',
+          BASEENVVAR: env.base,
+          '/[ \\t]*\\/\\/ #Options\\n/': () => Content(readOptions(model)),
         },
       },
       () => {
@@ -479,7 +596,7 @@ clean:
       },
       () => {
         Slot({ name: 'toolArgs' }, () => Content(tools.map((tool) => {
-          const spec = TOOL_SPEC[tool.op]
+          const spec = specOf(tool, paging)
           const json = spec.key + (spec.optional ? ',omitempty' : '')
           return `// ${spec.type} is what an agent sends to ${tool.name}.
 type ${spec.type} struct {
@@ -488,7 +605,7 @@ type ${spec.type} struct {
 }`
         }).join('\n\n')))
         Slot({ name: 'toolRegistrations' }, () => Content(tools.map((tool) => {
-          const spec = TOOL_SPEC[tool.op]
+          const spec = specOf(tool, paging)
           return `	mcp.AddTool(server, &mcp.Tool{
 		Name:        ${JSON.stringify(tool.name)},
 		Description: ${JSON.stringify(spec.verb + ' ' + model.Name + '. Args: entity, ' + spec.key + ' (' + spec.help + '). Returns ' + spec.returns + ' as JSON.')},

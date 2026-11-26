@@ -739,8 +739,8 @@ describe('guardFlowSteps — a generated flow test makes only calls the runtime 
   })
 
   test('a step whose op no generated test calls is switched off and reported', () => {
-    const m = model({ patch: { points: [pt('/moon')] }, list: { points: [pt('/moon')] } },
-      [{ o: 'patch' }, { o: 'list' }])
+    const m = model({ command: { points: [pt('/moon')] }, list: { points: [pt('/moon')] } },
+      [{ o: 'command' }, { o: 'list' }])
     const sink: any[] = []
     const log = { warn: (e: any) => sink.push(e) }
     deepStrictEqual(guardFlowSteps(m, log), [])
@@ -748,7 +748,17 @@ describe('guardFlowSteps — a generated flow test makes only calls the runtime 
     strictEqual(m.main.kit.flow.BasicMoonFlow.step[0].ungenerated, true)
     strictEqual(sink.length, 1)
     strictEqual(sink[0].point, 'flow-step-ungenerated')
-    deepStrictEqual(sink[0].steps, ['BasicMoonFlow.0:patch'])
+    deepStrictEqual(sink[0].steps, ['BasicMoonFlow.0:command'])
+    ok(sink[0].note.includes('create, list, load, update, patch, remove'), sink[0].note)
+  })
+
+  test('a patch step is called as an update step is', () => {
+    const m = model({ create: { points: [pt('/moon')] }, patch: { points: [pt('/moon/{id}')] } },
+      [{ o: 'create' }, { o: 'patch' }])
+    const sink: any[] = []
+    deepStrictEqual(guardFlowSteps(m, { warn: (e: any) => sink.push(e) }), [])
+    deepStrictEqual(m.main.kit.flow.BasicMoonFlow.step.map((s: any) => s.a), [undefined, undefined])
+    deepStrictEqual(sink, [])
   })
 
   test('a check that a record is gone is switched off with the remove it follows', () => {

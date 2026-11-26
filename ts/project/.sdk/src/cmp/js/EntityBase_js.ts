@@ -14,7 +14,7 @@ const EntityBase = cmp(async function EntityBase(props: any) {
   const { target } = props
   const { model } = props.ctx$
 
-  File({ name: model.const.Name + 'EntityBase.' + target.name }, () => {
+  File({ name: model.const.Name + 'EntityBase.' + target.ext }, () => {
 
     Fragment(
       {

@@ -5,8 +5,8 @@ use crate::core::error::ProjectNameError;
 use crate::core::helpers::{get_bool, get_str, getp, setp, to_int};
 use crate::utility::voxgigstruct::Value;
 
-/// Stream producer attached by the streaming feature: yields the result
-/// items (or chunked batches) with configured pacing applied.
+/// Stream producer, attached by the streaming feature when it is active: it
+/// yields the result items (or chunked batches) at the configured pace.
 pub type StreamFn = Rc<dyn Fn() -> Vec<Value>>;
 
 pub struct SdkResult {
@@ -19,8 +19,8 @@ pub struct SdkResult {
     pub resdata: Value,
     pub resmatch: Value,
 
-    // Feature extensions: pagination signals (paging feature) and the
-    // incremental item iterator (streaming feature).
+    // Feature extensions, set only while their feature is active: pagination
+    // signals (paging) and the incremental item iterator (streaming).
     pub paging: Value,
     pub streaming: bool,
     pub stream: Option<StreamFn>,

@@ -62,7 +62,8 @@ function makeError(ctx: Context, err?: any) {
 
   ctx.ctrl.err = err
 
-  // Closes error paths that never reach PreDone (e.g. an rbac short-circuit).
+  // Closes error paths that never reach PreDone (e.g. a PrePoint
+  // short-circuit).
   if (null != ctx.client && null != ctx.utility &&
     'function' === typeof ctx.utility.featureHook) {
     ctx.unexpectedFired = true

@@ -6,11 +6,8 @@ import {
   configDefinition,
   configReprSetting,
   each,
-  isAuthActive,
   isConfigData,
-  resolveAuthIn,
-  resolveAuthName,
-  resolveAuthPrefix,
+  templateSafe,
 } from '@voxgig/sdkgen'
 
 
@@ -44,17 +41,8 @@ const Config = cmp(async function Config(props: any) {
 
   const model: Model = ctx$.model
 
-  const { def: config, json: baseJson } = configDefinition(model, target.name)
-
-  const authIn = resolveAuthIn(model)
-  const authName = resolveAuthName(model)
-  const configAuth = config?.options?.auth
-  if (null != configAuth) {
-    if ('header' !== authIn) { configAuth.in = authIn }
-    if ('Authorization' !== authName) { configAuth.name = authName }
-  }
-  const configJson = JSON.stringify(config)
-  assertHeaderIdentity(configJson, baseJson, authIn, authName)
+  const { def: config, json } = configDefinition(model, target.name)
+  const configJson = templateSafe('json', json)
 
   const asData = isConfigData(configJson, configReprSetting(model))
 
@@ -102,19 +90,10 @@ ${wireBlock}`)
   (:require [voxgig.struct :as vs]${wireRequires}))
 
 (defn make-config []
-  ${formatCljValue(config, 1)})
+  ${templateSafe('clojure', formatCljValue(config, 1))})
 ${wireBlock}`)
   })
 })
-
-
-function assertHeaderIdentity(now: string, before: string, authIn: string, authName: string) {
-  const defaults = 'header' === authIn && 'Authorization' === authName
-  if (defaults && now !== before) {
-    throw new Error('Config_clojure: the auth overlay changed a ' +
-      'header/Authorization config, which must regenerate byte-identical')
-  }
-}
 
 
 export {

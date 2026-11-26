@@ -1,8 +1,9 @@
-// Cross-language gotcha verification (entity-agnostic). Each test targets a
-// specific trap called out in the porting playbook.
+// Traps a port of the pipeline can fall into (entity-agnostic), one section
+// per trap, numbered as the tests are named.
 
 const std = @import("std");
 const sdk = @import("sdk");
+const fh = @import("fh.zig");
 const h = sdk.h;
 const Value = sdk.Value;
 const testing = std.testing;
@@ -99,7 +100,7 @@ test "gotcha8: custom utility callable survives" {
     probe_calls = 0;
     const fn_val = h.callable(@ptrCast(&probe_dummy), probeCall);
     const opts = h.jo(&.{.{ "utility", h.jo(&.{.{ "probe", fn_val }}) }});
-    const client = sdk.SDK.new(opts);
+    const client = fh.live_client(opts);
     const stored = h.getp(client.sdkUtility.custom, "probe");
     try testing.expect(stored == .function);
     const r = h.call_vfn(stored, h.vstr("x"));
@@ -121,7 +122,7 @@ test "gotcha8: test_sdk keeps root sdkopts" {
 // ---- gotcha #3: config is N-feature-safe (0 and N features) -------------
 
 test "gotcha3: zero features" {
-    const client = sdk.new();
+    const client = fh.live_client(vnull());
     try testing.expect(std.mem.eql(u8, client.mode, "live"));
 }
 
@@ -131,14 +132,14 @@ test "gotcha3: many features" {
         .{ "cache", h.jo(&.{.{ "active", h.vbool(true) }}) },
         .{ "timeout", h.jo(&.{.{ "active", h.vbool(true) }}) },
     }) }});
-    const client = sdk.SDK.new(opts);
+    const client = fh.live_client(opts);
     try testing.expect(client.features.items.len >= 3);
 }
 
 // ---- gotcha #2: make_point surfaces a PrePoint (rbac) error ------------
 
 test "gotcha2: make_point surfaces out.point error" {
-    const client = sdk.new();
+    const client = fh.live_client(vnull());
     const ctx = client.sdkUtility.make_context(.{ .opname = "list" }, client.get_root_ctx());
     const e = ctx.make_error("rbac_denied", "denied");
     ctx.out_set("point", sdk.OutVal{ .err = e });
@@ -150,7 +151,7 @@ test "gotcha2: make_point surfaces out.point error" {
 // ---- gotcha #4: featureAdd __before__ ordering -------------------------
 
 test "gotcha4: featureAdd before ordering" {
-    const client = sdk.new();
+    const client = fh.live_client(vnull());
     const ctx = client.get_root_ctx();
     client.sdkUtility.feature_add(ctx, OrderFeat.make("aaa", vnull()));
     client.sdkUtility.feature_add(ctx, OrderFeat.make("bbb", h.jo(&.{.{ "__before__", h.vstr("aaa") }})));
@@ -174,7 +175,7 @@ test "gotcha6: netsim offline error code" {
         }) }}) },
         .{ "system", h.jo(&.{.{ "fetch", makeAlwaysOk() }}) },
     });
-    const client = sdk.SDK.new(opts);
+    const client = fh.live_client(opts);
     const ctx = client.get_root_ctx();
     const r = client.sdkUtility.fetch(ctx, "http://x", h.jo(&.{.{ "url", h.vstr("http://x") }}));
     try testing.expectError(error.Sdk, r);
@@ -190,7 +191,7 @@ test "gotcha6: netsim conn error code" {
         }) }}) },
         .{ "system", h.jo(&.{.{ "fetch", makeAlwaysOk() }}) },
     });
-    const client = sdk.SDK.new(opts);
+    const client = fh.live_client(opts);
     const ctx = client.get_root_ctx();
     const r = client.sdkUtility.fetch(ctx, "http://x", h.jo(&.{.{ "url", h.vstr("http://x") }}));
     try testing.expectError(error.Sdk, r);
@@ -211,7 +212,7 @@ test "gotcha6: netsim seeded latency is deterministic" {
                 }) }}) },
                 .{ "system", h.jo(&.{.{ "fetch", makeAlwaysOk() }}) },
             });
-            const client = sdk.SDK.new(opts);
+            const client = fh.live_client(opts);
             const ctx = client.get_root_ctx();
             var i: usize = 0;
             while (i < 4) : (i += 1) {

@@ -86,7 +86,7 @@ public class PipelineTest
         }
     }
 
-    // --- feature order (PR #2) ----------------------------------------------
+    // --- feature order ------------------------------------------------------
 
     // ResolveOpts runs makeOptions over an options.feature value (map or list)
     // and returns the derived options so __derived__.featureorder can be

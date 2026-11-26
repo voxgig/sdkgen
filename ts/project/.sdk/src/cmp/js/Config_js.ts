@@ -12,13 +12,7 @@ import {
   configReprSetting,
   each,
   indent,
-  isAuthActive,
   isConfigData,
-  resolveAuthIn,
-  resolveAuthName,
-  isHttpBasicAuth,
-  resolveAuthPrefix,
-  serverVariables,
   targetFeatures,
 } from '@voxgig/sdkgen'
 
@@ -49,40 +43,24 @@ const Config = cmp(async function Config(props: any) {
 
   const headers = getModelPath(model, `main.${KIT}.config.headers`) || {}
 
-  const authActive = isAuthActive(model)
-  const authPrefix = resolveAuthPrefix(model)
-  // `in` and `name` travel with the prefix now. They were resolved by
-  // apidef all along and dropped here, so an apiKey-in-query API got an
-  // Authorization header it does not read. Emitted only when they differ
-  // from the defaults, so a header/Authorization SDK is byte-identical to
-  // what it generated before.
-  const authIn = resolveAuthIn(model)
-  const authName = resolveAuthName(model)
-  const authBasic = isHttpBasicAuth(model)
-  const authBlock = authActive
-    ? `auth: {
-      prefix: '${authPrefix}',${authBasic ? `
-      basic: true,` : ''}${'header' === authIn ? '' : `
-      in: '${authIn}',`}${'Authorization' === authName ? '' : `
-      name: '${authName}',`}
+  const { def: configDef, json: configJson } = configDefinition(model, target.name)
+  const asData = isConfigData(configJson, configReprSetting(model))
+
+  const auth = configDef.options.auth
+  const authBlock = null == auth ? '' : `auth: {
+      prefix: '${auth.prefix}',${auth.basic ? `
+      basic: true,` : ''}${null == auth.in ? '' : `
+      in: '${auth.in}',`}${null == auth.name ? '' : `
+      name: '${auth.name}',`}
     },
 
     `
-    : ''
 
-  const svars = serverVariables(model)
-  const serverBlock = 0 === svars.length ? '' :
+  const server = configDef.options.server
+  const serverBlock = null == server ? '' :
     'server: {\n' +
-    svars.map((v: any) => `      ${JSON.stringify(v.name)}: ${JSON.stringify(v.dflt)},\n`).join('') +
+    Object.entries(server).map(([name, dflt]: [string, any]) => `      ${JSON.stringify(name)}: ${JSON.stringify(dflt)},\n`).join('') +
     '    },\n\n    '
-
-  let baseUrl = ''
-  try {
-    baseUrl = getModelPath(model, `main.${KIT}.info.servers.0.url`)
-  } catch (_e) { }
-
-  const { def: configDef, json: configJson } = configDefinition(model, target.name)
-  const asData = isConfigData(configJson, configReprSetting(model))
 
   File({ name: 'Config.' + target.ext }, () => {
 
@@ -119,7 +97,7 @@ const Config = cmp(async function Config(props: any) {
 
       replace: {
 
-        "'BASEURL'": JSON.stringify(baseUrl),
+        "'BASEURL'": JSON.stringify(configDef.options.base),
 
         "'SERVERBLOCK'": serverBlock,
 

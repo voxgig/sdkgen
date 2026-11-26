@@ -1,4 +1,4 @@
-import { flowSteps, invalidRequest, opReachable, flowLoadRoute, flowLoadReadsRecord } from '@voxgig/sdkgen'
+import { flowSteps, invalidRequest, opReachable, flowLoadRoute, flowLoadReadsRecord, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -17,7 +17,8 @@ import {
   cmp,
   each,
   buildIdNames,
-  getMatchEntries, envName, envToken, entityRecordIdField,
+  getMatchEntries, entityRecordIdField,
+  isAuthActive,
 } from '@voxgig/sdkgen'
 
 
@@ -33,9 +34,9 @@ type GenCtx = {
 type OpGen = (ctx: GenCtx, step: ModelEntityFlowStep, index: number) => void
 
 
-// Generates <entity>_entity_test.cpp: the model-driven basic-flow test
-// (unit mode against the in-memory mock transport). Mirrors the rust/go
-// TestEntity generators.
+// Generates <entity>_entity_test.cpp: the model-driven basic-flow test, in
+// unit mode against the in-memory mock transport, or live through a client
+// built from the environment. Mirrors the rust/go TestEntity generators.
 const TestEntity = cmp(function TestEntity(props: any) {
   const ctx$ = props.ctx$
   const model: Model = ctx$.model
@@ -44,7 +45,19 @@ const TestEntity = cmp(function TestEntity(props: any) {
   const entity: ModelEntity = props.entity
 
   const ProjectName = model.const.Name
-  const PROJUPPER = envName(model)
+  const ENVVAR = fact(model.main[KIT], 'env')
+  const PROJUPPER = ENVVAR.prefix
+  const authActive = isAuthActive(model)
+  const authSecret = authActive && fact(model.main[KIT], 'auth').secret
+  const svars = fact(model.main[KIT], 'server')
+  const credEnvEntry = (authActive ? `,\n    {"${ENVVAR.apikey}", Value("")}` : '') +
+    (authSecret ? `,\n    {"${ENVVAR.secret}", Value("")}` : '')
+  const serverEnvEntry = svars
+    .map((v: any) => `,\n    {"${ENVVAR.server[v.name]}", Value(${JSON.stringify(v.dflt)})}`).join('')
+  const liveFields = (authActive ? `    map_put(liveopts, "apikey", getp(env, "${ENVVAR.apikey}"));\n` : '') +
+    (authSecret ? `    map_put(liveopts, "secret", getp(env, "${ENVVAR.secret}"));\n` : '') +
+    (0 === svars.length ? '' : `    map_put(liveopts, "server", vmap({${svars
+      .map((v: any) => `{${JSON.stringify(v.name)}, getp(env, "${ENVVAR.server[v.name]}")}`).join(', ')}}));\n`)
 
   const basicflow: ModelEntityFlow | undefined =
     getModelPath(model, `main.${KIT}.flow.Basic${nom(entity, 'Name')}Flow`)
@@ -56,10 +69,9 @@ const TestEntity = cmp(function TestEntity(props: any) {
   const idnamesStr = idnames.map(n => `Value("${n}")`).join(', ')
 
   const allSteps = Object.values(flowSteps(basicflow)) as any[]
-  const updateStep = allSteps.find((s: any) => s.o === 'update')
-  const updateData = updateStep?.d
-    ? Object.entries(updateStep.d).filter(([k]: any) => k !== 'id' && !k.endsWith('$'))
-    : []
+  const updateData = Object.entries(Object.assign({}, ...allSteps
+    .filter((s: any) => 'update' === s.o || 'patch' === s.o).map((s: any) => s.d || {})))
+    .filter(([k]: any) => k !== 'id' && !k.endsWith('$'))
   const aliases = updateData.map(([k, v]: any) => [k, v])
 
   const genCtx: GenCtx = { model, entity, flow: basicflow }
@@ -93,7 +105,7 @@ struct ${entity.Name}Setup {
 static ${entity.Name}Setup ${evar}_basic_setup(const Value& extra) {
   load_env_local();
 
-  std::string entity_data_file = "../.sdk/test/entity/${entity.name}/${entity.Name}TestData.json";
+  std::string entity_data_file = "${ctx$.stdrep.SDKREL}/.sdk/test/entity/${entity.name}/${entity.Name}TestData.json";
   Value entity_data = vs::parse_json(read_file(entity_data_file));
 ${fixtureIdentity(entity)}
   Value options = vmap({{"entity", getp(entity_data, "existing")}});
@@ -112,12 +124,12 @@ ${fixtureIdentity(entity)}
   if (!idmap.is_map()) idmap = vmap();
 
   Value env = env_override(vmap({
-    {"${PROJUPPER}_TEST_${envToken(entity.name)}_ENTID", idmap},
-    {"${PROJUPPER}_TEST_LIVE", Value("FALSE")},
-    {"${PROJUPPER}_TEST_EXPLAIN", Value("FALSE")}
+    {"${ENVVAR.entid[entity.name]}", idmap},
+    {"${ENVVAR.live}", Value("FALSE")},
+    {"${PROJUPPER}_TEST_EXPLAIN", Value("FALSE")}${credEnvEntry}${serverEnvEntry}
   }));
 
-  Value idmap_resolved = Helpers::toMapAny(getp(env, "${PROJUPPER}_TEST_${envToken(entity.name)}_ENTID"));
+  Value idmap_resolved = Helpers::toMapAny(getp(env, "${ENVVAR.entid[entity.name]}"));
   if (!idmap_resolved.is_map()) idmap_resolved = idmap;
 `)
 
@@ -130,7 +142,14 @@ ${fixtureIdentity(entity)}
     }
 
     Content(`
-  bool live = getp(env, "${PROJUPPER}_TEST_LIVE") == Value("TRUE");
+  bool live = getp(env, "${ENVVAR.live}") == Value("TRUE");
+  if (live) {
+    // sdk-test-control.json's test.client.options seeds the live client; the
+    // generated fields below overwrite anything they name.
+    Value liveopts = live_client_options();
+${liveFields}    client = std::make_shared<${ProjectName}SDK>(
+        Struct::merge(vlist({liveopts, extra.is_map() ? extra : vmap()})));
+  }
 
   ${entity.Name}Setup s;
   s.client = client;
@@ -414,7 +433,7 @@ const generateList: OpGen = (ctx, step: any, index) => {
 
   const priorSteps = Object.values(flowSteps(flow)).slice(0, Number(index)) as any[]
   const needsEnt = !priorSteps.some((s: any) =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
 
   Content(`  // LIST
 `)
@@ -472,10 +491,10 @@ const generateUpdate: OpGen = (ctx, step: any, index) => {
 
   const priorSteps = Object.values(flowSteps(flow)).slice(0, Number(index)) as any[]
   const needsEnt = !priorSteps.some((s: any) =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
   const hasEntIdU = null != entity.id
 
-  Content(`  // UPDATE
+  Content(`  // ${step.o.toUpperCase()}
 `)
   if (needsEnt) {
     Content(`  auto ${entvar} = client->${cppVarName(entity.name)}();
@@ -508,13 +527,13 @@ const generateUpdate: OpGen = (ctx, step: any, index) => {
       }
     }
   }
-  Content(`  Value ${resdatavar}_result = ${entvar}->update(Struct::clone(${datavar}_up), Value::undef())->data();
+  Content(`  Value ${resdatavar}_result = ${entvar}->${step.o}(Struct::clone(${datavar}_up), Value::undef())->data();
   Value ${resdatavar} = Helpers::toMapAny(${resdatavar}_result);
   if (!${resdatavar}.is_map()) ${resdatavar} = vmap();
-  ASSERT_TRUE(${resdatavar}.is_map(), "expected update result to be a map");
+  ASSERT_TRUE(${resdatavar}.is_map(), "expected ${step.o} result to be a map");
 `)
   if (hasEntIdU) {
-    Content(`  ASSERT_EQ_VAL(getp(${resdatavar}, ${rid(entity)}), getp(${datavar}_up, "id"), "expected update result id to match");
+    Content(`  ASSERT_EQ_VAL(getp(${resdatavar}, ${rid(entity)}), getp(${datavar}_up, "id"), "expected ${step.o} result id to match");
 `)
   }
   if (markname) {
@@ -534,7 +553,7 @@ const generateLoad: OpGen = (ctx, step: any, index) => {
 
   const priorSteps = Object.values(flowSteps(flow)).slice(0, Number(index)) as any[]
   const hasEntVar = priorSteps.some((s: any) =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
   const hasEntId = null != entity.id
   const created = (s: any) => cppVarName(s.i?.datavar ?? ((s.i?.ref ?? entity.name + '_ref01') + '_data' + (s.i?.suffix ?? '')))
   const hasSrcData = priorSteps.some((s: any) => 'create' === s.o && created(s) === srcdatavar) ||
@@ -580,7 +599,7 @@ const generateRemove: OpGen = (ctx, step: any, index) => {
 
   const priorSteps = Object.values(flowSteps(flow)).slice(0, Number(index)) as any[]
   const needsEnt = !priorSteps.some((s: any) =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
 
   Content(`  // REMOVE
 `)
@@ -674,6 +693,7 @@ const GENERATE_OP: Record<string, OpGen> = {
   create: generateCreate,
   list: generateList,
   update: generateUpdate,
+  patch: generateUpdate,
   load: generateLoad,
   remove: generateRemove,
 }

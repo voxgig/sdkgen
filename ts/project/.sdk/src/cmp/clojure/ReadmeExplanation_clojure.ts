@@ -1,9 +1,21 @@
 
 import { cmp, Content } from '@voxgig/sdkgen'
 
+import {
+  KIT,
+  getModelPath,
+} from '@voxgig/apidef'
+
 
 const ReadmeExplanation = cmp(function ReadmeExplanation(props: any) {
   const { target, ctx$: { model } } = props
+
+  const entity = getModelPath(model, `main.${KIT}.entity`)
+  const exampleEntity = Object.values(entity || {})
+    .find((e: any) => e.active !== false) as any
+  const entityNs = exampleEntity ? `, and an entity
+namespace (e.g. \`[sdk.entity.${exampleEntity.name} :as e-${exampleEntity.name}]\`)
+only when you call its operations directly` : ''
 
   Content(`### Data as struct value maps
 
@@ -31,9 +43,7 @@ ${target.name}/
 └── test/                  -- test suites
 \`\`\`
 
-Require \`[sdk.api :as api]\` for the public surface, and an entity
-namespace (e.g. \`[sdk.entity.${model.const.Name.toLowerCase()} :as e-${model.const.Name.toLowerCase()}]\`)
-only when you call its operations directly.
+Require \`[sdk.api :as api]\` for the public surface${entityNs}.
 
 `)
 

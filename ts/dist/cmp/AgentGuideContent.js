@@ -19,12 +19,12 @@ exports.featureSection = featureSection;
 exports.customiseSection = customiseSection;
 exports.aontuSection = aontuSection;
 exports.claudePointer = claudePointer;
-const applicability_1 = require("../helpers/applicability");
 const facts_1 = require("../helpers/facts");
 const featureSource_1 = require("../helpers/featureSource");
 const copymerge_1 = require("../helpers/copymerge");
 const packageMeta_1 = require("../helpers/packageMeta");
 const text_1 = require("../helpers/text");
+const FeatureDocs_1 = require("./FeatureDocs");
 const jostraca_1 = require("jostraca");
 const types_1 = require("../types");
 const LANG_CMD = {
@@ -110,14 +110,10 @@ function activeTargets(model) {
     const kit = model.main[types_1.KIT];
     return (0, facts_1.fact)(kit, 'active').map((name) => kit.target[name]);
 }
-// With a target, also drops features that do not APPLY to it — a guide
-// must not document a feature the target has no implementation for.
-// Without one (the repo-level guide) every active feature is listed.
+// The feature models of the features featureDocs documents.
 function activeFeatures(model, target) {
-    const feature = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.feature`) || {};
-    return (0, jostraca_1.each)(feature)
-        .filter((f) => f && f.active !== false)
-        .filter((f) => null == target || (0, applicability_1.featureApplies)(f, target));
+    const feature = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.feature`, { required: false });
+    return null == feature ? [] : (0, FeatureDocs_1.featureDocs)(model, target).map((f) => feature[f.name]);
 }
 function activeEntities(model) {
     const entity = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.entity`) || {};

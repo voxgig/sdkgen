@@ -1710,9 +1710,9 @@ let make_client_base ~(config : value) ~(make_feature : string -> feature) (opti
   rootctx.c_options <- opts;
   (* Add features in the resolved order (make_options records an explicit
      array order, else defaults to test-first). Ordering matters: the `test`
-     feature installs the base mock transport and the transport features
-     (retry/cache/netsim/proxy/ratelimit) wrap whatever is current, so `test`
-     must be added before them to sit at the base of the wrapper chain. *)
+     feature installs the base mock transport and the features whose model
+     declares `transport: 'wrap'` wrap whatever is current, so `test` must be
+     added before them to sit at the base of the wrapper chain. *)
   let feature_opts = match to_map (getp opts "feature") with Map _ as m -> m | _ -> empty_map () in
   let feature_order = match getpath_s opts "__derived__.featureorder" with List r -> !r | _ -> [] in
   List.iter (fun fname_v ->
@@ -1834,8 +1834,8 @@ let direct (client : sdk_client) (fetchargs : value) : value =
  * a top-level `errors` array, so status alone would report a failed query as
  * ok.
  *
- * NOTE: like direct, this bypasses the feature pipeline — no retry, ratelimit
- * or paging features apply. *)
+ * NOTE: like direct, this bypasses the feature pipeline: no feature hook runs
+ * on this path. *)
 let graphql (client : sdk_client) (query : string) (variables : value)
     (ctrl : value) : value =
   if not (op_allowed client "graphql") then op_denied client "graphql"

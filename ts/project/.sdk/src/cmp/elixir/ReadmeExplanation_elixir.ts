@@ -1,11 +1,13 @@
 
 import { cmp, Content } from '@voxgig/sdkgen'
 
+import { elixirApp } from './app_elixir'
+
 
 const ReadmeExplanation = cmp(function ReadmeExplanation(props: any) {
   const { target, ctx$: { model } } = props
 
-  const app = model.const.name.toLowerCase()
+  const app = elixirApp(model, target)
 
   Content(`### Data as struct value nodes
 
@@ -34,7 +36,7 @@ elixir/
 │       ├── context.ex            -- Operation context
 │       ├── entity_base.ex        -- Shared entity behaviour
 │       ├── error.ex              -- SDK error type
-│       ├── feature.ex            -- Built-in features
+│       ├── feature.ex            -- Feature implementations
 │       ├── helpers.ex            -- Value helpers (deep/1, ...)
 │       ├── json.ex               -- JSON encode/decode
 │       └── utility.ex            -- Utility functions

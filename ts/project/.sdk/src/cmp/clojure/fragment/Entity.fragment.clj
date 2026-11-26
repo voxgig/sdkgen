@@ -34,7 +34,7 @@
         utility (core/get-utility client)
         data (atom (vs/jm))
         match (atom (vs/jm))
-        ;; Set once a successful `remove` resolves on this instance.
+        ;; Set when a remove marks this instance deleted.
         deleted (atom false)
         entctx (core/make-context (vs/jm "entopts" entopts) (core/client-root-ctx client))
         ent {:_name "entityname" :_client client :_utility utility :_entopts entopts
@@ -61,14 +61,14 @@
 ;; Every operation resolves to the ENTITY, not the raw data — the record is
 ;; reached through data-get. run-op returns the terminal result value, so the
 ;; op hands that back only when the pipeline FAILED; on success it hands back
-;; the entity. See AGENTS.md "Entity operations return ENTITIES".
+;; the entity.
 (defn- op-return [ent ctx out]
   (let [result (core/oget ctx :result)]
     (if (and result (true? (core/oget result :ok))) ent out)))
 
-;; `remove` resolves to the entity, marked. The instance KEEPS the data it
-;; held — a caller can still read what was deleted — but it is no longer a
-;; live record.
+;; A remove resolves to the entity, marked deleted. The instance KEEPS the
+;; data it held — a caller can still read what was deleted — but it is no
+;; longer a live record.
 (defn mark-deleted [ent] (reset! (:_deleted ent) true) ent)
 
 (defn deleted [ent] (true? (deref (:_deleted ent))))
@@ -130,13 +130,12 @@
       (unexpected ctx operr))))
 
 ;; Streaming operation. Runs `action` (an op name, e.g. "list") through the
-;; full pipeline and returns a LAZY SEQUENCE of result items, so the
-;; `streaming` feature's incremental output is reachable (a normal op call
-;; materialises the whole result). When the streaming feature is active the
-;; result carries a `stream` thunk and this yields from it (honouring
-;; chunkSize); otherwise it falls back to the materialised items, so stream
-;; always yields. An entity is yielded as its record, the struct map its
-;; data-get returns.
+;; full pipeline and returns a LAZY SEQUENCE of result items, so incremental
+;; output is reachable (a normal op call materialises the whole result). When
+;; the streaming feature is active the result carries a `stream` thunk and
+;; this yields from it (honouring chunkSize); otherwise it falls back to the
+;; materialised items, so stream always yields. An entity is yielded as its
+;; record, the struct map its data-get returns.
 ;; `callopts` parameterises the call:
 ;;   - ctrl:   per-call pipeline control (threaded onto the op ctx);
 ;;   - body:   an async-iterable/list payload for outbound (upload) streaming,

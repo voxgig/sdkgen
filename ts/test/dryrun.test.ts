@@ -103,6 +103,27 @@ describe('dry run', () => {
   })
 
 
+  // A port writes its LICENSE and VERSION at generate, so recorded copies of
+  // their templates go with the next add.
+  test('target add prunes the LICENSE and VERSION templates a port now writes', async () => {
+    const project = makeProject({})
+    const kept: Record<string, string> = { 'tm/go/VERSION': '0.0.1\n', 'tm/go/LICENSE': 'MIT License\n' }
+    project.fs.mkdirSync(ROOT + '/tm/go', { recursive: true })
+    project.fs.mkdirSync(ROOT + '/log', { recursive: true })
+    for (const [rel, text] of Object.entries(kept)) {
+      project.fs.writeFileSync(ROOT + '/' + rel, text)
+      project.fs.appendFileSync(ROOT + '/log/copies.jsonl', JSON.stringify({
+        op: 'add', files: { [rel]: fingerprint(text) },
+      }) + '\n')
+    }
+
+    await target_add([targetRef('go')], project.actx)
+
+    deepStrictEqual(Object.keys(kept).filter((rel) => project.fs.existsSync(ROOT + '/' + rel)), [],
+      'a retired template survived the add')
+  })
+
+
   test('feature add writes nothing', async () => {
     // A target must exist for `feature add` to have anywhere to put source.
     const project = makeProject({ target: { go: { name: 'go' } } })

@@ -183,6 +183,10 @@ function checkManifest(fs: any, sdk: string, read: any): Finding[] {
 function checkItems(fs: any, sdk: string, manifest?: Manifest): Finding[] {
   const found: Finding[] = []
 
+  // The bundled scaffold ships inside this generator, so no other release reads it.
+  const range = manifest?.engines?.sdkgen ??
+    (Path.resolve(sdk) === Path.resolve(scaffoldFolder()) ? SDKGEN_VERSION : undefined)
+
   for (const kind of Object.keys(KINDS).sort()) {
     const claimed = claims(manifest?.provides, kind)
     const ondisk = definitionNames(fs, sdk, kind)
@@ -199,7 +203,7 @@ function checkItems(fs: any, sdk: string, manifest?: Manifest): Finding[] {
       found.push(...checkDefinition(fs, kind, name, file, {
         manifest: Path.join(sdk, '..', MANIFEST),
         tier: manifest?.parity?.[name],
-        range: manifest?.engines?.sdkgen,
+        range,
       }))
     }
   }

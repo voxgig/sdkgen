@@ -226,7 +226,7 @@
                     (let [[out err] ((core/uget ctx :make-point) ctx)]
                       (t/is-nil err "no err")
                       (t/is-true (identical? out preset) "preset")))))
-      ;; gotcha #2: a feature (rbac) places an error in out.point; make-point
+      ;; A feature (rbac) places an error in out.point; make-point
       ;; must surface it before any network use.
       (chk "point-surfaces-feature-error"
            (fn [] (let [ctx (make-ctx sdk "load")
@@ -385,7 +385,7 @@
                     (t/is-throws (fn [] ((core/uget ctx :make-error) ctx (core/ctx-error ctx "rbac_denied" "denied")))
                                  "rbac_denied" "preserves code"))))
 
-      ;; ---- feature ordering (gotcha #4) ----
+      ;; ---- feature ordering ----
       (chk "feature-add-appends-in-order"
            (fn [] (let [ctx (make-ctx sdk "load")]
                     (reset! (:features sdk) [])
@@ -410,7 +410,7 @@
                     (let [miss (named "z4")] (swap! miss assoc :_options (vs/jm "__before__" "missing")) ((core/uget ctx :feature-add) ctx miss))
                     (t/is-deep (names) ["a" "z2" "z3" "b" "z4"] "append fallback"))))
 
-      ;; ---- feature order (PR review #2) ----
+      ;; ---- feature order ----
       ;; make-options resolves the feature add-order into
       ;; __derived__.featureorder: a map defaults test-first (so the test mock
       ;; is the base transport), an explicit array preserves the developer

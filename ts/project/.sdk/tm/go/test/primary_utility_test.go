@@ -278,7 +278,7 @@ func TestPrimaryUtility(t *testing.T) {
 
 	t.Run("fetcher-live", func(t *testing.T) {
 		calls := []map[string]any{}
-		liveClient := sdk.NewProjectNameSDK(map[string]any{
+		liveClient := newClient(map[string]any{
 			"base": "http://localhost:8080",
 			"system": map[string]any{
 				"fetch": func(url string, fetchdef map[string]any) (map[string]any, error) {
@@ -309,7 +309,7 @@ func TestPrimaryUtility(t *testing.T) {
 
 	t.Run("fetcher-blocked-test-mode", func(t *testing.T) {
 		// Create a live SDK then set mode to test (not using TestSDK, which installs test feature)
-		blockedClient := sdk.NewProjectNameSDK(map[string]any{
+		blockedClient := newClient(map[string]any{
 			"base": "http://localhost:8080",
 			"system": map[string]any{
 				"fetch": func(url string, fetchdef map[string]any) (map[string]any, error) {
@@ -363,7 +363,7 @@ func TestPrimaryUtility(t *testing.T) {
 		}))
 		defer server.Close()
 
-		liveClient := sdk.NewProjectNameSDK(map[string]any{"base": server.URL})
+		liveClient := newClient(map[string]any{"base": server.URL})
 		liveUtility := liveClient.GetUtility()
 		ctx := liveUtility.MakeContext(map[string]any{
 			"opname":  "load",
@@ -457,7 +457,7 @@ func TestPrimaryUtility(t *testing.T) {
 		// The secret is registered as a caller's is: it is the client's apikey.
 		fetch := func(cleanactive bool, path string, fetchdef map[string]any) (int, []arrival) {
 			t.Helper()
-			liveClient := sdk.NewProjectNameSDK(map[string]any{
+			liveClient := newClient(map[string]any{
 				"base": apiURL, "apikey": secret, "clean": map[string]any{"active": cleanactive},
 			})
 			liveUtility := liveClient.GetUtility()
@@ -563,7 +563,7 @@ func TestPrimaryUtility(t *testing.T) {
 	})
 
 	t.Run("fetcher-getonly-guard", func(t *testing.T) {
-		liveClient := sdk.NewProjectNameSDK(map[string]any{"base": "http://127.0.0.1:9"})
+		liveClient := newClient(map[string]any{"base": "http://127.0.0.1:9"})
 		liveUtility := liveClient.GetUtility()
 		ctx := liveUtility.MakeContext(map[string]any{
 			"opname":  "create",
@@ -686,7 +686,7 @@ func TestPrimaryUtility(t *testing.T) {
 			}, nil)
 			ctx.Client = client
 			ctx.Utility = utility
-			return utility.MakeOptions(ctx), nil
+			return utility.MakeOptions(ctx)
 		})
 	})
 
@@ -872,6 +872,12 @@ func TestPrimaryUtility(t *testing.T) {
 	})
 
 	t.Run("prepareAuth-basic", func(t *testing.T) {
+		// Read from the config, never from a probe: a probe that finds no
+		// credential is the regression this section exists to catch.
+		if options, _ := sdk.MakeConfig()["options"].(map[string]any); nil == options["auth"] {
+			t.Skip("this SDK's config declares no auth, so it places no credential")
+		}
+
 		setupOpts := getSpec(primary, "prepareAuth", "DEF", "setup", "a")
 		authClient := sdk.TestSDK(nil, setupOpts)
 		authUtility := authClient.GetUtility()

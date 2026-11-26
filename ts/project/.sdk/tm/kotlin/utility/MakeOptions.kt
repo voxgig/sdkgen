@@ -198,11 +198,11 @@ fun makeOptions(ctx: Context): MutableMap<String, Any?> {
       featureorder.addAll(names)
     }
     // Station special case, mirroring test's: its transport wrap must
-    // sit immediately outside the base transport (inside retry/cache/
-    // netsim), so map-form activation hoists it to just after test -
-    // or first, when no test entry exists. Without this the sorted
-    // default would init station last and wrap OUTSIDE the recording
-    // features, turning its wire-truth events into fiction.
+    // sit immediately outside the base transport (inside every other
+    // transport wrap), so map-form activation hoists it to just after
+    // test - or first, when no test entry exists. Without this the
+    // sorted default would init station last and wrap OUTSIDE the
+    // recording features, turning its wire-truth events into fiction.
     val si = featureorder.indexOf("station")
     if (0 <= si) {
       featureorder.removeAt(si)

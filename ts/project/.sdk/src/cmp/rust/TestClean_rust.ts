@@ -10,11 +10,12 @@ import {
   Content,
   entityCollection,
   targetFeatures,
-  isAuthSuppressed,
-  isHttpBasicAuth,
-  resolveAuthIn,
-  resolveAuthName,
+  fact,
 } from '@voxgig/sdkgen'
+
+import {
+  KIT,
+} from '@voxgig/apidef'
 
 
 import { rustMethodName } from './utility_rust'
@@ -33,16 +34,17 @@ const DIAGNOSTIC = ['log', 'debug', 'audit', 'telemetry', 'cost', 'metrics', 'cl
 // A second sweep does the same for a body of bytes.
 const TestClean = cmp(function TestClean(props: any) {
   const { model } = props.ctx$
+  const authFact = fact(model.main[KIT], 'auth')
   const { target, rustcrate } = props
 
   const Name = model.const.Name
 
   const auth = {
-    suppressed: isAuthSuppressed(model),
-    where: resolveAuthIn(model),
-    name: 'header' === resolveAuthIn(model)
-      ? resolveAuthName(model).toLowerCase() : resolveAuthName(model),
-    basic: isHttpBasicAuth(model),
+    suppressed: authFact.suppressed,
+    where: authFact.in,
+    name: 'header' === authFact.in
+      ? authFact.name.toLowerCase() : authFact.name,
+    basic: authFact.basic,
   }
 
   const features = Object.keys(targetFeatures(model, target))
@@ -470,7 +472,11 @@ fn offline(opts: Value) -> Value {
 fn construct(opts: Value) -> Rc<${Name}SDK> {
     let opts = offline(opts);
     match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| ${Name}SDK::new(opts))) {
-        Ok(sdk) => sdk,
+        Ok(Ok(sdk)) => sdk,
+        Ok(Err(err)) => panic!(
+            "clean harness: the client could not be constructed, so nothing was swept: {}",
+            err
+        ),
         Err(cause) => panic!(
             "clean harness: the client could not be constructed, so nothing was swept: {}",
             cause
@@ -786,10 +792,10 @@ fn clean_no_credential_leaves_the_sdk_in_any_form() {
     // (make_options keeps its input when validation fails), so what the
     // constructor produced is swept instead: the client's prints, and a
     // string quoting the value, cleaned the way a validation message is.
-    let mistyped = ${Name}SDK::new(offline(jo(vec![
+    let mistyped = construct(jo(vec![
         ("apikey", jo(vec![("value", Value::str(CANARY_APIKEY))])),
         ("clean", jo(vec![("values", Value::str(CANARY_VALUE))])),
-    ])));
+    ]));
     push(&sinks, "mistyped:debug", format!("{:?}", mistyped));
     push(&sinks, "mistyped:display", format!("{}", mistyped));
     push(
@@ -1062,7 +1068,7 @@ fn clean_honours_the_generated_config_clean_block() {
         },
         None,
     );
-    let opts = utility.make_options(&ctx);
+    let opts = utility.make_options(&ctx).unwrap();
     *ctx.options.borrow_mut() = opts;
     assert_eq!(
         clean::clean_str(&ctx, "a CONFIG-SEEDED-1 b CALLER-SEEDED-2"),

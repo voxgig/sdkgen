@@ -18,7 +18,7 @@ const concurrencyOps = 32
 
 // concurrencyClient is a live client whose transport answers at once.
 func concurrencyClient() *sdk.ProjectNameSDK {
-	return sdk.NewProjectNameSDK(map[string]any{
+	return newClient(map[string]any{
 		"base":  "http://concurrency.test/api",
 		"allow": map[string]any{"op": "direct"},
 		"system": map[string]any{

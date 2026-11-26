@@ -56,7 +56,7 @@ FEATURE_LINK ?=
 INC = -I utility -I . -I test -I test/vendor/omni $(FEATURE_INC)
 
 # The shared JSON corpus lives in the sibling .sdk workspace.
-CORPUS = ../.sdk/test/test.json
+CORPUS = SDKREL/.sdk/test/test.json
 
 # A gated feature's modules come AFTER sdk_features.ml (a feature module
 # opens it) and BEFORE sdk_config.ml (the generated factory names them).

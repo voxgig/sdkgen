@@ -1,4 +1,4 @@
-import { flowSteps, opReachable, invalidRequest, flowLoadRoute, flowLoadReadsRecord } from '@voxgig/sdkgen'
+import { flowSteps, opReachable, invalidRequest, flowLoadRoute, flowLoadReadsRecord, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -18,7 +18,7 @@ import {
   each,
   buildIdNames,
   getMatchEntries,
-  isAuthActive, envName, envToken, entityRecordIdField,
+  isAuthActive, entityRecordIdField,
   liveFlowNeeds, liveStrict, liveStrictNote,
   liveGates, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
   liveRouteExamples, liveStepExamples,
@@ -128,22 +128,28 @@ const TestEntity = cmp(function TestEntity(props: any) {
     return
   }
 
-  const PROJUPPER = envName(model)
-  const ENTUPPER = envToken(entity.name)
-  const entidEnvVar = `${PROJUPPER}_TEST_${ENTUPPER}_ENTID`
+  const ENVVAR = fact(model.main[KIT], 'env')
+  const PROJUPPER = ENVVAR.prefix
+  const entidEnvVar = ENVVAR.entid[entity.name]
 
   const SDK = model.const.Name + 'SDK'
   const accessor = kotlinVarName(entity.name)
 
   const authActive = isAuthActive(model)
+  const authSecret = authActive && fact(model.main[KIT], 'auth').secret
+  const svars = fact(model.main[KIT], 'server')
+  const serverEnvEntry = svars.map((v: any) =>
+    `      envm[${kotlinLit(ENVVAR.server[v.name])}] = ${kotlinLit(v.dflt)}\n`).join('')
+  const serverLiveField = 0 === svars.length ? '' :
+    '        liveOpts["server"] = linkedMapOf<String, Any?>(' + svars.map((v: any) =>
+      kotlinLit(v.name) + ' to env[' + kotlinLit(ENVVAR.server[v.name]) + ']').join(', ') + ')\n'
 
   const idnames = buildIdNames(entity, basicflow)
 
   const allSteps = Object.values(flowSteps(basicflow)) as any[]
-  const updateStep = allSteps.find((s: any) => s.o === 'update')
-  const updateData = updateStep?.d
-    ? Object.entries(updateStep.d).filter(([k]: any) => k !== 'id' && !k.endsWith('$'))
-    : []
+  const updateData = Object.entries(Object.assign({}, ...allSteps
+    .filter((s: any) => 'update' === s.o || 'patch' === s.o).map((s: any) => s.d || {})))
+    .filter(([k]: any) => k !== 'id' && !k.endsWith('$'))
   const aliases = updateData.map(([k, v]: any) => [k, v])
 
   const genCtx: GenCtx = { model, entity, kotlinpackage, flow: basicflow, PROJUPPER, accessor }
@@ -313,7 +319,7 @@ ${liveExcludedLines(plan).map((line) => '      println(' + kotlinLit(line) + ')\
       val entityData: MutableMap<String, Any?>
       try {
         val entityDataSource = Files.readString(Paths.get(
-            "..", ".sdk", "test", "entity", "${entity.name}", "${entity.Name}TestData.json"))
+            "${ctx$.stdrep.SDKREL}", ".sdk", "test", "entity", "${entity.name}", "${entity.Name}TestData.json"))
         entityData = Helpers.toMapAny(Json.parse(entityDataSource)) ?: linkedMapOf()
       } catch (e: Exception) {
         throw AssertionError("failed to read ${entity.name} test data: " + e.message, e)
@@ -345,9 +351,9 @@ ${fixtureIdentity(entity)}
 
       val envm = linkedMapOf<String, Any?>()
       envm["${entidEnvVar}"] = idmap
-      envm["${PROJUPPER}_TEST_LIVE"] = "FALSE"
+      envm["${ENVVAR.live}"] = "FALSE"
       envm["${PROJUPPER}_TEST_EXPLAIN"] = "FALSE"
-${authActive ? `      envm["${PROJUPPER}_APIKEY"] = "NONE"\n` : ''}      val env = RunnerSupport.envOverride(envm)
+${authActive ? `      envm["${ENVVAR.apikey}"] = ""\n` : ''}${authSecret ? `      envm["${ENVVAR.secret}"] = ""\n` : ''}${serverEnvEntry}      val env = RunnerSupport.envOverride(envm)
 
       var idmapResolved = Helpers.toMapAny(env["${entidEnvVar}"])
       if (idmapResolved == null) {
@@ -364,10 +370,13 @@ ${authActive ? `      envm["${PROJUPPER}_APIKEY"] = "NONE"\n` : ''}      val env
     }
 
     Content(`
-      val live = "TRUE" == env["${PROJUPPER}_TEST_LIVE"]
+      val live = "TRUE" == env["${ENVVAR.live}"]
       if (live) {
-        val liveOpts = linkedMapOf<String, Any?>()
-${authActive ? `        liveOpts["apikey"] = env["${PROJUPPER}_APIKEY"]\n` : ''}        val mergedOpts = Struct.merge(Struct.jt(liveOpts, extra))
+        // sdk-test-control.json's test.client.options seeds the live
+        // client; the generated fields below overwrite anything they name.
+        val liveOpts = RunnerSupport.liveClientOptions()
+${authActive ? `        liveOpts["apikey"] = env["${ENVVAR.apikey}"]\n` : ''}${authSecret ? `        liveOpts["secret"] = env["${ENVVAR.secret}"]\n` : ''}${serverLiveField}        // An empty map, not null: merge answers null when its last entry is null.
+        val mergedOpts = Struct.merge(Struct.jt(liveOpts, extra ?: linkedMapOf<String, Any?>()))
         client = ${SDK}(Helpers.toMapAny(mergedOpts))
       }
 
@@ -397,7 +406,7 @@ const generateCreate: OpGen = (ctx, step, index) => {
 
   const priorSteps = Object.values(flowSteps(flow)).slice(0, Number(index)) as any[]
   const needsEnt = !priorSteps.some((s: any) =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
 
   const hasDatvar = priorSteps.some((s: any) => {
     if ('create' === s.o) {
@@ -447,7 +456,7 @@ const generateList: OpGen = (ctx, step, index) => {
 
   const priorSteps = Object.values(flowSteps(flow)).slice(0, Number(index)) as any[]
   const needsEnt = !priorSteps.some((s: any) =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
 
   Content(`    // LIST
 `)
@@ -522,11 +531,11 @@ const generateUpdate: OpGen = (ctx, step, index) => {
 
   const priorSteps = Object.values(flowSteps(flow)).slice(0, Number(index)) as any[]
   const needsEnt = !priorSteps.some((s: any) =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
 
   const hasEntIdU = null != entity.id
 
-  Content(`    // UPDATE
+  Content(`    // ${step.o.toUpperCase()}
 `)
   if (needsEnt) {
     Content(`    val ${entvar} = client.${accessor}(null)
@@ -562,13 +571,13 @@ const generateUpdate: OpGen = (ctx, step, index) => {
   }
 
   Content(`
-    val ${resdatavar}Result = ${entvar}.update(${datavar}Up, null)
+    val ${resdatavar}Result = ${entvar}.${step.o}(${datavar}Up, null)
     val ${resdatavar} = Helpers.toMapAny(if (${resdatavar}Result is SdkEntity) ${resdatavar}Result.data() else ${resdatavar}Result) ?: linkedMapOf()
-    assertNotNull(${resdatavar}, "expected update result to be a map")
+    assertNotNull(${resdatavar}, "expected ${step.o} result to be a map")
 `)
   if (hasEntIdU) {
     Content(sameId(liveRepeatsId(entity), `${resdatavar}[${rid(entity)}]`, `${datavar}Up["id"]`,
-      'expected update result id to match'))
+      'expected ' + step.o + ' result id to match'))
   }
 
   if (step.s) {
@@ -593,7 +602,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
 
   const priorSteps = Object.values(flowSteps(flow)).slice(0, Number(index)) as any[]
   const hasEntVar = priorSteps.some((s: any) =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
 
   const flowHasCreate = Object.values(flowSteps(flow)).some((s: any) => (s as any).o === 'create')
   const preambleRef = entity.name + '_ref01'
@@ -648,7 +657,7 @@ const generateRemove: OpGen = (ctx, step, index) => {
 
   const priorSteps = Object.values(flowSteps(flow)).slice(0, Number(index)) as any[]
   const needsEnt = !priorSteps.some((s: any) =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
 
   Content(`    // REMOVE
 `)
@@ -776,6 +785,7 @@ const GENERATE_OP: Record<string, OpGen> = {
   create: generateCreate,
   list: generateList,
   update: generateUpdate,
+  patch: generateUpdate,
   load: generateLoad,
   remove: generateRemove,
 }

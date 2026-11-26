@@ -20,10 +20,10 @@ import {
 
 
 // The text guard: the documentation under single-switch variations of the
-// model, read for unresolved links (`link`), lines naming what the run removed
-// (`off`), siblings reading different facts (`parity`), a fix that reached one
-// sibling only (`reaction`), unfired markers (`marker`), features said to start
-// off that start on (`starts-off`) and foreign code (`fence`).
+// model, read for each relation AGENTS.md lists: unresolved links, lines naming
+// what the run removed, siblings reading different facts, a fix that reached
+// one sibling only, unfired markers, features said to start off that start on,
+// foreign code, header-only tables and numbered headings with a gap.
 
 
 type Line = { text: string, chain: string }
@@ -158,15 +158,12 @@ function baseline(): Variation {
 }
 
 
-// Consumers switch every phase off and wrap the target their name begins with.
+// Each consumer, with the installed target it builds on.
 function consumers(model: any): Record<string, string> {
   const out: Record<string, string> = {}
   for (const name of Object.keys(model.main[KIT].target).sort()) {
-    const phase = fact(model.main[KIT].target[name], 'phase')
-    if (Object.values(phase).every((on: any) => false === on)) {
-      const wrapped = TARGETS.find((t: string) => name.startsWith(t + '-'))
-      if (null != wrapped) out[name] = wrapped
-    }
+    const wrapped = fact(model.main[KIT].target[name], 'consumes')
+    if ('' !== wrapped) out[name] = wrapped
   }
   return out
 }
@@ -244,7 +241,7 @@ function variations(): Variation[] {
     targets: [lead],
     extra: base.extra + `\nmain: kit: phase: top: active: false\nmain: kit: target: ${lead}: output: root: true`,
   })
-  for (const away of Object.keys(wraps).slice(0, 1)) {
+  for (const away of [Object.keys(wraps)[0], lead].filter((t) => null != t)) {
     with_('external-' + away, 'placement', {
       extra: base.extra + `\nmain: kit: target: '${away}': output: ` +
         `{ path: '../elsewhere/${away}', repo: 'acme/${away}', sdkrel: '../sdk' }`,
@@ -540,10 +537,11 @@ function reaction(base: Run, run: Run, family: string): Finding[] {
 }
 
 
-// The facts a section reads that one sibling reads and another does not.
+// The facts a section reads that one sibling reads and another does not,
+// from the model or from the fact computed over it.
 const FACT_ROOTS: [string, RegExp][] = [
-  ['auth', /^main\.kit\.config\.auth(\.|$)/],
-  ['servers', /^main\.kit\.info\.servers(\.|$)/],
+  ['auth', /^main\.kit\.(config|fact)\.auth(\.|$)/],
+  ['servers', /^main\.kit\.(info\.servers|fact\.server)(\.|$)/],
 ]
 
 function parity(run: Run): Finding[] {
@@ -640,6 +638,55 @@ function startsOff(run: Run): Finding[] {
 }
 
 
+// A table header with no row under it, outside code.
+function emptyTables(run: Run): Finding[] {
+  const out: Finding[] = []
+  for (const [doc, lines] of Object.entries(run.lines)) {
+    let fence = false
+    lines.forEach((l: Line, i: number) => {
+      if (/^\s*(```|~~~)/.test(l.text)) {
+        fence = !fence
+      }
+      else if (!fence && /^\s*\|(\s*:?-{3,}:?\s*\|)+\s*$/.test(l.text) &&
+        !/^\s*\|/.test(lines[i + 1]?.text ?? '')) {
+        const head = lines[i - 1] ?? l
+        out.push({ relation: 'table', chain: head.chain, cause: 'empty', doc, line: head.text, variation: run.id })
+      }
+    })
+  }
+  return out
+}
+
+
+// Numbered headings under one parent count 1, 2, 3 with no gap.
+function numbering(run: Run): Finding[] {
+  const out: Finding[] = []
+  for (const [doc, lines] of Object.entries(run.lines)) {
+    const next = new Map<number, number>()
+    let fence = false
+    for (const l of lines) {
+      if (/^\s*(```|~~~)/.test(l.text)) {
+        fence = !fence
+        continue
+      }
+      const h = fence ? null : /^(#{1,6})\s+(?:(\d+)\.\s)?/.exec(l.text)
+      if (null == h) continue
+      const level = h[1].length
+      for (const deeper of [...next.keys()].filter((k: number) => level < k)) next.delete(deeper)
+      if (null == h[2]) {
+        next.delete(level)
+        continue
+      }
+      if (Number(h[2]) !== (next.get(level) ?? 1)) {
+        out.push({ relation: 'numbering', chain: l.chain, cause: 'gap', doc, line: l.text, variation: run.id })
+      }
+      next.set(level, Number(h[2]) + 1)
+    }
+  }
+  return out
+}
+
+
 // A test-only component: a stale sentence, a dangling link and an unfired
 // marker, each of which the guard must report.
 function negativeControl(feature: string): () => void {
@@ -668,6 +715,7 @@ export type {
 
 export {
   TARGETS,
+  SDK_TARGETS,
   FEATURES,
   TOKEN,
   baseline,
@@ -680,6 +728,8 @@ export {
   reaction,
   parity,
   startsOff,
+  emptyTables,
+  numbering,
   negativeControl,
   key,
 }

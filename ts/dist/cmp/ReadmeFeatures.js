@@ -69,15 +69,7 @@ ${f.title}.
 
 `);
         if (0 < f.options.length) {
-            (0, jostraca_1.Content)(`| Option | Default |
-|---|---|
-`);
-            for (const o of f.options) {
-                (0, jostraca_1.Content)(`| \`${o.name}\` | ${o.code} |
-`);
-            }
-            (0, jostraca_1.Content)(`
-`);
+            ReadmeFeatureOptions({ feature: f });
         }
         (0, jostraca_1.Content)(`Set \`feature.${f.name}.active\` to enable it${0 < f.options.length ? ', then override any of the options above' : ''}.
 
@@ -92,4 +84,16 @@ activated earlier.
     }
 });
 exports.ReadmeFeatures = ReadmeFeatures;
+const ReadmeFeatureOptions = (0, component_1.cmp)(function ReadmeFeatureOptions(props) {
+    const f = props.feature;
+    (0, jostraca_1.Content)(`| Option | Default |
+|---|---|
+`);
+    for (const o of f.options) {
+        (0, jostraca_1.Content)(`| \`${o.name}\` | ${o.code} |
+`);
+    }
+    (0, jostraca_1.Content)(`
+`);
+});
 //# sourceMappingURL=ReadmeFeatures.js.map

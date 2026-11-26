@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, entityClassName, entityCollection, fact, clientOptions, entityOps, entityPath, introOps, requiredItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -10,6 +10,9 @@ import {
 const ReadmeModel = cmp(function ReadmeModel(props: any) {
   const { target, ctx$: { model } } = props
 
+  // PHP class names ignore case, so Entity_php folds case when it names one.
+  const className = (ent: any): string => entityClassName(ent, entityCollection(model), true)
+
   const entity = getModelPath(model, `main.${KIT}.entity`)
   const entityList = each(entity).filter((e: any) => e.active !== false)
 
@@ -17,23 +20,25 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   // load/list/create/update/remove row only for operations at least one active
   // entity actually exposes (a read-only entity has just list+load) — never
   // document an operation no entity has.
-  const opUnion = new Set<string>()
-  entityList.forEach((e: any) => Object.keys(e.op || {})
-    .forEach((o: string) => { if (e.op[o] && e.op[o].active !== false) opUnion.add(o) }))
+  const opUnion = new Set<string>(introOps(model))
+  const sameOps = fact(model.main[KIT], 'sharedOps')
+  const listAll = !entityList.some((e: any) =>
+    entityOps(e).includes('list') && 0 < requiredItems(e, 'list').length)
   const opRowDefs: Record<string, string> = {
     load: '| `load` | `($reqmatch, $ctrl): mixed` | Load a single entity by match criteria, and return it. |',
-    list: '| `list` | `(?array $reqmatch = null, $ctrl): mixed` | List entities matching the criteria (call with no argument to list all), one per record. |',
+    list: '| `list` | `(?array $reqmatch = null, $ctrl): mixed` | List entities matching the criteria' + (listAll ? ' (call with no argument to list all)' : '') + ', one per record. |',
     create: '| `create` | `($reqdata, $ctrl): mixed` | Create a new entity, and return it. |',
     update: '| `update` | `($reqdata, $ctrl): mixed` | Update an existing entity, and return it. |',
     patch: '| `patch` | `($reqdata, $ctrl): mixed` | Change part of an existing entity, and return it. |',
     remove: '| `remove` | `($reqmatch, $ctrl): mixed` | Remove an entity, and return it marked as deleted. |',
   }
   const opRows = ['load', 'list', 'create', 'update', 'patch', 'remove']
-    .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o]).join('\n')
+    .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o] + '\n').join('')
+  const listResult = opUnion.has('list') ? ', and `list` an `array` of entities, one\nper record' : ''
 
-  const apikeyOptionRow = isAuthActive(model)
-    ? '| `apikey` | `string` | API key for authentication. |\n'
-    : ''
+  const OPTION_KIND: Record<string, string> = { string: 'string', map: 'array', list: 'array' }
+  const optionRows = clientOptions(model)
+    .map((o: any) => '| `' + o.name + '` | `' + OPTION_KIND[o.kind] + '` | ' + o.desc + ' |\n').join('')
 
   Content(`### ${model.const.Name}SDK
 
@@ -46,13 +51,7 @@ Creates a new SDK client.
 
 | Option | Type | Description |
 | --- | --- | --- |
-${apikeyOptionRow}| \`base\` | \`string\` | Base URL of the API server. |
-| \`prefix\` | \`string\` | URL path prefix prepended to all requests. |
-| \`suffix\` | \`string\` | URL path suffix appended to all requests. |
-| \`feature\` | \`array\` | Feature activation flags. |
-| \`extend\` | \`array\` | Additional Feature instances to load. |
-| \`system\` | \`array\` | System overrides (e.g. custom \`fetch\` callable). |
-
+${optionRows}
 ### test
 
 \`\`\`php
@@ -73,19 +72,17 @@ Creates a test-mode client with mock transport. Both arguments may be \`null\`.
 
   each(entityList, (ent: any) => {
     const article = /^[aeiou]/i.test(ent.Name) ? 'an' : 'a'
-    Content(`| \`${ent.Name}\` | \`($data): ${ent.Name}Entity\` | Create ${article} ${ent.Name} entity instance. |
+    Content(`| \`${ent.Name}\` | \`($data): ${className(ent)}\` | Create ${article} ${ent.Name} entity instance. |
 `)
   })
 
   Content(`
 ### Entity interface
 
-All entities share the same interface.
-
-| Method | Signature | Description |
+${0 === entityList.length ? '' : (sameOps ? 'All entities share the same interface.' :
+  'Each entity has only the operations its model declares; see its section below.') + '\n\n'}| Method | Signature | Description |
 | --- | --- | --- |
-${opRows}
-| \`data_get\` | \`(): array\` | Get entity data. |
+${opRows}| \`data_get\` | \`(): array\` | Get entity data. |
 | \`data_set\` | \`($data): void\` | Set entity data. |
 | \`match_get\` | \`(): array\` | Get entity match criteria. |
 | \`match_set\` | \`($match): void\` | Set entity match criteria. |
@@ -94,8 +91,7 @@ ${opRows}
 
 ### Result shape
 
-Entity operations return the entity, and \`list\` an \`array\` of entities, one
-per record; an entity's \`data_get()\` reads its record (an \`array\`). They
+Entity operations return the entity${listResult}; an entity's \`data_get()\` reads its record (an \`array\`). They
 throw on error, so wrap calls in \`try\`/\`catch\` to handle failures.
 
 The \`direct()\` escape hatch never throws — it returns a result \`array\`
@@ -113,34 +109,32 @@ On error, \`ok\` is \`false\` and \`$err\` contains the error value.
 `)
 
   // Entities summary
-  Content(`### Entities
+  if (0 < entityList.length) {
+    Content(`### Entities
 
 `)
+  }
   each(entityList, (ent: any) => {
     const fields = Object.values(ent.fields || {})
-    const opnames = Object.keys(ent.op || {})
-    const ops = ent.op || {}
-    const points = each(ops).map((op: any) =>
-      op.points ? each(op.points) : []
-    ).flat()
-    const path = points.length > 0 ? (points[0] as any).o || '' : ''
+    const opnames = entityOps(ent)
+    const path = entityPath(ent)
 
     Content(`#### ${ent.Name}
 
-| Field | Description |
+${0 === fields.length ? '' : `| Field | Description |
 | --- | --- |
-`)
+`}`)
     each(fields, (field: any) => {
-      Content(`| \`${field.n}\` | ${field.sh || ''} |
+      Content(`| \`${field.n}\` | ${fact(model.main[KIT], 'field')[ent.name]?.[field.n]?.desc.cell ?? ''} |
 `)
     })
 
     Content(`
-Operations: ${opnames.map((n: string) => n.charAt(0).toUpperCase() + n.slice(1)).join(', ')}.
+${0 === opnames.length ? '' : `Operations: ${opnames.join(', ')}.
 
-API path: \`${path}\`
+`}${'' === path ? '' : `API path: \`${path}\`
 
-`)
+`}`)
   })
 
 })

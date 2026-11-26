@@ -154,6 +154,8 @@ main: kit: target: &: {
   publish: {
     version: *'0.0.1' | string
 
+    recipe: *true | boolean
+
     tag: {
       active: *true | boolean
       prefix: *'' | string

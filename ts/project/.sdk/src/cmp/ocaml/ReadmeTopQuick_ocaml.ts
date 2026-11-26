@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, opRequestShape, matchExampleItems, entityOps } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, opRequestShape, matchExampleItems, entityOps, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -30,9 +30,16 @@ const ReadmeTopQuick = cmp(function ReadmeTopQuick(props: any) {
   const exampleEntity = Object.values(entity).find((e: any) => e.active !== false) as any
 
   const authActive = isAuthActive(model)
-  const ctor = authActive
-    ? `Sdk_client.make (jo [("apikey", Str (Sys.getenv "${envName(model)}_APIKEY"))])`
-    : `Sdk_client.make0 ()`
+  const svars = fact(model.main[KIT], 'server').filter((v: any) => v.required)
+  const ctorFields = [
+    ...(authActive ? [`("apikey", Str (Sys.getenv "${envName(model)}_APIKEY"))`] : []),
+    ...(fact(model.main[KIT], 'auth').secret ? [`("secret", Str (Sys.getenv "${envName(model)}_SECRET"))`] : []),
+    ...(0 === svars.length ? [] : [`("server", jo [` +
+      svars.map((v: any) => `("${v.name}", Str "<${v.name}>")`).join('; ') + `])`]),
+  ]
+  const ctor = 0 === ctorFields.length
+    ? `Sdk_client.make0 ()`
+    : `Sdk_client.make (jo [${ctorFields.join('; ')}])`
 
   Content(`\`\`\`ocaml
 open Voxgig_struct

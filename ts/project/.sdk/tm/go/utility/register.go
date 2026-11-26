@@ -111,8 +111,13 @@ func overrideUtil(u *core.Utility, key string, val any) bool {
 			return true
 		}
 	case "makeOptions":
-		if fn, ok := val.(func(ctx *core.Context) map[string]any); ok {
+		if fn, ok := val.(func(ctx *core.Context) (map[string]any, error)); ok {
 			u.MakeOptions = fn
+			return true
+		}
+		// A one-result override cannot refuse, so it keeps working wrapped.
+		if fn, ok := val.(func(ctx *core.Context) map[string]any); ok {
+			u.MakeOptions = func(ctx *core.Context) (map[string]any, error) { return fn(ctx), nil }
 			return true
 		}
 	case "makeRequest":

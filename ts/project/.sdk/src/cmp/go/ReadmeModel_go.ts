@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, entityIdField, entityPrimaryOp, goModule, listMatchArg, matchExampleItems, litPair, litFor } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, entityIdField, entityPrimaryOp, goModule, listMatchArg, matchExampleItems, litPair, litFor, fact, clientOptions, entityOps, entityPath, introOps } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -20,9 +20,7 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   // entity actually exposes (a read-only entity has just List+Load) — never
   // document an operation no entity has. Model op keys are lowercase; Go
   // method names are capitalised.
-  const opUnion = new Set<string>()
-  entityList.forEach((e: any) => Object.keys(e.op || {})
-    .forEach((o: string) => { if (e.op[o] && e.op[o].active !== false) opUnion.add(o) }))
+  const opUnion = new Set<string>(introOps(model))
   const opRowDefs: Record<string, string> = {
     load: '| `Load` | `(reqmatch, ctrl map[string]any) (any, error)` | Load a single entity by match criteria, and return it. |',
     list: '| `List` | `(reqmatch, ctrl map[string]any) (any, error)` | List entities matching the criteria, one per record. |',
@@ -32,7 +30,7 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
     remove: '| `Remove` | `(reqmatch, ctrl map[string]any) (any, error)` | Remove an entity, and return it marked as deleted. |',
   }
   const opRows = ['load', 'list', 'create', 'update', 'patch', 'remove']
-    .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o]).join('\n')
+    .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o] + '\n').join('')
 
   const recordOps = ['load', 'create', 'update', 'patch', 'remove'].filter((o) => opUnion.has(o))
     .map((o) => '`' + o.charAt(0).toUpperCase() + o.slice(1) + '`')
@@ -43,9 +41,6 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
 
   const gomodule = goModule(model, target.name)
 
-  const apikeyOptionRow = isAuthActive(model)
-    ? '| `"apikey"` | `string` | API key for authentication. |\n'
-    : ''
 
   // Illustrate the Result shape with the first entity that ACTUALLY exposes an
   // op — never fabricate a `Load` on an op-less first entity (e.g. Cloudsmith's
@@ -84,23 +79,28 @@ slice):
 `
     : ''
 
+  const OPTION_KIND: Record<string, string> = { string: 'string', map: 'map[string]any', list: '[]any' }
+  const optionRows = clientOptions(model)
+    .map((o: any) => '| `"' + o.name + '"` | `' + OPTION_KIND[o.kind] + '` | ' + o.desc + ' |\n').join('')
+  const required = fact(model.main[KIT], 'server').filter((v: any) => v.required)
+    .map((v: any) => '`' + v.name + '`')
+  const refusal = 0 === required.length ? '' : `
+Construction refuses \`options["server"]\` without a value for ${required.join(' or ')}:
+it returns a nil client and an error whose code is \`server_var_required\`
+and whose message names the variable.
+`
+
   Content(`### New${model.const.Name}SDK
 
 \`\`\`go
-func New${model.const.Name}SDK(options map[string]any) *${model.const.Name}SDK
+func New${model.const.Name}SDK(options map[string]any) (*${model.const.Name}SDK, error)
 \`\`\`
 
 Creates a new SDK client.
-
+${refusal}
 | Option | Type | Description |
 | --- | --- | --- |
-${apikeyOptionRow}| \`"base"\` | \`string\` | Base URL of the API server. |
-| \`"prefix"\` | \`string\` | URL path prefix prepended to all requests. |
-| \`"suffix"\` | \`string\` | URL path suffix appended to all requests. |
-| \`"feature"\` | \`map[string]any\` | Feature activation flags. |
-| \`"extend"\` | \`[]any\` | Additional Feature instances to load. |
-| \`"system"\` | \`map[string]any\` | System overrides (e.g. custom \`"fetch"\` function). |
-
+${optionRows}
 ### TestSDK
 
 \`\`\`go
@@ -132,8 +132,7 @@ All entities implement the \`${model.const.Name}EntityBase\` interface.
 
 | Method | Signature | Description |
 | --- | --- | --- |
-${opRows}
-| \`Data\` | \`(args ...any) any\` | Get or set entity data. |
+${opRows}| \`Data\` | \`(args ...any) any\` | Get or set entity data. |
 | \`Match\` | \`(args ...any) any\` | Get or set entity match criteria. |
 | \`Make\` | \`() Entity\` | Create a new instance with the same options. |
 | \`GetName\` | \`() string\` | Return the entity name. |
@@ -141,45 +140,44 @@ ${opRows}
 ### Result shape
 
 Entity operations return \`(value, error)\`. The \`value\` is the entity
-itself — there is no wrapper:
+itself — there is no wrapper${'' === resultShapeRows ? '.' : `:
 
 | Operation | \`value\` |
 | --- | --- |
-${resultShapeRows}
+${resultShapeRows}`}
 
 ${resultCallExample}Only \`Direct()\` returns a response envelope — a \`map[string]any\` with
 \`"ok"\`, \`"status"\`, \`"headers"\`, and \`"data"\` keys.
 
 `)
 
-  Content(`### Entities
+  if (0 < entityList.length) {
+    Content(`### Entities
 
 `)
+  }
   each(entityList, (ent: any) => {
     const fields = Object.values(ent.fields || {})
-    const opnames = Object.keys(ent.op || {})
-    const ops = ent.op || {}
-    const points = each(ops).map((op: any) =>
-      op.points ? each(op.points) : []
-    ).flat()
-    const path = points.length > 0 ? (points[0] as any).o || '' : ''
+    const opnames = entityOps(ent)
+    const path = entityPath(ent)
 
     Content(`#### ${ent.Name}
 
-| Field | Description |
+${0 === fields.length ? '' : `| Field | Description |
 | --- | --- |
-`)
+`}`)
     each(fields, (field: any) => {
-      Content(`| \`"${field.n}"\` | ${field.sh || ''} |
+      Content(`| \`"${field.n}"\` | ${fact(model.main[KIT], 'field')[ent.name]?.[field.n]?.desc.cell ?? ''} |
 `)
     })
 
+    // Go spells each operation's method capitalised.
     Content(`
-Operations: ${opnames.map((n: string) => n.charAt(0).toUpperCase() + n.slice(1)).join(', ')}.
+${0 === opnames.length ? '' : `Operations: ${opnames.map((n: string) => n.charAt(0).toUpperCase() + n.slice(1)).join(', ')}.
 
-API path: \`${path}\`
+`}${'' === path ? '' : `API path: \`${path}\`
 
-`)
+`}`)
   })
 
 })

@@ -1,5 +1,5 @@
 
-const envlocal = __dirname + '/../../../.env.local'
+const envlocal = __dirname + '/../../../SDKREL/.env.local'
 require('../../utility').loadEnvLocal(envlocal)
 
 const Path = require('node:path')

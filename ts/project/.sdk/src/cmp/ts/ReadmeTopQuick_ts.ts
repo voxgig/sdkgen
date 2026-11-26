@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, isHttpBasicAuth, packageName, envName, entityIdField, entityOps, opRequestShape, safeVarName, exampleVarName, jsKey, serverVariables, listMatchArg, matchExampleItems } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, packageName, envName, entityIdField, entityOps, opRequestShape, safeVarName, exampleVarName, jsKey, listMatchArg, matchExampleItems, entityClassName, entityCollection, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -22,14 +22,14 @@ const ReadmeTopQuick = cmp(function ReadmeTopQuick(props: any) {
   // - makeOptions refuses rather than request a URL with a literal
   // {account_id} in it - so a quickstart that omits them is a quickstart
   // that throws on its first line.
-  const svarLines = serverVariables(model)
+  const svarLines = fact(model.main[KIT], 'server').filter((v: any) => v.required)
     .map((v: any) => `\n    ${v.name}: '<${v.name}>',`).join('')
   const serverField = '' === svarLines ? '' :
     `\n  // Required: this API's server URL is templated on these.\n  server: {${svarLines}\n  },`
 
   const ctorFields = (authActive
     ? `\n  apikey: process.env.${envName(model)}_APIKEY,${
-      isHttpBasicAuth(model) ? `\n  secret: process.env.${envName(model)}_SECRET,` : ''}`
+      fact(model.main[KIT], 'auth').secret ? `\n  secret: process.env.${envName(model)}_SECRET,` : ''}`
     : '') + serverField
 
   const ctor = '' === ctorFields
@@ -51,7 +51,7 @@ const client = ${ctor}
     let hasCall = false
 
     if (opnames.includes('list')) {
-      Content(`// List all ${eName.toLowerCase()}s (returns ${eName}Entity[], one entity per record)
+      Content(`// List all ${eName.toLowerCase()}s (returns ${entityClassName(exampleEntity, entityCollection(model))}[], one entity per record)
 const ${eVar}s = await client.${eName}().list(${listMatchArg('ts', exampleEntity)})
 for (const ${eVar} of ${eVar}s) {
   console.log(${eVar}.data())
@@ -85,7 +85,7 @@ for (const ${eVar} of ${eVar}s) {
             it.name === neIdF ? 'example_id' : 'example_' + it.name)},`)
 
       Content(`
-// Load a specific ${neName.toLowerCase()} (returns the entity, ${/^[aeiou]/i.test(neName) ? 'an' : 'a'} ${neName}Entity)
+// Load a specific ${neName.toLowerCase()} (returns the entity, ${/^[aeiou]/i.test(neName) ? 'an' : 'a'} ${entityClassName(nestedEntity, entityCollection(model))})
 const ${neVar} = await client.${neName}().load({
 ${neMatchLines.join('\n')}
 })
@@ -104,7 +104,7 @@ console.log(${neVar}.data())
           `  ${jsKey(it.name)}: ${exampleValue(exampleEntity, exampleEntity.op && exampleEntity.op.load, it.name,
             it.name === idF ? 'example_id' : 'example_' + it.name)},`)
       const loadArg = 0 < loadItems.length ? `{\n${loadItems.join('\n')}\n}` : ''
-      Content(`// Load a specific ${eName.toLowerCase()} (returns the entity, ${/^[aeiou]/i.test(eName) ? 'an' : 'a'} ${eName}Entity)
+      Content(`// Load a specific ${eName.toLowerCase()} (returns the entity, ${/^[aeiou]/i.test(eName) ? 'an' : 'a'} ${entityClassName(exampleEntity, entityCollection(model))})
 const ${eVar} = await client.${eName}().load(${loadArg})
 console.log(${eVar}.data())
 `)

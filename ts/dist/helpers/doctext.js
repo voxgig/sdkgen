@@ -70,6 +70,12 @@ function docTexts(model) {
         str(info.homepage), true);
     for (const [name, ent] of Object.entries(kit.entity || {})) {
         add(ent, ['desc'], str(info.entity_desc[name]) || str(ent.short) || str(ent.desc), !given(own.entity_desc?.[name]));
+        // Beside the kit, not the fields: some tests print an entity whole.
+        for (const field of Object.values(ent.fields || {})) {
+            if (given(field?.sh)) {
+                add(kit, ['field', name, String(field.n), 'desc'], str(field.sh), true);
+            }
+        }
     }
     for (const f of Object.values(kit.feature || {})) {
         add(f, ['title'], str(f.title), false);

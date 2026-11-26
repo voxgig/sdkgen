@@ -2,7 +2,7 @@
 import Fs, { writeFileSync } from 'node:fs'
 import Path from 'node:path'
 
-import { strictEqual } from 'node:assert'
+import { ok, strictEqual } from 'node:assert'
 
 import { Aontu } from 'aontu'
 import { each, names, Project, Folder } from 'jostraca'
@@ -197,6 +197,16 @@ main: kit: entity: planet: {
           { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`", ex: "p01" }
         ] }
         m: "PUT", o: "/planet/{id}", s: [{ lit: "planet" }, { var: "id" }]
+        t: { req: "\`reqdata\`", res: "\`body\`" }
+      } ]
+    }
+    patch: {
+      name: "patch"
+      points: [ {
+        g: { params: [
+          { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`", ex: "p01" }
+        ] }
+        m: "PATCH", o: "/planet/{id}", s: [{ lit: "planet" }, { var: "id" }]
         t: { req: "\`reqdata\`", res: "\`body\`" }
       } ]
     }
@@ -414,6 +424,12 @@ main: kit: flow: BasicPlanetFlow: {
     { o: "update", i: {
         ref: "planet_ref01", srcdatavar: "planet_ref01_data",
         suffix: "_up0", textfield: "kind" } }
+    # apidef writes no patch step; this one is shaped as its update steps
+    # are, mark included, so every flow test calls the patch it documents.
+    { o: "patch", i: {
+        ref: "planet_ref01", srcdatavar: "planet_ref01_data",
+        suffix: "_pt0", textfield: "title" }
+      s: [{ apply: "TextFieldMark", def: { mark: "Mark01-planet_ref01" } }] }
     { o: "load", i: {
         ref: "planet_ref01", srcdatavar: "planet_ref01_data", suffix: "_dt0" } }
     { o: "remove", i: { ref: "planet_ref01", suffix: "_rm0" } }
@@ -2360,6 +2376,17 @@ function makeRoot(registered: any[] = []): any {
 
 
 
+// A project's own copy of a bundled feature model, switched off: its include.
+function offFeature(name: string): string {
+  const dir = Path.join(STAGE, '.sdk', 'model', 'feature-off')
+  Fs.mkdirSync(dir, { recursive: true })
+  const src = Fs.readFileSync(Path.join(STAGE, '.sdk', 'model', 'feature', name + '.aontu'), 'utf8')
+  ok(/^ {2}active: true$/m.test(src), name + ': the feature model does not declare itself active')
+  writeFileSync(Path.join(dir, name + '.aontu'), src.replace(/^ {2}active: true$/m, '  active: false'))
+  return `@"feature-off/${name}.aontu"\n`
+}
+
+
 function namedEntity(name: string): string {
   const Flow = 'Basic' + name.split('_').map((s) => s.charAt(0).toUpperCase() + s.slice(1)).join('') + 'Flow'
   return `
@@ -2545,4 +2572,5 @@ export {
   stageAlias,
   makeRoot,
   namedEntity,
+  offFeature,
 }

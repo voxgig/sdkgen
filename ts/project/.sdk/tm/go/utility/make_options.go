@@ -45,7 +45,7 @@ func canonNumber(n json.Number) any {
 	return n
 }
 
-func makeOptionsUtil(ctx *core.Context) map[string]any {
+func makeOptionsUtil(ctx *core.Context) (map[string]any, error) {
 	options := ctx.Options
 	if options == nil {
 		options = map[string]any{}
@@ -161,6 +161,7 @@ func makeOptionsUtil(ctx *core.Context) map[string]any {
 		if mn, ok := vs.GetPath(config, []any{"main", "name"}).(string); ok && mn != "" {
 			sdkname = mn
 		}
+		missing := ""
 		resolved := serverVarRe.ReplaceAllStringFunc(base, func(ph string) string {
 			name := ph[1 : len(ph)-1]
 			val, _ := server[name].(string)
@@ -168,12 +169,18 @@ func makeOptionsUtil(ctx *core.Context) map[string]any {
 				if testmode {
 					return "test-" + name
 				}
-				panic(sdkname + ": the server variable '" + name + "' is required: " +
-					"the API base URL is '" + base + "' — pass " +
-					`options["server"].(map)["` + name + `"] in the SDK options`)
+				if missing == "" {
+					missing = name
+				}
 			}
 			return val
 		})
+		if missing != "" {
+			return nil, core.NewProjectNameError("server_var_required",
+				sdkname+": the server variable '"+missing+"' is required: "+
+					"the API base URL is '"+base+"' — pass "+
+					`"server": map[string]any{"`+missing+`": "..."} in the SDK options`, ctx)
+		}
 		opts["base"] = resolved
 	}
 
@@ -247,7 +254,7 @@ func makeOptionsUtil(ctx *core.Context) map[string]any {
 	// Again over the merged result: the config's own defaults can carry one.
 	cleanAddOptions(cleanctx, cleanOmit(opts, "clean", "__derived__"))
 
-	return opts
+	return opts, nil
 }
 
 // A feature's name is not a field name: only the sensitive names inside its

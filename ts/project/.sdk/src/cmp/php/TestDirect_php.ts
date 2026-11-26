@@ -1,5 +1,6 @@
 
 import {
+  KIT,
   Model,
   ModelEntity,
   nom,
@@ -11,9 +12,7 @@ import {
   File,
   cmp,
   snakify,
-  isAuthActive, envName, envToken,
-  serverVarEnv,
-  serverVariables,
+  isAuthActive,
   pointParts,
   pointSlash,
   pointPlaceholders,
@@ -26,6 +25,7 @@ import {
   liveEntity,
   liveDirectGetOnly, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
   liveDirectDiscovery,
+  fact,
 } from '@voxgig/sdkgen'
 
 import { formatPhpValue } from './utility_php'
@@ -100,27 +100,28 @@ const TestDirect = cmp(function TestDirect(props: any) {
   const target = props.target
   const entity: ModelEntity = liveEntity(ctx$, props.entity)
 
-  const PROJECTNAME = envName(model)
+  const ENVVAR = fact(model.main[KIT], 'env')
 
   const authActive = isAuthActive(model)
+  const authSecret = authActive && fact(model.main[KIT], 'auth').secret
   const apikeyEnvEntry = authActive
-    ? `\n        "${PROJECTNAME}_APIKEY" => "",`
+    ? `\n        "${ENVVAR.apikey}" => "",${authSecret ? `\n        "${ENVVAR.secret}" => "",` : ''}`
     : ''
   const apikeyLiveField = authActive
-    ? `\n            "apikey" => $env["${PROJECTNAME}_APIKEY"],`
+    ? `\n            "apikey" => $env["${ENVVAR.apikey}"],${authSecret ? `\n            "secret" => $env["${ENVVAR.secret}"],` : ''}`
     : ''
 
   // A templated server URL (OpenAPI server variables) makes a LIVE client
   // impossible to construct without values: makeOptions raises rather than
   // request a URL with a literal `{account_id}` in it. So the live suite
   // takes them from the environment the same way it takes the apikey.
-  const svars = serverVariables(model)
+  const svars = fact(model.main[KIT], 'server')
   const serverEnvEntry = svars
-    .map((v: any) => `\n        "${serverVarEnv(PROJECTNAME, v.name)}" => ${formatPhpValue(v.dflt)},`).join('')
+    .map((v: any) => `\n        "${ENVVAR.server[v.name]}" => ${formatPhpValue(v.dflt)},`).join('')
   const serverLiveField = 0 === svars.length ? '' : `
             "server" => [${svars
       .map((v: any) => `
-                "${v.name}" => $env["${serverVarEnv(PROJECTNAME, v.name)}"],`).join('')}
+                "${v.name}" => $env["${ENVVAR.server[v.name]}"],`).join('')}
             ],`
 
   const opnames = Object.keys(entity.op || {})
@@ -170,7 +171,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
     ? loadParams.map((p: any) => `            $params["${p.n}"] = ${JSON.stringify(p.ex)};`).join('\n')
     : ''
 
-  const entidEnvVar = `${PROJECTNAME}_TEST_${envToken(entity.name)}_ENTID`
+  const entidEnvVar = ENVVAR.entid[entity.name]
 
   const exampleIds = liveExampleIds(entity)
   const listLiveQueryLines = liveQueryExamples(listPoint)
@@ -387,10 +388,10 @@ function ${entity.name}_direct_setup($mockres)
 
     $env = Runner::env_override([
         "${entidEnvVar}" => [],
-        "${PROJECTNAME}_TEST_LIVE" => "FALSE",${apikeyEnvEntry}${serverEnvEntry}
+        "${ENVVAR.live}" => "FALSE",${apikeyEnvEntry}${serverEnvEntry}
     ]);
 
-    $live = $env["${PROJECTNAME}_TEST_LIVE"] === "TRUE";
+    $live = $env["${ENVVAR.live}"] === "TRUE";
 
     if ($live) {
         // Merged so the generated fields win: sdk-test-control.json's

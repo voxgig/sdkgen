@@ -20,8 +20,8 @@ public class Result {
   public Object resdata;
   public Map<String, Object> resmatch;
 
-  // Feature extensions: pagination signals (paging feature) and the
-  // incremental item iterator (streaming feature).
+  // Feature extensions, set only while their feature is active: pagination
+  // signals (paging) and the incremental item iterator (streaming).
   public Map<String, Object> paging;
   public boolean streaming = false;
   public Supplier<Iterator<Object>> stream;

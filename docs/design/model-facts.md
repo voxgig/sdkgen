@@ -42,6 +42,11 @@ read it; none of them computes it.
     an entity's `desc`, a feature's `title` and `option.<name>.value` or
     `.type`. They cost about 170 ms of the pass with 20 targets and 20
     features, and about 0.75 s for 600 texts.
+  - The escaped forms of each field's description (WP33), as
+    `main.kit.fact.field.<entity>.<field>.desc`, for the fields whose `sh` is
+    set. They sit beside the kit rather than the field, because the ts and
+    js live tests print an entity whole. Each costs about 2 ms of the pass,
+    so 5000 described fields add about 9 s.
   - `main.kit.fact.auth` (WP19): `apikey`, `suppressed`, `basic`, `in`,
     `name`, `prefix` and `secret`, each equal to the helper it is computed
     for (`isAuthActive`, `isAuthSuppressed`, `isHttpBasicAuth`,
@@ -77,12 +82,15 @@ read it; none of them computes it.
     publishes or the npm package of the ts SDK, else `<target>/v`; `''` when
     `publish.tag.active` is false (WP25). The publish workflow's tag job and
     PUBLISHING table read it, and so do the root Makefile's tag recipe and
-    header. The per-target Makefile templates still spell `<target>/v` until
-    WP35 gives them the tag through a token.
+    header, each port's own Makefile, through the `RELEASETAG` token every
+    pass sets, and each port's install section.
   - `main.kit.fact.ops`: each entity's canonical operations, by entity name,
     in canonical order, action-only ones included, with no fallback. They sit
     outside the entities because the ts and js live tests print an entity
     whole into generated source.
+  - `main.kit.fact.sharedOps` (WP31): whether every active entity has the
+    same operations, so that one entity interface describes them all; false
+    when no entity is active.
   - `main.kit.fact.package`: the JVM package of java, kotlin and scala, and the
     Python package py and py-data import, which is jostraca's `Name` for the
     project lower-cased.

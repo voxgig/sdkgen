@@ -74,6 +74,10 @@ target:
 It also ensures the `test` feature is present (every target's generated
 test suite depends on it).
 
+A component an earlier add copied that its source no longer ships is
+removed, when the copy record shows the project left it as the add wrote
+it. A changed one stays, and `doctor` reports it as **stale**.
+
 ```bash
 voxgig-sdkgen target add ts
 voxgig-sdkgen target add ts,go,py        # several at once
@@ -145,7 +149,7 @@ Fourteen categories:
 | **customized** | In merge mode (the default `main.kit.copies`), a copy the copy record shows the project changed after an add wrote it. An add merges its updates in, so it is the project's own work and never a failure. |
 | **forked** | A file in `.sdk/src/cmp/**`, or a target's own `.sdk/model/target/<t>.aontu`, differs from the scaffold. `target add` will silently revert it. |
 | **edited** | A template master in `.sdk/tm/**` differs — compared *after* applying the same substitutions `target add` applied, so placeholder replacement is not reported as an edit. |
-| **stale** | Present in the project, but `target add` would no longer write it. Orphaned output. |
+| **stale** | Present in the project, but `target add` would no longer write it: orphaned output, or a component an earlier add copied that its source no longer ships. Nothing loads such a component, and `target add` removes it when the project left it as written. |
 | **missing** | `target add` would write it and the project does not have it. |
 | **outdated** | Differs from its source, although the copy record shows the project has not touched it since an add wrote it: the generator or the package moved on and the copy was not refreshed. `package update <pkg> --no-fetch` refreshes it without `--force`. |
 | **ahead** | As **outdated**, but the copy record dates it from a newer release of the package than the one installed, so the package was moved back. `package update <pkg>` fetches the latest release and moves the package up to it; a re-add from the installed release would put older copies back. |
@@ -154,7 +158,7 @@ Fourteen categories:
 | **unreadable** | A copied model file that does not compile, so the model leaves its item out without an error. Model files copied before 1.3.18 use `//` comments, which the compiler does not read. Commit, then run `target add <t> --force`. |
 | **unresolved** | A declared target, feature or edition whose source is not installed, so its copies cannot be compared. Install the package it names. Until then its files are not reported as stale, and `target add` keeps an active feature's files rather than pruning them. |
 | **untested** | An active SDK target in a model with no active `test` feature, which its generated tests and test mode need. `generate` refuses the model; `target add <t>` installs the feature. |
-| **additive** | A project-owned component the scaffold never shipped. Reported, never a failure — this is the supported way to extend a target (see `registerComponent`). |
+| **additive** | A project-owned component that the scaffold never shipped and no add copied. Reported, never a failure — this is the supported way to extend a target (see `registerComponent`). |
 | **unwired** | A root-level component this sdkgen provides that the project's `src/*.ts` wiring never calls. Informational: opting out is legitimate. |
 
 **forked** to **untested** fail the check, except the copies reported as

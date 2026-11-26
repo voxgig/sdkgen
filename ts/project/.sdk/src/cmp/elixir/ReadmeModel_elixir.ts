@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, elixirAccessor, entityCollection } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, elixirAccessor, entityCollection, fact, clientOptions, entityOps, entityPath, introOps } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -17,9 +17,8 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   // Model-driven op rows for the shared entity interface: emit a
   // load/list/create/update/remove row only for operations at least one active
   // entity actually exposes.
-  const opUnion = new Set<string>()
-  entityList.forEach((e: any) => Object.keys(e.op || {})
-    .forEach((o: string) => { if (e.op[o] && e.op[o].active !== false) opUnion.add(o) }))
+  const opUnion = new Set<string>(introOps(model))
+  const sameOps = fact(model.main[KIT], 'sharedOps')
   const opRowDefs: Record<string, string> = {
     load: '| `load` | `(entity, reqmatch, ctrl \\\\ nil) :: entity` | Load a single entity by match criteria, and return it. Raises on error. |',
     list: '| `list` | `(entity, reqmatch \\\\ nil, ctrl \\\\ nil) :: list()` | List entities matching the criteria, one per record. Raises on error. |',
@@ -29,11 +28,12 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
     remove: '| `remove` | `(entity, reqmatch \\\\ nil, ctrl \\\\ nil) :: entity` | Remove an entity, and return it marked as deleted. Raises on error. |',
   }
   const opRows = ['load', 'list', 'create', 'update', 'patch', 'remove']
-    .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o]).join('\n')
+    .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o] + '\n').join('')
+  const listResult = opUnion.has('list') ? ', and `list` a list of entities, one per\nrecord' : ''
 
-  const apikeyOptionRow = isAuthActive(model)
-    ? '| `apikey` | `String.t()` | API key for authentication. |\n'
-    : ''
+  const OPTION_KIND: Record<string, string> = { string: 'String.t()', map: 'map()', list: 'list()' }
+  const optionRows = clientOptions(model)
+    .map((o: any) => '| `' + o.name + '` | `' + OPTION_KIND[o.kind] + '` | ' + o.desc + ' |\n').join('')
 
   Content(`### ${Name}
 
@@ -46,13 +46,7 @@ native map with \`${Name}.Helpers.deep/1\`.
 
 | Option | Type | Description |
 | --- | --- | --- |
-${apikeyOptionRow}| \`base\` | \`String.t()\` | Base URL of the API server. |
-| \`prefix\` | \`String.t()\` | URL path prefix prepended to all requests. |
-| \`suffix\` | \`String.t()\` | URL path suffix appended to all requests. |
-| \`feature\` | \`map()\` | Feature activation flags. |
-| \`extend\` | \`list()\` | Additional feature instances to load. |
-| \`system\` | \`map()\` | System overrides (e.g. custom \`fetch\` function). |
-
+${optionRows}
 ### test
 
 \`\`\`elixir
@@ -80,12 +74,10 @@ Creates a test-mode client with mock transport. Both arguments may be \`nil\`.
   Content(`
 ### Entity interface
 
-Every entity's \`${Name}.Entity.<Name>\` module shares the same interface.
-
-| Function | Signature | Description |
+${0 === entityList.length ? '' : (sameOps ? `Every entity's \`${Name}.Entity.<Name>\` module shares the same interface.` :
+  'Each entity has only the operations its model declares; see its section below.') + '\n\n'}| Function | Signature | Description |
 | --- | --- | --- |
-${opRows}
-| \`data_get\` | \`(entity) :: map()\` | Get entity data. |
+${opRows}| \`data_get\` | \`(entity) :: map()\` | Get entity data. |
 | \`data_set\` | \`(entity, data)\` | Set entity data. |
 | \`match_get\` | \`(entity) :: map()\` | Get entity match criteria. |
 | \`match_set\` | \`(entity, match)\` | Set entity match criteria. |
@@ -94,8 +86,7 @@ ${opRows}
 
 ### Result shape
 
-Entity operations return the entity, and \`list\` a list of entities, one per
-record; an entity module's \`data_get/1\` reads an entity's record. They raise
+Entity operations return the entity${listResult}; an entity module's \`data_get/1\` reads an entity's record. They raise
 a \`${Name}.Error\` on failure, so wrap calls in \`try\`/\`rescue\` to handle
 errors.
 
@@ -114,34 +105,32 @@ On error, \`ok\` is \`false\` and \`err\` carries the error value.
 `)
 
   // Entities summary
-  Content(`### Entities
+  if (0 < entityList.length) {
+    Content(`### Entities
 
 `)
+  }
   each(entityList, (ent: any) => {
     const fields = Object.values(ent.fields || {})
-    const opnames = Object.keys(ent.op || {})
-    const ops = ent.op || {}
-    const points = each(ops).map((op: any) =>
-      op.points ? each(op.points) : []
-    ).flat()
-    const path = points.length > 0 ? (points[0] as any).o || '' : ''
+    const opnames = entityOps(ent)
+    const path = entityPath(ent)
 
     Content(`#### ${ent.Name}
 
-| Field | Description |
+${0 === fields.length ? '' : `| Field | Description |
 | --- | --- |
-`)
+`}`)
     each(fields, (field: any) => {
-      Content(`| \`${field.n}\` | ${field.sh || ''} |
+      Content(`| \`${field.n}\` | ${fact(model.main[KIT], 'field')[ent.name]?.[field.n]?.desc.cell ?? ''} |
 `)
     })
 
     Content(`
-Operations: ${opnames.map((n: string) => n.charAt(0).toUpperCase() + n.slice(1)).join(', ')}.
+${0 === opnames.length ? '' : `Operations: ${opnames.join(', ')}.
 
-API path: \`${path}\`
+`}${'' === path ? '' : `API path: \`${path}\`
 
-`)
+`}`)
   })
 
 })

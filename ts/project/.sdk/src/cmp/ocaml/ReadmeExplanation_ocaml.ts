@@ -28,7 +28,7 @@ ${target.name}/
 ├── sdk_types.ml                -- Core pipeline types
 ├── sdk_helpers.ml              -- jo / ja / getp and friends
 ├── sdk_runtime.ml              -- Operation pipeline runner
-├── sdk_features.ml             -- Built-in features (base, test, log)
+├── sdk_features.ml             -- Feature implementations
 ├── utility/                    -- Vendored voxgig struct port
 └── test/                       -- Test suites
 \`\`\`

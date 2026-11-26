@@ -25,6 +25,17 @@ fn vnull() Value {
     return Value{ .null = {} };
 }
 
+// A live client over `opts`, given a plain base where they name none, so a
+// server variable of the API's own URL cannot refuse it.
+pub fn live_client(opts: Value) *sdk.SDK {
+    const o: Value = if (opts == .object) opts else h.omap();
+    if (h.getp(o, "base") != .string) h.setp(o, "base", h.vstr("http://localhost:8080"));
+    return switch (sdk.SDK.new(o)) {
+        .ok => |client| client,
+        .err => |e| std.debug.panic("{s}", .{e.msg}),
+    };
+}
+
 // ---- feature presence guard (mirrors rust fh_present) -------------------
 
 pub fn fh_has_feature(name: []const u8) bool {

@@ -53,8 +53,8 @@ public abstract class SdkClient {
 
     // Add features in the resolved order (makeOptions puts an explicit list
     // order first, else defaults to test-first). Ordering matters: the `test`
-    // feature installs the base mock transport and the transport features
-    // (retry/cache/netsim/proxy/ratelimit) wrap whatever is current, so `test`
+    // feature installs the base mock transport and the features whose model
+    // declares `transport: 'wrap'` wrap whatever is current, so `test`
     // must be added before them to sit at the base of the chain.
     Map<String, Object> featureOpts =
         Helpers.toMapAny(Struct.getprop(this.options, "feature"));
@@ -233,8 +233,8 @@ public abstract class SdkClient {
    * 200 as a top-level {@code errors} array, so status alone would report a
    * failed query as ok.
    *
-   * <p>NOTE: like direct, this bypasses the feature pipeline — no retry,
-   * ratelimit or paging features apply.
+   * <p>NOTE: like direct, this bypasses the feature pipeline: no feature hook
+   * runs on this path.
    */
   public Map<String, Object> graphql(String query,
       Map<String, Object> variables, Map<String, Object> ctrl) {

@@ -1,6 +1,6 @@
 // Primary-utility corpus driver.
 //
-// Drives every `primary` section of the shared corpus (../.sdk/test/test.json)
+// Drives every `primary` section of the shared corpus (SDKREL/.sdk/test/test.json)
 // through this SDK's utilities, the way the ts reference harness does.
 //
 // The ENGINE is the vendored @voxgig/omni runner (sdktest/vendor/omni),
@@ -252,9 +252,15 @@ object PrimaryCorpus {
     runset("makeSpec", clientFor("makeSpec", sdk)) { (c, _) =>
       val s = u.makeSpec(c); if (s != null) c.spec = s; specValue(c.spec)
     }
-    runset("prepareAuth", clientFor("prepareAuth", sdk)) { (c, _) =>
-      u.prepareAuth(c); specValue(c.spec)
+    // Read from the config, never from a probe: a probe that finds no
+    // credential is the regression this section exists to catch.
+    if (SCALAPACKAGE.core.Config.sharedConfig().get("options").asInstanceOf[JMap[String, Object]]
+      .containsKey("auth")) {
+      runset("prepareAuth", clientFor("prepareAuth", sdk)) { (c, _) =>
+        u.prepareAuth(c); specValue(c.spec)
+      }
     }
+    else REPORT.skip("prepareAuth", "this SDK's config declares no auth, so it places no credential")
     runset("prepareBody", sdk) { (c, _) => toValue(u.prepareBody(c)) }
     runset("prepareHeaders", sdk) { (c, _) => toValue(u.prepareHeaders(c)) }
     runset("prepareMethod", sdk) { (c, _) =>
@@ -316,7 +322,7 @@ object PrimaryCorpus {
 
 object PrimaryCorpusMain {
   def main(args: Array[String]): Unit = {
-    val testfile = if (args.length > 0) args(0) else "../.sdk/test/test.json"
+    val testfile = if (args.length > 0) args(0) else "SDKREL/.sdk/test/test.json"
     System.exit(PrimaryCorpus.run(testfile))
   }
 }

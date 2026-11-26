@@ -1,9 +1,16 @@
 
-import { cmp, Content, File } from '@voxgig/sdkgen'
+import { cmp, Content, File, fact } from '@voxgig/sdkgen'
 
 
 const ReadmeExamplesTest = cmp(function ReadmeExamplesTest(props: any) {
-  const { ctx$: { model } } = props
+  const { target, ctx$: { model } } = props
+  // The root README where the run writes one beside this target, and the
+  // target's own documents where it writes them.
+  const link = fact(target, 'link').readme
+  const own = fact(target, 'phase').readme
+  if ('' === link && !own) {
+    return
+  }
 
   const Name = model.const.Name
 
@@ -27,9 +34,9 @@ defmodule ${Name}.ReadmeExamplesTest do
 
   @pkg_root Path.expand("..", __DIR__)
   @docs [
-    {"root README", Path.expand("../README.md", @pkg_root)},
-    {"elixir README.md", Path.join(@pkg_root, "README.md")},
-    {"elixir REFERENCE.md", Path.join(@pkg_root, "REFERENCE.md")}
+${[...('' === link ? [] : [`    {"root README", Path.expand("${link}", @pkg_root)}`]),
+  ...(own ? ['    {"elixir README.md", Path.join(@pkg_root, "README.md")}',
+    '    {"elixir REFERENCE.md", Path.join(@pkg_root, "REFERENCE.md")}'] : [])].join(',\n')}
   ]
 
   # Return the code bodies of every elixir-tagged fenced block in \`text\`.

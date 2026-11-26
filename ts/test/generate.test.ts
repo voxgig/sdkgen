@@ -12,7 +12,7 @@ import { memfs } from 'memfs'
 import { cmp, each, names, Project, Folder } from 'jostraca'
 import * as sucrase from 'sucrase'
 
-import { SdkGen, mcpTools, alongsideNote, applyFacts } from '../dist/sdkgen.js'
+import { SdkGen, mcpTools, alongsideNote, applyFacts, installCommand, packageName, featureDocs, targetFeatures, Main, fact, clientOptions } from '../dist/sdkgen.js'
 import { aliasCmpText } from '../dist/action/target.js'
 
 // Fixture, miniature Root and memfs layering — shared with
@@ -22,8 +22,12 @@ import {
   FOLD_ENTITY, UNGENERATED_OP, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, CREATELESS_ENTITY,
   ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY, DOC_MODELS, namedEntity, toolchain,
   REQUEST_SHAPED_ENTITY, exampleParams, wireNameParams, slashRoutes, getOnlyFlows, getOnlyBuildctx, multiRouteLoad, keylessLoad,
-  directDiscovery, liveFallbacks, slugKeyed, liveIdentities,
+  directDiscovery, liveFallbacks, slugKeyed, liveIdentities, BASIC_TEMPLATED, BASIC_QUERY, offFeature,
+  stageAlias, CREATE_ONLY_ENTITY,
 } from './generateharness'
+
+
+const BEARER = "main: kit: config: auth: { active: true, prefix: 'Bearer', in: 'header', name: 'Authorization' }"
 
 
 const SCHEMA_FILE = /(^|\/)(sdk_)?schema\.[a-z]+$/i
@@ -119,11 +123,11 @@ const PLACEHOLDER_PINNED = [
 ]
 
 
-const NON_SDK_SIBLING: Record<string, string> = {
-  'go-cli': 'go',
-  'go-mcp': 'go',
-  'py-data': 'py',
-}
+// A consumer names the target it builds on in its own model file.
+const NON_SDK_SIBLING: Record<string, string> = Object.fromEntries(
+  Object.entries(makeModel(allTargets(), undefined, '', []).main[KIT].target)
+    .filter(([, t]: [string, any]) => '' !== t.consumes)
+    .map(([name, t]: [string, any]) => [name, t.consumes]))
 
 const NON_SDK_TARGETS = Object.keys(NON_SDK_SIBLING)
 
@@ -177,11 +181,6 @@ const DOC_PINS: { point: string, file: RegExp, note: RegExp, reason: string }[] 
     reason: 'S43, S44, S45 (WP14): a root document links the README or guide of a target that writes none',
   },
   {
-    point: 'doc-table-broken', file: /\/(README|REFERENCE)\.md$/, note: /`[^`]*\| null`/,
-    reason: 'New: a nullable field type prints as `T | null` in a field table, its pipe unescaped inside ' +
-      'the code span; the copy wave escapes these cells (WP33)',
-  },
-  {
     point: 'doc-link-dangling', file: /^README\.md$/, note: /^\.sdk\//,
     reason: 'The test stage has no `.sdk/def/`, which every project has',
   },
@@ -197,10 +196,10 @@ function docBreaks(warnings: any[]): any[] {
 // in this suite fails on one.
 async function generate(
   targetNames: string[], name?: string, extra?: string, sink?: any[], features?: string[],
-  buildctx?: any,
+  buildctx?: any, root?: any,
 ): Promise<Record<string, string>> {
   const warnings: any[] = []
-  const out = await generateWarning(targetNames, name, extra, sink, features, buildctx, warnings)
+  const out = await generateWarning(targetNames, name, extra, sink, features, buildctx, warnings, root)
   deepStrictEqual(docBreaks(warnings), [], 'a generated document breaks a table or a link')
   return out
 }
@@ -208,7 +207,7 @@ async function generate(
 
 async function generateWarning(
   targetNames: string[], name?: string, extra?: string, sink?: any[], features?: string[],
-  buildctx?: any, warnings?: any[],
+  buildctx?: any, warnings?: any[], root?: any,
 ): Promise<Record<string, string>> {
   const { fs, vol } = memfs({})
 
@@ -223,7 +222,7 @@ async function generateWarning(
   // throw reach the caller, which names the target it came from.
   const res = await sdkgen.generate({
     model: makeModel(targetNames, name, extra, features),
-    root: makeRoot(),
+    root: root ?? makeRoot(),
     buildctx,
   })
   strictEqual(res.ok, true, 'generation did not report ok')
@@ -321,6 +320,24 @@ function loadTsConfig(src: string): any {
 function findFile(out: Record<string, string>, suffix: string): string | undefined {
   const hit = Object.entries(out).find(([p]) => p.endsWith(suffix))
   return hit ? hit[1] : undefined
+}
+
+
+// The lines of the layout tree a README draws under its `### ... structure`
+// heading, each with the path it names below the tree's root.
+function structureTree(readme: string): { line: string, path: string }[] {
+  const block = /^### [A-Za-z ]*[Ss]tructure\n\n```\n([\s\S]*?)\n```/m.exec(readme)
+  if (null == block) return []
+  const stack: string[] = []
+  return block[1].split('\n').slice(1).map((line: string) => {
+    const m = /^((?:│ {3}| {4})*)(?:├── |└── )(\S+)/.exec(line)
+    if (null == m) return { line, path: '' }
+    const depth = m[1].length / 4
+    stack.length = depth
+    const path = [...stack, m[2]].join('/')
+    stack[depth] = m[2].replace(/\/$/, '')
+    return { line, path }
+  })
 }
 
 
@@ -425,7 +442,7 @@ describe('generate', () => {
         // map without the standard replacements — the generated SDK then names
         // itself "ProjectName" at runtime, or fails to compile outright. Every
         // offender is collected so one fix pass can clear them all.
-        if (/ProjectName|PROJECTNAME|projectname|PROJECTUSERAGENT/.test(content) &&
+        if (/ProjectName|PROJECTNAME|projectname|PROJECTUSERAGENT|SDKREL|RELEASETAG/.test(content) &&
           !PLACEHOLDER_PINNED.some((re) => re.test(path))) {
           leaks.push(path)
         }
@@ -438,7 +455,7 @@ describe('generate', () => {
     }
 
     strictEqual(leaks.length, 0,
-      'generated files leak a ProjectName, PROJECTNAME or projectname placeholder:\n  ' +
+      'generated files leak a ProjectName, PROJECTNAME, projectname, SDKREL or RELEASETAG placeholder:\n  ' +
       leaks.join('\n  '))
     deepStrictEqual(undef, [], 'direct tests that name undefined')
   })
@@ -724,6 +741,110 @@ describe('generate', () => {
   })
 
 
+  // A build writes these, and generation does not.
+  const BUILD_OUTPUT: Record<string, string[]> = { ts: ['dist/'] }
+
+  test('every path a README layout tree names is one the target writes', async () => {
+    const targets = sdkTargets()
+    const out = await generate(targets)
+
+    for (const target of targets) {
+      const tree = structureTree(out[target + '/README.md'])
+      ok(0 < tree.length, target + ': the README draws no layout tree')
+      const written = filesFor(out, target).map(([p]) => p.slice(target.length + 1))
+
+      for (const { line, path } of tree) {
+        ok('' !== path, target + ': a tree line names no path: ' + line)
+        if ((BUILD_OUTPUT[target] || []).includes(path)) continue
+        const pattern = new RegExp('^' + path.split('*')
+          .map((part: string) => part.replace(/[.+?^${}()|[\]\\]/g, '\\$&')).join('[^/]*') +
+          (path.endsWith('/') ? '' : '$'))
+        ok(written.some((p: string) => pattern.test(p)),
+          target + ': the layout tree names ' + path + ', which generation does not write')
+      }
+    }
+  })
+
+
+  test('a README says a schema change needs no regeneration only where no typed model follows it', async () => {
+    const cmpdir = Path.resolve(__dirname, '..', 'project', '.sdk', 'src', 'cmp')
+    const targets = sdkTargets()
+    const out = await generate(targets)
+
+    for (const target of targets) {
+      const readme = out[target + '/README.md']
+      const typed = existsSync(Path.join(cmpdir, target, 'EntityTypes_' + target + '.ts'))
+      ok(!(typed && /no code generation is\s+needed/.test(readme)),
+        target + ': the README says no regeneration is needed beside the typed models it generates')
+      for (const m of readme.matchAll(/typed models in\s+`([^`]+)`/g)) {
+        ok(null != out[target + '/' + m[1]],
+          target + ': the README names typed models in ' + m[1] + ', which generation does not write')
+      }
+    }
+  })
+
+
+  // A comment holding nothing but `#Name` or `#Name-Tag` is a fragment marker
+  // no replacement fired on.
+  test('no fragment marker line survives into generated source', async () => {
+    const MARKER =
+      /^\s*(\/\/|#|--|;+|\(\*|\/\*|\*)\s*#[A-Z][A-Za-z0-9]*(-[A-Z][A-Za-z0-9]*)?\s*(\*\)|\*\/)?\s*$/
+    const features = readdirSync(Path.resolve(__dirname, '..', 'project', '.sdk', 'model', 'feature'))
+      .filter((f: string) => f.endsWith('.aontu') && !f.includes('-index'))
+      .map((f: string) => f.replace(/\.aontu$/, ''))
+    const targets = [...sdkTargets(), ...NON_SDK_TARGETS]
+
+    const left: string[] = []
+    for (const featureSet of [undefined, features]) {
+      const out = await generate(targets, undefined, undefined, undefined, featureSet)
+      for (const [path, text] of Object.entries(out)) {
+        if (path.endsWith('.md') || 'string' !== typeof text) continue
+        text.split('\n').forEach((line: string, i: number) => {
+          if (MARKER.test(line)) left.push(path + ':' + (i + 1) + ': ' + line.trim())
+        })
+      }
+    }
+    deepStrictEqual(left, [])
+  })
+
+
+  test('lua: each feature comment is indented as the constructor body around it', async () => {
+    const main = (await generate(['lua']))['lua/demo_sdk.lua']
+    deepStrictEqual(main.split('\n').filter((line: string) => line.includes('-- feature: ')),
+      ['  -- feature: log', '  -- feature: test'])
+  })
+
+
+  // The title, which an alias keeps, rather than the key, which it renames.
+  test('ts, js: the main SDK file is headed with the target\'s title', async () => {
+    for (const target of ['ts', 'js']) {
+      const out = await generate([target])
+      const main = out[target + '/src/DemoSDK.' + target]
+      ok(null != main, target + ': no main SDK file')
+      strictEqual(main.split('\n')[0], '// Demo ' + targetTitle(target) + ' SDK')
+    }
+  })
+
+
+  test('clojure: the namespace example names an entity namespace the run writes', async () => {
+    const structure = (readme: string): string =>
+      readme.slice(readme.indexOf('### Namespace structure'), readme.indexOf('### Entity state'))
+
+    const out = await generate(['clojure'])
+    const named = [...structure(out['clojure/README.md']).matchAll(/\[sdk\.entity\.(\S+) :as e-(\S+)\]/g)]
+    strictEqual(named.length, 1, 'the namespace paragraph names no single entity namespace')
+    strictEqual(named[0][1], named[0][2], 'the alias names another entity')
+    ok(null != out['clojure/src/sdk/entity/' + named[0][1] + '.clj'],
+      'the example names sdk.entity.' + named[0][1] + ', which no entity file declares')
+
+    const entities = Object.keys(makeModel([], undefined, '', []).main[KIT].entity)
+    const none = await generateWarning(['clojure'], undefined,
+      entities.map((name: string) => `main: kit: entity: ${name}: active: false\n`).join(''))
+    ok(!structure(none['clojure/README.md']).includes('sdk.entity.'),
+      'with no active entity the namespace paragraph still names an entity namespace')
+  })
+
+
   // A bundled target leaves some optional components to a shared default, and
   // that is no news to a consumer: a warning there is noise in every run.
   test('a bundled target generates with no optional component warning', async () => {
@@ -769,9 +890,9 @@ describe('generate', () => {
     ok(null != out['rb/README.md'], 'rb: no README.md')
 
     const top = topSections(out['README.md'])
-    deepStrictEqual(subheads(top['Quickstart']), ['Golang'], 'the lead quickstart')
+    deepStrictEqual(subheads(top['Quickstart']), ['Go'], 'the lead quickstart')
     deepStrictEqual(subheads(top['Quickstart in other languages']), ['Ruby'])
-    deepStrictEqual(subheads(top['Offline unit testing']), ['Golang', 'Ruby'])
+    deepStrictEqual(subheads(top['Offline unit testing']), ['Go', 'Ruby'])
     ok(top['How-to guides'].includes('client.Direct('),
       'the direct call guide has no go example')
     deepStrictEqual(sink.filter((e: any) => 'optional-component-missing' === e?.point), [])
@@ -868,7 +989,7 @@ describe('generate', () => {
     ok(zig.includes('(Zig)') && !zig.includes('TypeScript'), zig)
 
     const cli = await entry(['go', 'go-cli'])
-    ok(cli.includes('(Golang, plus the CLI surface)') && !cli.includes('MCP'), cli)
+    ok(cli.includes('(Go, plus the CLI surface)') && !cli.includes('MCP'), cli)
   })
 
 
@@ -915,12 +1036,203 @@ describe('generate', () => {
   })
 
 
+  test('a published js README installs the package its manifest names, in a shell block', async () => {
+    const out = await generate(['js'], undefined, 'main: kit: target: js: publish: registry: active: true')
+    const name = JSON.parse(out['js/package.json']).name
+    ok(out['js/README.md'].includes('```bash\nnpm install ' + name + '\n```'),
+      'the js README does not install ' + name + ':\n' + out['js/README.md'].slice(0, 900))
+  })
+
+
+  // A placeholder a reader has to replace is a step the generator could take.
+  test('no install section asks for the repository URL by placeholder', async () => {
+    const targets = ['swift', 'rust', 'cpp', 'zig']
+    for (const extra of ['', targets.map((t) => `main: kit: target: ${t}: publish: registry: active: true`).join('\n')]) {
+      const out = await generate(targets, undefined, extra)
+      const left = Object.keys(out).filter((path) => out[path].includes('<repo-url>'))
+      deepStrictEqual(left, [], 'these print <repo-url>')
+    }
+  })
+
+
+  // Bundled content collects no dependency for these targets; a project's own
+  // does, and then the documents stop calling the SDK dependency-free.
+  test('an SDK with a dependency is not called dependency-free', async () => {
+    const targets = ['c', 'ocaml', 'perl', 'scala', 'swift']
+    const claim = /dependency-free|no external dependencies|no third-party runtime|zero non-core runtime/
+    const claims = (out: Record<string, string>) => Object.keys(out)
+      .filter((path) => (path.endsWith('.md') || path.endsWith('.opam')) && claim.test(out[path])).sort()
+
+    const free = claims(await generate(targets))
+    deepStrictEqual(targets.filter((t) => !free.some((path) => path.startsWith(t + '/'))), [],
+      'a target without dependencies no longer says so')
+    const dep = targets.map((t) => `main: kit: target: ${t}: deps: extralib: { active: true, version: '1.0.0' }`)
+      .join('\n')
+    deepStrictEqual(claims(await generate(targets, undefined, dep)), [],
+      'a target with a dependency is called dependency-free')
+  })
+
+
+  test('a hyphenated slug names the elixir app once, in snake case, everywhere', async () => {
+    const out = await generate(['elixir'], 'acme-shop')
+    ok(out['elixir/mix.exs'].includes('app: :acme_shop,'), 'mix.exs names another app')
+    for (const file of ['lib/acme_shop.ex', 'lib/acme_shop_types.ex']) {
+      ok(null != out['elixir/' + file], 'no ' + file)
+    }
+    deepStrictEqual(Object.keys(out).filter((path) => path.startsWith('elixir/lib/acme-shop')), [],
+      'a file is named after the slug')
+    ok(Object.keys(out).some((path) => path.startsWith('elixir/lib/acme_shop/')),
+      'the module folder is named otherwise')
+    ok(/├── acme_shop\.ex\s/.test(out['elixir/README.md']) && /└── acme_shop\//.test(out['elixir/README.md']),
+      'the README tree names other files')
+    ok(out['elixir/README.md'].includes('{:acme_shop, '), 'the install names another app')
+  })
+
+
+  // The Maven coordinates are the package name: the declared one, else the
+  // origin's group and the SDK's artifact.
+  test('a JVM target publishes and documents the coordinates its model declares', async () => {
+    const declare = (pkg: string, targets: string[]) => targets.map((t) =>
+      `main: kit: target: ${t}: publish: registry: { package: '${pkg}', active: true }`).join('\n')
+
+    const jvm = ['java', 'kotlin', 'scala']
+    const out = await generate(jvm, undefined, declare('io.acme:acme-client', jvm))
+    ok(/<groupId>io\.acme<\/groupId>\s*<artifactId>acme-client<\/artifactId>/.test(out['java/pom.xml']), 'pom')
+    ok(out['kotlin/build.gradle.kts'].includes('group = "io.acme"'), 'gradle group')
+    ok(out['kotlin/settings.gradle.kts'].includes('rootProject.name = "acme-client"'), 'gradle artifact')
+    ok(/<groupId>io\.acme<\/groupId>\s*<artifactId>acme-client<\/artifactId>/.test(out['java/README.md']), 'java README')
+    ok(out['kotlin/README.md'].includes('implementation("io.acme:acme-client:'), 'kotlin README')
+    ok(out['scala/README.md'].includes('"io.acme:acme-client_3:'), 'scala README')
+    for (const t of ['Java', 'Kotlin', 'Scala']) {
+      ok(new RegExp('\\| ' + t + ' \\| `io\\.acme:acme-client` \\|').test(out['README.md']), t + ' packages row')
+    }
+
+    const bare = await generate(['java'], undefined, declare('acme-client', ['java']))
+    ok(/<groupId>com\.voxgig<\/groupId>\s*<artifactId>acme-client<\/artifactId>/.test(bare['java/pom.xml']),
+      'a declared artifact keeps the default group')
+  })
+
+
+  // A reader installs the name the manifest publishes and the root Packages
+  // table lists, whatever state the registry is in.
+  test('the install line, the Packages row and the manifest name agree in every registry state', async () => {
+    const file = (out: Record<string, string>, t: string, re: RegExp) =>
+      out[Object.keys(out).find((path) => path.startsWith(t + '/') && re.test(path))!]
+    const first = (text: string, re: RegExp) => String(re.exec(text)?.[1])
+    const MANIFEST: Record<string, (out: Record<string, string>) => string> = {
+      ts: (out) => JSON.parse(out['ts/package.json']).name,
+      js: (out) => JSON.parse(out['js/package.json']).name,
+      py: (out) => first(out['py/pyproject.toml'], /^name = "([^"]+)"/m),
+      php: (out) => JSON.parse(out['php/composer.json']).name,
+      rb: (out) => first(file(out, 'rb', /\.gemspec$/), /spec\.name\s*=\s*"([^"]+)"/),
+      lua: (out) => first(file(out, 'lua', /\.rockspec$/), /^package = "([^"]+)"/m),
+      go: (out) => first(out['go/go.mod'], /^module (\S+)/m),
+      rust: (out) => first(out['rust/Cargo.toml'], /^name = "([^"]+)"/m),
+      csharp: (out) => first(file(out, 'csharp', /\.csproj$/), /<PackageId>([^<]+)</),
+      perl: (out) => first(out['perl/Makefile.PL'], /NAME\s*=>\s*'([^']+)'/),
+      ocaml: (out) => first(file(out, 'ocaml', /\.opam$/), /^name: "([^"]+)"/m),
+      java: (out) => first(out['java/pom.xml'], /<groupId>([^<]+)</) + ':' +
+        first(out['java/pom.xml'], /<artifactId>([^<]+)</),
+      kotlin: (out) => first(out['kotlin/build.gradle.kts'], /^group = "([^"]+)"/m) + ':' +
+        first(out['kotlin/settings.gradle.kts'], /rootProject\.name = "([^"]+)"/),
+      zig: (out) => first(out['zig/build.zig.zon'], /\.name = \.(\w+)/),
+      elixir: (out) => first(out['elixir/mix.exs'], /app: :(\w+)/),
+      swift: (out) => first(out['swift/Package.swift'], /name: "([^"]+)"/),
+    }
+    // swift's and zig's install sections give a URL, and c and cpp have no package.
+    const NAMED = ['ts', 'js', 'py', 'php', 'rb', 'lua', 'go', 'rust', 'csharp', 'perl', 'ocaml',
+      'java', 'kotlin', 'elixir', 'scala', 'clojure']
+    const targets = [...Object.keys(MANIFEST), 'scala', 'clojure', 'c', 'cpp']
+
+    for (const active of [true, false]) {
+      const extra = targets.map((t) => `main: kit: target: ${t}: publish: registry: active: ${active}`).join('\n')
+      const model = makeModel(targets, undefined, extra)
+      const out = await generate(targets, undefined, extra)
+      const row = (t: string) => out['README.md'].split('\n').find((line) => line.startsWith(
+        '| ' + model.main[KIT].target[t].fact.title + ' | `' + packageName(model, t) + '` | '))
+
+      for (const t of targets.filter((t) => !['c', 'cpp'].includes(t))) {
+        const pkg = packageName(model, t)
+        ok(null != row(t), t + ': the Packages table does not list ' + pkg)
+        if (null != MANIFEST[t]) strictEqual(MANIFEST[t](out), pkg, t + ': the manifest publishes another name')
+      }
+      if (!active) continue
+
+      for (const t of NAMED) {
+        const pkg = packageName(model, t)
+        const install = out[t + '/README.md'].split('## Install')[1].split('\n## ')[0]
+        ok(pkg.split(':').every((part) => install.includes(part)), t + ': the install section does not name ' +
+          pkg + ':\n' + install)
+        const command = installCommand(model, t)
+        if ('' !== command) {
+          ok(install.includes(command), t + ': the install section does not run ' + command)
+          ok(row(t)!.includes('`' + command + '`'), t + ': the Packages row does not run ' + command)
+        }
+      }
+    }
+  })
+
+
+  // One release tag per port: the tag fact, which the publish workflow and the
+  // root Makefile's recipe read, is what the port's own Makefile and its
+  // install section name.
+  test('a port\'s Makefile and install section name the release tag the model gives it', async () => {
+    const targets = ['ts', 'js', 'go', 'py', 'rb', 'php', 'lua', 'rust', 'java', 'kotlin', 'csharp',
+      'perl', 'swift', 'cpp', 'c', 'zig', 'ocaml', 'scala', 'clojure', 'elixir']
+    const model = makeModel(targets)
+    const out = await generate(targets)
+    for (const t of targets) {
+      const tag = model.main[KIT].target[t].fact.tag
+      const make = out[t + '/Makefile']
+      if (/^TAG := /m.test(make)) {
+        ok(make.includes('\nTAG := ' + tag + '$(VERSION)\n'), t + ': the Makefile tags otherwise')
+      }
+      const install = out[t + '/README.md'].split('## Install')[1].split('\n## ')[0]
+      deepStrictEqual(install.match(/\b[\w-]+\/vX\.Y\.Z/g)?.filter((m) => m !== tag + 'X.Y.Z') ?? [], [],
+        t + ': the install section names another tag')
+    }
+    ok(out['ts/Makefile'].includes('\nTAG := v$(VERSION)\n'), 'the primary npm package keeps its bare tag')
+
+    const off = await generate(targets, undefined,
+      targets.map((t) => `main: kit: target: ${t}: publish: tag: active: false`).join('\n'))
+    for (const t of targets) {
+      ok(!/^TAG := \S/m.test(off[t + '/Makefile'] ?? ''), t + ': a Makefile tags with no tag')
+      ok(!/vX\.Y\.Z/.test(off[t + '/README.md'].split('## Install')[1].split('\n## ')[0]),
+        t + ': the install section names a tag the model does not cut')
+    }
+  })
+
+
+  // Written at every generate from the model, not copied once at add.
+  test('a port\'s VERSION is its publish version and its LICENSE the project\'s', async () => {
+    const out = await generate(['go', 'ts'], undefined, "main: kit: target: go: publish: version: '2.3.4'")
+    strictEqual(out['go/VERSION'], '2.3.4\n')
+    for (const t of ['go', 'ts']) {
+      strictEqual(out[t + '/LICENSE'], out['LICENSE'], t + ': the LICENSE is not the project\'s')
+    }
+    ok(out['LICENSE'].includes('Copyright (c) 2026 Voxgig'), out['LICENSE'].slice(0, 80))
+  })
+
+
+  // The rockspec's source dir is the target's folder in the cloned repository.
+  test('the lua rockspec finds the package where the target is placed', async () => {
+    const dir = (out: Record<string, string>, file: string) => /^\s*dir = "([^"]+)"/m.exec(out[file])?.[1]
+    strictEqual(dir(await generate(['lua']), 'lua/demo.rockspec'), 'demo-sdk/lua')
+    const root = await generate(['lua'], undefined,
+      'main: kit: phase: top: active: false\nmain: kit: target: lua: output: root: true')
+    strictEqual(dir(root, 'demo.rockspec'), 'demo-sdk')
+  })
+
+
   test('a manifest description names its target by title and by what it is', async () => {
     const expected: Record<string, string> = {
       ts: 'TypeScript SDK', js: 'JavaScript SDK', py: 'Python SDK', php: 'PHP SDK',
       rb: 'Ruby SDK', lua: 'Lua SDK', csharp: 'C# SDK', elixir: 'Elixir SDK',
       perl: 'Perl SDK', 'py-data': 'Python Data package',
+      rust: 'Rust SDK', java: 'Java SDK', ocaml: 'OCaml SDK', kotlin: 'Kotlin SDK',
     }
+    // go has no manifest slot, and says it in its package doc comment.
+    expected.go = makeModel(['go']).main[KIT].target.go.fact.title + ' SDK'
     const out = await generate(Object.keys(expected))
     for (const [target, name] of Object.entries(expected)) {
       const named = filesFor(out, target)
@@ -1019,10 +1331,12 @@ describe('generate', () => {
   })
 
 
-  test('a line break or a pipe in a field description warns of the table it breaks', async () => {
+  // A field's name is printed as the spec spells it, so a pipe in one is a
+  // table the check sees broken.
+  test('a pipe in a field name warns of the table it breaks', async () => {
     const warnings: any[] = []
     await generateWarning(['ts'], undefined,
-      'main: kit: entity: planet: fields: radius: sh: ' + JSON.stringify('Mean | radius\nin km'),
+      "main: kit: entity: planet: fields: 'a|b': { n: 'a|b', h: 'AB', r: false, t: '`$STRING`' }",
       undefined, undefined, undefined, warnings)
     const broken = warnings.filter((w: any) => 'doc-table-broken' === w.point)
     ok(broken.some((w: any) => 'ts/README.md' === w.file), JSON.stringify(warnings.map((w: any) => w.point)))
@@ -1030,10 +1344,11 @@ describe('generate', () => {
   })
 
 
+  // The project's own wording keeps its links; the spec's loses them.
   test('a link to nothing the run wrote warns, and an encoded URL does not', async () => {
     const warnings: any[] = []
     await generateWarning(['ts'], undefined, [
-      'main: kit: entity: planet: fields: radius: sh: ' + JSON.stringify('See [radius](radius.md).'),
+      'main: kit: text: entity_desc: planet: ' + JSON.stringify('See [radius](radius.md).'),
       "main: kit: info: website: 'https://example.com/a_(b)'",
     ].join('\n'), undefined, undefined, undefined, warnings)
     const dangling = warnings.filter((w: any) => 'doc-link-dangling' === w.point)
@@ -1428,9 +1743,13 @@ main: kit: target: js: phase: feature: active: false
   }
 
 
-  for (const [shape, servers] of [
-    ['no server URL', ''],
-    ['a server URL', "main: kit: info: servers: [ { url: 'https://api.example.com' } ]"],
+  for (const [shape, servers, base] of [
+    ['no server URL', '', ''],
+    ['a server URL', "main: kit: info: servers: [ { url: 'https://api.example.com' } ]", 'https://api.example.com'],
+    ['HTTP Basic and a templated server URL', BASIC_TEMPLATED, 'https://{tenant}.example.test/{region}'],
+    ['HTTP Basic in the query', BASIC_QUERY, ''],
+    ['a key renamed in a cookie',
+      "main: kit: config: auth: { active: true, prefix: '', in: 'cookie', name: 'session' }", ''],
   ]) {
     test('the ts config is the same whichever representation is emitted, with ' +
       shape, async () => {
@@ -1450,8 +1769,7 @@ main: kit: target: js: phase: feature: active: false
         deepStrictEqual(snap(datcfg), snap(litcfg),
           'the two config representations describe different configs')
 
-        strictEqual(litcfg.options.base, '' === servers ? '' : 'https://api.example.com',
-          'the base URL did not survive into the config')
+        strictEqual(litcfg.options.base, base, 'the base URL did not survive into the config')
 
         // `makeFeature` lives on the prototype in both, so assigning the parsed
         // data over an instance must not have shadowed it.
@@ -1464,6 +1782,137 @@ main: kit: target: js: phase: feature: active: false
         }
       })
   }
+
+
+  // BASIC_TEMPLATED's URL uses `tenant` with no default and `region` with one.
+  test('a quick start asks for the server variables a client must supply, and no others', async () => {
+    const targets = allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))
+    const out = await generate(targets, undefined, BASIC_TEMPLATED)
+    for (const target of targets) {
+      const fence = '```' + ({ py: 'python', rb: 'ruby' }[target] ?? target) + '\n'
+      for (const file of [target + '/README.md', 'README.md']) {
+        const ctors = String(out[file]).split(fence).slice(1).map((b: string) => b.slice(0, b.indexOf('```')))
+          .filter((b: string) => /DEMO_APIKEY/.test(b))
+        ok(0 < ctors.length, target + ', ' + file + ': no quick start constructs a client')
+        for (const block of ctors) {
+          ok(/tenant/.test(block), target + ', ' + file + ': the quick start omits the required tenant')
+          ok(!/region/.test(block), target + ', ' + file + ': the quick start asks for the defaulted region')
+        }
+      }
+    }
+    ok(out['ts/README.md'].includes('| `server` | `object` | **Required.** Values for the server-URL ' +
+      'variables: `tenant`, `region` (default `eu`).'), 'the ts options row does not say which variable has a default')
+  })
+
+  // A client built over a templated URL is refused without its required variables.
+  test('the ts and js tester and extend constructors pass the server variables a client must supply', async () => {
+    const out = await generate(['ts', 'js'], undefined, BASIC_TEMPLATED)
+    for (const target of ['ts', 'js']) {
+      const readme = String(out[target + '/README.md'])
+      const tester = /const client = (new DemoSDK\([^\n]*\))\nconst testClient = client\.tester\(\)/.exec(readme)
+      ok(null != tester && /tenant: '\.\.\.'/.test(tester[1]) && !/region/.test(tester[1]),
+        target + ': the tester constructor: ' + tester?.[1])
+      const extend = /const client = new DemoSDK\(\{([\s\S]*?)extend: \[logger\],\n\}\)/.exec(readme)
+      ok(null != extend && /tenant: '\.\.\.'/.test(extend[1]) && !/region/.test(extend[1]),
+        target + ': the extend constructor: ' + extend?.[1])
+    }
+  })
+
+  test('the go quick start indents its server block as its other keys', async () => {
+    const readme = String((await generate(['go'], undefined, BASIC_TEMPLATED))['go/README.md'])
+    ok(/\n {8}"apikey": [^\n]*\n( {8}"secret": [^\n]*\n)? {8}"server": map\[string\]any\{\n {12}"tenant": "<tenant>",\n {8}\},/.test(readme),
+      readme.slice(readme.indexOf('"apikey"') - 80, readme.indexOf('"apikey"') + 200))
+  })
+
+  // PrepareAuth composes a Basic credential only with the key in the header.
+  test('every target\'s documents ask for a secret exactly where PrepareAuth reads one', async () => {
+    const targets = allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))
+    for (const [extra, wanted] of [[BASIC_TEMPLATED, true], [BASIC_QUERY, false]] as [string, boolean][]) {
+      const out = await generate(targets, undefined, extra)
+      for (const file of ['README.md', ...targets.flatMap((t) => [t + '/README.md', t + '/REFERENCE.md'])]) {
+        strictEqual(/secret/i.test(String(out[file])), wanted, file + ', ' +
+          (wanted ? 'Basic in the header' : 'Basic in the query'))
+      }
+    }
+  })
+
+
+  // The template pass reads `$$path$$` in what a component prints, so text from
+  // the spec reaches generated source with each `$$` escaped for its language.
+  for (const repr of ['literal', 'data']) {
+    test('every target keeps a field description holding $$ in its ' + repr + ' config and tests', async () => {
+      const targets = allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))
+      const out = await generate(targets, undefined,
+        'main: kit: entity: planet: fields: radius: sh: "Cost in $$name$$ or $$x$$ y"\n' +
+        `main: kit: config: repr: '${repr}'\n`)
+      for (const target of targets) {
+        const source = filesFor(out, target).filter(([file]) => !file.endsWith('.md'))
+        deepStrictEqual(source.filter(([, text]) => String(text).includes('Cost in demo'))
+          .map(([file]) => file), [], target + ': the template pass rewrote the description')
+        const config = source.find(([file]) =>
+          /(^|\/)(sdk_)?config\.[a-z]+$/i.test(file) && !file.includes('feature/'))
+        ok(String(config?.[1]).includes('Cost in '), target + ': the description left the config')
+      }
+      const short = (cfg: any) => cfg.entity.planet.fields.find((f: any) => 'radius' === f.name).short
+      const src = tsConfigSrc(filesFor(out, 'ts'))
+      strictEqual(short('literal' === repr ? loadTsConfig(src) : parseTsConfigData(src)), 'Cost in $$name$$ or $$x$$ y')
+    })
+  }
+
+
+  // A spec's field description is cell text, and a project's wording of an
+  // entity is what every target's entity section says.
+  test('every target escapes a field description and words an entity as the project does', async () => {
+    const targets = allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))
+    const out = await generate(targets, undefined,
+      'main: kit: entity: planet: fields: radius: sh: "In km | miles, $$name$$\\nor [see](guide.md)"\n' +
+      "main: kit: text: entity_desc: planet: 'A worded planet.'\n")
+    for (const target of targets) {
+      const docs = filesFor(out, target).filter(([file]) => file.endsWith('.md'))
+        .map(([, text]) => String(text)).join('\n')
+      ok(docs.includes('In km \\| miles, $&#36;name$&#36;<br>or see'), target + ': no escaped field description')
+      ok(!docs.includes('$$name$$') && !docs.includes('](guide.md)'), target + ': a raw field description')
+      for (const doc of ['README.md', 'REFERENCE.md']) {
+        ok(String(out[target + '/' + doc]).includes('A worded planet.'), target + '/' + doc + ': not the project\'s wording')
+      }
+    }
+  })
+
+
+  // An API that declares no auth, with no project switch, is the project's
+  // switch-off: the documents say so, and the code places no credential.
+  test('every target generates for an API with no auth what it does with auth switched off', async () => {
+    const targets = allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))
+    const declared = await generate(targets)
+    const off = await generate(targets, undefined, 'main: kit: config: auth: active: false')
+    for (const target of targets) {
+      const files = filesFor(declared, target).map(([file]) => file)
+      deepStrictEqual(filesFor(off, target).map(([file]) => file), files, target + ': the file sets differ')
+      const auth = files.filter((file) => /prepare_?auth|clean|(^|\/)(sdk_)?config\.[a-z]+$/i.test(file) &&
+        !file.includes('feature/'))
+      ok(3 <= auth.length, target + ': no PrepareAuth, TestClean and Config output among ' + auth.length)
+      for (const file of auth) {
+        strictEqual(off[file], declared[file], file)
+      }
+    }
+  })
+
+
+  // Every literal takes its auth block from configDefinition, which flags Basic
+  // only where PrepareAuth composes it: with the key in the header.
+  test('every config flags Basic where the key is in the header, and nowhere else', async () => {
+    const targets = allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))
+    for (const [extra, flagged] of [[BASIC_TEMPLATED, true], [BASIC_QUERY, false]] as [string, boolean][]) {
+      const out = await generate(targets, undefined, "main: kit: config: repr: 'literal'\n" + extra)
+      for (const target of targets) {
+        const config = filesFor(out, target).find(([n]) =>
+          /(^|\/)(sdk_)?config\.[a-z]+$/i.test(n) && !n.includes('feature/'))
+        ok(config, target + ': no config file')
+        strictEqual(/\bbasic\b/.test(String(config![1])), flagged,
+          target + ': ' + config![0] + (flagged ? ' does not flag' : ' flags') + ' Basic')
+      }
+    }
+  })
 
 
   test('no generated config ships jostraca iteration metadata', async () => {
@@ -1500,9 +1949,13 @@ main: kit: target: js: phase: feature: active: false
   test('every live-capable target wires server variables and test.client.options',
     async () => {
       const LIVE_TARGETS = [
-        'ts', 'js', 'go', 'py', 'java',
-        'php', 'rb', 'lua', 'rust', 'csharp', 'perl',
+        'ts', 'js', 'go', 'py', 'java', 'kotlin',
+        'php', 'rb', 'lua', 'rust', 'csharp', 'perl', 'cpp',
       ]
+      // cpp's direct tests run against a mock fetch alone.
+      const ENTITY_ONLY = ['cpp']
+      const liveFiles = (files: Record<string, string>, target: string) =>
+        testFiles(files, target).filter(([n]) => !ENTITY_ONLY.includes(target) || /entity/i.test(n))
 
       const servers =
         "main: kit: info: servers: [ { url: 'https://{tenant}.example.com/{region}'," +
@@ -1523,7 +1976,7 @@ main: kit: target: js: phase: feature: active: false
       const hostileOut = await generate(LIVE_TARGETS, undefined, hostile)
 
       for (const target of LIVE_TARGETS) {
-        const tests = testFiles(out, target)
+        const tests = liveFiles(out, target)
         if (0 === tests.length) {
           gaps.push(`${target}: generated no entity/direct test files`)
           continue
@@ -1557,7 +2010,7 @@ main: kit: target: js: phase: feature: active: false
       // Hostile spec: nothing may reach the output as a bare identifier or as
       // a JSON literal that the target language would reinterpret.
       for (const target of LIVE_TARGETS) {
-        for (const [name, content] of testFiles(hostileOut, target)) {
+        for (const [name, content] of liveFiles(hostileOut, target)) {
           const src = String(content)
 
           // A bare `2fa:` / `2fa =` key, or a bare `edge-zone` one, is a
@@ -1572,10 +2025,10 @@ main: kit: target: js: phase: feature: active: false
             gaps.push(`${target}:${name} reads a server env var by dotted access`)
           }
 
-          // The default must survive as text. Dart/Perl/PHP interpolate `$eu`
-          // and Ruby interpolates `#{x}` inside a double-quoted literal, so a
-          // JSON-stringified default is wrong for those targets specifically.
-          if (['perl', 'php'].includes(target) && /"\$eu/.test(src)) {
+          // The default must survive as text. Dart/Perl/PHP/Kotlin interpolate
+          // `$eu` and Ruby interpolates `#{x}` inside a double-quoted literal, so
+          // a JSON-stringified default is wrong for those targets specifically.
+          if (['perl', 'php', 'kotlin'].includes(target) && /"\$eu/.test(src)) {
             gaps.push(`${target}:${name} emits an interpolating default literal`)
           }
           if ('rb' === target && /[^\\]#\{x\}/.test(src)) {
@@ -1586,6 +2039,49 @@ main: kit: target: js: phase: feature: active: false
 
       deepStrictEqual(gaps, [], 'live-suite wiring is not uniform across targets')
     })
+
+
+  // A README names the environment its generated files read, and that alone.
+  // Its own example programs may read what they like; every other name it
+  // gives is read by a generated file. Every name the env fact spells that a
+  // generated file reads is in the README, the per-entity ids by the pattern
+  // that names them.
+  test('a README names exactly the environment its generated tests read', async () => {
+    const targets = allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))
+    const out = await generate(targets, undefined, BASIC_TEMPLATED)
+    const env = fact(makeModel([], undefined, BASIC_TEMPLATED).main[KIT], 'env')
+    const entids = Object.values(env.entid) as string[]
+    const named = [env.live, env.apikey, env.secret, ...Object.values(env.server) as string[], ...entids]
+    const pattern = env.prefix + '_TEST_<ENTITY>_ENTID'
+    const NAME = new RegExp('\\b' + env.prefix + '_(?:TEST_<ENTITY>_ENTID|[A-Z0-9_]*[A-Z0-9])', 'g')
+    // The README's own programs; an env block, a shell block and prose are claims.
+    const PROGRAM = /^```(?!\s*(?:bash|sh|shell|text|dotenv)?\s*$)[^\n]*\n[\s\S]*?^```/gm
+
+    const gaps: string[] = []
+    for (const target of targets) {
+      const readme = out[target + '/README.md']
+      if (null == readme) {
+        gaps.push(target + ': no README')
+        continue
+      }
+      const read = new Set(filesFor(out, target).filter(([path]) => !path.endsWith('.md'))
+        .flatMap(([, text]) => text.match(NAME) || []))
+      const documented = new Set(readme.match(NAME) || [])
+
+      for (const name of new Set(readme.replace(PROGRAM, '').match(NAME) || [])) {
+        if (pattern === name ? !entids.some((n: string) => read.has(n)) : !read.has(name)) {
+          gaps.push(target + ': the README names ' + name + ', which no generated file reads')
+        }
+      }
+
+      for (const name of named.filter((n: string) => read.has(n))) {
+        if (!documented.has(entids.includes(name) ? pattern : name)) {
+          gaps.push(target + ': a generated file reads ' + name + ', which the README omits')
+        }
+      }
+    }
+    deepStrictEqual(gaps, [])
+  })
 
 
   // makeOptions fills a templated base URL from options.server merged over the
@@ -1749,7 +2245,7 @@ main: kit: target: js: phase: feature: active: false
       for (const [path, content] of files) {
         ok('string' === typeof content, target + ': ' + path + ' has no content')
 
-        for (const token of ['ProjectName', 'PROJECTENV', 'PROJECTVERSION']) {
+        for (const token of ['ProjectName', 'PROJECTENV', 'PROJECTVERSION', 'SDKREL', 'RELEASETAG', 'CONSUMEDREL']) {
           if (content.includes(token) &&
             !PLACEHOLDER_PINNED.some((re) => re.test(path))) {
             leaks.push(path + ': ' + token)
@@ -1770,6 +2266,87 @@ main: kit: target: js: phase: feature: active: false
     strictEqual(leaks.length, 0,
       'a consumer target leaked a placeholder into its output:\n  ' +
       leaks.join('\n  '))
+  })
+
+
+  // A consumer reads what it builds on from its `consumes` fact, so without
+  // an active target of that origin there is nothing for it to wrap.
+  test('a consumer refuses a model without the target it builds on', async () => {
+    const refused = async (targets: string[], extra = ''): Promise<string> => {
+      try {
+        await generate(targets, undefined, extra)
+      }
+      catch (err: any) {
+        return String(err.message)
+      }
+      return fail(targets.join(', ') + ': generated without the target it builds on')
+    }
+
+    for (const [target, sibling] of Object.entries(NON_SDK_SIBLING)) {
+      const absent = await refused([target])
+      ok(absent.includes('Target "' + target + '" builds on the `' + sibling + '` target, and the model has none') &&
+        absent.includes('`voxgig-sdkgen target add ' + sibling + '`'), absent)
+
+      const off = await refused([sibling, target], `main: kit: target: ${sibling}: active: false`)
+      ok(off.includes('builds on the `' + sibling + '` target, which the model switches off'), off)
+    }
+  })
+
+
+  // A Root that runs only the consumers, as an alias of an SDK target has no
+  // templates staged here.
+  const ConsumersOnly = cmp(function Root(props: any) {
+    const { model, ctx$ } = props
+    model.const = { name: model.name, year: 2026 }
+    names(model.const, model.name)
+    names(model, model.name)
+    ctx$.model = model
+    ctx$.stdrep = {}
+    names(ctx$.stdrep, model.Name, 'ProjectName')
+    Project({}, () => each(model.main[KIT].target)
+      .filter((target: any) => false !== target.active && '' !== fact(target, 'consumes'))
+      .map((target: any) => {
+        names(target, target.name)
+        Folder({ name: target.name }, () => Main({ target }))
+      }))
+  })
+
+  test('a consumer builds on an alias of its target, by the alias', async () => {
+    const golang = stageAlias('go', 'golang')
+    try {
+      const out = await generate(['go-cli', 'go-mcp'], undefined, golang.model,
+        undefined, undefined, undefined, ConsumersOnly)
+      for (const target of ['go-cli', 'go-mcp']) {
+        const mod = out[target + '/go.mod']
+        ok(/^require \S+\/golang v0\.0\.0$/m.test(mod) && /^replace \S+\/golang => \.\.\/golang$/m.test(mod),
+          target + ': go.mod does not reach golang:\n' + mod)
+        ok(out[target + '/README.md'].includes('the sibling Go SDK at `../golang`'), target + ': README')
+        ok(!/`\.\.\/go`/.test(out[target + '/README.md']), target + ': README names ../go')
+      }
+    }
+    finally {
+      golang.remove()
+    }
+
+    const py2 = stageAlias('py', 'py2')
+    try {
+      // The link to py2 resolves once a full Root writes py2.
+      const warnings: any[] = []
+      const out = await generateWarning(['py-data'], undefined, py2.model,
+        undefined, undefined, undefined, warnings, ConsumersOnly)
+      deepStrictEqual(docBreaks(warnings).map((w: any) => w.file + ' ' + w.note), ['py-data/README.md py2'])
+      ok(out['py-data/README.md'].includes('Built on the sibling [Python SDK](../py2) in this repo.'),
+        out['py-data/README.md'])
+      ok(out['py-data/README.md'].includes('#subdirectory=py2"'), 'py-data installs py from another folder')
+      ok(!/#subdirectory=py"/.test(out['py-data/README.md'] + out['py-data/notebooks/quickstart.ipynb']),
+        'py-data installs the absent py')
+      ok(out['py-data/AGENTS.md'].includes('the sibling Python SDK at `../py2`'), out['py-data/AGENTS.md'])
+      ok(/pip install -e \.\.\/py2$/m.test(out['py-data/Makefile']), out['py-data/Makefile'])
+      ok(out['py-data/test/conftest.py'].includes('_here.parent / "../py2"'), out['py-data/test/conftest.py'])
+    }
+    finally {
+      py2.remove()
+    }
   })
 
 
@@ -1801,9 +2378,9 @@ main: kit: target: js: phase: feature: active: false
     const shipped: string[] = []
 
     for (const target of allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))) {
-      const off = 'main: kit: feature: secrets: { active: false plugin: vault: active: true }'
+      const off = offFeature('secrets') + 'main: kit: feature: secrets: plugin: vault: active: true'
       const trims = false !== makeModel([target]).main[KIT].target[target].feature?.trim
-      const out = await generate([target], undefined, off, undefined, ['test', 'log', 'secrets'])
+      const out = await generate([target], undefined, off, undefined, ['test', 'log'])
 
       for (const [path] of filesFor(out, target)) {
         if (/hashicorp/i.test(path) || (trims && SECRETS.test(path.slice(target.length)))) {
@@ -2035,6 +2612,90 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
     ok(null != line, 'the root readme has no Features line')
     ok(!line!.includes('undefined'), 'the Features line prints undefined: ' + line)
     ok(line!.includes('`test`'), 'the Features line does not name the test feature: ' + line)
+  })
+
+
+  // A layout tree is the same whatever the model declares, so the line for
+  // the feature directory or file names no feature.
+  test('no README layout tree names a feature', async () => {
+    const targets = sdkTargets()
+    const out = await generate(targets)
+    const named = new RegExp('\\b(base|' + ['test', 'log'].join('|') + ')\\b', 'i')
+
+    const found: string[] = []
+    for (const target of targets) {
+      const block = /^### [A-Za-z ]*[Ss]tructure\n\n```\n([\s\S]*?)\n```/m.exec(out[target + '/README.md'])
+      ok(null != block, target + ': the README draws no layout tree')
+      for (const line of block![1].split('\n').filter((l: string) => /feature/i.test(l))) {
+        const comment = line.replace(/^.*?(--|#)\s*/, '')
+        if (named.test(comment)) found.push(target + ': ' + line.trim())
+      }
+    }
+    deepStrictEqual(found, [])
+  })
+
+
+  // One answer to which features a target documents: featureDocs, the active
+  // features targetFeatures gives the target, less `base`. Every feature list
+  // a document prints is that answer.
+  test('every feature list a document prints is featureDocs for its target', async () => {
+    const all = readdirSync(Path.resolve(__dirname, '..', 'project', '.sdk', 'model', 'feature'))
+      .filter((f: string) => f.endsWith('.aontu') && !f.includes('-index'))
+      .map((f: string) => f.replace(/\.aontu$/, ''))
+    const targets = sdkTargets()
+    const rows = (doc: string, header: string, cell: RegExp): string[] => {
+      const at = doc.indexOf(header)
+      return at < 0 ? [] : doc.slice(at + header.length).split('\n\n')[0].split('\n')
+        .map((line: string) => (cell.exec(line) || [])[1]).filter((name) => null != name) as string[]
+    }
+
+    for (const features of [undefined, ['test'], all]) {
+      const model = makeModel(targets, undefined, undefined, features)
+      const out = await generate(targets, undefined, undefined, undefined, features)
+      const union = new Map<string, string>()
+
+      for (const target of targets) {
+        const docs = featureDocs(model, model.main[KIT].target[target])
+        const applies = targetFeatures(model, target)
+        deepStrictEqual(docs.map((f: any) => f.name),
+          Object.keys(applies).filter((n: string) => 'base' !== n && false !== applies[n].active).sort(),
+          target + ': featureDocs is not the active features the target has, less base')
+        docs.forEach((f: any) => union.set(f.name, f.Name))
+
+        deepStrictEqual(rows(out[target + '/REFERENCE.md'], '| Feature | Version | Description |\n',
+          /^\| `([^`]+)` \|/), docs.map((f: any) => f.name), target + ': the REFERENCE feature table')
+        deepStrictEqual(rows(out[target + '/README.md'], 'The SDK ships with built-in features:\n\n',
+          /^- \*\*(\w+)Feature\*\*: /), docs.map((f: any) => f.Name), target + ': the README feature list')
+      }
+
+      deepStrictEqual(rows(out['README.md'], '| Feature | Purpose |\n', /^\| \*\*(\w+)Feature\*\* \|/),
+        [...union.keys()].sort().map((name: string) => union.get(name)), 'the root README feature table')
+    }
+  })
+
+
+  // The sentence over an agent guide's feature table says what its Template
+  // column shows: a template for every feature, for none, or for some.
+  test('an agent guide says which features run from a template of their own', async () => {
+    const targets = sdkTargets()
+    const out = await generate(targets, undefined, 'main: kit: feature: secrets: active: true',
+      undefined, ['test', 'log', 'secrets'])
+
+    const mixed: string[] = []
+    for (const target of targets) {
+      const guide = out[target + '/AGENTS.md']
+      const at = guide.indexOf('## Features in this target')
+      if (at < 0 || !guide.slice(at).includes('| Feature | Template |')) continue
+      const section = guide.slice(at, guide.indexOf('\n---\n', at))
+      const some = [...section.matchAll(/^\| \*\*[^|]+\| ([^|]+) \|/gm)].some((m) => '—' === m[1].trim())
+      const prose = section.replace(/\s+/g, ' ')
+      strictEqual(prose.includes('Its runtime is generated from the template listed here'), !some,
+        target + ': the guide says every feature has a template')
+      strictEqual(prose.includes('The others run from the runtime under'), some,
+        target + ': the guide says nothing of the features without a template')
+      if (some) mixed.push(target)
+    }
+    ok(mixed.includes('clojure'), 'no target templates some of its features: ' + mixed.join(', '))
   })
 
 
@@ -2499,9 +3160,12 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
 
 
   describe('the publisher', () => {
-    const tmDir = Path.join(SCAFFOLD, 'tm')
-    const licensed = readdirSync(tmDir)
-      .filter((t) => existsSync(Path.join(tmDir, t, 'LICENSE')))
+    // The ports whose Main writes their LICENSE.
+    const cmpDir = Path.join(SCAFFOLD, 'src', 'cmp')
+    const licensed = readdirSync(cmpDir).filter((t) => {
+      const main = Path.join(cmpDir, t, 'Main_' + t + '.ts')
+      return existsSync(main) && /\bTargetLicense\(/.test(readFileSync(main, 'utf8'))
+    })
 
     // Each consumer target generates beside the target it wraps.
     const targets = [...licensed.filter((t) => !NON_SDK_TARGETS.includes(t)),
@@ -2645,7 +3309,8 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
   test('an API title holding quotes, an ampersand and an interpolation reaches every manifest description intact', async () => {
     const TITLE = 'Bob\'s "Shop" & Co #{x}'
     const want = 'for the ' + TITLE + ' public API.'
-    const out = await generate(['csharp', 'elixir', 'js', 'lua', 'perl', 'php', 'py', 'py-data', 'rb', 'ts'],
+    const out = await generate(['csharp', 'elixir', 'js', 'lua', 'perl', 'php', 'py', 'py-data', 'rb', 'ts',
+      'rust', 'java', 'ocaml', 'kotlin', 'go'],
       undefined, "main: kit: text: { title: 'Bob\\'s \"Shop\" & Co #{x}' }")
     const bad: string[] = []
 
@@ -2665,6 +3330,11 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
       ['py/pyproject.toml', 'for the Bob\'s \\"Shop\\" & Co #{x} public API.'],
       ['py-data/pyproject.toml', 'for the Bob\'s \\"Shop\\" & Co #{x} public API.'],
       ['rb/Demo_sdk.gemspec', 'for the Bob\'s \\"Shop\\" & Co \\#{x} public API.'],
+      ['rust/Cargo.toml', 'for the Bob\'s \\"Shop\\" & Co #{x} public API.'],
+      ['java/pom.xml', 'for the Bob\'s "Shop" &amp; Co #{x} public API.'],
+      ['ocaml/voxgig-demo-sdk.opam', 'for the Bob\'s \\"Shop\\" & Co #{x} public API.'],
+      ['kotlin/build.gradle.kts', 'for the Bob\'s \\"Shop\\" & Co #{x} public API.'],
+      ['go/demo.go', 'for the Bob\'s "Shop" & Co #{x} public API.'],
     ]
     for (const [file, text] of literal) {
       if (!String(out[file]).includes(text)) bad.push(file + ' lacks ' + text)
@@ -4510,8 +5180,8 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
     // no kind file, and the accessor emitted EMPTY - it exists in every
     // config.c so sdk.h's prototype always has a definition.
     const off = await genc(
-      'main: kit: feature: secrets: { active: false plugin: vault: active: true }',
-      ['test', 'log', 'secrets'])
+      offFeature('secrets') + 'main: kit: feature: secrets: plugin: vault: active: true',
+      ['test', 'log'])
     ok(null == findFile(off, 'c/feature/secrets/kinds.c') &&
       null == findFile(off, 'c/feature/secrets/kinds.mk'),
       'c: an inactive feature still generated its wiring files')
@@ -4718,8 +5388,8 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
     })
     const offres = await off.generate({
       model: makeModel(['zig'], undefined,
-        'main: kit: feature: secrets: { active: false }',
-        ['test', 'log', 'secrets']),
+        offFeature('secrets'),
+        ['test', 'log']),
       root: makeRoot(),
     })
     strictEqual(offres.ok, true, 'generation did not report ok')
@@ -4945,8 +5615,8 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
     // no kind file, no include, and the accessor emitted EMPTY - it exists
     // in every config.hpp so a caller can always ask.
     const off = await gencpp(
-      'main: kit: feature: secrets: { active: false plugin: vault: active: true }',
-      ['test', 'log', 'secrets'])
+      offFeature('secrets') + 'main: kit: feature: secrets: plugin: vault: active: true',
+      ['test', 'log'])
     ok(null == findFile(off, 'cpp/feature/secrets/kinds.cpp') &&
       null == findFile(off, 'cpp/feature/secrets/kinds.mk'),
       'cpp: an inactive feature still generated its wiring files')
@@ -5203,8 +5873,8 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
     // no container, no kind module, and the accessor emitted EMPTY and
     // untyped - it exists in every sdk_config.ml.
     const off = await genml(
-      'main: kit: feature: secrets: { active: false plugin: vault: active: true }',
-      ['test', 'log', 'secrets'])
+      offFeature('secrets') + 'main: kit: feature: secrets: plugin: vault: active: true',
+      ['test', 'log'])
     ok(null == findFile(off, 'ocaml/feature/secrets/feature.mk'),
       'ocaml: an inactive feature still generated its build fragment')
     ok(null == findFile(off, 'ocaml/feature/secrets_feature.ml') &&
@@ -5677,7 +6347,7 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
       fs: layeredFs(offfs), folder: STAGE, root: '', pino: makeLog(),
     })
     const offres = await offgen.generate({
-      model: makeModel(['clojure'], undefined, undefined, ['test', 'log', 'secrets']),
+      model: makeModel(['clojure'], undefined, offFeature('secrets'), ['test', 'log']),
       root: makeRoot(),
     })
     strictEqual(offres.ok, true, 'feature-off generation did not report ok')
@@ -5807,7 +6477,7 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
       fs: layeredFs(offfs), folder: STAGE, root: '', pino: makeLog(),
     })
     const offres = await offgen.generate({
-      model: makeModel(['elixir'], undefined, undefined, ['test', 'log', 'secrets']),
+      model: makeModel(['elixir'], undefined, offFeature('secrets'), ['test', 'log']),
       root: makeRoot(),
     })
     strictEqual(offres.ok, true, 'feature-off generation did not report ok')
@@ -5940,14 +6610,15 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
     ok(null == findFile(out, 'swift/src/feature/secrets/.gitkeep'),
       'swift: the feature-add copy-target dir leaked into the package')
 
-    for (const [label, features] of [['undeclared', undefined],
-      ['declared-inactive', ['test', 'log', 'secrets']]] as [string, string[] | undefined][]) {
+    for (const [label, features, extra] of [['undeclared', undefined, undefined],
+      ['declared-inactive', ['test', 'log'], offFeature('secrets')]] as
+      [string, string[] | undefined, string | undefined][]) {
       const { fs: offfs, vol: offvol } = memfs({})
       const offgen = SdkGen({
         fs: layeredFs(offfs), folder: STAGE, root: '', pino: makeLog(),
       })
       const offres = await offgen.generate({
-        model: makeModel(['swift'], undefined, undefined, features),
+        model: makeModel(['swift'], undefined, extra, features),
         root: makeRoot(),
       })
       strictEqual(offres.ok, true, label + ': generation did not report ok')
@@ -6241,6 +6912,102 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
   })
 
 
+  // The binaries print and read what the model has: the fixture's API has no
+  // auth, and only planet updates.
+  test('go-cli, go-mcp: the binaries say and read only what the model has', async () => {
+    const off = await generate(['go', 'go-cli', 'go-mcp'], undefined,
+      'main: kit: entity: planet: op: update: active: false')
+    for (const target of ['go-cli', 'go-mcp']) {
+      ok(!/APIKEY/.test(off[target + '/main.go']), target + ': main.go reads a key without auth')
+    }
+    ok(off['go-cli/main.go'].startsWith('// Command demo-cli is a CLI'), off['go-cli/main.go'].split('\n')[0])
+    for (const file of ['go-cli/main.go', 'go-cli/words.go']) {
+      ok(!/update/.test(off[file]), file + ' offers update, which no entity has')
+    }
+    ok(/range \[\]string\{"list", "load"\}/.test(off['go-cli/words.go']), 'go-cli: the registered words')
+    const tools = off['go-mcp/tools.go']
+    ok(!/\{\\"id\\":1\}|first page/.test(tools), 'go-mcp: a tool says {"id":1} or first page:\n' + tools)
+
+    const basic = await generate(['go', 'go-cli', 'go-mcp'], undefined, BASIC_TEMPLATED, undefined,
+      ['test', 'log', 'paging'])
+    ok(basic['go-cli/main.go'].includes(
+      '"Env:      DEMO_APIKEY (api key), DEMO_SECRET (api secret), DEMO_SERVER_TENANT (tenant in the url), ' +
+      'DEMO_BASE (base url override)"'), 'go-cli: the env help line')
+    ok(basic['go-mcp/tools.go'].includes('Returns the first page of records as JSON.'),
+      'go-mcp: the list tool of an SDK with paging')
+    ok(basic['go-mcp/tools.go'].includes('match map naming the record, such as {\\"id\\":\\"example_id\\"}') ||
+      basic['go-mcp/tools.go'].includes('match map naming the record by its identifying fields'), 'go-mcp: load help')
+
+    const nested = await generate(['go', 'go-mcp'], undefined, ROUTING_MODEL)
+    ok(nested['go-mcp/tools.go'].includes('moon needs one naming the parent'), 'go-mcp: the nested list')
+  })
+
+
+  // The fixture's features are test and log; paging is the feature that pages.
+  test('py-data fetches every page only where the SDK pages, and turns paging on there', async () => {
+    const one = await generate(['py', 'py-data'])
+    const docs = ['README.md', 'AGENTS.md', 'notebooks/quickstart.ipynb', 'demo_data/entity_frames.py']
+      .map((file) => one['py-data/' + file]).join('\n')
+    ok(!/every page|Every page/.test(docs), 'py-data promises every page without paging')
+    ok(/One page is fetched: the SDK has no paging feature/.test(docs), 'py-data does not say it fetches one page')
+    ok(!/"paging"/.test(one['py-data/demo_data/__init__.py']), 'data() sets paging without the feature')
+    ok(/^PAGING = False$/m.test(one['py-data/test/test_entity_frames.py']), 'the generated test expects paging')
+
+    const all = await generate(['py', 'py-data'], undefined, '', undefined, ['test', 'log', 'paging'])
+    ok(/feature\.setdefault\("paging", \{"active": True\}\)/.test(all['py-data/demo_data/__init__.py']),
+      'data() does not switch paging on')
+    ok(all['py-data/README.md'].includes('**Every page, eagerly.**'), 'py-data: the README with paging')
+    ok(/^PAGING = True$/m.test(all['py-data/test/test_entity_frames.py']), 'the generated test expects no paging')
+  })
+
+
+  // planet alone writes in the fixture; with its writes off the API has none.
+  test('consumers name a write only where the API has one', async () => {
+    const readonly = await generate(['go', 'go-mcp', 'py', 'py-data'], undefined,
+      'main: kit: entity: planet: op: { create: { active: false }, update: { active: false }, ' +
+      'patch: { active: false }, remove: { active: false } }')
+    for (const doc of [readonly['go-mcp/README.md'], readonly['README.md']]) {
+      ok(!/become tools|becomes a tool|Turn on the write tools/.test(doc), 'a write that would become a tool:\n' + doc)
+      ok(/only reads(:|, as) no entity has a create, update, patch or remove/.test(doc), doc)
+    }
+    const data = Object.entries(readonly).filter(([path]) => path.startsWith('py-data/'))
+    deepStrictEqual(data.filter(([, text]) => /SomeEntity/.test(text)).map(([path]) => path), [])
+    ok(!/\.(create|update|remove)\(/.test(readonly['py-data/README.md'] + readonly['py-data/AGENTS.md']),
+      'py-data shows a write the API lacks')
+
+    const writes = await generate(['go', 'go-mcp', 'py', 'py-data'])
+    ok(writes['go-mcp/README.md'].includes('Create, update, patch and remove become tools too'),
+      'go-mcp: the write tools it would add')
+    ok(writes['README.md'].includes('create, update, patch and remove become tools when'),
+      'the root README: the write tools the MCP server would add')
+    for (const file of ['README.md', 'AGENTS.md', 'demo_data/__init__.py']) {
+      ok(writes['py-data/' + file].includes('result = ad.sdk.Planet().create({'), 'py-data: ' + file)
+    }
+  })
+
+
+  // planet's id is a string, ambient has none, and console only lists.
+  test('go-cli: examples send each entity\'s own query, and the entity table its words', async () => {
+    const off = (names: string[]) =>
+      names.map((name) => `main: kit: entity: ${name}: active: false\n`).join('')
+    const out = await generate(['go', 'go-cli'], undefined,
+      off(['ambient', 'console', 'graph_ql', 'history']) + BASIC_TEMPLATED + CREATE_ONLY_ENTITY +
+      'main: kit: flow: BasicZincFlow: { entity: "zinc", kind: "basic", name: "BasicZincFlow", ' +
+      'step: [ { o: "create", i: { ref: "zinc_ref01" } } ] }\n')
+    const readme = out['go-cli/README.md']
+    ok(!readme.includes('{id:1}') && !/ load 1 /.test(readme), 'go-cli: a numeric id for a string one:\n' + readme)
+    ok(readme.includes(`./demo-cli load '{id:"example_id"}' planet`), 'go-cli: no planet load')
+    ok(/^\.\/demo-cli update '\{id:"example",\w+:[^}]+\}' planet$/m.test(readme), 'go-cli: no planet update')
+    ok(readme.includes('| `planet` | `list`, `load`, `update` |'), 'go-cli: the entity table')
+    ok(!/^\| `zinc` \|/m.test(readme) && readme.includes('other entity, `zinc`, has no list'),
+      'go-cli: an entity no word runs on has a row')
+
+    const single = await generate(['go', 'go-cli'], undefined, off(['console', 'graph_ql', 'history',
+      'planet', 'record', 'utility']))
+    ok(single['go-cli/README.md'].includes('./demo-cli load ambient\n'), 'go-cli: ambient takes no query')
+  })
+
+
   // ROUTING_MODEL's `signal` lists only through its actions, so a plain list
   // of it is refused. With the entities between it and `ambient` off, it is
   // the next entity holding a list operation.
@@ -6264,7 +7031,7 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
     const first = await commands(off(['ambient', ...between]))
     ok(!first.some((c) => c.startsWith('list signal')),
       'go-cli: the quick start lists signal first, which lists only by action: ' + first)
-    ok(first.some((c) => c.startsWith('load 1 signal')),
+    ok(first.some((c) => c === `load '{id:"example_id"}' signal`),
       'go-cli: the quick start does not fall back to loading signal: ' + first)
   })
 
@@ -6277,7 +7044,7 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
     const out = await generate(['go', 'go-mcp'], undefined, ROUTING_MODEL + off)
     const readme = findFile(out, 'go-mcp/README.md')
     ok(null != readme, 'go-mcp: no README generated')
-    const listed = readme!.match(/_list: first page of records\n\{ "entity": "(\w+)" \}/)?.[1]
+    const listed = readme!.match(/_list: records\n\{ "entity": "(\w+)" \}/)?.[1]
     ok('utility' === listed,
       'go-mcp: the list example names ' + listed + ', not utility, the first entity a plain list runs on')
   })
@@ -6286,7 +7053,7 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
   // A key shown in the README is an example in no vendor's format, so it
   // cannot be read as a real key or as another vendor's.
   test('go-cli, go-mcp: every example API key starts apikey_', async () => {
-    const out = await generate(['go', 'go-cli', 'go-mcp'])
+    const out = await generate(['go', 'go-cli', 'go-mcp'], undefined, BEARER)
     for (const target of ['go-cli', 'go-mcp']) {
       const readme = findFile(out, target + '/README.md')
       ok(null != readme, target + ': no README generated')
@@ -6294,6 +7061,52 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
       ok(0 < keys.length, target + ': the README shows no example key')
       deepStrictEqual(keys.filter((key) => !key.startsWith('apikey_')), [],
         target + ': an example key does not start apikey_')
+    }
+  })
+
+
+  // The fixture's API has no auth; BASIC_TEMPLATED takes a key and a secret,
+  // and a URL with one variable to fill and one defaulted.
+  test('consumers ask for the credential and server variables the SDK needs, and no other', async () => {
+    const off = await generate(['go', 'go-cli', 'go-mcp', 'py', 'py-data'])
+    for (const target of ['go-cli', 'go-mcp']) {
+      ok(!/APIKEY/.test(off[target + '/README.md']), target + ': names an API key without auth')
+      ok(!/_SERVER_/.test(off[target + '/README.md'] + off[target + '/main.go']), target + ': server variables')
+    }
+    ok(!/Credentials|APIKEY|token/.test(off['py-data/README.md'] + off['py-data/AGENTS.md']),
+      'py-data documents a credential without auth')
+    ok(!/APIKEY|Credentials/.test(off['py-data/notebooks/quickstart.ipynb']), 'the notebook asks for a key')
+    const client = off['py-data/demo_data/__init__.py']
+    ok(!/missing_token_message|token/.test(client) && /opts: dict = \{\}/.test(client), client)
+
+    const basic = await generate(['go', 'go-cli', 'go-mcp', 'py', 'py-data'], undefined, BASIC_TEMPLATED)
+    for (const target of ['go-cli', 'go-mcp']) {
+      const readme = basic[target + '/README.md']
+      const main = basic[target + '/main.go']
+      for (const name of ['DEMO_APIKEY', 'DEMO_SECRET', 'DEMO_SERVER_TENANT']) {
+        ok(readme.includes('| `' + name + '` |'), target + ': the README does not list ' + name)
+      }
+      ok(!/DEMO_SERVER_REGION/.test(readme + main), target + ': asks for the defaulted region')
+      ok(/os\.Getenv\("DEMO_SECRET"\)/.test(main) && /opts\["secret"\] = secret/.test(main),
+        target + ': main.go does not read the secret')
+      ok(/"tenant": "DEMO_SERVER_TENANT"/.test(main) && /opts\["server"\] = serverVars/.test(main),
+        target + ': main.go does not read the server variable')
+    }
+    ok(/"secret": secret/.test(basic['py-data/demo_data/__init__.py']), 'py-data data() drops the secret')
+    for (const file of ['README.md', 'AGENTS.md', 'notebooks/quickstart.ipynb']) {
+      ok(basic['py-data/' + file].includes('DEMO_SECRET'), 'py-data: ' + file + ' omits the secret')
+    }
+  })
+
+
+  // A doubled or edge separator collapses in an environment name, as the SDK spells it.
+  test('go-cli, go-mcp: environment names are the SDK\'s own', async () => {
+    const out = await generate(['go', 'go-cli', 'go-mcp'], '-acme--x-', BEARER)
+    for (const target of ['go-cli', 'go-mcp']) {
+      const main = out[target + '/main.go']
+      ok(main.includes('os.Getenv("ACME_X_APIKEY")') && main.includes('os.Getenv("ACME_X_BASE")'), main)
+      ok(out[target + '/README.md'].includes('`ACME_X_APIKEY`'), target + ': README')
+      ok(!/ACME__X|_ACME_X/.test(main + out[target + '/README.md']), target + ': a separator survives')
     }
   })
 
@@ -6334,8 +7147,8 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
       ROUTING_MODEL + "main: kit: target: 'go-mcp': tool: write: true")
     const tools = findFile(out, 'go-mcp/tools.go')!
     deepStrictEqual(mcpRegistered(tools),
-      ['demo_list', 'demo_load', 'demo_create', 'demo_update', 'demo_remove'])
-    for (const type of ['CreateArgs', 'UpdateArgs', 'RemoveArgs']) {
+      ['demo_list', 'demo_load', 'demo_create', 'demo_update', 'demo_patch', 'demo_remove'])
+    for (const type of ['CreateArgs', 'UpdateArgs', 'PatchArgs', 'RemoveArgs']) {
       strictEqual(mcpEntities(tools, type), 'planet', 'go-mcp: ' + type)
     }
     const hints = Object.fromEntries([...tools.matchAll(
@@ -6346,11 +7159,12 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
       load: 'ReadOnlyHint: true',
       create: 'DestructiveHint: hint(false)',
       update: 'DestructiveHint: hint(true)',
+      patch: 'DestructiveHint: hint(true)',
       remove: 'DestructiveHint: hint(true)',
     })
 
     const top = out['README.md']
-    ok(top.includes("exposes this SDK's list, load, create, update and remove operations"),
+    ok(top.includes("exposes this SDK's list, load, create, update, patch and remove operations"),
       'the root README does not name the write operations the MCP server exposes')
     ok(!top.includes('It only reads'), 'the root README says the MCP server only reads')
   })
@@ -6362,7 +7176,7 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
       ROUTING_MODEL + FOLD_ENTITY + "main: kit: target: 'go-mcp': tool: write: true")
     const tools = findFile(out, 'go-mcp/tools.go')!
     ok(mcpRegistered(tools).includes('demo_patch'), 'go-mcp: no patch tool: ' + mcpRegistered(tools))
-    strictEqual(mcpEntities(tools, 'PatchArgs'), 'contacts_field', 'go-mcp: PatchArgs')
+    strictEqual(mcpEntities(tools, 'PatchArgs'), 'contacts_field | planet', 'go-mcp: PatchArgs')
     ok(/case "patch":\s+result, err = ent\.Patch\(input, nil\)/.test(tools),
       'go-mcp: the patch tool does not call Patch')
     const hint = tools.match(/Name:\s+"demo_patch",[^]*?Annotations: &mcp\.ToolAnnotations\{([^}]*)\}/)?.[1]
@@ -6385,7 +7199,7 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
     const out = await generate(['go', 'go-mcp'], undefined,
       ROUTING_MODEL + off + "main: kit: target: 'go-mcp': tool: write: true")
     const readme = findFile(out, 'go-mcp/README.md')!
-    const list = JSON.parse(readme.match(/_list: first page of records\n(\{.*\})/)![1])
+    const list = JSON.parse(readme.match(/_list: records\n(\{.*\})/)![1])
     strictEqual(list.entity, 'moon')
     ok(null != list.query?.planet_id, 'go-mcp: the moon list example omits its planet')
     const update = JSON.parse(readme.match(/_update: change a record's fields\n(\{.*\})/)![1])
@@ -6426,13 +7240,13 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
     const partial = await generate(['go', 'go-mcp'], undefined,
       ROUTING_MODEL + write + opOff('planet', ['remove']))
     const partialMcp = findFile(partial, 'go-mcp/README.md')!
-    ok(partialMcp.includes('Create and update are on'),
+    ok(partialMcp.includes('Create, update and patch are on'),
       'go-mcp: the README does not name the write tools it registers')
     ok(!partialMcp.includes('remove are on'), 'go-mcp: the README claims a remove tool')
     ok(!partial['README.md'].includes('It only reads'), 'the root README says a writing server only reads')
 
     const none = await generate(['go', 'go-mcp'], undefined,
-      ROUTING_MODEL + write + opOff('planet', ['create', 'update', 'remove']))
+      ROUTING_MODEL + write + opOff('planet', ['create', 'update', 'patch', 'remove']))
     ok(findFile(none, 'go-mcp/README.md')!.includes('The server only reads: the SDK'),
       'go-mcp: the README does not say a server with no write tools only reads')
     ok(none['README.md'].includes('It only reads, as no entity has a create, update, patch or remove'),
@@ -7074,6 +7888,72 @@ main: kit: flow: BasicNoteFlow: {
     const plain = await generate(['ts'], undefined, auth("in: header, name: 'Authorization'"))
     ok(!/The client sends the API key/.test(plain['README.md'] + plain['ts/README.md']),
       'the README names the default Authorization header')
+  })
+
+
+  // Every row names an option the optspec declares, or `feature`, which the
+  // option spec adds; and every option clientOptions lists has its row, but
+  // `extend` where a closed value union holds no feature instance.
+  test('every options table lists the options the optspec declares that a caller sets', async () => {
+    const targets = allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))
+    const closed = ['rust', 'c', 'cpp', 'zig', 'ocaml']
+    const out = await generate(targets, undefined, BASIC_TEMPLATED)
+    const model = makeModel(targets, undefined, BASIC_TEMPLATED)
+    const declared = [...Object.keys(model.main[KIT].optspec), 'feature']
+    const listed = clientOptions(model).map((o: any) => o.name)
+    deepStrictEqual(listed.filter((name: string) => !declared.includes(name)), [])
+    deepStrictEqual(listed, ['server', 'apikey', 'secret', 'base', 'prefix', 'suffix', 'headers', 'feature',
+      'extend', 'system'])
+    for (const target of targets) {
+      for (const [file, head] of [[target + '/README.md', /\| Option \| [^|]+\| Description \|/],
+        [target + '/REFERENCE.md', /\| (Name|Key) \| [^|]+\| Description \|/]] as [string, RegExp][]) {
+        const text = String(out[file])
+        const at = text.search(head)
+        ok(-1 < at, file + ': no options table')
+        const rows = text.slice(at).split('\n\n')[0].split('\n').slice(2)
+        const names = rows.map((row: string) => /^\| `(?:\$?options(?:\.|\[\"|->\{))?"?([a-z]+)/.exec(row)?.[1])
+          .filter((name: any) => null != name && 'options' !== name)
+        deepStrictEqual(names, listed.filter((name: string) => !closed.includes(target) || 'extend' !== name),
+          file)
+      }
+    }
+  })
+
+  // BASIC_TEMPLATED's client needs its key, its secret and `tenant`, not `region`.
+  test('the root entities example builds its client with what the constructor needs', async () => {
+    for (const [target, ctor] of [
+      ['ts', "const client = new DemoSDK({ apikey: '...', secret: '...', server: { tenant: '...' } })"],
+      ['js', "const client = new DemoSDK({ apikey: '...', secret: '...', server: { tenant: '...' } })"],
+      ['py', 'client = DemoSDK({"apikey": "...", "secret": "...", "server": {"tenant": "..."}})'],
+      ['go', 'client, err := sdk.NewDemoSDK(map[string]any{"apikey": "...", "secret": "...", ' +
+        '"server": map[string]any{"tenant": "..."}})'],
+      ['php', '$client = new DemoSDK(["apikey" => "...", "secret" => "...", "server" => ["tenant" => "..."]]);'],
+      ['rb', 'client = DemoSDK.new({"apikey" => "...", "secret" => "...", "server" => {"tenant" => "..."}})'],
+      ['lua', 'local client = sdk.new({["apikey"] = "...", ["secret"] = "...", ["server"] = {["tenant"] = "..."}})'],
+    ]) {
+      const readme = String((await generate([target], undefined, BASIC_TEMPLATED))['README.md'])
+      const at = readme.indexOf('## Entities, not endpoints')
+      ok(readme.slice(at, readme.indexOf('\n## ', at + 3)).includes('\n' + ctor + '\n'), target + ': ' +
+        readme.slice(at, readme.indexOf('\n## ', at + 3)))
+    }
+    const plain = String((await generate(['ts']))['README.md'])
+    ok(plain.includes('\nconst client = new DemoSDK()\n'), 'ts: a public API\'s client takes options')
+  })
+
+  // The live suites read the secret exactly where PrepareAuth reads one.
+  test('every live suite reads a secret exactly where PrepareAuth reads one', async () => {
+    const live = ['ts', 'js', 'go', 'py', 'java', 'kotlin', 'php', 'rb', 'lua', 'rust', 'csharp', 'perl']
+    for (const [extra, wanted] of [[BASIC_TEMPLATED, true], [BASIC_QUERY, false]] as [string, boolean][]) {
+      const out = await generate(live, undefined, extra)
+      for (const target of live) {
+        const tests = Object.entries(out).filter(([file]) => file.startsWith(target + '/') &&
+          /(Entity|Direct)[._]?[Tt]est|_(entity|direct)(_test|\.t$)|test_[a-z_]+_(entity|direct)/.test(file))
+        ok(0 < tests.length, target + ': no live suite')
+        for (const [file, text] of tests) {
+          strictEqual(String(text).includes('DEMO_SECRET'), wanted, file)
+        }
+      }
+    }
   })
 
 

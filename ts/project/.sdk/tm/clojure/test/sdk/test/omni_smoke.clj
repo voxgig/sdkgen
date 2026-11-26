@@ -76,6 +76,6 @@
   ;; in-memory spec cannot notice a broken spec path.
   (t/run-check rec "omni-smoke-loads-the-shared-corpus"
     (fn []
-      (let [p ((omni/make-runner "../.sdk/test/test.json") "struct")]
+      (let [p ((omni/make-runner "SDKREL/.sdk/test/test.json") "struct")]
         (t/is-true (map? (:spec p)) "the struct corpus section did not load")
         (t/is-true (some? (get (:spec p) "minor")) "the struct corpus has no minor section")))))

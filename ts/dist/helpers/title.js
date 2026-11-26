@@ -11,7 +11,7 @@ const LANG_LABEL = {
     cpp: 'C++',
     csharp: 'C#',
     elixir: 'Elixir',
-    go: 'Golang',
+    go: 'Go',
     'go-cli': 'Go CLI',
     'go-mcp': 'Go MCP server',
     java: 'Java',

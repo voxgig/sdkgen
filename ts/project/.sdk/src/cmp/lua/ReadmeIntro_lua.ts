@@ -1,5 +1,5 @@
 
-import { cmp, Content, introOps } from '@voxgig/sdkgen'
+import { cmp, Content, introOps, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -11,20 +11,21 @@ import {
 const ReadmeIntroBody = cmp(function ReadmeIntroBody(props: any) {
   const { target, ctx$: { model } } = props
 
-  // Derive a real entity accessor from the model for the semantic-entity
-  // note (fall back to a generic name if the model has no entities).
   const entity = getModelPath(model, `main.${KIT}.entity`) || {}
   const exampleEntity = Object.values(entity).find((e: any) => e && e.active !== false) as any
-  const eName = exampleEntity ? nom(exampleEntity, 'Name') : 'Entity'
 
   const opList = introOps(model)
     .map((o) => '`' + o + '`').join(', ')
 
   Content(`The ${target.title} SDK for the ${model.Name} API — an entity-oriented client using Lua conventions.
 
-It exposes the API as capitalised, semantic **Entities** — e.g. \`client:${eName}()\` — each with the same small set of operations (${opList}) instead of raw URL paths and query strings. You call meaning, not endpoints, which keeps the cognitive load low.
+`)
+
+  if (exampleEntity) {
+    Content(`It exposes the API as capitalised, semantic **Entities** — e.g. \`client:${nom(exampleEntity, 'Name')}()\` —${'' === opList ? '' : ` each with ${fact(model.main[KIT], 'sharedOps') ? 'the same small set of operations' : 'operations from one small set'} (${opList})`} instead of raw URL paths and query strings. You call meaning, not endpoints, which keeps the cognitive load low.
 
 `)
+  }
 })
 
 

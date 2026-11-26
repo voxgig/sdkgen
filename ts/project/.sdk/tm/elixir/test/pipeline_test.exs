@@ -65,7 +65,7 @@ defmodule ProjectName.PipelineTest do
     c
   end
 
-  # === feature order (PR review #2) ===
+  # === feature order ===
 
   # make_options resolves the feature add-order into __derived__.featureorder:
   # a map defaults test-first (so the test mock is the base transport), an

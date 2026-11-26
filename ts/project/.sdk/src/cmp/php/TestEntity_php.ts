@@ -1,4 +1,4 @@
-import { flowSteps, opReachable, opRequestShape, validateSeeds } from '@voxgig/sdkgen'
+import { flowSteps, opReachable, opRequestShape, validateSeeds, fact } from '@voxgig/sdkgen'
 
 import {
   flatten,
@@ -25,9 +25,7 @@ import {
   buildIdNames,
   getMatchEntries,
   isAuthActive,
-  serverVarEnv,
-  serverVariables,
-  entityDataIdField, entityRecordIdField, envName, envToken,
+  entityDataIdField, entityRecordIdField,
   phpEntityAccessor,
   invalidRequest,
   liveFlowNeeds, liveStrict, liveStrictNote,
@@ -137,43 +135,44 @@ const TestEntity = cmp(function TestEntity(props: any) {
   const entName = nom(entity, 'Name')
   const accessor = phpEntityAccessor(entName)
 
-  const PROJUPPER = envName(model)
+  const ENVVAR = fact(model.main[KIT], 'env')
+  const PROJUPPER = ENVVAR.prefix
 
   const authActive = isAuthActive(model)
+  const authSecret = authActive && fact(model.main[KIT], 'auth').secret
   const apikeyEnvEntry = authActive
-    ? `\n        "${PROJUPPER}_APIKEY" => "",`
+    ? `\n        "${ENVVAR.apikey}" => "",${authSecret ? `\n        "${ENVVAR.secret}" => "",` : ''}`
     : ''
   const apikeyLiveField = authActive
-    ? `\n                "apikey" => $env["${PROJUPPER}_APIKEY"],`
+    ? `\n                "apikey" => $env["${ENVVAR.apikey}"],${authSecret ? `\n                "secret" => $env["${ENVVAR.secret}"],` : ''}`
     : ''
 
   // A templated server URL (OpenAPI server variables) makes a LIVE client
   // impossible to construct without values: makeOptions raises rather than
   // request a URL with a literal `{account_id}` in it. So the live suite
   // takes them from the environment the same way it takes the apikey.
-  const svars = serverVariables(model)
+  const svars = fact(model.main[KIT], 'server')
   const serverEnvEntry = svars
-    .map((v: any) => `\n        "${serverVarEnv(PROJUPPER, v.name)}" => ${formatPhpValue(v.dflt)},`).join('')
+    .map((v: any) => `\n        "${ENVVAR.server[v.name]}" => ${formatPhpValue(v.dflt)},`).join('')
   const serverLiveField = 0 === svars.length ? '' : `
                 "server" => [${svars
       .map((v: any) => `
-                    "${v.name}" => $env["${serverVarEnv(PROJUPPER, v.name)}"],`).join('')}
+                    "${v.name}" => $env["${ENVVAR.server[v.name]}"],`).join('')}
                 ],`
 
   const idnames = buildIdNames(entity, basicflow)
   const idnamesStr = idnames.map(n => `"${n}"`).join(', ')
 
   const allSteps = Object.values(flowSteps(basicflow)) as any[]
-  const updateStep = allSteps.find((s: any) => s.o === 'update')
-  const updateData = updateStep?.d
-    ? Object.entries(updateStep.d).filter(([k]: any) => k !== 'id' && !k.endsWith('$'))
-    : []
+  const updateData = Object.entries(Object.assign({}, ...allSteps
+    .filter((s: any) => 'update' === s.o || 'patch' === s.o).map((s: any) => s.d || {})))
+    .filter(([k]: any) => k !== 'id' && !k.endsWith('$'))
   const aliases = updateData.map(([k, v]: any) => [k, v])
 
   const genCtx: GenCtx = { model, entity, flow: basicflow, PROJUPPER, accessor }
 
   const strict = liveStrict(model, target.name)
-  const entidEnv = PROJUPPER + '_TEST_' + envToken(entity.name) + '_ENTID'
+  const entidEnv = ENVVAR.entid[entity.name]
 
   File({ name: entity.Name + 'EntityTest.' + target.ext }, () => {
 
@@ -200,7 +199,7 @@ ${liveStrictNote(strict, '//', '    ')}
         $this->assertNotNull($ent);
     }
 ${hasList ? `
-    // Feature #4: the entity stream(action, ...) method runs the op pipeline
+    // The entity stream(action, ...) method runs the op pipeline
     // and yields result items. With the streaming feature active it yields the
     // feature's incremental output; otherwise it falls back to the materialised
     // list so stream always yields.
@@ -327,7 +326,7 @@ ${liveExcludedLines(plan).map((line) =>
 {
     Runner::load_env_local();
 
-    $entity_data_file = __DIR__ . '/../../.sdk/test/entity/${entity.name}/${entity.Name}TestData.json';
+    $entity_data_file = __DIR__ . '/../${ctx$.stdrep.SDKREL}/.sdk/test/entity/${entity.name}/${entity.Name}TestData.json';
     $entity_data_source = file_get_contents($entity_data_file);
     $entity_data = json_decode($entity_data_source, true);
 ${fixtureIdentity(entity)}
@@ -349,17 +348,17 @@ ${fixtureIdentity(entity)}
 
     Content(`    // Whether *_ENTID supplied the idmap, read before env_override consumes
     // it: without it, the ids a live flow binds are the fixture's synthetic ones.
-    $entid_env_raw = getenv("${PROJUPPER}_TEST_${envToken(entity.name)}_ENTID");
+    $entid_env_raw = getenv("${ENVVAR.entid[entity.name]}");
     $idmap_overridden = $entid_env_raw !== false && str_starts_with(trim($entid_env_raw), "{");
 
     $env = Runner::env_override([
-        "${PROJUPPER}_TEST_${envToken(entity.name)}_ENTID" => $idmap,
-        "${PROJUPPER}_TEST_LIVE" => "FALSE",
+        "${ENVVAR.entid[entity.name]}" => $idmap,
+        "${ENVVAR.live}" => "FALSE",
         "${PROJUPPER}_TEST_EXPLAIN" => "FALSE",${apikeyEnvEntry}${serverEnvEntry}
     ]);
 
     $idmap_resolved = Helpers::to_map(
-        $env["${PROJUPPER}_TEST_${envToken(entity.name)}_ENTID"]);
+        $env["${ENVVAR.entid[entity.name]}"]);
     if ($idmap_resolved === null) {
         $idmap_resolved = Helpers::to_map($idmap);
     }
@@ -374,7 +373,7 @@ ${fixtureIdentity(entity)}
     }
 
     Content(`
-    if ($env["${PROJUPPER}_TEST_LIVE"] === "TRUE") {
+    if ($env["${ENVVAR.live}"] === "TRUE") {
         $merged_opts = Vs::merge([
             // FIRST, so the generated fields below win: sdk-test-control.json's
             // test.client.options adds to the live client, it does not redirect it.
@@ -398,7 +397,7 @@ ${fixtureIdentity(entity)}
         $client = new ${model.const.Name}SDK(Helpers::to_map($merged_opts) ?? []);
     }
 
-    $live = $env["${PROJUPPER}_TEST_LIVE"] === "TRUE";
+    $live = $env["${ENVVAR.live}"] === "TRUE";
     return [
         "client" => $client,
         "data" => $entity_data,
@@ -423,7 +422,7 @@ const generateCreate: OpGen = (ctx, step, index) => {
 
   const priorSteps = Object.values(flowSteps(flow)).slice(0, Number(index)) as any[]
   const needsEnt = !priorSteps.some((s: any) =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
 
   const hasDatvar = priorSteps.some((s: any) => {
     if ('create' === s.o) {
@@ -479,7 +478,7 @@ const generateList: OpGen = (ctx, step, index) => {
 
   const priorSteps = Object.values(flowSteps(flow)).slice(0, Number(index)) as any[]
   const needsEnt = !priorSteps.some((s: any) =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
 
   Content(`        // LIST
 `)
@@ -552,11 +551,11 @@ const generateUpdate: OpGen = (ctx, step, index) => {
 
   const priorSteps = Object.values(flowSteps(flow)).slice(0, Number(index)) as any[]
   const needsEnt = !priorSteps.some((s: any) =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
 
   const hasEntIdU = null != entity.id
 
-  Content(`        // UPDATE
+  Content(`        // ${step.o.toUpperCase()}
 `)
   if (needsEnt) {
     Content(`        $${entvar} = $client->${accessor}(null);
@@ -595,7 +594,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
   }
 
   Content(`
-        $${resdatavar}_result = $${entvar}->update($${datavar}_up, null);
+        $${resdatavar}_result = $${entvar}->${step.o}($${datavar}_up, null);
         $${resdatavar} = Helpers::to_map(is_object($${resdatavar}_result) && method_exists($${resdatavar}_result, 'data_get') ? $${resdatavar}_result->data_get() : $${resdatavar}_result);
         $this->assertNotNull($${resdatavar});
 `)
@@ -624,7 +623,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
 
   const priorSteps = Object.values(flowSteps(flow)).slice(0, Number(index)) as any[]
   const hasEntVar = priorSteps.some((s: any) =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
 
   const flowHasCreate = Object.values(flowSteps(flow)).some((s: any) => (s as any).o === 'create')
   const preambleRef = entity.name + '_ref01'
@@ -685,7 +684,7 @@ const generateRemove: OpGen = (ctx, step, index) => {
 
   const priorSteps = Object.values(flowSteps(flow)).slice(0, Number(index)) as any[]
   const needsEnt = !priorSteps.some((s: any) =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
 
   Content(`        // REMOVE
 `)
@@ -803,6 +802,7 @@ const GENERATE_OP: Record<string, OpGen> = {
   create: generateCreate,
   list: generateList,
   update: generateUpdate,
+  patch: generateUpdate,
   load: generateLoad,
   remove: generateRemove,
 }

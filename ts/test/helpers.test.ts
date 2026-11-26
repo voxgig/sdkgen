@@ -27,6 +27,7 @@ import {
   sdkName,
   repoInfo,
   registryState,
+  registryNote,
   isPublished,
   installCommand,
   vendorCommand,
@@ -782,9 +783,24 @@ describe('helpers', () => {
           name: 'demo', origin: 'acme',
           main: { kit: { target: { [t]: { name: t, publish: { registry: { name: 'reg', state: 'active' } } } } } },
         })
-        strictEqual(isPublished(model, t), true, t)
+        // go installs from its tag whatever the registry, and prints that line.
+        strictEqual(isPublished(model, t), 'go' !== t, t)
         strictEqual(0 < installCommand(model, t).length, true, t + ' prints an empty install command')
       }
+    })
+
+
+    test('registryNote says what the install section can say of the registry', () => {
+      const model = (state: string, name = 'npm'): any => applyFacts({
+        name: 'demo', origin: 'acme',
+        main: { kit: { target: { ts: { name: 'ts', publish: { registry: { name, state } } } } } },
+      })
+      strictEqual(registryNote(model('active'), 'ts'), 'This package is published to npm.')
+      strictEqual(registryNote(model('pending'), 'ts'), 'This package is not yet published to npm.')
+      strictEqual(registryNote(model('inactive'), 'ts'), 'This package is not published to npm.')
+      strictEqual(registryNote(model('pending', 'maven-central'), 'ts'),
+        'This package is not yet published to Maven Central.')
+      strictEqual(registryNote(model('active', 'none'), 'ts'), 'This package is not published to a package registry.')
     })
 
 

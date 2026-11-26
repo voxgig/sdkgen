@@ -1,5 +1,5 @@
 
-import { cmp, File, Content } from '@voxgig/sdkgen'
+import { cmp, File, Content, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -16,6 +16,13 @@ function phpQuote(text: string): string {
 const ReadmeExamplesTest = cmp(function ReadmeExamplesTest(props: any) {
   const { target } = props
   const { model } = props.ctx$
+  // The root README where the run writes one beside this target, and the
+  // target's own documents where it writes them.
+  const link = fact(target, 'link').readme
+  const own = fact(target, 'phase').readme
+  if ('' === link && !own) {
+    return
+  }
 
   const sdkbase = model.const.Name.toLowerCase() + '_sdk'
   const sdkfile = sdkbase + '.php'
@@ -111,10 +118,10 @@ ${idFieldLines}
     private function docs(): array
     {
         return [
-            'root README' => __DIR__ . '/../../README.md',
-            'php README' => __DIR__ . '/../README.md',
+${'' === link ? '' : `            'root README' => __DIR__ . '/../${link}',
+`}${own ? `            'php README' => __DIR__ . '/../README.md',
             'php REFERENCE' => __DIR__ . '/../REFERENCE.md',
-        ];
+` : ''}        ];
     }
 
     /**
@@ -290,11 +297,10 @@ ${idFieldLines}
     /**
      * Rewrite a runnable block into an executable offline test-mode program: the
      * doc's own require of the SDK file is stripped (we require it by absolute
-     * path); any real client constructor (new <Sdk>SDK / <Sdk>SDK::test) becomes
+     * path); any real client constructor (new <Sdk>SDK / <Sdk>SDK::test), its
+     * argument list matched to the parenthesis that balances it, becomes
      * <Sdk>SDK::test(<fixtures>); a block that only uses \\$client gets such a
-     * constructor prepended. (The constructor arg-list match is deliberately
-     * shallow — it does not span nested parens — because runnable op blocks
-     * never build a client inline with a closure argument.)
+     * constructor prepended.
      */
     private function toRunner(string $block, string $sdk): string
     {
@@ -307,7 +313,7 @@ ${idFieldLines}
             '',
             $body
         );
-        $ctorRe = '/(?:new\\s+' . preg_quote($cls, '/') . '|' . preg_quote($cls, '/') . '::test)(?:\\([^()]*\\))?/';
+        $ctorRe = '/(?:new\\s+' . preg_quote($cls, '/') . '|' . preg_quote($cls, '/') . '::test)(?<args>\\((?:[^()]++|(?&args))*\\))?/';
         if (preg_match($ctorRe, $body)) {
             $body = preg_replace_callback($ctorRe, function () use ($cls, $fixtures) {
                 return $cls . '::test(' . $fixtures . ')';

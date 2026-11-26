@@ -1,9 +1,6 @@
 
-# Go MCP server target — a Go program that *consumes* the sibling Go
-# SDK and exposes it as MCP tools. Like go-cli, it is not a language
-# SDK in its own right, so the standard per-entity / per-feature /
-# readme / test generation phases are switched off via the `phase`
-# map below.
+# An MCP server built on the Go SDK, not an SDK of its own, so every
+# standard generation phase is off and Main writes the whole package.
 
 main: kit: target: 'go-mcp': {
 
@@ -12,6 +9,8 @@ main: kit: target: 'go-mcp': {
   comment: line: "//"
   module: name: '$$name$$'
   base: 'BASE'
+  surface: 'mcp'
+  consumes: 'go'
 
   phase: {
     entity:     { active: false }
@@ -21,9 +20,7 @@ main: kit: target: 'go-mcp': {
     test:       { active: false }
   }
 
-  # No external module deps declared here. The generated go.mod uses
-  # a relative replace to the sibling SDK at ../go and declares the
-  # MCP Go SDK as a direct dep. See Main_go-mcp.ts.
+  # Main writes go.mod, which reaches the Go SDK by a relative replace.
   deps: {}
 
   tool: write: *false | boolean
@@ -36,5 +33,6 @@ main: kit: feature: &: target: 'go-mcp': deps: &: {
 
 
 main: kit: target: 'go-mcp': publish: {
+  recipe: false
   tag: { via: 'root' }
 }
