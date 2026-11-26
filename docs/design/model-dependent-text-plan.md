@@ -1992,8 +1992,8 @@ added failed: three looked a generated file up in memfs under `Path.join`,
 which is not how memfs keys it there, and three generated into memfs after
 moving into the system temporary directory, which a Windows runner keeps on
 another drive than the stage. They now key files as the alias tests'
-`generated()` does, and work in a directory under the stage; only the runner
-can check them. Merging main's token-exchange and byte-response work (#524)
+`generated()` does, and work in a directory under the stage; the Windows
+runner has since passed them. Merging main's token-exchange and byte-response work (#524)
 brought tests that R3 had to adapt: the redirect test it added to the go,
 csharp, rust and zig secrets suites, which gate one test at a time, now opens
 with their gate, and the five clients it added to the go, rust, zig and c
@@ -2002,6 +2002,13 @@ lanes reading output their tool does not print there: csharp's corpus step, on
 dotnet's detailed logger, looked for the minimal logger's summary, and zig's
 no-auth lane missed a summary the runners colour; both now read what the tool
 prints.
+The macOS push runner found the last: the c secrets suite defines
+`_POSIX_C_SOURCE`, which on Darwin hides `INADDR_LOOPBACK`, the address the
+redirect case from #524 listens on. No lane compiled that suite on macOS
+before R3's no-auth lane, and the transport test, which no lane compiles
+there, carried the same flaw. Both now define `_DARWIN_C_SOURCE` beside it on
+Apple, as `utility/http.c` does, checked here against a stand-in for
+Darwin's header guard.
 
 **Left for later.**
 
