@@ -1978,16 +1978,22 @@ public-API one. Each of the twenty suites now skips, visibly and with the
 corpus runners' reason, where the generated config declares no auth;
 `ts/test/secretsauth.test.ts` holds the gate, and the secrets lanes of js, go,
 rb, perl, zig, c, cpp and ocaml run under a model without auth and require the
-skip line. CI then found two that no toolchain here could see. csharp's flow
-test named the update step's pattern variable `ue`, which C# scopes to the
-enclosing block, so the patch step, which shares the update step's generator,
-declared it twice (CS0128), and every csharp lane that generates planet failed
-to build; each pattern variable now takes its step's own result name. scala's
-patch-flow lane gave data to planet alone and wrote no root files, while
-scala's one test main runs every entity's test and the README check; the lane
-now writes every entity's data and scala's root files. Both were then
-reproduced and checked here, with dotnet and scala-cli installed for the
-purpose.
+skip line. CI then found three that the container that built R3 could not see.
+csharp's flow test named the update step's pattern variable `ue`, which C#
+scopes to the enclosing block, so the patch step, which shares the update
+step's generator, declared it twice (CS0128), and every csharp lane that
+generates planet failed to build; each pattern variable now takes its step's
+own result name. scala's patch-flow lane gave data to planet alone and wrote
+no root files, while scala's one test main runs every entity's test and the
+README check; the lane now writes every entity's data and scala's root files.
+Both were then reproduced and checked there, with dotnet and scala-cli
+installed for the purpose. And on the Windows push runner alone, six tests R3
+added failed: three looked a generated file up in memfs under `Path.join`,
+which is not how memfs keys it there, and three generated into memfs after
+moving into the system temporary directory, which a Windows runner keeps on
+another drive than the stage. They now key files as the alias tests'
+`generated()` does, and work in a directory under the stage; only the runner
+can check them.
 
 **Left for later.**
 
