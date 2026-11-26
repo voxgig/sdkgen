@@ -1226,13 +1226,17 @@ final class SecretsFeatureTest: XCTestCase {
 
   func testWithTheOptionARedirectOnTheExchangesOwnOriginIsFollowedAndNoOther() {
     withOrigins { o in
-      let moved = "POST /api/moved/token {\"refresh_token\":\"REFRESH01\"}"
-      let cases: [(Int, String, Bool)] = [
-        (307, "/api/moved/token", true),
-        (308, o.origin + "/api/moved/token", true),
-        (307, o.away, false),
-        (302, "/api/moved/token", false),
-        (307, "/api/auth/token", false),
+      let sent = " {\"refresh_token\":\"REFRESH01\"}"
+      // Each case: the status, the Location, and the path the exchange is
+      // asked again at, or nil where the redirect is refused.
+      let cases: [(Int, String, String?)] = [
+        (307, "/api/moved/token", "/api/moved/token"),
+        (308, o.origin + "/api/moved/token", "/api/moved/token"),
+        // A Location of a query alone keeps the path that answered.
+        (307, "?step=2", "/api/auth/token?step=2"),
+        (307, o.away, nil),
+        (302, "/api/moved/token", nil),
+        (307, "/api/auth/token", nil),
       ]
 
       var wrong: [String] = []
@@ -1240,7 +1244,7 @@ final class SecretsFeatureTest: XCTestCase {
       var refused = 0
       var looped = 0
 
-      for (status, location, follows) in cases {
+      for (status, location, path) in cases {
         o.lock.lock()
         o.answer = (status, location)
         o.followed = []
@@ -1257,8 +1261,9 @@ final class SecretsFeatureTest: XCTestCase {
 
         let report = "\(status) to \(location): " + message + " [" + seen.joined(separator: " | ") + "]"
 
-        if follows {
-          if true == res.entries["ok"]?.asBool && 2 == seen.count && moved == seen[0] {
+        if let path = path {
+          let asked = "POST " + path + sent
+          if true == res.entries["ok"]?.asBool && 2 == seen.count && asked == seen[0] {
             followed += 1
           } else {
             wrong.append(report)
@@ -1284,7 +1289,7 @@ final class SecretsFeatureTest: XCTestCase {
 
       XCTAssertEqual([], reached, "the exchange reached another origin")
       XCTAssertEqual([], wrong)
-      XCTAssertEqual(2, followed)
+      XCTAssertEqual(3, followed)
       XCTAssertEqual(3, refused)
       // A redirect to itself stops at the hop limit.
       XCTAssertEqual(6, looped)

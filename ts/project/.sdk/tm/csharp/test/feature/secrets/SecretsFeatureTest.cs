@@ -2037,14 +2037,18 @@ public class SecretsFeatureTest
         if (SkippedWithoutAuth()) return;
 
         using var o = new RedirectOrigins();
-        var moved = "POST /api/moved/token {\"refresh_token\":\"REFRESH01\"}";
-        var cases = new[]
+        var sent = " {\"refresh_token\":\"REFRESH01\"}";
+        // Each case: the status, the Location, and the path the exchange is
+        // asked again at, or null where the redirect is refused.
+        var cases = new (int, string, string?)[]
         {
-            (307, "/api/moved/token", true),
-            (308, o.Origin.Base + "/api/moved/token", true),
-            (307, o.Away, false),
-            (302, "/api/moved/token", false),
-            (307, "/api/auth/token", false),
+            (307, "/api/moved/token", "/api/moved/token"),
+            (308, o.Origin.Base + "/api/moved/token", "/api/moved/token"),
+            // A Location of a query alone keeps the path that answered.
+            (307, "?step=2", "/api/auth/token?step=2"),
+            (307, o.Away, null),
+            (302, "/api/moved/token", null),
+            (307, "/api/auth/token", null),
         };
 
         var wrong = new List<string>();
@@ -2052,7 +2056,7 @@ public class SecretsFeatureTest
         var refused = 0;
         var looped = 0;
 
-        foreach (var (status, location, follows) in cases)
+        foreach (var (status, location, path) in cases)
         {
             lock (o.Followed)
             {
@@ -2077,9 +2081,9 @@ public class SecretsFeatureTest
             var report = status + " to " + location + ": ok=" + res["ok"] + " " + message +
                 " [" + string.Join(" | ", seen) + "]";
 
-            if (follows)
+            if (null != path)
             {
-                if (Equals(res["ok"], true) && 2 == seen.Count && moved == seen[0])
+                if (Equals(res["ok"], true) && 2 == seen.Count && "POST " + path + sent == seen[0])
                 {
                     followed++;
                 }
@@ -2106,7 +2110,7 @@ public class SecretsFeatureTest
         Assert.True(0 == o.Elsewhere.Count,
             "the exchange reached another origin: " + string.Join(" | ", o.Elsewhere));
         Assert.True(0 == wrong.Count, string.Join(" || ", wrong));
-        Assert.Equal(2, followed);
+        Assert.Equal(3, followed);
         Assert.Equal(3, refused);
         // A redirect to itself stops at the hop limit.
         Assert.Equal(6, looped);
