@@ -14,6 +14,7 @@
 
 const { test, describe, beforeEach } = require('node:test')
 const assert = require('node:assert')
+const Http = require('node:http')
 
 const { SDK } = require('../../utility/index')
 
@@ -1025,6 +1026,85 @@ describe('secrets exchange', () => {
     assert.equal(stub.calls.length, 0, 'test mode must not do IO')
     // A deterministic placeholder, so offline suites need no configuration.
     credentialIs(fetchdef.headers[CREDHEADER], 'test-access_token')
+  })
+
+
+  // Real listeners and the platform fetch: a stub follows nothing.
+  test('a redirect answering the exchange is a failure, and nothing follows it', async () => {
+    const elsewhere = []
+    const followed = []
+    let answer = [307, '']
+
+    const other = Http.createServer((req, res) => {
+      let body = ''
+      req.on('data', (chunk) => body += chunk)
+      req.on('end', () => {
+        elsewhere.push({ method: req.method, url: req.url, body })
+        res.writeHead(200, { 'content-type': 'application/json', connection: 'close' })
+        res.end('{"access_token":"ELSEWHERE01"}')
+      })
+    })
+    const origin = Http.createServer((req, res) => {
+      req.resume()
+      req.on('end', () => {
+        if ('/api/auth/token' === req.url) {
+          res.writeHead(answer[0], { location: answer[1], connection: 'close' })
+          res.end()
+          return
+        }
+        followed.push(req.method + ' ' + req.url)
+        res.writeHead(200, { 'content-type': 'application/json', connection: 'close' })
+        res.end('{"access_token":"MOVED01"}')
+      })
+    })
+
+    const listen = (server) => new Promise((resolve) =>
+      server.listen(0, '127.0.0.1', () => resolve(server.address().port)))
+    const base = 'http://127.0.0.1:' + (await listen(origin)) + '/api'
+    const away = 'http://127.0.0.1:' + (await listen(other)) + '/api/auth/token'
+
+    try {
+      const answers = [[307, away], [308, away], [302, away], [307, '/api/moved/token']]
+
+      const allowed = []
+      let refused = 0
+
+      for (answer of answers) {
+        const sdk = new SDK({
+          base,
+          feature: {
+            secrets: {
+              active: true,
+              name: 'refresh_token',
+              exchange: { active: true, refresh: REFRESH },
+            },
+          },
+        })
+
+        const res = await sdk.direct({ path: '/thing' })
+        const message = String(null == res || null == res.err ? res : res.err.message)
+
+        if (message.includes(
+          'token exchange failed: ' + answer[0] + ' from ' + base + '/auth/token')) {
+          refused++
+        }
+        else {
+          allowed.push(answer[0] + ' to ' + answer[1] + ': ' + message)
+        }
+      }
+
+      console.log('secrets: exchange refused ' + refused + ' redirect(s), ' +
+        (elsewhere.length + followed.length) + ' followed')
+
+      assert.deepEqual(elsewhere, [], 'the exchange reached another origin')
+      assert.deepEqual(followed, [], 'a request followed a refused exchange')
+      assert.deepEqual(allowed, [], 'a redirect was not a failed exchange')
+      assert.equal(refused, answers.length)
+    }
+    finally {
+      origin.close()
+      other.close()
+    }
   })
 
 })
