@@ -34,7 +34,7 @@ src/cmp/c/TestClean_c.ts 2f60f2b9bdba
 src/cmp/c/TestDirect_c.ts ec4b126521c6
 src/cmp/c/TestEntity_c.ts a5d7718e4449
 src/cmp/c/Test_c.ts f1a8a6c7a0c6
-src/cmp/c/fragment/Entity.fragment.c 0123aef26915
+src/cmp/c/fragment/Entity.fragment.c 2dd30ab7eea6
 src/cmp/c/fragment/EntityCreateOp.fragment.c 28800c05f246
 src/cmp/c/fragment/EntityListOp.fragment.c ccad349ef185
 src/cmp/c/fragment/EntityLoadOp.fragment.c 80b62c0e93ce
@@ -165,7 +165,7 @@ src/cmp/clojure/fragment/EntityUpdateOp.fragment.clj 0245cb72c0ee
 src/cmp/clojure/tsconfig.json 720a3f229019
 src/cmp/clojure/utility_clojure.ts fa25f9feb766
 tm/clojure/Makefile d3ac03fe6a52
-tm/clojure/feature/secrets/sdk/feature/secrets.clj c51de60294c9
+tm/clojure/feature/secrets/sdk/feature/secrets.clj 2a51cde57e5b
 tm/clojure/feature/secrets/voxgig/plugin.clj eda66525b164
 tm/clojure/feature/secrets/voxgig/plugin/capability.clj b95da92fb675
 tm/clojure/feature/secrets/voxgig/plugin/catalog.clj 0b97b9f7d05c
@@ -225,12 +225,12 @@ tm/clojure/src/feature/test/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/timeout/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/validate/.gitkeep e3b0c44298fc
 tm/clojure/src/sdk/client.clj 747bdcaf4b47
-tm/clojure/src/sdk/core.clj 7b930c33480a
+tm/clojure/src/sdk/core.clj 2d9eeed15dc3
 tm/clojure/src/sdk/features.clj 52383c72eed5
 tm/clojure/src/voxgig/struct.clj 007fea2d9426
 tm/clojure/test/sdk/test/concurrency.clj a9bfd623695b
 tm/clojure/test/sdk/test/feature.clj 889886b26a0d
-tm/clojure/test/sdk/test/feature/secrets.clj 1552c71993cf
+tm/clojure/test/sdk/test/feature/secrets.clj 7cbe1696eec6
 tm/clojure/test/sdk/test/netsim.clj 2e797c353a8b
 tm/clojure/test/sdk/test/omni.clj cabff67d9640
 tm/clojure/test/sdk/test/omni_smoke.clj 8a48e55961c6
@@ -289,7 +289,7 @@ src/cmp/cpp/utility_cpp.ts b34388805840
 tm/cpp/Makefile 80ab5d610748
 tm/cpp/core/sdk.hpp 29180a8846ed
 tm/cpp/core/struct.hpp 0be0006d1389
-tm/cpp/core/types.hpp 6e5bc0348a56
+tm/cpp/core/types.hpp 0a1a56caef92
 tm/cpp/feature/base.hpp 09bbe326cadb
 tm/cpp/feature/options.hpp 74561793d626
 tm/cpp/feature/test.hpp 149ff9adc63a
@@ -714,7 +714,7 @@ tm/java/test/NetsimTest.java 9969f77c3cb3
 tm/java/test/OmniResolver.java 54333ccce204
 tm/java/test/OmniSmokeTest.java 722cc2d6bfe7
 tm/java/test/PipelineTest.java 7ee985e9c2e2
-tm/java/test/PrimaryUtilityTest.java 2ca6fc842a73
+tm/java/test/PrimaryUtilityTest.java da39ccb6e019
 tm/java/test/RunnerSupport.java fef0736a4b6e
 tm/java/test/StructCorpusTest.java b3679703f344
 tm/java/test/sdk-test-control.json acadc87764f6
@@ -726,7 +726,7 @@ tm/java/utility/Done.java 539e95bb155a
 tm/java/utility/FeatureAdd.java 77fd1ce39d5a
 tm/java/utility/FeatureHookUtil.java c0a61e00148f
 tm/java/utility/FeatureInit.java b7ee152fc808
-tm/java/utility/Fetcher.java 81e1da823816
+tm/java/utility/Fetcher.java 584ce5e31f67
 tm/java/utility/Graphql.java 375386544b43
 tm/java/utility/Json.java 319781c3f5ca
 tm/java/utility/MakeContext.java c7789b287936
@@ -951,7 +951,7 @@ tm/kotlin/test/NetsimTest.kt 870005516436
 tm/kotlin/test/OmniResolver.kt 177193e3e49a
 tm/kotlin/test/OmniSmokeTest.kt ec9e888beb69
 tm/kotlin/test/PipelineTest.kt 423d746d3abf
-tm/kotlin/test/PrimaryUtilityTest.kt 9fb8140a4c14
+tm/kotlin/test/PrimaryUtilityTest.kt f7d59fdcfec4
 tm/kotlin/test/RunnerSupport.kt 658e60d7adb2
 tm/kotlin/test/ServerVariableTest.kt cf52d241cde8
 tm/kotlin/test/StructCorpusTest.kt e240d16295a8
@@ -961,7 +961,7 @@ tm/kotlin/test/vendor/omni/Runner.kt ab92a25844a0
 tm/kotlin/test/vendor/omni/Util.kt 993e6ff9ab67
 tm/kotlin/utility/CoreUtil.kt 12d9c94d0cd9
 tm/kotlin/utility/FeatureUtil.kt 0afe6596ecdb
-tm/kotlin/utility/Fetcher.kt 613b565a8859
+tm/kotlin/utility/Fetcher.kt 4943fc198a6a
 tm/kotlin/utility/Graphql.kt a11645f053e2
 tm/kotlin/utility/Json.kt 300cfa023e24
 tm/kotlin/utility/MakeOptions.kt 7ac389538225
@@ -1619,7 +1619,7 @@ src/cmp/rust/TestClean_rust.ts 3ec88441ae3c
 src/cmp/rust/TestDirect_rust.ts f857617bc580
 src/cmp/rust/TestEntity_rust.ts 62cf39216180
 src/cmp/rust/Test_rust.ts bacb4080dc83
-src/cmp/rust/fragment/Entity.fragment.rs 7433d6a3443f
+src/cmp/rust/fragment/Entity.fragment.rs 6e72ffe70e99
 src/cmp/rust/fragment/EntityCreateOp.fragment.rs 4f8d48f60839
 src/cmp/rust/fragment/EntityListOp.fragment.rs 527a1074770c
 src/cmp/rust/fragment/EntityLoadOp.fragment.rs 9f759bc83de5
@@ -1777,7 +1777,7 @@ tm/scala/feature/ProxyFeature.scala c93944c9ada6
 tm/scala/feature/RatelimitFeature.scala 4b96e4be9fd5
 tm/scala/feature/RbacFeature.scala 978c969eccca
 tm/scala/feature/RetryFeature.scala 117b343c03a4
-tm/scala/feature/SecretsFeature.scala cb0678b6fc70
+tm/scala/feature/SecretsFeature.scala b6ae3d8ba6a0
 tm/scala/feature/StreamingFeature.scala 8ce264ff9371
 tm/scala/feature/TelemetryFeature.scala b1bf710a5667
 tm/scala/feature/TestFeature.scala 4beda610ed9b
@@ -1821,11 +1821,11 @@ tm/scala/sdktest/ConcurrencyTest.scala f27840bb67d8
 tm/scala/sdktest/OmniResolver.scala 2bbd5639ca7c
 tm/scala/sdktest/OmniSmoke.scala 5c22c83fb51f
 tm/scala/sdktest/PrimaryCorpus.scala 5027deb5208b
-tm/scala/sdktest/SdkTestMain.scala f5f8de4a2ed1
+tm/scala/sdktest/SdkTestMain.scala 91ab2822e6d7
 tm/scala/sdktest/SdkTestSupport.scala 9a0a70dcb153
 tm/scala/sdktest/ServerVariableTest.scala 0c041b23fd44
 tm/scala/sdktest/StructCorpus.scala c6453791202c
-tm/scala/sdktest/feature/secrets/SecretsTestMain.scala e8d8533bb139
+tm/scala/sdktest/feature/secrets/SecretsTestMain.scala 722f225f6c0a
 tm/scala/sdktest/sdk-test-control.json acadc87764f6
 tm/scala/sdktest/vendor/omni/Json.scala 832ecba5fdf8
 tm/scala/sdktest/vendor/omni/Runner.scala 004f6fce4126
@@ -1853,7 +1853,7 @@ tm/scala/src/feature/test/.gitkeep e3b0c44298fc
 tm/scala/src/feature/timeout/.gitkeep e3b0c44298fc
 tm/scala/src/feature/validate/.gitkeep e3b0c44298fc
 tm/scala/utility/FeatureUtils.scala 5dc80bb21e7b
-tm/scala/utility/Fetcher.scala 9dc262cbbfa7
+tm/scala/utility/Fetcher.scala f6a6b218659e
 tm/scala/utility/Graphql.scala 42b7689276a6
 tm/scala/utility/Json.java d39717264d80
 tm/scala/utility/Make.scala f3353acbe23b
@@ -2130,7 +2130,7 @@ src/cmp/zig/TestDirect_zig.ts 60144692ef88
 src/cmp/zig/TestEntity_zig.ts a46e513a43a7
 src/cmp/zig/Test_zig.ts db2e195e07e2
 src/cmp/zig/fragment/Build.fragment.zig 3e1c15ce3d3b
-src/cmp/zig/fragment/Entity.fragment.zig 01444406712e
+src/cmp/zig/fragment/Entity.fragment.zig ef94b49ccbc0
 src/cmp/zig/fragment/EntityCreateOp.fragment.zig 204e55446419
 src/cmp/zig/fragment/EntityListOp.fragment.zig 547f12bfa1ac
 src/cmp/zig/fragment/EntityLoadOp.fragment.zig 6eec03e0eb48
@@ -2156,7 +2156,7 @@ tm/zig/core/types.zig 06a853449e9c
 tm/zig/core/utility.zig 815f5308fe59
 tm/zig/feature/audit.zig 83a49d77a34a
 tm/zig/feature/base.zig ca0fa806bb43
-tm/zig/feature/cache.zig ef3b23e5e239
+tm/zig/feature/cache.zig 5b570b321469
 tm/zig/feature/clienttrack.zig c83ed2b08d81
 tm/zig/feature/cost.zig 2c3882a47898
 tm/zig/feature/debug.zig b2098ff40efa
@@ -2232,7 +2232,7 @@ tm/zig/src/feature/test/.gitkeep e3b0c44298fc
 tm/zig/src/feature/timeout/.gitkeep e3b0c44298fc
 tm/zig/src/feature/validate/.gitkeep e3b0c44298fc
 tm/zig/test/feature/secrets/secrets_test.zig 9c06b0f41156
-tm/zig/test/feature_test.zig dfbcd6a18307
+tm/zig/test/feature_test.zig 55222746c2bc
 tm/zig/test/fh.zig 4a248b2bc6b7
 tm/zig/test/gotcha_test.zig d235341e8986
 tm/zig/test/omniresolver.zig d7def53f0590
