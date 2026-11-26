@@ -1,5 +1,6 @@
 package KOTLINPACKAGE.feature
 
+import java.net.URI
 import java.util.concurrent.locks.ReentrantLock
 import java.util.function.BiFunction
 import java.util.function.Supplier
@@ -74,6 +75,8 @@ import KOTLINPACKAGE.utility.struct.Struct
 // buys another and retries the same request once. Concurrent purchases
 // share the one in-flight exchange; test mode buys nothing and answers with
 // a deterministic fake token.
+private const val REDIRECT_MAX = 5
+
 @Suppress("UNCHECKED_CAST")
 class SecretsFeature : BaseFeature("secrets", "0.1.0", true) {
 
@@ -126,6 +129,7 @@ class SecretsFeature : BaseFeature("secrets", "0.1.0", true) {
     val response: String,
     val statuses: List<Int>,
     val retries: Int,
+    val redirect: String,
   )
 
   // One shared in-flight resolution: late arrivals wait on `done` and read
@@ -188,6 +192,8 @@ class SecretsFeature : BaseFeature("secrets", "0.1.0", true) {
         response = FeatureOptions.foptStr(xopts, "response", "access_token"),
         statuses = statuses,
         retries = FeatureOptions.foptInt(xopts, "retries", 1),
+        redirect = if ("same-origin" == FeatureOptions.foptStr(xopts, "redirect", "refuse"))
+          "same-origin" else "refuse",
       )
     }
 
@@ -629,6 +635,33 @@ class SecretsFeature : BaseFeature("secrets", "0.1.0", true) {
     return token
   }
 
+  // Where a 307 or 308 points, when that is on the exchange's own origin. Any
+  // other redirect would drop the body or leave the origin.
+  private fun moved(url: String, at: String, res: Any?): String? {
+    val status = FeatureOptions.fresStatus(res)
+    if (307 != status && 308 != status) {
+      return null
+    }
+    val location = FeatureOptions.fresHeader(res, "location")
+    if ("" == location) {
+      return null
+    }
+    return try {
+      val next = URI.create(at).resolve(URI.create(location.trim()))
+      val origin = originOf(next)
+      if (null != origin && origin == originOf(URI.create(url))) next.toString() else null
+    } catch (e: RuntimeException) {
+      null
+    }
+  }
+
+  private fun originOf(uri: URI): String? {
+    val scheme = uri.scheme?.lowercase() ?: return null
+    val host = uri.host?.lowercase() ?: return null
+    val port = if (uri.port < 0) (if ("https" == scheme) 443 else 80) else uri.port
+    return scheme + "://" + host + ":" + port
+  }
+
   private fun buyonce(): String {
     val x = this.exchange!!
 
@@ -655,7 +688,7 @@ class SecretsFeature : BaseFeature("secrets", "0.1.0", true) {
       "method" to x.method,
       "headers" to linkedMapOf<String, Any?>("content-type" to "application/json"),
       "body" to body,
-      // Never followed: a redirect would carry the refresh token on.
+      // Never followed by the client: a redirect would carry the refresh token on.
       "redirect" to "manual",
     )
 
@@ -671,10 +704,23 @@ class SecretsFeature : BaseFeature("secrets", "0.1.0", true) {
       sysFetch = null
     }
 
-    val res: Any? = if (sysFetch is BiFunction<*, *, *>) {
-      (sysFetch as BiFunction<String, MutableMap<String, Any?>, Any?>).apply(url, fetchdef)
-    } else {
-      defaultHttpFetch(url, fetchdef)
+    val ask = { at: String ->
+      if (sysFetch is BiFunction<*, *, *>) {
+        (sysFetch as BiFunction<String, MutableMap<String, Any?>, Any?>).apply(at, fetchdef)
+      } else {
+        defaultHttpFetch(at, fetchdef)
+      }
+    }
+
+    var res: Any? = ask(url)
+
+    // By option alone, and only while the exchange stays on its own origin.
+    var at = url
+    var hops = 0
+    while ("same-origin" == x.redirect && hops < REDIRECT_MAX) {
+      at = moved(url, at, res) ?: break
+      res = ask(at)
+      hops++
     }
 
     val status = FeatureOptions.fresStatus(res)

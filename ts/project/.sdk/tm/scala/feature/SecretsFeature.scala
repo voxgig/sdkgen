@@ -1,6 +1,7 @@
 package SCALAPACKAGE.feature
 
-import java.util.{LinkedHashMap, List => JList, Map => JMap}
+import java.net.URI
+import java.util.{LinkedHashMap, Locale, List => JList, Map => JMap}
 import java.util.function.{BiFunction, Supplier}
 
 import scala.collection.immutable.ListMap
@@ -97,6 +98,7 @@ class SecretsFeature extends BaseFeature("secrets", "0.1.0", true) {
   private var xresponse: String = "access_token"
   private var xstatuses: List[Int] = List(401)
   private var xretries: Int = 1
+  private var xredirect: String = "refuse"
 
   // The refresh credential the chain resolved, for every later purchase.
   private var refresh: String = ""
@@ -149,6 +151,9 @@ class SecretsFeature extends BaseFeature("secrets", "0.1.0", true) {
       this.xrequest = FeatureOptions.foptStr(xopts, "request", "refresh_token")
       this.xresponse = FeatureOptions.foptStr(xopts, "response", "access_token")
       this.xretries = FeatureOptions.foptInt(xopts, "retries", 1)
+      this.xredirect =
+        if ("same-origin" == FeatureOptions.foptStr(xopts, "redirect", "refuse")) "same-origin"
+        else "refuse"
 
       val statuses = ListBuffer.empty[Int]
       val slist = FeatureOptions.foptList(xopts, "statuses")
@@ -486,10 +491,21 @@ class SecretsFeature extends BaseFeature("secrets", "0.1.0", true) {
     fetchdef.put("method", this.xmethod)
     fetchdef.put("headers", headers)
     fetchdef.put("body", Struct.jsonify(bodymap, flags))
-    // Never followed: a redirect would carry the refresh token on.
+    // Never followed by the client: a redirect would carry the refresh token on.
     fetchdef.put("redirect", "manual")
 
-    val res = exchangefetch(url, fetchdef)
+    var res = exchangefetch(url, fetchdef)
+
+    // By option alone, and only while the exchange stays on its own origin.
+    var at = url
+    var hops = 0
+    var next = if ("same-origin" == this.xredirect) moved(url, at, res) else null
+    while (next != null && hops < SecretsFeature.REDIRECT_MAX) {
+      at = next
+      res = exchangefetch(at, fetchdef)
+      hops += 1
+      next = moved(url, at, res)
+    }
     if (res == null) {
       throw new SekretoError("secrets: token exchange failed: no response from " + url)
     }
@@ -557,6 +573,28 @@ class SecretsFeature extends BaseFeature("secrets", "0.1.0", true) {
     }
   }
 
+  // Where a 307 or 308 points, when that is on the exchange's own origin. Any
+  // other redirect would drop the body or leave the origin.
+  private def moved(url: String, at: String, res: JMap[String, Object]): String = {
+    val status = FeatureOptions.fresStatus(res)
+    if (307 != status && 308 != status) return null
+    val location = FeatureOptions.fresHeader(res, "location")
+    if ("" == location) return null
+    try {
+      val next = URI.create(at).resolve(URI.create(location.trim))
+      val origin = originOf(next)
+      if (origin != null && origin == originOf(URI.create(url))) next.toString else null
+    }
+    catch { case _: RuntimeException => null }
+  }
+
+  private def originOf(uri: URI): String = {
+    if (uri.getScheme == null || uri.getHost == null) return null
+    val scheme = uri.getScheme.toLowerCase(Locale.ROOT)
+    val port = if (uri.getPort < 0) (if ("https" == scheme) 443 else 80) else uri.getPort
+    scheme + "://" + uri.getHost.toLowerCase(Locale.ROOT) + ":" + port
+  }
+
   // ---- support ------------------------------------------------------------
 
   private def optstr(map: JMap[String, Object], key: String): String = {
@@ -596,4 +634,8 @@ class SecretsFeature extends BaseFeature("secrets", "0.1.0", true) {
     // silently reading as absent.
     case other => VStr(String.valueOf(other))
   }
+}
+
+object SecretsFeature {
+  private val REDIRECT_MAX = 5
 }
