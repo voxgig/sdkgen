@@ -406,6 +406,28 @@ object SdkTestMain {
     { val rec = new FhRecorder()
       val h = fhMake((c, u, fd) => rec.fetch(c, u, fd), fhF(new CacheFeature(), om("active" -> B(false))))
       h.op(fhOp("load").withPath("/x")); h.op(fhOp("load").withPath("/x")); eqI("cache.inactive", 2, rec.calls.size()) }
+    // A body that declares another type than JSON passes by, unread.
+    { val sent = new java.util.ArrayList[JMap[String, Object]]()
+      val rec = new FhRecorder()
+      rec.reply = (n, fd) => {
+        val res = fhResponse(200, null, om("content-type" -> "audio/wav"))
+        res.put("body", "RIFF".getBytes)
+        sent.add(res)
+        res
+      }
+      val f = new CacheFeature()
+      val h = fhMake((c, u, fd) => rec.fetch(c, u, fd), fhF(f, om("ttl" -> I(10000))))
+      val a = h.op(fhOp("load").withPath("/w/1/audio")); val b = h.op(fhOp("load").withPath("/w/1/audio"))
+      eqI("cache.notJson.calls", 2, rec.calls.size())
+      check("cache.notJson.first", a.ctx.response != null &&
+        (sent.get(0).get("body") eq a.ctx.response.body) &&
+        (sent.get(0).get("headers") eq a.ctx.response.headers),
+        "the cache handed on a copy it had read")
+      check("cache.notJson.second", b.ctx.response != null &&
+        (sent.get(1).get("body") eq b.ctx.response.body) &&
+        (sent.get(1).get("headers") eq b.ctx.response.headers),
+        "the cache handed on a copy it had read")
+      eqI("cache.notJson.bypass", 2, f.bypass) }
   }
 
   private def testIdempotency(): Unit = {

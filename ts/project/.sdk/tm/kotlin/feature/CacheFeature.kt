@@ -5,6 +5,7 @@ import java.util.function.Supplier
 import KOTLINPACKAGE.core.Context
 import KOTLINPACKAGE.core.FetcherFn
 import KOTLINPACKAGE.core.SdkClient
+import KOTLINPACKAGE.utility.Media
 
 // Response caching for safe (read) requests. Wraps the active transport and
 // serves a fresh cached snapshot instead of hitting the network when the same
@@ -91,6 +92,12 @@ class CacheFeature : BaseFeature("cache", "0.0.1", true) {
       throw err
     }
 
+    // A body that declares another type than JSON passes by, unread.
+    if (storable(res) && !json(res)) {
+      this.bypass++
+      return res
+    }
+
     if (storable(res)) {
       val snapshot = snapshot(res)
       val ttl = FeatureOptions.foptInt(this.options, "ttl", 5000)
@@ -112,6 +119,11 @@ class CacheFeature : BaseFeature("cache", "0.0.1", true) {
   private fun storable(res: Any?): Boolean {
     val status = FeatureOptions.fresStatus(res)
     return status in 200..299 && (res as Map<*, *>)["unreadable"] != true
+  }
+
+  private fun json(res: Any?): Boolean {
+    val type = FeatureOptions.fresHeader(res, "content-type")
+    return "" == type || Media.isJsonMedia(type)
   }
 
   private fun snapshot(res: Any?): CacheSnapshot {

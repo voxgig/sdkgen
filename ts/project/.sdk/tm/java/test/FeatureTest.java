@@ -11,6 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import static JAVAPACKAGE.sdktest.FeatureHarness.FhClock;
@@ -434,6 +435,30 @@ public class FeatureTest {
     h.op(fhOp("load").path("/w"));
     h.op(fhOp("load").path("/w"));
     assertEquals(2, rec.calls.size(), "expected 2 calls");
+    assertEquals(2, f.bypass, "expected 2 bypasses");
+  }
+
+  @Test
+  public void cache_aBodyThatDeclaresAnotherTypeThanJsonPassesByUnread() {
+    assumeFeatures("cache");
+    List<Map<String, Object>> sent = new ArrayList<>();
+    FhRecorder rec = new FhRecorder();
+    rec.reply = (n, fetchdef) -> {
+      Map<String, Object> res = fhResponse(200, null, fhMap("content-type", "audio/wav"));
+      res.put("body", new byte[] {'R', 'I', 'F', 'F'});
+      sent.add(res);
+      return res;
+    };
+    CacheFeature f = new CacheFeature();
+    FhHarness h = fhMake(rec::fetch, fhF(f, fhMap("ttl", 10000)));
+    FhOpResult a = h.op(fhOp("load").path("/w/1/audio"));
+    FhOpResult b = h.op(fhOp("load").path("/w/1/audio"));
+    assertEquals(2, rec.calls.size(), "the body was stored");
+    assertSame(sent.get(0).get("body"), a.ctx.response.body,
+        "the cache handed on a copy it had read");
+    assertSame(sent.get(0).get("headers"), a.ctx.response.headers);
+    assertSame(sent.get(1).get("body"), b.ctx.response.body);
+    assertSame(sent.get(1).get("headers"), b.ctx.response.headers);
     assertEquals(2, f.bypass, "expected 2 bypasses");
   }
 
