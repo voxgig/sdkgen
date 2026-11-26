@@ -190,6 +190,15 @@ prints text from the spec in generated source through it, so the template
 pass never reads a `$$` in the text as a model path. It throws for a language
 it does not know.
 
+### `templateSafe(lang, text) → string`
+
+Source already formatted for the language `lang` (or `json`), with the `$` of
+each `$$` run written as that language's escape and every other character as
+it was. A component passes formatted data that holds text from the spec
+through it, so the template pass reads no model path in that text, and a lone
+`$`, such as a type sentinel, is unchanged. Each `$$` in the source must lie
+inside a string literal.
+
 ### `collectDeps(model, targetName, targetDeps) → DepEntry[]`
 
 Collect target-language dependencies from features and from the target's

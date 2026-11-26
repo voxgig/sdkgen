@@ -22,7 +22,7 @@ import {
   FOLD_ENTITY, UNGENERATED_OP, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, CREATELESS_ENTITY,
   ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY, DOC_MODELS, namedEntity, toolchain,
   REQUEST_SHAPED_ENTITY, exampleParams, wireNameParams, slashRoutes, getOnlyFlows, getOnlyBuildctx, multiRouteLoad, keylessLoad,
-  directDiscovery, liveFallbacks, slugKeyed, liveIdentities,
+  directDiscovery, liveFallbacks, slugKeyed, liveIdentities, BASIC_TEMPLATED, BASIC_QUERY,
 } from './generateharness'
 
 
@@ -175,11 +175,6 @@ const DOC_PINS: { point: string, file: RegExp, note: RegExp, reason: string }[] 
   {
     point: 'doc-link-dangling', file: /^(README|AGENTS)\.md$/, note: /^[\w-]+\/(README|AGENTS)\.md$/,
     reason: 'S43, S44, S45 (WP14): a root document links the README or guide of a target that writes none',
-  },
-  {
-    point: 'doc-table-broken', file: /\/(README|REFERENCE)\.md$/, note: /`[^`]*\| null`/,
-    reason: 'New: a nullable field type prints as `T | null` in a field table, its pipe unescaped inside ' +
-      'the code span; the copy wave escapes these cells (WP33)',
   },
   {
     point: 'doc-link-dangling', file: /^README\.md$/, note: /^\.sdk\//,
@@ -1019,10 +1014,12 @@ describe('generate', () => {
   })
 
 
-  test('a line break or a pipe in a field description warns of the table it breaks', async () => {
+  // A field's name is printed as the spec spells it, so a pipe in one is a
+  // table the check sees broken.
+  test('a pipe in a field name warns of the table it breaks', async () => {
     const warnings: any[] = []
     await generateWarning(['ts'], undefined,
-      'main: kit: entity: planet: fields: radius: sh: ' + JSON.stringify('Mean | radius\nin km'),
+      "main: kit: entity: planet: fields: 'a|b': { n: 'a|b', h: 'AB', r: false, t: '`$STRING`' }",
       undefined, undefined, undefined, warnings)
     const broken = warnings.filter((w: any) => 'doc-table-broken' === w.point)
     ok(broken.some((w: any) => 'ts/README.md' === w.file), JSON.stringify(warnings.map((w: any) => w.point)))
@@ -1030,10 +1027,11 @@ describe('generate', () => {
   })
 
 
+  // The project's own wording keeps its links; the spec's loses them.
   test('a link to nothing the run wrote warns, and an encoded URL does not', async () => {
     const warnings: any[] = []
     await generateWarning(['ts'], undefined, [
-      'main: kit: entity: planet: fields: radius: sh: ' + JSON.stringify('See [radius](radius.md).'),
+      'main: kit: text: entity_desc: planet: ' + JSON.stringify('See [radius](radius.md).'),
       "main: kit: info: website: 'https://example.com/a_(b)'",
     ].join('\n'), undefined, undefined, undefined, warnings)
     const dangling = warnings.filter((w: any) => 'doc-link-dangling' === w.point)
@@ -1428,9 +1426,13 @@ main: kit: target: js: phase: feature: active: false
   }
 
 
-  for (const [shape, servers] of [
-    ['no server URL', ''],
-    ['a server URL', "main: kit: info: servers: [ { url: 'https://api.example.com' } ]"],
+  for (const [shape, servers, base] of [
+    ['no server URL', '', ''],
+    ['a server URL', "main: kit: info: servers: [ { url: 'https://api.example.com' } ]", 'https://api.example.com'],
+    ['HTTP Basic and a templated server URL', BASIC_TEMPLATED, 'https://{tenant}.example.test/{region}'],
+    ['HTTP Basic in the query', BASIC_QUERY, ''],
+    ['a key renamed in a cookie',
+      "main: kit: config: auth: { active: true, prefix: '', in: 'cookie', name: 'session' }", ''],
   ]) {
     test('the ts config is the same whichever representation is emitted, with ' +
       shape, async () => {
@@ -1450,8 +1452,7 @@ main: kit: target: js: phase: feature: active: false
         deepStrictEqual(snap(datcfg), snap(litcfg),
           'the two config representations describe different configs')
 
-        strictEqual(litcfg.options.base, '' === servers ? '' : 'https://api.example.com',
-          'the base URL did not survive into the config')
+        strictEqual(litcfg.options.base, base, 'the base URL did not survive into the config')
 
         // `makeFeature` lives on the prototype in both, so assigning the parsed
         // data over an instance must not have shadowed it.
@@ -1464,6 +1465,102 @@ main: kit: target: js: phase: feature: active: false
         }
       })
   }
+
+
+  // BASIC_TEMPLATED's URL uses `tenant` with no default and `region` with one.
+  test('a quick start asks for the server variables a client must supply, and no others', async () => {
+    const out = await generate(['ts', 'go', 'py', 'java'], undefined, BASIC_TEMPLATED)
+    for (const target of ['ts', 'go', 'py', 'java']) {
+      const fence = '```' + ('py' === target ? 'python' : target) + '\n'
+      for (const file of [target + '/README.md', 'README.md']) {
+        const ctors = String(out[file]).split(fence).slice(1).map((b: string) => b.slice(0, b.indexOf('```')))
+          .filter((b: string) => /DEMO_APIKEY/.test(b))
+        ok(0 < ctors.length, target + ', ' + file + ': no quick start constructs a client')
+        for (const block of ctors) {
+          ok(/tenant/.test(block), target + ', ' + file + ': the quick start omits the required tenant')
+          ok(!/region/.test(block), target + ', ' + file + ': the quick start asks for the defaulted region')
+        }
+      }
+    }
+    ok(out['ts/README.md'].includes('| `server` | `object` | **Required.** Values for the server-URL ' +
+      'variables: `tenant`, `region` (default `eu`).'), 'the ts options row does not say which variable has a default')
+  })
+
+  test('the go quick start indents its server block as its other keys', async () => {
+    const readme = String((await generate(['go'], undefined, BASIC_TEMPLATED))['go/README.md'])
+    ok(/\n {8}"apikey": [^\n]*\n {8}"server": map\[string\]any\{\n {12}"tenant": "<tenant>",\n {8}\},/.test(readme),
+      readme.slice(readme.indexOf('"apikey"') - 80, readme.indexOf('"apikey"') + 200))
+  })
+
+  // PrepareAuth composes a Basic credential only with the key in the header.
+  test('the ts documents ask for a secret exactly where PrepareAuth reads one', async () => {
+    for (const [extra, wanted] of [[BASIC_TEMPLATED, true], [BASIC_QUERY, false]] as [string, boolean][]) {
+      const out = await generate(['ts'], undefined, extra)
+      for (const file of ['README.md', 'ts/README.md', 'ts/REFERENCE.md']) {
+        strictEqual(/secret[:?]|options\.secret|_SECRET/.test(String(out[file])), wanted, file + ', ' +
+          (wanted ? 'Basic in the header' : 'Basic in the query'))
+      }
+    }
+  })
+
+
+  // The template pass reads `$$path$$` in what a component prints, so text from
+  // the spec reaches generated source with each `$$` escaped for its language.
+  for (const repr of ['literal', 'data']) {
+    test('every target keeps a field description holding $$ in its ' + repr + ' config and tests', async () => {
+      const targets = allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))
+      const out = await generate(targets, undefined,
+        'main: kit: entity: planet: fields: radius: sh: "Cost in $$name$$ or $$x$$ y"\n' +
+        `main: kit: config: repr: '${repr}'\n`)
+      for (const target of targets) {
+        const source = filesFor(out, target).filter(([file]) => !file.endsWith('.md'))
+        deepStrictEqual(source.filter(([, text]) => String(text).includes('Cost in demo'))
+          .map(([file]) => file), [], target + ': the template pass rewrote the description')
+        const config = source.find(([file]) =>
+          /(^|\/)(sdk_)?config\.[a-z]+$/i.test(file) && !file.includes('feature/'))
+        ok(String(config?.[1]).includes('Cost in '), target + ': the description left the config')
+      }
+      const short = (cfg: any) => cfg.entity.planet.fields.find((f: any) => 'radius' === f.name).short
+      const src = tsConfigSrc(filesFor(out, 'ts'))
+      strictEqual(short('literal' === repr ? loadTsConfig(src) : parseTsConfigData(src)), 'Cost in $$name$$ or $$x$$ y')
+    })
+  }
+
+
+  // A spec's field description is cell text, and a project's wording of an
+  // entity is what every target's entity section says.
+  test('every target escapes a field description and words an entity as the project does', async () => {
+    const targets = allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))
+    const out = await generate(targets, undefined,
+      'main: kit: entity: planet: fields: radius: sh: "In km | miles, $$name$$\\nor [see](guide.md)"\n' +
+      "main: kit: text: entity_desc: planet: 'A worded planet.'\n")
+    for (const target of targets) {
+      const docs = filesFor(out, target).filter(([file]) => file.endsWith('.md'))
+        .map(([, text]) => String(text)).join('\n')
+      ok(docs.includes('In km \\| miles, $&#36;name$&#36;<br>or see'), target + ': no escaped field description')
+      ok(!docs.includes('$$name$$') && !docs.includes('](guide.md)'), target + ': a raw field description')
+      for (const doc of ['README.md', 'REFERENCE.md']) {
+        ok(String(out[target + '/' + doc]).includes('A worded planet.'), target + '/' + doc + ': not the project\'s wording')
+      }
+    }
+  })
+
+
+  // Every literal takes its auth block from configDefinition, which flags Basic
+  // only where PrepareAuth composes it: with the key in the header.
+  test('every config flags Basic where the key is in the header, and nowhere else', async () => {
+    const targets = allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))
+    for (const [extra, flagged] of [[BASIC_TEMPLATED, true], [BASIC_QUERY, false]] as [string, boolean][]) {
+      const out = await generate(targets, undefined, "main: kit: config: repr: 'literal'\n" + extra)
+      for (const target of targets) {
+        const config = filesFor(out, target).find(([n]) =>
+          /(^|\/)(sdk_)?config\.[a-z]+$/i.test(n) && !n.includes('feature/'))
+        ok(config, target + ': no config file')
+        strictEqual(/\bbasic\b/.test(String(config![1])), flagged,
+          target + ': ' + config![0] + (flagged ? ' does not flag' : ' flags') + ' Basic')
+      }
+    }
+  })
 
 
   test('no generated config ships jostraca iteration metadata', async () => {

@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, safeVarName, exampleVarName, serverVariables, listMatchArg, matchExampleItems, requiredItems, litString, requestExampleItems, sendsId } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, safeVarName, exampleVarName, listMatchArg, matchExampleItems, requiredItems, litString, requestExampleItems, sendsId, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -25,7 +25,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
 
   const authActive = isAuthActive(model)
 
-  const svars = serverVariables(model)
+  const svars = fact(model.main[KIT], 'server').filter((v: any) => v.required)
   const pyServerField = 0 === svars.length ? '' :
     `\n    "server": {` +
     svars.map((v: any) => `\n        "${v.name}": "<${v.name}>",`).join('') +

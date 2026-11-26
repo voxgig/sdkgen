@@ -7,12 +7,9 @@ import {
   configDefinition,
   configReprSetting,
   each,
-  isAuthActive,
   isConfigData,
-  resolveAuthIn,
-  resolveAuthName,
-  resolveAuthPrefix,
   targetFeatures,
+  templateSafe,
 } from '@voxgig/sdkgen'
 
 
@@ -40,18 +37,6 @@ const Config = cmp(async function Config(props: any) {
   const feature = targetFeatures(model, target)
 
   const headers = getModelPath(model, `main.${KIT}.config.headers`) || {}
-
-  const authActive = isAuthActive(model)
-  const authPrefix = resolveAuthPrefix(model)
-  const authIn = resolveAuthIn(model)
-  const authName = resolveAuthName(model)
-
-  let baseUrl = ''
-  try { baseUrl = getModelPath(model, `main.${KIT}.info.servers.0.url`) } catch (_e) { }
-
-  const authBlock = authActive
-    ? `        "auth" => %{"prefix" => ${elixirString(authPrefix)}},\n`
-    : ''
 
   const featurePlugins: Record<string, string[]> = {}
 
@@ -94,14 +79,8 @@ const Config = cmp(async function Config(props: any) {
 `
 
   Folder({ name: 'lib' }, () => {
-    const { def: configDef } = configDefinition(model, target.name)
-
-    if (authActive && null != configDef.options && null != configDef.options.auth) {
-      if ('header' !== authIn) configDef.options.auth.in = authIn
-      if ('Authorization' !== authName) configDef.options.auth.name = authName
-    }
-
-    const configJson = JSON.stringify(configDef)
+    const { def: configDef, json } = configDefinition(model, target.name)
+    const configJson = templateSafe('json', json)
     const asData = isConfigData(configJson, configReprSetting(model))
 
     const entityClean = configDef.entity
@@ -215,8 +194,8 @@ defmodule ${Name}.Config do
       // so a templated server URL described a different config either side of
       // the threshold. Same fix as dart, rust and zig.
       Content(`      },
-      "options" => ${formatElixir(configDef.options, 3)},
-      "entity" => ${formatElixir(entityClean, 3)}
+      "options" => ${templateSafe('elixir', formatElixir(configDef.options, 3))},
+      "entity" => ${templateSafe('elixir', formatElixir(entityClean, 3))}
     })
   end
 

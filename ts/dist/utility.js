@@ -259,8 +259,10 @@ function configDefinition(model, targetname) {
     const headers = (0, apidef_1.getModelPath)(model, `main.${apidef_1.KIT}.config.headers`) || {};
     const authActive = isAuthActive(model);
     const authPrefix = resolveAuthPrefix(model);
+    const authIn = resolveAuthIn(model);
+    const authName = resolveAuthName(model);
     // PrepareAuth composes Basic only in the header; elsewhere nothing reads the flag.
-    const authBasic = isHttpBasicAuth(model) && 'header' === resolveAuthIn(model);
+    const authBasic = isHttpBasicAuth(model) && 'header' === authIn;
     let baseUrl = '';
     try {
         baseUrl = (0, apidef_1.getModelPath)(model, `main.${apidef_1.KIT}.info.servers.0.url`);
@@ -305,8 +307,14 @@ function configDefinition(model, targetname) {
     if (0 < svars.length) {
         options.server = svars.reduce((a, v) => (a[v.name] = v.dflt, a), {});
     }
+    // The placement only where it is not the default, as every Config literal writes it.
     if (authActive) {
-        options.auth = authBasic ? { prefix: authPrefix, basic: true } : { prefix: authPrefix };
+        options.auth = {
+            prefix: authPrefix,
+            ...(authBasic ? { basic: true } : {}),
+            ...('header' === authIn ? {} : { in: authIn }),
+            ...('Authorization' === authName ? {} : { name: authName }),
+        };
     }
     options.headers = headers;
     options.entity = entityStubs;

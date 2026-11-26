@@ -4,33 +4,30 @@ import {
   File,
   Folder,
   cmp,
-  isHttpBasicAuth,
-  resolveAuthIn,
-  resolveAuthName,
-  resolveAuthPrefix,
+  fact,
 } from '@voxgig/sdkgen'
 
 
 import {
   KIT,
-  getModelPath,
 } from '@voxgig/apidef'
 
 
 const PrepareAuth = cmp(async function PrepareAuth(props: any) {
   const { target } = props
   const { model } = props.ctx$
+  const authFact = fact(model.main[KIT], 'auth')
 
   Folder({ name: 'utility' }, () => {
     File({ name: 'prepare_auth.' + target.ext }, () => {
       Content(render({
         pkg: model.const.Name.toLowerCase() + '_sdk',
         Name: model.const.Name,
-        active: isAuthActive_py(model),
-        where: resolveAuthIn(model),
-        name: resolveAuthName(model),
-        basic: isHttpBasicAuth(model),
-        prefix: resolveAuthPrefix(model),
+        active: !authFact.suppressed,
+        where: authFact.in,
+        name: authFact.name,
+        basic: authFact.basic,
+        prefix: authFact.prefix,
       }))
     })
   })
@@ -54,8 +51,7 @@ function render(spec: AuthSpec): string {
 from __future__ import annotations
 `
 
-  // NO AUTH AT ALL - the project switched it off (see isAuthActive_py for
-  // why only an EXPLICIT switch counts). The SDK gets a prepare_auth that is
+  // NO AUTH AT ALL - the auth fact says it is suppressed. The SDK gets a prepare_auth that is
   // honest about it rather than one that pops a header nobody set;
   // voxgig_struct is not imported, because nothing here reads an option.
   if (!spec.active) {
@@ -326,13 +322,6 @@ def _auth_name(options):
     return ${declared}
 
 `
-}
-
-
-function isAuthActive_py(model: any): boolean {
-  const auth = getModelPath(model, `main.${KIT}.config.auth`,
-    { only_active: false, required: false })
-  return !(null != auth && false === auth.active)
 }
 
 

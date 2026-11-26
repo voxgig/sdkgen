@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField , targetFeatures, opNeedsAction, bodyNote, elixirAccessor, entityCollection, exampleVarName, matchExampleItems, requestExampleItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField , targetFeatures, opNeedsAction, bodyNote, elixirAccessor, entityCollection, exampleVarName, matchExampleItems, requestExampleItems, fact } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -155,8 +155,8 @@ on error.
 
 `)
 
-      if (ent.short) {
-        Content(`${ent.short}
+      if (fact(ent, 'desc').inline) {
+        Content(`${fact(ent, 'desc').inline}
 
 `)
       }
@@ -177,8 +177,8 @@ ${eVar} = ${Name}.${eCall}(sdk)
 `)
         each(fields, (field: any) => {
           const req = field.r ? 'Yes' : 'No'
-          const desc = field.sh || ''
-          Content(`| \`${field.n}\` | \`${canonToType(field.t, target.name)}\` | ${req} | ${desc} |
+          const desc = fact(model.main[KIT], 'field')[ent.name]?.[field.n]?.desc.cell ?? ''
+          Content(`| \`${field.n}\` | \`${canonToType(field.t, 'elixir').replace(/\|/g, '\\|')}\` | ${req} | ${desc} |
 `)
         })
 
@@ -236,7 +236,7 @@ ${eVar}s = ${Name}.Entity.${EName}.list(${eVar}${elixirListArgs(ent, Name)})
 ${eVar} = ${Name}.Entity.${EName}.create(${eVar}, ${Name}.Helpers.deep(%{
 `)
             createItems.map((it: any) => {
-              Content(`  ${elixirString(it.name)} => ${elixirLit(it.type, 'example_' + it.name)},  # ${canonToType(it.type, target.name)}
+              Content(`  ${elixirString(it.name)} => ${elixirLit(it.type, 'example_' + it.name)},  # ${canonToType(it.type, 'elixir')}
 `)
             })
             Content(`}))

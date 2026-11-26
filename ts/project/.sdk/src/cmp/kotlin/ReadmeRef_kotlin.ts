@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField , targetFeatures, opNeedsAction, bodyNote, matchExampleItems, requestExampleItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField , targetFeatures, opNeedsAction, bodyNote, matchExampleItems, requestExampleItems, fact } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -190,8 +190,8 @@ Prepare a fetch definition without sending. Returns the \`fetchdef\` and raises 
 
 `)
 
-      if (ent.short) {
-        Content(`${ent.short}
+      if (fact(ent, 'desc').inline) {
+        Content(`${fact(ent, 'desc').inline}
 
 `)
       }
@@ -212,8 +212,8 @@ val ${eVar} = client.${accessor}(null)
 `)
         each(fields, (field: any) => {
           const req = field.r ? 'Yes' : 'No'
-          const desc = field.sh || ''
-          Content(`| \`${field.n}\` | \`${canonToType(field.t, target.name)}\` | ${req} | ${desc} |
+          const desc = fact(model.main[KIT], 'field')[ent.name]?.[field.n]?.desc.cell ?? ''
+          Content(`| \`${field.n}\` | \`${canonToType(field.t, 'kotlin').replace(/\|/g, '\\|')}\` | ${req} | ${desc} |
 `)
         })
 
@@ -301,7 +301,7 @@ val result = client.${accessor}(null).create(mutableMapOf<String, Any?>(
 `)
             createItems.map((it: any, i: number) => {
               const comma = i < createItems.length - 1 ? ',' : ''
-              Content(`    ${kotlinString(it.name)} to ${kotlinLit(it.type, 'example_' + it.name)}${comma}  // ${canonToType(it.type, target.name)}
+              Content(`    ${kotlinString(it.name)} to ${kotlinLit(it.type, 'example_' + it.name)}${comma}  // ${canonToType(it.type, 'kotlin')}
 `)
             })
             Content(`), null)

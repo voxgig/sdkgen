@@ -88,6 +88,12 @@ function docTexts(model: any): DocText[] {
   for (const [name, ent] of Object.entries(kit.entity || {}) as [string, any][]) {
     add(ent, ['desc'], str(info.entity_desc[name]) || str(ent.short) || str(ent.desc),
       !given(own.entity_desc?.[name]))
+    // Beside the kit, not the fields: some tests print an entity whole.
+    for (const field of Object.values(ent.fields || {}) as any[]) {
+      if (given(field?.sh)) {
+        add(kit, ['field', name, String(field.n), 'desc'], str(field.sh), true)
+      }
+    }
   }
 
   for (const f of Object.values(kit.feature || {}) as any[]) {

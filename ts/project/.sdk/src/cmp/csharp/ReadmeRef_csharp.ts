@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField , targetFeatures, opNeedsAction, bodyNote, matchExampleItems, requestExampleItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField , targetFeatures, opNeedsAction, bodyNote, matchExampleItems, requestExampleItems, fact } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -191,8 +191,8 @@ Prepare a fetch definition without sending. Returns the \`fetchdef\` and raises 
 
 `)
 
-      if (ent.short) {
-        Content(`${ent.short}
+      if (fact(ent, 'desc').inline) {
+        Content(`${fact(ent, 'desc').inline}
 
 `)
       }
@@ -213,8 +213,8 @@ var ${eVar} = client.${ent.Name}();
 `)
         each(fields, (field: any) => {
           const req = field.r ? 'Yes' : 'No'
-          const desc = field.sh || ''
-          Content(`| \`${field.n}\` | \`${canonToType(field.t, target.name)}\` | ${req} | ${desc} |
+          const desc = fact(model.main[KIT], 'field')[ent.name]?.[field.n]?.desc.cell ?? ''
+          Content(`| \`${field.n}\` | \`${canonToType(field.t, 'csharp').replace(/\|/g, '\\|')}\` | ${req} | ${desc} |
 `)
         })
 
@@ -303,7 +303,7 @@ var result = client.${ent.Name}().Create(new Dictionary<string, object?>
 {
 `)
             createItems.map((it: any) => {
-              Content(`    [${csStringLiteral(it.name)}] = ${csLit(it.type, 'example_' + it.name)},  // ${canonToType(it.type, target.name)}
+              Content(`    [${csStringLiteral(it.name)}] = ${csLit(it.type, 'example_' + it.name)},  // ${canonToType(it.type, 'csharp')}
 `)
             })
             Content(`});

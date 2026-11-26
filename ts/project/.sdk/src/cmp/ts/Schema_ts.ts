@@ -2,6 +2,7 @@ import {
   Content,
   File,
   cmp,
+  fact,
   entitySpecMap,
   optionSpec,
 } from '@voxgig/sdkgen'
@@ -22,7 +23,7 @@ const Schema = cmp(async function Schema(props: any) {
   const entityspec = entitySpecMap(model, target.name) || {}
 
   File({ name: 'Schema.' + target.ext }, () => {
-    Content(`// ${model.const.Name} ${target.Name} SDK: generated schemas. Do not edit.
+    Content(`// ${model.const.Name} ${fact(target, 'title')} SDK: generated schemas. Do not edit.
 //
 // Generated from the model: \`main.kit.optspec\` and each feature's
 // \`config.options\` for OPTSPEC; entity \`fields{}.type\` for ENTITYSPEC.

@@ -290,11 +290,10 @@ ${idFieldLines}
     /**
      * Rewrite a runnable block into an executable offline test-mode program: the
      * doc's own require of the SDK file is stripped (we require it by absolute
-     * path); any real client constructor (new <Sdk>SDK / <Sdk>SDK::test) becomes
+     * path); any real client constructor (new <Sdk>SDK / <Sdk>SDK::test), its
+     * argument list matched to the parenthesis that balances it, becomes
      * <Sdk>SDK::test(<fixtures>); a block that only uses \\$client gets such a
-     * constructor prepended. (The constructor arg-list match is deliberately
-     * shallow — it does not span nested parens — because runnable op blocks
-     * never build a client inline with a closure argument.)
+     * constructor prepended.
      */
     private function toRunner(string $block, string $sdk): string
     {
@@ -307,7 +306,7 @@ ${idFieldLines}
             '',
             $body
         );
-        $ctorRe = '/(?:new\\s+' . preg_quote($cls, '/') . '|' . preg_quote($cls, '/') . '::test)(?:\\([^()]*\\))?/';
+        $ctorRe = '/(?:new\\s+' . preg_quote($cls, '/') . '|' . preg_quote($cls, '/') . '::test)(?<args>\\((?:[^()]++|(?&args))*\\))?/';
         if (preg_match($ctorRe, $body)) {
             $body = preg_replace_callback($ctorRe, function () use ($cls, $fixtures) {
                 return $cls . '::test(' . $fixtures . ')';

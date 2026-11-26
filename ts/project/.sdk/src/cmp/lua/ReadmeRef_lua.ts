@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, safeVarName, exampleVarName, luaKey, targetFeatures, opNeedsAction, bodyNote, listMatchArg, matchExampleItems, litString, requestExampleItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, safeVarName, exampleVarName, luaKey, targetFeatures, opNeedsAction, bodyNote, listMatchArg, matchExampleItems, litString, requestExampleItems, fact } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -187,8 +187,8 @@ same parameters as \`direct()\`.
 
 `)
 
-      if (ent.short) {
-        Content(`${ent.short}
+      if (fact(ent, 'desc').inline) {
+        Content(`${fact(ent, 'desc').inline}
 
 `)
       }
@@ -208,8 +208,8 @@ local ${eVar} = client:${ent.Name}(nil)
 `)
         each(fields, (field: any) => {
           const req = field.r ? 'Yes' : 'No'
-          const desc = field.sh || ''
-          Content(`| \`${field.n}\` | \`${canonToType(field.t, target.name)}\` | ${req} | ${desc} |
+          const desc = fact(model.main[KIT], 'field')[ent.name]?.[field.n]?.desc.cell ?? ''
+          Content(`| \`${field.n}\` | \`${canonToType(field.t, 'lua').replace(/\|/g, '\\|')}\` | ${req} | ${desc} |
 `)
         })
 
@@ -302,7 +302,7 @@ local results, err = client:${ent.Name}():list(${listMatchArg('lua', ent)})
 local result, err = client:${ent.Name}():create({
 `)
             createItems.map((it: any) => {
-              Content(`  ${luaKey(it.name)} = --[[ ${canonToType(it.type, target.name)} ]],
+              Content(`  ${luaKey(it.name)} = --[[ ${canonToType(it.type, 'lua')} ]],
 `)
             })
             Content(`})

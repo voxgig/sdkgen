@@ -3,6 +3,7 @@ import {
   File,
   Folder,
   cmp,
+  fact,
   entitySpecMap,
   optionSpec,
 } from '@voxgig/sdkgen'
@@ -31,7 +32,7 @@ const Schema = cmp(async function Schema(props: any) {
   Folder({ name: 'lib' }, () => {
 
   File({ name: 'schema.ex' }, () => {
-    Content(`# ${Name} ${target.Name} SDK: generated schemas. Do not edit.
+    Content(`# ${Name} ${fact(target, 'title')} SDK: generated schemas. Do not edit.
 #
 # Generated from the model: \`main.kit.optspec\` and each feature's
 # \`config.options\` for OPTSPEC; entity \`fields{}.type\` for ENTITYSPEC.

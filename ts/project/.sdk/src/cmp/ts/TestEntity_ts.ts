@@ -48,6 +48,7 @@ import {
   flowLoadRoute,
   flowLoadReadsRecord,
   LIVE_GETONLY_ENV,
+  templateSafe,
 } from '@voxgig/sdkgen'
 import type { LiveGate } from '@voxgig/sdkgen'
 
@@ -103,7 +104,7 @@ const TestEntity = cmp(function TestEntity(props: any) {
 
   const svars = serverVariables(model)
   const serverEnvEntry = svars
-    .map((v: any) => `\n    '${serverVarEnv(PROJENVNAME, v.name)}': ${JSON.stringify(v.dflt)},`).join('')
+    .map((v: any) => `\n    '${serverVarEnv(PROJENVNAME, v.name)}': ${templateSafe('ts', JSON.stringify(v.dflt))},`).join('')
   const serverLiveField = 0 === svars.length ? '' : `
         server: {${svars
       .map((v: any) => `
@@ -114,7 +115,7 @@ const TestEntity = cmp(function TestEntity(props: any) {
 
   Folder({ name: entity.name }, () => {
 
-    File({ name: nom(entity, 'Name') + 'Entity.test.' + target.name }, () => {
+    File({ name: nom(entity, 'Name') + 'Entity.test.' + target.ext }, () => {
 
       Fragment({
         from: ff + 'Entity.test.fragment.ts',
@@ -260,7 +261,7 @@ ${fixtureIdentity(entity)}
     ${hasLiveScenarios(model) ? `if (live) { t.skip('Covered by live operation scenarios'); return }` : ''}
     const setup = basicSetup()
     if (setup.live) {
-      return runLiveEntity(setup, ${JSON.stringify(liveEntity(ctx$, entity))}, ${JSON.stringify(liveFlowRoutes(entity, basicflow))}, '${nom(entity, 'Name')}', ${JSON.stringify(liveFacts)}, { strict: LIVE_STRICT, t }${excludedArg(entity, basicflow)})
+      return runLiveEntity(setup, ${templateSafe('ts', JSON.stringify(liveEntity(ctx$, entity)))}, ${templateSafe('ts', JSON.stringify(liveFlowRoutes(entity, basicflow)))}, '${nom(entity, 'Name')}', ${templateSafe('ts', JSON.stringify(liveFacts))}, { strict: LIVE_STRICT, t }${excludedArg(entity, basicflow)})
     }
     const client = setup.client
     const struct = setup.struct
@@ -743,7 +744,7 @@ function validateTest(model: Model, entity: ModelEntity): string {
       return
     }
     const client = ${SDK}.test(undefined, { feature: { validate: { active: true } } })
-    await assert.rejects(client.${nom(entity, 'Name')}().${bad.op}(${JSON.stringify(bad.args)} as any),
+    await assert.rejects(client.${nom(entity, 'Name')}().${bad.op}(${templateSafe('ts', JSON.stringify(bad.args))} as any),
       (err: any) => 'validate_failed' === err.code)
   })
 `

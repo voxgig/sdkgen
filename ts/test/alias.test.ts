@@ -3,6 +3,7 @@ import { test, describe, before, after } from 'node:test'
 import { ok, strictEqual, deepStrictEqual } from 'node:assert'
 
 import Fs from 'node:fs'
+import Os from 'node:os'
 import Path from 'node:path'
 
 import { Aontu } from 'aontu'
@@ -381,6 +382,25 @@ async function generated(targets: string[], extra = '', root = makeRoot()): Prom
 }
 
 
+// What `<origin>~<alias>` alone generates. Components read their templates
+// relative to the working directory, so the alias's are copied into one.
+async function generatedAlias(origin: string, alias: string): Promise<Record<string, string>> {
+  const staged = stageAlias(origin, alias)
+  const work = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-alias-'))
+  const cwd = process.cwd()
+  try {
+    Fs.cpSync(Path.join(SDK_SCAFFOLD, 'tm', origin), Path.join(work, 'tm', alias), { recursive: true })
+    process.chdir(work)
+    return await generated([], staged.model)
+  }
+  finally {
+    process.chdir(cwd)
+    staged.remove()
+    Fs.rmSync(work, { recursive: true, force: true })
+  }
+}
+
+
 // An alias is classed by its origin: the documents name the alias where they
 // named the origin, and say nothing else differently.
 describe('aliased targets in the generated documents', () => {
@@ -426,5 +446,26 @@ describe('aliased targets in the generated documents', () => {
     strictEqual(base.length, 4, 'the packages table does not list the four targets:\n' + base.join('\n'))
     deepStrictEqual((await rows(['ts', 'py', 'rb'], aliasModel('go', 'go2')))
       .map((row: string) => row.split('/go2').join('/go')), base)
+  })
+
+  test('ts~ts2 and js~js2 name their files as ts and js do', async () => {
+    for (const [origin, alias] of [['ts', 'ts2'], ['js', 'js2']]) {
+      const own = Object.keys(await generated([origin])).filter((file) => file.startsWith(origin + '/'))
+      const aliased = Object.keys(await generatedAlias(origin, alias))
+        .filter((file) => file.startsWith(alias + '/'))
+      ok(aliased.some((file) => new RegExp('^' + alias + '/src/entity/[A-Za-z]+\\.' + origin + '$').test(file)),
+        alias + ' writes no entity file named as a ' + origin + ' file')
+      deepStrictEqual(aliased.map((file) => origin + file.slice(alias.length)).sort(), own.sort())
+    }
+  })
+
+  test('go~go2 types its fields as go does', async () => {
+    const go = await generated(['go'])
+    const go2 = await generatedAlias('go', 'go2')
+    const typed = (text: string) => text.split('\n').filter((line) => /^\| `[^`]+` \| `[^`]+` \|/.test(line))
+    for (const doc of ['README.md', 'REFERENCE.md']) {
+      ok(typed(go['go/' + doc]).some((row) => row.includes('`string`')), 'go ' + doc + ' types no field')
+      deepStrictEqual(typed(go2['go2/' + doc]), typed(go['go/' + doc]), doc)
+    }
   })
 })

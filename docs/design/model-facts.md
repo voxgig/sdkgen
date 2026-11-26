@@ -42,6 +42,11 @@ read it; none of them computes it.
     an entity's `desc`, a feature's `title` and `option.<name>.value` or
     `.type`. They cost about 170 ms of the pass with 20 targets and 20
     features, and about 0.75 s for 600 texts.
+  - The escaped forms of each field's description (WP33), as
+    `main.kit.fact.field.<entity>.<field>.desc`, for the fields whose `sh` is
+    set. They sit beside the kit rather than the field, because the ts and
+    js live tests print an entity whole. Each costs about 2 ms of the pass,
+    so 5000 described fields add about 9 s.
   - `main.kit.fact.auth` (WP19): `apikey`, `suppressed`, `basic`, `in`,
     `name`, `prefix` and `secret`, each equal to the helper it is computed
     for (`isAuthActive`, `isAuthSuppressed`, `isHttpBasicAuth`,

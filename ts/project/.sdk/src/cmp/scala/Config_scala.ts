@@ -4,13 +4,9 @@ import {
   File,
   cmp,
   each,
-  isAuthActive,
-  isHttpBasicAuth,
-  resolveAuthIn,
-  resolveAuthName,
-  resolveAuthPrefix,
   targetFeatures,
   configDefinition,
+  templateSafe,
 } from '@voxgig/sdkgen'
 
 
@@ -66,19 +62,6 @@ const Config = cmp(async function Config(props: any) {
     Object.keys(featurePlugins).sort().map((fname: string) =>
       `    case "${fname}" => List(${featurePlugins[fname].join(', ')})\n`).join('')
 
-  const authActive = isAuthActive(model)
-  const authPrefix = resolveAuthPrefix(model)
-  const authBasic = isHttpBasicAuth(model)
-  // WHERE the credential goes and under what name, as apidef resolved them
-  // from the spec's security scheme. Emitted below only when they DIFFER
-  // from the defaults, so every header-based SDK's Config.scala stays
-  // byte-identical.
-  const authIn = resolveAuthIn(model)
-  const authName = resolveAuthName(model)
-
-  let baseUrl = ''
-  try { baseUrl = getModelPath(model, `main.${KIT}.info.servers.0.url`) } catch (_e) { }
-
   const featureConfig: Record<string, any> = {}
   each(feature, (f: any) => {
     featureConfig[f.name] = cleanModel(f.config || {})
@@ -90,18 +73,14 @@ const Config = cmp(async function Config(props: any) {
   })
 
   const options: Record<string, any> = {
-    base: baseUrl,
+    base: configDef.options.base,
   }
   // The declared defaults makeOptions fills a templated base URL from.
   if (null != configDef.options.server) {
     options.server = configDef.options.server
   }
-  if (authActive) {
-    const auth: Record<string, any> = { prefix: authPrefix }
-    if (authBasic) auth.basic = true
-    if ('header' !== authIn) auth.in = authIn
-    if ('Authorization' !== authName) auth.name = authName
-    options.auth = auth
+  if (null != configDef.options.auth) {
+    options.auth = configDef.options.auth
   }
   options.headers = headers
   options.entity = optionsEntity
@@ -169,7 +148,7 @@ ${featurePluginsBlock}    case _ => Nil
     val b = new StringBuilder()
 `)
 
-    Content(jsonAppendLines(config, 'b'))
+    Content(templateSafe('scala', jsonAppendLines(config, 'b')))
 
     Content(`    b.toString
   }

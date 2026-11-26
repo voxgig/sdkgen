@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, entityIdField, opNeedsAction, javaMap, javaMapOf, matchExampleItems, javaMapItems, requestExampleItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, entityIdField, opNeedsAction, javaMap, javaMapOf, matchExampleItems, javaMapItems, requestExampleItems, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -58,8 +58,8 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 
 `)
 
-    if (entity.short) {
-      Content(`${entity.short}
+    if (fact(entity, 'desc').inline) {
+      Content(`${fact(entity, 'desc').inline}
 
 `)
     }
@@ -94,8 +94,8 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 `)
 
       each(fields, (field: any) => {
-        const desc = field.sh || ''
-        Content(`| \`${field.n}\` | \`${canonToType(field.t, target.name)}\` | ${desc} |
+        const desc = fact(model.main[KIT], 'field')[entity.name]?.[field.n]?.desc.cell ?? ''
+        Content(`| \`${field.n}\` | \`${canonToType(field.t, 'java').replace(/\|/g, '\\|')}\` | ${desc} |
 `)
       })
 
@@ -148,7 +148,7 @@ Object ${eVar} = client.${accessor}(null).create(${createMap.open}
 `)
       createItems.map((it: any, i: number) => {
         const comma = i < createItems.length - 1 ? ',' : ''
-        Content(`    ${createMap.pair(`${JSON.stringify(it.name)}, ${javaLit(it.type, 'example_' + it.name)}`)}${comma}  // ${canonToType(it.type, target.name)}
+        Content(`    ${createMap.pair(`${JSON.stringify(it.name)}, ${javaLit(it.type, 'example_' + it.name)}`)}${comma}  // ${canonToType(it.type, 'java')}
 `)
       })
       Content(`), null);

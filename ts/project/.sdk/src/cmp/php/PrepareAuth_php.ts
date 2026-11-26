@@ -4,43 +4,33 @@ import {
   File,
   Folder,
   cmp,
-  isHttpBasicAuth,
-  resolveAuthIn,
-  resolveAuthName,
-  resolveAuthPrefix,
+  fact,
 } from '@voxgig/sdkgen'
 
 
 import {
   KIT,
-  getModelPath,
 } from '@voxgig/apidef'
 
 
 const PrepareAuth = cmp(async function PrepareAuth(props: any) {
   const { target } = props
   const { model } = props.ctx$
+  const authFact = fact(model.main[KIT], 'auth')
 
   Folder({ name: 'utility' }, () => {
     File({ name: 'PrepareAuth.' + target.ext }, () => {
       Content(render({
         Name: model.const.Name,
-        active: authSwitchedOn(model),
-        where: resolveAuthIn(model),
-        name: resolveAuthName(model),
-        basic: isHttpBasicAuth(model),
-        prefix: resolveAuthPrefix(model),
+        active: !authFact.suppressed,
+        where: authFact.in,
+        name: authFact.name,
+        basic: authFact.basic,
+        prefix: authFact.prefix,
       }))
     })
   })
 })
-
-
-function authSwitchedOn(model: any): boolean {
-  const auth = getModelPath(model, `main.${KIT}.config.auth`,
-    { only_active: false, required: false })
-  return !(null != auth && false === auth.active)
-}
 
 
 type AuthSpec = {

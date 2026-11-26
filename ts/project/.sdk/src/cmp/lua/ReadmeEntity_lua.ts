@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, entityIdField, safeVarName, exampleVarName, luaKey, opNeedsAction, listMatchArg, matchExampleItems, litString, requestExampleItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, entityIdField, safeVarName, exampleVarName, luaKey, opNeedsAction, listMatchArg, matchExampleItems, litString, requestExampleItems, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -66,8 +66,8 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 
 `)
 
-    if (entity.short) {
-      Content(`${entity.short}
+    if (fact(entity, 'desc').inline) {
+      Content(`${fact(entity, 'desc').inline}
 
 `)
     }
@@ -102,8 +102,8 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 `)
 
       each(fields, (field: any) => {
-        const desc = field.sh || ''
-        Content(`| \`${field.n}\` | \`${canonToType(field.t, target.name)}\` | ${desc} |
+        const desc = fact(model.main[KIT], 'field')[entity.name]?.[field.n]?.desc.cell ?? ''
+        Content(`| \`${field.n}\` | \`${canonToType(field.t, 'lua').replace(/\|/g, '\\|')}\` | ${desc} |
 `)
       })
 
@@ -153,7 +153,7 @@ local ${eVar}s, err = client:${entity.Name}():list(${listMatchArg('lua', entity)
 local ${eVar}, err = client:${entity.Name}():create({
 `)
       createItems.map((it: any) => {
-        Content(`  ${luaKey(it.name)} = ${luaLit(it.type, 'example_' + it.name)}, -- ${canonToType(it.type, target.name)}
+        Content(`  ${luaKey(it.name)} = ${luaLit(it.type, 'example_' + it.name)}, -- ${canonToType(it.type, 'lua')}
 `)
       })
       Content(`})

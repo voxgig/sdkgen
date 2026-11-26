@@ -540,10 +540,11 @@ function reaction(base: Run, run: Run, family: string): Finding[] {
 }
 
 
-// The facts a section reads that one sibling reads and another does not.
+// The facts a section reads that one sibling reads and another does not,
+// from the model or from the fact computed over it.
 const FACT_ROOTS: [string, RegExp][] = [
-  ['auth', /^main\.kit\.config\.auth(\.|$)/],
-  ['servers', /^main\.kit\.info\.servers(\.|$)/],
+  ['auth', /^main\.kit\.(config|fact)\.auth(\.|$)/],
+  ['servers', /^main\.kit\.(info\.servers|fact\.server)(\.|$)/],
 ]
 
 function parity(run: Run): Finding[] {

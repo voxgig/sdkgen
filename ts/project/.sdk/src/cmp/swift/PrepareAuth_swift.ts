@@ -3,12 +3,12 @@ import {
   File,
   Folder,
   cmp,
-  isAuthSuppressed,
-  isHttpBasicAuth,
-  resolveAuthIn,
-  resolveAuthName,
-  resolveAuthPrefix,
+  fact,
 } from '@voxgig/sdkgen'
+
+import {
+  KIT,
+} from '@voxgig/apidef'
 
 
 import { swiftString, swiftTargetDir } from './utility_swift'
@@ -17,17 +17,18 @@ import { swiftString, swiftTargetDir } from './utility_swift'
 const PrepareAuth = cmp(async function PrepareAuth(props: any) {
   const { target } = props
   const { model } = props.ctx$
+  const authFact = fact(model.main[KIT], 'auth')
 
-  const suppressed = isAuthSuppressed(model)
+  const suppressed = authFact.suppressed
 
-  const where = resolveAuthIn(model)
+  const where = authFact.in
 
-  const resolvedName = resolveAuthName(model)
+  const resolvedName = authFact.name
   const name = 'header' === where ? resolvedName.toLowerCase() : resolvedName
 
-  const prefix = resolveAuthPrefix(model)
+  const prefix = authFact.prefix
 
-  const basic = isHttpBasicAuth(model)
+  const basic = authFact.basic
 
   Folder({ name: 'Sources' }, () => {
     Folder({ name: swiftTargetDir(model) }, () => {

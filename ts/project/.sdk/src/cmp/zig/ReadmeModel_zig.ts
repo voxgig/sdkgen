@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -134,7 +134,7 @@ On error, \`ok\` is \`false\` and \`err\` carries the error message.
 | --- | --- |
 `)
     each(fields, (field: any) => {
-      Content(`| \`${field.n}\` | ${field.sh || ''} |
+      Content(`| \`${field.n}\` | ${fact(model.main[KIT], 'field')[ent.name]?.[field.n]?.desc.cell ?? ''} |
 `)
     })
 

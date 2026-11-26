@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, File, isAuthActive, isHttpBasicAuth, entityIdField, entityActions, safeVarName, exampleVarName, jsKey, targetFeatures, opNeedsAction, bodyNote, listMatchArg, matchExampleItems, requestExampleItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField, entityActions, safeVarName, exampleVarName, jsKey, targetFeatures, opNeedsAction, bodyNote, listMatchArg, matchExampleItems, requestExampleItems, fact } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -78,7 +78,7 @@ Create a new SDK client instance.
 | Name | Type | Description |
 | --- | --- | --- |
 | \`options\` | \`object\` | SDK configuration options. |
-${isAuthActive(model) ? '| \`options.apikey\` | \`string\` | API key for authentication. |\n' : ''}${isAuthActive(model) && isHttpBasicAuth(model) ? '| \`options.secret\` | \`string\` | API secret for authentication. |\n' : ''}| \`options.base\` | \`string\` | Base URL for API requests. |
+${isAuthActive(model) ? '| \`options.apikey\` | \`string\` | API key for authentication. |\n' : ''}${isAuthActive(model) && fact(model.main[KIT], 'auth').secret ? '| \`options.secret\` | \`string\` | API secret for authentication. |\n' : ''}| \`options.base\` | \`string\` | Base URL for API requests. |
 | \`options.prefix\` | \`string\` | URL prefix appended after base. |
 | \`options.suffix\` | \`string\` | URL suffix appended after path. |
 | \`options.headers\` | \`object\` | Custom headers for all requests. |
@@ -210,8 +210,8 @@ as \`callopts.signal\`, and ends when it aborts.
 
 `)
 
-      if (ent.short) {
-        Content(`${ent.short}
+      if (fact(ent, 'desc').inline) {
+        Content(`${fact(ent, 'desc').inline}
 
 `)
       }
@@ -232,8 +232,8 @@ const ${eVar} = client.${ent.Name}()
 `)
         each(fields, (field: any) => {
           const req = field.r ? 'Yes' : 'No'
-          const desc = field.sh || ''
-          Content(`| \`${field.n}\` | \`${canonToType(field.t, target.name)}\` | ${req} | ${desc} |
+          const desc = fact(model.main[KIT], 'field')[ent.name]?.[field.n]?.desc.cell ?? ''
+          Content(`| \`${field.n}\` | \`${canonToType(field.t, 'ts').replace(/\|/g, '\\|')}\` | ${req} | ${desc} |
 `)
         })
 

@@ -71,7 +71,7 @@ const Main = cmp(async function Main(props: any) {
 
     SdkError({ target })
 
-    File({ name: model.const.Name + 'SDK.' + target.name }, () => {
+    File({ name: model.const.Name + 'SDK.' + target.ext }, () => {
 
       Line(`// ${model.const.Name} ${target.Name} SDK\n`)
 

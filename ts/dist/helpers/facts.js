@@ -80,6 +80,7 @@ function applyFacts(model) {
     kit.fact.option = optionRows(kit.optspec);
     releaseTags(model);
     texts.forEach((t, i) => place(t.at, t.path, out.escape['t' + i]));
+    kit.fact.field = mapOr(kit.fact.field);
     (0, title_1.titleFacts)(kit.target);
     kit.fact.external = externalTargets(model);
     place(kit, ['definitionKind'], (0, graphqlPoint_1.definitionKind)(model));

@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, entityIdField, entityOps, goModule, serverVariables, listMatchArg, matchExampleItems, litString, requestExampleItems, sendsId } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, entityIdField, entityOps, goModule, listMatchArg, matchExampleItems, litString, requestExampleItems, sendsId, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -24,11 +24,11 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   // - the SDK refuses rather than request a URL with a literal
   // {account_id} in it - so a quickstart that omits them is a quickstart
   // that fails on its first line.
-  const svars = serverVariables(model)
+  const svars = fact(model.main[KIT], 'server').filter((v: any) => v.required)
   const goServerField = 0 === svars.length ? '' :
-    `\n    "server": map[string]any{` +
-    svars.map((v: any) => `\n        "${v.name}": "<${v.name}>",`).join('') +
-    `\n    },`
+    `\n        "server": map[string]any{` +
+    svars.map((v: any) => `\n            "${v.name}": "<${v.name}>",`).join('') +
+    `\n        },`
 
   const ctor = authActive
     ? `sdk.New${model.const.Name}SDK(map[string]any{\n        "apikey": os.Getenv("${envName(model)}_APIKEY"),${goServerField}\n    })`

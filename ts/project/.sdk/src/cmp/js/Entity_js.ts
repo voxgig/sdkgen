@@ -35,7 +35,7 @@ const Entity = cmp(function Entity(props: any) {
 
   Folder({ name: 'src/entity' }, () => {
 
-    File({ name: cls + '.' + target.name }, () => {
+    File({ name: cls + '.' + target.ext }, () => {
 
       const opnames = Object.keys(entity.op || {})
 

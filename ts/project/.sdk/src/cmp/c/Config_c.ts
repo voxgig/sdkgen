@@ -7,13 +7,9 @@ import {
   configDefinition,
   configReprSetting,
   each,
-  isAuthActive,
   isConfigData,
-  resolveAuthIn,
-  resolveAuthName,
-  isHttpBasicAuth,
-  resolveAuthPrefix,
   targetFeatures,
+  templateSafe,
 } from '@voxgig/sdkgen'
 
 
@@ -290,21 +286,8 @@ const Config = cmp(async function Config(props: any) {
 
   const headers = getModelPath(model, `main.${KIT}.config.headers`) || {}
 
-  const authActive = isAuthActive(model)
-  const authPrefix = resolveAuthPrefix(model)
-  // `in` and `name` travel with the prefix now. They were resolved by apidef
-  // all along and dropped here, so an apiKey-in-query API got an
-  // Authorization header it does not read. Emitted only when they differ from
-  // the defaults, so a header/Authorization SDK's config.c is byte-identical
-  // to what it generated before (Config_ts and Config_go do the same).
-  const authIn = resolveAuthIn(model)
-  const authName = resolveAuthName(model)
-  const authBasic = isHttpBasicAuth(model)
-
-  let baseUrl = ''
-  try { baseUrl = getModelPath(model, `main.${KIT}.info.servers.0.url`) } catch (_e) { }
-
-  const { def: configDef, json: configJson } = configDefinition(model, target.name)
+  const { def: configDef, json } = configDefinition(model, target.name)
+  const configJson = templateSafe('json', json)
   const asData = isConfigData(configJson, configReprSetting(model))
 
   // The feature block comes from configDefinition's def, not from f.config,
@@ -321,7 +304,7 @@ const Config = cmp(async function Config(props: any) {
   })
 
   const options: any = {
-    base: baseUrl,
+    base: configDef.options.base,
     headers,
     entity: entityOptions,
   }
@@ -330,17 +313,8 @@ const Config = cmp(async function Config(props: any) {
   if (null != configDef.options.server) {
     options.server = configDef.options.server
   }
-  if (authActive) {
-    options.auth = { prefix: authPrefix }
-    if (authBasic) {
-      options.auth.basic = true
-    }
-    if ('header' !== authIn) {
-      options.auth.in = authIn
-    }
-    if ('Authorization' !== authName) {
-      options.auth.name = authName
-    }
+  if (null != configDef.options.auth) {
+    options.auth = configDef.options.auth
   }
 
   const entityConfig = configDef.entity
@@ -408,7 +382,7 @@ voxgig_value* shared_config(void) {
 #include <string.h>
 
 voxgig_value* make_config(void) {
-  return ${formatCValue(config, 1)};
+  return ${templateSafe('c', formatCValue(config, 1))};
 }
 
 // SHARED CONFIG (sdkgen rung L2).

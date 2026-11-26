@@ -11,14 +11,9 @@ import {
   configDefinition,
   configReprSetting,
   each,
-  isAuthActive,
   isConfigData,
-  resolveAuthIn,
-  resolveAuthName,
-  isHttpBasicAuth,
-  resolveAuthPrefix,
-  serverVariables,
   targetFeatures,
+  templateSafe,
 } from '@voxgig/sdkgen'
 
 
@@ -84,32 +79,27 @@ const Config = cmp(async function Config(props: any) {
 
   const headers = getModelPath(model, `main.${KIT}.config.headers`) || {}
 
-  const authActive = isAuthActive(model)
-  const authPrefix = resolveAuthPrefix(model)
+  const { def: configDef, json } = configDefinition(model, target.name)
+  const configJson = templateSafe('json', json)
+  const asData = isConfigData(configJson, configReprSetting(model))
 
-  let baseUrl = ''
-  try { baseUrl = getModelPath(model, `main.${KIT}.info.servers.0.url`) } catch (_e) { }
+  const auth = configDef.options.auth
+  const server = configDef.options.server
+  const baseUrl = configDef.options.base
 
-  const svars = serverVariables(model)
-  const serverBlock = 0 === svars.length ? '' :
+  const serverBlock = null == server ? '' :
     '      server = {\n' +
-    svars.map((v: any) => `        [${JSON.stringify(v.name)}] = ${JSON.stringify(v.dflt)},\n`).join('') +
+    Object.entries(server).map(([name, dflt]: [string, any]) => `        [${JSON.stringify(name)}] = ${JSON.stringify(dflt)},\n`).join('') +
     '      },\n'
 
-  const authIn = resolveAuthIn(model)
-  const authName = resolveAuthName(model)
-  const authBasic = isHttpBasicAuth(model)
-  const authBlock = authActive
+  const authBlock = null != auth
     ? `      auth = {
-        prefix = "${authPrefix}",${authBasic ? `
-        basic = true,` : ''}${'header' === authIn ? '' : `
-        ["in"] = "${authIn}",`}${'Authorization' === authName ? '' : `
-        name = "${authName}",`}
+        prefix = "${auth.prefix}",${auth.basic ? `
+        basic = true,` : ''}${null == auth.in ? '' : `
+        ["in"] = "${auth.in}",`}${null == auth.name ? '' : `
+        name = "${auth.name}",`}
       },\n`
     : ''
-
-  const { def: configDef, json: configJson } = configDefinition(model, target.name)
-  const asData = isConfigData(configJson, configReprSetting(model))
 
   File({ name: 'config.' + target.ext }, () => {
 
@@ -179,8 +169,8 @@ ${serverBlock}${authBlock}      headers = ${formatLuaTable(headers, 3)},
 
     Content(`      },
     },
-    entity = ${formatLuaTable(
-configDef.entity, 2)},
+    entity = ${templateSafe('lua', formatLuaTable(
+configDef.entity, 2))},
   }
 end
 `)

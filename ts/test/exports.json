@@ -272,6 +272,7 @@
     "swiftTypeName",
     "targetFeatures",
     "template",
+    "templateSafe",
     "tomlString",
     "tsSafeTypeName",
     "tsTypeName",
