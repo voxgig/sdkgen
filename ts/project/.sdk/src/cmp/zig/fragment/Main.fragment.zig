@@ -427,8 +427,8 @@ pub fn test_sdk(testopts_in: Value, sdkopts_in: Value) *ProjectNameSDK {
     };
     h.setp(testopts, "active", h.vbool(true));
 
-    // set_path mutates `sdkopts` in place; keep the ROOT (gotcha #8 — do not
-    // rebind to the return of setpath).
+    // set_path mutates `sdkopts` in place; keep the ROOT (do not rebind to
+    // the return of setpath).
     h.setpath(sdkopts, &.{ "feature", "test" }, testopts);
 
     // Test mode fills every server variable, so construction cannot refuse.

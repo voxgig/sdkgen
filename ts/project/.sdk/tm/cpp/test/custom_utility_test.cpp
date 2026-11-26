@@ -1,6 +1,6 @@
 // ProjectName SDK — custom utility overrides supplied via options.utility
 // land on the utility object's custom map (mirrors java
-// test/CustomUtilityTest.java). This exercises value-semantics gotcha #8:
+// test/CustomUtilityTest.java). This exercises value semantics:
 // the struct clone in makeOptions must NOT drop the function (Injector)
 // values, so each override is still callable after client construction.
 

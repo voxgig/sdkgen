@@ -379,7 +379,7 @@
                     (h-op h :opname "create" :path "/w")
                     (t/is-eq (mget (vs/getprop (vs/getprop (nth @calls 0) "fetchdef") "headers") "Idempotency-Key") "K1" "K1"))))
 
-    ;; ---- rbac (short-circuit, gotcha #2) ----
+    ;; ---- rbac (short-circuit) ----
     (check "rbac-denies-before-network" "rbac"
            (fn [] (let [[server calls] (recording-server nil)
                         h (make-harness [(fspec "rbac" "rules" (vs/jm "widget.remove" "admin") "permissions" (vs/jt))] :server server)

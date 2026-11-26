@@ -92,7 +92,7 @@ class EntyClass
     VoxgigStruct.clone(@_match)
   end
 
-  # Feature #4: run `action` through the full pipeline and return an Enumerator
+  # Run `action` through the full pipeline and return an Enumerator
   # over result items, so the `streaming` feature's incremental output, when
   # that feature is active, is reachable from a generated entity (a normal op
   # call materialises the whole result). `callopts` parameterises the call:

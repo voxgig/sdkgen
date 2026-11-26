@@ -10,7 +10,7 @@ require_once __DIR__ . '/../core/Helpers.php';
      *   assoc-array; a typed EntityNameLoadMatch names the shape.
      * @param mixed $ctrl Optional per-call control overrides.
      * @return EntyClass The loaded EntityName entity, whose data_get() reads
-     *   its record; throws ProjectNameError on failure (item-5 convention).
+     *   its record; throws ProjectNameError on failure.
      */
     public function load(?array $reqmatch = null, $ctrl = null): mixed
     {

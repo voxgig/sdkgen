@@ -199,7 +199,7 @@ describe("${entity.Name}Entity", function()
     assert.is_not_nil(ent)
   end)
 ${hasList ? `
-  -- Feature #4: the entity stream(action, ...) method runs the op pipeline and
+  -- The entity stream(action, ...) method runs the op pipeline and
   -- returns an iterator over result items. With the streaming feature active it
   -- yields the feature's incremental output; otherwise it falls back to the
   -- materialised list so stream always yields.

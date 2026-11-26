@@ -2,7 +2,7 @@
 // / rust feature/rbac.rs). Before an operation resolves its endpoint, the
 // required permission for that entity+operation is checked against the held
 // permissions; a disallowed call is short-circuited with an `rbac_denied`
-// error stored on ctx.out["point"] (which make_point surfaces — gotcha #2) and
+// error stored on ctx.out["point"] (which make_point surfaces) and
 // never touches the network.
 
 const std = @import("std");

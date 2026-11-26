@@ -719,7 +719,7 @@ pub fn make_options_util(ctx: *Context) E!Value {
     };
 
     // Merge custom utility overrides onto the utility object (function values
-    // are shared by reference — gotcha #8).
+    // are shared by reference).
     const custom_utils = h.to_map(h.getp(options, "utility"));
     if (custom_utils == .object) {
         if (ctx.utility) |utility| {
@@ -932,7 +932,7 @@ pub fn make_options_util(ctx: *Context) E!Value {
 }
 
 // ============================================================================
-// make_point (gotcha #2: rbac PrePoint short-circuit)
+// make_point (and the rbac PrePoint short-circuit)
 // ============================================================================
 
 // How many path segments a point has.

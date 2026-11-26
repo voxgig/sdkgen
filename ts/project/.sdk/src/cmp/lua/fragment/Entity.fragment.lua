@@ -117,7 +117,7 @@ function EntyClass:match_get()
 end
 
 
--- Feature #4: run `action` through the full pipeline and return a stateful
+-- Run `action` through the full pipeline and return a stateful
 -- iterator over result items, so the `streaming` feature's incremental
 -- output, when that feature is active, is reachable from a generated entity
 -- (a normal op call materialises the whole result). Use it as `for item in

@@ -1,5 +1,5 @@
-// Cross-language gotcha verification (entity-agnostic). Each test targets a
-// specific trap called out in the porting playbook.
+// Traps a port of the pipeline can fall into (entity-agnostic), one section
+// per trap, numbered as the tests are named.
 
 const std = @import("std");
 const sdk = @import("sdk");

@@ -152,7 +152,7 @@ func Test${entity.Name}Entity(t *testing.T) {
 		}
 	})
 ${hasList ? `
-	// Feature #4: the entity Stream(action, ...) method runs the op pipeline and
+	// The entity Stream(action, ...) method runs the op pipeline and
 	// returns a channel over result items. With the streaming feature active it
 	// yields the feature's incremental output; otherwise it falls back to the
 	// materialised list so Stream always yields.

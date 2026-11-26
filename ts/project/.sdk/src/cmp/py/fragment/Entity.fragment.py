@@ -72,7 +72,7 @@ class EntyClass:
         return vs.clone(self._match)
 
     def stream(self, action, args=None, callopts=None):
-        # Feature #4: run `action` through the full pipeline and yield result
+        # Run `action` through the full pipeline and yield result
         # items, so the `streaming` feature's incremental output, when that
         # feature is active, is reachable from a generated entity (a normal
         # op call materialises the whole result). `callopts` parameterises
