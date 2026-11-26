@@ -229,7 +229,9 @@ let make ?(plugins : Defs.definition list = [])
       let fetchdef = jo [
         ("method", Str x.xmethod);
         ("headers", jo [("content-type", Str "application/json")]);
-        ("body", Str (jsonify (jo [(x.xrequest, Str !refresh)])))] in
+        ("body", Str (jsonify (jo [(x.xrequest, Str !refresh)])));
+        (* Never followed: a redirect would carry the refresh token on. *)
+        ("redirect", Str "manual")] in
       let fetch =
         match getpath_s opts "system.fetch" with
         | Func _ as sf -> Some (fun url fd -> call_vfn sf (ja [Str url; fd]))

@@ -80,7 +80,7 @@ local function make_wire(script)
     local auth = headers[CREDHEADER]
     w.calls[#w.calls + 1] = {
       url = url, auth = auth, has = auth ~= nil,
-      body = fetchdef.body, method = fetchdef.method,
+      body = fetchdef.body, method = fetchdef.method, redirect = fetchdef.redirect,
     }
 
     if is_token(url) then
@@ -176,7 +176,7 @@ local function secrets_client(w, sdkopts)
   local function build(extend)
     local opts = {
       base = "http://secrets.test/api",
-      system = { fetch = w.fetch },
+      system = w and { fetch = w.fetch } or nil,
     }
     for k, v in pairs(sdkopts or {}) do opts[k] = v end
     if extend then
@@ -797,6 +797,7 @@ describe("secrets", function()
       assert.are.equal(1, #w.token(), "expected one token purchase")
       local t = w.token()[1]
       assert.are.equal("POST", t.method)
+      assert.are.equal("manual", t.redirect, "the exchange must follow no redirect")
       assert.is_truthy(t.body:find('"refresh_token":"REFRESH01"', 1, true),
         "the refresh token must be sent as JSON: " .. tostring(t.body))
       assert_credential(w.api()[1].auth, "ACCESS01")
@@ -858,6 +859,111 @@ describe("secrets", function()
       assert.is_truthy(tostring(res.err):find("secrets: no refresh token", 1, true),
         tostring(res.err))
       assert.are.equal(0, #w.api())
+    end)
+
+    -- The API and another origin, served by a second interpreter (Lua has no
+    -- threads), which prints each request it gets until it is told to stop.
+    local origins_server = [[
+      local socket = require("socket")
+      local api = assert(socket.bind("127.0.0.1", 0))
+      local other = assert(socket.bind("127.0.0.1", 0))
+      if LOCATION == "OTHER" then
+        LOCATION = "http://127.0.0.1:" .. select(2, other:getsockname()) .. "/api/auth/token"
+      end
+      io.stdout:write(select(2, api:getsockname()), "\t", LOCATION, "\n")
+      io.stdout:flush()
+      while true do
+        local srv = socket.select({ api, other }, nil, 20)[1]
+        if not srv then break end
+        local sock = srv:accept()
+        sock:settimeout(20)
+        local method, path = string.match(sock:receive("*l") or "", "^(%S+) (%S+)")
+        if path == "/stop" then break end
+        local length = 0
+        while true do
+          local name, value = string.match(sock:receive("*l") or "", "^([^:]+):%s*(.*)$")
+          if not name then break end
+          if string.lower(name) == "content-length" then length = tonumber(value) or 0 end
+        end
+        local body = length > 0 and (sock:receive(length) or "") or ""
+        local where = srv == api and "origin" or "other"
+        io.stdout:write(where, "\t", method or "", "\t", path or "", "\t", body, "\n")
+        io.stdout:flush()
+        local status, moved, answer = 200, "", '{"access_token":"ELSEWHERE01"}'
+        if where == "origin" and path == "/api/auth/token" then
+          status, moved, answer = STATUS, "Location: " .. LOCATION .. "\r\n", ""
+        elseif where == "origin" then
+          answer = '{"access_token":"MOVED01"}'
+        end
+        sock:send("HTTP/1.1 " .. status .. " X\r\n" .. moved .. "Content-Type: application/json\r\n" ..
+          "Content-Length: " .. #answer .. "\r\nConnection: close\r\n\r\n" .. answer)
+        sock:close()
+      end
+    ]]
+
+    -- Real listeners and the feature's own transport: a stub follows nothing.
+    local has_socket = pcall(require, "socket.http")
+    ;(has_socket and it or pending)("a redirect answering the exchange is a failure, and nothing follows it",
+      function()
+      local first = 0
+      while arg and arg[first - 1] ~= nil do first = first - 1 end
+      local lua = arg and first < 0 and arg[first] or "lua"
+
+      local refused, leaked, failures = 0, 0, {}
+      for _, case in ipairs({ { 307, "OTHER" }, { 308, "OTHER" }, { 302, "OTHER" },
+        { 307, "/api/moved/token" } }) do
+        local script = os.tmpname()
+        local f = assert(io.open(script, "w"))
+        f:write(string.format("package.path = %q\npackage.cpath = %q\nSTATUS = %d\nLOCATION = %q\n",
+          package.path, package.cpath, case[1], case[2]), origins_server)
+        f:close()
+        local child = assert(io.popen(string.format("%q %q", lua, script)))
+        local port, location = string.match(assert(child:read("*l")), "^(%d+)\t(.*)$")
+        local base = "http://127.0.0.1:" .. port .. "/api"
+
+        local client = secrets_client(nil, {
+          base = base,
+          feature = { secrets = {
+            active = true,
+            name = "refresh_token",
+            exchange = { active = true, refresh = "REFRESH01" },
+          } },
+        })
+        local res = client:direct({ path = "/thing" })
+
+        local stop = require("socket").connect("127.0.0.1", tonumber(port))
+        if stop then
+          stop:send("GET /stop HTTP/1.0\r\n\r\n")
+          stop:close()
+        end
+        local followed = {}
+        for line in child:lines() do
+          local where, method, path, body = string.match(line, "^(%S+)\t(%S*)\t(%S*)\t(.*)$")
+          if where == "other" or path ~= "/api/auth/token" then
+            followed[#followed + 1] = where .. " " .. method .. " " .. path .. " " .. body
+          end
+        end
+        child:close()
+        os.remove(script)
+
+        local label = case[1] .. " to " .. location
+        local message = tostring(res and res.err)
+        local want = "token exchange failed: " .. case[1] .. " from " .. base .. "/auth/token"
+        if message:find(want, 1, true) then
+          refused = refused + 1
+        else
+          failures[#failures + 1] = label .. ": not a failed exchange: " .. message
+        end
+        leaked = leaked + #followed
+        if #followed > 0 then
+          failures[#failures + 1] = label .. ": followed by " .. table.concat(followed, "; ")
+        end
+      end
+
+      print("\nsecrets: exchange refused " .. refused .. " redirect(s), " .. leaked .. " followed")
+
+      assert.are.same({}, failures)
+      assert.are.equal(4, refused)
     end)
 
     it("test mode buys nothing", function()

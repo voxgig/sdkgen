@@ -228,9 +228,11 @@
           ;; a configured request-field name) carrying a quote, backslash or
           ;; newline must arrive as that literal value, not as broken JSON.
           body (vs/jsonify (vs/jm (:request x) refresh) (vs/jm "indent" 0))
+          ;; Never followed: a redirect would carry the refresh token on.
           [res err] (fetch url (vs/jm "method" (:method x)
                                       "headers" (vs/jm "content-type" "application/json")
-                                      "body" body))]
+                                      "body" body
+                                      "redirect" "manual"))]
 
       (when (some? err)
         (throw (sekreto/sekretoerror

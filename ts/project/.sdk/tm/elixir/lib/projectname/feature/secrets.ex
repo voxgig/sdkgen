@@ -693,7 +693,9 @@ defmodule ProjectName.Feature.Secrets do
         S.jm([
           "method", x.method,
           "headers", S.jm(["content-type", "application/json"]),
-          "body", S.jsonify(S.jm([x.request, refresh]), S.jm(["indent", 0]))
+          "body", S.jsonify(S.jm([x.request, refresh]), S.jm(["indent", 0])),
+          # Never followed: a redirect would carry the refresh token on.
+          "redirect", "manual"
         ])
 
       sysfetch = S.getpath(options, "system.fetch")
@@ -783,7 +785,7 @@ defmodule ProjectName.Feature.Secrets do
         {String.to_charlist(url), hlist}
       end
 
-    case :httpc.request(method, request, [], body_format: :binary) do
+    case :httpc.request(method, request, [autoredirect: false], body_format: :binary) do
       {:ok, {{_v, status, _reason}, _rh, resbody}} ->
         text = if is_binary(resbody), do: resbody, else: to_string(resbody)
 
