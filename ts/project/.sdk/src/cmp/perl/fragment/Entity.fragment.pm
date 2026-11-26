@@ -142,9 +142,6 @@ sub match_get {
 #
 # $callopts parameterises the call:
 #   - ctrl:   per-call pipeline control (threaded onto the op ctx);
-#   - body:   an iterator coderef / arrayref payload for outbound (upload)
-#             streaming - attached to the request (reqdata.body$ + a
-#             stream_out marker on ctx) so the transport can stream it;
 #   - signal: an optional coderef; when it returns true the iterator stops.
 sub stream {
   my ($self, $action, $args, $callopts) = @_;
@@ -163,16 +160,6 @@ sub stream {
     'data' => $self->{_data},
     %{ ProjectNameHelpers::to_map($args) || {} },
   }, $self->{_entctx});
-
-  # Outbound: expose an async-iterable/list payload so the request builder /
-  # transport can stream it as the request body.
-  my $body = ProjectNameHelpers::gp($callopts, 'body');
-  if (defined $body) {
-    my $reqdata = ProjectNameHelpers::to_map($ctx->{reqdata}) || {};
-    $reqdata->{'body$'} = $body;
-    $ctx->{reqdata} = $reqdata;
-    $ctx->{stream_out} = $body;
-  }
 
   $self->_run_op($ctx, sub { return });
 
