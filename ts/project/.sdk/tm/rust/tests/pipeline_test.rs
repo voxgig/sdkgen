@@ -644,7 +644,10 @@ fn pl_auth_probe(sdkopts: Value) -> Option<PlCred> {
     }
     let spec = ctx.spec.borrow().clone().unwrap();
     for query in [false, true] {
-        if let Some((name, value)) = vs::items_vec(&pl_bag(&spec, query)).into_iter().next() {
+        let bag = pl_bag(&spec, query);
+        let first = vs::keysof_vec(&bag).into_iter().next()
+            .map(|k| { let v = vs::lookup(&bag, &vs::Value::str(k.clone())); (k, v) });
+        if let Some((name, value)) = first {
             let mut pair = String::new();
             if let Some(text) = value.as_str() {
                 if !query && "cookie" == name && pl_cookie_pair(text) {

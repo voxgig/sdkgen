@@ -1,5 +1,5 @@
 # VENDORED: @voxgig/sekreto 0.1.0 (perl/plugins/Voxgig/Sekreto/Plugins/Azuresecrets.pm)
-# Source: https://github.com/voxgig/sekreto @ ee837130bf444ca46a5a46181bdd6743e118898c  [tag: sdk-20261016-0845-0]
+# Source: https://github.com/voxgig/sekreto @ ee837130bf444ca46a5a46181bdd6743e118898c  [tag: sdk-20261125-1959-0]
 # License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 package Voxgig::Sekreto::Plugins::Azuresecrets;
 

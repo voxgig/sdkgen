@@ -1,5 +1,5 @@
-;; VENDORED: @voxgig/sekreto sdk-20261016-0845-0 (clojure/src/voxgig/sekreto/core.clj)
-;; Source: https://github.com/voxgig/sekreto @ ee837130bf444ca46a5a46181bdd6743e118898c  [tag: sdk-20261016-0845-0]
+;; VENDORED: @voxgig/sekreto sdk-20261125-1959-0 (clojure/src/voxgig/sekreto/core.clj)
+;; Source: https://github.com/voxgig/sekreto @ ee837130bf444ca46a5a46181bdd6743e118898c  [tag: sdk-20261125-1959-0]
 ;; License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 ;; The names, the errors and the text helpers - the half of sekreto that
 ;; does not know what a provider is.

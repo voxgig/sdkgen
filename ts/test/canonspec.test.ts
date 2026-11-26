@@ -1,19 +1,21 @@
 
 import { test, describe } from 'node:test'
-import { strictEqual, deepStrictEqual, ok } from 'node:assert'
-
-import * as struct from '@voxgig/struct'
+import { strictEqual, deepStrictEqual, ok, throws } from 'node:assert'
 
 import {
+  anyOf,
   byExampleSpec,
   canonToSpec,
   entityDataSpec,
   entityOpSpec,
   entitySpecs,
+  oneUnionPaths,
   optionalSpec,
   sentinel,
   validateSeeds,
 } from '../dist/helpers/canonSpec'
+
+import { struct } from './featureharness'
 
 
 // Run a spec the way the generated feature does: collecting, not throwing.
@@ -75,8 +77,8 @@ describe('canonSpec: sentinel mapping', () => {
     ok(accepts({ a: 3 }, spec))
     ok(!accepts({ a: true }, spec))
 
-    // apidef's own nested shape, passed to struct untranslated, reads the
-    // inner list as ONE alternative and rejects both members.
+    // apidef's own nested shape, passed to struct untranslated, names a
+    // checker struct does not define, and is refused whatever the value.
     ok(!accepts({ a: 'x' }, { a: ONE([S('STRING'), S('INTEGER')]) }))
   })
 
@@ -89,9 +91,9 @@ describe('canonSpec: sentinel mapping', () => {
 
   test('a NULLABLE field accepts null — the shape apidef actually emits', () => {
     // apidef writes `type: [a, b]` as ['`$ONE`', [<type>, '`$NULL`']], so
-    // this is the common union, not an exotic one. `$NULL` alone does not
-    // match inside a union (struct's per-alternative lookup reads a stored
-    // null as "no value"), so the mapping adds `$NIL` beside it.
+    // this is the common union, not an exotic one. The mapping adds `$NIL`
+    // beside `$NULL`: a struct copy that predates `$NOF` reads a stored null
+    // inside its union as "no value", which only `$NIL` admits.
     const spec = { a: canonToSpec(ONE([S('NUMBER'), S('NULL')])) }
     ok(accepts({ a: null }, spec), 'null is the value a nullable field exists for')
     ok(accepts({ a: 1.5 }, spec))
@@ -132,6 +134,30 @@ describe('canonSpec: optionality', () => {
 
   test('$ANY is not widened — it already admits an absent value', () => {
     strictEqual(optionalSpec(S('ANY')), S('ANY'))
+  })
+})
+
+
+describe('canonSpec: the union struct reads', () => {
+
+  test('a union is `$NOF` with a count of at least one', () => {
+    deepStrictEqual(anyOf([S('NUMBER')]), [S('NOF'), { min: 1 }, S('NUMBER')])
+    deepStrictEqual(canonToSpec(ONE([S('STRING'), S('INTEGER')])),
+      [S('NOF'), { min: 1 }, S('STRING'), [S('EXACT'), ''], S('INTEGER')])
+    deepStrictEqual(optionalSpec(S('BOOLEAN')), [S('NOF'), { min: 1 }, S('BOOLEAN'), S('NIL')])
+  })
+
+  test('any other count stays one alternative, not a union to flatten', () => {
+    const exactlyOne = [S('NOF'), 1, S('STRING'), S('NUMBER')]
+    deepStrictEqual(optionalSpec(exactlyOne), [S('NOF'), { min: 1 }, exactlyOne, S('NIL')])
+  })
+
+  test('a leftover `$ONE` is found wherever it sits, and not in a literal', () => {
+    deepStrictEqual(oneUnionPaths({
+      a: [S('ONE'), S('STRING')],
+      b: { c: [S('NOF'), { min: 1 }, S('NUMBER')] },
+      d: [S('EXACT'), S('ONE')],
+    }), ['a.0'])
   })
 })
 

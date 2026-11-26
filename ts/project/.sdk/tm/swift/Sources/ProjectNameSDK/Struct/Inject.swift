@@ -1,3 +1,6 @@
+// VENDORED: @voxgig/struct 0.1.3 (swift/Sources/VoxgigStruct/Inject.swift)
+// Source: https://github.com/voxgig/struct @ 358af9d51c90b589a295a70b2165dbe4629eaf8e  [tag: sdk-20261125-1959-0]
+// License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 // inject — recursive descent that resolves backtick references and
 // command-table injectors. The three-phase key processing
 // (M_KEYPRE → M_VAL → M_KEYPOST) is canonical: command handlers can
@@ -68,7 +71,7 @@ public func _injectstr(_ raw: String, _ store: Value, _ inj: Injection?) -> Valu
         // A node interpolated into a string uses compact JSON (canonical TS
         // uses JSON.stringify(found), not the pretty default jsonify).
         case .list, .map: out += jsonify(found, indent: 0)
-        case .function, .native: out += "<function>"
+        case .function, .native: out += "<function>"  // PATCH (the SDK's opaque native case, pending upstream fix)
         case .sentinel(let s): out += s.marker
         }
         idx = raw.index(after: close.lowerBound)
@@ -105,17 +108,16 @@ public func inject(_ val: Value, _ store: Value, _ injdef: Injection? = nil) -> 
       root.errs = el
     }
     root.meta.entries["__d"] = .int(0)
-    // Carry over caller-supplied options from injdef.
+    // Carry over caller-supplied options from injdef. Canonical carries
+    // modify, extra, meta AND handler; this port dropped `handler`, so
+    // `validate`'s `_validatehandler` never ran and the meta-path exact form
+    // (`\`q0$=x1\``) silently fell through to ordinary literal validation.
+    // `validate/special#19` is the entry that notices.
     if let idef = injdef {
       if let m = idef.modify { root.modify = m }
       if !idef.extra.isNoval { root.extra = idef.extra }
       if !idef.meta.entries.isEmpty { root.meta = idef.meta }
       if !idef.errs.items.isEmpty { root.errs = idef.errs }
-      // The caller's HANDLER, which canonical carries here too
-      // (typescript/src/StructUtility.ts inject). Dropping it made
-      // `validate`'s own `_validatehandler` dead code in every run, so the
-      // meta-path forms `q0$=x1` / `q0$~x1` never became the $EXACT / loose
-      // checks they name - the corpus pins it through validate.special.
       root.handler = idef.handler
       // Caller-provided meta/errs override above.
     }
@@ -124,6 +126,7 @@ public func inject(_ val: Value, _ store: Value, _ injdef: Injection? = nil) -> 
     inj = injdef!
   }
   _ = inj.descend()
+  inj.named = false
   var out = val
   if isnode(val) {
     var nodekeys: [String] = []
@@ -133,6 +136,7 @@ public func inject(_ val: Value, _ store: Value, _ injdef: Injection? = nil) -> 
       let plain = allSorted.filter { !$0.contains(S_DS) }
       let cmd = allSorted.filter { $0.contains(S_DS) }
       nodekeys = plain + cmd
+      inj.named = !plain.isEmpty
     } else if case .list(let l) = val {
       nodekeys = (0..<l.items.count).map { String($0) }
     }
@@ -157,6 +161,12 @@ public func inject(_ val: Value, _ store: Value, _ injdef: Injection? = nil) -> 
       }
       nkI += 1
     }
+    if case .list(let l) = val {
+      l.items.removeAll { item in
+        if case .sentinel(let sn) = item { return sn === SKIP }
+        return false
+      }
+    }
   } else if case .string(let s) = val {
     inj.mode = M_VAL
     out = _injectstr(s, store, inj)
@@ -178,7 +188,11 @@ public func inject(_ val: Value, _ store: Value, _ injdef: Injection? = nil) -> 
       let mkey = inj.key
       let mparent = inj.parent
       let mval = getprop(mparent, .string(mkey))
-      mod(mval, .string(mkey), mparent, inj, store)
+      let hole: Bool = {
+        if case .sentinel(let sn) = mval { return sn === SKIP }
+        return false
+      }()
+      mod(hole ? .noval : mval, .string(mkey), mparent, inj, store)
     }
   }
   inj.val = out
@@ -190,20 +204,20 @@ public func inject(_ val: Value, _ store: Value, _ injdef: Injection? = nil) -> 
 public func checkPlacement(_ modes: Int, _ name: String, _ parentTypes: Int, _ inj: Injection)
   -> Bool
 {
-  // The canonical messages, verbatim (typescript/src/StructUtility.ts
-  // checkPlacement): PLACEMENT names, KEYPRE/KEYPOST/VAL order, the type
-  // expected of the parent, and the closing period. The corpus pins all
-  // four through transform.apply, whose err entries the silent-pass inline
-  // runner used to skip.
   if (modes & inj.mode) == 0 {
+    // Canonical's wording (StructUtility.ts checkPlacement): the PLACEMENT
+    // names, in [KEYPRE, KEYPOST, VAL] order, and a trailing period. The old
+    // message used MODENAME ("key:pre", "val"), listed the modes in a
+    // different order and dropped the period - `transform/apply` asserts the
+    // text verbatim.
     let allowed = [M_KEYPRE, M_KEYPOST, M_VAL]
       .filter { (modes & $0) != 0 }
       .compactMap { PLACEMENT[$0] }
       .joined(separator: ",")
     inj.errs.items.append(
       .string(
-        "$\(name): invalid placement as " + (PLACEMENT[inj.mode] ?? "?")
-          + ", expected: " + allowed + "."))
+        "$\(name): invalid placement as " + (PLACEMENT[inj.mode] ?? "?") + ", expected: "
+          + allowed + "."))
     return false
   }
   if parentTypes != 0 {
@@ -211,8 +225,8 @@ public func checkPlacement(_ modes: Int, _ name: String, _ parentTypes: Int, _ i
     if (parentTypes & ptype) == 0 {
       inj.errs.items.append(
         .string(
-          "$\(name): invalid placement in parent " + typename(ptype)
-            + ", expected: " + typename(parentTypes) + "."))
+          "$\(name): invalid placement in parent " + typename(ptype) + ", expected: "
+            + typename(parentTypes) + "."))
       return false
     }
   }
@@ -227,16 +241,17 @@ public func injectorArgs(_ types: [Int], _ args: Value) -> (Value, [Value]) {
     let arg = i < l.items.count ? l.items[i] : Value.noval
     let atype = typify(arg)
     if expected != T_any && (expected & atype) == 0 {
-      // The canonical message, verbatim (typescript/src/StructUtility.ts
-      // injectorArgs): the offending VALUE, its type, its 1-based position
-      // and the type expected. The corpus pins it through transform.apply,
-      // whose err entries the silent-pass inline runner used to skip.
+      // Canonical's exact wording (StructUtility.ts injectorArgs): the value,
+      // its type, its ONE-BASED position, and the type expected. The corpus
+      // asserts it verbatim in `transform/apply`; the old message named a
+      // zero-based index and dropped the value entirely.
       return (
         .string(
           "invalid argument: " + stringify(arg, 22) + " (" + typename(atype)
             + " at position " + String(1 + i) + ") is not of type: "
             + typename(expected) + "."),
-        l.items)
+        l.items
+      )
     }
     out.append(arg)
   }
@@ -249,11 +264,11 @@ public func injectChild(_ child: Value, _ store: Value, _ inj: Injection) -> Inj
     if let prior2 = prior.prior {
       cinj = prior2.child(prior.keyI, prior.keys)
       cinj.val = child
-      setprop(cinj.parent, .string(prior.key), child)
+      _setprop(cinj.parent, .string(prior.key), child)
     } else {
       cinj = prior.child(inj.keyI, inj.keys)
       cinj.val = child
-      setprop(cinj.parent, .string(inj.key), child)
+      _setprop(cinj.parent, .string(inj.key), child)
     }
   }
   inject(child, store, cinj)

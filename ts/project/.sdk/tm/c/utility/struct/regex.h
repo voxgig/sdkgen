@@ -1,3 +1,6 @@
+// VENDORED: @voxgig/struct 0.1.3 (c/src/regex.h)
+// Source: https://github.com/voxgig/struct @ 358af9d51c90b589a295a70b2165dbe4629eaf8e  [tag: sdk-20261125-1959-0]
+// License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 /* Copyright (c) 2025-2026 Voxgig Ltd. MIT LICENSE.
  *
  * Voxgig Struct — RE2-subset regex engine (pure C, no runtime deps).
@@ -5,7 +8,7 @@
  * Dialect:
  *   - Literal chars and escapes (\n \t \\ \. ...)
  *   - Any char (.)
- *   - Anchors (^ $)
+ *   - Anchors (^ $), at the start and end of the whole text
  *   - Quantifiers: * + ? {n} {n,} {n,m}, plus lazy *? +? ?? {..}?
  *   - Character classes: [abc] [^abc] [a-z] (predefined classes inside too)
  *   - Predefined classes: \d \D \s \S \w \W

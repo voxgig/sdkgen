@@ -1,3 +1,6 @@
+// VENDORED: @voxgig/struct 0.1.3 (swift/Sources/VoxgigStruct/Walk.swift)
+// Source: https://github.com/voxgig/struct @ 358af9d51c90b589a295a70b2165dbe4629eaf8e  [tag: sdk-20261125-1959-0]
+// License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 // walk — depth-first recursive descent with optional before / after
 // callbacks. Each callback receives (key, val, parent, path) and may
 // return a replacement value. Mirrors the canonical TS walk.
@@ -12,7 +15,12 @@ public func walk(
   _ after: WalkApply? = nil,
   _ maxdepth: Int = MAXDEPTH
 ) -> Value {
-  return walkInner(val, .noval, .noval, [], before, after, maxdepth, 0)
+  // Canonical: `maxdepth = null != maxdepth && 0 <= maxdepth ? maxdepth :
+  // MAXDEPTH`. A NEGATIVE maxdepth falls back to the default; it does not mean
+  // "stop immediately". `walk/depth` entry 1 passes -1 and expects the whole
+  // tree back. struct/perl carried the same defect.
+  let depthlimit = 0 <= maxdepth ? maxdepth : MAXDEPTH
+  return walkInner(val, .noval, .noval, [], before, after, depthlimit, 0)
 }
 
 private func walkInner(

@@ -14,9 +14,33 @@ upstream is a marked `PATCH` block or an `adapt` rule, never a quiet edit.
 
 The checkpoint builds all four repositories **together**, which is the only
 time cross-repo bugs appear — CI builds each one alone. Expect the run to
-find real defects, and expect it to take hours on a 4-core machine.
+find real defects.
 
-Three things have cost a run before:
+## 1. Cut the checkpoint
+
+Dispatch the `checkpoint` workflow in `voxgig/admin`, on `main`:
+
+```bash
+gh workflow run checkpoint.yml --repo voxgig/admin --ref main -f dry_run=true
+gh workflow run checkpoint.yml --repo voxgig/admin --ref main
+```
+
+The first is a dry run: every gate runs, the tag a real run would take is
+printed, and nothing is pushed. The second is the real run.
+
+Its `resolve` job names the commit each `main` is at, and one gate job per
+repository runs that repository's full suite at those four commits, with the
+other three cloned beside it. The `tag` job runs once all four gates pass. It
+refuses if any `main` has moved since `resolve`, then writes the four tags
+and pushes them. A real run reads the `CHECKPOINT_TOKEN` secret, a
+fine-grained token that can push to the four repositories, and stops at once
+without it.
+
+### Or cut it on one machine
+
+`make checkpoint` in a `voxgig/admin` checkout does the same work locally,
+and takes hours on a 4-core machine. Three things have cost such a run
+before:
 
 - **Stale build daemons.** A long-lived bloop/scala-cli JVM holding a few
   gigabytes gets the run OOM-killed, and the kill reads as a test failure.
@@ -43,8 +67,6 @@ Three things have cost a run before:
 
 zig 0.16, lean, and `libssl-dev` + `libcurl4-openssl-dev` also have to be
 present; see `dev-machine-toolchains` notes for this machine.
-
-## 1. Cut the checkpoint
 
 ```bash
 cd ~/Projects/voxgig/admin

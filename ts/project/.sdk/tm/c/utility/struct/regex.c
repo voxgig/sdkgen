@@ -1,3 +1,6 @@
+// VENDORED: @voxgig/struct 0.1.3 (c/src/regex.c)
+// Source: https://github.com/voxgig/struct @ 358af9d51c90b589a295a70b2165dbe4629eaf8e  [tag: sdk-20261125-1959-0]
+// License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 /* Copyright (c) 2025-2026 Voxgig Ltd. MIT LICENSE.
  *
  * Voxgig Struct — RE2-subset regex engine.
@@ -79,7 +82,7 @@ struct voxgig_regex {
   int code_len;
   int code_cap;
   int ngroups; /* including group 0 */
-  /* Pre-computed: does the pattern start with ^? If so we don't try
+  /* Pre-computed: does every path start with ^? If so we don't try
      each input offset as a potential start. */
   bool anchored_start;
 };
@@ -139,7 +142,7 @@ static void cc_predef(voxgig_charclass* cc, int c) {
   case 'D':
     cc_set_range(cc, 0, 255);
     for (int x = '0'; x <= '9'; x++)
-      cc->bits[x >> 3] &= (uint8_t) ~(1u << (x & 7));
+      cc->bits[x >> 3] &= (uint8_t)(~(1u << (x & 7)));
     break;
   case 's':
     cc_set(cc, ' ');
@@ -151,12 +154,12 @@ static void cc_predef(voxgig_charclass* cc, int c) {
     break;
   case 'S':
     cc_set_range(cc, 0, 255);
-    cc->bits[' ' >> 3] &= (uint8_t) ~(1u << (' ' & 7));
-    cc->bits['\t' >> 3] &= (uint8_t) ~(1u << ('\t' & 7));
-    cc->bits['\n' >> 3] &= (uint8_t) ~(1u << ('\n' & 7));
-    cc->bits['\r' >> 3] &= (uint8_t) ~(1u << ('\r' & 7));
-    cc->bits['\f' >> 3] &= (uint8_t) ~(1u << ('\f' & 7));
-    cc->bits['\v' >> 3] &= (uint8_t) ~(1u << ('\v' & 7));
+    cc->bits[' ' >> 3] &= (uint8_t)(~(1u << (' ' & 7)));
+    cc->bits['\t' >> 3] &= (uint8_t)(~(1u << ('\t' & 7)));
+    cc->bits['\n' >> 3] &= (uint8_t)(~(1u << ('\n' & 7)));
+    cc->bits['\r' >> 3] &= (uint8_t)(~(1u << ('\r' & 7)));
+    cc->bits['\f' >> 3] &= (uint8_t)(~(1u << ('\f' & 7)));
+    cc->bits['\v' >> 3] &= (uint8_t)(~(1u << ('\v' & 7)));
     break;
   case 'w':
     cc_set_range(cc, '0', '9');
@@ -167,12 +170,12 @@ static void cc_predef(voxgig_charclass* cc, int c) {
   case 'W':
     cc_set_range(cc, 0, 255);
     for (int x = '0'; x <= '9'; x++)
-      cc->bits[x >> 3] &= (uint8_t) ~(1u << (x & 7));
+      cc->bits[x >> 3] &= (uint8_t)(~(1u << (x & 7)));
     for (int x = 'A'; x <= 'Z'; x++)
-      cc->bits[x >> 3] &= (uint8_t) ~(1u << (x & 7));
+      cc->bits[x >> 3] &= (uint8_t)(~(1u << (x & 7)));
     for (int x = 'a'; x <= 'z'; x++)
-      cc->bits[x >> 3] &= (uint8_t) ~(1u << (x & 7));
-    cc->bits['_' >> 3] &= (uint8_t) ~(1u << ('_' & 7));
+      cc->bits[x >> 3] &= (uint8_t)(~(1u << (x & 7)));
+    cc->bits['_' >> 3] &= (uint8_t)(~(1u << ('_' & 7)));
     break;
   default:
     break;
@@ -416,17 +419,18 @@ static int code_clone(voxgig_regex* re, int from, int to) {
   code_reserve(re, to - from);
   for (int i = from; i < to; i++) {
     re->code[re->code_len] = re->code[i];
-    /* Patch JMP / SPLIT targets that pointed inside the cloned range. */
+    /* Patch JMP / SPLIT targets inside the cloned range; a target at `to`
+     * leaves the atom, so the copy's leaves the copy. */
     if (re->code[re->code_len].op == OP_JMP) {
       int t = re->code[re->code_len].data.jmp;
-      if (t >= from && t < to)
+      if (t >= from && t <= to)
         re->code[re->code_len].data.jmp = t + delta;
     } else if (re->code[re->code_len].op == OP_SPLIT) {
       int x = re->code[re->code_len].data.split.x;
       int y = re->code[re->code_len].data.split.y;
-      if (x >= from && x < to)
+      if (x >= from && x <= to)
         re->code[re->code_len].data.split.x = x + delta;
-      if (y >= from && y < to)
+      if (y >= from && y <= to)
         re->code[re->code_len].data.split.y = y + delta;
     }
     re->code_len++;
@@ -487,6 +491,20 @@ static void apply_quant(parser* p, int start, char q, int n_lo, int n_hi, bool l
       re->code[spix].data.split.y = lazy ? start : re->code_len;
     }
   } else { /* {n,m} unrolling */
+    /* With no copy required, the atom already written is the first optional
+     * one: {0} drops it and {0,} is a star. */
+    if (n_lo == 0) {
+      if (n_hi == 0) {
+        re->code_len = start;
+        return;
+      }
+      apply_quant(p, start, n_hi == -1 ? '*' : '?', 0, 0, lazy);
+      if (n_hi == -1)
+        return;
+      start++;
+      end++;
+      n_lo = 1;
+    }
     /* Emit n_lo mandatory copies (we have already one — the original atom). */
     /* Use code_clone to duplicate. The original is in [start..end). */
     for (int i = 1; i < n_lo; i++) {
@@ -652,10 +670,6 @@ voxgig_regex* voxgig_regex_compile(const char* pattern, char** err) {
   /* Wrap the whole pattern in an implicit group 0. */
   int s = code_emit(re, OP_SAVE);
   re->code[s].data.slot = 0;
-  /* Detect leading ^ to set anchored_start (allows the matcher to skip
-     scanning starts; ^ is also emitted normally). */
-  if (p.slen > 0 && p.src[0] == '^')
-    re->anchored_start = true;
   parse_alt(&p);
   if (p.err) {
     if (err)
@@ -674,6 +688,12 @@ voxgig_regex* voxgig_regex_compile(const char* pattern, char** err) {
     voxgig_regex_free(re);
     return NULL;
   }
+  /* Only a ^ that every path passes first lets the matcher skip later
+   * starts: ^a|b must still be tried at each one. */
+  int first = 0;
+  while (first < re->code_len && re->code[first].op == OP_SAVE)
+    first++;
+  re->anchored_start = first < re->code_len && re->code[first].op == OP_BOL;
   int e = code_emit(re, OP_SAVE);
   re->code[e].data.slot = 1;
   code_emit(re, OP_MATCH);
@@ -740,13 +760,14 @@ static thread_t* tl_add(threadlist* tl, int pc, const int* slots, int nslots, in
     free(ns);
     return NULL;
   }
+  /* ^ and $ anchor to the whole text, as in RE2 without (?m). */
   if (in->op == OP_BOL) {
-    if (sp != 0 && input[sp - 1] != '\n')
+    if (sp != 0)
       return NULL;
     return tl_add(tl, pc + 1, slots, nslots, sp, re, input, ilen);
   }
   if (in->op == OP_EOL) {
-    if ((size_t)sp != ilen && input[sp] != '\n')
+    if ((size_t)sp != ilen)
       return NULL;
     return tl_add(tl, pc + 1, slots, nslots, sp, re, input, ilen);
   }

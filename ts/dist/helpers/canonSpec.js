@@ -1,8 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SPEC_STRING = void 0;
+exports.alternatives = alternatives;
+exports.anyOf = anyOf;
 exports.byExampleSpec = byExampleSpec;
 exports.canonToSpec = canonToSpec;
+exports.isAnyOf = isAnyOf;
+exports.oneUnionPaths = oneUnionPaths;
 exports.optionalSpec = optionalSpec;
 exports.entityDataSpec = entityDataSpec;
 exports.entityOpSpec = entityOpSpec;
@@ -19,6 +23,7 @@ const BT = String.fromCharCode(96);
 function sentinel(name) {
     return BT + '$' + name + BT;
 }
+const S_NOF = sentinel('NOF');
 const S_ONE = sentinel('ONE');
 const S_EXACT = sentinel('EXACT');
 const S_NIL = sentinel('NIL');
@@ -35,27 +40,56 @@ const CANON_STRUCT = {
     OBJECT: sentinel('MAP'),
     ANY: S_ANY,
 };
-const SPEC_STRING = [S_ONE, S_STRING, [S_EXACT, '']];
+// A union: with this count, `$NOF` admits a value when at least one of the
+// alternatives does.
+function anyOf(alts) {
+    return [S_NOF, { min: 1 }, ...alts];
+}
+function isAnyOf(spec) {
+    if (!Array.isArray(spec) || S_NOF !== spec[0]) {
+        return false;
+    }
+    const count = spec[1];
+    return null != count && 'object' === typeof count && !Array.isArray(count) &&
+        1 === Object.keys(count).length && 1 === count.min;
+}
+const SPEC_STRING = anyOf([S_STRING, [S_EXACT, '']]);
 exports.SPEC_STRING = SPEC_STRING;
 // Flatten a spec into the alternatives of a union, so that widening a value
-// that is ALREADY a union does not nest one `$ONE` inside another.
+// that is ALREADY a union does not nest one union inside another. Any other
+// count is a constraint of its own, and stays one alternative.
 function alternatives(spec) {
-    if (Array.isArray(spec) && S_ONE === spec[0]) {
-        return spec.slice(1);
-    }
-    return [spec];
+    return isAnyOf(spec) ? spec.slice(2) : [spec];
 }
 function optionalSpec(spec) {
     if (S_ANY === spec) {
         return spec;
     }
-    return [S_ONE, ...alternatives(spec), S_NIL];
+    return anyOf([...alternatives(spec), S_NIL]);
+}
+function specPath(path, step) {
+    return '' === path ? String(step) : path + '.' + step;
+}
+// Where a spec names `$ONE`, which struct's `validate` refuses the spec over.
+function oneUnionPaths(spec, path = '') {
+    if (S_ONE === spec) {
+        return [path || '(top)'];
+    }
+    if (Array.isArray(spec)) {
+        return S_EXACT === spec[0] ? [] :
+            spec.flatMap((item, i) => oneUnionPaths(item, specPath(path, i)));
+    }
+    if (null != spec && 'object' === typeof spec) {
+        return Object.entries(spec).flatMap(([key, val]) => oneUnionPaths(val, specPath(path, key)));
+    }
+    return [];
 }
 function canonToSpec(type, optional) {
     let spec;
     if (Array.isArray(type)) {
-        // The union sentinel. Members are mapped individually and SPLICED IN
-        // flat (difference 2 above); a member may itself be a union.
+        // The model's union, apidef's `['`$ONE`', [members]]` rather than struct's.
+        // Members are mapped individually and spliced in flat; a member may itself
+        // be a union.
         if ('ONE' === (0, canonType_1.canonKey)(type[0]) && Array.isArray(type[1])) {
             const members = [];
             for (const member of type[1]) {
@@ -68,7 +102,7 @@ function canonToSpec(type, optional) {
             if (0 <= members.indexOf(S_NULL) && members.indexOf(S_NIL) < 0) {
                 members.push(S_NIL);
             }
-            spec = 0 === members.length ? S_ANY : [S_ONE, ...members];
+            spec = 0 === members.length ? S_ANY : anyOf(members);
         }
         else {
             // An array-shaped sentinel that is not a union is a shape this mapper

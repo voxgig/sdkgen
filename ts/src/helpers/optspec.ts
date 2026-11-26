@@ -2,18 +2,35 @@
 import { each } from 'jostraca'
 import { KIT, getModelPath } from '@voxgig/apidef'
 
+import { SdkGenError } from '../utility'
 import { targetFeatures } from './applicability'
-import { byExampleSpec, entitySpecs, optionalSpec, sentinel } from './canonSpec'
+import {
+  anyOf, byExampleSpec, entitySpecs, oneUnionPaths, optionalSpec, sentinel,
+} from './canonSpec'
 
 
 const S_CHILD = sentinel('CHILD')
 const S_OPEN = sentinel('OPEN')
-const S_ONE = sentinel('ONE')
 const S_NIL = sentinel('NIL')
 
 
 function optional(spec: any): any[] {
-  return [S_ONE, spec, S_NIL]
+  return anyOf([spec, S_NIL])
+}
+
+
+// A spec naming `$ONE` fails here rather than in every client at construction.
+function checkedSpec<T>(targetname: string | undefined, spec: T): T {
+  const at = oneUnionPaths(spec)
+  if (0 < at.length) {
+    throw new SdkGenError((null == targetname ? '' : targetname + ': ') +
+      'the struct spec names ' + sentinel('ONE') + ' at ' + at.join(', ') +
+      ', which validate refuses, so every client would fail at construction. ' +
+      'Write [' + sentinel('ONE') + ', a, b] as [' + sentinel('NOF') +
+      ', {min: 1}, a, b].')
+  }
+
+  return spec
 }
 
 
@@ -70,7 +87,7 @@ function optionSpec(model: any, targetname?: string): Record<string, any> {
 
   spec.feature = feature
 
-  return spec
+  return checkedSpec(targetname, spec)
 }
 
 
@@ -92,7 +109,7 @@ function entitySpecMap(model: any, targetname?: string): Record<string, any> | n
     specs[ent.name] = entitySpecs(ent)
   })
 
-  return specs
+  return checkedSpec(targetname, specs)
 }
 
 

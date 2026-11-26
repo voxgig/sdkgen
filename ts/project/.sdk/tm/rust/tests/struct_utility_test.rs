@@ -602,10 +602,18 @@ fn struct_utility() {
             |vin| validate(&vget(&vin, "data"), &vget(&vin, "spec"), None).map_err(|e| e.message),
         );
     }
-    for name in ["child", "one", "exact"] {
+    for name in ["child", "exact"] {
         run.run_set_fallible(
             &set!("validate", name),
             true,
+            &format!("validate-{name}"),
+            |vin| validate(&vget(&vin, "data"), &vget(&vin, "spec"), None).map_err(|e| e.message),
+        );
+    }
+    for name in ["directive", "nof", "all", "len", "range", "rest", "like", "unknown"] {
+        run.run_set_fallible(
+            &set!("validate", name),
+            false,
             &format!("validate-{name}"),
             |vin| validate(&vget(&vin, "data"), &vget(&vin, "spec"), None).map_err(|e| e.message),
         );

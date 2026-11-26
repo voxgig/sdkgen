@@ -1,4 +1,6 @@
-
+// VENDORED: @voxgig/struct 0.1.7 (rust/src/ordered_map.rs)
+// Source: https://github.com/voxgig/struct @ 358af9d51c90b589a295a70b2165dbe4629eaf8e  [tag: sdk-20261125-1959-0]
+// License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 use std::collections::HashMap;
 use std::ops::Index;
 

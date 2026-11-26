@@ -242,7 +242,7 @@ describe('escaped text', () => {
   test('a feature option escapes its default and its type', () => {
     const f = applyFacts({ main: { [KIT]: { feature: { f: { name: 'f', title: 'F', config: {
       options: { sep: '|', tick: 'a`b' },
-      optspec: { sep: '`$STRING`', cb: ['`$ONE`', '`$NUMBER`', '`$MAP`'] },
+      optspec: { sep: '`$STRING`', cb: ['`$NOF`', { min: 1 }, '`$NUMBER`', '`$MAP`'] },
     } } } } } }).main[KIT].feature.f
     const option = fact(f, 'option')
     deepStrictEqual(Object.keys(option).sort(), ['cb', 'sep', 'tick'])

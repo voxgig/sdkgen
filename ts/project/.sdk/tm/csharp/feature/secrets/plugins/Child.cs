@@ -1,5 +1,5 @@
-// VENDORED: @voxgig/sekreto sdk-20261016-0845-0 (csharp/plugins/Child.cs)
-// Source: https://github.com/voxgig/sekreto @ ee837130bf444ca46a5a46181bdd6743e118898c  [tag: sdk-20261016-0845-0]
+// VENDORED: @voxgig/sekreto sdk-20261125-1959-0 (csharp/plugins/Child.cs)
+// Source: https://github.com/voxgig/sekreto @ ee837130bf444ca46a5a46181bdd6743e118898c  [tag: sdk-20261125-1959-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 // Running a child process, for the two provider kinds that shell out.
 //

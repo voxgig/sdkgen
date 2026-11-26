@@ -814,6 +814,37 @@ static voxgig_value* subj_validate(voxgig_value* in, char** err, void* ud) {
   return r;
 }
 
+/* validate.special: the entry carries its own injection config in `inj`,
+ * whose `meta` holds the operand a special check reads. */
+static voxgig_value* subj_validate_special(voxgig_value* in, char** err, void* ud) {
+  (void)ud;
+  voxgig_value* data = getp(in, "data");
+  voxgig_value* spec = getp(in, "spec");
+
+  voxgig_injection* inj = voxgig_inj_new(NULL, NULL);
+  inj->mode = 0;
+  voxgig_release(inj->errs);
+  inj->errs = voxgig_new_list();
+
+  voxgig_value* injv = getp(in, "inj");
+  voxgig_value* meta = getp(injv, "meta");
+  if (voxgig_is_map(meta)) {
+    voxgig_release(inj->meta);
+    inj->meta = voxgig_retain(meta);
+  }
+  voxgig_release(meta);
+  voxgig_release(injv);
+
+  voxgig_value* r = voxgig_validate(data, spec, inj);
+  if (0 < voxgig_list_len(voxgig_as_list(inj->errs)))
+    *err = join_errs(inj->errs);
+
+  voxgig_inj_free(inj);
+  voxgig_release(data);
+  voxgig_release(spec);
+  return r;
+}
+
 /* select subjects. */
 static voxgig_value* subj_select(voxgig_value* in, char** err, void* ud) {
   (void)ud;
@@ -823,6 +854,32 @@ static voxgig_value* subj_select(voxgig_value* in, char** err, void* ud) {
   voxgig_release(obj);
   voxgig_release(query);
   return r;
+}
+
+/* Fails on a group the corpus holds in `cat` that no run above names. */
+static void runs_every_group(const char* cat) {
+  omni_json* groups = omni_set(PACK, cat);
+  char full[256];
+  size_t i, j, found = 0;
+  int ran;
+
+  if (!omni_ismap(groups)) {
+    sb_add(cat, 0, 1, "corpus category missing - check .sdk/test/struct/");
+    return;
+  }
+  for (i = 0; i < groups->maplen; i++) {
+    if (!omni_ismap(groups->vals[i]))
+      continue;
+    found++;
+    snprintf(full, sizeof(full), "%s.%s", cat, groups->keys[i]);
+    ran = 0;
+    for (j = 0; j < SB_LEN && !ran; j++)
+      ran = 0 == strcmp(SB[j].name, full);
+    if (!ran)
+      sb_add(full, 0, 1, "the corpus holds this group, and nothing here runs it");
+  }
+  if (0 == found)
+    sb_add(cat, 0, 1, "the corpus holds no group in this category");
 }
 
 /* Category to file map (for scoreboard grouping). */
@@ -950,8 +1007,17 @@ int main(void) {
   run("validate", "basic", 0, subj_validate, NULL);
   run("validate", "invalid", 0, subj_validate, NULL);
   run("validate", "child", 1, subj_validate, NULL);
-  run("validate", "one", 1, subj_validate, NULL);
+  run("validate", "nof", 0, subj_validate, NULL);
   run("validate", "exact", 1, subj_validate, NULL);
+  run("validate", "special", 1, subj_validate_special, NULL);
+  run("validate", "directive", 0, subj_validate, NULL);
+  run("validate", "all", 0, subj_validate, NULL);
+  run("validate", "len", 0, subj_validate, NULL);
+  run("validate", "range", 0, subj_validate, NULL);
+  run("validate", "rest", 0, subj_validate, NULL);
+  run("validate", "like", 0, subj_validate, NULL);
+  run("validate", "unknown", 0, subj_validate, NULL);
+  runs_every_group("validate");
 
   /* select */
   run("select", "basic", 1, subj_select, NULL);

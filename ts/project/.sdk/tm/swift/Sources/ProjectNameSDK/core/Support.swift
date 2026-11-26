@@ -66,6 +66,21 @@ func s(_ v: String) -> Value { .string(v) }
 // isNil: absent or JSON null (the SDK treats both as "no value").
 func isNil(_ v: Value) -> Bool { v.isNoval || v.isNull }
 
+// struct's transform and validate throw what they collect unless handed a
+// sink. These hand one over and drop it: the SDK's own calls keep the
+// output whatever the spec found.
+func transformKept(_ data: Value, _ spec: Value) -> Value {
+  let inj = Injection(val: .noval, parent: .noval)
+  inj.errs = VList()
+  return (try? transform(data, spec, inj)) ?? .noval
+}
+
+func validateKept(_ data: Value, _ spec: Value) -> Value {
+  let inj = Injection(val: .noval, parent: .noval)
+  inj.errs = VList()
+  return (try? validate(data, spec, inj)) ?? .noval
+}
+
 // nativeClosure0 pulls a stored no-arg thunk (the transport `json` function).
 func nativeClosure0(_ v: Value) -> NativeCall0? { v.asNative as? NativeCall0 }
 

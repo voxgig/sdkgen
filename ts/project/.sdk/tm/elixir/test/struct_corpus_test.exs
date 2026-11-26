@@ -30,8 +30,8 @@ defmodule ProjectName.StructCorpusTest do
   # Under `{null: true}` the runner normalises both to NULLMARK and the
   # distinction never arises; the `{null: false}` groups are where it bites,
   # and the corpus is lopsided - reading a bare nil as ABSENT (test/support/
-  # omni.ex decision 5) costs the four entries below, reading it as null costs
-  # 43. Each drop is GUARDED on the entry's exact JSON: corpus indexes are
+  # omni.ex decision 5) costs the entries below, reading it as null costs
+  # many more. Each drop is GUARDED on the entry's exact JSON: corpus indexes are
   # positional, so a corpus that gains or reorders an entry fails loudly here
   # instead of quietly skipping a different one.
   @drops %{
@@ -40,7 +40,15 @@ defmodule ProjectName.StructCorpusTest do
       {50, ~s({"in":{"alt":null,"key":"x","val":{}},"out":null})},
       {51, ~s({"in":{"alt":null,"key":null,"val":{}},"out":null})}
     ],
-    {"validate", "basic"} => [{13, ~s({"in":{"data":null,"spec":"`$NULL`"},"out":null})}]
+    {"validate", "basic"} => [
+      {14, ~s({"in":{"data":null,"spec":"`$NULL`"},"out":null})},
+      {53, ~s({"in":{"data":null,"spec":"`$NULL`"},"out":null})}
+    ],
+    {"validate", "directive"} => [
+      {1, ~s({"in":{"data":null,"spec":["`$NOF`",{"min":1},"`$STRING`","`$NULL`"]},"out":null})},
+      {6, ~s({"in":{"data":null,"spec":["`$EXACT`",1,null]},"out":null})},
+      {11, ~s({"in":{"data":null,"spec":"`$NIL`"},"out":null})}
+    ]
   }
 
   setup_all do
@@ -494,24 +502,38 @@ defmodule ProjectName.StructCorpusTest do
     )
 
     # --- validate ---
+    #
+    # Each validate group, and whether it runs with the null flag. The
+    # assertion below fails on a group the corpus holds and this table
+    # leaves out.
 
-    nonull.("validate", "basic", arg1(fn vin -> S.validate(vget(vin, "data"), vget(vin, "spec")) end))
+    validate_groups = [
+      {"basic", false},
+      {"child", true},
+      {"nof", false},
+      {"exact", true},
+      {"invalid", false},
+      {"special", true},
+      {"directive", false},
+      {"all", false},
+      {"len", false},
+      {"range", false},
+      {"rest", false},
+      {"like", false},
+      {"unknown", false}
+    ]
 
-    Enum.each(["child", "one", "exact"], fn sub ->
-      withnull.("validate", sub, arg1(fn vin -> S.validate(vget(vin, "data"), vget(vin, "spec")) end))
+    Enum.each(validate_groups, fn {sub, nulls} ->
+      run = if nulls, do: withnull, else: nonull
+      run.("validate", sub, arg1(fn vin -> S.validate(vget(vin, "data"), vget(vin, "spec"), vget(vin, "inj")) end))
     end)
 
-    nonull.(
-      "validate",
-      "invalid",
-      arg1(fn vin -> S.validate(vget(vin, "data"), vget(vin, "spec")) end)
-    )
+    groups = for {sub, node} <- Map.get(spec, "validate"), is_map(node), do: sub
+    assert [] != groups, "the corpus holds no validate group"
+    named = Enum.map(validate_groups, fn {sub, _} -> sub end)
 
-    withnull.(
-      "validate",
-      "special",
-      arg1(fn vin -> S.validate(vget(vin, "data"), vget(vin, "spec"), vget(vin, "inj")) end)
-    )
+    assert [] == groups -- named,
+           "the corpus holds validate groups this runner does not run: #{inspect(groups -- named)}"
 
     # --- select ---
 
@@ -555,9 +577,9 @@ defmodule ProjectName.StructCorpusTest do
     IO.puts("\nSTRUCT CORPUS: CASES #{ran} (vendored omni)")
 
     # A run that executes nothing is not a pass. The floor is the corpus as
-    # measured at the vendoring tag, less the four guarded drops above; it is
+    # measured at the vendoring tag, less the guarded drops above; it is
     # deliberately a FLOOR, so the corpus can grow without editing this line,
     # and a section that stopped running trips it.
-    assert ran >= 1208, "the struct corpus executed only #{ran} cases"
+    assert ran >= 1470, "the struct corpus executed only #{ran} cases"
   end
 end

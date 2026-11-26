@@ -4,6 +4,7 @@ exports.docTexts = docTexts;
 exports.renderValue = renderValue;
 exports.sentinelName = sentinelName;
 const apidef_1 = require("@voxgig/apidef");
+const canonSpec_1 = require("./canonSpec");
 const text_1 = require("./text");
 // A struct.validate sentinel as a reader's word for it: '`$FUNCTION`' ->
 // 'function'. A union renders its members, so netsim's latency reads
@@ -12,7 +13,8 @@ const text_1 = require("./text");
 // whole path exists to fix.
 function sentinelName(v) {
     if (Array.isArray(v)) {
-        const members = v.slice(1).map((m) => sentinelName(m))
+        const members = ((0, canonSpec_1.isAnyOf)(v) ? (0, canonSpec_1.alternatives)(v) : v.slice(1))
+            .map((m) => sentinelName(m))
             .filter((m) => 'one' !== m);
         return 0 === members.length ? 'any' : members.join(' | ');
     }

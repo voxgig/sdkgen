@@ -3,11 +3,10 @@
 //
 // The specs are NOT written here and not written in the model either: every
 // entity field already carries a canonical type sentinel (`$STRING`,
-// `$INTEGER`, the `$ONE` union for an OpenAPI multi-type), which is the same
-// vocabulary `validate` speaks. The generator maps them once
-// (helpers/canonSpec) and emits `SdkSchema.entityspec`, so a field whose type
-// changes in the API spec changes what this feature enforces with no edit
-// anywhere.
+// `$INTEGER`, a union for an OpenAPI multi-type). The generator maps them
+// once (helpers/canonSpec) into the vocabulary `validate` speaks and emits
+// `SdkSchema.entityspec`, so a field whose type changes in the API spec
+// changes what this feature enforces with no edit anywhere.
 //
 // WHAT IS CHECKED
 //   outbound (preSpec)  the payload the caller asked to send, against
@@ -214,7 +213,7 @@ public final class ValidateFeature: BaseFeature {
                      _ direction: String) -> [String] {
     let inj = Injection(val: .noval, parent: .noval)
     inj.errs = VList()
-    _ = validate(data, spec, inj)
+    _ = try? validate(data, spec, inj)
 
     let errs = inj.errs.items.map { $0.asString ?? stringify($0) }
 

@@ -1,5 +1,5 @@
 // VENDORED: @voxgig/struct 0.1.1 (csharp/Struct.cs)
-// Source: https://github.com/voxgig/struct @ 621057e24eb5f3e3da6fd3820ff24a36aaacb21b  [tag: sdk-20261016-0845-0]
+// Source: https://github.com/voxgig/struct @ 358af9d51c90b589a295a70b2165dbe4629eaf8e  [tag: sdk-20261125-1959-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 /* Copyright (c) 2025-2026 Voxgig Ltd. MIT LICENSE. */
 
@@ -110,6 +110,7 @@ namespace Voxgig.Struct
         public Dictionary<string, object?> Meta { get; set; } = [];
         public object? Extra { get; set; }
         public object? Root { get; set; }
+        public bool Named { get; set; }  // Current map node names keys of its own (not $ commands).
 
         public object? Descend()
         {
@@ -183,7 +184,12 @@ namespace Voxgig.Struct
             bool del = val == null || ReferenceEquals(val, StructUtils.NONE);
             if (ancestor < 2)
             {
-                if (del)
+                if (del && Parent is List<object?>)
+                {
+                    // A list keeps the removed slot as a hole until Inject's loop ends.
+                    StructUtils.SetProp(Parent, Key, StructUtils.SKIP);
+                }
+                else if (del)
                 {
                     StructUtils.DelProp(Parent, Key);
                 }
@@ -312,7 +318,6 @@ namespace Voxgig.Struct
         ];
 
         // Regular expressions (compile-time generated; see partial methods at end of class).
-        private static readonly Regex R_INTEGER_KEY = R_IntegerKeyGen();
         private static readonly Regex R_ESCAPE_REGEXP = R_EscapeRegexpGen();
         private static readonly Regex R_CLONE_REF = R_CloneRefGen();
         private static readonly Regex R_INJECTION_FULL = R_InjectionFullGen();
@@ -320,6 +325,7 @@ namespace Voxgig.Struct
         private static readonly Regex R_DOUBLE_DOLLAR = R_DoubleDollarGen();
         private static readonly Regex R_META_PATH = R_MetaPathGen();
         private static readonly Regex R_TRANSFORM_NAME = R_TransformNameGen();
+        private static readonly Regex R_CHECKER_NAME = R_CheckerNameGen();
         private static readonly Regex R_DOT = R_DotGen();
 
         public const int MAXDEPTH = 32;
@@ -524,6 +530,74 @@ namespace Voxgig.Struct
             return padding >= 0 ? s.PadRight(padding, pc[0]) : s.PadLeft(-padding, pc[0]);
         }
 
+        // A list key this far from zero is past any list: a write appends or prepends, a read misses.
+        private const long LISTKEY_HUGE = 1_000_000_000_000_000_000;
+
+        // ^(0|-?[1-9][0-9]*)$, the form String(n) gives an integer n, as that integer. So "01",
+        // "+1", " 1", "1.0" and "-0" are not list keys.
+        private static bool CanonListIndex(string key, out long index)
+        {
+            index = 0;
+            int j = key.StartsWith('-') ? 1 : 0;
+            if (j == key.Length || ('0' == key[j] && 1 < key.Length))
+            {
+                return false;
+            }
+
+            long i = 0;
+            for (; j < key.Length; j++)
+            {
+                if (key[j] is < '0' or > '9')
+                {
+                    return false;
+                }
+
+                i = i < LISTKEY_HUGE / 10 ? (i * 10) + (key[j] - '0') : LISTKEY_HUGE;
+            }
+
+            index = key.StartsWith('-') ? -i : i;
+            return true;
+        }
+
+        // The canonical _listkey: an integral number, or a string CanonListIndex accepts.
+        private static bool ListKey(object? key, out long index)
+        {
+            if (key is string s)
+            {
+                return CanonListIndex(s, out index);
+            }
+
+            double d = ListKeyNumber(key);
+            if (!double.IsFinite(d) || d != Math.Floor(d))
+            {
+                index = 0;
+                return false;
+            }
+
+            index = Math.Abs(d) < LISTKEY_HUGE ? (long)d : d < 0 ? -LISTKEY_HUGE : LISTKEY_HUGE;
+            return true;
+        }
+
+        // The element a list read selects, else -1. Only GetElem counts a negative key from the end.
+        private static long ListIndex(object? key)
+        {
+            return ListKey(key, out long i) && 0 <= i ? i : -1;
+        }
+
+        // A map reads a string or number key; any other key names no member.
+        private static bool MapReadKey(object? key)
+        {
+            return key is string or int or long or double or float;
+        }
+
+        // A numeric key's value; NaN for any other key.
+        private static double ListKeyNumber(object? key)
+        {
+            return key is IConvertible c && c.GetTypeCode() is >= TypeCode.SByte and <= TypeCode.Decimal
+                ? c.ToDouble(CultureInfo.InvariantCulture)
+                : double.NaN;
+        }
+
         // Get a list element by integer index (negative counts from end).
         public static object? GetElem(object? val, object? key, object? alt = null)
         {
@@ -533,26 +607,16 @@ namespace Voxgig.Struct
             }
 
             object? out2 = alt;
-            if (val is List<object?> list)
+            if (val is List<object?> list && ListKey(key, out long nkey))
             {
-                if (!int.TryParse(key?.ToString(), out int nkey))
-                {
-                    return alt;
-                }
-
-                if (!R_INTEGER_KEY.IsMatch(key!.ToString()!))
-                {
-                    return alt;
-                }
-
                 if (nkey < 0)
                 {
-                    nkey = list.Count + nkey;
+                    nkey += list.Count;
                 }
 
                 if (nkey >= 0 && nkey < list.Count)
                 {
-                    out2 = list[nkey];
+                    out2 = list[(int)nkey];
                 }
             }
 
@@ -577,25 +641,17 @@ namespace Voxgig.Struct
             if (val is Dictionary<string, object?> map)
             {
                 string k = StrKey(key) ?? S_MT;
-                if (map.TryGetValue(k, out object? v))
+                if (MapReadKey(key) && map.TryGetValue(k, out object? v))
                 {
                     out2 = v;
                 }
             }
             else if (val is List<object?> list)
             {
-                string? ks = key?.ToString();
-                if (ks != null && int.TryParse(ks, out int i))
+                long i = ListIndex(key);
+                if (i >= 0 && i < list.Count)
                 {
-                    if (i < 0)
-                    {
-                        i = list.Count + i;
-                    }
-
-                    if (i >= 0 && i < list.Count)
-                    {
-                        out2 = list[i];
-                    }
+                    out2 = list[(int)i];
                 }
             }
 
@@ -624,23 +680,12 @@ namespace Voxgig.Struct
             if (val is Dictionary<string, object?> map)
             {
                 string k = StrKey(key) ?? S_MT;
-                return map.TryGetValue(k, out object? v) ? v : NONE;
+                return MapReadKey(key) && map.TryGetValue(k, out object? v) ? v : NONE;
             }
             if (val is List<object?> list)
             {
-                string? ks = key.ToString();
-                if (ks != null && int.TryParse(ks, out int i))
-                {
-                    if (i < 0)
-                    {
-                        i = list.Count + i;
-                    }
-                    if (i >= 0 && i < list.Count)
-                    {
-                        return list[i];
-                    }
-                }
-                return NONE;
+                long i = ListIndex(key);
+                return i >= 0 && i < list.Count ? list[(int)i] : NONE;
             }
             return NONE;
         }
@@ -1165,6 +1210,11 @@ namespace Voxgig.Struct
                 return parent;
             }
 
+            if (IsCondensed(parent))
+            {
+                throw new InvalidOperationException(S_IMMUTABLE);
+            }
+
             if (parent is Dictionary<string, object?> map)
             {
                 string k = StrKey(key) ?? S_MT;
@@ -1172,13 +1222,11 @@ namespace Voxgig.Struct
             }
             else if (parent is List<object?> list)
             {
-                string? ks = key?.ToString();
-                if (ks == null || !long.TryParse(ks, out long keyL))
+                if (!ListKey(key, out long keyI))
                 {
                     return parent;
                 }
 
-                int keyI = (int)Math.Floor((double)keyL);
                 if (keyI >= 0)
                 {
                     int clamped = Convert.ToInt32(Slice(keyI, 0, list.Count + 1), CultureInfo.InvariantCulture);
@@ -1206,23 +1254,19 @@ namespace Voxgig.Struct
                 return parent;
             }
 
+            if (IsCondensed(parent))
+            {
+                throw new InvalidOperationException(S_IMMUTABLE);
+            }
+
             if (parent is Dictionary<string, object?> map)
             {
                 string k = StrKey(key) ?? S_MT;
                 map.Remove(k);
             }
-            else if (parent is List<object?> list)
+            else if (parent is List<object?> list && ListKey(key, out long keyI) && keyI >= 0 && keyI < list.Count)
             {
-                if (!int.TryParse(key?.ToString(), out int keyI))
-                {
-                    return parent;
-                }
-
-                keyI = (int)Math.Floor((double)keyI);
-                if (keyI >= 0 && keyI < list.Count)
-                {
-                    list.RemoveAt(keyI);
-                }
+                list.RemoveAt((int)keyI);
             }
 
             return parent;
@@ -1237,6 +1281,11 @@ namespace Voxgig.Struct
         // last key was set (matches TypeScript behavior).
         public static object? SetPath(object? store, object? path, object? val)
         {
+            if (IsCondensed(store))
+            {
+                throw new InvalidOperationException(S_IMMUTABLE);
+            }
+
             if (store == null)
             {
                 return null;
@@ -1315,7 +1364,23 @@ namespace Voxgig.Struct
             List<string> parts;
             if (path is List<object?> lp)
             {
-                parts = lp.Select(p => StrKey(p) ?? S_MT).ToList();
+                // A number part reads as its string form; any other part makes the whole path miss.
+                parts = new List<string>(lp.Count);
+                foreach (object? part in lp)
+                {
+                    if (part is string ps)
+                    {
+                        parts.Add(ps);
+                    }
+                    else if (part is int or long or double or float)
+                    {
+                        parts.Add(CondenseStr(part));
+                    }
+                    else
+                    {
+                        return null;
+                    }
+                }
             }
             else if (path is List<string> ls)
             {
@@ -1327,11 +1392,24 @@ namespace Voxgig.Struct
             }
             else if (0 < (T.Number & Typify(path)))
             {
-                parts = [StrKey(path) ?? S_MT];
+                parts = [CondenseStr(path)];
             }
             else
             {
                 return null;
+            }
+
+            // A base changes what the path resolves against, so honour it on the expansion.
+            if (IsCondensed(store))
+            {
+                if (state?.Base == null)
+                {
+                    object? found = CondenseRebuild(store, CondenseResolve(store, CondenseRoot(store), path));
+                    // Group A, as a plain getpath reads it: a stored null is absent.
+                    return ReferenceEquals(found, NONE) ? null : found;
+                }
+
+                store = Expand(store);
             }
 
             string? baseKey = state?.Base;
@@ -1848,6 +1926,8 @@ namespace Voxgig.Struct
 
             state.Descend();
 
+            state.Named = false;
+
             // ── Node: recurse into children ──────────────────────────────────────
             if (IsNode(val))
             {
@@ -1859,6 +1939,7 @@ namespace Voxgig.Struct
                     var normal = allKeys.Where(k => !k.Contains(S_DS)).ToList();
                     var transform = allKeys.Where(k => k.Contains(S_DS)).ToList();
                     keys = [.. normal.Cast<object?>(), .. transform.Cast<object?>()];
+                    state.Named = 0 < normal.Count;
                 }
                 else
                 {
@@ -1902,6 +1983,11 @@ namespace Voxgig.Struct
 
                     nkI++;
                 }
+
+                if (val is List<object?> nodelist)
+                {
+                    nodelist.RemoveAll(item => ReferenceEquals(item, SKIP));
+                }
             }
 
             // ── String scalar: resolve backtick references ──────────────────────
@@ -1926,7 +2012,7 @@ namespace Voxgig.Struct
                 {
                     object? mparent = state.Parent;
                     object? mval = GetProp(mparent, state.Key);
-                    state.ModifyFn(mval, state.Key, mparent, state, store);
+                    state.ModifyFn(ReferenceEquals(SKIP, mval) ? NONE : mval, state.Key, mparent, state, store);
                 }
             }
 
@@ -2419,7 +2505,7 @@ namespace Voxgig.Struct
                 return null;
             }
 
-            // Get refpath from parent list element 1.
+            // ['`$REF`', 'ref-path']: a relative path starts where this slot is, so .x is a sibling.
             object? refpath = GetProp(inj.Parent, 1);
             inj.KeyI = inj.Keys.Count;   // skip remaining keys
 
@@ -2436,10 +2522,8 @@ namespace Voxgig.Struct
                 return null;
             }
 
-            // Build dpath from current path (skip first element "$TOP").
-            var dpath = inj.Path.Count > 1
-                ? inj.Path.GetRange(1, inj.Path.Count - 1).Select(p => (object?)(StrKey(p) ?? S_MT)).ToList()
-                : [];
+            var dpath = ((Slice(inj.Path, 1, -2) as List<object?>) ?? [])
+                .Select(p => (object?)(StrKey(p) ?? S_MT)).ToList();
             var dpathInj = new InjectState
             {
                 DPath = dpath,
@@ -2447,6 +2531,22 @@ namespace Voxgig.Struct
             };
 
             object? refResult = GetPath(spec, refpath, null, dpathInj);
+
+            // A chain of references that comes back to a path it has named names nothing.
+            var seen = new List<object?> { refpath };
+            object? next = refResult;
+            while (IsList(next) && Lookup(next, 0) is string head && head == "`$REF`")
+            {
+                object? nextpath = GetProp(next, 1);
+                if (seen.Contains(nextpath))
+                {
+                    refResult = null;
+                    break;
+                }
+
+                seen.Add(nextpath);
+                next = GetPath(spec, nextpath, null, dpathInj);
+            }
 
             // Check if refResult contains sub-references.
             bool hasSubRef = false;
@@ -2463,58 +2563,29 @@ namespace Voxgig.Struct
                 });
             }
 
-            object? tref = Clone(refResult);
+            // A recursive reference stops where the data does.
             int pathLen = inj.Path.Count;
-
-            var cpath = pathLen > 3
-                ? inj.Path.GetRange(0, pathLen - 3).Cast<object?>().ToList()
-                : [];
             var tpath = pathLen >= 1
                 ? inj.Path.GetRange(0, pathLen - 1).Cast<object?>().ToList()
                 : [];
-
-            object? tcur = GetPath(store, cpath, null, null);
             object? tvalRef = GetPath(store, tpath, null, null);
+            object? rval = !hasSubRef || tvalRef != null ? Clone(refResult) : NONE;
 
-            if (!hasSubRef || tvalRef != null)
+            // The enclosing loop injects the referenced spec in this list's place, so
+            // neither this pass nor this element leaves a value for modify to check.
+            object? grandparent = inj.SetVal(rval, 2);
+
+            InjectState? prior = inj.Prior;
+            if (prior != null)
             {
-                string lastPath = tpath.Count > 0
-                    ? (StrKey(tpath[^1]) ?? S_DTOP)
-                    : S_DTOP;
-
-                var tinj = inj.Child(0, [(object?)lastPath]);
-                tinj.Path = tpath;
-
-                int nodesLen = inj.Nodes.Count;
-                tinj.Nodes = nodesLen > 1
-                    ? inj.Nodes.GetRange(0, nodesLen - 1).Cast<object?>().ToList()
-                    : [];
-                tinj.Parent = nodesLen >= 2 ? inj.Nodes[nodesLen - 2] : null;
-                tinj.Val = tref;
-                tinj.DPath = cpath;
-                tinj.DParent = tcur;
-
-                Inject(tref, store, tinj);
-                object? rval = tinj.Val;
-
-                inj.SetVal(rval, 2);
-
-                if (IsList(GetElem(inj.Nodes, -2)) && inj.Prior != null)
+                prior.ModifyFn = null;
+                if (IsList(grandparent) || (rval != null && !ReferenceEquals(rval, NONE)))
                 {
-                    inj.Prior.KeyI--;
-                }
-            }
-            else
-            {
-                // Circular self-reference with no data: delete the key from the grandparent.
-                inj.SetVal(null, 2);
-                if (IsList(GetElem(inj.Nodes, -2)) && inj.Prior != null)
-                {
-                    inj.Prior.KeyI--;
+                    prior.KeyI--;
                 }
             }
 
-            return val;
+            return SKIP;
         };
 
         // Apply a named format function to a child value.
@@ -2801,13 +2872,12 @@ namespace Voxgig.Struct
             if (0 == (T.Str & t))
             {
                 inj.Errs.Add(_InvalidTypeMsg(inj.Path, S_string, t, keyExists ? out_ : NONE));
-                return NONE;
+                return keyExists && null == out_ ? _KeepNull(inj) : out_;
             }
 
             if (S_MT == (out_ as string))
             {
                 inj.Errs.Add("Empty string at " + Pathify(inj.Path, 1));
-                return NONE;
             }
 
             return out_;
@@ -2818,7 +2888,9 @@ namespace Voxgig.Struct
         {
             string tname = refStr != null && refStr.Length > 1 ? refStr[1..].ToLowerInvariant() : "";
             int idx = Array.IndexOf(TYPENAME, tname);
-            int typev = idx >= 0 ? (1 << (31 - idx)) : 0;
+
+            // $NIL is absent or null.
+            int typev = (idx >= 0 ? (1 << (31 - idx)) : 0) | (S_nil == tname ? T.Null : 0);
 
             bool keyExists = TryGetDataValue(inj.DParent, inj.Key, out object? out_);
             int t = keyExists ? Typify(out_) : T.NoVal;
@@ -2826,15 +2898,22 @@ namespace Voxgig.Struct
             if (0 == (t & typev))
             {
                 inj.Errs.Add(_InvalidTypeMsg(inj.Path, tname, t, keyExists ? out_ : NONE));
-                return NONE;
             }
 
-            return out_;
+            return keyExists && null == out_ ? _KeepNull(inj) : out_;
         };
 
         // Allow any value without type check.
         private static readonly Injector _ValidateAny = (inj, val, refStr, store) =>
-            GetProp(inj.DParent, inj.Key);
+            TryGetDataValue(inj.DParent, inj.Key, out object? out_) && null == out_ ? _KeepNull(inj) : out_;
+
+        // Keep an accepted null in place: SetVal deletes on null, which in a list
+        // shifts the elements after it. Validation has nothing to check for a null.
+        private static Dictionary<string, object?> _KeepNull(InjectState inj)
+        {
+            SetProp(inj.Parent, inj.Key, null);
+            return SKIP;
+        }
 
         // Validate every child of a map or list against a template.
         private static readonly Injector _ValidateChild = (inj, val, refStr, store) =>
@@ -2855,8 +2934,7 @@ namespace Voxgig.Struct
                 }
                 else if (!IsMap(tval))
                 {
-                    inj.Errs.Add(_InvalidTypeMsg(Slice(inj.Path, -1), S_object, Typify(tval), tval));
-                    inj.SetVal(NONE);
+                    // _Validation reports the mismatch, once.
                     return NONE;
                 }
 
@@ -2889,9 +2967,6 @@ namespace Voxgig.Struct
 
                 if (!IsList(inj.DParent))
                 {
-                    string msg = _InvalidTypeMsg(
-                        Slice(inj.Path, -1), S_list, Typify(inj.DParent), inj.DParent);
-                    inj.Errs.Add(msg);
                     inj.KeyI = Size(inj.Parent);
                     return inj.DParent;
                 }
@@ -2927,75 +3002,71 @@ namespace Voxgig.Struct
             return NONE;
         };
 
-        // Match at least one of the provided alternatives.
-        private static readonly Injector _ValidateOne = (inj, val, refStr, store) =>
+        // The members a spec does not name: the map form is a key, the list form a
+        // tuple's last item. Each places clones of its spec for the loop to check.
+        private static readonly Injector _ValidateRest = (inj, val, refStr, store) =>
         {
-            if (M_VAL != inj.Mode)
+            if (M_KEYPRE == inj.Mode)
             {
-                return null;
+                object? resttm = Lookup(inj.Parent, inj.Key);
+                object? tval = GetProp(inj.DParent, GetElem(inj.Path, -2));
+
+                if (IsMap(tval))
+                {
+                    foreach (string ckey in KeysOf(tval))
+                    {
+                        if (!inj.Keys.Contains(ckey))
+                        {
+                            SetProp(inj.Parent, ckey, Clone(resttm));
+                            inj.Keys.Add(ckey);
+                        }
+                    }
+                }
+
+                inj.SetVal(NONE);
+                return NONE;
             }
 
-            if (!IsList(inj.Parent) || 0 != inj.KeyI)
+            InjectState? prior = inj.Prior;
+            if (M_VAL != inj.Mode || null == prior || !IsList(prior.Parent) || 0 != inj.KeyI)
             {
-                inj.Errs.Add("The $ONE validator at field " +
-                    Pathify(inj.Path, 1, 1) +
-                    " must be the first element of an array.");
-                return null;
+                inj.Errs.Add(_RestMsg(Slice(inj.Path, 1), " must be the last element of an array."));
+                return NONE;
             }
 
             inj.KeyI = Size(inj.Keys);
+            prior.ModifyFn = null;
 
-            inj.SetVal(inj.DParent, 2);
-            inj.Path = (List<object?>)Slice(inj.Path, -1)!;
+            object? tuple = prior.Parent;
+            long slot = ListIndex(prior.Key);
+            object? dlist = prior.DParent;
+            int numitems = IsList(dlist) ? Size(dlist) : 0;
 
-            var tvals = (List<object?>)Slice(inj.Parent, 1)!;
-            if (0 == Size(tvals))
+            if (numitems <= slot)
             {
-                inj.Errs.Add("The $ONE validator at field " +
-                    Pathify(inj.Path, 1, 1) +
-                    " must have at least one argument.");
-                return null;
+                inj.SetVal(NONE, 2);
+                return SKIP;
             }
 
-            // GetProp answers null for a missing key where ts hands the nested
-            // call `undefined`, so `$NIL` rejected every optional entry the
-            // caller omitted and no default client could be constructed.
-            object? dval = inj.DParent ?? NONE;
-
-            foreach (object? tval in tvals)
+            object? itemtm = Lookup(inj.Parent, 1);
+            for (long i = slot; i < numitems; i++)
             {
-                var terrs = new List<object?>();
-                var vstore = (Dictionary<string, object?>)Merge(
-                    new List<object?> { new Dictionary<string, object?>(), store }, 1)!;
-                vstore[S_DTOP] = dval;
-
-                object? vcurrent = Validate(dval, tval, new InjectState
-                {
-                    Extra = vstore,
-                    Errs = terrs,
-                    Meta = inj.Meta,
-                });
-
-                inj.SetVal(vcurrent, -2);
-
-                if (0 == Size(terrs))
-                {
-                    return null;
-                }
+                SetProp(tuple, i, Clone(itemtm));
             }
 
-            // No match found.
-            string valdesc = R_TRANSFORM_NAME.Replace(
-                Join(Items(tvals, n => (object?)Stringify(n[1])), ", "),
-                m => m.Groups[1].Value.ToLowerInvariant());
+            for (int i = Size(prior.Keys); i < numitems; i++)
+            {
+                prior.Keys.Add(StrKey(i));
+            }
 
-            inj.Errs.Add(_InvalidTypeMsg(
-                inj.Path,
-                (1 < Size(tvals) ? "one of " : "") + valdesc,
-                Typify(inj.DParent), inj.DParent));
-
-            return null;
+            prior.KeyI--;
+            return SKIP;
         };
+
+        private static string _RestMsg(object? path, string problem)
+        {
+            return "The $REST validator at field " + Pathify(path) + problem;
+        }
 
         // Match one of the provided exact values.
         private static readonly Injector _ValidateExact = (inj, val, refStr, store) =>
@@ -3010,11 +3081,14 @@ namespace Voxgig.Struct
                     return null;
                 }
 
+                object? cval = _SlotVal(inj);
+
                 inj.KeyI = Size(inj.Keys);
 
-                inj.SetVal(inj.DParent, 2);
+                // Replace [$EXACT, ...] with the data value; SKIP keeps inject off the detached list.
+                _SetSlot(inj, cval);
+
                 inj.Path = (List<object?>)Slice(inj.Path, 0, -1)!;
-                inj.Key = StrKey(GetElem(inj.Path, -1)) ?? S_MT;
 
                 var tvals = (List<object?>)Slice(inj.Parent, 1)!;
                 if (0 == Size(tvals))
@@ -3022,23 +3096,14 @@ namespace Voxgig.Struct
                     inj.Errs.Add("The $EXACT validator at field " +
                         Pathify(inj.Path, 1, 1) +
                         " must have at least one argument.");
-                    return null;
+                    return SKIP;
                 }
 
-                // TS descends through getprop, so a null data value is NONE here.
-                object? current = inj.DParent ?? NONE;
-                string? currentStr = null;
                 foreach (object? tval in tvals)
                 {
-                    bool exactMatch = Equals(tval, current);
-                    if (!exactMatch && IsNode(tval))
+                    if (_DeepEqual(tval, cval))
                     {
-                        currentStr ??= Stringify(current);
-                        exactMatch = Stringify(tval) == currentStr;
-                    }
-                    if (exactMatch)
-                    {
-                        return null;
+                        return SKIP;
                     }
                 }
 
@@ -3050,15 +3115,310 @@ namespace Voxgig.Struct
                     inj.Path,
                     (1 < Size(inj.Path) ? "" : "value ") +
                     "exactly equal to " + (1 == Size(tvals) ? "" : "one of ") + valdesc,
-                    Typify(current), current));
-            }
-            else
-            {
-                DelProp(inj.Parent, inj.Key);
+                    Typify(cval), cval));
+
+                return SKIP;
             }
 
+            DelProp(inj.Parent, inj.Key);
             return null;
         };
+
+        // Count the specs that admit the value: ['`$NOF`', count, spec, ...], where
+        // count is an integer, or a map holding min, max or both.
+        private static readonly Injector _ValidateNof = (inj, val, refStr, store) =>
+            _ValidateCount(inj, store, "$NOF", true);
+
+        // Every spec admits the value: ['`$ALL`', spec, ...].
+        private static readonly Injector _ValidateAll = (inj, val, refStr, store) =>
+            _ValidateCount(inj, store, "$ALL", false);
+
+        // The counting list directives. Without a count, every spec has to admit.
+        private static object? _ValidateCount(InjectState inj, object? store, string name, bool counted)
+        {
+            if (M_VAL != inj.Mode)
+            {
+                return NONE;
+            }
+
+            if (!IsList(inj.Parent) || 0 != inj.KeyI)
+            {
+                inj.Errs.Add("The " + name + " validator at field " +
+                    Pathify(inj.Path, 1, 1) +
+                    " must be the first element of an array.");
+                return NONE;
+            }
+
+            object? cval = _SlotVal(inj);
+
+            inj.KeyI = Size(inj.Keys);
+
+            // Replace the directive's list with the data value. Each return is SKIP, so
+            // that inject leaves the detached list alone and validates nothing in it.
+            _SetSlot(inj, cval);
+
+            inj.Path = (List<object?>)Slice(inj.Path, -1)!;
+
+            object? count = counted ? Lookup(inj.Parent, 1) : NONE;
+            var tvals = (List<object?>)Slice(inj.Parent, counted ? 2 : 1)!;
+            int numtvals = Size(tvals);
+            string field = "The " + name + " validator at field " + Pathify(inj.Path, 1);
+
+            if (0 == numtvals)
+            {
+                inj.Errs.Add(field + (counted ? " must have a count and" : " must have") +
+                    " at least one argument.");
+                return SKIP;
+            }
+
+            var (lo, hi, countdesc) = counted
+                ? _NofCount(count, numtvals)
+                : (numtvals, numtvals, "all");
+
+            if (null == countdesc)
+            {
+                inj.Errs.Add(field + " has an invalid count: " + Stringify(count) + ".");
+                return SKIP;
+            }
+
+            int admitted = 0;
+            for (int tI = 0; tI < numtvals; tI++)
+            {
+                int left = numtvals - tI;
+
+                // Stop once the specs left cannot change the verdict.
+                if (hi < admitted || admitted + left < lo || (lo <= admitted && admitted + left <= hi))
+                {
+                    break;
+                }
+
+                if (_Admits(cval, tvals[tI], inj, store))
+                {
+                    admitted++;
+                }
+            }
+
+            if (admitted < lo || hi < admitted)
+            {
+                string valdesc = R_TRANSFORM_NAME.Replace(
+                    Join(Items(tvals, n => (object?)Stringify(n[1])), ", "),
+                    m => m.Groups[1].Value.ToLowerInvariant());
+
+                inj.Errs.Add(_InvalidTypeMsg(inj.Path, countdesc + " of " + valdesc, Typify(cval), cval));
+            }
+
+            return SKIP;
+        }
+
+        // The value's length is within a bound: ['`$LEN`', bound, spec?], where the
+        // bound is as for a $NOF count. A string's length is in code points.
+        private static readonly Injector _ValidateLen = (inj, val, refStr, store) =>
+            _ValidateBound(inj, store, "$LEN");
+
+        // The value is a number within a bound: ['`$RANGE`', bound, spec?], where the
+        // bound holds min or gt, max or lt, or one of each.
+        private static readonly Injector _ValidateRange = (inj, val, refStr, store) =>
+            _ValidateBound(inj, store, "$RANGE");
+
+        private static readonly Injector _ValidateLike = (inj, val, refStr, store) =>
+            _ValidateBound(inj, store, "$LIKE");
+
+        // The bounding list directives: a bound or pattern, then at most one spec that also admits.
+        private static object? _ValidateBound(InjectState inj, object? store, string name)
+        {
+            if (M_VAL != inj.Mode)
+            {
+                return NONE;
+            }
+
+            if (!IsList(inj.Parent) || 0 != inj.KeyI)
+            {
+                inj.Errs.Add("The " + name + " validator at field " +
+                    Pathify(inj.Path, 1, 1) +
+                    " must be the first element of an array.");
+                return NONE;
+            }
+
+            object? cval = _SlotVal(inj);
+
+            inj.KeyI = Size(inj.Keys);
+
+            // As for the counting directives: SKIP keeps inject off the detached list.
+            _SetSlot(inj, cval);
+
+            inj.Path = (List<object?>)Slice(inj.Path, -1)!;
+
+            string field = "The " + name + " validator at field " + Pathify(inj.Path, 1);
+            int nargs = Size(inj.Parent) - 1;
+            bool islen = "$LEN" == name;
+            bool islike = "$LIKE" == name;
+            string argname = islike ? "pattern" : "bound";
+
+            if (nargs is < 1 or > 2)
+            {
+                inj.Errs.Add(field + " must have a " + argname + " and at most one spec.");
+                return SKIP;
+            }
+
+            object? bound = Lookup(inj.Parent, 1);
+            Regex? like = islike ? _LikeRe(bound) : null;
+            var (lo, hi, desc) = islen
+                ? _LenBound(bound)
+                : (0d, 0d, islike ? (null == like ? null : "like /" + bound + "/") : _RangeDesc(bound));
+
+            if (null == desc)
+            {
+                inj.Errs.Add(field + " has an invalid " + argname + ": " + Stringify(bound) + ".");
+                return SKIP;
+            }
+
+            int ctype = Typify(cval);
+
+            if (2 == nargs && !_Admits(cval, Lookup(inj.Parent, 2), inj, store))
+            {
+                string specdesc = R_TRANSFORM_NAME.Replace(
+                    Stringify(Lookup(inj.Parent, 2)),
+                    m => m.Groups[1].Value.ToLowerInvariant());
+
+                inj.Errs.Add(_InvalidTypeMsg(inj.Path, specdesc, ctype, cval));
+                return SKIP;
+            }
+
+            if (0 == ((islen ? T.Str | T.List | T.Map : islike ? T.Str : T.Number) & ctype))
+            {
+                string needtype = islen ? "string, list or map" : islike ? S_string : S_number;
+                inj.Errs.Add(_InvalidTypeMsg(inj.Path, needtype, ctype, cval));
+                return SKIP;
+            }
+
+            int len = !islen ? 0 : cval is string s ? s.EnumerateRunes().Count() : Size(cval);
+            bool inbound = islen
+                ? lo <= len && (-1 == hi || len <= hi)
+                : islike
+                    ? cval is string text && ReTest((string)bound!, text)
+                    : _InRange(bound, cval);
+
+            if (!inbound)
+            {
+                string needtype = (1 < Size(inj.Path) ? "" : "value ") + desc;
+                inj.Errs.Add(_InvalidTypeMsg(inj.Path, needtype, ctype, cval));
+            }
+
+            return SKIP;
+        }
+
+        // The bounds of a $LEN bound, with -1 for no maximum, and the words for it,
+        // which are null when the bound is invalid.
+        private static (double lo, double hi, string? desc) _LenBound(object? bound)
+        {
+            var (lo, hi, countdesc) = _NofCount(bound, -1);
+
+            if (null == countdesc)
+            {
+                return (0, 0, null);
+            }
+
+            string desc = "of length " +
+                (lo == hi
+                    ? Stringify(lo)
+                    : -1 == hi
+                        ? "at least " + Stringify(lo)
+                        : 0 == lo
+                            ? "at most " + Stringify(hi)
+                            : Stringify(lo) + " to " + Stringify(hi));
+
+            return (lo, hi, desc);
+        }
+
+        // A $LIKE pattern compiled by the port's own regex engine; null unless it compiles.
+        private static Regex? _LikeRe(object? pattern)
+        {
+            if (pattern is not string source)
+            {
+                return null;
+            }
+
+            try
+            {
+                return ReCompile(source);
+            }
+            catch (ArgumentException)
+            {
+                return null;
+            }
+        }
+
+        // The words for a $RANGE bound, which are null when the bound is invalid.
+        private static string? _RangeDesc(object? bound)
+        {
+            if (!IsMap(bound))
+            {
+                return null;
+            }
+
+            object? min = Lookup(bound, "min");
+            object? max = Lookup(bound, "max");
+            object? gt = Lookup(bound, "gt");
+            object? lt = Lookup(bound, "lt");
+            object? lower = Has(min) ? min : gt;
+            object? upper = Has(max) ? max : lt;
+
+            static bool Has(object? n)
+            {
+                return !ReferenceEquals(n, NONE);
+            }
+
+            static bool IsNum(object? n)
+            {
+                return !Has(n) || (n is int or long or double or float && 0 < (T.Number & Typify(n)));
+            }
+
+            bool valid =
+                0 < Size(bound) &&
+                Size(bound) == new[] { min, max, gt, lt }.Count(Has) &&
+                (!Has(min) || !Has(gt)) &&
+                (!Has(max) || !Has(lt)) &&
+                IsNum(min) &&
+                IsNum(max) &&
+                IsNum(gt) &&
+                IsNum(lt) &&
+                (!Has(lower) || !Has(upper) || _BoundNum(lower) <= _BoundNum(upper));
+
+            if (!valid)
+            {
+                return null;
+            }
+
+            return Join(
+                [
+                    Has(min) ? "at least " + Stringify(min) : Has(gt) ? "greater than " + Stringify(gt) : NONE,
+                    Has(max) ? "at most " + Stringify(max) : Has(lt) ? "less than " + Stringify(lt) : NONE,
+                ],
+                " and ");
+        }
+
+        // A number within a valid $RANGE bound.
+        private static bool _InRange(object? bound, object? val)
+        {
+            object? min = Lookup(bound, "min");
+            object? max = Lookup(bound, "max");
+            object? gt = Lookup(bound, "gt");
+            object? lt = Lookup(bound, "lt");
+            double v = _BoundNum(val);
+
+            return (ReferenceEquals(min, NONE) || _BoundNum(min) <= v) &&
+                (ReferenceEquals(max, NONE) || v <= _BoundNum(max)) &&
+                (ReferenceEquals(gt, NONE) || _BoundNum(gt) < v) &&
+                (ReferenceEquals(lt, NONE) || v < _BoundNum(lt));
+        }
+
+        // Typify flags a type it does not know as any, number included: NaN puts it out of range.
+        private static double _BoundNum(object? n)
+        {
+            return n is int or long or double or float
+                ? Convert.ToDouble(n, CultureInfo.InvariantCulture)
+                : double.NaN;
+        }
 
         // True if key exists on node (JSON null counts as present); sets value when present.
         private static bool TryGetDataValue(object? node, object? key, out object? value)
@@ -3076,19 +3436,11 @@ namespace Voxgig.Struct
             }
             if (node is List<object?> list)
             {
-                string? ks = key?.ToString();
-                if (ks != null && int.TryParse(ks, out int i))
+                long i = ListIndex(key);
+                if (i >= 0 && i < list.Count)
                 {
-                    if (i < 0)
-                    {
-                        i = list.Count + i;
-                    }
-
-                    if (i >= 0 && i < list.Count)
-                    {
-                        value = list[i];
-                        return true;
-                    }
+                    value = list[(int)i];
+                    return true;
                 }
                 return false;
             }
@@ -3119,7 +3471,7 @@ namespace Voxgig.Struct
 
             // TS's getprop answers NONE for a null value too, so a null keeps
             // the spec default exactly as an absent key does, and so does a
-            // NONE that a $ONE alternative passes down.
+            // NONE that a $NOF or $ALL trial passes down.
             if (!exact && (!cKeyExists || cval == null || ReferenceEquals(cval, NONE)))
             {
                 return null;
@@ -3160,8 +3512,8 @@ namespace Voxgig.Struct
                 object? openFlag = GetProp(pval, "`$OPEN`");
                 bool isOpen = true == (openFlag as bool?);
 
-                // Empty spec map means open (accepts any keys).
-                if (0 < Size(pkeys) && !isOpen)
+                // Only a spec written as {} is open, even if named keys resolved away.
+                if ((0 < Size(pkeys) || inj.Named) && !isOpen)
                 {
                     var badkeys = new List<string>();
                     foreach (string ck in ckeys)
@@ -3179,7 +3531,7 @@ namespace Voxgig.Struct
                     if (0 < badkeys.Count)
                     {
                         string msg = "Unexpected keys at field " + Pathify(inj.Path, 1) +
-                            S_VIZ + Join(badkeys.Cast<object?>().ToList());
+                            S_VIZ + Join(badkeys.Cast<object?>().ToList(), ", ");
                         inj.Errs.Add(msg);
                         return null;
                     }
@@ -3198,6 +3550,27 @@ namespace Voxgig.Struct
                 if (!IsList(pval))
                 {
                     inj.Errs.Add(_InvalidTypeMsg(inj.Path, TypeName(ptype), ctype, cval));
+                }
+                else if (0 < Size(pval))
+                {
+                    // Closed list, so reject items past the end of the shape.
+                    var badkeys = new List<object?>();
+                    for (int i = Size(pval); i < Size(cval); i++)
+                    {
+                        badkeys.Add(StrKey(i));
+                    }
+
+                    if (0 < badkeys.Count)
+                    {
+                        string msg = "Unexpected keys at field " + Pathify(inj.Path, 1) +
+                            S_VIZ + Join(badkeys, ", ");
+                        inj.Errs.Add(msg);
+                    }
+                }
+                else
+                {
+                    // Empty spec list [] means list can be open (any items).
+                    Merge(new List<object?> { pval, cval });
                 }
             }
             else if (exact)
@@ -3295,8 +3668,13 @@ namespace Voxgig.Struct
                     ["$INSTANCE"] = _ValidateType,
                     ["$ANY"]      = _ValidateAny,
                     ["$CHILD"]    = _ValidateChild,
-                    ["$ONE"]      = _ValidateOne,
                     ["$EXACT"]    = _ValidateExact,
+                    ["$NOF"]      = _ValidateNof,
+                    ["$ALL"]      = _ValidateAll,
+                    ["$LEN"]      = _ValidateLen,
+                    ["$RANGE"]    = _ValidateRange,
+                    ["$LIKE"]     = _ValidateLike,
+                    ["$REST"]     = _ValidateRest,
 
                     [S_DERRS] = errs,
                 },
@@ -3309,20 +3687,289 @@ namespace Voxgig.Struct
             var meta = injdef?.Meta ?? [];
             SetProp(meta, S_BEXACT, GetProp(meta, S_BEXACT) ?? false);
 
+            // A spec that names an unknown checker validates nothing.
+            int numerrs = errs.Count;
+            _CheckNames(spec, store, [], errs);
+
             // Pass errs explicitly so Transform collects (doesn't throw) internally.
-            object? out_ = Transform(data, spec, new InjectState
-            {
-                Extra = store,
-                ModifyFn = _Validation,
-                Handler = _ValidateHandler,
-                Meta = meta,
-                Errs = errs,
-            });
+            object? out_ = numerrs < errs.Count
+                ? Clone(data)
+                : Transform(data, spec, new InjectState
+                {
+                    Extra = store,
+                    ModifyFn = _Validation,
+                    Handler = _ValidateHandler,
+                    Meta = meta,
+                    Errs = errs,
+                });
 
             return errs.Count > 0 && !collect
                 ? throw new InvalidOperationException(
                     string.Join(" | ", errs.Select(e => e?.ToString() ?? "")))
                 : out_;
+        }
+
+        // Names a validate spec may use besides its checkers: transform's that it keeps, and $OPEN.
+        private static readonly string[] VALIDATE_NAMES =
+        [
+            "$TOP",
+            "$SPEC",
+            "$BT",
+            "$DS",
+            "$WHEN",
+            "$ANNO",
+            "$REF",
+            "$FORMAT",
+            "$APPLY",
+            "$OPEN",
+        ];
+
+        // Report each checker the spec names that validate lacks, and each misplaced
+        // $REST; $EXACT's arguments are literals. Last: spec is a list's last item.
+        private static void _CheckNames(
+            object? spec, object? store, List<object?> path, List<object?> errs, bool last = false)
+        {
+            string? name = _RefName(spec);
+            if (null != name)
+            {
+                if (_UnknownName(name, store))
+                {
+                    errs.Add("Unknown validator " + name + " at field " + Pathify(path) + ".");
+                }
+                else if ("$REST" == name)
+                {
+                    errs.Add(_RestMsg(path, " must be the last element of an array."));
+                }
+                return;
+            }
+
+            string? head = IsList(spec) ? _RefName(Lookup(spec, 0)) : null;
+            if ("$EXACT" == head)
+            {
+                return;
+            }
+
+            if ("$REST" == head)
+            {
+                if (!last)
+                {
+                    errs.Add(_RestMsg(path, " must be the last element of an array."));
+                }
+                else if (2 != Size(spec))
+                {
+                    errs.Add(_RestMsg(path, " must have exactly one spec."));
+                }
+                _CheckNames(Lookup(spec, 1), store, [.. path, 1], errs);
+                return;
+            }
+
+            const string restkey = "`$REST`";
+            if (IsMap(spec) && !ReferenceEquals(NONE, Lookup(spec, restkey)) &&
+                !ReferenceEquals(NONE, Lookup(spec, "`$CHILD`")))
+            {
+                errs.Add(_RestMsg(path, " cannot be used with $CHILD."));
+            }
+
+            string? lastkey = IsList(spec) ? StrKey(Size(spec) - 1) : null;
+            foreach (string key in KeysOf(spec))
+            {
+                if (IsMap(spec) && restkey != key)
+                {
+                    _CheckNames(key, store, path, errs);
+                }
+                _CheckNames(Lookup(spec, key), store, [.. path, key], errs, lastkey == key);
+            }
+        }
+
+        // The name a whole-string reference gives, when it is a checker name in any case.
+        private static string? _RefName(object? val)
+        {
+            Match? m = val is string s ? R_INJECTION_FULL.Match(s) : null;
+            return null != m && m.Success && R_CHECKER_NAME.IsMatch(m.Groups[1].Value.ToUpperInvariant())
+                ? m.Groups[1].Value
+                : null;
+        }
+
+        // Unknown: undefined and upper case, or a defined name in another case. Null disables a name.
+        private static bool _UnknownName(string name, object? store)
+        {
+            bool Known(string n)
+            {
+                object? v = Lookup(store, n);
+                return 0 <= Array.IndexOf(VALIDATE_NAMES, n) || (null != v && !ReferenceEquals(v, NONE));
+            }
+
+            string upper = name.ToUpperInvariant();
+            return !Known(name) && (upper == name || Known(upper));
+        }
+
+        // The data value at a list directive's slot. The directive's own DParent was
+        // read with GetProp, which reports a stored null as absent.
+        private static object? _SlotVal(InjectState inj)
+        {
+            InjectState? prior = inj.Prior;
+            return null == prior ? inj.DParent : Lookup(prior.DParent, prior.Key);
+        }
+
+        // Set the slot that holds a list directive, as setval(val, 2) does. SetVal
+        // deletes on null, and a null at the slot is a value.
+        private static void _SetSlot(InjectState inj, object? val)
+        {
+            if (null == val)
+            {
+                SetProp(GetElem(inj.Nodes, -2), GetElem(inj.Path, -2), null);
+            }
+            else
+            {
+                inj.SetVal(val, 2);
+            }
+        }
+
+        // JSON equality: numbers by value, lists in order, maps by key in any order.
+        // A boolean is never a number, and a function or instance equals only itself.
+        private static bool _DeepEqual(object? a, object? b)
+        {
+            if (ReferenceEquals(a, b))
+            {
+                return true;
+            }
+
+            if (a is int or long or double or float && b is int or long or double or float)
+            {
+                return Convert.ToDouble(a, CultureInfo.InvariantCulture) ==
+                    Convert.ToDouble(b, CultureInfo.InvariantCulture);
+            }
+
+            if (a is string or bool)
+            {
+                return a.Equals(b);
+            }
+
+            if (!(IsList(a) && IsList(b)) && !(IsMap(a) && IsMap(b)))
+            {
+                return false;
+            }
+
+            var akeys = KeysOf(a);
+            var bkeys = KeysOf(b);
+            if (akeys.Count != bkeys.Count)
+            {
+                return false;
+            }
+
+            for (int kI = 0; kI < akeys.Count; kI++)
+            {
+                string k = akeys[kI];
+                if (k != bkeys[kI] || !_DeepEqual(Lookup(a, k), Lookup(b, k)))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        // Every member val has is in out, unchanged. A member only out has is a
+        // default the spec supplied, and is ignored.
+        private static bool _Keeps(object? val, object? out_)
+        {
+            if (ReferenceEquals(val, NONE))
+            {
+                return true;
+            }
+
+            if (!IsNode(val) || IsList(val) != IsList(out_) || !IsNode(out_))
+            {
+                return _DeepEqual(val, out_);
+            }
+
+            foreach (string k in KeysOf(val))
+            {
+                if (!_Keeps(Lookup(val, k), Lookup(out_, k)))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        // A spec admits a value when validating the value against it finds no error
+        // and gives back the value as it is.
+        private static bool _Admits(object? val, object? spec, InjectState inj, object? store)
+        {
+            var terrs = new List<object?>();
+
+            var vstore = (Dictionary<string, object?>)Merge(
+                new List<object?> { new Dictionary<string, object?>(), store }, 1)!;
+            vstore[S_DTOP] = val;
+
+            object? out_ = Validate(val, spec, new InjectState
+            {
+                Extra = vstore,
+                Errs = terrs,
+                Meta = inj.Meta,
+            });
+
+            return 0 == Size(terrs) && _Keeps(val, out_);
+        }
+
+        // The bounds of a $NOF count, and the words for it, which are null when
+        // the count is invalid. Without a max, the bound is the number of specs.
+        private static (double lo, double hi, string? desc) _NofCount(object? count, int numtvals)
+        {
+            static bool IsNat(object? n)
+            {
+                return n is int or long or double or float && 0 < (T.Integer & Typify(n)) &&
+                    0 <= Convert.ToDouble(n, CultureInfo.InvariantCulture);
+            }
+
+            static string Num(double n)
+            {
+                return Stringify(n);
+            }
+
+            if (IsNat(count))
+            {
+                double c = Convert.ToDouble(count, CultureInfo.InvariantCulture);
+                return (c, c, 0 == c ? "none" : "exactly " + Num(c));
+            }
+
+            object? min = Lookup(count, "min");
+            object? max = Lookup(count, "max");
+            bool hasmin = !ReferenceEquals(min, NONE);
+            bool hasmax = !ReferenceEquals(max, NONE);
+
+            bool valid =
+                IsMap(count) &&
+                0 < Size(count) &&
+                Size(count) == (hasmin ? 1 : 0) + (hasmax ? 1 : 0) &&
+                (!hasmin || IsNat(min)) &&
+                (!hasmax || IsNat(max)) &&
+                (!hasmin || !hasmax ||
+                    Convert.ToDouble(min, CultureInfo.InvariantCulture) <=
+                    Convert.ToDouble(max, CultureInfo.InvariantCulture));
+
+            if (!valid)
+            {
+                return (0, 0, null);
+            }
+
+            double lo = hasmin ? Convert.ToDouble(min, CultureInfo.InvariantCulture) : 0;
+            double hi = hasmax ? Convert.ToDouble(max, CultureInfo.InvariantCulture) : numtvals;
+
+            string desc =
+                !hasmax
+                    ? "at least " + Num(lo)
+                    : 0 == hi
+                        ? "none"
+                        : !hasmin
+                            ? "at most " + Num(hi)
+                            : lo == hi
+                                ? "exactly " + Num(lo)
+                                : Num(lo) + " to " + Num(hi);
+
+            return (lo, hi, desc);
         }
 
 
@@ -3445,6 +4092,12 @@ namespace Voxgig.Struct
         // $GT, $LT, $GTE, $LTE, $LIKE: comparison operators.
         private static readonly Injector _SelectCmp = (inj, val, refStr, store) =>
         {
+            // The list form of $LIKE is validate's checker; the key form is this operator.
+            if (M_VAL == inj.Mode && "$LIKE" == refStr)
+            {
+                return _ValidateLike(inj, val, refStr, store);
+            }
+
             if (M_KEYPRE != inj.Mode)
             {
                 return NONE;
@@ -3537,20 +4190,12 @@ namespace Voxgig.Struct
                 });
             var results = new List<object?>();
 
+            // Bare names only: Transform reads a key without a leading $ as data.
             var selectExtra = new Dictionary<string, object?>
             {
-                ["`$AND`"] = _SelectAnd,
-                ["`$OR`"] = _SelectOr,
-                ["`$NOT`"] = _SelectNot,
                 ["$AND"] = _SelectAnd,
                 ["$OR"] = _SelectOr,
                 ["$NOT"] = _SelectNot,
-                // JSON/test fixtures use backtick-wrapped keys (`$GT`, etc.); GetPath resolves bare $NAME.
-                ["`$GT`"] = _SelectCmp,
-                ["`$LT`"] = _SelectCmp,
-                ["`$GTE`"] = _SelectCmp,
-                ["`$LTE`"] = _SelectCmp,
-                ["`$LIKE`"] = _SelectCmp,
                 ["$GT"] = _SelectCmp,
                 ["$LT"] = _SelectCmp,
                 ["$GTE"] = _SelectCmp,
@@ -3561,18 +4206,7 @@ namespace Voxgig.Struct
             var meta = new Dictionary<string, object?> { [S_BEXACT] = true };
             var q = Clone(query);
 
-            Walk(q, (k, v, p, path) =>
-            {
-                if (IsMap(v))
-                {
-                    object? existing = GetProp(v, "`$OPEN`");
-                    if (existing == null)
-                    {
-                        SetProp(v, "`$OPEN`", true);
-                    }
-                }
-                return v;
-            });
+            _OpenQuery(q);
 
             foreach (object? child in childList)
             {
@@ -3593,8 +4227,557 @@ namespace Voxgig.Struct
             return results;
         }
 
-        [GeneratedRegex(@"^[-0-9]+$")]
-        private static partial Regex R_IntegerKeyGen();
+        // Open every map in a select query, so a child may hold keys the query does
+        // not name, but leave a directive's literals as written: what $EXACT
+        // compares, and the count or bound of $NOF, $LEN and $RANGE.
+        private static void _OpenQuery(object? q)
+        {
+            if (q is Dictionary<string, object?> map)
+            {
+                SetProp(map, "`$OPEN`", GetProp(map, "`$OPEN`", true));
+                foreach (string key in KeysOf(map))
+                {
+                    _OpenQuery(map[key]);
+                }
+            }
+            else if (q is List<object?> list)
+            {
+                object? head = 0 < list.Count ? list[0] : null;
+                bool exact = head is "`$EXACT`";
+                bool bounded = head is "`$NOF`" or "`$LEN`" or "`$RANGE`";
+                for (int i = 0; i < list.Count; i++)
+                {
+                    if (0 == i || !(exact || (bounded && 1 == i)))
+                    {
+                        _OpenQuery(list[i]);
+                    }
+                }
+            }
+        }
+
+
+        // ========================================================================
+        // Condense
+        // ========================================================================
+
+        private const long CONDENSE_VERSION = 1;
+
+        private const long CONDENSE_MAP = 0;
+        private const long CONDENSE_LIST = 1;
+        private const long CONDENSE_STR = 2;
+        private const long CONDENSE_NUM = 3;
+        private const long CONDENSE_TRUE = 4;
+        private const long CONDENSE_FALSE = 5;
+        private const long CONDENSE_NULL = 6;
+
+        private const string S_condense = "$condense";
+        private const string S_condsym = "sym";
+        private const string S_condnode = "node";
+        private const string S_condroot = "root";
+
+        private const string S_IMMUTABLE =
+            "struct: condensed structures are immutable - expand() first, then modify the copy";
+
+        private const double TWO_POW_63 = 9223372036854775808.0;
+
+        public static bool IsCondensed(object? val = null)
+        {
+            return val is Dictionary<string, object?> map
+                && map.TryGetValue(S_condense, out object? version)
+                && CondenseInt(version, out long v)
+                && CONDENSE_VERSION == v
+                && map.TryGetValue(S_condsym, out object? sym) && sym is List<object?>
+                && map.TryGetValue(S_condnode, out object? node) && node is List<object?>
+                && map.TryGetValue(S_condroot, out object? root) && root is int or long or double or float;
+        }
+
+        // Pure: the same input gives the same bytes, on every port.
+        public static object? Condense(object? val)
+        {
+            var symset = new HashSet<string>(StringComparer.Ordinal);
+            CondenseCollect(val, symset);
+            List<string> sym = [.. symset];
+            sym.Sort(CondenseCmp);
+            var symid = new Dictionary<string, long>(StringComparer.Ordinal);
+            for (int i = 0; i < sym.Count; i++)
+            {
+                symid[sym[i]] = i;
+            }
+
+            List<object?> node = [];
+            var seen = new Dictionary<string, long>(StringComparer.Ordinal);
+            long root = CondenseBuild(val, symid, node, seen);
+
+            return new Dictionary<string, object?>
+            {
+                [S_condense] = CONDENSE_VERSION,
+                [S_condsym] = sym.Cast<object?>().ToList(),
+                [S_condnode] = node,
+                [S_condroot] = root,
+            };
+        }
+
+        // A value that is not condensed comes back as itself.
+        public static object? Expand(object? cond)
+        {
+            if (!IsCondensed(cond))
+            {
+                return cond;
+            }
+
+            object? out2 = CondenseRebuild(cond, CondenseRoot(cond));
+            return ReferenceEquals(out2, NONE) ? null : out2;
+        }
+
+        public static CondenseView CondenseView(object? cond, long? idx = null,
+                                                Dictionary<string, object?>? memo = null)
+        {
+            long start = idx ?? (IsCondensed(cond) ? CondenseRoot(cond) : -1);
+            return new CondenseView(cond, start, memo ?? []);
+        }
+
+        private static void CondenseCollect(object? n, HashSet<string> symset)
+        {
+            if (n is Dictionary<string, object?> map)
+            {
+                foreach (KeyValuePair<string, object?> entry in map)
+                {
+                    symset.Add(entry.Key);
+                    CondenseCollect(entry.Value, symset);
+                }
+            }
+            else if (n is List<object?> list)
+            {
+                foreach (object? item in list)
+                {
+                    CondenseCollect(item, symset);
+                }
+            }
+            else if (n is string s)
+            {
+                symset.Add(s);
+            }
+        }
+
+        // Post-order, so identical subtrees are already interned when a parent names them.
+        private static long CondenseBuild(object? n, Dictionary<string, long> symid,
+                                          List<object?> node, Dictionary<string, long> seen)
+        {
+            List<object?> enc;
+            if (n is Dictionary<string, object?> map)
+            {
+                enc = [CONDENSE_MAP];
+                foreach (KeyValuePair<string, object?> entry in map.OrderBy(e => symid[e.Key]))
+                {
+                    enc.Add(symid[entry.Key]);
+                    enc.Add(CondenseBuild(entry.Value, symid, node, seen));
+                }
+            }
+            else if (n is List<object?> list)
+            {
+                enc = [CONDENSE_LIST];
+                foreach (object? item in list)
+                {
+                    enc.Add(CondenseBuild(item, symid, node, seen));
+                }
+            }
+            else if (n is string s)
+            {
+                enc = [CONDENSE_STR, symid[s]];
+            }
+            else if (n is int or long or double or float)
+            {
+                enc = [CONDENSE_NUM, n];
+            }
+            else if (n is bool b)
+            {
+                enc = [b ? CONDENSE_TRUE : CONDENSE_FALSE];
+            }
+            else
+            {
+                enc = [CONDENSE_NULL];
+            }
+
+            string key = string.Join(S_CM, enc.Select(CondenseNumKey));
+            if (seen.TryGetValue(key, out long hit))
+            {
+                return hit;
+            }
+
+            long idx = node.Count;
+            node.Add(enc);
+            seen[key] = idx;
+            return idx;
+        }
+
+        // Equal numbers spell the same, so an integer and a decimal of one value share a node.
+        private static string CondenseNumKey(object? v)
+        {
+            return CondenseInt(v, out long n)
+                ? n.ToString(CultureInfo.InvariantCulture)
+                : Convert.ToDouble(v, CultureInfo.InvariantCulture).ToString("R", CultureInfo.InvariantCulture);
+        }
+
+        // The integer a number holds: false for anything else, a fraction included.
+        private static bool CondenseInt(object? v, out long n)
+        {
+            if (v is int i)
+            {
+                n = i;
+                return true;
+            }
+
+            if (v is long l)
+            {
+                n = l;
+                return true;
+            }
+
+            double d = v is double dv ? dv : v is float fv ? fv : double.NaN;
+            if (Math.Floor(d) == d && -TWO_POW_63 <= d && d < TWO_POW_63)
+            {
+                n = (long)d;
+                return true;
+            }
+
+            n = -1;
+            return false;
+        }
+
+        // An index read from the format, or -1 when the value cannot be one.
+        private static long CondenseIdx(object? v)
+        {
+            return CondenseInt(v, out long n) ? n : -1;
+        }
+
+        private static List<object?>? CondenseField(object? cond, string name)
+        {
+            return cond is Dictionary<string, object?> map && map.TryGetValue(name, out object? v)
+                ? v as List<object?>
+                : null;
+        }
+
+        internal static long CondenseRoot(object? cond)
+        {
+            return cond is Dictionary<string, object?> map && map.TryGetValue(S_condroot, out object? root)
+                ? CondenseIdx(root)
+                : -1;
+        }
+
+        // Node idx's encoding; NONE when it is absent or null.
+        private static object? CondenseEnc(object? cond, long idx)
+        {
+            List<object?>? node = CondenseField(cond, S_condnode);
+            object? enc = node != null && 0 <= idx && idx < node.Count ? node[(int)idx] : null;
+            return enc ?? NONE;
+        }
+
+        private static long CondenseKind(List<object?>? el)
+        {
+            return el != null && 0 < el.Count ? CondenseIdx(el[0]) : -1;
+        }
+
+        // sym[id]; NONE when id does not index sym.
+        private static object? CondenseSym(object? cond, object? id)
+        {
+            List<object?>? sym = CondenseField(cond, S_condsym);
+            long i = CondenseIdx(id);
+            return sym != null && 0 <= i && i < sym.Count ? sym[(int)i] : NONE;
+        }
+
+        // sym[id] as a map key: its string form when it is not a string.
+        private static string CondenseKeyName(object? cond, object? id)
+        {
+            object? s = CondenseSym(cond, id);
+            return s as string ?? CondenseStr(s);
+        }
+
+        // Code-point order, unlike string.CompareOrdinal: a surrogate pair sorts as the
+        // character it encodes, after every other character up to U+FFFF.
+        private static int CondenseCmp(string a, string b)
+        {
+            int i = 0;
+            int j = 0;
+            while (i < a.Length && j < b.Length)
+            {
+                int ca = CondenseCodePoint(a, i);
+                int cb = CondenseCodePoint(b, j);
+                if (ca != cb)
+                {
+                    return ca < cb ? -1 : 1;
+                }
+
+                i += 0xffff < ca ? 2 : 1;
+                j += 0xffff < cb ? 2 : 1;
+            }
+
+            return a.Length - i - (b.Length - j);
+        }
+
+        private static int CondenseCodePoint(string s, int i)
+        {
+            return char.IsHighSurrogate(s[i]) && i + 1 < s.Length && char.IsLowSurrogate(s[i + 1])
+                ? char.ConvertToUtf32(s[i], s[i + 1])
+                : s[i];
+        }
+
+        // JS `'' + v`.
+        private static string CondenseStr(object? v)
+        {
+            return v switch
+            {
+                null => S_null,
+                string s => s,
+                bool b => b ? "true" : "false",
+                int or long => Convert.ToString(v, CultureInfo.InvariantCulture) ?? S_MT,
+                double or float => CondenseNumStr(Convert.ToDouble(v, CultureInfo.InvariantCulture)),
+                List<object?> l => string.Join(S_CM, l.Select(e => e == null || ReferenceEquals(e, NONE)
+                    ? S_MT
+                    : CondenseStr(e))),
+                _ => ReferenceEquals(v, NONE) ? "undefined" : "[object Object]",
+            };
+        }
+
+        private static string CondenseNumStr(double d)
+        {
+            if (double.IsNaN(d))
+            {
+                return "NaN";
+            }
+
+            if (double.IsInfinity(d))
+            {
+                return d < 0 ? "-Infinity" : "Infinity";
+            }
+
+            return Math.Floor(d) == d && Math.Abs(d) < 1e21
+                ? (0 == d ? 0.0 : d).ToString("F0", CultureInfo.InvariantCulture)
+                : d.ToString("R", CultureInfo.InvariantCulture);
+        }
+
+        private static long CondenseSymId(object? cond, string key)
+        {
+            List<object?>? sym = CondenseField(cond, S_condsym);
+            if (sym == null)
+            {
+                return -1;
+            }
+
+            long lo = 0;
+            long hi = sym.Count - 1;
+            while (lo <= hi)
+            {
+                long mid = (lo + hi) / 2;
+                int c = CondenseCmp(sym[(int)mid] as string ?? S_MT, key);
+                if (0 == c)
+                {
+                    return mid;
+                }
+
+                if (0 > c)
+                {
+                    lo = mid + 1;
+                }
+                else
+                {
+                    hi = mid - 1;
+                }
+            }
+
+            return -1;
+        }
+
+        // The node index of key inside node idx, or -1. Touches only this node.
+        private static long CondenseChild(object? cond, long idx, string key)
+        {
+            List<object?>? el = CondenseEnc(cond, idx) as List<object?>;
+            long kind = CondenseKind(el);
+
+            if (CONDENSE_MAP == kind)
+            {
+                long symid = CondenseSymId(cond, key);
+                long lo = 0;
+                long hi = ((el!.Count - 1) / 2) - 1;
+                while (0 <= symid && lo <= hi)
+                {
+                    long mid = (lo + hi) / 2;
+                    long k = CondenseIdx(el[(int)(1 + (mid * 2))]);
+                    if (k == symid)
+                    {
+                        return CondenseIdx(el[(int)(2 + (mid * 2))]);
+                    }
+
+                    if (k < symid)
+                    {
+                        lo = mid + 1;
+                    }
+                    else
+                    {
+                        hi = mid - 1;
+                    }
+                }
+
+                return -1;
+            }
+
+            if (CONDENSE_LIST == kind)
+            {
+                return CanonListIndex(key, out long i) && 0 <= i && i < el!.Count - 1
+                    ? CondenseIdx(el[(int)(1 + i)])
+                    : -1;
+            }
+
+            return -1;
+        }
+
+        // Walk a path from node idx: the node index reached, or -1.
+        internal static long CondenseResolve(object? cond, long idx, object? path)
+        {
+            long at = idx;
+
+            if (path is System.Collections.IList parts)
+            {
+                foreach (object? part in parts)
+                {
+                    if (0 > at || part is not (string or int or long or double or float))
+                    {
+                        return -1;
+                    }
+
+                    if (part is not string { Length: 0 })
+                    {
+                        at = CondenseChild(cond, at, CondenseStr(part));
+                    }
+                }
+            }
+            else if (path is string s)
+            {
+                foreach (string part in 0 < s.Length ? s.Split('.') : [])
+                {
+                    if (0 > at)
+                    {
+                        return -1;
+                    }
+
+                    if (0 < part.Length)
+                    {
+                        at = CondenseChild(cond, at, part);
+                    }
+                }
+            }
+            else if (path != null && !ReferenceEquals(path, NONE))
+            {
+                if (0 > at)
+                {
+                    return -1;
+                }
+
+                at = CondenseChild(cond, at, CondenseStr(path));
+            }
+
+            return at;
+        }
+
+        // A fresh, independent tree for node idx; NONE when there is no such node.
+        internal static object? CondenseRebuild(object? cond, long idx)
+        {
+            object? enc = CondenseEnc(cond, idx);
+            if (ReferenceEquals(enc, NONE))
+            {
+                return NONE;
+            }
+
+            List<object?>? el = enc as List<object?>;
+            long kind = CondenseKind(el);
+
+            if (CONDENSE_MAP == kind)
+            {
+                Dictionary<string, object?> out2 = [];
+                for (int j = 1; j < el!.Count; j += 2)
+                {
+                    object? child = CondenseRebuild(cond, j + 1 < el.Count ? CondenseIdx(el[j + 1]) : -1);
+                    string key = CondenseKeyName(cond, el[j]);
+                    // As setprop does for an absent value, the key goes.
+                    if (ReferenceEquals(child, NONE))
+                    {
+                        out2.Remove(key);
+                    }
+                    else
+                    {
+                        out2[key] = child;
+                    }
+                }
+
+                return out2;
+            }
+
+            if (CONDENSE_LIST == kind)
+            {
+                List<object?> out2 = new(el!.Count - 1);
+                for (int j = 1; j < el.Count; j++)
+                {
+                    object? child = CondenseRebuild(cond, CondenseIdx(el[j]));
+                    out2.Add(ReferenceEquals(child, NONE) ? null : child);
+                }
+
+                return out2;
+            }
+
+            if (CONDENSE_STR == kind)
+            {
+                object? s = 1 < el!.Count ? CondenseSym(cond, el[1]) : NONE;
+                return ReferenceEquals(s, NONE) ? NONE : Clone(s);
+            }
+
+            if (CONDENSE_NUM == kind)
+            {
+                return 1 < el!.Count ? Clone(el[1]) : NONE;
+            }
+
+            if (kind is CONDENSE_TRUE or CONDENSE_FALSE)
+            {
+                return CONDENSE_TRUE == kind;
+            }
+
+            return null;
+        }
+
+        internal static List<string> CondenseKeys(object? cond, long idx)
+        {
+            List<string> out2 = [];
+            List<object?>? el = CondenseEnc(cond, idx) as List<object?>;
+            long kind = CondenseKind(el);
+
+            if (CONDENSE_MAP == kind)
+            {
+                for (int j = 1; j < el!.Count; j += 2)
+                {
+                    out2.Add(CondenseKeyName(cond, el[j]));
+                }
+            }
+            else if (CONDENSE_LIST == kind)
+            {
+                for (int j = 1; j < el!.Count; j++)
+                {
+                    out2.Add((j - 1).ToString(CultureInfo.InvariantCulture));
+                }
+            }
+
+            return out2;
+        }
+
+        internal static int CondenseSize(object? cond, long idx)
+        {
+            List<object?>? el = CondenseEnc(cond, idx) as List<object?>;
+            long kind = CondenseKind(el);
+            if (CONDENSE_MAP == kind)
+            {
+                return (el!.Count - 1) / 2;
+            }
+
+            return CONDENSE_LIST == kind ? el!.Count - 1 : 0;
+        }
+
         [GeneratedRegex(@"[.*+?^${}()|[\]\\]")]
         private static partial Regex R_EscapeRegexpGen();
         [GeneratedRegex(@"^`\$REF:([0-9]+)`$")]
@@ -3609,7 +4792,86 @@ namespace Voxgig.Struct
         private static partial Regex R_MetaPathGen();
         [GeneratedRegex(@"`\$([A-Z]+)`")]
         private static partial Regex R_TransformNameGen();
+        // \z, since .NET's $ also matches before a final newline.
+        [GeneratedRegex(@"^\$[A-Z]+\z")]
+        private static partial Regex R_CheckerNameGen();
         [GeneratedRegex(@"\.")]
         private static partial Regex R_DotGen();
+    }
+
+
+    // A cursor into a condensed structure. Views made by At share the memo, so Ref hands
+    // every one of them the same node.
+    public sealed class CondenseView
+    {
+        private readonly object? _cond;
+        private readonly long _start;
+        private readonly Dictionary<string, object?> _memo;
+
+        internal CondenseView(object? cond, long start, Dictionary<string, object?> memo)
+        {
+            _cond = cond;
+            _start = start;
+            _memo = memo;
+        }
+
+        public object? Get(object? path = null)
+        {
+            return Present(StructUtils.CondenseRebuild(_cond, StructUtils.CondenseResolve(_cond, _start, path)));
+        }
+
+        public List<string> Keys(object? path = null)
+        {
+            return StructUtils.CondenseKeys(_cond, StructUtils.CondenseResolve(_cond, _start, path));
+        }
+
+        public bool Has(object? path = null)
+        {
+            return 0 <= StructUtils.CondenseResolve(_cond, _start, path);
+        }
+
+        public CondenseView At(object? path = null)
+        {
+            return new CondenseView(_cond, StructUtils.CondenseResolve(_cond, _start, path), _memo);
+        }
+
+        public object? Value()
+        {
+            return Present(StructUtils.CondenseRebuild(_cond, _start));
+        }
+
+        public int Size()
+        {
+            return StructUtils.CondenseSize(_cond, _start);
+        }
+
+        public bool Exists()
+        {
+            return 0 <= _start;
+        }
+
+        // Shared, unlike Get and Value: mutating the result changes every reader of the node.
+        public object? Ref()
+        {
+            string k = _start.ToString(CultureInfo.InvariantCulture);
+            if (_memo.TryGetValue(k, out object? hit))
+            {
+                return hit;
+            }
+
+            object? out2 = StructUtils.CondenseRebuild(_cond, _start);
+            if (ReferenceEquals(out2, StructUtils.NONE))
+            {
+                return null;
+            }
+
+            _memo[k] = out2;
+            return out2;
+        }
+
+        private static object? Present(object? val)
+        {
+            return ReferenceEquals(val, StructUtils.NONE) ? null : val;
+        }
     }
 }

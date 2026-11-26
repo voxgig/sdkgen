@@ -798,7 +798,9 @@ function sameId(compares: boolean, result: string, expected: string, message: st
 // in another field reads the key from there too.
 function fixtureIdentity(entity: any): string {
   return 'id' === entityRecordIdField(entity) ? '' : `
-    for (_, fixture_rec) in vs::items_vec(&to_map(&getpath(&["existing", "${entity.name}"], &entity_data))) {
+    let fixture_map = to_map(&getpath(&["existing", "${entity.name}"], &entity_data));
+    for fixture_key in vs::keysof_vec(&fixture_map) {
+        let fixture_rec = vs::lookup(&fixture_map, &Value::str(fixture_key));
         if matches!(fixture_rec, Value::Map(_)) && !getp(&fixture_rec, "id").is_noval() {
             setp(&fixture_rec, ${rid(entity)}, getp(&fixture_rec, "id"));
         }

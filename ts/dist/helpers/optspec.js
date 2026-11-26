@@ -5,14 +5,26 @@ exports.featureOptionSpec = featureOptionSpec;
 exports.entitySpecMap = entitySpecMap;
 const jostraca_1 = require("jostraca");
 const apidef_1 = require("@voxgig/apidef");
+const utility_1 = require("../utility");
 const applicability_1 = require("./applicability");
 const canonSpec_1 = require("./canonSpec");
 const S_CHILD = (0, canonSpec_1.sentinel)('CHILD');
 const S_OPEN = (0, canonSpec_1.sentinel)('OPEN');
-const S_ONE = (0, canonSpec_1.sentinel)('ONE');
 const S_NIL = (0, canonSpec_1.sentinel)('NIL');
 function optional(spec) {
-    return [S_ONE, spec, S_NIL];
+    return (0, canonSpec_1.anyOf)([spec, S_NIL]);
+}
+// A spec naming `$ONE` fails here rather than in every client at construction.
+function checkedSpec(targetname, spec) {
+    const at = (0, canonSpec_1.oneUnionPaths)(spec);
+    if (0 < at.length) {
+        throw new utility_1.SdkGenError((null == targetname ? '' : targetname + ': ') +
+            'the struct spec names ' + (0, canonSpec_1.sentinel)('ONE') + ' at ' + at.join(', ') +
+            ', which validate refuses, so every client would fail at construction. ' +
+            'Write [' + (0, canonSpec_1.sentinel)('ONE') + ', a, b] as [' + (0, canonSpec_1.sentinel)('NOF') +
+            ', {min: 1}, a, b].');
+    }
+    return spec;
 }
 function featureOptionSpec(feat) {
     const config = (feat && feat.config) || {};
@@ -54,7 +66,7 @@ function optionSpec(model, targetname) {
         feature[f.name] = optional(featureOptionSpec(f));
     });
     spec.feature = feature;
-    return spec;
+    return checkedSpec(targetname, spec);
 }
 function entitySpecMap(model, targetname) {
     const feats = (0, applicability_1.targetFeatures)(model, null == targetname ? undefined : targetname);
@@ -70,6 +82,6 @@ function entitySpecMap(model, targetname) {
         }
         specs[ent.name] = (0, canonSpec_1.entitySpecs)(ent);
     });
-    return specs;
+    return checkedSpec(targetname, specs);
 }
 //# sourceMappingURL=optspec.js.map

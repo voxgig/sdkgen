@@ -1,15 +1,18 @@
 
 import { test, describe } from 'node:test'
-import { strictEqual, deepStrictEqual, ok } from 'node:assert'
+import { strictEqual, deepStrictEqual, ok, throws } from 'node:assert'
 
-import { readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import Path from 'node:path'
 
 import { Aontu } from 'aontu'
-import * as struct from '@voxgig/struct'
 
-import { optionSpec, featureOptionSpec, entitySpecMap } from '../dist/helpers/optspec'
+import {
+  optionSpec, featureOptionSpec, entitySpecMap,
+} from '../dist/helpers/optspec'
 import { sentinel } from '../dist/helpers/canonSpec'
+
+import { struct } from './featureharness'
 
 
 const MODEL = Path.resolve(__dirname, '..', 'model', 'sdkgen.aontu')
@@ -273,7 +276,13 @@ describe('optionSpec: what the spec may contain', () => {
   }
 
   test('strings and booleans only, so the JSON round-trip is lossless', () => {
-    const spec = optionSpec(modelWith(shippedFeatures()))
+    // A union's count is the one number allowed: `$NOF` takes nothing else.
+    const NOF = sentinel('NOF')
+    const uncounted = (node: any): any => Array.isArray(node) ?
+      (NOF === node[0] ? [NOF, ...node.slice(2).map(uncounted)] : node.map(uncounted)) :
+      (null != node && 'object' === typeof node ?
+        Object.fromEntries(Object.entries(node).map(([k, v]) => [k, uncounted(v)])) : node)
+    const spec = uncounted(optionSpec(modelWith(shippedFeatures())))
 
     const found: Array<{ path: string, value: any }> = []
     scalars(spec, '', found)
@@ -356,6 +365,85 @@ describe('optionSpec: the shipped feature set', () => {
     for (const name of Object.keys(fmodel)) {
       ok(accepts({ feature: { [name]: { active: true } } }, spec),
         name + ': ' + check({ feature: { [name]: { active: true } } }, spec).join('; '))
+    }
+  })
+})
+
+
+describe('optionSpec: the union every target reads', () => {
+
+  const SDK = Path.resolve(__dirname, '..', 'project', '.sdk')
+  const NOF = sentinel('NOF')
+  const ONE = sentinel('ONE')
+
+  const feature = {
+    log: { name: 'log', active: true, config: { options: { active: false, level: 'info' } } },
+  }
+
+  function has(node: any, name: string): boolean {
+    return JSON.stringify(node).includes(JSON.stringify(name))
+  }
+
+  test('every target is handed `$NOF`', () => {
+    for (const target of ['ts', 'swift']) {
+      const spec = optionSpec(modelWith(feature), target)
+      ok(has(spec, NOF) && !has(spec, ONE), target)
+    }
+  })
+
+  test('entity specs are handed `$NOF` too', () => {
+    const model = {
+      main: {
+        kit: {
+          optspec: baseModel().main.kit.optspec,
+          feature: { validate: { name: 'validate', active: true, config: { options: {} } } },
+          entity: {
+            widget: {
+              name: 'widget',
+              fields: { note: { n: 'note', t: sentinel('STRING'), r: false } },
+            },
+          },
+        },
+      },
+    }
+    ok(has(entitySpecMap(model, 'swift'), NOF) && !has(entitySpecMap(model, 'swift'), ONE))
+    ok(has(entitySpecMap(model, 'py'), NOF))
+  })
+
+  test('a spec that still names `$ONE` is refused at generation', () => {
+    const model = modelWith({
+      old: {
+        name: 'old', active: true,
+        config: { options: {}, optspec: { mode: [ONE, sentinel('STRING'), sentinel('NUMBER')] } },
+      },
+    })
+    throws(() => optionSpec(model, 'go'), /go: the struct spec names .* at feature\.old\.2\.mode/)
+    throws(() => optionSpec(model, 'swift'), /swift: the struct spec names/)
+  })
+
+  function treeHas(dir: string, needle: string): boolean {
+    for (const ent of readdirSync(dir, { withFileTypes: true })) {
+      const path = Path.join(dir, ent.name)
+      if (ent.isDirectory() ? treeHas(path, needle) :
+        readFileSync(path, 'utf8').includes(needle)) {
+        return true
+      }
+    }
+    return false
+  }
+
+  test('every target ships a struct that implements `$NOF`, and none `$ONE`', () => {
+    const cmp = Path.join(SDK, 'src', 'cmp')
+    const schema = readdirSync(cmp)
+      .filter((t) => existsSync(Path.join(cmp, t, 'Schema_' + t + '.ts')))
+      .sort()
+    ok(10 < schema.length, 'found only ' + schema.length + ' targets with a Schema component')
+
+    for (const t of schema) {
+      const tm = Path.join(SDK, 'tm', t)
+      ok(!treeHas(tm, 'The $ONE validator'),
+        t + ': its struct still implements `$ONE`, so it cannot read the `$NOF` it is handed')
+      ok(treeHas(tm, '$NOF'), t + ': its struct does not implement `$NOF`')
     }
   })
 })
