@@ -35,6 +35,9 @@ function zigLit(type: any, placeholder: string = 'example'): string {
 }
 
 
+
+const LIST_ALL = ' The match is optional — pass `h.vnull()` to list all records.'
+
 const ReadmeRef = cmp(function ReadmeRef(props: any) {
   const { target } = props
   const { model } = props.ctx$
@@ -49,7 +52,7 @@ const ReadmeRef = cmp(function ReadmeRef(props: any) {
     },
     list: {
       sig: 'list(reqmatch: Value, ctrl: Value) EntListResult',
-      desc: 'List entities matching the given criteria. The match is optional — pass `h.vnull()` to list all records. `.ok` is a slice of entities, one per record.',
+      desc: 'List entities matching the given criteria.' + LIST_ALL + ' `.ok` is a slice of entities, one per record.',
     },
     create: {
       sig: 'create(reqdata: Value, ctrl: Value) EntResult',
@@ -259,6 +262,7 @@ const ${eVar} = client.${method}(h.vnull());
           const needs = requiredItems(ent, opname).map((it: any) => it.name)
           const desc = info.desc.replace(' The data must include the entity id.',
             null != idF && needs.includes(idF) ? ' The data must include the entity `' + idF + '`.' : '')
+            .replace(LIST_ALL, 0 === needs.length ? LIST_ALL : ' The match must include ' + needs.map((n: string) => '`' + n + '`').join(', ') + '.')
 
           Content(`#### \`${info.sig}\`
 

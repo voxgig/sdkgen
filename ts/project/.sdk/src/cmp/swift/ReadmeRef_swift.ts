@@ -25,6 +25,8 @@ function swiftLit(type: any, placeholder: string = 'example'): string {
 }
 
 
+const LIST_ALL = ' The match is optional — call `list(nil, nil)` to list all records.'
+
 const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string }> = {
   load: {
     sig: 'load(reqmatch, ctrl) throws -> Value',
@@ -34,7 +36,7 @@ const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string
   list: {
     sig: 'list(reqmatch, ctrl) throws -> Value',
     returns: 'a `Value` list of entities, one per record',
-    desc: 'List entities matching the given criteria. The match is optional — call `list(nil, nil)` to list all records. Returns a `Value` list of entities, one per record, and throws on error.',
+    desc: 'List entities matching the given criteria.' + LIST_ALL + ' Returns a `Value` list of entities, one per record, and throws on error.',
   },
   create: {
     sig: 'create(reqdata, ctrl) throws -> Value',
@@ -57,6 +59,7 @@ const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string
     desc: 'Remove the entity matching the given criteria. Returns the entity, marked as deleted, and throws on error.',
   },
 }
+
 
 
 const ReadmeRef = cmp(function ReadmeRef(props: any) {
@@ -258,6 +261,7 @@ let ${eVar} = client.${accessor}()
           const needs = requiredItems(ent, opname).map((it: any) => it.name)
           const desc = info.desc.replace(' The data must include the entity `id`.',
             null != idF && needs.includes(idF) ? ' The data must include the entity `' + idF + '`.' : '')
+            .replace(LIST_ALL, 0 === needs.length ? LIST_ALL : ' The match must include ' + needs.map((n: string) => '`' + n + '`').join(', ') + '.')
 
           Content(`#### \`${info.sig}\`
 

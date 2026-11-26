@@ -41,6 +41,9 @@ function cmapExpr(pairs: string[]): string {
 }
 
 
+
+const LIST_ALL = ' The match is optional — pass `NULL` to list all records.'
+
 const ReadmeRef = cmp(function ReadmeRef(props: any) {
   const { target } = props
   const { model } = props.ctx$
@@ -57,7 +60,7 @@ const ReadmeRef = cmp(function ReadmeRef(props: any) {
     },
     list: {
       sig: 'Entity** vt->list(Entity* e, voxgig_value* reqmatch, voxgig_value* ctrl, PNError** err)',
-      desc: 'List entities matching the given criteria. The match is optional — pass `NULL` to list all records. Returns a `NULL`-terminated array of entities, one per record, or `NULL` with `*err` set on failure.',
+      desc: 'List entities matching the given criteria.' + LIST_ALL + ' Returns a `NULL`-terminated array of entities, one per record, or `NULL` with `*err` set on failure.',
     },
     create: {
       sig: 'Entity* vt->create(Entity* e, voxgig_value* reqdata, voxgig_value* ctrl, PNError** err)',
@@ -258,6 +261,7 @@ Entity* ${evar} = ${acc}(client, NULL);
           const needs = requiredItems(ent, opname).map((it: any) => it.name)
           const desc = info.desc.replace(' The data must include the entity id.',
             null != idF && needs.includes(idF) ? ' The data must include the entity `' + idF + '`.' : '')
+            .replace(LIST_ALL, 0 === needs.length ? LIST_ALL : ' The match must include ' + needs.map((n: string) => '`' + n + '`').join(', ') + '.')
 
           Content(`#### \`${info.sig}\`
 

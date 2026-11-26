@@ -22,6 +22,8 @@ function phpLit(type: any, placeholder: string = 'example'): string {
 }
 
 
+const LIST_ALL = ' (call with no argument to list all).'
+
 const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string }> = {
   load: {
     sig: 'load(array $reqmatch, ?array $ctrl = null): mixed',
@@ -31,7 +33,7 @@ const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string
   list: {
     sig: 'list(?array $reqmatch = null, ?array $ctrl = null): mixed',
     returns: 'array — the entities, one per record; throws on error',
-    desc: 'List entities matching the given criteria (call with no argument to list all). Returns an array of entities, one per record, and throws on error.',
+    desc: 'List entities matching the given criteria' + LIST_ALL + ' Returns an array of entities, one per record, and throws on error.',
   },
   create: {
     sig: 'create(array $reqdata, ?array $ctrl = null): mixed',
@@ -54,6 +56,7 @@ const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string
     desc: 'Remove the entity matching the given criteria. Returns the entity, marked as deleted, and throws on error.',
   },
 }
+
 
 
 const ReadmeRef = cmp(function ReadmeRef(props: any) {
@@ -256,6 +259,7 @@ $${ent.name} = $client->${phpEntityAccessor(ent.Name)}();
           const needs = requiredItems(ent, opname).map((it: any) => it.name)
           const desc = info.desc.replace(' The data must include the entity `id`.',
             null != idF && needs.includes(idF) ? ' The data must include the entity `' + idF + '`.' : '')
+            .replace(LIST_ALL, 0 === needs.length ? LIST_ALL : '.' + ' The match must include ' + needs.map((n: string) => '`' + n + '`').join(', ') + '.')
 
           Content(`#### \`${info.sig}\`
 

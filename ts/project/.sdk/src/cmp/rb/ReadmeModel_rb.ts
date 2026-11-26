@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, entityClassName, entityCollection, fact, clientOptions, entityOps, entityPath, introOps } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, entityClassName, entityCollection, fact, clientOptions, entityOps, entityPath, introOps, requiredItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -19,9 +19,11 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   // document an operation no entity has.
   const opUnion = new Set<string>(introOps(model))
   const sameOps = fact(model.main[KIT], 'sharedOps')
+  const listAll = !entityList.some((e: any) =>
+    entityOps(e).includes('list') && 0 < requiredItems(e, 'list').length)
   const opRowDefs: Record<string, string> = {
     load: '| `load` | `(reqmatch, ctrl) -> any` | Load a single entity by match criteria, and return it. Raises on error. |',
-    list: '| `list` | `(reqmatch = nil, ctrl) -> Array` | List entities matching the criteria (call with no argument to list all), one per record. Raises on error. |',
+    list: '| `list` | `(reqmatch = nil, ctrl) -> Array` | List entities matching the criteria' + (listAll ? ' (call with no argument to list all)' : '') + ', one per record. Raises on error. |',
     create: '| `create` | `(reqdata, ctrl) -> any` | Create a new entity, and return it. Raises on error. |',
     update: '| `update` | `(reqdata, ctrl) -> any` | Update an existing entity, and return it. Raises on error. |',
     patch: '| `patch` | `(reqdata, ctrl) -> any` | Change part of an existing entity, and return it. Raises on error. |',

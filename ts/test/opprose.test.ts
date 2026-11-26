@@ -8,7 +8,7 @@ import { memfs } from 'memfs'
 import { Jostraca, Project, Folder, File } from 'jostraca'
 
 import { SdkGen, ReadmeModel, entityCollection } from '../dist/sdkgen.js'
-import { STAGE, SCAFFOLD, makeModel, makeRoot, makeLog, layeredFs, idlessUpdate } from './generateharness'
+import { STAGE, SCAFFOLD, makeModel, makeRoot, makeLog, layeredFs, idlessUpdate, ROUTING_MODEL } from './generateharness'
 import { emptyTables } from './textguard'
 
 
@@ -312,5 +312,17 @@ describe('operation-dependent prose', () => {
     const slug = await documents(only() + '\n' + GADGET)
     deepStrictEqual(TARGETS.filter((t: string) => !slug[t + '/REFERENCE.md'].includes('must include the entity `slug`')), [])
     deepStrictEqual(refs(slug), [])
+  })
+
+
+  test('a reference says a list needs no argument only where it needs none, and names what it does need', async () => {
+    const ALL = /list all/
+    const flat = await documents()
+    const listing = TARGETS.filter((t: string) => ALL.test(flat[t + '/REFERENCE.md'] + flat[t + '/README.md']))
+    strictEqual(15 < listing.length, true, 'the fixture names listing all in ' + listing.join(', '))
+    const nested = await documents(only() + '\n' + ROUTING_MODEL)
+    deepStrictEqual(TARGETS.filter((t: string) => ALL.test(nested[t + '/REFERENCE.md'] + nested[t + '/README.md'])), [])
+    deepStrictEqual(listing.filter((t: string) =>
+      !nested[t + '/REFERENCE.md'].includes('The match must include `planet_id`.')), [])
   })
 })

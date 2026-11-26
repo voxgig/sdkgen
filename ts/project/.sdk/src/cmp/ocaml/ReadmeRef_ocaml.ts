@@ -36,6 +36,8 @@ function ocamlType(type: any): string {
 }
 
 
+const LIST_ALL = ' The match is optional \u2014 pass `(empty_map ())` to list all records.'
+
 const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string }> = {
   load: {
     sig: 'e_load reqmatch ctrl : entity_obj',
@@ -45,7 +47,7 @@ const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string
   list: {
     sig: 'e_list reqmatch ctrl : entity_obj list',
     returns: 'one entity per record',
-    desc: 'List entities matching the given criteria. The match is optional \u2014 pass `(empty_map ())` to list all records. Resolves to one entity per record and raises on error.',
+    desc: 'List entities matching the given criteria.' + LIST_ALL + ' Resolves to one entity per record and raises on error.',
   },
   create: {
     sig: 'e_create reqdata ctrl : entity_obj',
@@ -68,6 +70,7 @@ const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string
     desc: 'Remove the entity matching the given criteria. Resolves to the entity, marked as deleted (`e_deleted`); it keeps the data it held. Raises on error.',
   },
 }
+
 
 
 const ReadmeRef = cmp(function ReadmeRef(props: any) {
@@ -262,6 +265,7 @@ let ${fn} = Sdk_client.${fn} client Noval
           const needs = requiredItems(ent, opname).map((it: any) => it.name)
           const desc = info.desc.replace(' The data must include the entity `id`.',
             null != idF && needs.includes(idF) ? ' The data must include the entity `' + idF + '`.' : '')
+            .replace(LIST_ALL, 0 === needs.length ? LIST_ALL : ' The match must include ' + needs.map((n: string) => '`' + n + '`').join(', ') + '.')
 
           Content(`#### \`${info.sig}\`
 
