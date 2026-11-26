@@ -687,6 +687,8 @@ describe('secrets exchange', () => {
     assert.deepEqual(
       JSON.parse(stub.token()[0].init.body), { refresh_token: REFRESH },
       'the refresh token is sent in the request field')
+    assert.equal(stub.token()[0].init.redirect, 'manual',
+      'a supplied fetch is asked not to follow the exchange')
 
     assert.equal(stub.api().length, 1)
     authIs(stub.api()[0], 'ACCESS01')
