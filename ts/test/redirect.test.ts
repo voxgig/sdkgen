@@ -370,6 +370,44 @@ describe('redirects', () => {
         assert.equal(res.status, 302)
         assert.deepEqual(calls, [apibase + '/in'])
       })
+
+      // A browser: the platform's fetch, and no way to read where a redirect points.
+      test(target + ': where a redirect cannot be read, a request with a body refuses it', async () => {
+        const fetcher = load()
+        const ctx = credentialCtx(target)
+        const seen: { method: string, redirect: any }[] = []
+        const platform: any = async (_url: string, def: any) => {
+          seen.push({ method: def.method, redirect: def.redirect })
+          return { status: 200, statusText: 'OK', headers: new Headers(), json: async () => ({}) }
+        }
+        const upload = { method: 'PUT', headers: headers(), body: 'BODY-1' }
+        const kept = { fetch: globalThis.fetch, process: (globalThis as any).process }
+        try {
+          ;(globalThis as any).fetch = platform
+          ;(globalThis as any).process = { env: kept.process.env, versions: {} }
+          await fetcher(ctx, apibase + '/upload', upload)
+          await fetcher(ctx, apibase + '/upload', { ...upload, method: 'POST', redirect: 'follow' })
+          await fetcher(ctx, apibase + '/record', { method: 'GET', headers: headers() })
+          await fetcher(ctx, apibase + '/upload', { ...upload, redirect: 'manual' })
+        }
+        finally {
+          ;(globalThis as any).fetch = kept.fetch
+          ;(globalThis as any).process = kept.process
+        }
+        assert.deepEqual(seen, [
+          { method: 'PUT', redirect: 'error' },
+          { method: 'POST', redirect: 'error' },
+          { method: 'GET', redirect: undefined },
+          { method: 'PUT', redirect: 'manual' },
+        ])
+        assert.equal((upload as any).redirect, undefined, 'the caller\'s definition was changed')
+
+        // A transport the caller supplied decides for itself.
+        seen.length = 0
+        ctx.client.options = () => ({ system: { fetch: platform } })
+        await fetcher(ctx, apibase + '/upload', upload)
+        assert.deepEqual(seen, [{ method: 'PUT', redirect: undefined }])
+      })
     }
   })
 })

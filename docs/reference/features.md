@@ -270,7 +270,10 @@ from, is dropped on a hop to another origin too.
 
 In `ts` and `js` this holds outside a browser, where the SDK follows a
 redirect itself. A browser does not show a script where a redirect points,
-so there the browser follows it by its own rules.
+so there the SDK cannot drop anything on a hop. A request that carries a
+body therefore refuses every redirect in a browser, and fails when it meets
+one. A request without a body is left to the browser, which follows it by
+its own rules.
 
 A fetch definition whose `redirect` is `manual`, which a transport feature
 sets under a hosts policy, is answered by the redirect response itself in
