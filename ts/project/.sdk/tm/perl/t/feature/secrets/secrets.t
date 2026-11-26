@@ -1119,26 +1119,31 @@ SKIP: {
   clear_env();
   require JSON::PP;
   my $moved = sub {
-    my ($tag, $method, $rpath, $sent) = split /\t/, ($_[0] // ''), 4;
+    my ($line, $path) = @_;
+    my ($tag, $method, $rpath, $sent) = split /\t/, ($line // ''), 4;
     my $body = eval { JSON::PP::decode_json($sent // '') };
-    return 'origin' eq $tag && 'POST' eq $method && '/api/moved/token' eq $rpath
+    return 'origin' eq $tag && 'POST' eq $method && $path eq ($rpath // '')
       && 'HASH' eq ref $body && 1 == keys %$body && 'REFRESH01' eq ($body->{refresh_token} // '');
   };
-  my @cases = ([307, '/api/moved/token', 1],
-    [308, 'http://127.0.0.1:ORIGIN/api/moved/token', 1],
-    [307, 'http://127.0.0.1:OTHER/api/auth/token', 0],
-    [302, '/api/moved/token', 0], [307, '/api/auth/token', 0]);
+  # Each case: the status, the Location, and the path the exchange is asked
+  # again at, or undef where the redirect is refused.
+  my @cases = ([307, '/api/moved/token', '/api/moved/token'],
+    [308, 'http://127.0.0.1:ORIGIN/api/moved/token', '/api/moved/token'],
+    # A Location of a query alone keeps the path that answered.
+    [307, '?step=2', '/api/auth/token?step=2'],
+    [307, 'http://127.0.0.1:OTHER/api/auth/token', undef],
+    [302, '/api/moved/token', undef], [307, '/api/auth/token', undef]);
   my ($followed, $refused, $looped, $elsewhere, @wrong) = (0, 0, 0, 0);
   for my $case (@cases) {
-    my ($status, $location, $follows) = @$case;
+    my ($status, $location, $path) = @$case;
     my ($message, $arrived, $base, $exchanged) =
       redirect_exchange($status, $location, { 'redirect' => 'same-origin' });
     skip('no fork', 5) unless $arrived;
     my @origin = grep { 0 == index($_, "origin\t") } @$arrived;
     $elsewhere += grep { 0 == index($_, "other\t") } @$arrived;
     my $seen = "$status to $location: $message [" . join(' | ', @$arrived) . ']';
-    if ($follows) {
-      if ('ok' eq $message && 2 == @origin && $moved->($origin[0])) { $followed++ }
+    if (defined $path) {
+      if ('ok' eq $message && 2 == @origin && $moved->($origin[0], $path)) { $followed++ }
       else { push @wrong, $seen }
     }
     elsif (0 == @origin
@@ -1157,7 +1162,7 @@ SKIP: {
 
   is($elsewhere, 0, 'exchange opt-in: nothing reached another origin');
   is_deeply(\@wrong, [], 'exchange opt-in: each case as the rule says');
-  is($followed, 2, 'exchange opt-in: two redirects on its own origin followed');
+  is($followed, 3, 'exchange opt-in: three redirects on its own origin followed');
   is($refused, 3, 'exchange opt-in: three redirects refused');
   # A redirect to itself is followed up to the hop limit and no more.
   is($looped, 6, 'exchange opt-in: the loop asked the exchange six times');

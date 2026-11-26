@@ -1052,13 +1052,17 @@ class SecretsFeatureTest < Minitest::Test
 
   def test_with_the_option_a_redirect_on_the_exchanges_own_origin_is_followed_and_no_other
     with_origins do |o|
-      moved = 'POST /api/moved/token {"refresh_token":"REFRESH01"}'
+      sent = ' {"refresh_token":"REFRESH01"}'
+      # Each case: the status, the Location, and the path the exchange is
+      # asked again at, or nil where the redirect is refused.
       cases = [
-        [307, "/api/moved/token", true],
-        [308, o["origin"] + "/api/moved/token", true],
-        [307, o["away"], false],
-        [302, "/api/moved/token", false],
-        [307, "/api/auth/token", false],
+        [307, "/api/moved/token", "/api/moved/token"],
+        [308, o["origin"] + "/api/moved/token", "/api/moved/token"],
+        # A Location of a query alone keeps the path that answered.
+        [307, "?step=2", "/api/auth/token?step=2"],
+        [307, o["away"], nil],
+        [302, "/api/moved/token", nil],
+        [307, "/api/auth/token", nil],
       ]
 
       wrong = []
@@ -1066,7 +1070,7 @@ class SecretsFeatureTest < Minitest::Test
       refused = 0
       looped = 0
 
-      cases.each do |status, location, follows|
+      cases.each do |status, location, path|
         o["lock"].synchronize do
           o["answer"] = [status, location]
           o["followed"].clear
@@ -1076,9 +1080,9 @@ class SecretsFeatureTest < Minitest::Test
         res, message = redirect_probe(redirect_client(o, { "redirect" => "same-origin" }))
         seen = "#{status} to #{location}: #{message} #{o['followed'].inspect}"
 
-        if follows
+        if path
           if res.is_a?(Hash) && true == res["ok"] &&
-             moved == o["followed"][0] && 2 == o["followed"].length
+             "POST #{path}#{sent}" == o["followed"][0] && 2 == o["followed"].length
             followed += 1
           else
             wrong << seen
@@ -1098,7 +1102,7 @@ class SecretsFeatureTest < Minitest::Test
 
       assert_equal [], o["elsewhere"], "the exchange reached another origin"
       assert_equal [], wrong
-      assert_equal 2, followed
+      assert_equal 3, followed
       assert_equal 3, refused
       # A redirect to itself is followed up to the hop limit and no more.
       assert_equal 6, looped

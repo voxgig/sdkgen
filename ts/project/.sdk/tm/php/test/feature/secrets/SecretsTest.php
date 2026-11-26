@@ -1001,7 +1001,8 @@ class ProjectNameSecretsTest extends TestCase
     {
         $record = <<<'ROUTER'
 <?php
-$path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/';
+// The request target, query included: only the bare token path is the exchange.
+$path = (string)($_SERVER['REQUEST_URI'] ?? '/');
 $answer = @file_get_contents(__DIR__ . '/answer.txt');
 if (false !== $answer && '/api/auth/token' === $path) {
     file_put_contents(__DIR__ . '/exchanged.txt', 'x', FILE_APPEND);
@@ -1118,13 +1119,17 @@ ROUTER;
     public function testWithTheOptionARedirectOnTheExchangesOwnOriginIsFollowedAndNoOther(): void
     {
         $this->withOrigins(function (object $o) {
-            $moved = 'POST /api/moved/token {"refresh_token":"REFRESH01"}';
+            $sent = ' {"refresh_token":"REFRESH01"}';
+            // Each case: the status, the Location, and the path the exchange
+            // is asked again at, or null where the redirect is refused.
             $cases = [
-                [307, '/api/moved/token', true],
-                [308, $o->at . '/api/moved/token', true],
-                [307, $o->away, false],
-                [302, '/api/moved/token', false],
-                [307, '/api/auth/token', false],
+                [307, '/api/moved/token', '/api/moved/token'],
+                [308, $o->at . '/api/moved/token', '/api/moved/token'],
+                // A Location of a query alone keeps the path that answered.
+                [307, '?step=2', '/api/auth/token?step=2'],
+                [307, $o->away, null],
+                [302, '/api/moved/token', null],
+                [307, '/api/auth/token', null],
             ];
 
             $wrong = [];
@@ -1132,7 +1137,7 @@ ROUTER;
             $refused = 0;
             $looped = 0;
 
-            foreach ($cases as [$status, $location, $follows]) {
+            foreach ($cases as [$status, $location, $path]) {
                 $o->origin->put('answer.txt', $status . ' ' . $location);
                 $o->origin->put('seen.txt', '');
                 $o->origin->put('exchanged.txt', '');
@@ -1145,9 +1150,9 @@ ROUTER;
                 }, self::lines($o->origin->read('seen.txt')));
                 $shown = $status . ' to ' . $location . ': ' . $message . ' ' . json_encode($seen);
 
-                if ($follows) {
+                if (null !== $path) {
                     if (is_array($res) && true === ($res['ok'] ?? null) &&
-                        2 === count($seen) && $moved === $seen[0]) {
+                        2 === count($seen) && 'POST ' . $path . $sent === $seen[0]) {
                         $followed++;
                     } else {
                         $wrong[] = $shown;
@@ -1172,7 +1177,7 @@ ROUTER;
 
             $this->assertSame([], $elsewhere, 'the exchange reached another origin');
             $this->assertSame([], $wrong);
-            $this->assertSame(2, $followed);
+            $this->assertSame(3, $followed);
             $this->assertSame(3, $refused);
             // A redirect to itself is followed up to the hop limit and no more.
             $this->assertSame(6, $looped);
