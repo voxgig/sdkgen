@@ -7850,6 +7850,8 @@ type SecretsLane = {
   target: string,
   runner: string,
   command: () => { bin: string, args: string[], env?: NodeJS.ProcessEnv } | null,
+  // Why the redirect case did not run, where the suite itself skipped it.
+  unrun?: (out: string) => string | null,
 }
 
 const SECRETS_LANES: SecretsLane[] = [
@@ -7881,6 +7883,12 @@ const SECRETS_LANES: SecretsLane[] = [
     target: 'php',
     runner: 'test/feature/secrets/SecretsTest.php',
     command: () => phpunitViaComposer(['test/feature/secrets/SecretsTest.php']),
+    // The case's listeners are child `php -S` processes. On windows the
+    // suite's stub starts none, and PHPUnit reports its cases skipped.
+    unrun: (out) => 'win32' === process.platform &&
+      /^OK, but some tests were skipped!/m.test(out)
+      ? 'PHPUnit reported the redirect case skipped: its listeners did not start here'
+      : null,
   },
   {
     target: 'java',
@@ -7969,6 +7977,11 @@ describe('the secrets suite runs from a generated SDK', () => {
 
       ok(ran.ok, 'the generated ' + lane.target + ' secrets suite FAILED:\n' +
         tail(ran.out, 60))
+
+      const unrun = null == lane.unrun ? null : lane.unrun(ran.out)
+      if (null != unrun) {
+        return t.skip(lane.target + ': ' + unrun)
+      }
       exchangeRefused(lane.target, ran.out)
     })
   }
