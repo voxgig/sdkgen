@@ -13,6 +13,27 @@ module ProjectNameUtilities
     m == "application/json" || m == "text/json" || m.end_with?("+json")
   end
 
+  TEXT_MEDIA = /json|xml|html|javascript|ecmascript|yaml|urlencoded|graphql/.freeze
+
+  # Text is no declared type, text/*, or a structured text format.
+  def self.text_media?(type)
+    media = type.to_s.split(";").first.to_s.strip.downcase
+    media.empty? || media.start_with?("text/") || TEXT_MEDIA.match?(media)
+  end
+
+  # A response whose body is bytes: by the model, or by the type it declares.
+  def self.binary_response?(point, type)
+    response = point.is_a?(Hash) ? point["response"] : nil
+    (response.is_a?(Hash) && true == response["binary"]) || !text_media?(type)
+  end
+
+  # A header's value, from a map in any spelling.
+  def self.header_value(headers, name)
+    return "" unless headers.is_a?(Hash)
+    pair = headers.find { |key, _| key.to_s.downcase == name }
+    pair ? pair[1].to_s : ""
+  end
+
   # The declared JSON type alone, else every declared type in the model's
   # order; nil when no success response declares a body.
   def self.accept_of(point)

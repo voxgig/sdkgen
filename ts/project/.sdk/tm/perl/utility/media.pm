@@ -28,6 +28,35 @@ sub is_json_media {
   return 'application/json' eq $m || 'text/json' eq $m || $m =~ /\+json\z/;
 }
 
+# Text is no declared type, text/*, or a structured text format.
+sub is_text_media {
+  my ($type) = @_;
+  my ($media) = split /;/, (defined $type && !ref $type ? "$type" : ''), 2;
+  $media = lc(defined $media ? $media : '');
+  $media =~ s/^\s+|\s+$//g;
+  return 1 if !length $media || $media =~ m{^text/};
+  return $media =~ /json|xml|html|javascript|ecmascript|yaml|urlencoded|graphql/ ? 1 : 0;
+}
+
+# A response whose body is bytes: by the model, or by the type it declares.
+sub is_binary_response {
+  my ($point, $type) = @_;
+  my $response = ProjectNameHelpers::gp($point, 'response');
+  return 1 if ProjectNameHelpers::is_true(ProjectNameHelpers::gp($response, 'binary'));
+  return is_text_media($type) ? 0 : 1;
+}
+
+# A header's value, from a map in any spelling.
+sub header_value {
+  my ($headers, $name) = @_;
+  return '' unless Voxgig::Struct::ismap($headers);
+  for my $k (keys %$headers) {
+    next unless lc("$k") eq $name;
+    return defined $headers->{$k} ? "$headers->{$k}" : '';
+  }
+  return '';
+}
+
 # The declared JSON type alone, else every declared type in the model's
 # order; undef when no success response declares a body.
 sub accept_of {

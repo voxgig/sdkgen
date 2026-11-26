@@ -187,23 +187,40 @@ sub sensitive_key {
   return 0;
 }
 
-# The live request body of a point the model marks binary, and its type.
-sub binary_body {
+# The request body of a point the model marks binary, and a response body
+# that is bytes, each with its type. A response read as text does not say
+# how many bytes it was, so it is not sized.
+sub binary_bodies {
   my ($ctx) = @_;
-  return undef unless Voxgig::Struct::ismap($ctx);
-  my $body = ProjectNameHelpers::gp($ctx->{point}, 'body');
-  my $kind = ProjectNameHelpers::gp($body, 'kind');
-  return undef unless defined $kind && 'raw' eq $kind
-    && ProjectNameHelpers::is_true(ProjectNameHelpers::gp($body, 'binary'));
+  return [] unless Voxgig::Struct::ismap($ctx);
   # A string shorter than the registry accepts is not told from ordinary text.
   my $min = config($ctx)->{min};
-  my @live = grep { defined $_ && (ref $_ || length($_) >= $min) } (
-    ProjectNameHelpers::gp($ctx->{spec}, 'body'),
-    ProjectNameHelpers::gp($ctx->{reqdata}, $ProjectNameUtilities::RAW_BODY),
-  );
-  return undef unless @live;
-  my $media = ProjectNameHelpers::gp($body, 'media');
-  return { 'live' => \@live, 'type' => (defined $media && !ref $media ? $media : undef) };
+  my $known = sub { [ grep { defined $_ && (ref $_ || length($_) >= $min) } @_ ] };
+  my @bodies;
+
+  my $body = ProjectNameHelpers::gp($ctx->{point}, 'body');
+  my $kind = ProjectNameHelpers::gp($body, 'kind');
+  if (defined $kind && 'raw' eq $kind
+    && ProjectNameHelpers::is_true(ProjectNameHelpers::gp($body, 'binary'))) {
+    my $media = ProjectNameHelpers::gp($body, 'media');
+    push @bodies, {
+      'live' => $known->(ProjectNameHelpers::gp($ctx->{spec}, 'body'),
+        ProjectNameHelpers::gp($ctx->{reqdata}, $ProjectNameUtilities::RAW_BODY)),
+      'type' => (defined $media && !ref $media ? $media : undef),
+      'sized' => 1,
+    };
+  }
+
+  my $response = $ctx->{response};
+  if (Voxgig::Struct::ismap($response)) {
+    my $type = ProjectNameUtilities::header_value($response->{headers}, 'content-type');
+    if (ProjectNameUtilities::is_binary_response($ctx->{point}, $type)) {
+      push @bodies, { 'live' => $known->($response->{body}),
+        'type' => (length $type ? $type : undef), 'sized' => 0 };
+    }
+  }
+
+  return [ grep { @{ $_->{live} } } @bodies ];
 }
 
 # The same reference, or a scalar equal to it.
@@ -234,14 +251,21 @@ sub byte_length {
 }
 
 # Bytes are described, never copied (ADR-006): the kind, and the size and
-# media type where they are known. A string is bytes only as the body of a
-# point the model marks binary; a filehandle is read once, so it is a stream.
+# media type where they are known. A string is bytes only as a live body;
+# a filehandle is read once, so it is a stream.
 sub describe_binary {
-  my ($val, $bin) = @_;
-  my ($live) = $bin ? grep { same_body($_, $val) } @{ $bin->{live} } : ();
+  my ($val, $bins) = @_;
+  my ($live, $bin);
+  for my $one (@$bins) {
+    ($live) = grep { same_body($_, $val) } @{ $one->{live} };
+    if (defined $live) { $bin = $one; last }
+  }
   my $desc;
   if (!ref $val) {
-    $desc = { $BINARY => 'bytes', 'size' => byte_length($live) } if defined $live;
+    if (defined $live) {
+      $desc = { $BINARY => 'bytes' };
+      $desc->{size} = byte_length($live) if $bin->{sized};
+    }
   }
   elsif (is_stream($val)) {
     $desc = { $BINARY => 'stream' };
@@ -337,7 +361,7 @@ sub clean {
   return $val unless defined $val;
   return clean_string($cfg, $val) unless ref $val;
 
-  my $bin = binary_body($ctx);
+  my $bin = binary_bodies($ctx);
 
   if (Scalar::Util::blessed($val) && $val->isa('ProjectNameError')) {
     $val->{msg} = clean_string($cfg, "$val->{msg}") if defined $val->{msg};
