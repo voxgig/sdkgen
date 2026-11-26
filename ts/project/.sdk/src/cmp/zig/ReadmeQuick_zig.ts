@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems, sendsId } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems, sendsId, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -29,9 +29,17 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   ) as any
 
   const authActive = isAuthActive(model)
-  const ctor = authActive
-    ? `sdk.${model.const.Name}SDK.new(h.jo(&.{\n    .{ "apikey", h.vstr(init.environ_map.get("${envName(model)}_APIKEY") orelse "") },\n}))`
-    : `sdk.${model.const.Name}SDK.new(h.vnull())`
+  // The constructor refuses a templated URL it has no value for, so the quick
+  // start passes each variable the URL uses with no default.
+  const svars = fact(model.main[KIT], 'server').filter((v: any) => v.required)
+  const ctorFields = [
+    ...(authActive ? [`.{ "apikey", h.vstr(init.environ_map.get("${envName(model)}_APIKEY") orelse "") },`] : []),
+    ...(0 === svars.length ? [] : [`.{ "server", h.jo(&.{ ` +
+      svars.map((v: any) => `.{ "${v.name}", h.vstr("<${v.name}>") }`).join(', ') + ` }) },`]),
+  ]
+  const ctor = 0 === ctorFields.length
+    ? `sdk.${model.const.Name}SDK.new(h.vnull())`
+    : `sdk.${model.const.Name}SDK.new(h.jo(&.{${ctorFields.map((f: string) => '\n    ' + f).join('')}\n}))`
 
   // A type-correct zig expression constructing a voxgig struct Value.
   const zigLit = (type: any, placeholder: string = 'example'): string => {

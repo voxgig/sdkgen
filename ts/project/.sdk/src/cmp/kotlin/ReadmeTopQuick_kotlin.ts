@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, opRequestShape, matchExampleItems, entityOps } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, opRequestShape, matchExampleItems, entityOps, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -44,18 +44,19 @@ import ${kotlinPackage(model)}.core.${SDK}
 ${shown ? `import ${kotlinPackage(model)}.core.SdkEntity\n` : ''}
 `)
 
-  if (authActive) {
-    Content(`val client = ${SDK}(mutableMapOf<String, Any?>(
-    "apikey" to System.getenv("${envName(model)}_APIKEY"),
-))
+  const svars = fact(model.main[KIT], 'server').filter((v: any) => v.required)
+  const ctorFields = [
+    ...(authActive ? [`"apikey" to System.getenv("${envName(model)}_APIKEY"),`] : []),
+    ...(0 === svars.length ? [] : [`"server" to mutableMapOf<String, Any?>(` +
+      svars.map((v: any) => `"${v.name}" to "<${v.name}>"`).join(', ') + `),`]),
+  ]
+  const ctor = 0 === ctorFields.length
+    ? `${SDK}()`
+    : `${SDK}(mutableMapOf<String, Any?>(${ctorFields.map((f: string) => '\n    ' + f).join('')}\n))`
+
+  Content(`val client = ${ctor}
 
 `)
-  }
-  else {
-    Content(`val client = ${SDK}()
-
-`)
-  }
 
   if (exampleEntity) {
     const eVar = kotlinVarName(exampleEntity.name)

@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, opRequestShape, matchExampleItems, entityOps } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, opRequestShape, matchExampleItems, entityOps, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -43,19 +43,20 @@ import ${MODULE}
 ${authActive ? 'import Foundation\n' : ''}
 `)
 
-  if (authActive) {
-    Content(`let options = VMap()
-options.entries["apikey"] = .string(
-    ProcessInfo.processInfo.environment["${envName(model)}_APIKEY"] ?? "")
-let client = ${SDK}(options)
+  const svars = fact(model.main[KIT], 'server').filter((v: any) => v.required)
+  const ctorLines = [
+    ...(authActive ? [`options.entries["apikey"] = .string(\n    ProcessInfo.processInfo.environment["${envName(model)}_APIKEY"] ?? "")`] : []),
+    ...(0 === svars.length ? [] : ['let server = VMap()',
+      ...svars.map((v: any) => `server.entries["${v.name}"] = .string("<${v.name}>")`),
+      'options.entries["server"] = .map(server)']),
+  ]
+  const ctor = 0 === ctorLines.length
+    ? `let client = ${SDK}()`
+    : ['let options = VMap()', ...ctorLines, `let client = ${SDK}(options)`].join('\n')
+
+  Content(`${ctor}
 
 `)
-  }
-  else {
-    Content(`let client = ${SDK}()
-
-`)
-  }
 
   if (exampleEntity) {
     const eName = nom(exampleEntity, 'Name')

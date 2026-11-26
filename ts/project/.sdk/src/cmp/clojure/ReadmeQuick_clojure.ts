@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems, sendsId } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems, sendsId, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -27,9 +27,17 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   ) as any
 
   const authActive = isAuthActive(model)
-  const ctor = authActive
-    ? `(api/make-sdk (vs/jm "apikey" (System/getenv "${envName(model)}_APIKEY")))`
-    : `(api/make-sdk nil)`
+  // The constructor refuses a templated URL it has no value for, so the quick
+  // start passes each variable the URL uses with no default.
+  const svars = fact(model.main[KIT], 'server').filter((v: any) => v.required)
+  const ctorFields = [
+    ...(authActive ? [`"apikey" (System/getenv "${envName(model)}_APIKEY")`] : []),
+    ...(0 === svars.length ? [] : [`"server" (vs/jm ` +
+      svars.map((v: any) => `"${v.name}" "<${v.name}>"`).join(' ') + `)`]),
+  ]
+  const ctor = 0 === ctorFields.length
+    ? `(api/make-sdk nil)`
+    : `(api/make-sdk (vs/jm ${ctorFields.join(' ')}))`
 
   // A type-correct Clojure literal for a param.
   const cljLit = (type: any, placeholder: string = 'example'): string => {

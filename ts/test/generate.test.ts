@@ -1786,9 +1786,10 @@ main: kit: target: js: phase: feature: active: false
 
   // BASIC_TEMPLATED's URL uses `tenant` with no default and `region` with one.
   test('a quick start asks for the server variables a client must supply, and no others', async () => {
-    const out = await generate(['ts', 'go', 'py', 'java'], undefined, BASIC_TEMPLATED)
-    for (const target of ['ts', 'go', 'py', 'java']) {
-      const fence = '```' + ('py' === target ? 'python' : target) + '\n'
+    const targets = allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))
+    const out = await generate(targets, undefined, BASIC_TEMPLATED)
+    for (const target of targets) {
+      const fence = '```' + ({ py: 'python', rb: 'ruby' }[target] ?? target) + '\n'
       for (const file of [target + '/README.md', 'README.md']) {
         const ctors = String(out[file]).split(fence).slice(1).map((b: string) => b.slice(0, b.indexOf('```')))
           .filter((b: string) => /DEMO_APIKEY/.test(b))

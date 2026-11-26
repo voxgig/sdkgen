@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, entityIdField, opRequestShape, elixirAccessor, entityCollection, exampleVarName, matchExampleItems, entityOps } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, entityIdField, opRequestShape, elixirAccessor, entityCollection, exampleVarName, matchExampleItems, entityOps, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -19,9 +19,15 @@ const ReadmeTopQuick = cmp(function ReadmeTopQuick(props: any) {
   const exampleEntity = Object.values(entity).find((e: any) => e.active !== false) as any
 
   const authActive = isAuthActive(model)
-  const ctor = authActive
-    ? `${Name}.new(H.deep(%{"apikey" => System.get_env("${envName(model)}_APIKEY")}))`
-    : `${Name}.new()`
+  const svars = fact(model.main[KIT], 'server').filter((v: any) => v.required)
+  const ctorFields = [
+    ...(authActive ? [`"apikey" => System.get_env("${envName(model)}_APIKEY")`] : []),
+    ...(0 === svars.length ? [] : [`"server" => %{` +
+      svars.map((v: any) => `"${v.name}" => "<${v.name}>"`).join(', ') + `}`]),
+  ]
+  const ctor = 0 === ctorFields.length
+    ? `${Name}.new()`
+    : `${Name}.new(H.deep(%{${ctorFields.join(', ')}}))`
 
   Content(`\`\`\`elixir
 alias ${Name}.Helpers, as: H

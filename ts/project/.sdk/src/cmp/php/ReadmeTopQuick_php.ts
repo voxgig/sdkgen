@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, opRequestShape, phpEntityAccessor, listMatchArg, matchExampleItems, litString, entityOps } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, opRequestShape, phpEntityAccessor, listMatchArg, matchExampleItems, litString, entityOps, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -29,9 +29,15 @@ const ReadmeTopQuick = cmp(function ReadmeTopQuick(props: any) {
   const exampleEntity = Object.values(entity).find((e: any) => e.active !== false) as any
 
   const authActive = isAuthActive(model)
-  const ctor = authActive
-    ? `new ${model.const.Name}SDK([\n    "apikey" => getenv("${envName(model)}_APIKEY"),\n])`
-    : `new ${model.const.Name}SDK()`
+  const svars = fact(model.main[KIT], 'server').filter((v: any) => v.required)
+  const ctorFields = [
+    ...(authActive ? [`"apikey" => getenv("${envName(model)}_APIKEY"),`] : []),
+    ...(0 === svars.length ? [] : [`"server" => [` +
+      svars.map((v: any) => `\n        "${v.name}" => "<${v.name}>",`).join('') + `\n    ],`]),
+  ]
+  const ctor = 0 === ctorFields.length
+    ? `new ${model.const.Name}SDK()`
+    : `new ${model.const.Name}SDK([${ctorFields.map((f: string) => '\n    ' + f).join('')}\n])`
 
   Content(`\`\`\`php
 <?php

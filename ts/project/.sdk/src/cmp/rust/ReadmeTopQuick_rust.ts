@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, opRequestShape, matchExampleItems, entityOps } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, opRequestShape, matchExampleItems, entityOps, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -33,9 +33,15 @@ const ReadmeTopQuick = cmp(function ReadmeTopQuick(props: any) {
   const exampleEntity = Object.values(entity).find((e: any) => e.active !== false) as any
 
   const authActive = isAuthActive(model)
-  const ctor = authActive
-    ? `${model.const.Name}SDK::new(jo(vec![\n    ("apikey", Value::str(std::env::var("${envName(model)}_APIKEY").unwrap_or_default())),\n]))`
-    : `${model.const.Name}SDK::new(Value::Noval)`
+  const svars = fact(model.main[KIT], 'server').filter((v: any) => v.required)
+  const ctorFields = [
+    ...(authActive ? [`("apikey", Value::str(std::env::var("${envName(model)}_APIKEY").unwrap_or_default())),`] : []),
+    ...(0 === svars.length ? [] : [`("server", jo(vec![` +
+      svars.map((v: any) => `("${v.name}", Value::str("<${v.name}>"))`).join(', ') + `])),`]),
+  ]
+  const ctor = 0 === ctorFields.length
+    ? `${model.const.Name}SDK::new(Value::Noval)`
+    : `${model.const.Name}SDK::new(jo(vec![${ctorFields.map((f: string) => '\n    ' + f).join('')}\n]))`
 
   Content(`\`\`\`rust
 use ${rustcrate}::{jo, ${model.const.Name}EntityBase, ${model.const.Name}SDK, Entity, Value};

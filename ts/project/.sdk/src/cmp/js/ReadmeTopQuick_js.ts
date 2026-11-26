@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, packageName, envName, entityIdField, entityOps, opRequestShape, safeVarName, exampleVarName, jsKey, listMatchArg, matchExampleItems } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, packageName, envName, entityIdField, entityOps, opRequestShape, safeVarName, exampleVarName, jsKey, listMatchArg, matchExampleItems, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -16,9 +16,16 @@ const ReadmeTopQuick = cmp(function ReadmeTopQuick(props: any) {
   const entity = getModelPath(model, `main.${KIT}.entity`)
   const exampleEntity = Object.values(entity).find((e: any) => e.active !== false) as any
 
-  const ctor = isAuthActive(model)
-    ? `new ${model.const.Name}SDK({\n  apikey: process.env.${envName(model)}_APIKEY,\n})`
-    : `new ${model.const.Name}SDK()`
+  const svars = fact(model.main[KIT], 'server').filter((v: any) => v.required)
+  const serverField = 0 === svars.length ? '' :
+    `\n  // Required: this API's server URL is templated on these.\n  server: {` +
+    svars.map((v: any) => `\n    ${v.name}: '<${v.name}>',`).join('') + `\n  },`
+  const ctorFields = (isAuthActive(model)
+    ? `\n  apikey: process.env.${envName(model)}_APIKEY,`
+    : '') + serverField
+  const ctor = '' === ctorFields
+    ? `new ${model.const.Name}SDK()`
+    : `new ${model.const.Name}SDK({${ctorFields}\n})`
 
   Content(`\`\`\`js
 const { ${model.const.Name}SDK } = require('${packageName(model, target.name)}')
