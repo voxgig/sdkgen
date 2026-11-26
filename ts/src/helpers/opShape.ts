@@ -410,6 +410,7 @@ function entityOps(ent: any): string[] {
 
 
 // Unlike entityOps, keeps action-only ops: the README introductions always have.
+// None when no active entity has one.
 function introOps(model: any): string[] {
   const entity = model?.main?.[KIT]?.entity || {}
   const found = new Set<string>()
@@ -419,8 +420,7 @@ function introOps(model: any): string[] {
       if (e.op[o] && false !== e.op[o].active) found.add(o)
     }
   }
-  const names = CANON_OP_ORDER.filter((o) => found.has(o))
-  return 0 < names.length ? names : ['list', 'load']
+  return CANON_OP_ORDER.filter((o) => found.has(o))
 }
 
 

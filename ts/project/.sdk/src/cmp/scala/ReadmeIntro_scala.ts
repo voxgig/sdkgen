@@ -23,19 +23,17 @@ const ReadmeIntroBody = cmp(function ReadmeIntroBody(props: any) {
   const entity = getModelPath(model, `main.${KIT}.entity`)
   const exampleEntity = Object.values(entity || {})
     .find((e: any) => e.active !== false) as any
-  const example = exampleEntity
-    ? `for example \`client.${scalaVarName(exampleEntity.name)}(null)\` — each`
-    : 'each'
-
   const opList = introOps(model)
     .map((o) => '`' + o + '`').join(', ')
 
-  Content(`The SDK exposes the API as semantic **Entities** — ${example}
-carrying a small, uniform set of operations (${opList}) instead of raw URL
+  if (exampleEntity) {
+    Content(`The SDK exposes the API as semantic **Entities** — for example \`client.${scalaVarName(exampleEntity.name)}(null)\` —${'' === opList ? '' : ` each
+carrying a small, uniform set of operations (${opList})`} instead of raw URL
 paths and query strings. You work with named resources and verbs, which
 keeps the cognitive load low.
 
 `)
+  }
 })
 
 

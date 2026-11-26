@@ -247,13 +247,7 @@ const ReadmeTopEntityModel = (0, component_1.cmp)(function ReadmeTopEntityModel(
             const body = bodyLines.length ? `\n${bodyLines.join('\n')}\n` : '';
             exCall = `const ${exLower} = await client.${ex}().${primaryOp}({${body}})`;
         }
-        const CANON_OPS = ['list', 'load', 'create', 'update', 'patch', 'remove'];
-        const opSet = new Set();
-        activeEntities.forEach((e) => Object.keys(e.op || {})
-            .forEach((o) => { if (e.op[o] && e.op[o].active !== false)
-            opSet.add(o); }));
-        const opNames = CANON_OPS.filter((o) => opSet.has(o)).concat([...opSet].filter((o) => !CANON_OPS.includes(o)));
-        const opList = (opNames.length ? opNames : ['list', 'load']).map((o) => '`' + o + '`').join(', ');
+        const opList = (0, opShape_1.introOps)(model).map((o) => '`' + o + '`').join(', ');
         // In the SDK's own language: ts when it has one, else the first the
         // example helpers can write, else no example at all.
         const lang = exampleLang(model, sdkTargets);
@@ -273,8 +267,8 @@ const ReadmeTopEntityModel = (0, component_1.cmp)(function ReadmeTopEntityModel(
 
 This SDK exposes the API as ${surface} that you
 call directly, instead of assembling URL paths and query strings.${seeEntities} Entities are
-**Capitalised** to mark them as the primary surface, each with the operations they
-support (${opList})${exBlock}
+**Capitalised** to mark them as the primary surface${'' === opList ? '' : `, each with the operations they
+support (${opList})`}${exBlock}
 
 Thinking in entities keeps the mental model small — for people and AI agents alike —
 rather than reasoning about raw HTTP routes and query parameters.
@@ -449,7 +443,7 @@ Then add it to your agent's MCP config (Claude Desktop, Cursor, etc.):
     }
 });
 const ReadmeTopEntities = (0, component_1.cmp)(function ReadmeTopEntities(props) {
-    const { activeEntities } = props.s;
+    const { model, activeEntities } = props.s;
     if (activeEntities.length > 0) {
         (0, jostraca_1.Content)(`## Entities
 
@@ -467,13 +461,9 @@ The API exposes ${activeEntities.length === 1 ? 'one entity' : activeEntities.le
             (0, jostraca_1.Content)(`| **${ent.Name}** | ${entdesc} | \`${path}\` |
 `);
         });
-        const opUnion = new Set();
-        activeEntities.forEach((e) => Object.keys(e.op || {})
-            .forEach((o) => { if (e.op[o]?.active !== false)
-            opUnion.add(o); }));
-        const opAvail = ['load', 'list', 'create', 'update', 'patch', 'remove'].filter((o) => opUnion.has(o));
-        const opBold = (opAvail.length ? opAvail : ['load', 'list']).map((o) => '**' + o + '**').join(', ');
-        (0, jostraca_1.Content)(`
+        const opBold = (0, opShape_1.introOps)(model).map((o) => '**' + o + '**').join(', ');
+        (0, jostraca_1.Content)('' === opBold ? `
+` : `
 The operations available across these entities are ${opBold} — see each entity's
 own list above for exactly which it supports.
 

@@ -25,19 +25,17 @@ following idiomatic OCaml conventions (${0 === collectDeps(model, target.name, t
   const entity = getModelPath(model, `main.${KIT}.entity`)
   const exampleEntity = Object.values(entity || {})
     .find((e: any) => e.active !== false) as any
-  const example = exampleEntity
-    ? `for example \`Sdk_client.${ocamlVarName(exampleEntity.name)} client Noval\` — each`
-    : 'each'
-
   const opList = introOps(model)
     .map((o) => '`' + o + '`').join(', ')
 
-  Content(`The SDK exposes the API as semantic **Entities** — ${example}
-carrying a small, uniform set of operations (${opList}) instead of raw URL
+  if (exampleEntity) {
+    Content(`The SDK exposes the API as semantic **Entities** — for example \`Sdk_client.${ocamlVarName(exampleEntity.name)} client Noval\` —${'' === opList ? '' : ` each
+carrying a small, uniform set of operations (${opList})`} instead of raw URL
 paths and query strings. You work with named resources and verbs, which
 keeps the cognitive load low.
 
 `)
+  }
 })
 
 

@@ -24,21 +24,19 @@ entity-oriented client following idiomatic modern C++ (C++17) conventions.
   const entity = getModelPath(model, `main.${KIT}.entity`)
   const exampleEntity = Object.values(entity || {})
     .find((e: any) => e.active !== false) as any
-  const example = exampleEntity
-    ? `for example \`client->${cppVarName(exampleEntity.name)}()\` — each`
-    : 'each'
-
   const opList = introOps(model)
     .map((o) => '`' + o + '`').join(', ')
 
-  Content(`The SDK exposes the API as semantic **Entities** — ${example}
-carrying a small, uniform set of operations (${opList}) instead of raw URL
+  if (exampleEntity) {
+    Content(`The SDK exposes the API as semantic **Entities** — for example \`client->${cppVarName(exampleEntity.name)}()\` —${'' === opList ? '' : ` each
+carrying a small, uniform set of operations (${opList})`} instead of raw URL
 paths and query strings. You work with named resources and verbs, which
 keeps the cognitive load low. Every value flows through a single dynamic
 \`sdk::Value\` type (a JSON-like variant), so there is no schema-driven code to
 regenerate when the API changes.
 
 `)
+  }
 })
 
 

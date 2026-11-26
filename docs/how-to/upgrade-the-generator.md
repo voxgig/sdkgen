@@ -51,6 +51,19 @@ npx voxgig-sdkgen target add <t> --force
 
 Then compare with `git diff` and restore any local change by hand.
 
+## An empty operation list in a README introduction
+
+From 4.48.0, `introOps` names no operation when no active entity has one,
+where it named `list` and `load` before. The README introductions copied
+before 4.48.0 call it, so under the newer package they print an empty
+list, `()`. The safe path brings the copies up with the package; this
+happens only where the package moved alone, by an `npm install` say.
+Re-add each target to bring its copies up to the package:
+
+```bash
+npx voxgig-sdkgen target add <t>
+```
+
 ## Releases up to 4.41.0 do not run on a fresh install
 
 A project whose pin resolves to 4.41.0 or earlier, such as `~4.40.1`,

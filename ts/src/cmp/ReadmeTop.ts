@@ -14,7 +14,7 @@ import { PIPELINE_STAGES, pipelineLength } from './FeatureHook'
 import type { FeatureDoc } from './FeatureDocs'
 
 import {
-  entityPrimaryOp, entityIdField, entityPath, entityActions,
+  entityPrimaryOp, entityIdField, entityPath, entityActions, introOps,
 } from '../helpers/opShape'
 import { EXAMPLE_LANGS, matchArg, listMatchArg, idLiteral, primaryOpCall, requestExampleItems } from '../helpers/opExample'
 import { mcpTools, MCP_WRITE_OPS } from '../helpers/mcpTools'
@@ -297,12 +297,7 @@ const ReadmeTopEntityModel = cmp(function ReadmeTopEntityModel(props: any) {
       const body = bodyLines.length ? `\n${bodyLines.join('\n')}\n` : ''
       exCall = `const ${exLower} = await client.${ex}().${primaryOp}({${body}})`
     }
-    const CANON_OPS = ['list', 'load', 'create', 'update', 'patch', 'remove']
-    const opSet = new Set<string>()
-    activeEntities.forEach((e: any) => Object.keys(e.op || {})
-      .forEach((o: string) => { if ((e.op as any)[o] && (e.op as any)[o].active !== false) opSet.add(o) }))
-    const opNames = CANON_OPS.filter((o) => opSet.has(o)).concat([...opSet].filter((o) => !CANON_OPS.includes(o)))
-    const opList = (opNames.length ? opNames : ['list', 'load']).map((o) => '`' + o + '`').join(', ')
+    const opList = introOps(model).map((o) => '`' + o + '`').join(', ')
 
     // In the SDK's own language: ts when it has one, else the first the
     // example helpers can write, else no example at all.
@@ -324,8 +319,8 @@ const ReadmeTopEntityModel = cmp(function ReadmeTopEntityModel(props: any) {
 
 This SDK exposes the API as ${surface} that you
 call directly, instead of assembling URL paths and query strings.${seeEntities} Entities are
-**Capitalised** to mark them as the primary surface, each with the operations they
-support (${opList})${exBlock}
+**Capitalised** to mark them as the primary surface${'' === opList ? '' : `, each with the operations they
+support (${opList})`}${exBlock}
 
 Thinking in entities keeps the mental model small — for people and AI agents alike —
 rather than reasoning about raw HTTP routes and query parameters.
@@ -517,7 +512,7 @@ Then add it to your agent's MCP config (Claude Desktop, Cursor, etc.):
 
 
 const ReadmeTopEntities = cmp(function ReadmeTopEntities(props: any) {
-  const { activeEntities } = props.s
+  const { model, activeEntities } = props.s
 
   if (activeEntities.length > 0) {
     Content(`## Entities
@@ -538,12 +533,9 @@ The API exposes ${activeEntities.length === 1 ? 'one entity' : activeEntities.le
 `)
     })
 
-    const opUnion = new Set<string>()
-    activeEntities.forEach((e: any) => Object.keys(e.op || {})
-      .forEach((o: string) => { if ((e.op as any)[o]?.active !== false) opUnion.add(o) }))
-    const opAvail = ['load', 'list', 'create', 'update', 'patch', 'remove'].filter((o) => opUnion.has(o))
-    const opBold = (opAvail.length ? opAvail : ['load', 'list']).map((o) => '**' + o + '**').join(', ')
-    Content(`
+    const opBold = introOps(model).map((o) => '**' + o + '**').join(', ')
+    Content('' === opBold ? `
+` : `
 The operations available across these entities are ${opBold} — see each entity's
 own list above for exactly which it supports.
 

@@ -343,6 +343,7 @@ function entityOps(ent) {
     return CANON_OP_ORDER.filter((o) => ops[o] && ops[o].active !== false && !opNeedsAction(ops[o]));
 }
 // Unlike entityOps, keeps action-only ops: the README introductions always have.
+// None when no active entity has one.
 function introOps(model) {
     const entity = model?.main?.[apidef_1.KIT]?.entity || {};
     const found = new Set();
@@ -354,8 +355,7 @@ function introOps(model) {
                 found.add(o);
         }
     }
-    const names = CANON_OP_ORDER.filter((o) => found.has(o));
-    return 0 < names.length ? names : ['list', 'load'];
+    return CANON_OP_ORDER.filter((o) => found.has(o));
 }
 // The operations the active entities have a generated method for, in
 // canonical order; none when no entity has one.

@@ -357,8 +357,8 @@ The typed-model subsystem (full picture:
   six the bundled targets generate, in canonical order, leaving out an op
   whose every route is an action;
   **`introOps(model)`** — the op names of those six a README introduction
-  lists, across every active entity, in canonical order, or `list` and `load`
-  when there are none;
+  lists, across every active entity, in canonical order, and none when no
+  active entity has one;
   **`entityPrimaryOp(ent)`** — the representative op for a single example;
   **`pickExampleEntity(entityColl)`** — the entity a README example should
   use, preferring one whose example call reaches a route.
