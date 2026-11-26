@@ -789,100 +789,200 @@ func TestSecretsExchangeRawFetch(t *testing.T) {
 }
 
 // Real listeners and the raw fallback transport: a stub follows nothing.
+// redirectOrigins holds the real listeners: the origin answers the exchange
+// as `status` and `location` say and records what else it gets.
+type redirectOrigins struct {
+	mu        sync.Mutex
+	elsewhere []string
+	followed  []string
+	exchanged int
+	status    int
+	location  string
+	origin    string
+	base      string
+	away      string
+}
+
+func withOrigins(run func(o *redirectOrigins)) {
+	o := &redirectOrigins{}
+
+	other := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+		body, _ := io.ReadAll(req.Body)
+		o.mu.Lock()
+		o.elsewhere = append(o.elsewhere, req.Method+" "+req.URL.Path+" "+string(body))
+		o.mu.Unlock()
+		res.Header().Set("content-type", "application/json")
+		res.Write([]byte(`{"access_token":"ELSEWHERE01"}`))
+	}))
+	defer other.Close()
+
+	origin := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+		body, _ := io.ReadAll(req.Body)
+		o.mu.Lock()
+		defer o.mu.Unlock()
+		if "/api/auth/token" == req.URL.Path {
+			o.exchanged++
+			res.Header().Set("location", o.location)
+			res.WriteHeader(o.status)
+			return
+		}
+		o.followed = append(o.followed,
+			strings.TrimSpace(req.Method+" "+req.URL.Path+" "+string(body)))
+		res.Header().Set("content-type", "application/json")
+		res.Write([]byte(`{"access_token":"MOVED01"}`))
+	}))
+	defer origin.Close()
+
+	o.origin = origin.URL
+	o.base = origin.URL + "/api"
+	o.away = other.URL + "/api/auth/token"
+
+	run(o)
+}
+
+func (o *redirectOrigins) answer(status int, location string) {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	o.status = status
+	o.location = location
+	o.followed = []string{}
+	o.exchanged = 0
+}
+
+func redirectClient(o *redirectOrigins, extra map[string]any) *sdk.ProjectNameSDK {
+	exchange := map[string]any{"active": true, "refresh": "REFRESH01"}
+	for k, v := range extra {
+		exchange[k] = v
+	}
+	return withSecrets(func(extend bool) *sdk.ProjectNameSDK {
+		opts := map[string]any{
+			"base": o.base,
+			"feature": map[string]any{"secrets": map[string]any{
+				"active":   true,
+				"name":     "refresh_token",
+				"exchange": exchange,
+			}},
+		}
+		if extend {
+			opts["extend"] = []any{feat.NewSecretsFeature()}
+		}
+		return sdk.NewProjectNameSDK(opts)
+	})
+}
+
 func TestSecretsExchangeRedirectRefused(t *testing.T) {
 	t.Run("a redirect answering the exchange is a failure, and nothing follows it", func(t *testing.T) {
 		entity, opname := routableOp(t)
 
-		var mu sync.Mutex
-		elsewhere := []string{}
-		followed := []string{}
-		answer := struct {
-			status   int
-			location string
-		}{}
+		withOrigins(func(o *redirectOrigins) {
+			answers := []struct {
+				status   int
+				location string
+			}{{307, o.away}, {308, o.away}, {302, o.away}, {307, "/api/moved/token"}}
 
-		other := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
-			body, _ := io.ReadAll(req.Body)
-			mu.Lock()
-			elsewhere = append(elsewhere, req.Method+" "+req.URL.Path+" "+string(body))
-			mu.Unlock()
-			res.Header().Set("content-type", "application/json")
-			res.Write([]byte(`{"access_token":"ELSEWHERE01"}`))
-		}))
-		defer other.Close()
+			allowed := []string{}
+			refused := 0
 
-		origin := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
-			io.Copy(io.Discard, req.Body)
-			mu.Lock()
-			defer mu.Unlock()
-			if "/api/auth/token" == req.URL.Path {
-				res.Header().Set("location", answer.location)
-				res.WriteHeader(answer.status)
-				return
-			}
-			followed = append(followed, req.Method+" "+req.URL.Path)
-			res.Header().Set("content-type", "application/json")
-			res.Write([]byte(`{"access_token":"MOVED01"}`))
-		}))
-		defer origin.Close()
+			for _, a := range answers {
+				o.answer(a.status, a.location)
 
-		base := origin.URL + "/api"
-		away := other.URL + "/api/auth/token"
-
-		answers := []struct {
-			status   int
-			location string
-		}{{307, away}, {308, away}, {302, away}, {307, "/api/moved/token"}}
-
-		allowed := []string{}
-		refused := 0
-
-		for _, a := range answers {
-			mu.Lock()
-			answer = a
-			mu.Unlock()
-
-			client := withSecrets(func(extend bool) *sdk.ProjectNameSDK {
-				opts := map[string]any{
-					"base": base,
-					"feature": map[string]any{"secrets": map[string]any{
-						"active":   true,
-						"name":     "refresh_token",
-						"exchange": map[string]any{"active": true, "refresh": "REFRESH01"},
-					}},
+				message := fmt.Sprint(callNamedOp(redirectClient(o, nil), entity, opname))
+				if strings.Contains(message, "token exchange failed: "+
+					strconv.Itoa(a.status)+" from "+o.base+"/auth/token") {
+					refused++
+				} else {
+					allowed = append(allowed, fmt.Sprintf("%d to %s: %s", a.status, a.location, message))
 				}
-				if extend {
-					opts["extend"] = []any{feat.NewSecretsFeature()}
-				}
-				return sdk.NewProjectNameSDK(opts)
-			})
-
-			message := fmt.Sprint(callNamedOp(client, entity, opname))
-			if strings.Contains(message, "token exchange failed: "+
-				strconv.Itoa(a.status)+" from "+base+"/auth/token") {
-				refused++
-			} else {
-				allowed = append(allowed, fmt.Sprintf("%d to %s: %s", a.status, a.location, message))
 			}
-		}
 
-		mu.Lock()
-		defer mu.Unlock()
-		fmt.Printf("secrets: exchange refused %d redirect(s), %d followed\n",
-			refused, len(elsewhere)+len(followed))
+			o.mu.Lock()
+			defer o.mu.Unlock()
+			fmt.Printf("secrets: exchange refused %d redirect(s), %d followed\n",
+				refused, len(o.elsewhere)+len(o.followed))
 
-		if 0 != len(elsewhere) {
-			t.Errorf("the exchange reached another origin: %v", elsewhere)
-		}
-		if 0 != len(followed) {
-			t.Errorf("a request followed a refused exchange: %v", followed)
-		}
-		if 0 != len(allowed) {
-			t.Errorf("a redirect was not a failed exchange: %v", allowed)
-		}
-		if len(answers) != refused {
-			t.Errorf("expected %d refused exchanges, got %d", len(answers), refused)
-		}
+			if 0 != len(o.elsewhere) {
+				t.Errorf("the exchange reached another origin: %v", o.elsewhere)
+			}
+			if 0 != len(o.followed) {
+				t.Errorf("a request followed a refused exchange: %v", o.followed)
+			}
+			if 0 != len(allowed) {
+				t.Errorf("a redirect was not a failed exchange: %v", allowed)
+			}
+			if len(answers) != refused {
+				t.Errorf("expected %d refused exchanges, got %d", len(answers), refused)
+			}
+		})
+	})
+
+	t.Run("with the option, a redirect on the exchange's own origin is followed, and no other", func(t *testing.T) {
+		entity, opname := routableOp(t)
+
+		withOrigins(func(o *redirectOrigins) {
+			moved := `POST /api/moved/token {"refresh_token":"REFRESH01"}`
+			cases := []struct {
+				status   int
+				location string
+				follows  bool
+			}{
+				{307, "/api/moved/token", true},
+				{308, o.origin + "/api/moved/token", true},
+				{307, o.away, false},
+				{302, "/api/moved/token", false},
+				{307, "/api/auth/token", false},
+			}
+
+			wrong := []string{}
+			followed, refused, looped := 0, 0, 0
+
+			for _, c := range cases {
+				o.answer(c.status, c.location)
+
+				result := callNamedOp(redirectClient(o, map[string]any{"redirect": "same-origin"}),
+					entity, opname)
+				message := fmt.Sprint(result)
+
+				o.mu.Lock()
+				seen := fmt.Sprintf("%d to %s: %s %v", c.status, c.location, message, o.followed)
+				if c.follows {
+					if nil == result && 2 == len(o.followed) && moved == o.followed[0] {
+						followed++
+					} else {
+						wrong = append(wrong, seen)
+					}
+				} else if 0 == len(o.followed) && strings.Contains(message,
+					"token exchange failed: "+strconv.Itoa(c.status)+" from "+o.base+"/auth/token") {
+					refused++
+				} else {
+					wrong = append(wrong, seen)
+				}
+				if "/api/auth/token" == c.location {
+					looped = o.exchanged
+				}
+				o.mu.Unlock()
+			}
+
+			o.mu.Lock()
+			defer o.mu.Unlock()
+			fmt.Printf("secrets: exchange opt-in followed %d redirect(s) on its own origin, refused %d, %d elsewhere\n",
+				followed, refused, len(o.elsewhere))
+
+			if 0 != len(o.elsewhere) {
+				t.Errorf("the exchange reached another origin: %v", o.elsewhere)
+			}
+			if 0 != len(wrong) {
+				t.Errorf("unexpected outcomes: %v", wrong)
+			}
+			if 2 != followed {
+				t.Errorf("expected 2 followed, got %d", followed)
+			}
+			if 3 != refused {
+				t.Errorf("expected 3 refused, got %d", refused)
+			}
+			if 6 != looped {
+				t.Errorf("expected the exchange asked 6 times, got %d", looped)
+			}
+		})
 	})
 }
 

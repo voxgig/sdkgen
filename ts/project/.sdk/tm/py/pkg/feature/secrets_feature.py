@@ -3,6 +3,7 @@
 from __future__ import annotations
 import json
 import urllib.error
+import urllib.parse
 import urllib.request
 
 from projectname_sdk.utility.voxgig_struct import voxgig_struct as vs
@@ -131,6 +132,8 @@ class ProjectNameSecretsFeature(ProjectNameBaseFeature):
                 "retries": xopts.get("retries")
                 if isinstance(xopts.get("retries"), (int, float))
                 and not isinstance(xopts.get("retries"), bool) else 1,
+                "redirect": "same-origin"
+                if "same-origin" == xopts.get("redirect") else "refuse",
             }
         else:
             self._exchange = None
@@ -342,13 +345,28 @@ class ProjectNameSecretsFeature(ProjectNameBaseFeature):
         # feature wraps, and sending the token request back through it
         # would recurse on the first 401 - and would route the exchange
         # through the test mock, which knows nothing about it.
-        res, err = fetch(url, {
+        fetchdef = {
             "method": x["method"],
             "headers": {"content-type": "application/json"},
             "body": json.dumps({x["request"]: self._refresh}),
-            # Never followed: a redirect would carry the refresh token on.
+            # Never followed by the client: a redirect would carry the
+            # refresh token on.
             "redirect": "manual",
-        })
+        }
+
+        res, err = fetch(url, fetchdef)
+
+        # By option alone, and only while the exchange stays on its own origin.
+        at = url
+        hops = 0
+        while "same-origin" == x["redirect"] and hops < _REDIRECT_MAX \
+                and err is None:
+            nxt = _moved(url, at, res)
+            if nxt is None:
+                break
+            at = nxt
+            res, err = fetch(at, fetchdef)
+            hops += 1
 
         if err is not None:
             raise Exception(
@@ -471,6 +489,35 @@ class ProjectNameSecretsFeature(ProjectNameBaseFeature):
             prefix + " " + token if prefix else token
 
 
+_REDIRECT_MAX = 5
+
+
+def _origin(parts):
+    port = parts.port or {"http": 80, "https": 443}.get(parts.scheme)
+    return (parts.scheme, parts.hostname, port)
+
+
+def _moved(url, at, res):
+    """Where a 307 or 308 points, when that is on the exchange's own
+    origin. Any other redirect would drop the body or leave the origin."""
+    status = res.get("status") if isinstance(res, dict) else None
+    if status not in (307, 308):
+        return None
+
+    headers = res.get("headers")
+    location = headers.get("location") if isinstance(headers, dict) else None
+    if not isinstance(location, str) or "" == location:
+        return None
+
+    try:
+        nxt = urllib.parse.urljoin(at, location)
+        same = _origin(urllib.parse.urlsplit(nxt)) == \
+            _origin(urllib.parse.urlsplit(url))
+    except ValueError:
+        return None
+    return nxt if same else None
+
+
 class _NoRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         return None
@@ -500,6 +547,7 @@ def _raw_exchange_fetch(fullurl, fetchdef):
         with _NO_REDIRECT.open(req, timeout=30) as res:
             raw = res.read()
             status = res.status
+            headers = {k.lower(): v for k, v in res.headers.items()}
 
         def _json():
             try:
@@ -507,11 +555,13 @@ def _raw_exchange_fetch(fullurl, fetchdef):
             except Exception:
                 return None
 
-        return {"status": status, "json": _json}, None
+        return {"status": status, "headers": headers, "json": _json}, None
     except urllib.error.HTTPError as e:
         # A non-2xx answer IS a response: hand back its status so the
         # caller reports "token exchange failed: <status>" rather than a
         # transport error.
-        return {"status": e.code, "json": lambda: None}, None
+        headers = {k.lower(): v for k, v in (e.headers or {}).items()}
+        return {"status": e.code, "headers": headers,
+                "json": lambda: None}, None
     except Exception as e:
         return None, e

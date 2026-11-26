@@ -23,6 +23,7 @@
 # trims it, along with the feature source and the vendored library, for a
 # project whose model does not select `secrets`.
 
+import contextlib
 import json
 import os
 import http.server
@@ -63,6 +64,74 @@ def secrets_sdk(sdkopts):
         sdkopts = dict(sdkopts)
         sdkopts["extend"] = [ProjectNameSecretsFeature()]
     return ProjectNameSDK(sdkopts)
+
+
+# Two real listeners: the origin answers the exchange as `answer` says and
+# records what else it gets.
+@contextlib.contextmanager
+def _origins():
+    o = {"elsewhere": [], "followed": [], "exchanged": [0], "answer": [307, ""]}
+
+    def _recorder(log, respond):
+        class _Handler(http.server.BaseHTTPRequestHandler):
+            def _any(self):
+                raw = self.rfile.read(
+                    int(self.headers.get("content-length") or 0))
+                if respond(self):
+                    return
+                log.append((self.command, self.path, raw.decode("utf-8")))
+                out = b'{"access_token":"ELSEWHERE01"}'
+                self.send_response(200)
+                self.send_header("content-type", "application/json")
+                self.send_header("content-length", str(len(out)))
+                self.end_headers()
+                self.wfile.write(out)
+
+            do_GET = do_POST = do_PUT = do_PATCH = do_DELETE = _any
+
+            def log_message(self, *args):
+                pass
+        return _Handler
+
+    def _exchange(handler):
+        if "/api/auth/token" != handler.path:
+            return False
+        o["exchanged"][0] += 1
+        handler.send_response(o["answer"][0])
+        handler.send_header("location", o["answer"][1])
+        handler.send_header("content-length", "0")
+        handler.end_headers()
+        return True
+
+    origin = http.server.HTTPServer(
+        ("127.0.0.1", 0), _recorder(o["followed"], _exchange))
+    other = http.server.HTTPServer(
+        ("127.0.0.1", 0), _recorder(o["elsewhere"], lambda h: False))
+    for srv in (origin, other):
+        threading.Thread(target=srv.serve_forever, daemon=True).start()
+
+    o["origin"] = "http://127.0.0.1:%d" % origin.server_port
+    o["base"] = o["origin"] + "/api"
+    o["away"] = "http://127.0.0.1:%d/api/auth/token" % other.server_port
+
+    try:
+        yield o
+    finally:
+        for srv in (origin, other):
+            srv.shutdown()
+            srv.server_close()
+
+
+def _redirect_sdk(o, exchange=None):
+    return secrets_sdk({
+        "base": o["base"],
+        "feature": {"secrets": {
+            "active": True,
+            "name": "refresh_token",
+            "exchange": dict({"active": True, "refresh": "REFRESH01"},
+                             **(exchange or {})),
+        }},
+    })
 
 
 def envchain(extra=None):
@@ -413,88 +482,86 @@ class TestSecretsReviewPins(unittest.TestCase):
 
     # Real listeners and the raw fallback transport: a stub follows nothing.
     def test_a_redirect_answering_the_exchange_is_a_failure(self):
-        elsewhere = []
-        followed = []
-        answer = [307, ""]
-
-        def _recorder(log, respond):
-            class _Handler(http.server.BaseHTTPRequestHandler):
-                def _any(self):
-                    raw = self.rfile.read(
-                        int(self.headers.get("content-length") or 0))
-                    if respond(self):
-                        return
-                    log.append((self.command, self.path, raw.decode("utf-8")))
-                    out = b'{"access_token":"ELSEWHERE01"}'
-                    self.send_response(200)
-                    self.send_header("content-type", "application/json")
-                    self.send_header("content-length", str(len(out)))
-                    self.end_headers()
-                    self.wfile.write(out)
-
-                do_GET = do_POST = do_PUT = do_PATCH = do_DELETE = _any
-
-                def log_message(self, *args):
-                    pass
-            return _Handler
-
-        def _exchange(handler):
-            if "/api/auth/token" != handler.path:
-                return False
-            handler.send_response(answer[0])
-            handler.send_header("location", answer[1])
-            handler.send_header("content-length", "0")
-            handler.end_headers()
-            return True
-
-        origin = http.server.HTTPServer(
-            ("127.0.0.1", 0), _recorder(followed, _exchange))
-        other = http.server.HTTPServer(
-            ("127.0.0.1", 0), _recorder(elsewhere, lambda h: False))
-        for srv in (origin, other):
-            threading.Thread(target=srv.serve_forever, daemon=True).start()
-
-        base = "http://127.0.0.1:%d/api" % origin.server_port
-        away = "http://127.0.0.1:%d/api/auth/token" % other.server_port
-
-        try:
-            answers = [[307, away], [308, away], [302, away],
+        with _origins() as o:
+            answers = [[307, o["away"]], [308, o["away"]], [302, o["away"]],
                        [307, "/api/moved/token"]]
             allowed = []
             refused = 0
 
             for case in answers:
-                answer[:] = case
-                sdk = secrets_sdk({
-                    "base": base,
-                    "feature": {"secrets": {
-                        "active": True,
-                        "name": "refresh_token",
-                        "exchange": {"active": True, "refresh": "REFRESH01"},
-                    }},
-                })
+                o["answer"][:] = case
 
-                res = sdk.direct({"path": "/thing"})
+                res = _redirect_sdk(o).direct({"path": "/thing"})
                 err = res.get("err") if isinstance(res, dict) else None
                 message = str(res if err is None else err)
 
                 if ("token exchange failed: %d from %s/auth/token"
-                        % (case[0], base)) in message:
+                        % (case[0], o["base"])) in message:
                     refused += 1
                 else:
                     allowed.append("%d to %s: %s" % (case[0], case[1], message))
 
             print("secrets: exchange refused %d redirect(s), %d followed"
-                  % (refused, len(elsewhere) + len(followed)))
+                  % (refused, len(o["elsewhere"]) + len(o["followed"])))
 
-            self.assertEqual([], elsewhere, "the exchange reached another origin")
-            self.assertEqual([], followed, "a request followed a refused exchange")
+            self.assertEqual([], o["elsewhere"], "the exchange reached another origin")
+            self.assertEqual([], o["followed"], "a request followed a refused exchange")
             self.assertEqual([], allowed, "a redirect was not a failed exchange")
             self.assertEqual(len(answers), refused)
-        finally:
-            for srv in (origin, other):
-                srv.shutdown()
-                srv.server_close()
+
+    def test_with_the_option_a_redirect_on_the_exchange_s_own_origin_is_followed(self):
+        with _origins() as o:
+            cases = [
+                (307, "/api/moved/token", True),
+                (308, o["origin"] + "/api/moved/token", True),
+                (307, o["away"], False),
+                (302, "/api/moved/token", False),
+                (307, "/api/auth/token", False),
+            ]
+
+            wrong = []
+            followed = refused = looped = 0
+
+            for status, location, follows in cases:
+                o["answer"][:] = [status, location]
+                o["followed"].clear()
+                o["exchanged"][0] = 0
+
+                res = _redirect_sdk(o, {"redirect": "same-origin"}).direct(
+                    {"path": "/thing"})
+                err = res.get("err") if isinstance(res, dict) else None
+                message = str(res if err is None else err)
+                seen = "%d to %s: %s %s" % (status, location, message, o["followed"])
+
+                if follows:
+                    first = o["followed"][0] if o["followed"] else None
+                    if (isinstance(res, dict) and res.get("ok") is True
+                            and 2 == len(o["followed"])
+                            and ("POST", "/api/moved/token") == first[:2]
+                            and {"refresh_token": "REFRESH01"} == json.loads(first[2])):
+                        followed += 1
+                    else:
+                        wrong.append(seen)
+                elif 0 == len(o["followed"]) and (
+                        "token exchange failed: %d from %s/auth/token"
+                        % (status, o["base"])) in message:
+                    refused += 1
+                else:
+                    wrong.append(seen)
+
+                if "/api/auth/token" == location:
+                    looped = o["exchanged"][0]
+
+            print("secrets: exchange opt-in followed %d redirect(s) on its own "
+                  "origin, refused %d, %d elsewhere"
+                  % (followed, refused, len(o["elsewhere"])))
+
+            self.assertEqual([], o["elsewhere"], "the exchange reached another origin")
+            self.assertEqual([], wrong)
+            self.assertEqual(2, followed)
+            self.assertEqual(3, refused)
+            # A redirect to itself is followed five times and no more.
+            self.assertEqual(6, looped)
 
     def test_a_supplied_fetch_is_asked_not_to_follow_the_exchange(self):
         calls = []
