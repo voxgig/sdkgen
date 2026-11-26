@@ -1,5 +1,5 @@
 
-import { cmp, File, Content } from '@voxgig/sdkgen'
+import { cmp, File, Content, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -16,6 +16,13 @@ function phpQuote(text: string): string {
 const ReadmeExamplesTest = cmp(function ReadmeExamplesTest(props: any) {
   const { target } = props
   const { model } = props.ctx$
+  // The root README where the run writes one beside this target, and the
+  // target's own documents where it writes them.
+  const link = fact(target, 'link').readme
+  const own = fact(target, 'phase').readme
+  if ('' === link && !own) {
+    return
+  }
 
   const sdkbase = model.const.Name.toLowerCase() + '_sdk'
   const sdkfile = sdkbase + '.php'
@@ -111,10 +118,10 @@ ${idFieldLines}
     private function docs(): array
     {
         return [
-            'root README' => __DIR__ . '/../../README.md',
-            'php README' => __DIR__ . '/../README.md',
+${'' === link ? '' : `            'root README' => __DIR__ . '/../${link}',
+`}${own ? `            'php README' => __DIR__ . '/../README.md',
             'php REFERENCE' => __DIR__ . '/../REFERENCE.md',
-        ];
+` : ''}        ];
     }
 
     /**

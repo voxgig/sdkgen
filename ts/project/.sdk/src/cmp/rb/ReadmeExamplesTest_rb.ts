@@ -1,5 +1,5 @@
 
-import { cmp, File, Content } from '@voxgig/sdkgen'
+import { cmp, File, Content, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -10,6 +10,13 @@ import {
 const ReadmeExamplesTest = cmp(function ReadmeExamplesTest(props: any) {
   const { target } = props
   const { model } = props.ctx$
+  // The root README where the run writes one beside this target, and the
+  // target's own documents where it writes them.
+  const link = fact(target, 'link').readme
+  const own = fact(target, 'phase').readme
+  if ('' === link && !own) {
+    return
+  }
 
   const sdkbase = model.const.Name + '_sdk'
   const sdkfile = sdkbase + '.rb'
@@ -63,10 +70,10 @@ require "tmpdir"
 class ReadmeExamplesTest < Minitest::Test
   # The three documentation sources this gate covers.
   DOCS = {
-    "root README" => File.join(__dir__, "..", "..", "README.md"),
-    "rb README" => File.join(__dir__, "..", "README.md"),
+${'' === link ? '' : `    "root README" => File.join(__dir__, "..", ${link.split('/').map((seg: string) => JSON.stringify(seg)).join(', ')}),
+`}${own ? `    "rb README" => File.join(__dir__, "..", "README.md"),
     "rb REFERENCE" => File.join(__dir__, "..", "REFERENCE.md"),
-  }
+` : ''}  }
   SDK = File.join(__dir__, "..", "${sdkfile}")
   SDK_CLASS = "${model.const.Name}SDK"
 

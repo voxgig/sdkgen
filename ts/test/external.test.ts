@@ -699,9 +699,15 @@ describe('external target', () => {
       const sdks = all.filter((t: string) => 'sdk' === fact(kit.target[t], 'surface'))
       ok(15 < sdks.length, 'expected every bundled SDK target: ' + sdks.join(', '))
 
-      // The ts README example test reads whichever README the placement writes.
+      // A README example test reads whichever README the placement writes.
+      const README_TEST = /(^|\/)(ReadmeExamples?(Test)?\.\w+|ReadmeExample\.test\.ts|readme_examples(\.test|_test)?\.\w+|test_readme_examples\.py)$/
       const code = (tree: Record<string, string>) => Object.keys(tree)
-        .filter((path: string) => !path.endsWith('.md') && 'test/ReadmeExample.test.ts' !== path).sort()
+        .filter((path: string) => !path.endsWith('.md') && !README_TEST.test(path)).sort()
+      // A document list's root README entry, which only a tree beside one carries.
+      const ROOT_ENTRY = /["']root[ -]README(\.md)?["']\s*[,=:]|\["root-README" "/
+      const readers = (tree: Record<string, string>) => Object.keys(tree).sort()
+        .filter((path: string) => !path.endsWith('.md') && ROOT_ENTRY.test(tree[path]))
+      let reading = 0
 
       for (const t of sdks) {
         const tree = under((await generate([t], {})).inside, t)
@@ -714,6 +720,7 @@ describe('external target', () => {
         // the clone.
         const placed = (text: string) => text.replace(/^TAG := .*$/m, 'TAG :=')
           .replace(/^  dir = ".*"$/m, '  dir =')
+          .replace(/\["root-README" "[^"]*"\]\n\s*/, '')
         const differ = code(tree).filter((path: string) =>
           placed(away[path].split('../../zzproj').join('..')) !== placed(tree[path]))
         deepStrictEqual(differ, [], t + ': these differ from the in-tree files by more than the path back')
@@ -721,7 +728,10 @@ describe('external target', () => {
           t + ': no file names the declared path back')
         deepStrictEqual(code(away).filter((path: string) => IN_TREE_BACK.test(away[path])), [],
           t + ': these still walk back to the project as they do in tree')
+        reading += readers(tree).length
+        deepStrictEqual(readers(away), [], t + ': out of tree these still read a root README')
       }
+      ok(15 < reading, 'in tree only ' + reading + ' README tests read the root README')
     })
 
 

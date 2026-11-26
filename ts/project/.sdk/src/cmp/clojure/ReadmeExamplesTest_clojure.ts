@@ -1,8 +1,16 @@
 
-import { cmp, Content } from '@voxgig/sdkgen'
+import { cmp, Content, fact } from '@voxgig/sdkgen'
 
 
-const ReadmeExamplesTest = cmp(function ReadmeExamplesTest(_props: any) {
+const ReadmeExamplesTest = cmp(function ReadmeExamplesTest(props: any) {
+  const { target } = props
+  // The root README where the run writes one beside this target, and the
+  // target's own documents where it writes them.
+  const link = fact(target, 'link').readme
+  const own = fact(target, 'phase').readme
+  if ('' === link && !own) {
+    return
+  }
 
   Content(`  (letfn [(fence-pat [] (re-pattern (apply str (repeat 3 (char 96)))))
           (fence-count [text] (count (re-seq (fence-pat) text)))
@@ -18,9 +26,9 @@ const ReadmeExamplesTest = cmp(function ReadmeExamplesTest(_props: any) {
                    (map (fn [seg]
                           (clojure.string/join "\\n"
                             (rest (clojure.string/split-lines seg))))))))]
-    (doseq [[label path] [["root-README" "../README.md"]
-                          ["README" "README.md"]
-                          ["REFERENCE" "REFERENCE.md"]]]
+    (doseq [[label path] [${[...('' === link ? [] : [`["root-README" "${link}"]`]),
+      ...(own ? ['["README" "README.md"]', '["REFERENCE" "REFERENCE.md"]'] : [])]
+      .join('\n                          ')}]]
       (t/run-check rec (str "gen-readme-examples-" label)
         (fn []
           (if-not (.exists (java.io.File. ^String path))

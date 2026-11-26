@@ -1,11 +1,19 @@
 
-import { cmp, File, Content } from '@voxgig/sdkgen'
+import { cmp, File, Content, fact } from '@voxgig/sdkgen'
 
 import { kotlinPackage } from './utility_kotlin'
 
 
 const ReadmeExamplesTest = cmp(function ReadmeExamplesTest(props: any) {
   const { target, ctx$: { model } } = props
+  // The root README where the run writes one beside this target, and the
+  // target's own documents where it writes them.
+  const link = fact(target, 'link').readme
+  const own = fact(target, 'phase').readme
+  if ('' === link && !own) {
+    return
+  }
+  const first = '' === link ? 0 : 1
 
   const Name = model.const.Name
   const kotlinpackage = props.kotlinpackage || kotlinPackage(model)
@@ -47,10 +55,10 @@ class ReadmeExamplesTest {
   // {label, relative path}.
   private fun docs(): Array<Array<String>> {
     return arrayOf(
-      arrayOf("root README", ".." + File.separator + "README.md"),
-      arrayOf("kotlin README.md", "README.md"),
+${'' === link ? '' : `      arrayOf("root README", ${link.split('/').map((seg: string) => JSON.stringify(seg)).join(' + File.separator + ')}),
+`}${own ? `      arrayOf("kotlin README.md", "README.md"),
       arrayOf("kotlin REFERENCE.md", "REFERENCE.md"),
-    )
+` : ''}    )
   }
 
   // Extract every kotlin fenced block. Split on the triple-backtick fence:
@@ -114,28 +122,28 @@ class ReadmeExamplesTest {
     return stack.isEmpty()
   }
 
-  @Test
+${'' === link ? '' : `  @Test
   fun rootReadmeHasKotlinBlocks() {
     val doc = docs()[0]
     val blocks = kotlinBlocks(readDoc(Paths.get(doc[1]), doc[0]))
     assertTrue(blocks.size > 0, "expected at least one kotlin block in " + doc[0])
   }
 
-  @Test
+`}${own ? `  @Test
   fun localReadmeHasKotlinBlocks() {
-    val doc = docs()[1]
+    val doc = docs()[${first}]
     val blocks = kotlinBlocks(readDoc(Paths.get(doc[1]), doc[0]))
     assertTrue(blocks.size > 0, "expected at least one kotlin block in " + doc[0])
   }
 
   @Test
   fun referenceHasKotlinBlocks() {
-    val doc = docs()[2]
+    val doc = docs()[${first + 1}]
     val blocks = kotlinBlocks(readDoc(Paths.get(doc[1]), doc[0]))
     assertTrue(blocks.size > 0, "expected at least one kotlin block in " + doc[0])
   }
 
-  @Test
+` : ''}  @Test
   fun allKotlinBlocksAreStructurallyBalanced() {
     val failures = mutableListOf<String>()
     for (doc in docs()) {

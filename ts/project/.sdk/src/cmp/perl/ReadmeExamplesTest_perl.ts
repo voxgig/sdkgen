@@ -1,5 +1,5 @@
 
-import { cmp, each, File, Content } from '@voxgig/sdkgen'
+import { cmp, each, File, Content, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -10,6 +10,13 @@ import {
 
 const ReadmeExamplesTest = cmp(function ReadmeExamplesTest(props: any) {
   const { target, ctx$: { model } } = props
+  // The root README where the run writes one beside this target, and the
+  // target's own documents where it writes them.
+  const link = fact(target, 'link').readme
+  const own = fact(target, 'phase').readme
+  if ('' === link && !own) {
+    return
+  }
 
   const Name = model.const.Name
   const sdkClass = Name + 'SDK'
@@ -70,10 +77,10 @@ my $LIB = File::Spec->catdir($PKG_ROOT, 'lib');
 
 # The three documentation sources this gate covers.
 my %DOCS = (
-  'root README'    => File::Spec->catfile($PKG_ROOT, '..', 'README.md'),
-  'perl README'    => File::Spec->catfile($PKG_ROOT, 'README.md'),
+${'' === link ? '' : `  'root README'    => File::Spec->catfile($PKG_ROOT, ${link.split('/').map((seg: string) => "'" + seg + "'").join(', ')}),
+`}${own ? `  'perl README'    => File::Spec->catfile($PKG_ROOT, 'README.md'),
   'perl REFERENCE' => File::Spec->catfile($PKG_ROOT, 'REFERENCE.md'),
-);
+` : ''});
 
 my $SDK_CLASS = '${sdkClass}';
 

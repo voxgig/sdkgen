@@ -1,11 +1,19 @@
 
-import { cmp, File, Content } from '@voxgig/sdkgen'
+import { cmp, File, Content, fact } from '@voxgig/sdkgen'
 
 import { javaPackage } from './utility_java'
 
 
 const ReadmeExamplesTest = cmp(function ReadmeExamplesTest(props: any) {
   const { target, ctx$: { model } } = props
+  // The root README where the run writes one beside this target, and the
+  // target's own documents where it writes them.
+  const link = fact(target, 'link').readme
+  const own = fact(target, 'phase').readme
+  if ('' === link && !own) {
+    return
+  }
+  const first = '' === link ? 0 : 1
 
   const Name = model.const.Name
   const javapackage = props.javapackage || javaPackage(model)
@@ -50,10 +58,10 @@ public class ReadmeExamplesTest {
   // is {label, relative path}.
   private static String[][] docs() {
     return new String[][] {
-      { "root README", ".." + java.io.File.separator + "README.md" },
-      { "java README.md", "README.md" },
+${'' === link ? '' : `      { "root README", ${link.split('/').map((seg: string) => JSON.stringify(seg)).join(' + java.io.File.separator + ')} },
+`}${own ? `      { "java README.md", "README.md" },
       { "java REFERENCE.md", "REFERENCE.md" },
-    };
+` : ''}    };
   }
 
   // Extract every java fenced block. Split on the triple-backtick fence:
@@ -123,7 +131,7 @@ public class ReadmeExamplesTest {
     return stack.isEmpty();
   }
 
-  @Test
+${'' === link ? '' : `  @Test
   public void rootReadmeHasJavaBlocks() {
     String[] doc = docs()[0];
     List<String> blocks = javaBlocks(readDoc(Path.of(doc[1]), doc[0]));
@@ -131,9 +139,9 @@ public class ReadmeExamplesTest {
         "expected at least one java block in " + doc[0]);
   }
 
-  @Test
+`}${own ? `  @Test
   public void localReadmeHasJavaBlocks() {
-    String[] doc = docs()[1];
+    String[] doc = docs()[${first}];
     List<String> blocks = javaBlocks(readDoc(Path.of(doc[1]), doc[0]));
     assertTrue(blocks.size() > 0,
         "expected at least one java block in " + doc[0]);
@@ -141,13 +149,13 @@ public class ReadmeExamplesTest {
 
   @Test
   public void referenceHasJavaBlocks() {
-    String[] doc = docs()[2];
+    String[] doc = docs()[${first + 1}];
     List<String> blocks = javaBlocks(readDoc(Path.of(doc[1]), doc[0]));
     assertTrue(blocks.size() > 0,
         "expected at least one java block in " + doc[0]);
   }
 
-  @Test
+` : ''}  @Test
   public void allJavaBlocksAreStructurallyBalanced() {
     List<String> failures = new ArrayList<>();
     for (String[] doc : docs()) {

@@ -1,9 +1,16 @@
 
-import { cmp, Content, File } from '@voxgig/sdkgen'
+import { cmp, Content, File, fact } from '@voxgig/sdkgen'
 
 
 const ReadmeExamplesTest = cmp(function ReadmeExamplesTest(props: any) {
   const { target, ctx$: { model } } = props
+  // The root README where the run writes one beside this target, and the
+  // target's own documents where it writes them.
+  const link = fact(target, 'link').readme
+  const own = fact(target, 'phase').readme
+  if ('' === link && !own) {
+    return
+  }
 
   File({ name: 'readme_examples_test.' + target.ext }, () => {
     Content(`(* Structural gate over every \`\`\`ocaml block in the ${model.const.Name} SDK
@@ -74,10 +81,10 @@ let is_balanced (block : string) : bool =
   !ok && !stack = [] && not !in_str
 
 let docs = [
-  ("root README", "../README.md");
-  ("ocaml/README", "README.md");
+${'' === link ? '' : `  ("root README", "${link}");
+`}${own ? `  ("ocaml/README", "README.md");
   ("ocaml/REFERENCE", "REFERENCE.md");
-]
+` : ''}]
 
 let () =
   test "readme.ocaml_snippets_wellformed" (fun () ->

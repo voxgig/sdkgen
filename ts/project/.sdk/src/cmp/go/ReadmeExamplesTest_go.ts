@@ -1,4 +1,4 @@
-import { cmp, Content, File } from '@voxgig/sdkgen'
+import { cmp, Content, File, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -7,7 +7,14 @@ import {
 
 
 const ReadmeExamplesTest = cmp(function ReadmeExamplesTest(props: any) {
-  const { ctx$: { model } } = props
+  const { target, ctx$: { model } } = props
+  // The root README where the run writes one beside this target, and the
+  // target's own documents where it writes them.
+  const link = fact(target, 'link').readme
+  const own = fact(target, 'phase').readme
+  if ('' === link && !own) {
+    return
+  }
 
   // Seed a test-mode fixture for every active entity. Complete-program
   // examples load by "example_id", so seed that record for each entity; the
@@ -95,10 +102,10 @@ func TestReadmeGoSnippets(t *testing.T) {
 	}
 
 	docs := []doc{
-		{"root README", filepath.Join(testDir, "..", "..", "README.md")},
-		{"go/README", filepath.Join(testDir, "..", "README.md")},
+${'' === link ? '' : `		{"root README", filepath.Join(testDir, "..", ${link.split('/').map((seg: string) => JSON.stringify(seg)).join(', ')})},
+`}${own ? `		{"go/README", filepath.Join(testDir, "..", "README.md")},
 		{"go/REFERENCE", filepath.Join(testDir, "..", "REFERENCE.md")},
-	}
+` : ''}	}
 
 	// The work dir has to live inside the module (the snippets import the SDK
 	// by module path), but it MUST stay invisible to \`go build ./...\`. The go

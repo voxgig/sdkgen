@@ -1,5 +1,5 @@
 
-import { cmp, Content, File } from '@voxgig/sdkgen'
+import { cmp, Content, File, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -8,7 +8,14 @@ import {
 
 
 const ReadmeExamplesTest = cmp(function ReadmeExamplesTest(props: any) {
-  const { ctx$: { model } } = props
+  const { target, ctx$: { model } } = props
+  // The root README where the run writes one beside this target, and the
+  // target's own documents where it writes them.
+  const link = fact(target, 'link').readme
+  const own = fact(target, 'phase').readme
+  if ('' === link && !own) {
+    return
+  }
   const Name = model.const.Name
 
   // Seed a fixture for every active entity so list()/load() resolve
@@ -84,10 +91,11 @@ const CLIENT_CALL = new RegExp(CLIENT.source + '\\\\s*\\\\.')
 
 // The three docs this gate covers, resolved relative to dist-test/.
 const DOCS: Array<{ label: string; key: string; path: string }> = [
-  { label: 'root README.md', key: 'root_readme', path: Path.join(__dirname, '..', '..', 'README.md') },
-  { label: 'ts/README.md', key: 'lang_readme', path: Path.join(__dirname, '..', 'README.md') },
+${'' === link ? '' : `  { label: 'root README.md', key: 'root_readme', path: Path.join(__dirname, '..', ${link.split('/')
+    .map((seg: string) => "'" + seg + "'").join(', ')}) },
+`}${own ? `  { label: 'ts/README.md', key: 'lang_readme', path: Path.join(__dirname, '..', 'README.md') },
   { label: 'ts/REFERENCE.md', key: 'reference', path: Path.join(__dirname, '..', 'REFERENCE.md') },
-]
+` : ''}]
 
 
 // Pull out the body of every \`\`\`ts fenced code block.
