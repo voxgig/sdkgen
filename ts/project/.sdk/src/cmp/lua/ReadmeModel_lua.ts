@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, entityIdField, listMatchArg, matchExampleItems, litPair, litFor, entityClassName, entityCollection, fact, clientOptions } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, entityIdField, listMatchArg, matchExampleItems, litPair, litFor, entityClassName, entityCollection, fact, clientOptions, entityOps, introOps } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -13,9 +13,7 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   const entity = getModelPath(model, `main.${KIT}.entity`)
   const entityList = each(entity).filter((e: any) => e.active !== false)
 
-  const opUnion = new Set<string>()
-  entityList.forEach((e: any) => Object.keys(e.op || {})
-    .forEach((o: string) => { if (e.op[o] && e.op[o].active !== false) opUnion.add(o) }))
+  const opUnion = new Set<string>(introOps(model))
   const opRowDefs: Record<string, string> = {
     load: '| `load` | `(reqmatch, ctrl) -> any, err` | Load a single entity by match criteria, and return it. |',
     list: '| `list` | `(reqmatch, ctrl) -> any, err` | List entities matching the criteria, one per record. |',
@@ -131,7 +129,7 @@ Only \`direct()\` returns a response envelope — a \`table\` with \`ok\`,
 `)
   each(entityList, (ent: any) => {
     const fields = Object.values(ent.fields || {})
-    const opnames = Object.keys(ent.op || {})
+    const opnames = entityOps(ent)
     const ops = ent.op || {}
     const points = each(ops).map((op: any) =>
       op.points ? each(op.points) : []

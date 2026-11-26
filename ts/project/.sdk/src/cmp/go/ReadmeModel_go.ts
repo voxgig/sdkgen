@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, entityIdField, entityPrimaryOp, goModule, listMatchArg, matchExampleItems, litPair, litFor, fact, clientOptions } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, entityIdField, entityPrimaryOp, goModule, listMatchArg, matchExampleItems, litPair, litFor, fact, clientOptions, entityOps, introOps } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -20,9 +20,7 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   // entity actually exposes (a read-only entity has just List+Load) — never
   // document an operation no entity has. Model op keys are lowercase; Go
   // method names are capitalised.
-  const opUnion = new Set<string>()
-  entityList.forEach((e: any) => Object.keys(e.op || {})
-    .forEach((o: string) => { if (e.op[o] && e.op[o].active !== false) opUnion.add(o) }))
+  const opUnion = new Set<string>(introOps(model))
   const opRowDefs: Record<string, string> = {
     load: '| `Load` | `(reqmatch, ctrl map[string]any) (any, error)` | Load a single entity by match criteria, and return it. |',
     list: '| `List` | `(reqmatch, ctrl map[string]any) (any, error)` | List entities matching the criteria, one per record. |',
@@ -152,7 +150,7 @@ ${resultCallExample}Only \`Direct()\` returns a response envelope — a \`map[st
 `)
   each(entityList, (ent: any) => {
     const fields = Object.values(ent.fields || {})
-    const opnames = Object.keys(ent.op || {})
+    const opnames = entityOps(ent)
     const ops = ent.op || {}
     const points = each(ops).map((op: any) =>
       op.points ? each(op.points) : []

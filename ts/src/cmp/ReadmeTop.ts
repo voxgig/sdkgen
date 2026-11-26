@@ -14,7 +14,7 @@ import { PIPELINE_STAGES, pipelineLength } from './FeatureHook'
 import type { FeatureDoc } from './FeatureDocs'
 
 import {
-  entityPrimaryOp, entityIdField, entityPath, entityActions, introOps,
+  entityPrimaryOp, entityIdField, entityPath, entityActions, entityOps, introOps,
 } from '../helpers/opShape'
 import { EXAMPLE_LANGS, matchArg, listMatchArg, idLiteral, primaryOpCall, requestExampleItems } from '../helpers/opExample'
 import { mcpTools, MCP_WRITE_OPS } from '../helpers/mcpTools'
@@ -524,8 +524,7 @@ The API exposes ${activeEntities.length === 1 ? 'one entity' : activeEntities.le
 `)
 
     activeEntities.map((ent: any) => {
-      const ops = ent.op || {}
-      const opNames = Object.keys(ops).filter((o: string) => (ops as any)[o]?.active !== false)
+      const opNames = entityOps(ent)
       const entdesc = fact(ent, 'desc').cell ||
         `The ${ent.Name} entity${opNames.length ? ' (' + opNames.join(', ') + ')' : ''}.`
       const path = entityPath(ent)

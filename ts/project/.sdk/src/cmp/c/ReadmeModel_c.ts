@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, fact, clientOptions } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, fact, clientOptions, entityOps, introOps } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -19,9 +19,7 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
 
   // Model-driven op rows for the shared entity vtable: emit a row only for
   // operations at least one active entity actually exposes.
-  const opUnion = new Set<string>()
-  entityList.forEach((e: any) => Object.keys(e.op || {})
-    .forEach((o: string) => { if (e.op[o] && e.op[o].active !== false) opUnion.add(o) }))
+  const opUnion = new Set<string>(introOps(model))
   const opRowDefs: Record<string, string> = {
     load: '| `load` | `(Entity*, reqmatch, ctrl, PNError**) -> Entity*` | Load a single entity by match criteria. |',
     list: '| `list` | `(Entity*, reqmatch, ctrl, PNError**) -> Entity**` | List entities matching the criteria: a `NULL`-terminated array, one per record. |',
@@ -115,7 +113,7 @@ On error, \`ok\` is \`false\` and \`err\` carries the error value.
 `)
   each(entityList, (ent: any) => {
     const fields = Object.values(ent.fields || {})
-    const opnames = Object.keys(ent.op || {})
+    const opnames = entityOps(ent)
     const ops = ent.op || {}
     const points = each(ops).map((op: any) =>
       op.points ? each(op.points) : []

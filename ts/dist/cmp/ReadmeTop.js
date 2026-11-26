@@ -453,8 +453,7 @@ The API exposes ${activeEntities.length === 1 ? 'one entity' : activeEntities.le
 | --- | --- | --- |
 `);
         activeEntities.map((ent) => {
-            const ops = ent.op || {};
-            const opNames = Object.keys(ops).filter((o) => ops[o]?.active !== false);
+            const opNames = (0, opShape_1.entityOps)(ent);
             const entdesc = (0, facts_1.fact)(ent, 'desc').cell ||
                 `The ${ent.Name} entity${opNames.length ? ' (' + opNames.join(', ') + ')' : ''}.`;
             const path = (0, opShape_1.entityPath)(ent);
