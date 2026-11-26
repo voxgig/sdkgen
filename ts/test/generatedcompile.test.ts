@@ -1160,10 +1160,13 @@ pub fn main() void {
         ok(Fs.readFileSync(Path.join(sdkroot, 'REFERENCE.md'), 'utf8').includes('.patch({'),
           'the reference has no patch example')
       }
-      if (BASIC_TEMPLATED === extra) {
+      if (BASIC_TEMPLATED === extra || BASIC_QUERY === extra) {
         const readme = Fs.readFileSync(Path.join(sdkroot, 'README.md'), 'utf8')
-        ok(/apikey:/.test(readme) && /secret:/.test(readme) && /tenant:/.test(readme),
-          'the README constructor shows no apikey, secret and server variable')
+        const code = (readme.match(/```[a-z]*\n[\s\S]*?```/g) ?? []).join('\n')
+        ok(BASIC_TEMPLATED === extra ?
+          /apikey:/.test(code) && /secret:/.test(code) && /tenant:/.test(code) && !/region:/.test(code) :
+          /apikey:/.test(code) && !/secret:/.test(code),
+          'the README examples do not pass exactly what the constructor needs')
       }
 
       const built = run(process.execPath, [TSC, '--build', 'src', 'test'], sdkroot)
@@ -9184,7 +9187,7 @@ describe('the README examples run for a slug carrying the word client', () => {
   })
 
   const readmeLane = async (t: any, lane: any, dir: string, extra?: string, mark = /engine/,
-    shows = 'list example with its required parameters') => {
+    shows = 'list example with its required parameters', code?: RegExp) => {
     const sdkroot = Path.join(tmp, dir, lane.target)
     const files = await generateTo(lane.target, sdkroot, extra, undefined,
       { name: README_SLUG, top: true })
@@ -9193,6 +9196,8 @@ describe('the README examples run for a slug carrying the word client', () => {
       lane.target + ': the README does not carry the slug, so it tests nothing')
     ok(null == extra || mark.test(String(files['README.md'])),
       lane.target + ': the README has no ' + shows)
+    const blocks = (String(files['README.md']).match(/```[a-z]*\n[\s\S]*?```/g) ?? []).join('\n')
+    ok(null == code || code.test(blocks), lane.target + ': the README code shows no ' + shows)
     if (null != lane.example) {
       Fs.appendFileSync(Path.join(sdkroot, 'README.md'), '\n' + lane.example + '\n')
     }
@@ -9296,13 +9301,14 @@ describe('the README examples run for a slug carrying the word client', () => {
     test(lane.target + ': the README examples run with HTTP Basic in the header and a templated server URL',
       { todo: README_PENDING[lane.target + ' basic-templated'] }, async (t) => {
         await readmeLane(t, lane, lane.target + '-basic-templated', BASIC_TEMPLATED, /APIKEY/,
-          'constructor with its credential')
+          'constructor with its key, its secret and its required server variable',
+          /^(?=[\s\S]*APIKEY)(?=[\s\S]*SECRET)(?=[\s\S]*tenant)(?![\s\S]*region)/)
       })
 
     test(lane.target + ': the README examples run with HTTP Basic in the query',
       { todo: README_PENDING[lane.target + ' basic-query'] }, async (t) => {
         await readmeLane(t, lane, lane.target + '-basic-query', BASIC_QUERY, /APIKEY/,
-          'constructor with its credential')
+          'constructor with its key and no secret', /^(?=[\s\S]*APIKEY)(?![\s\S]*SECRET)/)
       })
 
     // `)(` parses in no target.
@@ -10024,6 +10030,15 @@ describe('the documented c, cpp, rust, zig, ocaml, csharp, scala, swift and cloj
       for (const doc of DOC_PAGES) {
         ok(blocks.some((b) => b.doc === doc),
           lane.target + ': ' + doc + ' shows no ' + lane.fence + ' example, so nothing checks it')
+      }
+      const code = blocks.map((b) => b.code).join('\n')
+      if ('basic-templated' === shape) {
+        ok(/APIKEY/.test(code) && /SECRET/.test(code) && /"tenant"/.test(code) && !/region/.test(code),
+          lane.target + ': the examples do not build the client with its key, secret and server variable')
+      }
+      if ('basic-query' === shape) {
+        ok(/APIKEY/.test(code) && !/SECRET/.test(code),
+          lane.target + ': the examples ask for a secret no PrepareAuth reads, or for no key')
       }
 
       const compiles = lane.compile(sdkroot, blocks)
