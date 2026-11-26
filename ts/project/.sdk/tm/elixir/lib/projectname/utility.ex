@@ -1238,7 +1238,7 @@ defmodule ProjectName.Utility do
         if S.getprop(point, "kind") == "graphql" do
           # GraphQL addresses one endpoint: no path parts, no query string,
           # and the body carries the operation. prepare_body is skipped
-          # deliberately — it only emits a body for data-input ops, whereas
+          # deliberately — it builds only a REST body, whereas
           # every GraphQL op posts one, including load/list/remove.
           S.setprop(spec, "body", graphql_body(ctx))
           S.setprop(spec, "path", "")
@@ -2010,9 +2010,51 @@ defmodule ProjectName.Utility do
     op = S.getprop(ctx, "op")
 
     cond do
-      S.getprop(op, "input") != "data" -> nil
+      S.getprop(op, "input") != "data" -> match_body(ctx)
       raw_request?(S.getprop(ctx, "point")) -> raw_body(S.getprop(ctx, "reqdata"))
       true -> transform_request(ctx)
+    end
+  end
+
+  # A list, load or remove routed to a method with a body sends the match
+  # fields that body declares, never a path parameter, and never a header,
+  # cookie or query argument the body does not also declare as a field.
+  defp match_body(ctx) do
+    point = S.getprop(ctx, "point")
+
+    case point_names(point, "fields") do
+      [] ->
+        nil
+
+      fields ->
+        reqmatch = S.getprop(ctx, "reqmatch")
+
+        routed =
+          point_names(point, "params") ++
+            arg_names(point, "args.params") ++
+            Enum.flat_map(["header", "cookie", "query"], &unkept_arg_names(point, &1))
+
+        body = S.jm([])
+
+        Enum.each(fields, fn name ->
+          val = S.getprop(reqmatch, name)
+          if val != nil and name != "$action" and name not in routed, do: S.setprop(body, name, val)
+        end)
+
+        body
+    end
+  end
+
+  defp unkept_arg_names(point, kind) do
+    defs = S.getpath(point, "args." <> kind)
+
+    if S.islist(defs) and S.size(defs) > 0 do
+      0..(S.size(defs) - 1)
+      |> Enum.map(&S.getelem(defs, &1))
+      |> Enum.reject(&(true == S.getprop(&1, "field")))
+      |> Enum.map(&S.getprop(&1, "name"))
+    else
+      []
     end
   end
 
@@ -2065,6 +2107,17 @@ defmodule ProjectName.Utility do
     S.join(parts, "/", true)
   end
 
+  # The names in one of a point's lists of names, as its params and fields are.
+  defp point_names(nil, _key), do: []
+
+  defp point_names(point, key) do
+    names = S.getprop(point, key)
+
+    if S.islist(names),
+      do: H.entries(names) |> Enum.map(&elem(&1, 1)) |> Enum.filter(&is_binary/1),
+      else: []
+  end
+
   # The names in one of a point's lists of argument definitions.
   defp arg_names(nil, _path), do: []
 
@@ -2100,13 +2153,16 @@ defmodule ProjectName.Utility do
     # A path parameter travels in the path. The generated config lists them
     # as args.params, which prepare_params reads; params is the older list.
     # A header or cookie parameter travels in the headers, which prepare_headers
-    # fills, unless a query parameter shares its name: then both are sent.
+    # fills, and a field the point's body declares travels in the body, which
+    # prepare_body fills, unless a query parameter shares its name: then both
+    # are sent.
     declared = arg_names(point, "args.query")
 
+    elsewhere =
+      arg_names(point, "args.header") ++ arg_names(point, "args.cookie") ++ point_names(point, "fields")
+
     param_strs =
-      param_strs ++
-        arg_names(point, "args.params") ++
-        Enum.reject(arg_names(point, "args.header") ++ arg_names(point, "args.cookie"), &(&1 in declared))
+      param_strs ++ arg_names(point, "args.params") ++ Enum.reject(elsewhere, &(&1 in declared))
 
     # A query parameter travels under the name the definition gives it, its
     # orig, which the model may have renamed for the caller.

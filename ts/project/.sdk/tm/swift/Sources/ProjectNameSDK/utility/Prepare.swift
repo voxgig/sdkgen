@@ -148,7 +148,9 @@ func prepareQueryUtil(_ ctx: Context) -> VMap {
     }
   }
   // A header or cookie parameter travels in the headers, which prepareHeaders
-  // fills, unless a query parameter shares its name: then both are sent.
+  // fills, and a field the point's body declares travels in the body, which
+  // prepareBody fills, unless a query parameter shares its name: then both
+  // are sent.
   var declared: [Value] = []
   if let dql = gpath(ctx.point, "args", "query").asList {
     for qd in dql.items {
@@ -162,6 +164,11 @@ func prepareQueryUtil(_ ctx: Context) -> VMap {
       if let s = name.asString, !containsStr(declared, s) {
         paramnames.append(name)
       }
+    }
+  }
+  for name in gp(ctx.point, "fields").asList?.items ?? [] {
+    if let s = name.asString, !containsStr(declared, s) {
+      paramnames.append(name)
     }
   }
 
@@ -202,7 +209,35 @@ func prepareBodyUtil(_ ctx: Context) -> Value {
     if isRawRequest(ctx.point) { return rawBodyOf(ctx.reqdata) }
     return ctx.utility!.transformRequest(ctx)
   }
+  if let fields = gp(ctx.point, "fields").asList, !fields.items.isEmpty {
+    return .map(matchBody(ctx, fields))
+  }
   return .noval
+}
+
+// A list, load or remove routed to a method with a body sends the match
+// fields that body declares, never a path parameter, and never a header,
+// cookie or query argument the body does not also declare as a field.
+private func matchBody(_ ctx: Context, _ fields: VList) -> VMap {
+  var routed: [Value] = gp(ctx.point, "params").asList?.items ?? []
+  for pd in gpath(ctx.point, "args", "params").asList?.items ?? [] {
+    routed.append(gp(pd, "name"))
+  }
+  for kind in ["header", "cookie", "query"] {
+    for ad in gpath(ctx.point, "args", kind).asList?.items ?? [] where gp(ad, "field").asBool != true {
+      routed.append(gp(ad, "name"))
+    }
+  }
+
+  let body = VMap()
+  for field in fields.items {
+    guard let name = field.asString else { continue }
+    let val = gp(ctx.reqmatch, name)
+    if !isNil(val) && "$action" != name && !containsStr(routed, name) {
+      body.entries[name] = val
+    }
+  }
+  return body
 }
 
 // prepareAuth IS NOT HERE. It was, and it hardcoded

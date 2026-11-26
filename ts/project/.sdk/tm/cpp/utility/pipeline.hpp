@@ -1200,7 +1200,7 @@ inline SpecPtr makeSpec(CtxPtr ctx) {
   if ("graphql" == as_str(getp(ctx->point, "kind"))) {
     // GraphQL addresses one endpoint: no path parts, no query string, and
     // the body carries the operation. prepareBody is skipped deliberately
-    // — it only emits a body for data-input ops, whereas every GraphQL op
+    // — it builds only a REST body, whereas every GraphQL op
     // posts one, including load/list/remove.
     ctx->spec->body = graphqlBody(ctx);
     ctx->spec->path = "";
@@ -1599,11 +1599,48 @@ inline Value mediaHeaders(const Value& point, Value headers) {
 // A string Value holds any bytes, and they are sent as they are.
 inline Value rawBody(const Value& reqdata) { return getp(reqdata, rawBodyKey()); }
 
+// A list, load or remove routed to a method with a body sends the match
+// fields that body declares, never a path parameter, and never a header,
+// cookie or query argument the body does not also declare as a field.
+inline Value matchBody(CtxPtr ctx, const Value& fields) {
+  std::vector<std::string> routed;
+  Value params = getp(ctx->point, "params");
+  if (params.is_list()) {
+    for (const auto& p : *params.as_list()) {
+      if (p.is_string()) routed.push_back(p.as_string());
+    }
+  }
+  for (const char* kind : {"params", "header", "cookie", "query"}) {
+    Value defs = getp(getp(ctx->point, "args"), kind);
+    if (!defs.is_list()) continue;
+    for (const auto& ad : *defs.as_list()) {
+      Value n = getp(ad, "name");
+      Value f = getp(ad, "field");
+      bool kept = std::string("params") != kind && f.is_bool() && f.as_bool();
+      if (n.is_string() && !kept) routed.push_back(n.as_string());
+    }
+  }
+
+  Value body = vmap();
+  for (const auto& f : *fields.as_list()) {
+    if (!f.is_string()) continue;
+    std::string name = f.as_string();
+    Value val = getp(ctx->reqmatch, name);
+    if (!is_nullish(val) && "$action" != name &&
+        std::find(routed.begin(), routed.end(), name) == routed.end()) {
+      map_put(body, name, val);
+    }
+  }
+  return body;
+}
+
 inline Value prepareBody(CtxPtr ctx) {
   if (ctx->op->input == "data") {
     if (isRawRequest(ctx->point)) return rawBody(ctx->reqdata);
     return ctx->utility->transformRequest(ctx);
   }
+  Value fields = getp(ctx->point, "fields");
+  if (fields.is_list() && !fields.as_list()->empty()) return matchBody(ctx, fields);
   return Value::undef();
 }
 
@@ -1782,6 +1819,16 @@ inline Value prepareParams(CtxPtr ctx) {
 
 // ---- prepareQuery -----------------------------------------------------
 
+// Whether the point's body declares this field, which prepareBody sends.
+inline bool bodyField(const Value& point, const std::string& name) {
+  Value fields = getp(point, "fields");
+  if (!fields.is_list()) return false;
+  for (const auto& f : *fields.as_list()) {
+    if (f.is_string() && f.as_string() == name) return true;
+  }
+  return false;
+}
+
 inline Value prepareQuery(CtxPtr ctx) {
   Value point = ctx->point;
   Value reqmatch = ctx->reqmatch;
@@ -1815,10 +1862,11 @@ inline Value prepareQuery(CtxPtr ctx) {
     return false;
   };
 
-  // A header or cookie parameter travels in the headers, which prepareHeaders
-  // fills, unless a query parameter shares its name: then both are sent.
+  // A header or cookie parameter travels in the headers, and a body field in
+  // the body, unless a query parameter shares its name: then both are sent.
   Value aquery = point.is_map() ? getp(getp(point, "args"), "query") : Value::undef();
-  auto elsewhere = [&](const std::string& s) { return (named(aheader, s) || named(acookie, s)) && !named(aquery, s); };
+  auto located = [&](const std::string& s) { return named(aheader, s) || named(acookie, s) || bodyField(point, s); };
+  auto elsewhere = [&](const std::string& s) { return located(s) && !named(aquery, s); };
 
   // A query parameter travels under the name the definition gives it, its
   // orig, which the model may have renamed for the caller.

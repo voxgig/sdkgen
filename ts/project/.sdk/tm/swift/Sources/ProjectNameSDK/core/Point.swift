@@ -16,6 +16,8 @@ public final class Point {
   public var relations: VList? = nil
   public var alias: VMap = VMap()
   public var transform: VMap = VMap()
+  // The fields a list, load or remove sends in a request body.
+  public var fields: VList? = nil
 
   public init(_ pointmap: VMap?) {
     args = VMap()
@@ -35,5 +37,6 @@ public final class Point {
     if let rl = getprop(pm, .string("relations")).asList { relations = rl }
     if let al = getprop(pm, .string("alias")).asMap { alias = al }
     if let tf = getprop(pm, .string("transform")).asMap { transform = tf }
+    if let fl = getprop(pm, .string("fields")).asList { fields = fl }
   }
 }

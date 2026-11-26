@@ -395,3 +395,50 @@ describe('actionstrip: every SDK target strips the selector', () => {
     })
   }
 })
+
+
+// Where each target builds a request body.
+const BODY_SITES: Record<string, Site> = {
+  ts: ['ts/src/utility/PrepareBodyUtility.ts'],
+  js: ['js/src/utility/PrepareBodyUtility.js'],
+  go: ['go/utility/prepare_body.go'],
+  py: ['py/pkg/utility/prepare_body.py'],
+  rb: ['rb/utility/prepare_body.rb'],
+  php: ['php/utility/PrepareBody.php'],
+  java: ['java/utility/PrepareBody.java'],
+  c: ['c/utility/prepare_body.c'],
+  csharp: ['csharp/utility/PrepareBody.cs'],
+  lua: ['lua/utility/prepare_body.lua'],
+  perl: ['perl/utility/prepare_body.pm'],
+  rust: ['rust/utility/prepare_body.rs'],
+  cpp: ['cpp/utility/pipeline.hpp', 'inline Value prepareBody('],
+  zig: ['zig/core/utility.zig', 'pub fn prepare_body_util('],
+  swift: ['swift/Sources/ProjectNameSDK/utility/Prepare.swift', 'func prepareBodyUtil('],
+  kotlin: ['kotlin/utility/Prepare.kt', 'fun prepareBody('],
+  scala: ['scala/utility/Prepare.scala', 'def prepareBody('],
+  elixir: ['elixir/lib/projectname/utility.ex', 'def prepare_body_impl('],
+  clojure: ['clojure/src/sdk/core.clj', '(defn u-prepare-body '],
+  ocaml: ['ocaml/sdk_runtime.ml', 'let prepare_body_util '],
+}
+
+
+// A list, load or remove routed to POST sends the fields its point lists in
+// the body, and the query leaves them out; the media probe checks the wire.
+describe('actionstrip: every SDK target sends a match op its body fields', () => {
+
+  test('the body site table covers exactly the SDK targets', () => {
+    deepStrictEqual(Object.keys(BODY_SITES).sort(), [...SDK_TARGETS].sort())
+  })
+
+  for (const lang of SDK_TARGETS) {
+    test(lang + ': prepare-body reads the point fields', () => {
+      ok(/["']fields["']|\.fields\b|:fields\b/.test(siteText(BODY_SITES[lang])),
+        lang + ': ' + BODY_SITES[lang][0] + ' never reads the fields a point lists')
+    })
+
+    test(lang + ': prepare-query leaves the point fields out', () => {
+      ok(/["']fields["']|\.fields\b|:fields\b/.test(siteText(SITES[lang].query)),
+        lang + ': ' + SITES[lang].query[0] + ' never leaves the point fields out')
+    })
+  }
+})

@@ -1197,7 +1197,7 @@ pub fn make_spec_util(ctx: *Context) E!*Spec {
     if (std.mem.eql(u8, kind, "graphql")) {
         // GraphQL addresses one endpoint: no path parts, no query string,
         // and the body carries the operation. prepare_body is skipped
-        // deliberately — it only emits a body for data-input ops, whereas
+        // deliberately — it builds only a REST body, whereas
         // every GraphQL op posts one, including load/list/remove.
         spec.body = graphql_body_util(ctx);
         spec.path = "";
@@ -1779,7 +1779,36 @@ pub fn prepare_body_util(ctx: *Context) Value {
         if (is_raw_request(ctx.point)) return raw_body(ctx.reqdata);
         return transform_request_util(ctx);
     }
+    const fields = h.getp(ctx.point, "fields");
+    if (fields == .array and fields.array.data.items.len != 0) return match_body(ctx, fields);
     return h.vnull();
+}
+
+// A list, load or remove routed to a method with a body sends the match
+// fields that body declares, never a path parameter, and never a header,
+// cookie or query argument the body does not also declare as a field.
+fn match_body(ctx: *Context, fields: Value) Value {
+    const body = h.omap();
+    for (fields.array.data.items) |f| {
+        if (f != .string or std.mem.eql(u8, f.string, "$action") or body_routed(ctx.point, f.string)) continue;
+        const val = h.getp(ctx.reqmatch, f.string);
+        if (!h.is_noval(val)) h.setp(body, f.string, val);
+    }
+    return body;
+}
+
+fn body_routed(point: Value, key: []const u8) bool {
+    if (listed(h.getp(point, "params"), key) or names_key(h.getpath(&.{ "args", "params" }, point), key)) return true;
+    for ([_][]const u8{ "header", "cookie", "query" }) |kind| {
+        const defs: Value = h.getpath(&.{ "args", kind }, point);
+        if (defs != .array) continue;
+        for (defs.array.data.items) |ad| {
+            const n = h.getp(ad, "name");
+            const f = h.getp(ad, "field");
+            if (n == .string and std.mem.eql(u8, n.string, key) and !(f == .bool and f.bool)) return true;
+        }
+    }
+    return false;
 }
 
 pub fn prepare_params_util(ctx: *Context) Value {
@@ -1828,6 +1857,15 @@ fn names_key(defs: Value, key: []const u8) bool {
     return false;
 }
 
+// Whether a list of names holds this key.
+fn listed(names: Value, key: []const u8) bool {
+    if (names != .array) return false;
+    for (names.array.data.items) |v| {
+        if (v == .string and std.mem.eql(u8, v.string, key)) return true;
+    }
+    return false;
+}
+
 pub fn prepare_query_util(ctx: *Context) Value {
     const point = ctx.point;
     const reqmatch: Value = switch (ctx.reqmatch) {
@@ -1842,9 +1880,12 @@ pub fn prepare_query_util(ctx: *Context) Value {
     // as args.params, which prepare_params reads; params is the older list.
     const aparams: Value = h.getpath(&.{ "args", "params" }, point);
     // A header or cookie parameter travels in the headers, which prepare_headers
-    // fills, unless a query parameter shares its name: then both are sent.
+    // fills, and a field the point's body declares travels in the body, which
+    // prepare_body fills, unless a query parameter shares its name: then both
+    // are sent.
     const aheader: Value = h.getpath(&.{ "args", "header" }, point);
     const acookie: Value = h.getpath(&.{ "args", "cookie" }, point);
+    const fields: Value = h.getp(point, "fields");
     // A query parameter travels under the name the definition gives it, its
     // orig, which the model may have renamed for the caller.
     const aquery: Value = h.getpath(&.{ "args", "query" }, point);
@@ -1865,7 +1906,8 @@ pub fn prepare_query_util(ctx: *Context) Value {
                 }
             }
             if (!contained) contained = names_key(aparams, key) or
-                ((names_key(aheader, key) or names_key(acookie, key)) and !names_key(aquery, key));
+                ((names_key(aheader, key) or names_key(acookie, key) or listed(fields, key)) and
+                    !names_key(aquery, key));
             var wire: []const u8 = key;
             if (aquery == .array) {
                 for (aquery.array.data.items) |qd| {
@@ -1886,7 +1928,8 @@ pub fn prepare_query_util(ctx: *Context) Value {
     // A create or update passes its query arguments in its data.
     for (call_args(ctx, "query")) |arg| {
         var contained = h.is_noval(arg.val) or names_key(aparams, arg.name) or
-            ((names_key(aheader, arg.name) or names_key(acookie, arg.name)) and !names_key(aquery, arg.name));
+            ((names_key(aheader, arg.name) or names_key(acookie, arg.name) or listed(fields, arg.name)) and
+                !names_key(aquery, arg.name));
         if (params == .array) {
             for (params.array.data.items) |v| {
                 if (v == .string and std.mem.eql(u8, v.string, arg.name)) contained = true;

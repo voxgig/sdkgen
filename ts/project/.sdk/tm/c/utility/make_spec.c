@@ -59,7 +59,7 @@ Spec* make_spec_util(Context* ctx, PNError** err) {
   if (is_graphql) {
     // GraphQL addresses one endpoint: no path parts, no query string, and
     // the body carries the operation. prepare_body is skipped deliberately
-    // — it only emits a body for data-input ops, whereas every GraphQL op
+    // — it builds only a REST body, whereas every GraphQL op
     // posts one, including load/list/remove.
     spec->body = graphql_body_util(ctx);
     spec_set_path(spec, "");

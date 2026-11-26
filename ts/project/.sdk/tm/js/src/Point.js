@@ -22,6 +22,8 @@ class Point {
     this.relations = getprop(altmap, 'relations', [])
     this.alias = getprop(altmap, 'alias', {})
     this.transform = getprop(altmap, 'transform', { req: undefined, res: undefined })
+    // The fields a list, load or remove sends in a request body.
+    this.fields = getprop(altmap, 'fields')
   }
 }
 

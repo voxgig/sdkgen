@@ -37,7 +37,8 @@ function loadTs(rel: string, shims: Record<string, any> = {}): any {
 }
 
 
-const STEPS = ['Param', 'PrepareHeaders', 'PrepareBody', 'TransformRequest', 'MakeFetchDef']
+const STEPS = ['Param', 'PrepareHeaders', 'PrepareBody', 'PrepareQuery', 'TransformRequest',
+  'MakeFetchDef']
 
 const PIPES: Record<string, any> = {
   ts: Object.assign({}, ...STEPS.map((s) => loadTs('ts/src/utility/' + s + 'Utility.ts'))),
@@ -308,6 +309,75 @@ describe('media: every other body is JSON, as before', () => {
         utility: { struct },
       }
       deepStrictEqual(pipe.prepareHeaders(ctx), { 'content-type': 'application/json' })
+    })
+  }
+})
+
+
+// The query a call sends, from the same shipped templates.
+function query(lang: string, pt: any, args: any): Record<string, any> {
+  return PIPES[lang].prepareQuery({ point: pt, reqmatch: args, reqdata: {}, utility: { struct } })
+}
+
+const SEARCH = { m: 'POST', o: '/cat/search', s: [{ lit: 'cat' }, { lit: 'search' }] }
+const PAGE = { k: 'query', n: 'page', or: 'page', r: false, t: '`$STRING`' }
+
+
+describe('media: a list, load or remove routed to POST sends its body fields', () => {
+
+  test('the config gives such a point the fields its body declares', () => {
+    deepStrictEqual(point('list', { ...SEARCH, bf: ['range', 'limit'] }).fields, ['range', 'limit'])
+    deepStrictEqual(point('load', { m: 'POST', bf: ['detail'] }).fields, ['detail'])
+    deepStrictEqual(point('remove', { m: 'POST', bf: ['id'] }).fields, ['id'])
+  })
+
+  test('a GET, a create and a point that declares no body carry none', () => {
+    strictEqual('fields' in point('list', { bf: ['range'] }), false)
+    strictEqual('fields' in point('create', { bf: ['name'] }), false)
+    strictEqual('fields' in point('list', { m: 'POST' }), false)
+    strictEqual('fields' in point('list', { m: 'POST', bf: [] }), false)
+  })
+
+  for (const lang of Object.keys(PIPES)) {
+
+    test(lang + ': a search sends its filters as JSON, and the rest in the query', () => {
+      const pt = point('list', { ...SEARCH, g: { query: [PAGE] }, bf: ['range', 'limit'] })
+      const args = { range: '1h', limit: 5, page: '2', other: 'x' }
+      deepStrictEqual(JSON.parse(call(lang, 'list', pt, args).body), { range: '1h', limit: 5 })
+      deepStrictEqual(query(lang, pt, args), { page: '2', other: 'x' })
+    })
+
+    test(lang + ': a remove sends the id its body declares, and no query', () => {
+      const pt = point('remove', { m: 'POST', o: '/cat/delete', s: [{ lit: 'cat' }, { lit: 'delete' }],
+        g: {}, bf: ['id'] })
+      deepStrictEqual(JSON.parse(call(lang, 'remove', pt, { id: 'c1' }).body), { id: 'c1' })
+      deepStrictEqual(query(lang, pt, { id: 'c1' }), {})
+    })
+
+    test(lang + ': a path parameter stays in the path, though the body names it', () => {
+      const pt = point('load', { m: 'POST', bf: ['id', 'detail'] })
+      const args = { id: 'c1', detail: 'full' }
+      deepStrictEqual(JSON.parse(call(lang, 'load', pt, args).body), { detail: 'full' })
+      deepStrictEqual(query(lang, pt, args), {})
+    })
+
+    test(lang + ': a query argument the body also declares goes to both', () => {
+      const pt = point('list', { ...SEARCH, g: { query: [PAGE] }, bf: ['range', 'page'] })
+      const args = { range: '1h', page: '2' }
+      deepStrictEqual(JSON.parse(call(lang, 'list', pt, args).body), { range: '1h', page: '2' })
+      deepStrictEqual(query(lang, pt, args), { page: '2' })
+    })
+
+    test(lang + ': no field given sends an empty JSON object', () => {
+      const pt = point('list', { ...SEARCH, bf: ['range'] })
+      deepStrictEqual(JSON.parse(call(lang, 'list', pt, {}).body), {})
+    })
+
+    test(lang + ': a list on GET sends no body, as before', () => {
+      const pt = point('list', { bf: ['range'] })
+      const def = call(lang, 'list', pt, { id: 'c1', range: '1h' })
+      strictEqual(def.body, undefined)
+      deepStrictEqual(query(lang, pt, { id: 'c1', range: '1h' }), { range: '1h' })
     })
   }
 })

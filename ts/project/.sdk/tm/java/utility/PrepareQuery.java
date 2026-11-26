@@ -38,7 +38,9 @@ final class PrepareQuery {
         }
       }
       // A header or cookie parameter travels in the headers, which prepareHeaders
-      // fills, unless a query parameter shares its name: then both are sent.
+      // fills, and a field the point's body declares travels in the body, which
+      // prepareBody fills, unless a query parameter shares its name: then both
+      // are sent.
       List<Object> declared = new ArrayList<>();
       Object dl = Struct.getpath(point, List.of("args", "query"));
       if (dl instanceof List) {
@@ -59,6 +61,14 @@ final class PrepareQuery {
       if (cl instanceof List) {
         for (Object cd : (List<Object>) cl) {
           Object name = Struct.getprop(cd, "name");
+          if (name instanceof String && !declared.contains(name)) {
+            params.add(name);
+          }
+        }
+      }
+      Object fl = Struct.getprop(point, "fields");
+      if (fl instanceof List) {
+        for (Object name : (List<Object>) fl) {
           if (name instanceof String && !declared.contains(name)) {
             params.add(name);
           }

@@ -1001,6 +1001,11 @@
         parts (let [p (when point (vs/getprop point "parts"))] (if (vs/islist p) p (vs/jt)))]
     (vs/join parts "/" true)))
 
+;; The names in one of a point's lists of names, as its params and fields are.
+(defn- point-names [point key]
+  (let [names (when point (vs/getprop point key))]
+    (if (vs/islist names) (filterv string? (vec names)) [])))
+
 (defn u-prepare-query [ctx]
   (let [point (oget ctx :point)
         reqmatch (or (oget ctx :reqmatch) (vs/jm))
@@ -1020,18 +1025,20 @@
         acookie (let [args (when point (vs/getprop point "args"))
                       c (when (vs/ismap args) (vs/getprop args "cookie"))]
                   (if (vs/islist c) c (vs/jt)))
-        ;; A header or cookie name leaves the query unless a query parameter
-        ;; shares it: then both are sent.
+        ;; A header or cookie name, or a field the point's body declares,
+        ;; which u-prepare-body sends, leaves the query unless a query
+        ;; parameter shares it: then both are sent.
         declared (let [args (when point (vs/getprop point "args"))
                        q (when (vs/ismap args) (vs/getprop args "query"))]
                    (into #{} (keep (fn [qd] (when (vs/ismap qd) (vs/getprop qd "name")))
                                    (vec (if (vs/islist q) q (vs/jt))))))
         routed (fn [d] (when (vs/ismap d)
                          (let [n (vs/getprop d "name")] (when-not (contains? declared n) n))))
-        pset (into (into (into (into #{} (vec params))
-                               (keep (fn [pd] (when (vs/ismap pd) (vs/getprop pd "name"))) (vec aparams)))
-                         (keep routed (vec aheader)))
-                   (keep routed (vec acookie)))
+        pset (into #{} cat [(vec params)
+                            (keep (fn [pd] (when (vs/ismap pd) (vs/getprop pd "name"))) (vec aparams))
+                            (keep routed (vec aheader))
+                            (keep routed (vec acookie))
+                            (remove declared (point-names point "fields"))])
         ;; A query parameter travels under the name the definition gives it,
         ;; its orig, which the model may have renamed for the caller.
         aquery (let [args (when point (vs/getprop point "args"))
@@ -1101,9 +1108,33 @@
              (if (nil? reqform) data
                  (vs/transform (vs/jm "reqdata" data) reqform))))))))
 
+;; A list, load or remove routed to a method with a body sends the match
+;; fields that body declares, never a path parameter, and never a header,
+;; cookie or query argument the body does not also declare as a field.
+(defn- match-body [ctx]
+  (let [point (oget ctx :point)
+        fields (point-names point "fields")
+        args (vs/getprop point "args")
+        arg-names (fn [kind keep?]
+                    (let [defs (when (vs/ismap args) (vs/getprop args kind))]
+                      (keep (fn [ad] (when (and (vs/ismap ad) (keep? ad)) (vs/getprop ad "name")))
+                            (vec (if (vs/islist defs) defs (vs/jt))))))
+        unkept (fn [ad] (not (true? (vs/getprop ad "field"))))
+        routed (into (set (point-names point "params"))
+                     (concat (arg-names "params" any?)
+                             (mapcat #(arg-names % unkept) ["header" "cookie" "query"])))
+        reqmatch (oget ctx :reqmatch)]
+    (when (seq fields)
+      (let [body (vs/jm)]
+        (doseq [name fields]
+          (let [v (vs/getprop reqmatch name)]
+            (when (and (some? v) (not= "$action" name) (not (contains? routed name)))
+              (.put ^java.util.Map body name v))))
+        body))))
+
 (defn u-prepare-body [ctx]
   (cond
-    (not= "data" (op-input (oget ctx :op))) nil
+    (not= "data" (op-input (oget ctx :op))) (match-body ctx)
     (raw-request? (oget ctx :point)) (raw-body (oget ctx :reqdata))
     :else (ucall ctx :transform-request)))
 
@@ -1388,8 +1419,8 @@
             (if (= "graphql" (vs/getprop point "kind"))
               ;; GraphQL addresses one endpoint: no path parts, no query
               ;; string, and the body carries the operation. prepare-body is
-              ;; skipped deliberately — it only emits a body for data-input
-              ;; ops, whereas every GraphQL op posts one, including
+              ;; skipped deliberately — it builds only a REST body,
+              ;; whereas every GraphQL op posts one, including
               ;; load/list/remove.
               (do
                 (oset! spec :body (ucall ctx :graphql-body))

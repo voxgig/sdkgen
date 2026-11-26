@@ -286,6 +286,17 @@ const SPEC_FACTS: Record<string, (model: any) => any> = {
 const ROUTED_KINDS = ['header', 'cookie', 'query']
 
 
+// A list, load or remove takes a match, not data. Routed to a method that
+// carries a body, it sends the fields that body declares there.
+const MATCH_OPS = ['list', 'load', 'remove']
+const BODY_METHODS = ['POST', 'PUT', 'PATCH']
+
+function matchBodyFields(opname: string, pt: any): string[] | undefined {
+  return MATCH_OPS.includes(opname) && BODY_METHODS.includes(String(pt.m).toUpperCase()) &&
+    Array.isArray(pt.bf) && 0 < pt.bf.length ? [...pt.bf] : undefined
+}
+
+
 // `alias` names the record field an entity keeps its identity in, where that is
 // not the parameter's own name, so an entity a list returned can address itself.
 function withPointParts(
@@ -315,7 +326,7 @@ function withPointParts(
           active: pt.a, kind: pt.k, method: pt.m, orig: pt.o,
           segments: pt.s, parts: pointParts(pt), rename: pt.r,
           transform: pt.t, args, select: pt.q, live: pt.li, graphql: pointGraphql(pt),
-          body: pt.rb, response: pt.rs, alias,
+          body: pt.rb, response: pt.rs, alias, fields: matchBodyFields(opname, pt),
         }
       }),
     }

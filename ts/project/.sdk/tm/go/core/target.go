@@ -16,6 +16,8 @@ type Point struct {
 	Relations []any
 	Alias     map[string]any
 	Transform map[string]any
+	// The fields a list, load or remove sends in a request body.
+	Fields []any
 }
 
 func NewPoint(altmap map[string]any) *Point {
@@ -96,6 +98,12 @@ func NewPoint(altmap map[string]any) *Point {
 	}
 	if t.Transform == nil {
 		t.Transform = map[string]any{}
+	}
+
+	if f := vs.GetProp(altmap, "fields"); f != nil {
+		if fl, ok := f.([]any); ok {
+			t.Fields = fl
+		}
 	}
 
 	return t
