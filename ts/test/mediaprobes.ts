@@ -1088,7 +1088,7 @@ fn media_probe() {
         if !headers.is_noval() {
             setp(&opts, "headers", headers);
         }
-        let client = DemoSDK::new(opts);
+        let client = DemoSDK::new(opts).unwrap();
         let data = vs::clone(&getp(&c, "input"));
         if let Value::Str(h) = getp(&c, "bodyHex") {
             let bytes: Vec<u8> = (0..h.len() / 2)

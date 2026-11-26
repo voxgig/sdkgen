@@ -828,11 +828,11 @@ fn allow_probe() {
     let a = DemoSDK::new(jo(vec![
         ("base", Value::str(base.clone())),
         ("allow", jo(vec![("method", Value::str("PUT,\n get")), ("op", Value::str("direct,load"))])),
-    ]));
+    ])).unwrap();
     let b = DemoSDK::new(jo(vec![
         ("base", Value::str(base)),
         ("allow", jo(vec![("op", Value::str("indirect,reload"))])),
-    ]));
+    ])).unwrap();
 
     for method in ["get", "POST", "PU"] {
         let name = format!("prepare {}", method);

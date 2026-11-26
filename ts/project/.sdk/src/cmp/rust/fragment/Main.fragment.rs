@@ -22,7 +22,7 @@ pub struct ProjectNameSDK {
 }
 
 impl ProjectNameSDK {
-    pub fn new(options: Value) -> Rc<ProjectNameSDK> {
+    pub fn new(options: Value) -> Result<Rc<ProjectNameSDK>, ProjectNameError> {
         let sdk = Rc::new(ProjectNameSDK {
             mode: RefCell::new("live".to_string()),
             options: RefCell::new(Value::Noval),
@@ -47,7 +47,7 @@ impl ProjectNameSDK {
             None,
         );
 
-        let opts = sdk.utility.make_options(&rootctx);
+        let opts = sdk.utility.make_options(&rootctx)?;
         *sdk.options.borrow_mut() = opts.clone();
 
         if getpath(&["feature", "test", "active"], &opts) == Value::Bool(true) {
@@ -89,7 +89,7 @@ impl ProjectNameSDK {
 
         sdk.utility.feature_hook(&rootctx, "PostConstruct");
 
-        sdk
+        Ok(sdk)
     }
 
     pub fn options_map(&self) -> Value {
@@ -427,7 +427,8 @@ pub fn test_sdk(testopts: Value, sdkopts: Value) -> Rc<ProjectNameSDK> {
         None,
     );
 
-    let sdk = ProjectNameSDK::new(sdkopts);
+    // Test mode fills every server variable, so construction cannot refuse.
+    let sdk = ProjectNameSDK::new(sdkopts).expect("a test-mode client");
     *sdk.mode.borrow_mut() = "test".to_string();
 
     sdk

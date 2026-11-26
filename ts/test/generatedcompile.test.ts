@@ -4118,7 +4118,7 @@ fn wire(opts: Vec<(&str, Value)>) -> (bool, Value, bool) {
     let mut all = opts;
     all.push(("base", Value::str("http://localhost:8080")));
     all.push(("system", jo(vec![("fetch", mock)])));
-    let client = DemoSDK::new(jo(all));
+    let client = DemoSDK::new(jo(all)).unwrap();
     let _ = client.planet(Value::Noval).create(jo(vec![("name", Value::str("p1"))]), Value::Noval);
 
     let h = seen.borrow().clone();
@@ -4152,7 +4152,7 @@ fn authnull_probe() {
     let client = DemoSDK::new(jo(vec![
         ("apikey", Value::str("OPTKEY01")),
         ("auth", Value::Null),
-    ]));
+    ])).unwrap();
     let om = client.options_map();
     let a = match &om {
         Value::Map(m) => m.borrow().get("auth").cloned(),
@@ -6794,6 +6794,17 @@ const SERVER_LANES: ServerLane[] = [
       /^--- PASS: TestServerVariableMissingOrEmptyRefusesConstruction /m,
       /^--- PASS: TestServerVariableFillsTheBase /m,
       /^--- PASS: TestServerVariableTestModeFillsTheBase /m,
+    ],
+  },
+  {
+    target: 'rust',
+    runner: 'tests/server_variable_test.rs',
+    needs: 'cargo',
+    command: () => cargoTest(['--test', 'server_variable_test']),
+    ran: [
+      /^test server_variable_missing_or_empty_refuses_construction \.\.\. ok$/m,
+      /^test server_variable_fills_the_base \.\.\. ok$/m,
+      /^test server_variable_test_mode_fills_the_base \.\.\. ok$/m,
     ],
   },
   {

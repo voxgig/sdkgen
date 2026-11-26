@@ -40,9 +40,10 @@ const ReadmeTopQuick = cmp(function ReadmeTopQuick(props: any) {
     ...(0 === svars.length ? [] : [`("server", jo(vec![` +
       svars.map((v: any) => `("${v.name}", Value::str("<${v.name}>"))`).join(', ') + `])),`]),
   ]
-  const ctor = 0 === ctorFields.length
+  const ctor = (0 === ctorFields.length
     ? `${model.const.Name}SDK::new(Value::Noval)`
-    : `${model.const.Name}SDK::new(jo(vec![${ctorFields.map((f: string) => '\n    ' + f).join('')}\n]))`
+    : `${model.const.Name}SDK::new(jo(vec![${ctorFields.map((f: string) => '\n    ' + f).join('')}\n]))`) +
+    '.expect("valid client options")'
 
   Content(`\`\`\`rust
 use ${rustcrate}::{jo, ${model.const.Name}EntityBase, ${model.const.Name}SDK, Entity, Value};

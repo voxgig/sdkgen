@@ -225,7 +225,8 @@ fn ${evar}_direct_setup(mockres: Value) -> ${entity.Name}DirectSetup {
                 jo(vec![${apikeyLiveField}${serverLiveField}]),
             ]),
             None,
-        )));
+        )))
+        .unwrap();
         let idmap = match to_map(&getp(&env, "${entidEnvVar}")) {
             Value::Map(m) => Value::Map(m),
             _ => Value::empty_map(),
@@ -263,7 +264,8 @@ ${exampleIds.map(([key, ex]) => `        if getp(&idmap, "${key}").is_noval() {
     let client = ${model.const.Name}SDK::new(jo(vec![
         ("base", Value::str("http://localhost:8080")),
         ("system", jo(vec![("fetch", mock_fetch)])),
-    ]));
+    ]))
+    .unwrap();
 
     ${entity.Name}DirectSetup {
         client,

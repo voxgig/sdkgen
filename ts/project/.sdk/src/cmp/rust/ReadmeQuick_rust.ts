@@ -39,9 +39,10 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
     ...(0 === svars.length ? [] : [`("server", jo(vec![` +
       svars.map((v: any) => `("${v.name}", Value::str("<${v.name}>"))`).join(', ') + `])),`]),
   ]
-  const ctor = 0 === ctorFields.length
+  const ctor = (0 === ctorFields.length
     ? `${model.const.Name}SDK::new(Value::Noval)`
-    : `${model.const.Name}SDK::new(jo(vec![${ctorFields.map((f: string) => '\n    ' + f).join('')}\n]))`
+    : `${model.const.Name}SDK::new(jo(vec![${ctorFields.map((f: string) => '\n    ' + f).join('')}\n]))`) +
+    '.expect("valid client options")'
 
   // A type-correct rust expression constructing a voxgig struct Value.
   const rustLit = (type: any, placeholder: string = 'example'): string => {

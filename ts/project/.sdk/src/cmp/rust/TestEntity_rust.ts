@@ -433,7 +433,7 @@ ${fixtureIdentity(entity)}
             ]),
             None,
         );
-        ${model.const.Name}SDK::new(to_map(&merged))
+        ${model.const.Name}SDK::new(to_map(&merged)).unwrap()
     } else {
         client
     };

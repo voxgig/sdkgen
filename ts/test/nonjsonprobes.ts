@@ -886,7 +886,7 @@ fn nonjson_probe() {
         if !f[3].is_empty() {
             opts.push(("headers", jo(vec![("user-agent", Value::str(f[3]))])));
         }
-        let client = DemoSDK::new(jo(opts));
+        let client = DemoSDK::new(jo(opts)).unwrap();
         match client.cat(Value::Noval).list(jo(vec![]), Value::Noval) {
             Ok(_) => report("probe", f[0], "ok", None),
             Err(e) => report("probe", f[0], &e.code, Some(e.msg.clone())),
@@ -907,7 +907,7 @@ fn nonjson_probe() {
         if !f[3].is_empty() {
             copts.push(("headers", jo(vec![("user-agent", Value::str(f[3]))])));
         }
-        let cached = DemoSDK::new(jo(copts));
+        let cached = DemoSDK::new(jo(copts)).unwrap();
         for path in ["cache1", "cache2"] {
             match cached.cat(Value::Noval).list(jo(vec![]), Value::Noval) {
                 Ok(_) => report(path, f[0], "ok", None),

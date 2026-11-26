@@ -141,7 +141,8 @@ Override the base URL to reach a local or staging server:
 \`\`\`rust
 let client = ${model.const.Name}SDK::new(jo(vec![
     ("base", Value::str("http://localhost:8080")),
-]));
+]))
+.expect("valid client options");
 \`\`\`
 
 ### Run live tests
