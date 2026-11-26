@@ -34,7 +34,9 @@ $REGISTRY{prepare_query} = sub {
       }
     }
     # A header or cookie parameter travels in the headers, which prepare_headers
-    # fills, unless a query parameter shares its name: then both are sent.
+    # fills, and a field the point's body declares travels in the body, which
+    # prepare_body fills, unless a query parameter shares its name: then both
+    # are sent.
     my $ql = ProjectNameHelpers::gpath($point, 'args.query');
     my %declared = Voxgig::Struct::islist($ql)
       ? map { my $n = ProjectNameHelpers::gp($_, 'name'); defined $n && !ref $n ? ($n => 1) : () } @$ql
@@ -46,6 +48,10 @@ $REGISTRY{prepare_query} = sub {
         my $name = ProjectNameHelpers::gp($hd, 'name');
         push @$params, $name if defined $name && !ref $name && !$declared{$name};
       }
+    }
+    my $fields = ProjectNameHelpers::gp($point, 'fields');
+    if (Voxgig::Struct::islist($fields)) {
+      push @$params, grep { defined $_ && !ref $_ && !$declared{$_} } @$fields;
     }
   }
   # A query parameter travels under the name the definition gives it, its

@@ -47,11 +47,14 @@ pub fn prepare_query_util(ctx: &Rc<Context>) -> Value {
     };
 
     // A header or cookie parameter travels in the headers, which prepare_headers
-    // fills, unless a query parameter shares its name: then both are sent.
+    // fills, and a field the point's body declares travels in the body, which
+    // prepare_body fills, unless a query parameter shares its name: then both
+    // are sent.
     let aheader = getp(&getp(&point, "args"), "header");
     let acookie = getp(&getp(&point, "args"), "cookie");
     let declared = getp(&getp(&point, "args"), "query");
-    let in_header = |key: &str| -> bool {
+    let fields = getp(&point, "fields");
+    let elsewhere = |key: &str| -> bool {
         if let Value::List(ql) = &declared {
             for qd in ql.borrow().iter() {
                 if let Value::Str(s) = getp(qd, "name") {
@@ -59,6 +62,11 @@ pub fn prepare_query_util(ctx: &Rc<Context>) -> Value {
                         return false;
                     }
                 }
+            }
+        }
+        if let Value::List(fl) = &fields {
+            if fl.borrow().iter().any(|f| f.as_str() == Some(key)) {
+                return true;
             }
         }
         for located in [&aheader, &acookie] {
@@ -100,7 +108,7 @@ pub fn prepare_query_util(ctx: &Rc<Context>) -> Value {
             .collect();
         for (key, val) in entries {
             if !val.is_noval() && !val.is_null() && "$action" != key && !contains(&key) && !in_args(&key)
-                && !in_header(&key)
+                && !elsewhere(&key)
             {
                 setp(&out, &wire_name(&key), val);
             }
@@ -109,7 +117,7 @@ pub fn prepare_query_util(ctx: &Rc<Context>) -> Value {
 
     // A create or update passes its query arguments in its data.
     for (name, wire, val) in call_args(ctx, "query") {
-        if !val.is_noval() && !val.is_null() && !contains(&name) && !in_args(&name) && !in_header(&name) {
+        if !val.is_noval() && !val.is_null() && !contains(&name) && !in_args(&name) && !elsewhere(&name) {
             setp(&out, &wire, val);
         }
     }

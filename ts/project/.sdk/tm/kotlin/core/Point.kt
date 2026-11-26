@@ -19,6 +19,8 @@ class Point(pointmap: Map<String, Any?>?) {
   var relations: MutableList<Any?>? = null
   var alias: MutableMap<String, Any?> = linkedMapOf()
   var transform: MutableMap<String, Any?> = linkedMapOf()
+  // The fields a list, load or remove sends in a request body.
+  var fields: MutableList<Any?>? = null
 
   init {
     var v = Struct.getprop(pointmap, "args")
@@ -80,6 +82,11 @@ class Point(pointmap: Map<String, Any?>?) {
     v = Struct.getprop(pointmap, "transform")
     if (v is MutableMap<*, *>) {
       this.transform = v as MutableMap<String, Any?>
+    }
+
+    v = Struct.getprop(pointmap, "fields")
+    if (v is MutableList<*>) {
+      this.fields = v as MutableList<Any?>
     }
   }
 }

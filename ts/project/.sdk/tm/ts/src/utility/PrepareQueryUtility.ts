@@ -34,10 +34,12 @@ function prepareQuery(ctx: Context) {
     }
   }
 
-  // A header or cookie parameter travels in the headers, which prepareHeaders
-  // fills, unless a query parameter shares its name: then both are sent.
+  // A header or cookie argument travels in the headers, and a field the point's
+  // body declares in the body, unless a query parameter shares its name.
   const elsewhere: string[] = (point.args?.header || []).concat(point.args?.cookie || [])
-    .map((a: any) => a?.name).filter((name: string) => !declared.includes(name))
+    .map((a: any) => a?.name)
+    .concat(Array.isArray(point.fields) ? point.fields : [])
+    .filter((name: string) => !declared.includes(name))
 
   const out: any = {}
   for (let [key, val] of items(reqmatch)) {

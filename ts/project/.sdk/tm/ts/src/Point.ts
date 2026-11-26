@@ -19,6 +19,8 @@ class Point {
   relations: any[]
   alias: Record<string, string>
   transform: { req: any, res: any }
+  // The fields a list, load or remove sends in a request body.
+  fields?: string[]
 
   constructor(altmap: Record<string, any>) {
     this.args = getprop(altmap, 'args', { params: [] })
@@ -36,6 +38,7 @@ class Point {
     this.relations = getprop(altmap, 'relations', [])
     this.alias = getprop(altmap, 'alias', {})
     this.transform = getprop(altmap, 'transform', { req: undefined, res: undefined })
+    this.fields = getprop(altmap, 'fields')
   }
 }
 

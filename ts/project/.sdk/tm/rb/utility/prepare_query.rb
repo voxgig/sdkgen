@@ -19,7 +19,9 @@ module ProjectNameUtilities
         end
       end
       # A header or cookie parameter travels in the headers, which prepare_headers
-      # fills, unless a query parameter shares its name: then both are sent.
+      # fills, and a field the point's body declares travels in the body, which
+      # prepare_body fills, unless a query parameter shares its name: then both
+      # are sent.
       ql = VoxgigStruct.getpath(point, "args.query")
       declared = ql.is_a?(Array) ? ql.map { |qd| VoxgigStruct.getprop(qd, "name") } : []
       [VoxgigStruct.getpath(point, "args.header"), VoxgigStruct.getpath(point, "args.cookie")].each do |hl|
@@ -28,6 +30,10 @@ module ProjectNameUtilities
           name = VoxgigStruct.getprop(hd, "name")
           params << name if name.is_a?(String) && !declared.include?(name)
         end
+      end
+      fields = VoxgigStruct.getprop(point, "fields")
+      if fields.is_a?(Array)
+        fields.each { |name| params << name if name.is_a?(String) && !declared.include?(name) }
       end
     end
     # A query parameter travels under the name the definition gives it, its

@@ -31,8 +31,9 @@ def prepare_query_util(ctx):
                 if isinstance(name, str):
                     params.append(name)
         # A header or cookie parameter travels in the headers, which
-        # prepare_headers fills, unless a query parameter shares its name:
-        # then both are sent.
+        # prepare_headers fills, and a field the point's body declares travels
+        # in the body, which prepare_body fills, unless a query parameter
+        # shares its name: then both are sent.
         ql = vs.getpath(point, "args.query")
         declared = [vs.getprop(qd, "name") for qd in ql] if isinstance(ql, list) else []
         for located in (vs.getpath(point, "args.header"), vs.getpath(point, "args.cookie")):
@@ -41,6 +42,10 @@ def prepare_query_util(ctx):
                     name = vs.getprop(hd, "name")
                     if isinstance(name, str) and name not in declared:
                         params.append(name)
+        fields = vs.getprop(point, "fields")
+        if isinstance(fields, list):
+            params += [name for name in fields
+                       if isinstance(name, str) and name not in declared]
 
     # A query parameter travels under the name the definition gives it, its
     # orig, which the model may have renamed for the caller.

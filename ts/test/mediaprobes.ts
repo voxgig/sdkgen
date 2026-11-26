@@ -29,6 +29,8 @@ type MediaCase = {
     // Pieces the cookie header must hold.
     cookies?: string[]
     query?: Record<string, string>
+    // Query parameters that must not be sent.
+    queryAbsent?: string[]
   }
 }
 
@@ -134,6 +136,14 @@ const MEDIA_MODEL =
     list: point('GET', '/badge', JSON_RS, '`reqdata`', '',
       '["`$EACH`", "body", { "`$MERGE`": "`.badge`" }]'),
     load: point('GET', '/badge/{id}', JSON_RS),
+  }) +
+  // A list, a load and a remove routed to POST, each sending the fields its
+  // request body declares as JSON, as a search or a delete by body does.
+  entity('finding', {
+    list: point('POST', '/finding/search', `bf: ["range", "limit"]
+        ${JSON_RS}`, '`reqdata`', `query: [${arg('query', 'page', 'page')}]`),
+    load: point('POST', '/finding/{id}/read', 'bf: ["id", "detail"]'),
+    remove: point('POST', '/finding/delete', 'bf: ["id"]'),
   }) +
   // A list whose route requires a path and a query parameter, which the test mock matches.
   entity('search', {
@@ -257,6 +267,32 @@ const MEDIA_CASES: MediaCase[] = [
     },
   },
   {
+    name: 'a list routed to POST sends its filters as JSON, and the rest in the query',
+    entity: 'finding', op: 'list', input: { range: '1h', limit: '5', page: '2' },
+    expect: {
+      method: 'POST', path: '/finding/search', accept: 'application/json',
+      contentType: 'application/json', json: { range: '1h', limit: '5' }, absent: ['page'],
+      query: { page: '2' }, queryAbsent: ['range', 'limit'],
+    },
+  },
+  {
+    name: 'a load routed to POST keeps its id in the path and its fields in the body',
+    entity: 'finding', op: 'load', input: { id: 'f01', detail: 'full' },
+    expect: {
+      method: 'POST', path: '/finding/f01/read', accept: null,
+      contentType: 'application/json', json: { detail: 'full' }, absent: ['id'],
+      queryAbsent: ['id', 'detail'],
+    },
+  },
+  {
+    name: 'a remove routed to POST sends the id its body declares',
+    entity: 'finding', op: 'remove', input: { id: 'f01' },
+    expect: {
+      method: 'POST', path: '/finding/delete', accept: null,
+      contentType: 'application/json', json: { id: 'f01' }, queryAbsent: ['id'],
+    },
+  },
+  {
     name: 'a body with no declared type is JSON, as before',
     entity: 'planet', op: 'create', input: { title: 'Mars' },
     expect: {
@@ -369,6 +405,9 @@ function mediaFailures(cases: MediaCase[], records: MediaRecord[]): string[] {
 
     for (const [name, value] of Object.entries(c.expect.query || {})) {
       if (value !== r.query[name]) fail('query ' + name, r.query[name], value)
+    }
+    for (const name of c.expect.queryAbsent || []) {
+      if (name in r.query) fail('query without ' + name, r.query, c.expect.queryAbsent)
     }
   })
 
@@ -508,6 +547,8 @@ func TestMediaProbe(t *testing.T) {
 			ent = client.Picture(nil)
 		case "planet":
 			ent = client.Planet(nil)
+		case "finding":
+			ent = client.Finding(nil)
 		}
 		var cerr error
 		switch c["op"] {
@@ -735,6 +776,7 @@ public class MediaProbe {
         SdkEntity ent = switch ((String) c.get("entity")) {
           case "cat" -> client.cat(null);
           case "picture" -> client.picture(null);
+          case "finding" -> client.finding(null);
           default -> client.planet(null);
         };
         switch ((String) c.get("op")) {
@@ -786,6 +828,7 @@ class MediaProbe {
         val ent: SdkEntity = when (c["entity"]) {
           "cat" -> client.cat(null)
           "picture" -> client.picture(null)
+          "finding" -> client.finding(null)
           else -> client.planet(null)
         }
         when (c["op"]) {
@@ -836,6 +879,7 @@ object MediaProbeMain {
         val ent: SdkEntity = c.get("entity") match {
           case "cat" => client.cat(null)
           case "picture" => client.picture(null)
+          case "finding" => client.finding(null)
           case _ => client.planet(null)
         }
         c.get("op") match {
@@ -894,6 +938,7 @@ public static class MediaProbe
                 {
                     "cat" => client.Cat(),
                     "picture" => client.Picture(),
+                    "finding" => client.Finding(),
                     _ => client.Planet(),
                 };
                 switch ((string)c["op"]!)
@@ -951,6 +996,7 @@ final class MediaProbeTest: XCTestCase {
         switch gp(c, "entity").asString {
         case "cat": ent = client.Cat(nil)
         case "picture": ent = client.Picture(nil)
+        case "finding": ent = client.Finding(nil)
         default: ent = client.Planet(nil)
         }
         switch gp(c, "op").asString {
@@ -999,6 +1045,7 @@ defmodule Demo.MediaProbeTest do
           case S.getprop(c, "entity") do
             "cat" -> {Demo.cat(client), Demo.Entity.Cat}
             "picture" -> {Demo.picture(client), Demo.Entity.Picture}
+            "finding" -> {Demo.finding(client), Demo.Entity.Finding}
             _ -> {Demo.planet(client), Demo.Entity.Planet}
           end
 
@@ -1020,7 +1067,8 @@ const CLOJURE_PROBE = String.raw`
          '[voxgig.struct :as vs]
          '[sdk.entity.cat :as e-cat]
          '[sdk.entity.picture :as e-picture]
-         '[sdk.entity.planet :as e-planet])
+         '[sdk.entity.planet :as e-planet]
+         '[sdk.entity.finding :as e-finding])
 
 (def cases (core/json-parse (slurp "media-cases.json")))
 (def base (System/getenv "MEDIA_BASE"))
@@ -1043,6 +1091,7 @@ const CLOJURE_PROBE = String.raw`
             ent (case entity
                   "cat" (api/cat client nil)
                   "picture" (api/picture client nil)
+                  "finding" (api/finding client nil)
                   (api/planet client nil))
             f (case [entity op]
                 ["cat" "load"] e-cat/load
@@ -1054,6 +1103,9 @@ const CLOJURE_PROBE = String.raw`
                 ["picture" "update"] e-picture/update
                 ["picture" "patch"] e-picture/patch
                 ["picture" "create"] e-picture/create
+                ["finding" "list"] e-finding/list
+                ["finding" "load"] e-finding/load
+                ["finding" "remove"] e-finding/remove
                 e-planet/create)]
         (f ent data (vs/jm)))
       (catch Throwable e (println (str "media-probe: case " i ": " (.getMessage e)))))))
@@ -1113,6 +1165,9 @@ fn media_probe() {
             ("picture", "update") => call!(client.picture(Value::Noval), update, data),
             ("picture", "patch") => call!(client.picture(Value::Noval), patch, data),
             ("picture", "create") => call!(client.picture(Value::Noval), create, data),
+            ("finding", "list") => call!(client.finding(Value::Noval), list, data),
+            ("finding", "load") => call!(client.finding(Value::Noval), load, data),
+            ("finding", "remove") => call!(client.finding(Value::Noval), remove, data),
             _ => call!(client.planet(Value::Noval), create, data),
         };
         if let Err(e) = res {
@@ -1184,7 +1239,8 @@ int main(void) {
     const char* entity = get_str(c, "entity");
     const char* op = get_str(c, "op");
     Entity* e = 0 == strcmp(entity, "cat") ? demo_cat(sdk, NULL) :
-      0 == strcmp(entity, "picture") ? demo_picture(sdk, NULL) : demo_planet(sdk, NULL);
+      0 == strcmp(entity, "picture") ? demo_picture(sdk, NULL) :
+      0 == strcmp(entity, "finding") ? demo_finding(sdk, NULL) : demo_planet(sdk, NULL);
     PNError* err = NULL;
     if (0 == strcmp(op, "load")) e->vt->load(e, input, v_map(), &err);
     else if (0 == strcmp(op, "list")) e->vt->list(e, input, v_map(), &err);
@@ -1268,7 +1324,8 @@ int main() {
     std::string op = as_str(getp(c, "op"));
     try {
       SdkEntityPtr ent = "cat" == entity ? SdkEntityPtr(client->cat()) :
-        "picture" == entity ? SdkEntityPtr(client->picture()) : SdkEntityPtr(client->planet());
+        "picture" == entity ? SdkEntityPtr(client->picture()) :
+        "finding" == entity ? SdkEntityPtr(client->finding()) : SdkEntityPtr(client->planet());
       if ("load" == op) ent->load(data, vmap());
       else if ("list" == op) ent->list(data, vmap());
       else if ("create" == op) ent->create(data, vmap());
@@ -1376,6 +1433,9 @@ test "media probe" {
         if (is(u8, entity, "picture") and is(u8, op, "update")) report(i, client.picture(vnull()).update(data, h.omap()));
         if (is(u8, entity, "picture") and is(u8, op, "patch")) report(i, client.picture(vnull()).patch(data, h.omap()));
         if (is(u8, entity, "picture") and is(u8, op, "create")) report(i, client.picture(vnull()).create(data, h.omap()));
+        if (is(u8, entity, "finding") and is(u8, op, "list")) report(i, client.finding(vnull()).list(data, h.omap()));
+        if (is(u8, entity, "finding") and is(u8, op, "load")) report(i, client.finding(vnull()).load(data, h.omap()));
+        if (is(u8, entity, "finding") and is(u8, op, "remove")) report(i, client.finding(vnull()).remove(data, h.omap()));
         if (is(u8, entity, "planet")) report(i, client.planet(vnull()).create(data, h.omap()));
     }
     std.debug.print("media-probe: ran {d} cases\n", .{cases.array.data.items.len});
@@ -1433,6 +1493,7 @@ let () =
       let ent = match getp c "entity" with
         | Str "cat" -> Sdk_client.cat client Noval
         | Str "picture" -> Sdk_client.picture client Noval
+        | Str "finding" -> Sdk_client.finding client Noval
         | _ -> Sdk_client.planet client Noval in
       try run ent (getp c "op") input
       with e -> Printf.printf "media-probe: case %d: %s\n" i (Printexc.to_string e))
