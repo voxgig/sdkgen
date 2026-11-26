@@ -30,7 +30,7 @@ src/cmp/c/ReadmeTopHowto_c.ts 1cb63edd8a24
 src/cmp/c/ReadmeTopQuick_c.ts 1f39ef265f96
 src/cmp/c/ReadmeTopTest_c.ts 9ae625173e92
 src/cmp/c/Schema_c.ts c4ed362679d7
-src/cmp/c/TestClean_c.ts cc9928186ce1
+src/cmp/c/TestClean_c.ts 2f60f2b9bdba
 src/cmp/c/TestDirect_c.ts ec4b126521c6
 src/cmp/c/TestEntity_c.ts a5d7718e4449
 src/cmp/c/Test_c.ts f1a8a6c7a0c6
@@ -2231,7 +2231,7 @@ tm/zig/src/feature/telemetry/.gitkeep e3b0c44298fc
 tm/zig/src/feature/test/.gitkeep e3b0c44298fc
 tm/zig/src/feature/timeout/.gitkeep e3b0c44298fc
 tm/zig/src/feature/validate/.gitkeep e3b0c44298fc
-tm/zig/test/feature/secrets/secrets_test.zig 9f2848fc82ff
+tm/zig/test/feature/secrets/secrets_test.zig cd3c96ea3cfb
 tm/zig/test/feature_test.zig dfbcd6a18307
 tm/zig/test/fh.zig 4a248b2bc6b7
 tm/zig/test/gotcha_test.zig d235341e8986

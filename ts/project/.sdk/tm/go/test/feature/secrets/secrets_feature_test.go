@@ -880,7 +880,11 @@ func TestSecretsExchangeRedirectRefused(t *testing.T) {
 				if extend {
 					opts["extend"] = []any{feat.NewSecretsFeature()}
 				}
-				return sdk.NewProjectNameSDK(opts)
+				client, err := sdk.NewProjectNameSDK(opts)
+				if err != nil {
+					panic(err)
+				}
+				return client
 			})
 
 			message := fmt.Sprint(callNamedOp(client, entity, opname))

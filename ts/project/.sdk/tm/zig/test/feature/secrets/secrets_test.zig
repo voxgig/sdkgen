@@ -1045,7 +1045,7 @@ test "secrets exchange: a redirect answering the exchange is a failure, and noth
                 .{ "exchange", h.jo(&.{ .{ "active", h.vbool(true) }, .{ "refresh", h.vstr("REFRESH01") } }) },
             }) }}) },
         });
-        const client = sdk.SDK.new_with(opts, &.{sdk.SecretsFeature.make()});
+        const client = sdk.SDK.new_with(opts, &.{sdk.SecretsFeature.make()}).ok;
         const res = client.direct(h.jo(&.{.{ "path", h.vstr("/thing") }}));
 
         origin.close();

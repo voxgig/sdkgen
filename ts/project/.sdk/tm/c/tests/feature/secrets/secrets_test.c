@@ -919,7 +919,7 @@ static void t_exchange_redirect_refused(void) {
       "feature", cmap(1, "secrets", cmap(3,
         "active", v_bool(true),
         "name", v_str("refresh_token"),
-        "exchange", cmap(2, "active", v_bool(true), "refresh", v_str("REFRESH01"))))));
+        "exchange", cmap(2, "active", v_bool(true), "refresh", v_str("REFRESH01"))))), NULL);
     voxgig_value* res = direct(sdk);
 
     kill(origin, SIGTERM);

@@ -1713,7 +1713,8 @@ fn a_redirect_answering_the_exchange_is_a_failure_and_nothing_follows_it() {
                     ]),
                 )]),
             ),
-        ]));
+        ]))
+        .unwrap();
 
         let message = match client.direct(jo(vec![("path", Value::str("/thing"))])) {
             Ok(res) => get_str(&res, "err").unwrap_or_else(|| format!("{:?}", res)),

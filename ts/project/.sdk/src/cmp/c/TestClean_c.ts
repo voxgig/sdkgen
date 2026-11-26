@@ -750,7 +750,7 @@ static void sweep_content(void) {
 
 // What a hook that cleans the response body it holds is handed back.
 static voxgig_value* carried(const char* type, bool active) {
-  ${Name}SDK* sdk = ${ident}_sdk_new(offline(cmap(1, "clean", cmap(1, "active", v_bool(active)))));
+  ${Name}SDK* sdk = ${ident}_sdk_new(offline(cmap(1, "clean", cmap(1, "active", v_bool(active)))), NULL);
   CtxSpec cs;
   memset(&cs, 0, sizeof(cs));
   cs.response = response_new(bytes_response(200, type));
