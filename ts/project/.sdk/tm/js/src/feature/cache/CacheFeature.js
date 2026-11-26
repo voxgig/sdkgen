@@ -1,6 +1,7 @@
 
 
 const { BaseFeature } = require('../base/BaseFeature')
+const { headerValue, isJsonMedia } = require('../../utility/MediaUtility')
 
 
 // Response caching for safe (read) requests. Wraps the active transport and
@@ -61,6 +62,12 @@ class CacheFeature extends BaseFeature {
 
     const res = await inner(ctx, url, fetchdef)
 
+    // A body that declares another type than JSON passes by, unread.
+    if (this._cacheable(res) && !this._json(res)) {
+      this._track('bypass')
+      return res
+    }
+
     if (this._cacheable(res)) {
       const snapshot = await this._snapshot(res)
 
@@ -89,6 +96,12 @@ class CacheFeature extends BaseFeature {
     }
     const status = res.status
     return 'number' === typeof status && status >= 200 && status < 300
+  }
+
+
+  _json(res) {
+    const type = headerValue(res.headers, 'content-type')
+    return '' === type || isJsonMedia(type)
   }
 
 
