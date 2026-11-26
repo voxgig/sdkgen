@@ -155,10 +155,9 @@ const TestEntity = cmp(function TestEntity(props: any) {
   const idnamesStr = idnames.map(n => `'${n}'`).join(', ')
 
   const allSteps = Object.values(flowSteps(basicflow)) as any[]
-  const updateStep = allSteps.find((s: any) => s.o === 'update')
-  const updateData = updateStep?.d
-    ? Object.entries(updateStep.d).filter(([k]: any) => k !== 'id' && !k.endsWith('$'))
-    : []
+  const updateData = Object.entries(Object.assign({}, ...allSteps
+    .filter((s: any) => 'update' === s.o || 'patch' === s.o).map((s: any) => s.d || {})))
+    .filter(([k]: any) => k !== 'id' && !k.endsWith('$'))
   const aliases = updateData.map(([k, v]: any) => [k, v])
 
   // An entity whose basic flow has no steps yields an EMPTY list, and Perl's
@@ -370,7 +369,7 @@ const generateCreate: OpGen = (ctx, step, index) => {
 
   const priorSteps = Object.values(flowSteps(flow)).slice(0, Number(index)) as any[]
   const needsEnt = !priorSteps.some((s: any) =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
 
   Content(`  # CREATE
 `)
@@ -409,7 +408,7 @@ const generateList: OpGen = (ctx, step, index) => {
 
   const priorSteps = Object.values(flowSteps(flow)).slice(0, Number(index)) as any[]
   const needsEnt = !priorSteps.some((s: any) =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
 
   Content(`  # LIST
 `)
@@ -480,11 +479,11 @@ const generateUpdate: OpGen = (ctx, step, index) => {
 
   const priorSteps = Object.values(flowSteps(flow)).slice(0, Number(index)) as any[]
   const needsEnt = !priorSteps.some((s: any) =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
 
   const hasEntIdU = null != entity.id
 
-  Content(`  # UPDATE
+  Content(`  # ${step.o.toUpperCase()}
 `)
   if (needsEnt) {
     Content(`  $V{${entvar}} = $client->${entity.Name}(undef);
@@ -523,19 +522,19 @@ const generateUpdate: OpGen = (ctx, step, index) => {
   }
 
   Content(`
-  $V{${resdatavar}_result} = $V{${entvar}}->update($V{${datavar}_up}, undef);
+  $V{${resdatavar}_result} = $V{${entvar}}->${step.o}($V{${datavar}_up}, undef);
   $V{${resdatavar}} = ${N}Helpers::to_map(ref($V{${resdatavar}_result}) && $V{${resdatavar}_result}->can('data_get') ? $V{${resdatavar}_result}->data_get : $V{${resdatavar}_result});
-  ok(defined $V{${resdatavar}}, '${entity.name} update: data');
+  ok(defined $V{${resdatavar}}, '${entity.name} ${step.o}: data');
 `)
   if (hasEntIdU) {
-    Content(`  is($V{${resdatavar}}{${rid(entity)}}, $V{${datavar}_up}{id}, '${entity.name} update: id')${liveDeclared(liveRepeatsId(entity))};
+    Content(`  is($V{${resdatavar}}{${rid(entity)}}, $V{${datavar}_up}{id}, '${entity.name} ${step.o}: id')${liveDeclared(liveRepeatsId(entity))};
 `)
   }
 
   if (step.s) {
     for (const spec of step.s) {
       if ('TextFieldMark' === spec.apply && null != step.i.textfield) {
-        Content(`  is($V{${resdatavar}}{ $V{${markdefvar}_name} }, $V{${markdefvar}_value}, '${entity.name} update: mark');
+        Content(`  is($V{${resdatavar}}{ $V{${markdefvar}_name} }, $V{${markdefvar}_value}, '${entity.name} ${step.o}: mark');
 `)
       }
     }
@@ -553,7 +552,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
 
   const priorSteps = Object.values(flowSteps(flow)).slice(0, Number(index)) as any[]
   const hasEntVar = priorSteps.some((s: any) =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
 
   const flowHasCreate = Object.values(flowSteps(flow)).some((s: any) => (s as any).o === 'create')
   const preambleRef = entity.name + '_ref01'
@@ -612,7 +611,7 @@ const generateRemove: OpGen = (ctx, step, index) => {
 
   const priorSteps = Object.values(flowSteps(flow)).slice(0, Number(index)) as any[]
   const needsEnt = !priorSteps.some((s: any) =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
 
   Content(`  # REMOVE
 `)
@@ -722,6 +721,7 @@ const GENERATE_OP: Record<string, OpGen> = {
   create: generateCreate,
   list: generateList,
   update: generateUpdate,
+  patch: generateUpdate,
   load: generateLoad,
   remove: generateRemove,
 }

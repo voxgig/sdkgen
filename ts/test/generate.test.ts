@@ -6883,7 +6883,7 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
   test('consumers name a write only where the API has one', async () => {
     const readonly = await generate(['go', 'go-mcp', 'py', 'py-data'], undefined,
       'main: kit: entity: planet: op: { create: { active: false }, update: { active: false }, ' +
-      'remove: { active: false } }')
+      'patch: { active: false }, remove: { active: false } }')
     for (const doc of [readonly['go-mcp/README.md'], readonly['README.md']]) {
       ok(!/become tools|becomes a tool|Turn on the write tools/.test(doc), 'a write that would become a tool:\n' + doc)
       ok(/only reads(:|, as) no entity has a create, update, patch or remove/.test(doc), doc)
@@ -6894,9 +6894,9 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
       'py-data shows a write the API lacks')
 
     const writes = await generate(['go', 'go-mcp', 'py', 'py-data'])
-    ok(writes['go-mcp/README.md'].includes('Create, update and remove become tools too'),
+    ok(writes['go-mcp/README.md'].includes('Create, update, patch and remove become tools too'),
       'go-mcp: the write tools it would add')
-    ok(writes['README.md'].includes('create, update and remove become tools when'),
+    ok(writes['README.md'].includes('create, update, patch and remove become tools when'),
       'the root README: the write tools the MCP server would add')
     for (const file of ['README.md', 'AGENTS.md', 'demo_data/__init__.py']) {
       ok(writes['py-data/' + file].includes('result = ad.sdk.Planet().create({'), 'py-data: ' + file)
@@ -7065,8 +7065,8 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
       ROUTING_MODEL + "main: kit: target: 'go-mcp': tool: write: true")
     const tools = findFile(out, 'go-mcp/tools.go')!
     deepStrictEqual(mcpRegistered(tools),
-      ['demo_list', 'demo_load', 'demo_create', 'demo_update', 'demo_remove'])
-    for (const type of ['CreateArgs', 'UpdateArgs', 'RemoveArgs']) {
+      ['demo_list', 'demo_load', 'demo_create', 'demo_update', 'demo_patch', 'demo_remove'])
+    for (const type of ['CreateArgs', 'UpdateArgs', 'PatchArgs', 'RemoveArgs']) {
       strictEqual(mcpEntities(tools, type), 'planet', 'go-mcp: ' + type)
     }
     const hints = Object.fromEntries([...tools.matchAll(
@@ -7077,11 +7077,12 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
       load: 'ReadOnlyHint: true',
       create: 'DestructiveHint: hint(false)',
       update: 'DestructiveHint: hint(true)',
+      patch: 'DestructiveHint: hint(true)',
       remove: 'DestructiveHint: hint(true)',
     })
 
     const top = out['README.md']
-    ok(top.includes("exposes this SDK's list, load, create, update and remove operations"),
+    ok(top.includes("exposes this SDK's list, load, create, update, patch and remove operations"),
       'the root README does not name the write operations the MCP server exposes')
     ok(!top.includes('It only reads'), 'the root README says the MCP server only reads')
   })
@@ -7093,7 +7094,7 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
       ROUTING_MODEL + FOLD_ENTITY + "main: kit: target: 'go-mcp': tool: write: true")
     const tools = findFile(out, 'go-mcp/tools.go')!
     ok(mcpRegistered(tools).includes('demo_patch'), 'go-mcp: no patch tool: ' + mcpRegistered(tools))
-    strictEqual(mcpEntities(tools, 'PatchArgs'), 'contacts_field', 'go-mcp: PatchArgs')
+    strictEqual(mcpEntities(tools, 'PatchArgs'), 'contacts_field | planet', 'go-mcp: PatchArgs')
     ok(/case "patch":\s+result, err = ent\.Patch\(input, nil\)/.test(tools),
       'go-mcp: the patch tool does not call Patch')
     const hint = tools.match(/Name:\s+"demo_patch",[^]*?Annotations: &mcp\.ToolAnnotations\{([^}]*)\}/)?.[1]
@@ -7157,13 +7158,13 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
     const partial = await generate(['go', 'go-mcp'], undefined,
       ROUTING_MODEL + write + opOff('planet', ['remove']))
     const partialMcp = findFile(partial, 'go-mcp/README.md')!
-    ok(partialMcp.includes('Create and update are on'),
+    ok(partialMcp.includes('Create, update and patch are on'),
       'go-mcp: the README does not name the write tools it registers')
     ok(!partialMcp.includes('remove are on'), 'go-mcp: the README claims a remove tool')
     ok(!partial['README.md'].includes('It only reads'), 'the root README says a writing server only reads')
 
     const none = await generate(['go', 'go-mcp'], undefined,
-      ROUTING_MODEL + write + opOff('planet', ['create', 'update', 'remove']))
+      ROUTING_MODEL + write + opOff('planet', ['create', 'update', 'patch', 'remove']))
     ok(findFile(none, 'go-mcp/README.md')!.includes('The server only reads: the SDK'),
       'go-mcp: the README does not say a server with no write tools only reads')
     ok(none['README.md'].includes('It only reads, as no entity has a create, update, patch or remove'),

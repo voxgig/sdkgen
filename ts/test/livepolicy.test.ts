@@ -42,6 +42,8 @@ test('a flow that creates its record needs only the ids its steps bind', () => {
     { o: 'update', d: { title: 'title' } },
     { o: 'load' }, { o: 'remove' },
   )), { keys: ['planet01', 'title'] })
+  assert.deepEqual(liveFlowNeeds(entity, flow({ o: 'create' }, { o: 'patch', d: { kind: 'kind01' } })),
+    { keys: ['kind01'] })
 })
 
 test('a create-less flow lists its record, or says why it cannot run live', () => {
@@ -52,6 +54,8 @@ test('a create-less flow lists its record, or says why it cannot run live', () =
   assert.deepEqual(liveFlowNeeds(entity, flow({ o: 'load' })),
     { keys: [], blocked: 'the flow loads a metric record it has no list to find' })
   assert.deepEqual(liveFlowNeeds(entity, flow({ o: 'list' }, { o: 'update', d: {} })),
+    { keys: [], blocked: 'the flow updates a metric record it did not create' })
+  assert.deepEqual(liveFlowNeeds(entity, flow({ o: 'list' }, { o: 'patch', d: {} })),
     { keys: [], blocked: 'the flow updates a metric record it did not create' })
   assert.deepEqual(liveFlowNeeds({ name: 'ambient' }, flow({ o: 'load' })), { keys: [] })
 })
@@ -452,6 +456,11 @@ test('every live run leaves out a step on an operation the entity lacks, and wha
   ])
   assert.deepEqual(liveGates(account, steps).map(({ getOnly, runs }) => [getOnly, runs]),
     [[true, false], [false, false]])
+
+  const moon = { name: 'moon', op: { patch: at('PATCH', '/moon/{id}') } }
+  const patched = liveFlowPlan(moon, flow({ o: 'create', a: false, unreachable: true, i: { ref: 'moon_ref01' } },
+    { o: 'patch', i: { ref: 'moon_ref01' } }))!
+  assert.deepEqual(patched.excluded[1], { id: 'moon.patch.1', reason: 'acts on the record moon.create.0 makes' })
 })
 
 test('a flow with no step to run has a plan that skips, and one whose every step runs has none', () => {

@@ -449,7 +449,7 @@ describe('target, entity and project facts', () => {
       'main: kit: entity: planet: op: update: active: false',
       'main: kit: entity: bare: { name: "bare" }',
     ].join('\n')).main[KIT], 'ops')
-    deepStrictEqual(ops.planet, ['list', 'load', 'create', 'remove'])
+    deepStrictEqual(ops.planet, ['list', 'load', 'create', 'patch', 'remove'])
     deepStrictEqual(ops.bare, [])
   })
 

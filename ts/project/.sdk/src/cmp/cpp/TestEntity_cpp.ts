@@ -56,10 +56,9 @@ const TestEntity = cmp(function TestEntity(props: any) {
   const idnamesStr = idnames.map(n => `Value("${n}")`).join(', ')
 
   const allSteps = Object.values(flowSteps(basicflow)) as any[]
-  const updateStep = allSteps.find((s: any) => s.o === 'update')
-  const updateData = updateStep?.d
-    ? Object.entries(updateStep.d).filter(([k]: any) => k !== 'id' && !k.endsWith('$'))
-    : []
+  const updateData = Object.entries(Object.assign({}, ...allSteps
+    .filter((s: any) => 'update' === s.o || 'patch' === s.o).map((s: any) => s.d || {})))
+    .filter(([k]: any) => k !== 'id' && !k.endsWith('$'))
   const aliases = updateData.map(([k, v]: any) => [k, v])
 
   const genCtx: GenCtx = { model, entity, flow: basicflow }
@@ -414,7 +413,7 @@ const generateList: OpGen = (ctx, step: any, index) => {
 
   const priorSteps = Object.values(flowSteps(flow)).slice(0, Number(index)) as any[]
   const needsEnt = !priorSteps.some((s: any) =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
 
   Content(`  // LIST
 `)
@@ -472,10 +471,10 @@ const generateUpdate: OpGen = (ctx, step: any, index) => {
 
   const priorSteps = Object.values(flowSteps(flow)).slice(0, Number(index)) as any[]
   const needsEnt = !priorSteps.some((s: any) =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
   const hasEntIdU = null != entity.id
 
-  Content(`  // UPDATE
+  Content(`  // ${step.o.toUpperCase()}
 `)
   if (needsEnt) {
     Content(`  auto ${entvar} = client->${cppVarName(entity.name)}();
@@ -508,13 +507,13 @@ const generateUpdate: OpGen = (ctx, step: any, index) => {
       }
     }
   }
-  Content(`  Value ${resdatavar}_result = ${entvar}->update(Struct::clone(${datavar}_up), Value::undef())->data();
+  Content(`  Value ${resdatavar}_result = ${entvar}->${step.o}(Struct::clone(${datavar}_up), Value::undef())->data();
   Value ${resdatavar} = Helpers::toMapAny(${resdatavar}_result);
   if (!${resdatavar}.is_map()) ${resdatavar} = vmap();
-  ASSERT_TRUE(${resdatavar}.is_map(), "expected update result to be a map");
+  ASSERT_TRUE(${resdatavar}.is_map(), "expected ${step.o} result to be a map");
 `)
   if (hasEntIdU) {
-    Content(`  ASSERT_EQ_VAL(getp(${resdatavar}, ${rid(entity)}), getp(${datavar}_up, "id"), "expected update result id to match");
+    Content(`  ASSERT_EQ_VAL(getp(${resdatavar}, ${rid(entity)}), getp(${datavar}_up, "id"), "expected ${step.o} result id to match");
 `)
   }
   if (markname) {
@@ -534,7 +533,7 @@ const generateLoad: OpGen = (ctx, step: any, index) => {
 
   const priorSteps = Object.values(flowSteps(flow)).slice(0, Number(index)) as any[]
   const hasEntVar = priorSteps.some((s: any) =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
   const hasEntId = null != entity.id
   const created = (s: any) => cppVarName(s.i?.datavar ?? ((s.i?.ref ?? entity.name + '_ref01') + '_data' + (s.i?.suffix ?? '')))
   const hasSrcData = priorSteps.some((s: any) => 'create' === s.o && created(s) === srcdatavar) ||
@@ -580,7 +579,7 @@ const generateRemove: OpGen = (ctx, step: any, index) => {
 
   const priorSteps = Object.values(flowSteps(flow)).slice(0, Number(index)) as any[]
   const needsEnt = !priorSteps.some((s: any) =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
 
   Content(`  // REMOVE
 `)
@@ -674,6 +673,7 @@ const GENERATE_OP: Record<string, OpGen> = {
   create: generateCreate,
   list: generateList,
   update: generateUpdate,
+  patch: generateUpdate,
   load: generateLoad,
   remove: generateRemove,
 }

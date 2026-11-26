@@ -102,10 +102,9 @@ const TestEntity = cmp(function TestEntity(props: any) {
 
   // Get all update data entries for alias generation
   const allSteps = Object.values(flowSteps(basicflow)) as any[]
-  const updateStep = allSteps.find((s: any) => s.o === 'update')
-  const updateData = updateStep?.d
-    ? Object.entries(updateStep.d).filter(([k]: any) => k !== 'id' && !k.endsWith('$'))
-    : []
+  const updateData = Object.entries(Object.assign({}, ...allSteps
+    .filter((s: any) => 'update' === s.o || 'patch' === s.o).map((s: any) => s.d || {})))
+    .filter(([k]: any) => k !== 'id' && !k.endsWith('$'))
   const aliases = updateData.map(([k, v]: any) => [k, v])
 
   const genCtx: GenCtx = { model, entity, gomodule, flow: basicflow, PROJUPPER }
@@ -116,7 +115,7 @@ const TestEntity = cmp(function TestEntity(props: any) {
   // fmt is only used by the TextFieldMark Update branch — omit the import
   // when no step needs it, otherwise Go's strict unused-import check fails.
   const needsFmt = allSteps.some((s: any) =>
-    s.o === 'update' &&
+    ('update' === s.o || 'patch' === s.o) &&
     s.i.textfield &&
     Array.isArray(s.s) &&
     s.s.some((sp: any) => sp.apply === 'TextFieldMark'))
@@ -492,7 +491,7 @@ const generateCreate: OpGen = (ctx, step, index) => {
 
   const priorSteps = Object.values(flowSteps(flow)).slice(0, Number(index)) as any[]
   const needsEnt = !priorSteps.some((s: any) =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
 
   const hasDatvar = priorSteps.some((s: any) => {
     if ('create' === s.o) {
@@ -557,7 +556,7 @@ const generateList: OpGen = (ctx, step, index) => {
 
   const priorSteps = Object.values(flowSteps(flow)).slice(0, Number(index)) as any[]
   const needsEnt = !priorSteps.some((s: any) =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
 
   Content(`		// LIST
 `)
@@ -650,11 +649,11 @@ const generateUpdate: OpGen = (ctx, step, index) => {
 
   const priorSteps = Object.values(flowSteps(flow)).slice(0, Number(index)) as any[]
   const needsEnt = !priorSteps.some((s: any) =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
 
   const hasEntIdU = null != entity.id
 
-  Content(`		// UPDATE
+  Content(`		// ${step.o.toUpperCase()}
 `)
   if (needsEnt) {
     Content(`		${entvar} := client.${entity.Name}(nil)
@@ -695,18 +694,18 @@ const generateUpdate: OpGen = (ctx, step, index) => {
   }
 
   Content(`
-		${resdatavar}Result, err := ${entvar}.Update(${datavar}Up, nil)
+		${resdatavar}Result, err := ${entvar}.${step.o[0].toUpperCase() + step.o.slice(1)}(${datavar}Up, nil)
 		if err != nil {
-			t.Fatalf("update failed: %v", err)
+			t.Fatalf("${step.o} failed: %v", err)
 		}
 		${resdatavar} := core.ToMapAny(entityData(${resdatavar}Result))
 		if ${resdatavar} == nil {
-			t.Fatal("expected update result to be a map")
+			t.Fatal("expected ${step.o} result to be a map")
 		}
 `)
   if (hasEntIdU) {
     Content(`		if ${liveDeclared(liveRepeatsId(entity))}!liveSameId(${resdatavar}[${rid(entity)}], ${datavar}Up["id"]) {
-			t.Fatal("expected update result id to match")
+			t.Fatal("expected ${step.o} result id to match")
 		}
 `)
   }
@@ -735,7 +734,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
 
   const priorSteps = Object.values(flowSteps(flow)).slice(0, Number(index)) as any[]
   const hasEntVar = priorSteps.some((s: any) =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
 
   // Check if srcdatavar was declared by a prior create step or preamble
   const flowHasCreate = Object.values(flowSteps(flow)).some((s: any) => (s as any).o === 'create')
@@ -815,7 +814,7 @@ const generateRemove: OpGen = (ctx, step, index) => {
 
   const priorSteps = Object.values(flowSteps(flow)).slice(0, Number(index)) as any[]
   const needsEnt = !priorSteps.some((s: any) =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
 
   // Use `:=` when this is the first op step (so `err` gets declared);
   // otherwise reuse the `err` from a prior op step.
@@ -952,6 +951,7 @@ const GENERATE_OP: Record<string, OpGen> = {
   create: generateCreate,
   list: generateList,
   update: generateUpdate,
+  patch: generateUpdate,
   load: generateLoad,
   remove: generateRemove,
 }

@@ -277,7 +277,7 @@ src/cmp/cpp/ReadmeTopTest_cpp.ts 6634fb44d472
 src/cmp/cpp/Schema_cpp.ts 8148c50576cd
 src/cmp/cpp/TestClean_cpp.ts c88a6ceac558
 src/cmp/cpp/TestDirect_cpp.ts cfbc2a338964
-src/cmp/cpp/TestEntity_cpp.ts a9bdd1023184
+src/cmp/cpp/TestEntity_cpp.ts fa8c53fe5ba7
 src/cmp/cpp/Test_cpp.ts a9b085808534
 src/cmp/cpp/fragment/Entity.fragment.cpp a600c54dce06
 src/cmp/cpp/fragment/EntityCreateOp.fragment.cpp edc7cd52b026
@@ -356,7 +356,7 @@ src/cmp/csharp/Schema_csharp.ts a898466bc43d
 src/cmp/csharp/SdkError_csharp.ts 1cd61a4cfec7
 src/cmp/csharp/TestClean_csharp.ts 29d8f225203d
 src/cmp/csharp/TestDirect_csharp.ts 3899f5e9862c
-src/cmp/csharp/TestEntity_csharp.ts 2b9b553936c6
+src/cmp/csharp/TestEntity_csharp.ts b43f7b03830e
 src/cmp/csharp/Test_csharp.ts 881ebab279a4
 src/cmp/csharp/fragment/Entity.fragment.cs 2e98f8d7683d
 src/cmp/csharp/fragment/EntityBase.fragment.cs efaec21e305d
@@ -540,7 +540,7 @@ src/cmp/go/ReadmeTopTest_go.ts 91b120dc85f3
 src/cmp/go/Schema_go.ts c6b7e375dbfc
 src/cmp/go/TestClean_go.ts fa4e9e68277a
 src/cmp/go/TestDirect_go.ts c9edf724de9e
-src/cmp/go/TestEntity_go.ts c1e23e99fb8a
+src/cmp/go/TestEntity_go.ts bb04562d86ac
 src/cmp/go/Test_go.ts 836686c64aee
 src/cmp/go/fragment/Entity.fragment.go 7d31f60814d7
 src/cmp/go/fragment/EntityCreateOp.fragment.go 117bf3641e41
@@ -676,7 +676,7 @@ src/cmp/java/Schema_java.ts b0793859cf67
 src/cmp/java/SdkError_java.ts 2957202451b0
 src/cmp/java/TestClean_java.ts e2d27f088848
 src/cmp/java/TestDirect_java.ts c2f28fbc6d2e
-src/cmp/java/TestEntity_java.ts 2007d76a4dd9
+src/cmp/java/TestEntity_java.ts 7960b56ef01c
 src/cmp/java/Test_java.ts 941460b7f312
 src/cmp/java/fragment/Entity.fragment.java 4a531d0e0922
 src/cmp/java/fragment/EntityBase.fragment.java 7675381ad0c3
@@ -794,7 +794,7 @@ src/cmp/js/SdkError_js.ts c3c526f2b624
 src/cmp/js/TestClean_js.ts 4680b676c16d
 src/cmp/js/TestDefinition_js.ts 9bd45df6b9d9
 src/cmp/js/TestDirect_js.ts 12425ba975c6
-src/cmp/js/TestEntity_js.ts b6a8516f2652
+src/cmp/js/TestEntity_js.ts f2c6973b0631
 src/cmp/js/TestLive_js.ts 7e369f6f6ba5
 src/cmp/js/TestMain_js.ts 8b45d4d8db1a
 src/cmp/js/Test_js.ts 212a62b03e50
@@ -868,7 +868,7 @@ tm/js/test/feature.test.js c862538059ba
 tm/js/test/feature/Corpus.test.js 0c34bb3a6862
 tm/js/test/feature/harness.js d293e8f12ca9
 tm/js/test/live-contract.js 348bc8916e69
-tm/js/test/live-entity.js e6a8ef318448
+tm/js/test/live-entity.js 65f42e90b65d
 tm/js/test/live-runner.js 7f5a2e172192
 tm/js/test/live-scenarios.js 3d82fe88e2ab
 tm/js/test/netsim.test.js 11a4e4a385fa
@@ -918,7 +918,7 @@ src/cmp/kotlin/Schema_kotlin.ts 4ad41ad6b320
 src/cmp/kotlin/SdkError_kotlin.ts dc0cd7ddcc31
 src/cmp/kotlin/TestClean_kotlin.ts fcbdbc7e3104
 src/cmp/kotlin/TestDirect_kotlin.ts b2f5a64898e4
-src/cmp/kotlin/TestEntity_kotlin.ts 2d783053029d
+src/cmp/kotlin/TestEntity_kotlin.ts ff137653f334
 src/cmp/kotlin/Test_kotlin.ts 322f28ee5f6e
 src/cmp/kotlin/fragment/Entity.fragment.kt 39df6554e3aa
 src/cmp/kotlin/fragment/EntityBase.fragment.kt 6cd6f4810661
@@ -1013,7 +1013,7 @@ src/cmp/lua/ReadmeTopTest_lua.ts a5647e458051
 src/cmp/lua/Schema_lua.ts e64ff9cff3b1
 src/cmp/lua/TestClean_lua.ts 238aaa63c20a
 src/cmp/lua/TestDirect_lua.ts 96fe252d19ae
-src/cmp/lua/TestEntity_lua.ts 4013c0f1e36d
+src/cmp/lua/TestEntity_lua.ts a864b2c28b92
 src/cmp/lua/Test_lua.ts c206f43dff79
 src/cmp/lua/fragment/Entity.fragment.lua 651eb3dc9d18
 src/cmp/lua/fragment/EntityCreateOp.fragment.lua b9fbd8e72c85
@@ -1182,7 +1182,7 @@ src/cmp/perl/ReadmeTopTest_perl.ts 950f8286521b
 src/cmp/perl/Schema_perl.ts 0591817e7773
 src/cmp/perl/TestClean_perl.ts c1f1383a72ea
 src/cmp/perl/TestDirect_perl.ts fc495986cf70
-src/cmp/perl/TestEntity_perl.ts 50b677097176
+src/cmp/perl/TestEntity_perl.ts 51b149aa5ed2
 src/cmp/perl/Test_perl.ts cb7b4d57d5d1
 src/cmp/perl/fragment/Entity.fragment.pm 56acf8894689
 src/cmp/perl/fragment/EntityCreateOp.fragment.pm 3248163ac139
@@ -1288,7 +1288,7 @@ src/cmp/php/ReadmeTopTest_php.ts c1a4a8bb5d36
 src/cmp/php/Schema_php.ts 247e70d3a652
 src/cmp/php/TestClean_php.ts 4decdfb5438d
 src/cmp/php/TestDirect_php.ts 8731b768120c
-src/cmp/php/TestEntity_php.ts a092b6688809
+src/cmp/php/TestEntity_php.ts 341fb567ecbf
 src/cmp/php/Test_php.ts 4b04d7202c7a
 src/cmp/php/fragment/Entity.fragment.php 4b566c83c875
 src/cmp/php/fragment/EntityCreateOp.fragment.php 685a8e173d2a
@@ -1391,7 +1391,7 @@ src/cmp/py/ReadmeTopTest_py.ts 8b84dccc74bc
 src/cmp/py/Schema_py.ts ec7b0acb681d
 src/cmp/py/TestClean_py.ts 5bc29c06e8df
 src/cmp/py/TestDirect_py.ts 6048b9a4737e
-src/cmp/py/TestEntity_py.ts ce0526e18112
+src/cmp/py/TestEntity_py.ts b4d7a39936a1
 src/cmp/py/Test_py.ts 637c586815a4
 src/cmp/py/fragment/Entity.fragment.py 53a6aa56749e
 src/cmp/py/fragment/EntityCreateOp.fragment.py 52fe24fc2490
@@ -1524,7 +1524,7 @@ src/cmp/rb/ReadmeTopTest_rb.ts abcd96aab99b
 src/cmp/rb/Schema_rb.ts 278129f12df8
 src/cmp/rb/TestClean_rb.ts 1b9425fc153c
 src/cmp/rb/TestDirect_rb.ts 438fdf9acb6e
-src/cmp/rb/TestEntity_rb.ts cd1aecc4b30d
+src/cmp/rb/TestEntity_rb.ts 4e14cd36e197
 src/cmp/rb/Test_rb.ts a98c4dcbd2fb
 src/cmp/rb/fragment/Entity.fragment.rb 0a1c9e0ceb06
 src/cmp/rb/fragment/EntityCreateOp.fragment.rb 04a3ce4d10c7
@@ -1632,7 +1632,7 @@ src/cmp/rust/Schema_rust.ts 62516d49914a
 src/cmp/rust/SdkError_rust.ts 44f812a8460e
 src/cmp/rust/TestClean_rust.ts 6afec57bb7ab
 src/cmp/rust/TestDirect_rust.ts 5f9aa42b1a0b
-src/cmp/rust/TestEntity_rust.ts f9bc13ea7f7d
+src/cmp/rust/TestEntity_rust.ts a7a5b41427dc
 src/cmp/rust/Test_rust.ts bacb4080dc83
 src/cmp/rust/fragment/Entity.fragment.rs 7433d6a3443f
 src/cmp/rust/fragment/EntityCreateOp.fragment.rs 4f8d48f60839
@@ -1749,7 +1749,7 @@ src/cmp/scala/ReadmeTopTest_scala.ts a9ffb6404c1b
 src/cmp/scala/Schema_scala.ts bee963216e09
 src/cmp/scala/TestClean_scala.ts 6610f7c69baa
 src/cmp/scala/TestDirect_scala.ts 07de948be724
-src/cmp/scala/TestEntity_scala.ts a0e204b5c8d3
+src/cmp/scala/TestEntity_scala.ts 2095faad4239
 src/cmp/scala/Test_scala.ts 2fb85405a87f
 src/cmp/scala/fragment/Entity.fragment.scala 02bf1b00e3b5
 src/cmp/scala/fragment/EntityBase.fragment.scala 51c5994c827e
@@ -2020,7 +2020,7 @@ src/cmp/ts/SdkError_ts.ts 699cd45f2bf3
 src/cmp/ts/TestClean_ts.ts e264e87e8941
 src/cmp/ts/TestDefinition_ts.ts f75c97be6281
 src/cmp/ts/TestDirect_ts.ts 4a7f84043138
-src/cmp/ts/TestEntity_ts.ts c3bcd47ec91c
+src/cmp/ts/TestEntity_ts.ts 70adffd24209
 src/cmp/ts/TestLive_ts.ts df4f84cf2f0f
 src/cmp/ts/TestMain_ts.ts 8b45d4d8db1a
 src/cmp/ts/Test_ts.ts e5c125bcc0dd
@@ -2095,7 +2095,7 @@ tm/ts/test/feature.test.ts 35d521e4b0c3
 tm/ts/test/feature/Corpus.test.ts 84e87762e86e
 tm/ts/test/feature/harness.ts aa21c893ec53
 tm/ts/test/live-contract.ts 54ee4d2e6fe6
-tm/ts/test/live-entity.ts 3d47bee3aa90
+tm/ts/test/live-entity.ts 8746be16e63b
 tm/ts/test/live-runner.ts b83964e7f843
 tm/ts/test/live-scenarios.ts 3543313296c4
 tm/ts/test/netsim.test.ts 350539c6a30b

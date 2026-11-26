@@ -324,7 +324,8 @@ describe('generated live tests continue after failures', () => {
     test(target + ': CRUD, singleton and list run without ENTID', async () => {
       const result = await run(target, '')
       assert.equal(result.code, 0, result.output)
-      for (const request of ['POST /planet', 'GET /planet', 'PUT /planet/created01', 'GET /planet/created01', 'DELETE /planet/created01', 'GET /ambient', 'GET /history']) {
+      for (const request of ['POST /planet', 'GET /planet', 'PUT /planet/created01', 'PATCH /planet/created01',
+        'GET /planet/created01', 'DELETE /planet/created01', 'GET /ambient', 'GET /history']) {
         assert(calls.includes(request), request + '\n' + result.output)
       }
       assert.equal(records.size, 0)
@@ -339,7 +340,7 @@ describe('generated live tests continue after failures', () => {
         for (const request of ['GET /planet', 'GET /planet/existing01']) {
           assert(calls.includes(request), request + '\n' + result.output)
         }
-        for (const id of ['planet.create.0', 'planet.update.2', 'planet.remove.4']) {
+        for (const id of ['planet.create.0', 'planet.update.2', 'planet.patch.3', 'planet.remove.5']) {
           assert(result.output.includes(`"id":"${id}","state":"excluded"`), id + '\n' + result.output)
         }
 

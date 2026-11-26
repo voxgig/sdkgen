@@ -200,6 +200,16 @@ main: kit: entity: planet: {
         t: { req: "\`reqdata\`", res: "\`body\`" }
       } ]
     }
+    patch: {
+      name: "patch"
+      points: [ {
+        g: { params: [
+          { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`", ex: "p01" }
+        ] }
+        m: "PATCH", o: "/planet/{id}", s: [{ lit: "planet" }, { var: "id" }]
+        t: { req: "\`reqdata\`", res: "\`body\`" }
+      } ]
+    }
     remove: {
       name: "remove"
       points: [ {
@@ -414,6 +424,12 @@ main: kit: flow: BasicPlanetFlow: {
     { o: "update", i: {
         ref: "planet_ref01", srcdatavar: "planet_ref01_data",
         suffix: "_up0", textfield: "kind" } }
+    # apidef writes no patch step; this one is shaped as its update steps
+    # are, mark included, so every flow test calls the patch it documents.
+    { o: "patch", i: {
+        ref: "planet_ref01", srcdatavar: "planet_ref01_data",
+        suffix: "_pt0", textfield: "title" }
+      s: [{ apply: "TextFieldMark", def: { mark: "Mark01-planet_ref01" } }] }
     { o: "load", i: {
         ref: "planet_ref01", srcdatavar: "planet_ref01_data", suffix: "_dt0" } }
     { o: "remove", i: { ref: "planet_ref01", suffix: "_rm0" } }

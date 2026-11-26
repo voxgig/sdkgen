@@ -313,7 +313,7 @@ const generateCreate: OpGen = (ctx, step, index) => {
 
   const priorSteps = flowSteps(flow).slice(0, Number(index))
   const needsEnt = !priorSteps.some(s =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
 
   const hasDatvar = priorSteps.some(s => {
     if ('create' === s.o) {
@@ -370,7 +370,7 @@ const generateList: OpGen = (ctx, step, index) => {
 
   const priorSteps = flowSteps(flow).slice(0, Number(index))
   const needsEnt = !priorSteps.some(s =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
 
   Content(`
     // LIST
@@ -422,12 +422,12 @@ const generateUpdate: OpGen = (ctx, step, index) => {
 
   const priorSteps = flowSteps(flow).slice(0, Number(index))
   const needsEnt = !priorSteps.some(s =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
 
   const hasEntIdU = null != entity.id
 
   Content(`
-    // UPDATE
+    // ${step.o.toUpperCase()}
 `)
   if (needsEnt) {
     Content(`    const ${entvar} = client.${nom(entity, 'Name')}()
@@ -463,7 +463,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
   }
 
   Content(`
-    const ${resdatavar} = (await ${entvar}.update(${datavar})).data()
+    const ${resdatavar} = (await ${entvar}.${step.o}(${datavar})).data()
 `)
   if (hasEntIdU) {
     Content(`    assert(${rid(entity, untyped(entity, resdatavar))} === ${datavar}.id)
@@ -496,7 +496,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
 
   const priorSteps = flowSteps(flow).slice(0, Number(index))
   const hasEntVar = priorSteps.some(s =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
 
   // Check if srcdatavar was declared by a prior create step or by the
   // preamble bootstrap (which runs when the flow has no create step)
@@ -572,7 +572,7 @@ const generateRemove: OpGen = (ctx, step, index) => {
 
   const priorSteps = flowSteps(flow).slice(0, Number(index))
   const needsEnt = !priorSteps.some(s =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
 
   // "Remove what you created" needs the created record's id. An entity with
   // no DATA id field (entityDataIdField null — e.g. Multichannel's Template)
@@ -668,6 +668,7 @@ const GENERATE_OP: Record<string, OpGen> = {
   create: generateCreate,
   list: generateList,
   update: generateUpdate,
+  patch: generateUpdate,
   load: generateLoad,
   remove: generateRemove,
 }

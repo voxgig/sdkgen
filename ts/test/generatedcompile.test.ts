@@ -8168,6 +8168,196 @@ int main() {
 })
 
 
+// The fixture's planet flow patches the record it created, marking a field,
+// so every target whose entity test runs a flow calls patch, takes the data
+// hop and checks the record it gets back.
+describe('a basic flow calls patch where the entity has it', () => {
+
+  let tmp = ''
+  const LONG = 30 * 60 * 1000
+
+  before(() => {
+    tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-patchflow-'))
+    const dir = Path.join(tmp, '.sdk', 'test', 'entity', 'planet')
+    Fs.mkdirSync(dir, { recursive: true })
+    Fs.writeFileSync(Path.join(dir, 'PlanetTestData.json'),
+      JSON.stringify(entityTestData(makeModel(['ts']).main.kit.entity.planet)))
+  })
+
+  after(() => {
+    if ('' !== tmp) Fs.rmSync(tmp, { recursive: true, force: true })
+  })
+
+  // The flow's patch step, whatever the target names its variables.
+  async function generatePatching(target: string, test: string): Promise<string> {
+    const root = Path.join(tmp, target)
+    await generateTo(target, root)
+    const src = Fs.readFileSync(Path.join(root, test), 'utf8')
+    ok(/(\.|->|:)[Pp]atch\(/.test(src) && /planet_?[Rr]ef01_?[Dd]ata_?[Pp]t0/.test(src),
+      target + ': the planet flow test makes no patch call:\n' + src.slice(0, 2000))
+    return root
+  }
+
+
+  for (const target of ['ts', 'js']) {
+    test(target + ': the planet flow patches its record', async () => {
+      const root = await generatePatching(target,
+        Path.join('test', 'entity', 'planet', 'PlanetEntity.test.' + target))
+      linkDeps(root)
+      if ('ts' === target) {
+        for (const tree of ['src', 'test']) {
+          const built = tsc(root, tree)
+          ok(built.ok, 'ts: the generated ' + tree + ' does not compile:\n' + built.out)
+        }
+      }
+      const res = run(process.execPath, ['--test', '--test-reporter=tap',
+        Path.join('ts' === target ? 'dist-test' : 'test', 'entity', 'planet', 'PlanetEntity.test.js')],
+      root, nestedTestEnv())
+      ok(res.ok && /^\s*ok \d+ - basic\b/m.test(res.out), target + ': the planet flow failed:\n' + tail(res.out))
+    })
+  }
+
+
+  test('go: the planet flow patches its record', async (t) => {
+    const root = await generatePatching('go', Path.join('test', 'planet_entity_test.go'))
+    const go = toolchain('go')
+    if (null == go) return t.skip('needs go')
+    const res = run(go, ['test', './test/', '-count=1', '-v', '-run', '^TestPlanetEntity$'], root, undefined, LONG)
+    if (res.timedOut) return t.skip('go: ' + res.out)
+    ok(res.ok && res.out.includes('--- PASS: TestPlanetEntity/basic'), 'go: the planet flow failed:\n' + tail(res.out))
+  })
+
+
+  test('py: the planet flow patches its record', async (t) => {
+    const root = await generatePatching('py', Path.join('test', 'test_planet_entity.py'))
+    const cmd = pytest(['-v', 'test_planet_entity.py'])
+    if (null == cmd) return t.skip('needs python3 with pytest')
+    const res = run(cmd.bin, cmd.args, Path.join(root, 'test'), cmd.env)
+    if (res.timedOut) return t.skip('py: ' + res.out)
+    ok(res.ok && /::test_should_run_basic_flow PASSED/.test(res.out), 'py: the planet flow failed:\n' + tail(res.out))
+  })
+
+
+  test('rb: the planet flow patches its record', async (t) => {
+    const root = await generatePatching('rb', Path.join('test', 'planet_entity_test.rb'))
+    const rb = minitest([])
+    if (null == rb) return t.skip('needs ruby with minitest')
+    const res = run(rb.bin, ['test/planet_entity_test.rb', '-v'], root, rb.env)
+    if (res.timedOut) return t.skip('rb: ' + res.out)
+    ok(res.ok && /#test_basic_flow = [\d.]+ s = \./.test(res.out), 'rb: the planet flow failed:\n' + tail(res.out))
+  })
+
+
+  test('lua: the planet flow patches its record', async (t) => {
+    const root = await generatePatching('lua', Path.join('test', 'planet_entity_test.lua'))
+    const lua = toolchain('lua5.4') || toolchain('lua')
+    const cmd = busted(['-o', 'TAP', 'test/planet_entity_test.lua'])
+    if (null == cmd || null == lua || !probeOk(lua, ['-e', 'require "dkjson"'])) {
+      return t.skip('needs lua 5.4 with busted and the dkjson rock')
+    }
+    const res = run(cmd.bin, cmd.args, root)
+    if (res.timedOut) return t.skip('lua: ' + res.out)
+    ok(res.ok && !/^not ok/m.test(res.out) && /^ok \d+ .*basic/m.test(res.out),
+      'lua: the planet flow failed:\n' + tail(res.out))
+  })
+
+
+  test('perl: the planet flow patches its record', async (t) => {
+    const root = await generatePatching('perl', Path.join('t', 'planet_entity.t'))
+    const perl = toolchain('perl')
+    if (null == perl) return t.skip('needs perl')
+    if (!probeOk(perl, ['-MTest::More', '-e', '1'])) return t.skip('perl is here but Test::More is not')
+    const res = run(perl, ['-Ilib', 't/planet_entity.t'], root)
+    if (res.timedOut) return t.skip('perl: ' + res.out)
+    ok(res.ok && !/^not ok/m.test(res.out) && /^ok \d+ - planet patch: mark$/m.test(res.out),
+      'perl: the planet flow failed:\n' + tail(res.out))
+  })
+
+
+  test('php: the planet flow patches its record', async (t) => {
+    const root = await generatePatching('php', Path.join('test', 'PlanetEntityTest.php'))
+    const cmd = phpunitViaComposer(['--filter', 'test_basic_flow', 'test/PlanetEntityTest.php'])
+    if (null == cmd) return t.skip('needs php with phpunit (on PATH, PHPUNIT=<path to phpunit.phar>, or composer to install it)')
+    const res = run(cmd.bin, cmd.args, root)
+    if (res.timedOut) return t.skip('php: ' + res.out)
+    ok(res.ok && /OK \(1 test/.test(res.out), 'php: the planet flow failed:\n' + tail(res.out))
+  })
+
+
+  test('rust: the planet flow patches its record', async (t) => {
+    const root = await generatePatching('rust', Path.join('tests', 'planet_entity_test.rs'))
+    const cmd = cargoTest(['--test', 'planet_entity_test'])
+    if (null == cmd) return t.skip('needs cargo')
+    const res = run(cmd.bin, cmd.args, root, cmd.env, LONG)
+    if (res.timedOut) return t.skip('rust: ' + res.out)
+    ok(res.ok && /^test planet_entity_basic \.\.\. ok$/m.test(res.out), 'rust: the planet flow failed:\n' + tail(res.out))
+  })
+
+
+  test('java: the planet flow patches its record', async (t) => {
+    const root = await generatePatching('java', Path.join('test', 'PlanetEntityTest.java'))
+    const cmd = maven(['-Dtest=PlanetEntityTest'])
+    if (null == cmd) return t.skip('needs java and maven')
+    const res = run(cmd.bin, cmd.args, root, undefined, LONG)
+    if (res.timedOut) return t.skip('java: ' + res.out)
+    ok(res.ok && /Tests run: [1-9]\d*, Failures: 0, Errors: 0, Skipped: \d+, .* in [\w.]*PlanetEntityTest/.test(res.out),
+      'java: the planet flow failed:\n' + tail(res.out, 80))
+  })
+
+
+  test('kotlin: the planet flow patches its record', async (t) => {
+    const root = await generatePatching('kotlin', Path.join('test', 'PlanetEntityTest.kt'))
+    const cmd = gradleTest('*PlanetEntityTest*')
+    if (null == cmd) return t.skip('needs gradle (and not windows, where it hangs)')
+    const res = run(cmd.bin, cmd.args, root, undefined, LONG)
+    if (res.timedOut) return t.skip('kotlin: ' + res.out)
+    ok(res.ok && /tests="[1-9]\d*" skipped="\d+" failures="0" errors="0"/.test(junitReport(root, 'PlanetEntityTest')),
+      'kotlin: the planet flow failed:\n' + tail(res.out, 80))
+  })
+
+
+  test('csharp: the planet flow patches its record', async (t) => {
+    const root = await generatePatching('csharp', Path.join('test', 'PlanetEntityTest.cs'))
+    const dotnet = toolchain('dotnet')
+    if (null == dotnet) return t.skip('needs dotnet')
+    const built = run(dotnet, ['build', '--nologo', '-v', 'quiet', 'test'], root, undefined, LONG)
+    ok(built.ok, 'csharp: the generated test project does not build:\n' + tail(built.out))
+    const cmd = dotnetTest('PlanetEntityTest')!
+    const res = run(cmd.bin, cmd.args, root, undefined, LONG)
+    if (res.timedOut) return t.skip('csharp: ' + res.out)
+    ok(res.ok && /Passed!\s+-\s+Failed:\s+0,\s+Passed:\s+[1-9]\d*/.test(res.out),
+      'csharp: the planet flow failed:\n' + tail(res.out, 80))
+  })
+
+
+  test('scala: the planet flow patches its record', async (t) => {
+    const root = await generatePatching('scala', Path.join('sdktest', 'PlanetEntityTest.scala'))
+    const scalacli = toolchain('scala-cli')
+    if (null == scalacli) return t.skip('needs scala-cli (which resolves the Scala compiler from the network)')
+    const res = run(scalacli, ['run', '.', '--main-class', 'SdkEntityTestMain'], root, undefined, LONG)
+    if (res.timedOut) return t.skip('scala: ' + res.out)
+    ok(res.ok && /ENTITY PASS [1-9]\d* {2}FAIL 0/.test(res.out), 'scala: the planet flow failed:\n' + tail(res.out))
+  })
+
+
+  test('cpp: the planet flow patches its record', async (t) => {
+    const root = await generatePatching('cpp', Path.join('test', 'planet_entity_test.cpp'))
+    const make = toolchain('make')
+    const cxx = cleanCxx()
+    if (null == make || null == cxx) {
+      return t.skip('needs make and a C++ compiler (make: ' + make + ', cxx: ' + cxx + ')')
+    }
+    const out = 'test/planet_entity_test.out'
+    const built = run(make, ['-j2', 'CXX=' + cxx, out], root, undefined, LONG)
+    if (built.timedOut) return t.skip('cpp: ' + built.out)
+    ok(built.ok, 'cpp: planet_entity_test did not build:\n' + tail(built.out))
+    const res = run(Path.join(root, out), [], root)
+    ok(res.ok && /^planet_entity_test: [1-9]\d* tests, [1-9]\d* checks, 0 failures$/m.test(res.out),
+      'cpp: the planet flow failed:\n' + tail(res.out))
+  })
+})
+
+
 // A basic flow loads the record it listed by the route that record fills,
 // and the mock serves it: job under the company its record holds, which the
 // step's binding names no record by, and proverb by its own lang and id

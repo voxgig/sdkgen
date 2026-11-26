@@ -170,10 +170,9 @@ const TestEntity = cmp(function TestEntity(props: any) {
 
   // Get all update data entries for alias generation
   const allSteps = Object.values(flowSteps(basicflow)) as any[]
-  const updateStep = allSteps.find((s: any) => s.o === 'update')
-  const updateData = updateStep?.d
-    ? Object.entries(updateStep.d).filter(([k]: any) => k !== 'id' && !k.endsWith('$'))
-    : []
+  const updateData = Object.entries(Object.assign({}, ...allSteps
+    .filter((s: any) => 'update' === s.o || 'patch' === s.o).map((s: any) => s.d || {})))
+    .filter(([k]: any) => k !== 'id' && !k.endsWith('$'))
   const aliases = updateData.map(([k, v]: any) => [k, v])
 
   const genCtx: GenCtx = { model, entity, flow: basicflow, PROJUPPER }
@@ -473,7 +472,7 @@ const generateCreate: OpGen = (ctx, step, index) => {
 
   const priorSteps = Object.values(flowSteps(flow)).slice(0, Number(index)) as any[]
   const needsEnt = !priorSteps.some((s: any) =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
 
   const hasDatvar = priorSteps.some((s: any) => {
     if ('create' === s.o) {
@@ -525,7 +524,7 @@ const generateList: OpGen = (ctx, step, index) => {
 
   const priorSteps = Object.values(flowSteps(flow)).slice(0, Number(index)) as any[]
   const needsEnt = !priorSteps.some((s: any) =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
 
   Content(`        // LIST
 `)
@@ -605,11 +604,11 @@ const generateUpdate: OpGen = (ctx, step, index) => {
 
   const priorSteps = Object.values(flowSteps(flow)).slice(0, Number(index)) as any[]
   const needsEnt = !priorSteps.some((s: any) =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
 
   const hasEntIdU = null != entity.id
 
-  Content(`        // UPDATE
+  Content(`        // ${step.o.toUpperCase()}
 `)
   if (needsEnt) {
     Content(`        var ${entvar} = client.${entity.Name}();
@@ -651,13 +650,13 @@ const generateUpdate: OpGen = (ctx, step, index) => {
   }
 
   Content(`
-        var ${resdatavar}Result = ${entvar}.Update(${datavar}Up, null);
+        var ${resdatavar}Result = ${entvar}.${step.o[0].toUpperCase() + step.o.slice(1)}(${datavar}Up, null);
         var ${resdatavar} = Helpers.ToMapAny(${resdatavar}Result is IEntity ue ? ue.Data() : ${resdatavar}Result);
-        Assert.True(${resdatavar} != null, "expected update result to be a map");
+        Assert.True(${resdatavar} != null, "expected ${step.o} result to be a map");
 `)
   if (hasEntIdU) {
     Content(sameId(liveRepeatsId(entity), `StructUtils.GetProp(${resdatavar}, ${rid(entity)})`, `${datavar}Up["id"]`,
-      'expected update result id to match'))
+      'expected ' + step.o + ' result id to match'))
   }
 
   // Assert TextFieldMark
@@ -683,7 +682,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
 
   const priorSteps = Object.values(flowSteps(flow)).slice(0, Number(index)) as any[]
   const hasEntVar = priorSteps.some((s: any) =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
 
   // Check if srcdatavar was declared by a prior create step or preamble
   const flowHasCreate = Object.values(flowSteps(flow)).some((s: any) => (s as any).o === 'create')
@@ -743,7 +742,7 @@ const generateRemove: OpGen = (ctx, step, index) => {
 
   const priorSteps = Object.values(flowSteps(flow)).slice(0, Number(index)) as any[]
   const needsEnt = !priorSteps.some((s: any) =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
 
   Content(`        // REMOVE
 `)
@@ -876,6 +875,7 @@ const GENERATE_OP: Record<string, OpGen> = {
   create: generateCreate,
   list: generateList,
   update: generateUpdate,
+  patch: generateUpdate,
   load: generateLoad,
   remove: generateRemove,
 }
