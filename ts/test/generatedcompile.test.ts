@@ -1869,7 +1869,6 @@ describe('auth null', () => {
       .filter((l: string) => /^(Failure|Error) ->/.test(l))
     ok(probe.ok, 'lua secrets suite failed:\n' + failed.join('\n') +
       '\n' + tail(out))
-    exchangeRefused('lua', out)
 
     // POSITIVE EVIDENCE THE TESTS RAN. busted prints one summary line;
     // without it - or with a count that says the suite was trimmed to a
@@ -1884,6 +1883,12 @@ describe('auth null', () => {
       ' tests - it was trimmed, not run:\n' + tail(out))
     t.diagnostic('lua: secrets suite ran ' + successes + ' tests, ' + failures +
       ' failures, ' + errors + ' errors (vault group, native helper built)')
+
+    // The redirect case listens through LuaSocket, and is pending without it.
+    if (/^Pending -> [^\n]*\n[^\n]*a redirect answering the exchange/m.test(out)) {
+      return t.skip('lua: the redirect case is pending: no LuaSocket here for its listeners')
+    }
+    exchangeRefused('lua', out)
   })
 
 
