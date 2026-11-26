@@ -82,7 +82,7 @@ def secrets_sdk(sdkopts):
 def _origins():
     o = {"elsewhere": [], "followed": [], "exchanged": [0], "answer": [307, ""]}
 
-    def _recorder(log, respond):
+    def _recorder(log, respond, token):
         class _Handler(http.server.BaseHTTPRequestHandler):
             def _any(self):
                 raw = self.rfile.read(
@@ -90,7 +90,7 @@ def _origins():
                 if respond(self):
                     return
                 log.append((self.command, self.path, raw.decode("utf-8")))
-                out = b'{"access_token":"ELSEWHERE01"}'
+                out = json.dumps({"access_token": token}).encode("utf-8")
                 self.send_response(200)
                 self.send_header("content-type", "application/json")
                 self.send_header("content-length", str(len(out)))
@@ -114,9 +114,9 @@ def _origins():
         return True
 
     origin = http.server.HTTPServer(
-        ("127.0.0.1", 0), _recorder(o["followed"], _exchange))
+        ("127.0.0.1", 0), _recorder(o["followed"], _exchange, "MOVED01"))
     other = http.server.HTTPServer(
-        ("127.0.0.1", 0), _recorder(o["elsewhere"], lambda h: False))
+        ("127.0.0.1", 0), _recorder(o["elsewhere"], lambda h: False, "ELSEWHERE01"))
     for srv in (origin, other):
         threading.Thread(target=srv.serve_forever, daemon=True).start()
 
@@ -533,6 +533,15 @@ class TestSecretsReviewPins(unittest.TestCase):
                 (307, "/api/auth/token", None),
             ]
 
+            # The call after the exchange goes through the SDK's own transport,
+            # which imports requests. Where that is missing, the token the
+            # client holds shows the exchange was answered.
+            try:
+                import requests  # noqa: F401
+                transport = True
+            except ImportError:
+                transport = False
+
             wrong = []
             followed = refused = looped = 0
 
@@ -541,18 +550,21 @@ class TestSecretsReviewPins(unittest.TestCase):
                 o["followed"].clear()
                 o["exchanged"][0] = 0
 
-                res = _redirect_sdk(o, {"redirect": "same-origin"}).direct(
-                    {"path": "/thing"})
+                sdk = _redirect_sdk(o, {"redirect": "same-origin"})
+                res = sdk.direct({"path": "/thing"})
                 err = res.get("err") if isinstance(res, dict) else None
                 message = str(res if err is None else err)
                 seen = "%d to %s: %s %s" % (status, location, message, o["followed"])
 
                 if path is not None:
                     first = o["followed"][0] if o["followed"] else None
-                    if (isinstance(res, dict) and res.get("ok") is True
-                            and 2 == len(o["followed"])
+                    called = (isinstance(res, dict) and res.get("ok") is True
+                              and 2 == len(o["followed"]))
+                    if (first is not None
                             and ("POST", path) == first[:2]
-                            and {"refresh_token": "REFRESH01"} == json.loads(first[2])):
+                            and {"refresh_token": "REFRESH01"} == json.loads(first[2])
+                            and "MOVED01" == sdk.options.get("apikey")
+                            and (called or (not transport and 1 == len(o["followed"])))):
                         followed += 1
                     else:
                         wrong.append(seen)
