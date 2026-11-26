@@ -1,5 +1,6 @@
 import { KIT, nom } from '@voxgig/apidef'
 
+import { alternatives, isAnyOf } from './canonSpec'
 import { modelText } from './text'
 
 
@@ -20,7 +21,8 @@ type DocText = {
 // whole path exists to fix.
 function sentinelName(v: any): string {
   if (Array.isArray(v)) {
-    const members = v.slice(1).map((m: any) => sentinelName(m))
+    const members = (isAnyOf(v) ? alternatives(v) : v.slice(1))
+      .map((m: any) => sentinelName(m))
       .filter((m: string) => 'one' !== m)
     return 0 === members.length ? 'any' : members.join(' | ')
   }

@@ -96,15 +96,16 @@ sub sleep_ms {
   Time::HiRes::sleep($ms / 1000.0) if defined $ms && $ms > 0;
 }
 
-# The alternatives a `$ONE` union offers, or the spec itself when it is not
-# one. Every FEATURE option in the generated spec is wrapped
-# `['`$ONE`', <type>, '`$NIL`']` (an option a caller may omit), so a walker
-# that does not unwrap it sees no types at all.
+# The specs a `$NOF` counts, or the spec itself when it is not one. Every
+# FEATURE option in the generated spec is wrapped
+# `['`$NOF`', {min: 1}, <type>, '`$NIL`']` (an option a caller may omit), so a
+# walker that does not unwrap it sees no types at all. The count is a map too,
+# and is skipped, or the first map alternative found would be the count.
 sub _spec_alts {
   my ($spec) = @_;
-  if (Voxgig::Struct::islist($spec) && @$spec
-      && defined $spec->[0] && !ref $spec->[0] && '`$ONE`' eq $spec->[0]) {
-    return [ @{$spec}[1 .. $#$spec] ];
+  if (Voxgig::Struct::islist($spec) && @$spec > 1
+      && defined $spec->[0] && !ref $spec->[0] && '`$NOF`' eq $spec->[0]) {
+    return [ @{$spec}[2 .. $#$spec] ];
   }
   return [ $spec ];
 }

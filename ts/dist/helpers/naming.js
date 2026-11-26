@@ -123,8 +123,9 @@ function rbSafeTypeName(Name) {
 const SWIFT_SDK_TYPES = new Set([
     'Context', 'Control', 'Entity', 'Operation', 'Point', 'Response', 'Result',
     'SdkConfig', 'SdkSchema', 'Spec', 'Utility',
-    'Injection', 'Injector', 'JSON', 'JSONParseError', 'Modify',
-    'OrderedDictionary', 'Sentinel', 'Value', 'VList', 'VMap', 'WalkApply',
+    'CondenseView', 'Injection', 'Injector', 'JSON', 'JSONParseError', 'Modify',
+    'OrderedDictionary', 'Sentinel', 'StructError', 'Value', 'VList', 'VMap',
+    'WalkApply',
     'FetcherFunc', 'Formatter', 'NativeCall0', 'NativeRef', 'SystemFetch',
     'ManualRedirectDelegate',
     'AuditFeature', 'BaseFeature', 'CacheFeature', 'ClienttrackFeature',

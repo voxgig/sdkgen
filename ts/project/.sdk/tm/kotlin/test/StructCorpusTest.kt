@@ -274,13 +274,20 @@ class StructCorpusTest {
     // ===== validate =====
     add(tests, "validate", "basic", false) { Struct.validate(getp(it, "data"), getp(it, "spec")) }
     add(tests, "validate", "child", true) { Struct.validate(getp(it, "data"), getp(it, "spec")) }
-    add(tests, "validate", "one", true) { Struct.validate(getp(it, "data"), getp(it, "spec")) }
+    add(tests, "validate", "nof", false) { Struct.validate(getp(it, "data"), getp(it, "spec")) }
     add(tests, "validate", "exact", true) { Struct.validate(getp(it, "data"), getp(it, "spec")) }
     add(tests, "validate", "invalid", false) { Struct.validate(getp(it, "data"), getp(it, "spec")) }
     add(tests, "validate", "special", true) {
       val inj = getp(it, "inj") as? Map<String, Any?>
       Struct.validate(getp(it, "data"), getp(it, "spec"), inj)
     }
+    add(tests, "validate", "directive", false) { Struct.validate(getp(it, "data"), getp(it, "spec")) }
+    add(tests, "validate", "all", false) { Struct.validate(getp(it, "data"), getp(it, "spec")) }
+    add(tests, "validate", "len", false) { Struct.validate(getp(it, "data"), getp(it, "spec")) }
+    add(tests, "validate", "range", false) { Struct.validate(getp(it, "data"), getp(it, "spec")) }
+    add(tests, "validate", "rest", false) { Struct.validate(getp(it, "data"), getp(it, "spec")) }
+    add(tests, "validate", "like", false) { Struct.validate(getp(it, "data"), getp(it, "spec")) }
+    add(tests, "validate", "unknown", false) { Struct.validate(getp(it, "data"), getp(it, "spec")) }
 
     // ===== select =====
     add(tests, "select", "basic", true) { Struct.select(getp(it, "obj"), getp(it, "query")) }
@@ -288,7 +295,20 @@ class StructCorpusTest {
     add(tests, "select", "edge", true) { Struct.select(getp(it, "obj"), getp(it, "query")) }
     add(tests, "select", "alts", true) { Struct.select(getp(it, "obj"), getp(it, "query")) }
 
+    val names = tests.map { it.displayName }
+    tests.add(DynamicTest.dynamicTest("validate-every-group") { runsEveryGroup(names, "validate") })
+
     return tests
+  }
+
+  // Fails on a group the corpus holds in `category` that no test above runs.
+  private fun runsEveryGroup(names: List<String>, category: String) {
+    val cat = Helpers.toMapAny(structRun().spec[category])
+    assertNotNull(cat, "struct corpus category missing: $category")
+    val groups = cat!!.filterValues { it is Map<*, *> }.keys
+    assertTrue(groups.isNotEmpty(), "the corpus holds no $category group")
+    val unrun = groups.filter { "$category-$it" !in names }
+    assertTrue(unrun.isEmpty(), "the corpus holds $category groups this runner does not run: $unrun")
   }
 
   // The struct.nullsem section: does a PRESENT key holding a JSON null read

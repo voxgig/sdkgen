@@ -3,11 +3,10 @@
 //
 // The specs are NOT written here and not written in the model either: every
 // entity field already carries a canonical type sentinel (`$STRING`,
-// `$INTEGER`, the `$ONE` union for an OpenAPI multi-type), which is the same
-// vocabulary vs.validate speaks. The generator maps them once
-// (helpers/canonSpec) and emits `core/schema.zig`, so a field whose type
-// changes in the API spec changes what this feature enforces with no edit
-// anywhere.
+// `$INTEGER`, a union for an OpenAPI multi-type). The generator maps them
+// once (helpers/canonSpec) into the vocabulary vs.validate speaks and emits
+// `core/schema.zig`, so a field whose type changes in the API spec changes
+// what this feature enforces with no edit anywhere.
 //
 // WHAT IS CHECKED
 //   outbound (PreSpec)  the payload the caller asked to send, against

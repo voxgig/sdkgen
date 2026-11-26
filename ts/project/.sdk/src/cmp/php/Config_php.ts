@@ -273,7 +273,7 @@ ${serverBlock}${authBlock}                "headers" => ${formatPhpArray(headers,
 `)
 
     each(entity, (entity: any) => {
-      Content(`                    "${entity.name}" => [],
+      Content(`                    "${entity.name}" => (object)[],
 `)
     })
 

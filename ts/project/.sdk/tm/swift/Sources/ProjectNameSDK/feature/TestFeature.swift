@@ -140,7 +140,7 @@ private func testBuildArgs(_ ctx: Context, _ op: Operation, _ args: VMap?) -> Va
     let argsPath = getpath(point, jtp("args", kind))
     reqdArgs.items.append(contentsOf: select(argsPath, .map(vm(("reqd", .bool(true))))).asList?.items ?? [])
   }
-  let reqd = transform(.list(reqdArgs), jtp("`$EACH`", "", "`$KEY.name`"))
+  let reqd = transformKept(.list(reqdArgs), jtp("`$EACH`", "", "`$KEY.name`"))
 
   let qand = VList()
   let q = VMap()
@@ -226,7 +226,7 @@ public final class TestFeature: BaseFeature {
           extra.entries["statusText"] = .string("Not found")
           return testRespond(ctx2, 404, .noval, extra)
         }
-        delprop(ent, .string("$KEY"))
+        _ = try? delprop(ent, .string("$KEY"))
         return testRespond(ctx2, 200, clone(ent), nil)
       } else if op.name == "list" {
         let args = testBuildArgs(ctx2, op, ctx2.reqmatch)
@@ -237,7 +237,7 @@ public final class TestFeature: BaseFeature {
           return testRespond(ctx2, 404, .noval, extra)
         }
         if let fl = found.asList {
-          for item in fl.items { delprop(item, .string("$KEY")) }
+          for item in fl.items { _ = try? delprop(item, .string("$KEY")) }
         }
         return testRespond(ctx2, 200, clone(found), nil)
       } else if op.name == "update" || op.name == "patch" {
@@ -264,7 +264,7 @@ public final class TestFeature: BaseFeature {
         if ent.isMap {
           _ = merge(.list(VList([ent, .map(testRecord(ctx2.reqdata))])))
         }
-        delprop(ent, .string("$KEY"))
+        _ = try? delprop(ent, .string("$KEY"))
         return testRespond(ctx2, 200, clone(ent), nil)
       } else if op.name == "remove" {
         let args = testBuildArgs(ctx2, op, testResolveMatch(ctx2, ctx2.reqmatch))
@@ -272,7 +272,7 @@ public final class TestFeature: BaseFeature {
         let ent = getelem(found, .int(0))
         if let entm2 = ent.asMap {
           let id = gp(entm2, "id")
-          delprop(.map(entmap), id)
+          _ = try? delprop(.map(entmap), id)
         }
         return testRespond(ctx2, 200, .noval, nil)
       } else if op.name == "create" {
@@ -291,7 +291,7 @@ public final class TestFeature: BaseFeature {
             entm.entries[idField] = id
           }
           if let idStr = id.asString { entmap.entries[idStr] = .map(entm) }
-          delprop(.map(entm), .string("$KEY"))
+          _ = try? delprop(.map(entm), .string("$KEY"))
           return testRespond(ctx2, 200, clone(.map(entm)), nil)
         }
         return testRespond(ctx2, 200, ent, nil)

@@ -1,3 +1,6 @@
+// VENDORED: @voxgig/struct 0.1.7 (rust/src/consts.rs)
+// Source: https://github.com/voxgig/struct @ 358af9d51c90b589a295a70b2165dbe4629eaf8e  [tag: sdk-20261125-1959-0]
+// License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 // Copyright (c) 2025-2026 Voxgig Ltd. MIT LICENSE.
 // VERSION: @voxgig/struct 0.1.0
 //
@@ -7,15 +10,13 @@
 
 #![allow(non_upper_case_globals)] // S_* string constants mirror the TS names
 
-use crate::utility::voxgigstruct::re::Regex;
+use super::re::Regex;
 use std::sync::LazyLock as Lazy;
 
-// ---- mode flags (bitfield) for inject steps ---------------------------
 pub const M_KEYPRE: i64 = 1;
 pub const M_KEYPOST: i64 = 2;
 pub const M_VAL: i64 = 4;
 
-// ---- special strings --------------------------------------------------
 pub const S_BKEY: &str = "`$KEY`";
 pub const S_BANNO: &str = "`$ANNO`";
 pub const S_BEXACT: &str = "`$EXACT`";
@@ -47,6 +48,13 @@ pub const S_SP: &str = " ";
 pub const S_CM: &str = ",";
 pub const S_VIZ: &str = ": ";
 
+pub const S_condense: &str = "$condense";
+pub const S_condsym: &str = "sym";
+pub const S_condnode: &str = "node";
+pub const S_condroot: &str = "root";
+
+pub const CONDENSE_VERSION: f64 = 1.0;
+
 pub const T_ANY: u32 = (1u32 << 31) - 1;
 pub const T_NOVAL: u32 = 1 << 30; // property absent, undefined. NOT a scalar.
 pub const T_BOOLEAN: u32 = 1 << 29;
@@ -65,29 +73,17 @@ pub const T_SCALAR: u32 = 1 << 7;
 pub const T_NODE: u32 = 1 << 6;
 
 pub const TYPENAME: [&str; 26] = [
-    "any",
-    "nil",      // 1   clz32(T_noval=1<<30)
-    "boolean",
-    "decimal",
-    "integer",
-    "number",
-    "string",
-    "function",
-    "symbol",
-    "null",
-    "", "", "", "", "", "", "",
-    "list",     // 17  clz32(1<<14)
+    "any", "nil", // 1   clz32(T_noval=1<<30)
+    "boolean", "decimal", "integer", "number", "string", "function", "symbol", "null", "", "", "",
+    "", "", "", "", "list",     // 17  clz32(1<<14)
     "map",      // 18  clz32(1<<13)
     "instance", // 19  clz32(1<<12)
-    "", "", "", "",
-    "scalar",
-    "node",
+    "", "", "", "", "scalar", "node",
 ];
 
 pub const MAXDEPTH: i64 = 32;
 
-// ---- regexes ----------------------------------------------------------
-pub static R_INTEGER_KEY: Lazy<Regex> = Lazy::new(|| Regex::new(r"^[-0-9]+$").unwrap());
+pub static R_INTEGER_KEY: Lazy<Regex> = Lazy::new(|| Regex::new(r"^(0|-?[1-9][0-9]*)$").unwrap());
 pub static R_ESCAPE_REGEXP: Lazy<Regex> = Lazy::new(|| Regex::new(r"[.*+?^${}()|\[\]\\]").unwrap());
 pub static R_QUOTES: Lazy<Regex> = Lazy::new(|| Regex::new(r#"""#).unwrap());
 pub static R_DOT: Lazy<Regex> = Lazy::new(|| Regex::new(r"\.").unwrap());
@@ -96,7 +92,9 @@ pub static R_META_PATH: Lazy<Regex> = Lazy::new(|| Regex::new(r"^([^$]+)\$([=~])
 pub static R_TRANSFORM_NAME: Lazy<Regex> = Lazy::new(|| Regex::new(r"`\$([A-Z]+)`").unwrap());
 pub static R_INJECTION_FULL: Lazy<Regex> =
     Lazy::new(|| Regex::new(r"^`(\$[A-Z]+|[^`]*)[0-9]*`$").unwrap());
+pub static R_CHECKER_NAME: Lazy<Regex> = Lazy::new(|| Regex::new(r"^\$[A-Z]+$").unwrap());
 pub static R_INJECTION_PARTIAL: Lazy<Regex> = Lazy::new(|| Regex::new(r"`([^`]+)`").unwrap());
+pub static R_CONDENSE_INDEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"^(0|[1-9][0-9]*)$").unwrap());
 
 pub fn mode_name(mode: i64) -> &'static str {
     match mode {

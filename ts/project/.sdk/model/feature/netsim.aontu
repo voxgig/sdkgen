@@ -32,7 +32,7 @@ main: kit: feature: netsim: {
       # `latency: 0` reads as "a number", but the feature also takes
       # `{ min, max }` for a uniform sample — the comment above said so and
       # the spec would have rejected it.
-      latency: ['`$ONE`', '`$NUMBER`', '`$MAP`']
+      latency: ['`$NOF`', { min: 1 }, '`$NUMBER`', '`$MAP`']
 
       # Injected clock, for tests that must not really wait.
       sleep: '`$FUNCTION`'

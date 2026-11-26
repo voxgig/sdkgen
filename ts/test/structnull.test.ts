@@ -93,9 +93,9 @@ print 'validate=', ($@ ? 'throws' : 'default'), "\\n";
   },
   {
     target: 'rb',
-    stamp: 'unstamped',
+    stamp: '0.1.1',
     needs: 'ruby',
-    answers: { getprop: 'null', haskey: 'true', validate: 'default' },
+    answers: { getprop: 'alt', haskey: 'false', validate: 'default' },
     exec: () => {
       const rb = toolchain('ruby')
       if (null == rb) return null
@@ -115,9 +115,9 @@ end
   },
   {
     target: 'php',
-    stamp: 'unstamped',
+    stamp: '0.1.3',
     needs: 'php',
-    answers: { getprop: 'null', haskey: 'true', validate: 'throws' },
+    answers: { getprop: 'alt', haskey: 'false', validate: 'default' },
     exec: () => {
       const php = toolchain('php')
       if (null == php) return null
@@ -186,7 +186,7 @@ catch (Exception)
     // here. TypeScript is transpiled in-process with the repo's own
     // compiler; no toolchain beyond node is needed.
     target: 'ts',
-    stamp: '0.3.7',
+    stamp: '0.4.0',
     needs: 'node (always present - this suite runs on it)',
     answers: { getprop: 'alt', haskey: 'false', validate: 'default' },
     exec: (tmp) => {
@@ -210,7 +210,7 @@ catch (e) { console.log('validate=throws') }
   },
   {
     target: 'js',
-    stamp: '0.1.7 (0.3.x behaviour)',
+    stamp: '0.2.0 (0.4.x behaviour)',
     needs: 'node (always present - this suite runs on it)',
     answers: { getprop: 'alt', haskey: 'false', validate: 'default' },
     exec: () => {
@@ -228,7 +228,7 @@ catch (e) { console.log('validate=throws') }
   },
   {
     target: 'go',
-    stamp: '0.1.6',
+    stamp: '0.2.0',
     needs: 'go',
     answers: { getprop: 'alt', haskey: 'false', validate: 'default' },
     exec: (tmp) => {

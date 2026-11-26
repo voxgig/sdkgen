@@ -1,5 +1,5 @@
 // VENDORED: @voxgig/omni 0.1.0 (rust/src/json.rs)
-// Source: https://github.com/voxgig/omni @ e9cb45a308a4da47ffdbc1b3149b9c59199190b2  [tag: sdk-20261016-0845-0]
+// Source: https://github.com/voxgig/omni @ ef55ad0fa48470146a81a1d652c859b03ebab6fc  [tag: sdk-20261125-1959-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 //! The omni JSON value model, with a small in-tree parser.
 //!
@@ -332,24 +332,40 @@ fn parsestr(chars: &[char], pos: &mut usize) -> Result<String, String> {
             'r' => out.push('\r'),
             't' => out.push('\t'),
             'u' => {
-                let mut code = 0u32;
-                for _ in 0..4 {
-                    if *pos >= chars.len() {
-                        return Err("omni: bad JSON unicode escape".to_string());
+                let mut code = parsehex4(chars, pos)?;
+                if (0xd800..=0xdbff).contains(&code) {
+                    if *pos + 2 > chars.len() || chars[*pos] != '\\' || chars[*pos + 1] != 'u' {
+                        return Err(LONE_SURROGATE.to_string());
                     }
-                    let digit = chars[*pos]
-                        .to_digit(16)
-                        .ok_or_else(|| "omni: bad JSON unicode escape".to_string())?;
-                    code = code * 16 + digit;
-                    *pos += 1;
+                    *pos += 2;
+                    let low = parsehex4(chars, pos)?;
+                    if !(0xdc00..=0xdfff).contains(&low) {
+                        return Err(LONE_SURROGATE.to_string());
+                    }
+                    code = 0x10000 + ((code - 0xd800) << 10) + (low - 0xdc00);
                 }
-                out.push(char::from_u32(code).unwrap_or('\u{fffd}'));
+                out.push(char::from_u32(code).ok_or_else(|| LONE_SURROGATE.to_string())?);
             }
             _ => return Err(format!("omni: bad JSON escape at {}", pos)),
         }
     }
 
     Err("omni: unterminated JSON string".to_string())
+}
+
+const LONE_SURROGATE: &str = "omni: bad JSON unicode escape (lone surrogate)";
+
+fn parsehex4(chars: &[char], pos: &mut usize) -> Result<u32, String> {
+    let mut code = 0u32;
+    for _ in 0..4 {
+        let digit = chars
+            .get(*pos)
+            .and_then(|char| char.to_digit(16))
+            .ok_or_else(|| "omni: bad JSON unicode escape".to_string())?;
+        code = code * 16 + digit;
+        *pos += 1;
+    }
+    Ok(code)
 }
 
 fn parsenum(chars: &[char], pos: &mut usize) -> Result<Json, String> {

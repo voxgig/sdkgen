@@ -40,7 +40,7 @@
   "routed cannot see it. Declared, not derived - deriving it swept each",
   "port's CLI and tests in too."
  ],
- "tag": "sdk-20261016-0845-0",
+ "tag": "sdk-20261125-1959-0",
  "ignorenote": [
   "What a routed directory is EXPECTED to hold that is not vendored.",
   "--audit reports every OTHER unrouted file, so this list is what keeps a",
@@ -74,7 +74,11 @@
   "`plugins/index.ts` and `Plugins.java` above, and the same reason.",
   "",
   "examples/, tests/ and cli/ under a swept container are upstream's own,",
-  "not library code an SDK vendors."
+  "not library code an SDK vendors.",
+  "",
+  "ruby keeps its port at the top of ruby/, beside its Gemfile and lockfile",
+  "(its dependency manifest), omni.rb (the bridge its own test runner",
+  "loads) and walk_bench.rb (a benchmark). None of them is library code."
  ],
  "ignore": [
   "(^|/)(Makefile|Dockerfile|LICENSE|VERSION)$",
@@ -99,7 +103,10 @@
   "(^|/)plugins/all/",
   "(^|/)examples?/",
   "(^|/)tests?/",
-  "(^|/)cli/"
+  "(^|/)cli/",
+  "(^|/)Gemfile(\\.lock)?$",
+  "^ruby/omni\\.rb$",
+  "(^|/)[^/]*_bench\\.[a-z]+$"
  ],
  "repo": {
   "struct": {
@@ -2020,6 +2027,54 @@
   },
   {
    "lib": "struct",
+   "port": "c",
+   "lang": "c",
+   "version": "0.1.3",
+   "dir": [
+    "tm/c/utility/struct"
+   ],
+   "file": {
+    "c/src/inject.c": "tm/c/utility/struct/inject.c",
+    "c/src/re_util.c": "tm/c/utility/struct/re_util.c",
+    "c/src/regex.c": "tm/c/utility/struct/regex.c",
+    "c/src/regex.h": "tm/c/utility/struct/regex.h",
+    "c/src/transform.c": "tm/c/utility/struct/transform.c",
+    "c/src/utility.c": "tm/c/utility/struct/utility.c",
+    "c/src/value.c": "tm/c/utility/struct/value.c",
+    "c/src/value.h": "tm/c/utility/struct/value.h",
+    "c/src/value_io.c": "tm/c/utility/struct/value_io.c",
+    "c/src/value_io.h": "tm/c/utility/struct/value_io.h",
+    "c/src/voxgig_struct.h": "tm/c/utility/struct/voxgig_struct.h"
+   }
+  },
+  {
+   "lib": "struct",
+   "port": "clojure",
+   "lang": "clojure",
+   "version": "0.1.1",
+   "dir": [
+    "tm/clojure/src/voxgig"
+   ],
+   "file": {
+    "clojure/src/voxgig/struct.clj": "tm/clojure/src/voxgig/struct.clj"
+   }
+  },
+  {
+   "lib": "struct",
+   "port": "cpp",
+   "lang": "cpp",
+   "version": "0.1.4",
+   "dir": [
+    "tm/cpp/utility/voxgigstruct"
+   ],
+   "file": {
+    "cpp/src/value.hpp": "tm/cpp/utility/voxgigstruct/value.hpp",
+    "cpp/src/value_io.hpp": "tm/cpp/utility/voxgigstruct/value_io.hpp",
+    "cpp/src/voxgig_struct.hpp": "tm/cpp/utility/voxgigstruct/voxgig_struct.hpp"
+   }
+  },
+  {
+   "lib": "struct",
    "port": "csharp",
    "lang": "csharp",
    "version": "0.1.1",
@@ -2032,9 +2087,21 @@
   },
   {
    "lib": "struct",
+   "port": "elixir",
+   "lang": "elixir",
+   "version": "0.1.1",
+   "dir": [
+    "tm/elixir/lib/utility/struct"
+   ],
+   "file": {
+    "elixir/lib/voxgig_struct.ex": "tm/elixir/lib/utility/struct/voxgig_struct.ex"
+   }
+  },
+  {
+   "lib": "struct",
    "port": "go",
    "lang": "go",
-   "version": "0.1.6",
+   "version": "0.2.0",
    "file": {
     "go/voxgigstruct.go": "tm/go/utility/struct/voxgigstruct.go"
    }
@@ -2062,7 +2129,7 @@
    "lib": "struct",
    "port": "javascript",
    "lang": "js",
-   "version": "0.1.7",
+   "version": "0.2.0",
    "file": {
     "javascript/src/struct.js": "tm/js/src/utility/StructUtility.js"
    }
@@ -2108,12 +2175,171 @@
   },
   {
    "lib": "struct",
+   "port": "ocaml",
+   "lang": "ocaml",
+   "version": "0.1.1",
+   "dir": [
+    "tm/ocaml/utility"
+   ],
+   "file": {
+    "ocaml/src/voxgig_struct.ml": "tm/ocaml/utility/voxgig_struct.ml",
+    "ocaml/src/vregex.ml": "tm/ocaml/utility/vregex.ml"
+   }
+  },
+  {
+   "lib": "struct",
    "port": "perl",
    "lang": "perl",
    "version": "0.1.1",
    "file": {
     "perl/lib/Voxgig/Struct.pm": "tm/perl/lib/Voxgig/Struct.pm"
    }
+  },
+  {
+   "lib": "struct",
+   "port": "php",
+   "lang": "php",
+   "version": "0.1.3",
+   "dir": [
+    "tm/php/utility/struct"
+   ],
+   "file": {
+    "php/src/Struct.php": "tm/php/utility/struct/Struct.php"
+   }
+  },
+  {
+   "lib": "struct",
+   "port": "ruby",
+   "lang": "rb",
+   "version": "0.1.1",
+   "dir": [
+    "tm/rb/utility/struct"
+   ],
+   "file": {
+    "ruby/voxgig_struct.rb": "tm/rb/utility/struct/voxgig_struct.rb"
+   }
+  },
+  {
+   "lib": "struct",
+   "port": "rust",
+   "lang": "rust",
+   "version": "0.1.7",
+   "dir": [
+    "tm/rust/utility/voxgigstruct"
+   ],
+   "file": {
+    "rust/src/lib.rs": "tm/rust/utility/voxgigstruct/mod.rs",
+    "rust/src/consts.rs": "tm/rust/utility/voxgigstruct/consts.rs",
+    "rust/src/major.rs": "tm/rust/utility/voxgigstruct/major.rs",
+    "rust/src/mini.rs": "tm/rust/utility/voxgigstruct/mini.rs",
+    "rust/src/ordered_map.rs": "tm/rust/utility/voxgigstruct/ordered_map.rs",
+    "rust/src/re.rs": "tm/rust/utility/voxgigstruct/re.rs",
+    "rust/src/value.rs": "tm/rust/utility/voxgigstruct/value.rs"
+   },
+   "adapt": [
+    {
+     "match": "utility/voxgigstruct/(consts|major|mini|value)\\.rs$",
+     "from": "crate::",
+     "to": "super::"
+    }
+   ]
+  },
+  {
+   "lib": "struct",
+   "port": "scala",
+   "lang": "scala",
+   "version": "0.1.1",
+   "dir": [
+    "tm/scala/utility/struct"
+   ],
+   "file": {
+    "scala/src/voxgig_struct.scala": "tm/scala/utility/struct/voxgig_struct.scala",
+    "java/src/Struct.java": "tm/scala/utility/struct/Struct.java"
+   },
+   "adapt": [
+    {
+     "match": "utility/struct/Struct\\.java$",
+     "from": "package voxgig.struct;",
+     "to": "package SCALAPACKAGE.utility.struct;"
+    }
+   ]
+  },
+  {
+   "lib": "struct",
+   "port": "swift",
+   "lang": "swift",
+   "version": "0.1.3",
+   "dir": [
+    "tm/swift/Sources/ProjectNameSDK/Struct"
+   ],
+   "file": {
+    "swift/Sources/VoxgigStruct/Condense.swift": "tm/swift/Sources/ProjectNameSDK/Struct/Condense.swift",
+    "swift/Sources/VoxgigStruct/Constants.swift": "tm/swift/Sources/ProjectNameSDK/Struct/Constants.swift",
+    "swift/Sources/VoxgigStruct/Inject.swift": "tm/swift/Sources/ProjectNameSDK/Struct/Inject.swift",
+    "swift/Sources/VoxgigStruct/Injection.swift": "tm/swift/Sources/ProjectNameSDK/Struct/Injection.swift",
+    "swift/Sources/VoxgigStruct/JSON.swift": "tm/swift/Sources/ProjectNameSDK/Struct/JSON.swift",
+    "swift/Sources/VoxgigStruct/Merge.swift": "tm/swift/Sources/ProjectNameSDK/Struct/Merge.swift",
+    "swift/Sources/VoxgigStruct/Minor.swift": "tm/swift/Sources/ProjectNameSDK/Struct/Minor.swift",
+    "swift/Sources/VoxgigStruct/OrderedDictionary.swift": "tm/swift/Sources/ProjectNameSDK/Struct/OrderedDictionary.swift",
+    "swift/Sources/VoxgigStruct/Path.swift": "tm/swift/Sources/ProjectNameSDK/Struct/Path.swift",
+    "swift/Sources/VoxgigStruct/Select.swift": "tm/swift/Sources/ProjectNameSDK/Struct/Select.swift",
+    "swift/Sources/VoxgigStruct/Transform.swift": "tm/swift/Sources/ProjectNameSDK/Struct/Transform.swift",
+    "swift/Sources/VoxgigStruct/Validate.swift": "tm/swift/Sources/ProjectNameSDK/Struct/Validate.swift",
+    "swift/Sources/VoxgigStruct/Value.swift": "tm/swift/Sources/ProjectNameSDK/Struct/Value.swift",
+    "swift/Sources/VoxgigStruct/Walk.swift": "tm/swift/Sources/ProjectNameSDK/Struct/Walk.swift"
+   },
+   "adapt": [
+    {
+     "match": "Struct/Value\\.swift$",
+     "from": "public let DELETE = Sentinel(tag: \"DELETE\", marker: \"`$DELETE`\")\n\n// MARK: - Collection wrappers (reference-stable lists and maps)\n",
+     "to": "public let DELETE = Sentinel(tag: \"DELETE\", marker: \"`$DELETE`\")\n\n// PATCH (the SDK's opaque native case, pending upstream fix): a `.native`\n// Value carries a runtime value that is not JSON data, such as an SDK\n// closure. It compares by reference and clones by sharing the reference.\npublic final class NativeRef: @unchecked Sendable {\n  public let value: Any\n  public init(_ value: Any) { self.value = value }\n}\n\n// MARK: - Collection wrappers (reference-stable lists and maps)\n"
+    },
+    {
+     "match": "Struct/Value\\.swift$",
+     "from": "  case sentinel(Sentinel)\n\n  // MARK: Convenience constructors\n\n",
+     "to": "  case sentinel(Sentinel)\n  case native(NativeRef)  // PATCH (the SDK's opaque native case, pending upstream fix)\n\n  // MARK: Convenience constructors\n\n  public static func nat(_ v: Any) -> Value { .native(NativeRef(v)) }\n"
+    },
+    {
+     "match": "Struct/Value\\.swift$",
+     "from": "  public var isFunction: Bool { if case .function = self { return true } else { return false } }\n",
+     "to": "  public var isFunction: Bool {  // PATCH (the SDK's opaque native case, pending upstream fix)\n    if case .function = self { return true }\n    if case .native = self { return true }\n    return false\n  }\n  public var isNative: Bool { if case .native = self { return true } else { return false } }\n"
+    },
+    {
+     "match": "Struct/Value\\.swift$",
+     "from": "  public var asSentinel: Sentinel? {\n    if case .sentinel(let s) = self { return s } else { return nil }\n  }\n\n",
+     "to": "  public var asSentinel: Sentinel? {\n    if case .sentinel(let s) = self { return s } else { return nil }\n  }\n  public var asNative: Any? {  // PATCH (the SDK's opaque native case, pending upstream fix)\n    if case .native(let n) = self { return n.value } else { return nil }\n  }\n\n"
+    },
+    {
+     "match": "Struct/Value\\.swift$",
+     "from": "    case (.sentinel(let a), .sentinel(let b)): return a === b\n    case (.function, .function): return false\n",
+     "to": "    case (.sentinel(let a), .sentinel(let b)): return a === b\n    case (.native(let a), .native(let b)): return a === b  // PATCH (the SDK's opaque native case, pending upstream fix)\n    case (.function, .function): return false\n"
+    },
+    {
+     "match": "Struct/Minor\\.swift$",
+     "from": "  case .function: return T_scalar | T_function\n",
+     "to": "  case .function, .native: return T_scalar | T_function  // PATCH (the SDK's opaque native case, pending upstream fix)\n"
+    },
+    {
+     "match": "Struct/Minor\\.swift$",
+     "from": "  case .function: s = \"<function>\"\n",
+     "to": "  case .function, .native: s = \"<function>\"  // PATCH (the SDK's opaque native case, pending upstream fix)\n"
+    },
+    {
+     "match": "Struct/Minor\\.swift$",
+     "from": "  case .function: out += \"\\\"<function>\\\"\"\n",
+     "to": "  case .function, .native: out += \"\\\"<function>\\\"\"  // PATCH (the SDK's opaque native case, pending upstream fix)\n"
+    },
+    {
+     "match": "Struct/JSON\\.swift$",
+     "from": "    case .function: out += \"\\\"<function>\\\"\"\n",
+     "to": "    case .function, .native: out += \"\\\"<function>\\\"\"  // PATCH (the SDK's opaque native case, pending upstream fix)\n"
+    },
+    {
+     "match": "Struct/Inject\\.swift$",
+     "from": "        case .function: out += \"<function>\"\n",
+     "to": "        case .function, .native: out += \"<function>\"  // PATCH (the SDK's opaque native case, pending upstream fix)\n"
+    }
+   ]
   },
   {
    "lib": "struct",
@@ -2128,7 +2354,7 @@
    "lib": "struct",
    "port": "typescript",
    "lang": "ts",
-   "version": "0.3.7",
+   "version": "0.4.0",
    "file": {
     "typescript/src/StructUtility.ts": "tm/ts/src/utility/StructUtility.ts"
    }

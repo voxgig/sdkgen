@@ -1404,7 +1404,7 @@ let make_spec_util (ctx : ctx) : (spec option * sdk_error option) =
       let note (s : spec) =
         s.sp_authquery <- List.filter (fun k ->
             match List.assoc_opt k query with
-            | Some was -> not (veq was (getp s.sp_query k))
+            | Some was -> not (deepequal was (getp s.sp_query k))
             | None -> true) (keysof s.sp_query) in
       match u.u_prepare_auth ctx with
       | (_, Some err) -> (None, Some err)

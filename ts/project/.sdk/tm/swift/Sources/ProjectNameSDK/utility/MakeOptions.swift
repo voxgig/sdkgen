@@ -120,7 +120,7 @@ func makeOptionsUtil(_ ctx: Context) -> VMap {
   // so without this one client's options (headers, server, ...) are written
   // into the shared config and inherited by every client built afterwards.
   let merged = merge(.list([.map(VMap()), clone(.map(cfgopts)), .map(opts)]))
-  let validated = validate(merged, optspec)
+  let validated = validateKept(merged, optspec)
   let result = validated.asMap ?? VMap()
 
   // Restore the suppression the optspec default would otherwise erase.

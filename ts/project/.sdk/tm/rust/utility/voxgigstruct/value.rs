@@ -1,3 +1,6 @@
+// VENDORED: @voxgig/struct 0.1.7 (rust/src/value.rs)
+// Source: https://github.com/voxgig/struct @ 358af9d51c90b589a295a70b2165dbe4629eaf8e  [tag: sdk-20261125-1959-0]
+// License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 // Copyright (c) 2025-2026 Voxgig Ltd. MIT LICENSE.
 // VERSION: @voxgig/struct 0.1.0
 //
@@ -15,8 +18,8 @@ use std::cell::RefCell;
 use std::fmt;
 use std::rc::Rc;
 
-use crate::utility::voxgigstruct::major::Inj;
-use crate::utility::voxgigstruct::ordered_map::OrderedMap;
+use super::major::Inj;
+use super::ordered_map::OrderedMap;
 
 pub type VList = Rc<RefCell<Vec<Value>>>;
 pub type VMap = Rc<RefCell<OrderedMap<Value>>>;

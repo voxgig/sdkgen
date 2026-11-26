@@ -1,3 +1,6 @@
+// VENDORED: @voxgig/struct 0.1.3 (swift/Sources/VoxgigStruct/Transform.swift)
+// Source: https://github.com/voxgig/struct @ 358af9d51c90b589a295a70b2165dbe4629eaf8e  [tag: sdk-20261125-1959-0]
+// License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 // Transform commands — 11 injectors plus the top-level `transform`
 // driver. Each command receives `(inj, val, ref, store)` and returns
 // the result value (or NONE to delete the slot). The runtime helpers
@@ -29,7 +32,7 @@ public func transform_KEY(_ inj: Injection, _ val: Value, _ ref: String, _ store
   let parent = inj.parent
   let keyspec = lookup(parent, .string(S_BKEY))
   if !keyspec.isNoval {
-    delprop(parent, .string(S_BKEY))
+    _delprop(parent, .string(S_BKEY))
     return getprop(inj.dparent, keyspec)
   }
   let anno = lookup(parent, .string(S_BANNO))
@@ -43,14 +46,14 @@ public func transform_KEY(_ inj: Injection, _ val: Value, _ ref: String, _ store
 // MARK: - $META
 
 public func transform_META(_ inj: Injection, _ val: Value, _ ref: String, _ store: Value) -> Value {
-  delprop(inj.parent, .string(S_DMETA))
+  _delprop(inj.parent, .string(S_DMETA))
   return .noval
 }
 
 // MARK: - $ANNO
 
 public func transform_ANNO(_ inj: Injection, _ val: Value, _ ref: String, _ store: Value) -> Value {
-  delprop(inj.parent, .string(S_BANNO))
+  _delprop(inj.parent, .string(S_BANNO))
   return .noval
 }
 
@@ -142,14 +145,14 @@ public func transform_EACH(_ inj: Injection, _ val: Value, _ ref: String, _ stor
     tinj.nodes = slice(.list(VList(inj.nodes)), -1).asList?.items ?? []
     tinj.parent = getelem(.list(VList(tinj.nodes)), .int(-1))
     let tvalList = Value.list(VList(tval))
-    setprop(tinj.parent, .string(strkey(ckey)), tvalList)
+    _setprop(tinj.parent, .string(strkey(ckey)), tvalList)
     tinj.val = tvalList
     tinj.dpath = dpathParts.map { strkey($0) }
     tinj.dparent = tcurmap
     inject(tvalList, store, tinj)
     rval = tinj.val
   }
-  setprop(target, tkey, rval)
+  _setprop(target, tkey, rval)
   return getelem(rval, .int(0))
 }
 
@@ -183,7 +186,7 @@ public func transform_PACK(_ inj: Injection, _ val: Value, _ ref: String, _ stor
       for pair in items(src) {
         let k = pair[0]
         let v = pair[1]
-        setprop(v, .string(S_BANNO), jm("KEY", k))
+        _setprop(v, .string(S_BANNO), jm("KEY", k))
         coll.append(v)
       }
       src = .list(coll)
@@ -193,7 +196,7 @@ public func transform_PACK(_ inj: Injection, _ val: Value, _ ref: String, _ stor
   }
   if src.isNoval { return .noval }
   let keypath = getprop(origchildspec, .string(S_BKEY))
-  let childspec = delprop(origchildspec, .string(S_BKEY))
+  let childspec = _delprop(origchildspec, .string(S_BKEY))
   let child = getprop(childspec, .string(S_BVAL), childspec)
   let tval = VMap()
   if case .list(let srcL) = src {
@@ -213,12 +216,12 @@ public func transform_PACK(_ inj: Injection, _ val: Value, _ ref: String, _ stor
         kk = getpath(srcnode, keypath, inj)
       }
       let tchild = clone(child)
-      setprop(.map(tval), kk, tchild)
+      _setprop(.map(tval), kk, tchild)
       let anno = getprop(srcnode, .string(S_BANNO))
       if anno.isNoval {
-        delprop(tchild, .string(S_BANNO))
+        _delprop(tchild, .string(S_BANNO))
       } else {
-        setprop(tchild, .string(S_BANNO), anno)
+        _setprop(tchild, .string(S_BANNO), anno)
       }
     }
   }
@@ -236,7 +239,7 @@ public func transform_PACK(_ inj: Injection, _ val: Value, _ ref: String, _ stor
         } else {
           kn = getpath(n, keypath, inj)
         }
-        setprop(.map(tsrc), kn, n)
+        _setprop(.map(tsrc), kn, n)
       }
     }
     let tpath = slice(.list(VList(inj.path.map { Value.string($0) })), -1)
@@ -264,7 +267,7 @@ public func transform_PACK(_ inj: Injection, _ val: Value, _ ref: String, _ stor
     inject(.map(tval), store, tinj)
     rval = tinj.val
   }
-  setprop(target2, tkey, rval)
+  _setprop(target2, tkey, rval)
   return .noval
 }
 
@@ -272,7 +275,7 @@ public func transform_PACK(_ inj: Injection, _ val: Value, _ ref: String, _ stor
 
 public func transform_REF(_ inj: Injection, _ val: Value, _ ref: String, _ store: Value) -> Value {
   if inj.mode != M_VAL { return .noval }
-  let nodes = inj.nodes
+  // ['`$REF`', 'ref-path']: a relative path starts where this slot is, so .x is a sibling.
   let refpath = lookup(inj.parent, .int(1))
   inj.keyI = inj.keys.count
   let specFn = getprop(store, .string(S_DSPEC))
@@ -282,14 +285,26 @@ public func transform_REF(_ inj: Injection, _ val: Value, _ ref: String, _ store
   } else {
     spec = specFn
   }
-  let dpath = slice(.list(VList(inj.path.map { Value.string($0) })), 1)
+  let dpath = slice(.list(VList(inj.path.map { Value.string($0) })), 1, -2)
   let dpathList = dpath.asList?.items.map { strkey($0) } ?? []
   let subInj = Injection(val: spec, parent: spec)
   subInj.dpath = dpathList
   subInj.dparent = getpath(spec, dpath)
   subInj.base = S_DTOP
   subInj.meta = inj.meta
-  let resolved = getpath(spec, refpath, subInj)
+  var resolved = getpath(spec, refpath, subInj)
+  // A chain of references that comes back to a path it has named names nothing.
+  var seen = [refpath]
+  var next = resolved
+  while next.isList && lookup(next, .int(0)) == .string("`$REF`") {
+    let nextpath = lookup(next, .int(1))
+    if seen.contains(nextpath) {
+      resolved = .noval
+      break
+    }
+    seen.append(nextpath)
+    next = getpath(spec, nextpath, subInj)
+  }
   var hasSubRef = false
   if isnode(resolved) {
     _ = walk(
@@ -299,28 +314,19 @@ public func transform_REF(_ inj: Injection, _ val: Value, _ ref: String, _ store
         return v
       })
   }
-  let tref = clone(resolved)
-  let cpath = slice(.list(VList(inj.path.map { Value.string($0) })), -3)
-  let tpath = slice(.list(VList(inj.path.map { Value.string($0) })), -1)
-  let tcur = getpath(store, cpath)
-  let tval = getpath(store, tpath)
-  var rval: Value = .noval
-  if !hasSubRef || !tval.isNoval {
-    let tinj = inj.child(0, [strkey(getelem(tpath, .int(-1)))])
-    tinj.path = tpath.asList?.items.map { strkey($0) } ?? []
-    tinj.nodes = slice(.list(VList(inj.nodes)), -1).asList?.items ?? []
-    tinj.parent = nodes.count >= 2 ? nodes[nodes.count - 2] : .noval
-    tinj.val = tref
-    tinj.dpath = cpath.asList?.items.map { strkey($0) } ?? []
-    tinj.dparent = tcur
-    inject(tref, store, tinj)
-    rval = tinj.val
-  }
+  // A recursive reference stops where the data does.
+  let tval = getpath(store, slice(.list(VList(inj.path.map { Value.string($0) })), -1))
+  let rval: Value = !hasSubRef || !tval.isNoval ? clone(resolved) : .noval
+  // The enclosing loop injects the referenced spec in this list's place, so
+  // neither this pass nor this element leaves a value for modify to check.
   let grandparent = inj.setval(rval, ancestor: 2)
-  if grandparent.isList, let prior = inj.prior {
-    prior.keyI -= 1
+  if let prior = inj.prior {
+    prior.modify = nil
+    if grandparent.isList || !rval.isNoval {
+      prior.keyI -= 1
+    }
   }
-  return val
+  return .sentinel(SKIP)
 }
 
 // MARK: - $FORMAT
@@ -378,7 +384,7 @@ public func transform_FORMAT(_ inj: Injection, _ val: Value, _ ref: String, _ st
     return .noval
   }
   let out = walk(resolved, { k, v, _, _ in fmt(k, v) })
-  setprop(target, tkey, out)
+  _setprop(target, tkey, out)
   return out
 }
 
@@ -406,18 +412,38 @@ public func transform_APPLY(_ inj: Injection, _ val: Value, _ ref: String, _ sto
   if case .function(let fn) = apply {
     out = fn(cinj, resolved, "", store)
   }
-  setprop(target, tkey, out)
+  _setprop(target, tkey, out)
   return out
 }
 
 // MARK: - Top-level transform
 
-public func transform(_ data: Value, _ spec: Value, _ injdef: Injection? = nil) -> Value {
+/// Transform `data` by the by-example `spec`.
+///
+/// Throws a `StructError` carrying the collected errors, joined with " | ",
+/// unless the caller supplied an error sink - canonical's
+/// `collect = null != injdef?.errs`, which here is `Injection.errssupplied`
+/// (assign `inj.errs` to collect). Before, the errors were collected and then
+/// dropped on the floor, which meant every corpus entry with an `err:`
+/// expectation passed vacuously. The same defect struct/go and struct/php
+/// carried.
+public func transform(_ data: Value, _ spec: Value, _ injdef: Injection? = nil) throws -> Value {
+  let collect = injdef?.errssupplied ?? false
+  let errs = injdef?.errs ?? VList()
+  let out = transformCollect(data, spec, injdef, errs)
+  if 0 < errs.items.count && !collect {
+    throw StructError(join(.list(errs), " | "))
+  }
+  return out
+}
+
+// The collecting core: never throws, and appends to the caller's `errs`.
+func transformCollect(
+  _ data: Value, _ spec: Value, _ injdef: Injection?, _ errs: VList
+) -> Value {
   let origspec = spec
   let spec = clone(origspec)
   let extra = injdef?.extra ?? .noval
-  let collect = (injdef?.errs.items.count) != nil ? true : false
-  let errs = injdef?.errs ?? VList()
   let extraTransforms = VMap()
   let extraData = VMap()
   if !extra.isNoval, case .map(let em) = extra {
@@ -453,10 +479,5 @@ public func transform(_ data: Value, _ spec: Value, _ injdef: Injection? = nil) 
   let errsMap = VMap()
   errsMap.entries[S_DERRS] = .list(errs)
   let store = merge(.list([.map(base), .map(extraTransforms), .map(errsMap)]), 1)
-  let out = inject(spec, store, injdef)
-  if errs.items.count > 0 && !collect {
-    // Throw via fatalError isn't ideal — use a token to signal upstream.
-    // For now, leave errs accumulated in the injdef if collected.
-  }
-  return out
+  return inject(spec, store, injdef)
 }
