@@ -333,6 +333,22 @@
                     (h-op h :path "/w") (h-op h :path "/w")
                     (t/is-eq (count @calls) 2 "two calls")
                     (t/is-eq (mget (h-track h "_cache") "bypass") 2 "bypass"))))
+    (check "cache-passes-a-body-that-declares-another-type-than-json-by-unread" "cache"
+           (fn [] (let [sent (atom [])
+                        [server calls] (recording-server
+                                        (fn [_n _fd]
+                                          (let [res (make-response 200 nil (vs/jm "content-type" "audio/wav"))]
+                                            (swap! sent conj res)
+                                            [res nil])))
+                        h (make-harness [(fspec "cache")] :server server)
+                        a (h-op h :path "/w/1/audio") b (h-op h :path "/w/1/audio")
+                        ;; The harness rebuilds the response; its json fn is carried as given.
+                        handed (fn [r i] (identical? (:json @(core/oget (get r "ctx") :response))
+                                                     (vs/getprop (nth @sent i nil) "json")))]
+                    (t/is-eq (count @calls) 2 "the body was stored")
+                    (t/is-true (handed a 0) "the cache handed on a copy it had read")
+                    (t/is-true (handed b 1) "the second read was handed on as returned")
+                    (t/is-eq (mget (h-track h "_cache") "bypass") 2 "bypass"))))
     (check "cache-refetches-after-ttl" "cache"
            (fn [] (let [c (make-clock)
                         [server calls] (recording-server nil)

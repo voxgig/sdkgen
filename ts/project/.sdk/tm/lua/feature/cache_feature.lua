@@ -10,6 +10,7 @@
 -- body so both the original caller and later hits can parse repeatedly.
 
 local BaseFeature = require("feature.base_feature")
+local media = require("utility.media")
 
 local CacheFeature = {}
 CacheFeature.__index = CacheFeature
@@ -85,6 +86,12 @@ function CacheFeature:_through(ctx, fullurl, fetchdef, inner)
 
   local res, err = inner(ctx, fullurl, fetchdef)
 
+  -- A body that declares another type than JSON passes by, unread.
+  if self:_cacheable(res, err) and not self:_json(res) then
+    self:_track("bypass")
+    return res, err
+  end
+
   if self:_cacheable(res, err) then
     local snapshot = self:_snapshot(res)
     local ttl = self.options["ttl"] == nil and 5000 or self.options["ttl"]
@@ -109,6 +116,19 @@ function CacheFeature:_cacheable(res, err)
   end
   local status = res["status"]
   return type(status) == "number" and status >= 200 and status < 300
+end
+
+
+function CacheFeature:_json(res)
+  local ctype = ""
+  if type(res["headers"]) == "table" then
+    for k, v in pairs(res["headers"]) do
+      if type(k) == "string" and string.lower(k) == "content-type" then
+        ctype = tostring(v)
+      end
+    end
+  end
+  return ctype == "" or media.is_json_media(ctype)
 end
 
 

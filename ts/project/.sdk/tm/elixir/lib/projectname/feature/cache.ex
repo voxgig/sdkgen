@@ -60,16 +60,23 @@ defmodule ProjectName.Feature.Cache do
       else
         {res, err} = inner.(ctx, url, fetchdef)
 
-        if err == nil and cacheable(res) do
-          snap = snapshot(res)
-          ttl = case S.getprop(opts, "ttl") do nil -> 5000; v -> v end
-          evict(f)
-          S.setprop(store, key, S.jm(["expiry", now + ttl, "snapshot", snap]))
-          track(f, "miss")
-          {replay(snap), nil}
-        else
-          track(f, "bypass")
-          {res, err}
+        cond do
+          # A body that declares another type than JSON passes by, unread.
+          err == nil and cacheable(res) and not json?(res) ->
+            track(f, "bypass")
+            {res, err}
+
+          err == nil and cacheable(res) ->
+            snap = snapshot(res)
+            ttl = case S.getprop(opts, "ttl") do nil -> 5000; v -> v end
+            evict(f)
+            S.setprop(store, key, S.jm(["expiry", now + ttl, "snapshot", snap]))
+            track(f, "miss")
+            {replay(snap), nil}
+
+          true ->
+            track(f, "bypass")
+            {res, err}
         end
       end
     end
@@ -88,6 +95,21 @@ defmodule ProjectName.Feature.Cache do
         status >= 200 and status < 300
       end
     end
+  end
+
+  defp json?(res) do
+    headers = S.getprop(res, "headers")
+
+    type =
+      if S.ismap(headers) do
+        Enum.find_value(H.entries(headers), "", fn {k, v} ->
+          if String.downcase(to_string(k)) == "content-type", do: to_string(v)
+        end)
+      else
+        ""
+      end
+
+    type == "" or ProjectName.Utility.json_media?(type)
   end
 
   defp snapshot(res) do

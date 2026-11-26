@@ -481,6 +481,14 @@
         cacheable? (fn [res] (and (vs/ismap res)
                                   (not (true? (vs/getprop res "unreadable")))
                                   (let [s (vs/getprop res "status")] (and (number? s) (>= s 200) (< s 300)))))
+        json? (fn [res]
+                (let [h (vs/getprop res "headers")
+                      type (or (when (vs/ismap h)
+                                 (some (fn [item] (when (= "content-type" (str/lower-case (str (vs/getprop item 0))))
+                                                    (str (vs/getprop item 1))))
+                                       (or (vs/items h) [])))
+                               "")]
+                  (or (= "" type) (core/json-media? type))))
         snapshot (fn [res]
                    (let [jf (vs/getprop res "json")
                          data (when (fn? jf) (try (jf) (catch Throwable _ nil)))
@@ -509,14 +517,20 @@
                         (if (and (some? hit) (> (mget hit "expiry") now))
                           (do (track! "hit") [(replay (mget hit "snapshot")) nil])
                           (let [[res err] (inner ctx url fetchdef)]
-                            (if (and (nil? err) (cacheable? res))
+                            (cond
+                              ;; A body that declares another type than JSON passes by, unread.
+                              (and (nil? err) (cacheable? res) (not (json? res)))
+                              (do (track! "bypass") [res err])
+
+                              (and (nil? err) (cacheable? res))
                               (let [snap (snapshot res)
                                     ttl (opt fa "ttl" 5000)]
                                 (evict!)
                                 (swap! fa update :store assoc key (vs/jm "expiry" (+ now ttl) "snapshot" snap))
                                 (track! "miss")
                                 [(replay snap) nil])
-                              (do (track! "bypass") [res err]))))))))]
+
+                              :else (do (track! "bypass") [res err]))))))))]
     (swap! fa assoc
            "init" (fn [ctx options]
                     (swap! fa assoc :client (core/oget ctx :client)
