@@ -2021,22 +2021,22 @@
             [(str to) hop]))))))
 
 ;; java.net.http has no hook on a redirect, so the hops its NORMAL policy took
-;; are taken here. Each passes the GET-only guard; at the limit, which counts
-;; requests as the client's did, the 3xx is the answer.
+;; are taken here. Each passes the GET-only guard; past the last hop allowed,
+;; the 3xx is the answer.
 (defn- follow-redirects [ctx fullurl fetchdef]
   (let [manual (= "manual" (vs/getprop fetchdef "redirect"))
         ^java.util.Map given (if (vs/ismap fetchdef) fetchdef {})]
     (loop [url fullurl
            fdef (doto (java.util.LinkedHashMap. given) (.put "redirect" "manual"))
-           sent 1]
+           hops 0]
       (let [[res err :as answer] (default-http-fetch url fdef)
-            [next-url next-def :as hop] (when (and (nil? err) (not manual) (< sent REDIRECT-MAX))
+            [next-url next-def :as hop] (when (and (nil? err) (not manual) (< hops REDIRECT-MAX))
                                           (next-hop ctx url fdef res))
             refused (when hop (getonly-refusal ctx next-url (vs/getprop next-def "method")))]
         (cond
           (nil? hop) answer
           refused [nil refused]
-          :else (recur next-url next-def (inc sent)))))))
+          :else (recur next-url next-def (inc hops)))))))
 
 (defn u-fetcher [ctx fullurl fetchdef]
   (let [client (oget ctx :client)]
