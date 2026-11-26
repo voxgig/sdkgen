@@ -1063,8 +1063,8 @@ fn opts(allow: Value) Value {
 }
 
 test "allow probe" {
-    const a = sdk.SDK.new(opts(h.jo(&.{ .{ "method", h.vstr("PUT,\n get") }, .{ "op", h.vstr("direct,load") } })));
-    const b = sdk.SDK.new(opts(h.jo(&.{.{ "op", h.vstr("indirect,reload") }})));
+    const a = sdk.SDK.new(opts(h.jo(&.{ .{ "method", h.vstr("PUT,\n get") }, .{ "op", h.vstr("direct,load") } }))).ok;
+    const b = sdk.SDK.new(opts(h.jo(&.{.{ "op", h.vstr("indirect,reload") }}))).ok;
 
     for ([_][]const u8{ "get", "POST", "PU" }) |method| {
         const name = std.fmt.allocPrint(h.A(), "prepare {s}", .{method}) catch unreachable;

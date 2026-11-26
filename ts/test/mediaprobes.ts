@@ -1358,7 +1358,7 @@ test "media probe" {
         });
         const headers = h.getp(c, "headers");
         if (headers == .object) h.setp(opts, "headers", headers);
-        const client = sdk.SDK.new(opts);
+        const client = sdk.SDK.new(opts).ok;
         const data = h.clone(h.getp(c, "input"));
         const hex = h.getp(c, "bodyHex");
         if (hex == .string) h.setp(data, "$body", h.vstr(unhex(hex.string)));

@@ -1290,7 +1290,7 @@ test "nonjson probe" {
         });
         const agent = h.getp(c, "agent");
         if (agent == .string) h.setp(opts, "headers", h.jo(&.{.{ "user-agent", agent }}));
-        const client = sdk.SDK.new(opts);
+        const client = sdk.SDK.new(opts).ok;
         switch (client.cat(vnull()).list(h.omap(), h.omap())) {
             .ok => report("probe", name, "ok", null),
             .err => |e| report("probe", name, e.code, e.msg),
@@ -1309,7 +1309,7 @@ test "nonjson probe" {
             .{ "feature", h.jo(&.{.{ "cache", h.jo(&.{.{ "active", h.vbool(true) }}) }}) },
         });
         if (agent == .string) h.setp(copts, "headers", h.jo(&.{.{ "user-agent", agent }}));
-        const cached = sdk.SDK.new(copts);
+        const cached = sdk.SDK.new(copts).ok;
         for ([_][]const u8{ "cache1", "cache2" }) |path| {
             switch (cached.cat(vnull()).list(h.omap(), h.omap())) {
                 .ok => report(path, name, "ok", null),

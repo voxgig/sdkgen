@@ -128,9 +128,12 @@ ${testModeExample}
 Override the base URL to reach a local or staging server:
 
 \`\`\`zig
-const client = sdk.${model.const.Name}SDK.new(h.jo(&.{
+const client = switch (sdk.${model.const.Name}SDK.new(h.jo(&.{
     .{ "base", h.vstr("http://localhost:8080") },
-}));
+}))) {
+    .ok => |c| c,
+    .err => |e| std.debug.panic("{s}", .{e.msg}),
+};
 \`\`\`
 
 ### Run the test suite

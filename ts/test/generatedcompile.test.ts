@@ -6808,6 +6808,13 @@ const SERVER_LANES: ServerLane[] = [
     ],
   },
   {
+    target: 'zig',
+    runner: 'test/server_variable_test.zig',
+    needs: 'zig 0.16',
+    command: () => zigTest('server variable:'),
+    ran: [/\b3\/3 tests passed/],
+  },
+  {
     target: 'kotlin',
     runner: 'test/ServerVariableTest.kt',
     needs: 'gradle (which resolves the Kotlin plugin from the network)',

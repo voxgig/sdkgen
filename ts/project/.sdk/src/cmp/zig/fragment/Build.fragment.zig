@@ -65,6 +65,7 @@ pub fn build(b: *std.Build) void {
         "test/primary_utility_test.zig",
         "test/gotcha_test.zig",
         "test/omnismoke_test.zig",
+        "test/server_variable_test.zig",
     };
 
     for (test_files) |tf| {
