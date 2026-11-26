@@ -35,6 +35,7 @@ const ReadmeTopQuick = cmp(function ReadmeTopQuick(props: any) {
   const svars = fact(model.main[KIT], 'server').filter((v: any) => v.required)
   const ctorFields = [
     ...(authActive ? [`.{ "apikey", h.vstr(init.environ_map.get("${envName(model)}_APIKEY") orelse "") },`] : []),
+    ...(fact(model.main[KIT], 'auth').secret ? [`.{ "secret", h.vstr(init.environ_map.get("${envName(model)}_SECRET") orelse "") },`] : []),
     ...(0 === svars.length ? [] : [`.{ "server", h.jo(&.{ ` +
       svars.map((v: any) => `.{ "${v.name}", h.vstr("<${v.name}>") }`).join(', ') + ` }) },`]),
   ]

@@ -1,5 +1,6 @@
 
 import {
+  KIT,
   Model,
   ModelEntity,
   nom,
@@ -26,6 +27,7 @@ import {
   liveEntity,
   liveDirectGetOnly, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
   liveDirectDiscovery,
+  fact,
 } from '@voxgig/sdkgen'
 
 
@@ -99,11 +101,12 @@ const TestDirect = cmp(function TestDirect(props: any) {
   const PROJECTNAME = envName(model)
 
   const authActive = isAuthActive(model)
+  const authSecret = authActive && fact(model.main[KIT], 'auth').secret
   const apikeyEnvEntry = authActive
-    ? `\n        "${PROJECTNAME}_APIKEY": "",`
+    ? `\n        "${PROJECTNAME}_APIKEY": "",${authSecret ? `\n        "${PROJECTNAME}_SECRET": "",` : ''}`
     : ''
   const apikeyLiveField = authActive
-    ? `\n            "apikey": env.get("${PROJECTNAME}_APIKEY"),`
+    ? `\n            "apikey": env.get("${PROJECTNAME}_APIKEY"),${authSecret ? `\n            "secret": env.get("${PROJECTNAME}_SECRET"),` : ''}`
     : ''
 
   // A templated server URL (OpenAPI server variables) makes a LIVE client

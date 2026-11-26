@@ -46,6 +46,9 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   const apikeyOptionRow = isAuthActive(model)
     ? '| `"apikey"` | `string` | API key for authentication. |\n'
     : ''
+  const secretOptionRow = fact(model.main[KIT], 'auth').secret
+    ? '| `"secret"` | `string` | API secret for authentication. |\n'
+    : ''
 
   // Illustrate the Result shape with the first entity that ACTUALLY exposes an
   // op — never fabricate a `Load` on an op-less first entity (e.g. Cloudsmith's
@@ -94,7 +97,7 @@ Creates a new SDK client.
 
 | Option | Type | Description |
 | --- | --- | --- |
-${apikeyOptionRow}| \`"base"\` | \`string\` | Base URL of the API server. |
+${apikeyOptionRow}${secretOptionRow}| \`"base"\` | \`string\` | Base URL of the API server. |
 | \`"prefix"\` | \`string\` | URL path prefix prepended to all requests. |
 | \`"suffix"\` | \`string\` | URL path suffix appended to all requests. |
 | \`"feature"\` | \`map[string]any\` | Feature activation flags. |

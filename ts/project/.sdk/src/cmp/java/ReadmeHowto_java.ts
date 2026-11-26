@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, entityIdField, pickExampleEntity, requiredItems, javaMapOf, matchExampleItems, javaMapItems, requestExampleItems, envLocalAt, cdTarget } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, entityIdField, pickExampleEntity, requiredItems, javaMapOf, matchExampleItems, javaMapItems, requestExampleItems, envLocalAt, cdTarget, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -64,7 +64,7 @@ System.out.println(${eVar}.data());`
 System.out.println(result);`
 
   const apikeyEnvLine = isAuthActive(model)
-    ? `\n${envName(model)}_APIKEY=<your-key>`
+    ? `\n${envName(model)}_APIKEY=<your-key>${fact(model.main[KIT], 'auth').secret ? `\n${envName(model)}_SECRET=<your-secret>` : ''}`
     : ''
 
   Content(`### Make a direct HTTP request

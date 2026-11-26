@@ -1,4 +1,4 @@
-import { flowSteps, opReachable, invalidRequest, flowLoadRoute, flowLoadReadsRecord } from '@voxgig/sdkgen'
+import { flowSteps, opReachable, invalidRequest, flowLoadRoute, flowLoadReadsRecord, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -136,11 +136,12 @@ const TestEntity = cmp(function TestEntity(props: any) {
   const ENTUPPER = envToken(entity.name)
 
   const authActive = isAuthActive(model)
+  const authSecret = authActive && fact(model.main[KIT], 'auth').secret
   const apikeyEnvEntry = authActive
-    ? `\n        ("${PROJUPPER}_APIKEY", Value::str("")),`
+    ? `\n        ("${PROJUPPER}_APIKEY", Value::str("")),${authSecret ? `\n        ("${PROJUPPER}_SECRET", Value::str("")),` : ''}`
     : ''
   const apikeyLiveField = authActive
-    ? `("apikey", getp(&env, "${PROJUPPER}_APIKEY"))`
+    ? `("apikey", getp(&env, "${PROJUPPER}_APIKEY"))${authSecret ? `, ("secret", getp(&env, "${PROJUPPER}_SECRET"))` : ''}`
     : ''
 
   const svars = serverVariables(model)

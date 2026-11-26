@@ -90,7 +90,7 @@ Create a new SDK client instance.
 | Name | Type | Description |
 | --- | --- | --- |
 | \`options\` | \`dict\` | SDK configuration options. |
-${isAuthActive(model) ? '| \`options["apikey"]\` | \`str\` | API key for authentication. |\n' : ''}| \`options["base"]\` | \`str\` | Base URL for API requests. |
+${isAuthActive(model) ? '| \`options["apikey"]\` | \`str\` | API key for authentication. |\n' : ''}${fact(model.main[KIT], 'auth').secret ? '| \`options["secret"]\` | \`str\` | API secret for authentication. |\n' : ''}| \`options["base"]\` | \`str\` | Base URL for API requests. |
 | \`options["prefix"]\` | \`str\` | URL prefix appended after base. |
 | \`options["suffix"]\` | \`str\` | URL suffix appended after path. |
 | \`options["headers"]\` | \`dict\` | Custom headers for all requests. |

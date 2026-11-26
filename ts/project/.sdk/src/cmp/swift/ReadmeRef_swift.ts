@@ -96,7 +96,7 @@ Create a new SDK client instance. \`options\` is a \`VMap\` of \`Value\`.
 | Name | Type | Description |
 | --- | --- | --- |
 | \`options\` | \`VMap\` | SDK configuration options. |
-${isAuthActive(model) ? '| \`options["apikey"]\` | \`String\` | API key for authentication. |\n' : ''}| \`options["base"]\` | \`String\` | Base URL for API requests. |
+${isAuthActive(model) ? '| \`options["apikey"]\` | \`String\` | API key for authentication. |\n' : ''}${fact(model.main[KIT], 'auth').secret ? '| \`options["secret"]\` | \`String\` | API secret for authentication. |\n' : ''}| \`options["base"]\` | \`String\` | Base URL for API requests. |
 | \`options["prefix"]\` | \`String\` | URL prefix appended after base. |
 | \`options["suffix"]\` | \`String\` | URL suffix appended after path. |
 | \`options["headers"]\` | \`VMap\` | Custom headers for all requests. |

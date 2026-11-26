@@ -53,6 +53,9 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   const apikeyOptionRow = isAuthActive(model)
     ? '| `apikey` | `string` | API key for authentication. |\n'
     : ''
+  const secretOptionRow = fact(model.main[KIT], 'auth').secret
+    ? '| `secret` | `string` | API secret for authentication. |\n'
+    : ''
 
   Content(`### ${model.const.Name}SDK
 
@@ -65,7 +68,7 @@ Creates a new SDK client.
 
 | Option | Type | Description |
 | --- | --- | --- |
-${apikeyOptionRow}| \`base\` | \`string\` | Base URL of the API server. |
+${apikeyOptionRow}${secretOptionRow}| \`base\` | \`string\` | Base URL of the API server. |
 | \`prefix\` | \`string\` | URL path prefix prepended to all requests. |
 | \`suffix\` | \`string\` | URL path suffix appended to all requests. |
 | \`feature\` | \`table\` | Feature activation flags. |

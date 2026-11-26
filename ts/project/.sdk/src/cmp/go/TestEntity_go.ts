@@ -1,4 +1,4 @@
-import { flowSteps, opReachable } from '@voxgig/sdkgen'
+import { flowSteps, opReachable, fact } from '@voxgig/sdkgen'
 
 import {
   flatten,
@@ -76,11 +76,12 @@ const TestEntity = cmp(function TestEntity(props: any) {
   const PROJUPPER = envName(model)
 
   const authActive = isAuthActive(model)
+  const authSecret = authActive && fact(model.main[KIT], 'auth').secret
   const apikeyEnvEntry = authActive
-    ? `\n\t\t"${PROJUPPER}_APIKEY":         "",`
+    ? `\n\t\t"${PROJUPPER}_APIKEY":         "",${authSecret ? `\n\t\t"${PROJUPPER}_SECRET":         "",` : ''}`
     : ''
   const apikeyLiveField = authActive
-    ? `\n\t\t\t\t"apikey": env["${PROJUPPER}_APIKEY"],`
+    ? `\n\t\t\t\t"apikey": env["${PROJUPPER}_APIKEY"],${authSecret ? `\n\t\t\t\t"secret": env["${PROJUPPER}_SECRET"],` : ''}`
     : ''
 
 

@@ -35,12 +35,14 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   const svars = fact(model.main[KIT], 'server').filter((v: any) => v.required)
   const ctorFields = [
     ...(authActive ? [`{"apikey", Value(apikey ? apikey : "")},`] : []),
+    ...(fact(model.main[KIT], 'auth').secret ? [`{"secret", Value(secret ? secret : "")},`] : []),
     ...(0 === svars.length ? [] : [`{"server", vmap({` +
       svars.map((v: any) => `{"${v.name}", Value("<${v.name}>")}`).join(', ') + `})},`]),
   ]
   const ctor = 0 === ctorFields.length
     ? `auto client = ${Name}SDK::create();`
     : (authActive ? `const char* apikey = std::getenv("${envName(model)}_APIKEY");\n` : '') +
+      (fact(model.main[KIT], 'auth').secret ? `const char* secret = std::getenv("${envName(model)}_SECRET");\n` : '') +
       `auto client = std::make_shared<${Name}SDK>(vmap({${ctorFields.map((f: string) => '\n    ' + f).join('')}\n}));`
   const ctorIncludes = authActive
     ? `#include <cstdlib>

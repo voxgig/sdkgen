@@ -31,7 +31,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
     `\n        },`
 
   const ctor = authActive
-    ? `sdk.New${model.const.Name}SDK(map[string]any{\n        "apikey": os.Getenv("${envName(model)}_APIKEY"),${goServerField}\n    })`
+    ? `sdk.New${model.const.Name}SDK(map[string]any{\n        "apikey": os.Getenv("${envName(model)}_APIKEY"),${fact(model.main[KIT], 'auth').secret ? `\n        "secret": os.Getenv("${envName(model)}_SECRET"),` : ''}${goServerField}\n    })`
     : ('' === goServerField
       ? `sdk.New()`
       : `sdk.New${model.const.Name}SDK(map[string]any{${goServerField}\n    })`)

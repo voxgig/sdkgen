@@ -1806,16 +1806,17 @@ main: kit: target: js: phase: feature: active: false
 
   test('the go quick start indents its server block as its other keys', async () => {
     const readme = String((await generate(['go'], undefined, BASIC_TEMPLATED))['go/README.md'])
-    ok(/\n {8}"apikey": [^\n]*\n {8}"server": map\[string\]any\{\n {12}"tenant": "<tenant>",\n {8}\},/.test(readme),
+    ok(/\n {8}"apikey": [^\n]*\n( {8}"secret": [^\n]*\n)? {8}"server": map\[string\]any\{\n {12}"tenant": "<tenant>",\n {8}\},/.test(readme),
       readme.slice(readme.indexOf('"apikey"') - 80, readme.indexOf('"apikey"') + 200))
   })
 
   // PrepareAuth composes a Basic credential only with the key in the header.
-  test('the ts documents ask for a secret exactly where PrepareAuth reads one', async () => {
+  test('every target\'s documents ask for a secret exactly where PrepareAuth reads one', async () => {
+    const targets = allTargets().filter((t) => !NON_SDK_TARGETS.includes(t) && 'js' !== t)
     for (const [extra, wanted] of [[BASIC_TEMPLATED, true], [BASIC_QUERY, false]] as [string, boolean][]) {
-      const out = await generate(['ts'], undefined, extra)
-      for (const file of ['README.md', 'ts/README.md', 'ts/REFERENCE.md']) {
-        strictEqual(/secret[:?]|options\.secret|_SECRET/.test(String(out[file])), wanted, file + ', ' +
+      const out = await generate(targets, undefined, extra)
+      for (const file of ['README.md', ...targets.flatMap((t) => [t + '/README.md', t + '/REFERENCE.md'])]) {
+        strictEqual(/secret/i.test(String(out[file])), wanted, file + ', ' +
           (wanted ? 'Basic in the header' : 'Basic in the query'))
       }
     }

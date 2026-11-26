@@ -94,7 +94,7 @@ Create a new SDK client instance. \`options\` is an \`sdk::Value\` map.
 | Name | Type | Description |
 | --- | --- | --- |
 | \`options\` | \`Value\` | SDK configuration options (a map). |
-${isAuthActive(model) ? '| `options["apikey"]` | `std::string` | API key for authentication. |\n' : ''}| \`options["base"]\` | \`std::string\` | Base URL for API requests. |
+${isAuthActive(model) ? '| `options["apikey"]` | `std::string` | API key for authentication. |\n' : ''}${fact(model.main[KIT], 'auth').secret ? '| `options["secret"]` | `std::string` | API secret for authentication. |\n' : ''}| \`options["base"]\` | \`std::string\` | Base URL for API requests. |
 | \`options["prefix"]\` | \`std::string\` | URL prefix appended after base. |
 | \`options["suffix"]\` | \`std::string\` | URL suffix appended after path. |
 | \`options["headers"]\` | \`Value\` | Custom headers for all requests. |

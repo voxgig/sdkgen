@@ -33,7 +33,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
 
   const apikeyImport = authActive ? `import os\n` : ''
   const ctor = authActive
-    ? `${model.const.Name}SDK({\n    "apikey": os.environ.get("${envName(model)}_APIKEY"),${pyServerField}\n})`
+    ? `${model.const.Name}SDK({\n    "apikey": os.environ.get("${envName(model)}_APIKEY"),${fact(model.main[KIT], 'auth').secret ? `\n    "secret": os.environ.get("${envName(model)}_SECRET"),` : ''}${pyServerField}\n})`
     : ('' === pyServerField
       ? `${model.const.Name}SDK()`
       : `${model.const.Name}SDK({${pyServerField}\n})`)

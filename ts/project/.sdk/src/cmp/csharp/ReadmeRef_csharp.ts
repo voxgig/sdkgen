@@ -95,7 +95,7 @@ Create a new SDK client instance. \`options\` is a
 | Name | Type | Description |
 | --- | --- | --- |
 | \`options\` | \`Dictionary\` | SDK configuration options. |
-${isAuthActive(model) ? '| \`options["apikey"]\` | \`string\` | API key for authentication. |\n' : ''}| \`options["base"]\` | \`string\` | Base URL for API requests. |
+${isAuthActive(model) ? '| \`options["apikey"]\` | \`string\` | API key for authentication. |\n' : ''}${fact(model.main[KIT], 'auth').secret ? '| \`options["secret"]\` | \`string\` | API secret for authentication. |\n' : ''}| \`options["base"]\` | \`string\` | Base URL for API requests. |
 | \`options["prefix"]\` | \`string\` | URL prefix appended after base. |
 | \`options["suffix"]\` | \`string\` | URL suffix appended after path. |
 | \`options["headers"]\` | \`Dictionary\` | Custom headers for all requests. |

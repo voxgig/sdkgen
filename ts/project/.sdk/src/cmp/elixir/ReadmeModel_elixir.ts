@@ -34,6 +34,9 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   const apikeyOptionRow = isAuthActive(model)
     ? '| `apikey` | `String.t()` | API key for authentication. |\n'
     : ''
+  const secretOptionRow = fact(model.main[KIT], 'auth').secret
+    ? '| `secret` | `String.t()` | API secret for authentication. |\n'
+    : ''
 
   Content(`### ${Name}
 
@@ -46,7 +49,7 @@ native map with \`${Name}.Helpers.deep/1\`.
 
 | Option | Type | Description |
 | --- | --- | --- |
-${apikeyOptionRow}| \`base\` | \`String.t()\` | Base URL of the API server. |
+${apikeyOptionRow}${secretOptionRow}| \`base\` | \`String.t()\` | Base URL of the API server. |
 | \`prefix\` | \`String.t()\` | URL path prefix prepended to all requests. |
 | \`suffix\` | \`String.t()\` | URL path suffix appended to all requests. |
 | \`feature\` | \`map()\` | Feature activation flags. |

@@ -50,6 +50,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   const svars = fact(model.main[KIT], 'server').filter((v: any) => v.required)
   const ctorFields = [
     ...(authActive ? [`"apikey" to System.getenv("${envName(model)}_APIKEY"),`] : []),
+    ...(fact(model.main[KIT], 'auth').secret ? [`"secret" to System.getenv("${envName(model)}_SECRET"),`] : []),
     ...(0 === svars.length ? [] : [`"server" to mutableMapOf<String, Any?>(` +
       svars.map((v: any) => `"${v.name}" to "<${v.name}>"`).join(', ') + `),`]),
   ]

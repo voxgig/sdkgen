@@ -103,7 +103,7 @@ Create a new SDK client instance. \`options\` is a \`voxgig.struct\` map.
 
 | Key | Type | Description |
 | --- | --- | --- |
-${isAuthActive(model) ? '| `apikey` | `string` | API key for authentication. |\n' : ''}| \`base\` | \`string\` | Base URL for API requests. |
+${isAuthActive(model) ? '| `apikey` | `string` | API key for authentication. |\n' : ''}${fact(model.main[KIT], 'auth').secret ? '| `secret` | `string` | API secret for authentication. |\n' : ''}| \`base\` | \`string\` | Base URL for API requests. |
 | \`prefix\` | \`string\` | URL prefix appended after base. |
 | \`suffix\` | \`string\` | URL suffix appended after path. |
 | \`headers\` | \`map\` | Custom headers for all requests. |

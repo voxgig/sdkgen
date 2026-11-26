@@ -34,6 +34,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   const svars = fact(model.main[KIT], 'server').filter((v: any) => v.required)
   const ctorFields = [
     ...(authActive ? [`"apikey" => System.get_env("${envName(model)}_APIKEY")`] : []),
+    ...(fact(model.main[KIT], 'auth').secret ? [`"secret" => System.get_env("${envName(model)}_SECRET")`] : []),
     ...(0 === svars.length ? [] : [`"server" => %{` +
       svars.map((v: any) => `"${v.name}" => "<${v.name}>"`).join(', ') + `}`]),
   ]

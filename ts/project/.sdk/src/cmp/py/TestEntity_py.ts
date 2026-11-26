@@ -1,4 +1,4 @@
-import { flowSteps, opReachable, validateSeeds } from '@voxgig/sdkgen'
+import { flowSteps, opReachable, validateSeeds, fact } from '@voxgig/sdkgen'
 
 import {
   flatten,
@@ -120,11 +120,12 @@ const TestEntity = cmp(function TestEntity(props: any) {
   const PROJUPPER = envName(model)
 
   const authActive = isAuthActive(model)
+  const authSecret = authActive && fact(model.main[KIT], 'auth').secret
   const apikeyEnvEntry = authActive
-    ? `\n        "${PROJUPPER}_APIKEY": "",`
+    ? `\n        "${PROJUPPER}_APIKEY": "",${authSecret ? `\n        "${PROJUPPER}_SECRET": "",` : ''}`
     : ''
   const apikeyLiveField = authActive
-    ? `\n                "apikey": env.get("${PROJUPPER}_APIKEY"),`
+    ? `\n                "apikey": env.get("${PROJUPPER}_APIKEY"),${authSecret ? `\n                "secret": env.get("${PROJUPPER}_SECRET"),` : ''}`
     : ''
 
   // A templated server URL (OpenAPI server variables) makes a LIVE client

@@ -1,5 +1,6 @@
 
 import {
+  KIT,
   Model,
   ModelEntity,
   nom,
@@ -26,6 +27,7 @@ import {
   liveEntity,
   liveDirectGetOnly, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
   liveDirectDiscovery,
+  fact,
 } from '@voxgig/sdkgen'
 
 
@@ -105,6 +107,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
   const SDK = model.const.Name + 'SDK'
 
   const authActive = isAuthActive(model)
+  const authSecret = authActive && fact(model.main[KIT], 'auth').secret
 
 
   // A templated server URL (OpenAPI server variables) makes a LIVE client
@@ -540,7 +543,7 @@ ${loadSkipBlock}    if (setup.live) {
     Map<String, Object> envm = new LinkedHashMap<>();
     envm.put("${entidEnvVar}", new LinkedHashMap<>());
     envm.put("${PROJECTNAME}_TEST_LIVE", "FALSE");
-${authActive ? `    envm.put("${PROJECTNAME}_APIKEY", "");\n` : ''}${serverEnvEntry}    Map<String, Object> env = RunnerSupport.envOverride(envm);
+${authActive ? `    envm.put("${PROJECTNAME}_APIKEY", "");\n` : ''}${authSecret ? `    envm.put("${PROJECTNAME}_SECRET", "");\n` : ''}${serverEnvEntry}    Map<String, Object> env = RunnerSupport.envOverride(envm);
 
     boolean live = "TRUE".equals(env.get("${PROJECTNAME}_TEST_LIVE"));
 
@@ -552,7 +555,7 @@ ${authActive ? `    envm.put("${PROJECTNAME}_APIKEY", "");\n` : ''}${serverEnvEn
       // client; the generated fields below overwrite anything they name.
       Map<String, Object> mergedOpts =
           new LinkedHashMap<>(RunnerSupport.liveClientOptions());
-${authActive ? `      mergedOpts.put("apikey", env.get("${PROJECTNAME}_APIKEY"));\n` : ''}${serverLiveField}      setup.client = new ${SDK}(mergedOpts);
+${authActive ? `      mergedOpts.put("apikey", env.get("${PROJECTNAME}_APIKEY"));\n` : ''}${authSecret ? `      mergedOpts.put("secret", env.get("${PROJECTNAME}_SECRET"));\n` : ''}${serverLiveField}      setup.client = new ${SDK}(mergedOpts);
       setup.live = true;
 
       Map<String, Object> idmap = new LinkedHashMap<>();

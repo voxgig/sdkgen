@@ -93,7 +93,7 @@ Create a new SDK client instance. \`options\` is a \`MutableMap<String, Any?>\`.
 | Name | Type | Description |
 | --- | --- | --- |
 | \`options\` | \`Map\` | SDK configuration options. |
-${isAuthActive(model) ? '| \`options["apikey"]\` | \`String\` | API key for authentication. |\n' : ''}| \`options["base"]\` | \`String\` | Base URL for API requests. |
+${isAuthActive(model) ? '| \`options["apikey"]\` | \`String\` | API key for authentication. |\n' : ''}${fact(model.main[KIT], 'auth').secret ? '| \`options["secret"]\` | \`String\` | API secret for authentication. |\n' : ''}| \`options["base"]\` | \`String\` | Base URL for API requests. |
 | \`options["prefix"]\` | \`String\` | URL prefix appended after base. |
 | \`options["suffix"]\` | \`String\` | URL suffix appended after path. |
 | \`options["headers"]\` | \`Map\` | Custom headers for all requests. |

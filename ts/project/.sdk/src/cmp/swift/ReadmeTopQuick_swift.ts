@@ -46,6 +46,7 @@ ${authActive ? 'import Foundation\n' : ''}
   const svars = fact(model.main[KIT], 'server').filter((v: any) => v.required)
   const ctorLines = [
     ...(authActive ? [`options.entries["apikey"] = .string(\n    ProcessInfo.processInfo.environment["${envName(model)}_APIKEY"] ?? "")`] : []),
+    ...(fact(model.main[KIT], 'auth').secret ? [`options.entries["secret"] = .string(\n    ProcessInfo.processInfo.environment["${envName(model)}_SECRET"] ?? "")`] : []),
     ...(0 === svars.length ? [] : ['let server = VMap()',
       ...svars.map((v: any) => `server.entries["${v.name}"] = .string("<${v.name}>")`),
       'options.entries["server"] = .map(server)']),

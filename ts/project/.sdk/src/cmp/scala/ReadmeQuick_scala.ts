@@ -37,6 +37,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   const svars = fact(model.main[KIT], 'server').filter((v: any) => v.required)
   const ctorLines = [
     ...(authActive ? [`options.put("apikey", System.getenv("${envName(model)}_APIKEY"))`] : []),
+    ...(fact(model.main[KIT], 'auth').secret ? [`options.put("secret", System.getenv("${envName(model)}_SECRET"))`] : []),
     ...(0 === svars.length ? [] : ['val server = new java.util.LinkedHashMap[String, Object]()',
       ...svars.map((v: any) => `server.put("${v.name}", "<${v.name}>")`), 'options.put("server", server)']),
   ]

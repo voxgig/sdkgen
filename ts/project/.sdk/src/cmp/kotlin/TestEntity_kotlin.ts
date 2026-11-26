@@ -1,4 +1,4 @@
-import { flowSteps, opReachable, invalidRequest, flowLoadRoute, flowLoadReadsRecord } from '@voxgig/sdkgen'
+import { flowSteps, opReachable, invalidRequest, flowLoadRoute, flowLoadReadsRecord, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -136,6 +136,7 @@ const TestEntity = cmp(function TestEntity(props: any) {
   const accessor = kotlinVarName(entity.name)
 
   const authActive = isAuthActive(model)
+  const authSecret = authActive && fact(model.main[KIT], 'auth').secret
 
   const idnames = buildIdNames(entity, basicflow)
 
@@ -347,7 +348,7 @@ ${fixtureIdentity(entity)}
       envm["${entidEnvVar}"] = idmap
       envm["${PROJUPPER}_TEST_LIVE"] = "FALSE"
       envm["${PROJUPPER}_TEST_EXPLAIN"] = "FALSE"
-${authActive ? `      envm["${PROJUPPER}_APIKEY"] = "NONE"\n` : ''}      val env = RunnerSupport.envOverride(envm)
+${authActive ? `      envm["${PROJUPPER}_APIKEY"] = "NONE"\n` : ''}${authSecret ? `      envm["${PROJUPPER}_SECRET"] = "NONE"\n` : ''}      val env = RunnerSupport.envOverride(envm)
 
       var idmapResolved = Helpers.toMapAny(env["${entidEnvVar}"])
       if (idmapResolved == null) {
@@ -367,7 +368,7 @@ ${authActive ? `      envm["${PROJUPPER}_APIKEY"] = "NONE"\n` : ''}      val env
       val live = "TRUE" == env["${PROJUPPER}_TEST_LIVE"]
       if (live) {
         val liveOpts = linkedMapOf<String, Any?>()
-${authActive ? `        liveOpts["apikey"] = env["${PROJUPPER}_APIKEY"]\n` : ''}        val mergedOpts = Struct.merge(Struct.jt(liveOpts, extra))
+${authActive ? `        liveOpts["apikey"] = env["${PROJUPPER}_APIKEY"]\n` : ''}${authSecret ? `        liveOpts["secret"] = env["${PROJUPPER}_SECRET"]\n` : ''}        val mergedOpts = Struct.merge(Struct.jt(liveOpts, extra))
         client = ${SDK}(Helpers.toMapAny(mergedOpts))
       }
 

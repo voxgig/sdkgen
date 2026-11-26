@@ -70,7 +70,7 @@ native map with \`${Name}.Helpers.deep/1\`.
 
 | Name | Type | Description |
 | --- | --- | --- |
-${isAuthActive(model) ? '| `apikey` | `String.t()` | API key for authentication. |\n' : ''}| \`base\` | \`String.t()\` | Base URL for API requests. |
+${isAuthActive(model) ? '| `apikey` | `String.t()` | API key for authentication. |\n' : ''}${fact(model.main[KIT], 'auth').secret ? '| `secret` | `String.t()` | API secret for authentication. |\n' : ''}| \`base\` | \`String.t()\` | Base URL for API requests. |
 | \`prefix\` | \`String.t()\` | URL prefix appended after base. |
 | \`suffix\` | \`String.t()\` | URL suffix appended after path. |
 | \`headers\` | \`map()\` | Custom headers for all requests. |
