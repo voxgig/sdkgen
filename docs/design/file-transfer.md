@@ -477,7 +477,7 @@ relaxing is legitimate, and a test that fails when it regresses.
 | S4 | **Disk and time are bounded.** A declared length must be met exactly. An undeclared one is capped by `maxBytes` | 1 GiB when undeclared (R12) | `shortlength` and unbounded-chunked faults |
 | S5 | **A credential goes to the API's origin and nowhere else.** A hop or URL on another origin carries no `authorization`, `cookie`, `proxy-authorization`, no header or query parameter `prepareAuth` placed, and none a secrets provider supplied (fixes H11) | Always | Second origin records what arrives; the test asserts no canary |
 | S6 | **A capability URL is a secret.** Presigned URLs, session URLs and resume tokens are registered with `clean` when the SDK first sees them (ADR-003, rule 1) | Always | The clean sweep, with a presigned canary |
-| S7 | **An upload never follows a redirect to another origin.** A 307 or 308 would re-send the body there | Refused unless the host is allow-listed | `redirect` fault on a `PUT` |
+| S7 | **An upload never follows a redirect to another origin.** A 307 or 308 would re-send the body there. Where the SDK cannot read where a redirect points, as in a browser, a request with a body refuses every redirect (R21) | Refused unless the host is allow-listed | `redirect` fault on a `PUT` |
 | S8 | **Other origins are policy.** A download may follow an https redirect to another origin, bare of credentials as S5 requires. No hop may downgrade from https; hops are capped; a `hosts` allow-list narrows or widens | As stated (R6) | `redirect` fault matrix |
 | S9 | **File bytes never reach a diagnostic.** In the spec, explain record, error, log, audit and telemetry a body is a placeholder: kind, and size and media type where known. Never the bytes, never a source (fixes H2) | No switch of its own. `clean.active: false`, the one opt-out of all cleaning, turns it off with the rest | The clean sweep gains a content canary: a marker in the file bytes, searched for in every string that leaves |
 | S10 | **A transfer is complete or it failed.** Bytes received must equal the declared length; a 206 must carry the `Content-Range` asked for | Always | `cut`, `shortlength` faults |
@@ -890,8 +890,13 @@ ruling of this document that the item answers.
 | Item | Work | Where | From |
 | --- | --- | --- | --- |
 | `p0-error-bytes` | A failed upload's bytes stay out of its error, its explain record and every log, in every target | sdkgen | H2, S9 |
-| `p0-binary-response` | One error, the same in every target, for a response that is not JSON | sdkgen | H3 |
+| `p0-binary-response` | One error, the same in every target, for a response that is not JSON, and a response that is bytes described in every diagnostic | sdkgen | H3, S9 |
 | `p0-redirect-credentials` | No credential the SDK placed follows a redirect to another origin, under whatever name the model gives it | sdkgen | H11, S5 |
+| `p0-browser-upload-redirect` | In a browser, a request with a body refuses every redirect, in `ts` and `js` | sdkgen | R21, S7 |
+| `p0-perl-hook-exception` | perl masks an exception a feature hook throws, as `rb` and `php` do | sdkgen | R22 |
+| `p0-clojure-hop-limit` | `clojure` follows five hops, as the other targets do | sdkgen | H11 |
+| `p0-exchange-redirect` | The secrets feature's token exchange follows no redirect, so its refresh token stays on its origin | sdkgen | S5, S7 |
+| `p0-perl-clean-copy` | perl's `clean` returns a copy of a value cleaned on its own, never the live object | sdkgen | S9 |
 | `p0-feature-claims` | `cache` passes a body that is not JSON by; `stream()` stops documenting an upload nothing sends | sdkgen | H4, H5 |
 | `p0-apidef-verb-noun` | A collection named for a verb keeps its plain create, in both ports | apidef | H9, A1 |
 | `p0-apidef-flow-files` | Basic flows leave file routes out until file steps exist, in both ports | apidef | H10, A2 |
@@ -954,7 +959,8 @@ ruling of this document that the item answers.
 ## 12. Rulings
 
 Every question the plan raised is ruled. R1 to R8 were given on
-2026-11-21, and the rest on 2026-11-23.
+2026-11-21, R9 to R19 on 2026-11-23, and R20 to R22 on 2026-11-25, on
+questions the security work of Phase 0 raised.
 
 | # | Question | Ruling | Gates |
 | --- | --- | --- | --- |
@@ -977,6 +983,9 @@ Every question the plan raised is ruled. R1 to R8 were given on
 | **R17** | Model vocabulary | `bn` on a point and `binary` in the guide, by R9; `session` on an entity, the default, which was not put to the maintainer | apidef A3, A4 |
 | **R18** | A download of an undeclared media type | Refused | Phase 2 |
 | **R19** | Which plugins a scaffolded project turns on | `stream`; and `fs` where the target has a filesystem; both written in the project's own model | Phase 2 |
+| **R20** | Whether `clean.active: false` also switches the description of bytes off | Yes. It is the one opt-out of all cleaning, and there is no switch for bytes alone | S9, ADR-006 |
+| **R21** | A redirect where the SDK cannot follow by hand, as in a browser | A request that carries a body refuses every redirect; one without a body is left to the platform | S7, `p0-browser-upload-redirect` |
+| **R22** | perl: an exception object a feature hook throws | Masked. The caller gets the SDK's error with the cleaned message, and the hook's own object as its cause | `p0-perl-hook-exception` |
 
 Three more rulings came with them:
 
