@@ -18,6 +18,7 @@ import {
   each,
   buildIdNames,
   getMatchEntries, entityRecordIdField,
+  isAuthActive,
 } from '@voxgig/sdkgen'
 
 
@@ -33,9 +34,9 @@ type GenCtx = {
 type OpGen = (ctx: GenCtx, step: ModelEntityFlowStep, index: number) => void
 
 
-// Generates <entity>_entity_test.cpp: the model-driven basic-flow test
-// (unit mode against the in-memory mock transport). Mirrors the rust/go
-// TestEntity generators.
+// Generates <entity>_entity_test.cpp: the model-driven basic-flow test, in
+// unit mode against the in-memory mock transport, or live through a client
+// built from the environment. Mirrors the rust/go TestEntity generators.
 const TestEntity = cmp(function TestEntity(props: any) {
   const ctx$ = props.ctx$
   const model: Model = ctx$.model
@@ -46,6 +47,17 @@ const TestEntity = cmp(function TestEntity(props: any) {
   const ProjectName = model.const.Name
   const ENVVAR = fact(model.main[KIT], 'env')
   const PROJUPPER = ENVVAR.prefix
+  const authActive = isAuthActive(model)
+  const authSecret = authActive && fact(model.main[KIT], 'auth').secret
+  const svars = fact(model.main[KIT], 'server')
+  const credEnvEntry = (authActive ? `,\n    {"${ENVVAR.apikey}", Value("")}` : '') +
+    (authSecret ? `,\n    {"${ENVVAR.secret}", Value("")}` : '')
+  const serverEnvEntry = svars
+    .map((v: any) => `,\n    {"${ENVVAR.server[v.name]}", Value(${JSON.stringify(v.dflt)})}`).join('')
+  const liveFields = (authActive ? `    map_put(liveopts, "apikey", getp(env, "${ENVVAR.apikey}"));\n` : '') +
+    (authSecret ? `    map_put(liveopts, "secret", getp(env, "${ENVVAR.secret}"));\n` : '') +
+    (0 === svars.length ? '' : `    map_put(liveopts, "server", vmap({${svars
+      .map((v: any) => `{${JSON.stringify(v.name)}, getp(env, "${ENVVAR.server[v.name]}")}`).join(', ')}}));\n`)
 
   const basicflow: ModelEntityFlow | undefined =
     getModelPath(model, `main.${KIT}.flow.Basic${nom(entity, 'Name')}Flow`)
@@ -114,7 +126,7 @@ ${fixtureIdentity(entity)}
   Value env = env_override(vmap({
     {"${ENVVAR.entid[entity.name]}", idmap},
     {"${ENVVAR.live}", Value("FALSE")},
-    {"${PROJUPPER}_TEST_EXPLAIN", Value("FALSE")}
+    {"${PROJUPPER}_TEST_EXPLAIN", Value("FALSE")}${credEnvEntry}${serverEnvEntry}
   }));
 
   Value idmap_resolved = Helpers::toMapAny(getp(env, "${ENVVAR.entid[entity.name]}"));
@@ -131,6 +143,13 @@ ${fixtureIdentity(entity)}
 
     Content(`
   bool live = getp(env, "${ENVVAR.live}") == Value("TRUE");
+  if (live) {
+    // sdk-test-control.json's test.client.options seeds the live client; the
+    // generated fields below overwrite anything they name.
+    Value liveopts = live_client_options();
+${liveFields}    client = std::make_shared<${ProjectName}SDK>(
+        Struct::merge(vlist({liveopts, extra.is_map() ? extra : vmap()})));
+  }
 
   ${entity.Name}Setup s;
   s.client = client;

@@ -80,10 +80,14 @@ it names read that from the environment or a gitignored `.env`.
 
 ## Target coverage
 
-Twelve targets carry the full live wiring — credential, server variables and
+Thirteen targets carry the full live wiring — credential, server variables and
 `test.client.options`:
 
-`ts`, `js`, `go`, `py`, `java`, `kotlin`, `php`, `rb`, `lua`, `rust`, `csharp`, `perl`
+`ts`, `js`, `go`, `py`, `java`, `kotlin`, `php`, `rb`, `lua`, `rust`, `csharp`, `perl`, `cpp`
+
+In `cpp` only the entity tests build a live client, and the SDK has no
+transport of its own, so that client sends nothing without a `system.fetch`:
+a live run fails at its first request with `fetch_no_transport`.
 
 The rest generate the mock suite only: they have no live client to configure,
 so those environment variables do nothing there. `ts/test/generate.test.ts`

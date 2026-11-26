@@ -83,16 +83,6 @@
     },
     {
       "relation": "parity",
-      "chain": "ReadmeHowto@cpp",
-      "cause": "servers",
-      "reason": "cpp's entity tests read the live flag but build no live client, so nothing reads a server variable and its live-test environment names none.",
-      "line": "",
-      "variations": [
-        "baseline"
-      ]
-    },
-    {
-      "relation": "parity",
       "chain": "ReadmeHowto@c",
       "cause": "auth",
       "reason": "c has no live test suite, so its how-to has no live-test environment to name the credential's variables in; its examples build their clients in test mode or from an explicit base URL.",

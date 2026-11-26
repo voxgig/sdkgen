@@ -74,6 +74,8 @@ std::cout << Struct::jsonify(result) << std::endl;`
   const apikeyEnvLine = isAuthActive(model)
     ? `\n${ENVVAR.apikey}=<your-key>${fact(model.main[KIT], 'auth').secret ? `\n${ENVVAR.secret}=<your-secret>` : ''}`
     : ''
+  const serverEnvLine = fact(model.main[KIT], 'server').filter((v: any) => v.required)
+    .map((v: any) => `\n${ENVVAR.server[v.name]}=<${v.name}>`).join('')
 
   Content(`### Make a direct HTTP request
 
@@ -134,8 +136,13 @@ You can seed the mock store by passing test options — see the generated
 Create a \`.env.local\` file ${envLocalAt(props.ctx$, target)}:
 
 \`\`\`
-${ENVVAR.live}=TRUE${apikeyEnvLine}
+${ENVVAR.live}=TRUE${apikeyEnvLine}${serverEnvLine}
 \`\`\`
+
+The SDK has no HTTP transport of its own: a client sends nothing until it
+is given a \`system.fetch\`. The entity tests build their live client from
+these variables without one, so a live run fails at its first request with
+\`fetch_no_transport\`.
 
 Then build and run the test suite:
 

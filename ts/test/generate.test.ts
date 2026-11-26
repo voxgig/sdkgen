@@ -1950,8 +1950,12 @@ main: kit: target: js: phase: feature: active: false
     async () => {
       const LIVE_TARGETS = [
         'ts', 'js', 'go', 'py', 'java', 'kotlin',
-        'php', 'rb', 'lua', 'rust', 'csharp', 'perl',
+        'php', 'rb', 'lua', 'rust', 'csharp', 'perl', 'cpp',
       ]
+      // cpp's direct tests run against a mock fetch alone.
+      const ENTITY_ONLY = ['cpp']
+      const liveFiles = (files: Record<string, string>, target: string) =>
+        testFiles(files, target).filter(([n]) => !ENTITY_ONLY.includes(target) || /entity/i.test(n))
 
       const servers =
         "main: kit: info: servers: [ { url: 'https://{tenant}.example.com/{region}'," +
@@ -1972,7 +1976,7 @@ main: kit: target: js: phase: feature: active: false
       const hostileOut = await generate(LIVE_TARGETS, undefined, hostile)
 
       for (const target of LIVE_TARGETS) {
-        const tests = testFiles(out, target)
+        const tests = liveFiles(out, target)
         if (0 === tests.length) {
           gaps.push(`${target}: generated no entity/direct test files`)
           continue
@@ -2006,7 +2010,7 @@ main: kit: target: js: phase: feature: active: false
       // Hostile spec: nothing may reach the output as a bare identifier or as
       // a JSON literal that the target language would reinterpret.
       for (const target of LIVE_TARGETS) {
-        for (const [name, content] of testFiles(hostileOut, target)) {
+        for (const [name, content] of liveFiles(hostileOut, target)) {
           const src = String(content)
 
           // A bare `2fa:` / `2fa =` key, or a bare `edge-zone` one, is a
