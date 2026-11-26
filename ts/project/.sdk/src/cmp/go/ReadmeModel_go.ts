@@ -156,9 +156,9 @@ ${resultCallExample}Only \`Direct()\` returns a response envelope — a \`map[st
 
     Content(`#### ${ent.Name}
 
-| Field | Description |
+${0 === fields.length ? '' : `| Field | Description |
 | --- | --- |
-`)
+`}`)
     each(fields, (field: any) => {
       Content(`| \`"${field.n}"\` | ${fact(model.main[KIT], 'field')[ent.name]?.[field.n]?.desc.cell ?? ''} |
 `)

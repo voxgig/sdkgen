@@ -62,6 +62,25 @@ main: kit: flow: BasicMissionFlow: {
 `
 
 
+// An entity with no field.
+const BEACON = `
+main: kit: entity: beacon: {
+  alias: field: {}
+  name: "beacon"
+  fields: {}
+  op: { list: { name: "list", points: [ {
+    g: {}, m: "GET", o: "/beacon", s: [{ lit: "beacon" }]
+    t: { req: "\`reqdata\`", res: "\`body\`" }
+  } ] } }
+}
+
+main: kit: flow: BasicBeaconFlow: {
+  entity: "beacon", kind: "basic", name: "BasicBeaconFlow"
+  step: [ { o: "list", i: { ref: "beacon_ref01", srcdatavar: "beacon_ref01_data", suffix: "_dt0" } } ]
+}
+`
+
+
 async function generated(extra = ''): Promise<Record<string, string>> {
   const { fs, vol } = memfs({})
   await SdkGen({ fs: layeredFs(fs), folder: STAGE, root: '', pino: makeLog() })
@@ -218,5 +237,15 @@ describe('operation-dependent prose', () => {
     }
     strictEqual(0 < named, true, 'no Operations line was read')
     strictEqual(defines(entitySource(files, 'py', 'planet'), 'Load'), false)
+  })
+
+
+  test('an entity with no field gets no field table', async () => {
+    const docs = await documents(BEACON)
+    const lines = Object.fromEntries(Object.entries(docs).map(([path, text]) =>
+      [path, text.split('\n').map((line: string) => ({ text: line, chain: '' }))]))
+    deepStrictEqual(emptyTables({ id: 'fieldless', files: docs, present: new Set(), on: {}, applies: {}, lines })
+      .map((f: any) => f.doc + ': ' + f.line), [])
+    strictEqual(TARGETS.every((t: string) => docs[t + '/README.md'].includes('#### Beacon')), true)
   })
 })
