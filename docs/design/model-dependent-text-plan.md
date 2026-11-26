@@ -1993,7 +1993,15 @@ which is not how memfs keys it there, and three generated into memfs after
 moving into the system temporary directory, which a Windows runner keeps on
 another drive than the stage. They now key files as the alias tests'
 `generated()` does, and work in a directory under the stage; only the runner
-can check them.
+can check them. Merging main's token-exchange and byte-response work (#524)
+brought tests that R3 had to adapt: the redirect test it added to the go,
+csharp, rust and zig secrets suites, which gate one test at a time, now opens
+with their gate, and the five clients it added to the go, rust, zig and c
+tests are built as WP40's constructors require. The nightly then showed two
+lanes reading output their tool does not print there: csharp's corpus step, on
+dotnet's detailed logger, looked for the minimal logger's summary, and zig's
+no-auth lane missed a summary the runners colour; both now read what the tool
+prints.
 
 **Left for later.**
 
