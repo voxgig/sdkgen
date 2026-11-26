@@ -88,6 +88,9 @@ read it; none of them computes it.
     in canonical order, action-only ones included, with no fallback. They sit
     outside the entities because the ts and js live tests print an entity
     whole into generated source.
+  - `main.kit.fact.sharedOps` (WP31): whether every active entity has the
+    same operations, so that one entity interface describes them all; false
+    when no entity is active.
   - `main.kit.fact.package`: the JVM package of java, kotlin and scala, and the
     Python package py and py-data import, which is jostraca's `Name` for the
     project lower-cased.

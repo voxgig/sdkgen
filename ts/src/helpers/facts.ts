@@ -88,6 +88,7 @@ function applyFacts(model: any): any {
   kit.fact.env.entid = Object.fromEntries(Object.keys(entity).map((name) =>
     [name, out.entity[name].fact.entid]))
   kit.fact.ops = entityOps(kit.entity)
+  kit.fact.sharedOps = sharedOps(kit.entity, kit.fact.ops)
   kit.fact.package = projectPackages(model)
   kit.fact.option = optionRows(kit.optspec)
   releaseTags(model)
@@ -173,6 +174,14 @@ function entityOps(entity: any): Record<string, string[]> {
     .filter(([, ent]) => isMap(ent))
     .map(([name, ent]: [string, any]) => [name, CANON_OP_ORDER.filter((op: string) =>
       isMap(ent.op?.[op]) && false !== ent.op[op].active)]))
+}
+
+
+// Whether every active entity has the same operations, so one interface
+// describes them all.
+function sharedOps(entity: any, ops: Record<string, string[]>): boolean {
+  const active = Object.keys(ops).filter((name: string) => false !== entity[name].active)
+  return 0 < active.length && active.every((name: string) => ops[name].join() === ops[active[0]].join())
 }
 
 

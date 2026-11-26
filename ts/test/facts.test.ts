@@ -453,6 +453,18 @@ describe('target, entity and project facts', () => {
     deepStrictEqual(ops.bare, [])
   })
 
+  test('sharedOps: every active entity has the same operations', () => {
+    const shared = (extra: string) => fact(makeModel(['ts'], undefined, extra).main[KIT], 'sharedOps')
+    const entities = Object.keys(makeModel([]).main[KIT].entity)
+    const only = (...keep: string[]) => entities.filter((e: string) => !keep.includes(e))
+      .map((e: string) => `main: kit: entity: ${e}: active: false`).join('\n')
+    strictEqual(shared(''), false)
+    strictEqual(shared(only('planet')), true)
+    strictEqual(shared(only('history', 'record', 'utility')), true)
+    strictEqual(shared(only('history', 'ambient')), false)
+    strictEqual(shared(only()), false)
+  })
+
   test('package: the JVM and Python package names of the project', () => {
     for (const [name, origin, jvm, py] of [
       ['demo', '', 'voxgig.demosdk', 'demo_sdk'],
