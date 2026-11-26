@@ -813,9 +813,10 @@ static void redirect_say(int c, const char* text) {
   }
 }
 
-// A forked listener. The token path of the origin answers `moved`; every
-// other request is written to `log` as one line and answered with a token.
-static pid_t redirect_serve(int fd, int log, const char* moved) {
+// A forked listener. The token path of the origin answers `moved`, with a
+// line to `count`; every other request is written to `log` as one line and
+// answered with a token.
+static pid_t redirect_serve(int fd, int log, int count, const char* moved) {
   fflush(NULL);
   pid_t pid = fork();
   if (0 != pid) return pid;
@@ -852,6 +853,7 @@ static pid_t redirect_serve(int fd, int log, const char* moved) {
       if ((size_t)(buf + n - body) < want) want = (size_t)(buf + n - body);
       body[want] = '\0';
       if (NULL != moved && 0 == strcmp(target, "/api/auth/token")) {
+        redirect_say(count, "x\n");
         redirect_say(c, moved);
       } else {
         char line[1024];
@@ -876,75 +878,104 @@ static int redirect_lines(int log, char* into, size_t size) {
   return lines;
 }
 
+enum { TO_MOVED, TO_AWAY, TO_MOVED_ABSOLUTE, TO_SELF };
+
+typedef struct {
+  voxgig_value* res;
+  char base[64];
+  char location[128];
+  char away[512];
+  char again[512];
+  int reached;
+  int after;
+  int exchanged;
+} RedirectRun;
+
+// One exchange, on a fresh client, against a fresh origin answering it with
+// `status` to `where`, and a fresh other origin.
+static void redirect_run(int status, int where, const char* redirect, RedirectRun* r) {
+  int port = 0;
+  int otherport = 0;
+  int fd = redirect_listener(&port);
+  int otherfd = redirect_listener(&otherport);
+  int elsewhere[2];
+  int beyond[2];
+  int count[2];
+  CHECK(0 <= fd && 0 <= otherfd && 0 == pipe(elsewhere) && 0 == pipe(beyond) &&
+        0 == pipe(count), "redirect: loopback listeners");
+
+  if (TO_AWAY == where) {
+    snprintf(r->location, sizeof(r->location), "http://127.0.0.1:%d/api/auth/token", otherport);
+  } else if (TO_MOVED_ABSOLUTE == where) {
+    snprintf(r->location, sizeof(r->location), "http://127.0.0.1:%d/api/moved/token", port);
+  } else {
+    snprintf(r->location, sizeof(r->location), TO_SELF == where ? "/api/auth/token" : "/api/moved/token");
+  }
+  char moved[256];
+  snprintf(moved, sizeof(moved), "HTTP/1.1 %d Moved\r\nLocation: %s\r\n"
+    "Content-Length: 0\r\nConnection: close\r\n\r\n", status, r->location);
+
+  pid_t origin = redirect_serve(fd, beyond[1], count[1], moved);
+  pid_t other = redirect_serve(otherfd, elsewhere[1], -1, NULL);
+  close(fd);
+  close(otherfd);
+  close(beyond[1]);
+  close(elsewhere[1]);
+  close(count[1]);
+
+  snprintf(r->base, sizeof(r->base), "http://127.0.0.1:%d/api", port);
+  voxgig_value* exchange = cmap(2, "active", v_bool(true), "refresh", v_str("REFRESH01"));
+  if (NULL != redirect) setp(exchange, "redirect", v_str(redirect));
+  ProjectNameSDK* sdk = projectname_sdk_new(cmap(2,
+    "base", v_str(r->base),
+    "feature", cmap(1, "secrets", cmap(3,
+      "active", v_bool(true),
+      "name", v_str("refresh_token"),
+      "exchange", exchange))));
+  r->res = direct(sdk);
+
+  kill(origin, SIGTERM);
+  kill(other, SIGTERM);
+  waitpid(origin, NULL, 0);
+  waitpid(other, NULL, 0);
+
+  char counted[64];
+  r->reached = redirect_lines(elsewhere[0], r->away, sizeof(r->away));
+  r->after = redirect_lines(beyond[0], r->again, sizeof(r->again));
+  r->exchanged = redirect_lines(count[0], counted, sizeof(counted));
+  close(elsewhere[0]);
+  close(beyond[0]);
+  close(count[0]);
+}
+
+static int redirect_refused_with(RedirectRun* r, int status) {
+  char want[160];
+  snprintf(want, sizeof(want), "token exchange failed: %d from %s/auth/token", status, r->base);
+  return !res_ok(r->res) && NULL != strstr(res_err(r->res), want);
+}
+
 // Real listeners and the SDK's own exchange transport: a stub follows nothing.
 static void t_exchange_redirect_refused(void) {
-  struct { int status; int away; } cases[] = { {307, 1}, {308, 1}, {302, 1}, {307, 0} };
-  char labels[4][1024];
+  struct { int status; int where; } cases[] =
+    { {307, TO_AWAY}, {308, TO_AWAY}, {302, TO_AWAY}, {307, TO_MOVED} };
+  char labels[4][1400];
   int clean[4];
   int refused = 0;
   int followed = 0;
   int ncases = (int)(sizeof(cases) / sizeof(cases[0]));
 
   for (int i = 0; i < ncases; i++) {
-    int port = 0;
-    int otherport = 0;
-    int fd = redirect_listener(&port);
-    int otherfd = redirect_listener(&otherport);
-    int elsewhere[2];
-    int beyond[2];
-    CHECK(0 <= fd && 0 <= otherfd && 0 == pipe(elsewhere) && 0 == pipe(beyond),
-          "redirect: loopback listeners");
+    RedirectRun r;
+    redirect_run(cases[i].status, cases[i].where, NULL, &r);
+    followed += r.reached + r.after;
 
-    char moved[256];
-    char location[128];
-    if (cases[i].away) {
-      snprintf(location, sizeof(location), "http://127.0.0.1:%d/api/auth/token", otherport);
-    } else {
-      snprintf(location, sizeof(location), "/api/moved/token");
-    }
-    snprintf(moved, sizeof(moved), "HTTP/1.1 %d Moved\r\nLocation: %s\r\n"
-      "Content-Length: 0\r\nConnection: close\r\n\r\n", cases[i].status, location);
-
-    pid_t origin = redirect_serve(fd, beyond[1], moved);
-    pid_t other = redirect_serve(otherfd, elsewhere[1], NULL);
-    close(fd);
-    close(otherfd);
-    close(beyond[1]);
-    close(elsewhere[1]);
-
-    char base[64];
-    snprintf(base, sizeof(base), "http://127.0.0.1:%d/api", port);
-    ProjectNameSDK* sdk = projectname_sdk_new(cmap(2,
-      "base", v_str(base),
-      "feature", cmap(1, "secrets", cmap(3,
-        "active", v_bool(true),
-        "name", v_str("refresh_token"),
-        "exchange", cmap(2, "active", v_bool(true), "refresh", v_str("REFRESH01"))))));
-    voxgig_value* res = direct(sdk);
-
-    kill(origin, SIGTERM);
-    kill(other, SIGTERM);
-    waitpid(origin, NULL, 0);
-    waitpid(other, NULL, 0);
-
-    char away[256];
-    char again[256];
-    int reached = redirect_lines(elsewhere[0], away, sizeof(away));
-    int after = redirect_lines(beyond[0], again, sizeof(again));
-    close(elsewhere[0]);
-    close(beyond[0]);
-    followed += reached + after;
-
-    char want[160];
-    snprintf(want, sizeof(want), "token exchange failed: %d from %s/auth/token",
-             cases[i].status, base);
-    int failed = !res_ok(res) && NULL != strstr(res_err(res), want);
+    int failed = redirect_refused_with(&r, cases[i].status);
     refused += failed;
 
     snprintf(labels[i], sizeof(labels[i]),
              "redirect %d to %s: other origin got [%s], origin got [%s], ended: %s",
-             cases[i].status, location, away, again, res_err(res));
-    clean[i] = failed && 0 == reached && 0 == after;
+             cases[i].status, r.location, r.away, r.again, res_err(r.res));
+    clean[i] = failed && 0 == r.reached && 0 == r.after;
   }
 
   printf("secrets: exchange refused %d redirect(s), %d followed\n", refused, followed);
@@ -953,9 +984,54 @@ static void t_exchange_redirect_refused(void) {
   CHECK_INT_EQ(followed, 0, "redirect: nothing followed a refused exchange");
 }
 
+static void t_exchange_redirect_same_origin(void) {
+  struct { int status; int where; int follows; } cases[] = {
+    {307, TO_MOVED, 1}, {308, TO_MOVED_ABSOLUTE, 1}, {307, TO_AWAY, 0},
+    {302, TO_MOVED, 0}, {307, TO_SELF, 0} };
+  char labels[5][1400];
+  int clean[5];
+  int followed = 0;
+  int refused = 0;
+  int elsewhere = 0;
+  int looped = 0;
+  int ncases = (int)(sizeof(cases) / sizeof(cases[0]));
+
+  for (int i = 0; i < ncases; i++) {
+    RedirectRun r;
+    redirect_run(cases[i].status, cases[i].where, "same-origin", &r);
+    elsewhere += r.reached;
+
+    if (cases[i].follows) {
+      clean[i] = res_ok(r.res) && 2 == r.after && 0 == strncmp(r.again,
+        "POST /api/moved/token {\"refresh_token\":\"REFRESH01\"}\n", 52);
+      followed += clean[i];
+    } else {
+      clean[i] = 0 == r.after && redirect_refused_with(&r, cases[i].status);
+      refused += clean[i];
+    }
+    if (TO_SELF == cases[i].where) looped = r.exchanged;
+
+    snprintf(labels[i], sizeof(labels[i]),
+             "same-origin %d to %s: other origin got [%s], origin got [%s], ended: %s",
+             cases[i].status, r.location, r.away, r.again, res_err(r.res));
+  }
+
+  printf("secrets: exchange opt-in followed %d redirect(s) on its own origin, "
+         "refused %d, %d elsewhere\n", followed, refused, elsewhere);
+  for (int i = 0; i < ncases; i++) CHECK(clean[i], labels[i]);
+  CHECK_INT_EQ(followed, 2, "same-origin: both redirects on the origin followed");
+  CHECK_INT_EQ(refused, 3, "same-origin: every other redirect refused");
+  CHECK_INT_EQ(elsewhere, 0, "same-origin: the other origin got nothing");
+  CHECK_INT_EQ(looped, 6, "same-origin: a redirect to itself is followed five times");
+}
+
 #else
 
 static void t_exchange_redirect_refused(void) {
+  printf("secrets: redirect skipped, this platform has no POSIX sockets\n");
+}
+
+static void t_exchange_redirect_same_origin(void) {
   printf("secrets: redirect skipped, this platform has no POSIX sockets\n");
 }
 
@@ -998,6 +1074,7 @@ int main(void) {
   RUN(t_exchange_off_leaves_feature_as_before);
   RUN(t_exchange_test_mode_buys_nothing);
   RUN(t_exchange_redirect_refused);
+  RUN(t_exchange_redirect_same_origin);
 
   // The generator's runtime lane reads this line: a suite that RAN fewer
   // cases than it declares was trimmed, not passed.
