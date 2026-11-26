@@ -146,8 +146,9 @@ sends OUT, to a logger, a sink, an exporter, a buffer a caller reads, or a
 record on the client, passes through `ctx.utility.clean(ctx, value)` first.
 The shipped `log`, `debug`, `audit`, `telemetry`, `cost` and `proxy`
 features do this; a feature you add must too. `clean` also replaces a body
-of bytes with a description of it, so a record that includes the spec does
-not carry an upload. See
+of bytes with a description of it, so a record that includes the spec or
+the response carries neither an upload nor a file that the operation was
+answered with. See
 [secret redaction](../explanation/secret-redaction.md).
 
 ## Idiomatic error returns

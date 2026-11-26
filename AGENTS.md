@@ -917,11 +917,19 @@ emitted broken source reached the fleet unchallenged.
   see a string holding the bytes, which is the one carrier in lua, c, cpp,
   zig, ocaml and elixir, so a port with the first rule alone protects
   nothing there. A raw body the model does not mark binary is text and stays
-  data. `clean.active: false` switches this off with the rest; there is no
+  data. A third rule covers the RESPONSE: where it is bytes, by the model's
+  `point.response.binary` or by a declared media type that is not text, the
+  body on the context's response is described whatever carries it, with its
+  type and no size. That predicate is the one the unreadable-body error
+  uses (`isBinaryResponse` in ts), and it must stay ONE predicate. Most
+  transports read a body into text, so no other rule sees it there.
+  `clean.active: false` switches all of this off with the rest; there is no
   switch of its own. The sweep's content canary needs an operation that
   sends a binary body: an SDK without one skips it, and the clean lanes add
   one (`CLEAN_BINARY`) and require the
-  `clean: content swept N surface(s), 0 leak(s)` line.
+  `clean: content swept N surface(s), 0 leak(s)` line. The response canary
+  needs none: the sweep answers an ordinary operation with bytes, and the
+  lanes require `clean: response swept N surface(s), 0 leak(s)`.
 - **The HTTP status is on the error, not just in `err.result`.** `err.status`
   (-1 when there was no response) plus a `notFound` predicate, so a consumer
   never couples itself to the internal shape of `result`.
