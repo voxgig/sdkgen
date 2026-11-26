@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, requiredItems, matchExampleItems, requestExampleItems, envLocalAt, cdTarget, fact } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, requiredItems, matchExampleItems, requestExampleItems, envLocalAt, cdTarget, fact, directRoute } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -24,6 +24,7 @@ function swiftLit(type: any): string {
 
 const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   const { target, ctx$: { model } } = props
+  const dx = directRoute(model)
 
   const SDK = model.const.Name + 'SDK'
 
@@ -91,9 +92,9 @@ For endpoints not covered by entity methods:
 
 \`\`\`swift
 let result = client.direct(VMap([
-    ("path", .string("/api/resource/{id}")),
-    ("method", .string("GET")),
-    ("params", .map([("id", .string("example"))])),
+    ("path", .string("${dx.path}")),
+    ("method", .string("${dx.method}")),
+    ("params", .map([("${dx.param}", .string("example"))])),
 ]))
 
 if result.entries["ok"] == .bool(true) {
@@ -113,9 +114,9 @@ else {
 \`\`\`swift
 // prepare() returns the fetch definition and throws on error.
 let fetchdef = try client.prepare(VMap([
-    ("path", .string("/api/resource/{id}")),
-    ("method", .string("DELETE")),
-    ("params", .map([("id", .string("example"))])),
+    ("path", .string("${dx.path}")),
+    ("method", .string("${dx.method}")),
+    ("params", .map([("${dx.param}", .string("example"))])),
 ]))
 
 print(fetchdef.entries["url"] ?? .noval)

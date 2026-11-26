@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, requiredItems, matchExampleItems, requestExampleItems, envLocalAt, cdTarget, fact, serverVarEnv } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, requiredItems, matchExampleItems, requestExampleItems, envLocalAt, cdTarget, fact, serverVarEnv, directRoute } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -24,6 +24,7 @@ function kotlinLit(type: any): string {
 
 const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   const { target, ctx$: { model } } = props
+  const dx = directRoute(model)
 
   const SDK = model.const.Name + 'SDK'
 
@@ -88,9 +89,9 @@ For endpoints not covered by entity methods:
 
 \`\`\`kotlin
 val result = client.direct(mutableMapOf<String, Any?>(
-    "path" to "/api/resource/{id}",
-    "method" to "GET",
-    "params" to mapOf("id" to "example")))
+    "path" to "${dx.path}",
+    "method" to "${dx.method}",
+    "params" to mapOf("${dx.param}" to "example")))
 
 if (result["ok"] == true) {
     println(result["status"])  // 200
@@ -109,9 +110,9 @@ else {
 \`\`\`kotlin
 // prepare() returns the fetch definition and raises on error.
 val fetchdef = client.prepare(mutableMapOf<String, Any?>(
-    "path" to "/api/resource/{id}",
-    "method" to "DELETE",
-    "params" to mapOf("id" to "example")))
+    "path" to "${dx.path}",
+    "method" to "${dx.method}",
+    "params" to mapOf("${dx.param}" to "example")))
 
 println(fetchdef["url"])
 println(fetchdef["method"])

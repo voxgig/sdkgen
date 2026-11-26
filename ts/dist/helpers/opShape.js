@@ -14,6 +14,7 @@ exports.ownPoint = ownPoint;
 exports.opActions = opActions;
 exports.entityActions = entityActions;
 exports.entityPath = entityPath;
+exports.directRoute = directRoute;
 exports.opRequestShape = opRequestShape;
 exports.entityIdField = entityIdField;
 exports.entityDataIdField = entityDataIdField;
@@ -103,6 +104,35 @@ function entityPath(entity) {
         }
     }
     return '';
+}
+const PLACEHOLDER_ROUTE = { path: '/api/resource/{id}', method: 'GET', param: 'id' };
+// A direct() example's route, with one placeholder named as its path names it
+// (`{boxId}`, not the segment's `id`): unmodelled, else an entity's, else a stand-in.
+function directRoute(model) {
+    const entity = model?.main?.[apidef_1.KIT]?.entity || {};
+    const active = Object.keys(entity).sort().map((key) => entity[key])
+        .filter((ent) => null != ent && 'object' === typeof ent && false !== ent.active);
+    const named = (path) => [...path.matchAll(/\{([^{}/]+)\}/g)].map((m) => m[1]);
+    const route = (pt) => null != pt && 'string' === typeof pt.o && 1 === named(pt.o).length ?
+        { path: pt.o, method: String(pt.m || 'GET').toUpperCase(), param: named(pt.o)[0] } : null;
+    const first = (points) => points.map(route).find((r) => null != r) ?? null;
+    for (const ent of active) {
+        for (const opname of Object.keys(ent.op || {}).sort()) {
+            if (!CANON_OP_ORDER.includes(opname)) {
+                const found = first((0, jostraca_1.each)(ent.op[opname]?.points || []));
+                if (null != found)
+                    return found;
+            }
+        }
+    }
+    for (const ent of active) {
+        for (const opname of CANON_OP_ORDER) {
+            const found = null == ent.op?.[opname] ? null : first(selectablePoints(ent.op[opname]));
+            if (null != found)
+                return found;
+        }
+    }
+    return PLACEHOLDER_ROUTE;
 }
 function ownPoint(points) {
     let best = points[0];

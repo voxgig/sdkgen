@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, matchExampleItems, requestExampleItems, envLocalAt, cdTarget, fact } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, matchExampleItems, requestExampleItems, envLocalAt, cdTarget, fact, directRoute } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -23,6 +23,7 @@ function ocamlLit(type: any): string {
 
 const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   const { target, ctx$: { model } } = props
+  const dx = directRoute(model)
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
   // Pick an entity with a real op (prefer a read op) — never fabricate a
@@ -73,9 +74,9 @@ For endpoints not covered by entity methods:
 
 \`\`\`ocaml
 let result = Sdk_client.direct client (jo [
-    ("path", Str "/api/resource/{id}");
-    ("method", Str "GET");
-    ("params", jo [("id", Str "example")]);
+    ("path", Str "${dx.path}");
+    ("method", Str "${dx.method}");
+    ("params", jo [("${dx.param}", Str "example")]);
 ]) in
 (match getp result "ok" with
  | Bool true ->
@@ -93,9 +94,9 @@ let result = Sdk_client.direct client (jo [
 \`\`\`ocaml
 (* prepare returns the fetch definition and raises on error. *)
 let fetchdef = Sdk_client.prepare client (jo [
-    ("path", Str "/api/resource/{id}");
-    ("method", Str "DELETE");
-    ("params", jo [("id", Str "example")]);
+    ("path", Str "${dx.path}");
+    ("method", Str "${dx.method}");
+    ("params", jo [("${dx.param}", Str "example")]);
 ]) in
 print_endline (stringify (getp fetchdef "url"));
 print_endline (stringify (getp fetchdef "method"));

@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, requiredItems, matchExampleItems, requestExampleItems, envLocalAt, cdTarget, fact } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, requiredItems, matchExampleItems, requestExampleItems, envLocalAt, cdTarget, fact, directRoute } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -24,6 +24,7 @@ function zigLit(type: any): string {
 
 const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   const { target, ctx$: { model } } = props
+  const dx = directRoute(model)
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
   // Pick an entity with a real op (prefer a read op). primaryOp is null only
@@ -87,9 +88,9 @@ For endpoints not covered by entity methods:
 
 \`\`\`zig
 const result = client.direct(h.jo(&.{
-    .{ "path", h.vstr("/api/resource/{id}") },
-    .{ "method", h.vstr("GET") },
-    .{ "params", h.jo(&.{.{ "id", h.vstr("example") }}) },
+    .{ "path", h.vstr("${dx.path}") },
+    .{ "method", h.vstr("${dx.method}") },
+    .{ "params", h.jo(&.{.{ "${dx.param}", h.vstr("example") }}) },
 }));
 
 if (h.get_bool(result, "ok") orelse false) {
@@ -107,9 +108,9 @@ if (h.get_bool(result, "ok") orelse false) {
 \`\`\`zig
 // prepare() returns the fetch definition (an error union — use \`catch\`/\`try\`).
 const fetchdef = client.prepare(h.jo(&.{
-    .{ "path", h.vstr("/api/resource/{id}") },
-    .{ "method", h.vstr("DELETE") },
-    .{ "params", h.jo(&.{.{ "id", h.vstr("example") }}) },
+    .{ "path", h.vstr("${dx.path}") },
+    .{ "method", h.vstr("${dx.method}") },
+    .{ "params", h.jo(&.{.{ "${dx.param}", h.vstr("example") }}) },
 })) catch unreachable;
 
 std.debug.print("{s}\\n", .{h.get_str(fetchdef, "url") orelse ""});

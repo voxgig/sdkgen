@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, requiredItems, matchExampleItems, requestExampleItems, envLocalAt, cdTarget, fact, serverVarEnv } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, requiredItems, matchExampleItems, requestExampleItems, envLocalAt, cdTarget, fact, serverVarEnv, directRoute } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -24,6 +24,7 @@ function rustLit(type: any): string {
 
 const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   const { target, ctx$: { model } } = props
+  const dx = directRoute(model)
 
   const rustcrate = crateIdent(model)
   const entity = getModelPath(model, `main.${KIT}.entity`)
@@ -83,9 +84,9 @@ For endpoints not covered by entity methods:
 
 \`\`\`rust
 let result = client.direct(jo(vec![
-    ("path", Value::str("/api/resource/{id}")),
-    ("method", Value::str("GET")),
-    ("params", jo(vec![("id", Value::str("example"))])),
+    ("path", Value::str("${dx.path}")),
+    ("method", Value::str("${dx.method}")),
+    ("params", jo(vec![("${dx.param}", Value::str("example"))])),
 ])).unwrap();
 
 if getp(&result, "ok") == Value::Bool(true) {
@@ -103,9 +104,9 @@ if getp(&result, "ok") == Value::Bool(true) {
 \`\`\`rust
 // prepare() returns the fetch definition on Ok and Err on failure.
 let fetchdef = client.prepare(jo(vec![
-    ("path", Value::str("/api/resource/{id}")),
-    ("method", Value::str("DELETE")),
-    ("params", jo(vec![("id", Value::str("example"))])),
+    ("path", Value::str("${dx.path}")),
+    ("method", Value::str("${dx.method}")),
+    ("params", jo(vec![("${dx.param}", Value::str("example"))])),
 ])).unwrap();
 
 println!("{:?}", getp(&fetchdef, "url"));

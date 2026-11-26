@@ -1,5 +1,5 @@
 
-import { cmp, Content, canonKey, canonScalarKey, entityIdField, pickExampleEntity, requiredItems, matchExampleItems, requestExampleItems, cdTarget } from '@voxgig/sdkgen'
+import { cmp, Content, canonKey, canonScalarKey, entityIdField, pickExampleEntity, requiredItems, matchExampleItems, requestExampleItems, cdTarget, directRoute } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -23,6 +23,7 @@ function cljLit(type: any): string {
 
 const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   const { target, ctx$: { model } } = props
+  const dx = directRoute(model)
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
   // Pick an entity with a real op (prefer a read op). primaryOp is null only
@@ -75,9 +76,9 @@ For endpoints not covered by entity operations:
 \`\`\`clojure
 (def result
   (api/direct client
-    (vs/jm "path" "/api/resource/{id}"
-           "method" "GET"
-           "params" (vs/jm "id" "example"))))
+    (vs/jm "path" "${dx.path}"
+           "method" "${dx.method}"
+           "params" (vs/jm "${dx.param}" "example"))))
 
 (if (vs/getprop result "ok")
   (do
@@ -94,9 +95,9 @@ For endpoints not covered by entity operations:
 ;; prepare returns the fetch definition and raises on error.
 (def fetchdef
   (api/prepare client
-    (vs/jm "path" "/api/resource/{id}"
-           "method" "DELETE"
-           "params" (vs/jm "id" "example"))))
+    (vs/jm "path" "${dx.path}"
+           "method" "${dx.method}"
+           "params" (vs/jm "${dx.param}" "example"))))
 
 (println (vs/getprop fetchdef "url"))
 (println (vs/getprop fetchdef "method"))

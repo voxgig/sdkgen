@@ -1,16 +1,17 @@
 
-import { cmp, Content } from '@voxgig/sdkgen'
+import { cmp, Content, directRoute } from '@voxgig/sdkgen'
 
 
 const ReadmeTopHowto = cmp(function ReadmeTopHowto(props: any) {
   const { target } = props
+  const dx = directRoute(props.ctx$.model)
 
   Content(`**${target.title}:**
 \`\`\`cpp
 Value result = client->direct(vmap({
-    {"path", Value("/api/resource/{id}")},
-    {"method", Value("GET")},
-    {"params", vmap({{"id", Value("example")}})},
+    {"path", Value("${dx.path}")},
+    {"method", Value("${dx.method}")},
+    {"params", vmap({{"${dx.param}", Value("example")}})},
 }));
 \`\`\`
 

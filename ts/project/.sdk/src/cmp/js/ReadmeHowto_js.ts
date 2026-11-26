@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, entityIdField, entityDataIdField, pickExampleEntity, safeVarName, exampleVarName, jsKey, requiredItems, matchExampleItems, jsProp, requestExampleItems, envLocalAt, cdTarget, fact, serverVarEnv } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, entityIdField, entityDataIdField, pickExampleEntity, safeVarName, exampleVarName, jsKey, requiredItems, matchExampleItems, jsProp, requestExampleItems, envLocalAt, cdTarget, fact, serverVarEnv, directRoute } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -12,6 +12,7 @@ import { exampleValue } from './utility_js'
 
 const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   const { target, ctx$: { model } } = props
+  const dx = directRoute(model)
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
   // Pick an entity with a real op (prefer a read op) — never fabricate a
@@ -113,9 +114,9 @@ For endpoints not covered by entity methods:
 
 \`\`\`js
 const result = await client.direct({
-  path: '/api/resource/{id}',
-  method: 'GET',
-  params: { id: 'example' },
+  path: '${dx.path}',
+  method: '${dx.method}',
+  params: { ${jsKey(dx.param)}: 'example' },
 })
 
 if (result.ok) {
@@ -128,9 +129,9 @@ if (result.ok) {
 
 \`\`\`js
 const fetchdef = await client.prepare({
-  path: '/api/resource/{id}',
-  method: 'DELETE',
-  params: { id: 'example' },
+  path: '${dx.path}',
+  method: '${dx.method}',
+  params: { ${jsKey(dx.param)}: 'example' },
 })
 
 // Inspect before sending

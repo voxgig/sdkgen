@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, entityIdField, pickExampleEntity, requiredItems, javaMapOf, matchExampleItems, javaMapItems, requestExampleItems, envLocalAt, cdTarget, fact } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, entityIdField, pickExampleEntity, requiredItems, javaMapOf, matchExampleItems, javaMapItems, requestExampleItems, envLocalAt, cdTarget, fact, directRoute } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -11,6 +11,7 @@ import { scalaVarName, scalaLit } from './utility_scala'
 
 const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   const { target, ctx$: { model } } = props
+  const dx = directRoute(model)
 
   const SDK = model.const.Name + 'SDK'
 
@@ -71,9 +72,9 @@ For endpoints not covered by entity methods:
 
 \`\`\`scala
 val result = client.direct(java.util.Map.of(
-    "path", "/api/resource/{id}",
-    "method", "GET",
-    "params", java.util.Map.of("id", "example")))
+    "path", "${dx.path}",
+    "method", "${dx.method}",
+    "params", java.util.Map.of("${dx.param}", "example")))
 
 if (java.lang.Boolean.TRUE == result.get("ok")) {
     println(result.get("status"))  // 200
@@ -92,9 +93,9 @@ else {
 \`\`\`scala
 // prepare() returns the fetch definition and raises on error.
 val fetchdef = client.prepare(java.util.Map.of(
-    "path", "/api/resource/{id}",
-    "method", "DELETE",
-    "params", java.util.Map.of("id", "example")))
+    "path", "${dx.path}",
+    "method", "${dx.method}",
+    "params", java.util.Map.of("${dx.param}", "example")))
 
 println(fetchdef.get("url"))
 println(fetchdef.get("method"))

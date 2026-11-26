@@ -109,6 +109,42 @@ function entityPath(entity: any): string {
 }
 
 
+type DirectRoute = { path: string, method: string, param: string }
+
+const PLACEHOLDER_ROUTE: DirectRoute = { path: '/api/resource/{id}', method: 'GET', param: 'id' }
+
+
+// A direct() example's route, with one placeholder named as its path names it
+// (`{boxId}`, not the segment's `id`): unmodelled, else an entity's, else a stand-in.
+function directRoute(model: any): DirectRoute {
+  const entity = model?.main?.[KIT]?.entity || {}
+  const active = Object.keys(entity).sort().map((key: string) => entity[key])
+    .filter((ent: any) => null != ent && 'object' === typeof ent && false !== ent.active)
+  const named = (path: string): string[] => [...path.matchAll(/\{([^{}/]+)\}/g)].map((m) => m[1])
+  const route = (pt: any): DirectRoute | null =>
+    null != pt && 'string' === typeof pt.o && 1 === named(pt.o).length ?
+      { path: pt.o, method: String(pt.m || 'GET').toUpperCase(), param: named(pt.o)[0] } : null
+  const first = (points: any[]): DirectRoute | null =>
+    points.map(route).find((r: DirectRoute | null) => null != r) ?? null
+
+  for (const ent of active) {
+    for (const opname of Object.keys(ent.op || {}).sort()) {
+      if (!CANON_OP_ORDER.includes(opname)) {
+        const found = first(each(ent.op[opname]?.points || []))
+        if (null != found) return found
+      }
+    }
+  }
+  for (const ent of active) {
+    for (const opname of CANON_OP_ORDER) {
+      const found = null == ent.op?.[opname] ? null : first(selectablePoints(ent.op[opname]))
+      if (null != found) return found
+    }
+  }
+  return PLACEHOLDER_ROUTE
+}
+
+
 function ownPoint(points: any[]): any {
   let best = points[0]
 
@@ -798,6 +834,7 @@ export {
   opActions,
   entityActions,
   entityPath,
+  directRoute,
   opRequestShape,
   entityIdField,
   entityDataIdField,
@@ -817,6 +854,7 @@ export {
 }
 
 export type {
+  DirectRoute,
   OpShapeItem,
   UngeneratedOp,
 }

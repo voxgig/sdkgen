@@ -21,15 +21,15 @@ try {
 \`\`\`
 
 `;
-const TS_DIRECT = (fence) => `The low-level \`direct()\` method does **not** throw — it returns the
+const TS_DIRECT = (fence) => (r) => `The low-level \`direct()\` method does **not** throw — it returns the
 result envelope. Branch on \`ok\`; on failure \`status\` holds the HTTP status
 (for error responses) and \`err\` holds the error:
 
 \`\`\`${fence}
 const result = await client.direct({
-  path: '/api/resource/{id}',
-  method: 'GET',
-  params: { id: 'example_id' },
+  path: '${r.path}',
+  method: '${r.method}',
+  params: { ${(0, naming_1.jsKey)(r.param)}: 'example_id' },
 })
 
 if (!result.ok) {
@@ -67,15 +67,15 @@ except Exception as err:
 \`\`\`
 
 `,
-        direct: `\`direct()\` does **not** raise — it returns the result envelope. Branch
+        direct: (r) => `\`direct()\` does **not** raise — it returns the result envelope. Branch
 on \`ok\`; on failure \`status\` holds the HTTP status (for error responses)
 and \`err\` holds a transport error, so read both defensively:
 
 \`\`\`python
 result = client.direct({
-    "path": "/api/resource/{id}",
-    "method": "GET",
-    "params": {"id": "example_id"},
+    "path": "${r.path}",
+    "method": "${r.method}",
+    "params": {"${r.param}": "example_id"},
 })
 
 if not result["ok"]:
@@ -97,15 +97,15 @@ try {
 \`\`\`
 
 `,
-        direct: `\`direct()\` does **not** throw — it returns the result array. Branch on
+        direct: (r) => `\`direct()\` does **not** throw — it returns the result array. Branch on
 \`ok\`; on failure \`status\` holds the HTTP status (for error responses) and
 \`err\` holds a transport error, so read both defensively:
 
 \`\`\`php
 $result = $client->direct([
-    "path" => "/api/resource/{id}",
-    "method" => "GET",
-    "params" => ["id" => "example_id"],
+    "path" => "${r.path}",
+    "method" => "${r.method}",
+    "params" => ["${r.param}" => "example_id"],
 ]);
 
 if (! $result["ok"]) {
@@ -128,15 +128,15 @@ end
 \`\`\`
 
 `,
-        direct: `\`direct\` does **not** raise — it returns the result hash. Branch on
+        direct: (r) => `\`direct\` does **not** raise — it returns the result hash. Branch on
 \`ok\`; on failure \`status\` holds the HTTP status (for error responses) and
 \`err\` holds a transport error, so read both defensively:
 
 \`\`\`ruby
 result = client.direct({
-  "path" => "/api/resource/{id}",
-  "method" => "GET",
-  "params" => { "id" => "example_id" },
+  "path" => "${r.path}",
+  "method" => "${r.method}",
+  "params" => { "${r.param}" => "example_id" },
 })
 
 warn "request failed: #{result["err"] || "HTTP #{result["status"]}"}" unless result["ok"]
@@ -154,13 +154,13 @@ if err then error(err) end
 \`\`\`
 
 `,
-        direct: `\`direct\` follows the same \`(value, err)\` convention:
+        direct: (r) => `\`direct\` follows the same \`(value, err)\` convention:
 
 \`\`\`lua
 local result, err = client:direct({
-  path = "/api/resource/{id}",
-  method = "GET",
-  params = { id = "example_id" },
+  path = "${r.path}",
+  method = "${r.method}",
+  params = { ${(0, naming_1.luaKey)(r.param)} = "example_id" },
 })
 if err then error(err) end
 \`\`\`
@@ -181,13 +181,13 @@ _ = ${call.resultVar}
 \`\`\`
 
 `,
-        direct: `\`Direct\` follows the same \`(value, error)\` convention:
+        direct: (r) => `\`Direct\` follows the same \`(value, error)\` convention:
 
 \`\`\`go
 result, err := client.Direct(map[string]any{
-    "path":   "/api/resource/{id}",
-    "method": "GET",
-    "params": map[string]any{"id": "example_id"},
+    "path":   "${r.path}",
+    "method": "${r.method}",
+    "params": map[string]any{"${r.param}": "example_id"},
 })
 if err != nil {
     // handle err
@@ -227,13 +227,13 @@ ${ok}
 
 `;
         },
-        direct: directLead('sdk_direct()', 'set `*err` for an error response', 'the result map') +
+        direct: (r) => directLead('sdk_direct()', 'set `*err` for an error response', 'the result map') +
             `\`\`\`c
 PNError* err = NULL;
 voxgig_value* result = sdk_direct(client, cmap(3,
-    "path", v_str("/api/resource/{id}"),
-    "method", v_str("GET"),
-    "params", cmap(1, "id", v_str("example_id"))), &err);
+    "path", v_str("${r.path}"),
+    "method", v_str("${r.method}"),
+    "params", cmap(1, "${r.param}", v_str("example_id"))), &err);
 
 if (!voxgig_as_bool(getp(result, "ok"))) {
     fprintf(stderr, "request failed: %lld %s\\n",
@@ -264,12 +264,12 @@ ${body}
 
 `;
         },
-        direct: directLead('direct()', 'throw', 'the result `Value`') +
+        direct: (r) => directLead('direct()', 'throw', 'the result `Value`') +
             `\`\`\`cpp
 Value result = client->direct(vmap({
-    {"path", Value("/api/resource/{id}")},
-    {"method", Value("GET")},
-    {"params", vmap({{"id", Value("example_id")}})},
+    {"path", Value("${r.path}")},
+    {"method", Value("${r.method}")},
+    {"params", vmap({{"${r.param}", Value("example_id")}})},
 }));
 
 if (!(getp(result, "ok") == Value(true))) {
@@ -299,12 +299,12 @@ ${ok}
 
 `;
         },
-        direct: directLead('direct()', 'return `Err` for an error response', '`Ok` with the result map') +
+        direct: (r) => directLead('direct()', 'return `Err` for an error response', '`Ok` with the result map') +
             `\`\`\`rust
 match client.direct(jo(vec![
-    ("path", Value::str("/api/resource/{id}")),
-    ("method", Value::str("GET")),
-    ("params", jo(vec![("id", Value::str("example_id"))])),
+    ("path", Value::str("${r.path}")),
+    ("method", Value::str("${r.method}")),
+    ("params", jo(vec![("${r.param}", Value::str("example_id"))])),
 ])) {
     Ok(result) => {
         if getp(&result, "ok") != Value::Bool(true) {
@@ -337,12 +337,12 @@ ${ok}
 
 `;
         },
-        direct: directLead('direct()', 'fail on an error response', 'the result map') +
+        direct: (r) => directLead('direct()', 'fail on an error response', 'the result map') +
             `\`\`\`zig
 const result = client.direct(h.jo(&.{
-    .{ "path", h.vstr("/api/resource/{id}") },
-    .{ "method", h.vstr("GET") },
-    .{ "params", h.jo(&.{.{ "id", h.vstr("example_id") }}) },
+    .{ "path", h.vstr("${r.path}") },
+    .{ "method", h.vstr("${r.method}") },
+    .{ "params", h.jo(&.{.{ "${r.param}", h.vstr("example_id") }}) },
 }));
 
 if (!(h.get_bool(result, "ok") orelse false)) {
@@ -371,12 +371,12 @@ ${body}
 
 `;
         },
-        direct: directLead('Sdk_client.direct', 'raise', 'the result map') +
+        direct: (r) => directLead('Sdk_client.direct', 'raise', 'the result map') +
             `\`\`\`ocaml
 let result = Sdk_client.direct client (jo [
-    ("path", Str "/api/resource/{id}");
-    ("method", Str "GET");
-    ("params", jo [("id", Str "example_id")]);
+    ("path", Str "${r.path}");
+    ("method", Str "${r.method}");
+    ("params", jo [("${r.param}", Str "example_id")]);
 ]) in
 (match getp result "ok" with
  | Bool true -> ()
@@ -401,12 +401,12 @@ if (my $err = $@) {
 
 `;
         },
-        direct: directLead('direct', 'die', 'the result hashref') +
+        direct: (r) => directLead('direct', 'die', 'the result hashref') +
             `\`\`\`perl
 my $result = $client->direct({
-    'path' => '/api/resource/{id}',
-    'method' => 'GET',
-    'params' => { 'id' => 'example_id' },
+    'path' => '${r.path}',
+    'method' => '${r.method}',
+    'params' => { '${r.param}' => 'example_id' },
 });
 
 unless ($result->{ok}) {
@@ -438,12 +438,12 @@ catch (RuntimeException err) {
 
 `;
         },
-        direct: directLead('direct()', 'throw', 'the result map') +
+        direct: (r) => directLead('direct()', 'throw', 'the result map') +
             `\`\`\`java
 Map<String, Object> result = client.direct(Map.of(
-    "path", "/api/resource/{id}",
-    "method", "GET",
-    "params", Map.of("id", "example_id")));
+    "path", "${r.path}",
+    "method", "${r.method}",
+    "params", Map.of("${r.param}", "example_id")));
 
 if (!Boolean.TRUE.equals(result.get("ok"))) {
     System.out.println("request failed: " + result.get("status") + " " + result.get("err"));
@@ -474,12 +474,12 @@ catch (err: RuntimeException) {
 
 `;
         },
-        direct: directLead('direct()', 'throw', 'the result map') +
+        direct: (r) => directLead('direct()', 'throw', 'the result map') +
             `\`\`\`kotlin
 val result = client.direct(mutableMapOf<String, Any?>(
-    "path" to "/api/resource/{id}",
-    "method" to "GET",
-    "params" to mapOf("id" to "example_id")))
+    "path" to "${r.path}",
+    "method" to "${r.method}",
+    "params" to mapOf("${r.param}" to "example_id")))
 
 if (result["ok"] != true) {
     println("request failed: " + result["status"] + " " + result["err"])
@@ -509,12 +509,12 @@ catch {
 
 `;
         },
-        direct: directLead('direct()', 'throw', 'the result map') +
+        direct: (r) => directLead('direct()', 'throw', 'the result map') +
             `\`\`\`scala
 val result = client.direct(java.util.Map.of(
-    "path", "/api/resource/{id}",
-    "method", "GET",
-    "params", java.util.Map.of("id", "example_id")))
+    "path", "${r.path}",
+    "method", "${r.method}",
+    "params", java.util.Map.of("${r.param}", "example_id")))
 
 if (java.lang.Boolean.TRUE != result.get("ok")) {
     println("request failed: " + result.get("status") + " " + result.get("err"))
@@ -548,13 +548,13 @@ catch (Exception err)
 
 `;
         },
-        direct: directLead('Direct()', 'throw', 'the result dictionary') +
+        direct: (r) => directLead('Direct()', 'throw', 'the result dictionary') +
             `\`\`\`csharp
 var result = client.Direct(new Dictionary<string, object?>
 {
-    ["path"] = "/api/resource/{id}",
-    ["method"] = "GET",
-    ["params"] = new Dictionary<string, object?> { ["id"] = "example_id" },
+    ["path"] = "${r.path}",
+    ["method"] = "${r.method}",
+    ["params"] = new Dictionary<string, object?> { ["${r.param}"] = "example_id" },
 });
 
 if (!Equals(result["ok"], true))
@@ -592,12 +592,12 @@ catch {
 
 `;
         },
-        direct: directLead('direct()', 'throw', 'the result map') +
+        direct: (r) => directLead('direct()', 'throw', 'the result map') +
             `\`\`\`swift
 let result = client.direct(VMap([
-    ("path", .string("/api/resource/{id}")),
-    ("method", .string("GET")),
-    ("params", .map([("id", .string("example_id"))])),
+    ("path", .string("${r.path}")),
+    ("method", .string("${r.method}")),
+    ("params", .map([("${r.param}", .string("example_id"))])),
 ]))
 
 if result.entries["ok"] != .bool(true) {
@@ -630,12 +630,12 @@ end
 
 `;
         },
-        direct: (model) => directLead('direct/2', 'raise', 'a result node') +
+        direct: (r, model) => directLead('direct/2', 'raise', 'a result node') +
             `\`\`\`elixir
 result = ${model.const.Name}.direct(sdk, ${model.const.Name}.Helpers.deep(%{
-  "path" => "/api/resource/{id}",
-  "method" => "GET",
-  "params" => %{"id" => "example_id"}
+  "path" => "${r.path}",
+  "method" => "${r.method}",
+  "params" => %{"${r.param}" => "example_id"}
 }))
 
 unless Voxgig.Struct.getprop(result, "ok") do
@@ -668,13 +668,13 @@ ${body}
 
 `;
         },
-        direct: directLead('api/direct', 'throw', 'the result map') +
+        direct: (r) => directLead('api/direct', 'throw', 'the result map') +
             `\`\`\`clojure
 (def result
   (api/direct client
-    (vs/jm "path" "/api/resource/{id}"
-           "method" "GET"
-           "params" (vs/jm "id" "example_id"))))
+    (vs/jm "path" "${r.path}"
+           "method" "${r.method}"
+           "params" (vs/jm "${r.param}" "example_id"))))
 
 (when-not (vs/getprop result "ok")
   (println "request failed:" (vs/getprop result "status") (vs/getprop result "err")))
@@ -707,7 +707,7 @@ const ReadmeErrors = (0, component_1.cmp)(function ReadmeErrors(props) {
         const call = (0, opExample_1.primaryOpCall)((0, opExample_1.helperLang)(origin), eName, eLower, primaryOp, idF, ex);
         (0, jostraca_1.Content)(lang.entity({ model, ent: ex, op: primaryOp, idF, call }));
     }
-    (0, jostraca_1.Content)('function' === typeof lang.direct ? lang.direct(model) : lang.direct);
+    (0, jostraca_1.Content)('function' === typeof lang.direct ? lang.direct((0, opShape_1.directRoute)(model), model) : lang.direct);
 });
 exports.ReadmeErrors = ReadmeErrors;
 //# sourceMappingURL=ReadmeErrors.js.map

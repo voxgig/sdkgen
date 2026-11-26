@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, goModule, requiredItems, litPair, matchExampleItems, requestExampleItems, envLocalAt, cdTarget, fact, serverVarEnv } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, goModule, requiredItems, litPair, matchExampleItems, requestExampleItems, envLocalAt, cdTarget, fact, serverVarEnv, directRoute } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -27,6 +27,7 @@ function cap(s: string): string {
 
 const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   const { target, ctx$: { model } } = props
+  const dx = directRoute(model)
 
   const gomodule = goModule(model, target.name)
 
@@ -96,9 +97,9 @@ For endpoints not covered by entity methods:
 
 \`\`\`go
 result, err := client.Direct(map[string]any{
-    "path":   "/api/resource/{id}",
-    "method": "GET",
-    "params": map[string]any{"id": "example"},
+    "path":   "${dx.path}",
+    "method": "${dx.method}",
+    "params": map[string]any{"${dx.param}": "example"},
 })
 if err != nil {
     panic(err)
@@ -114,9 +115,9 @@ if result["ok"] == true {
 
 \`\`\`go
 fetchdef, err := client.Prepare(map[string]any{
-    "path":   "/api/resource/{id}",
-    "method": "DELETE",
-    "params": map[string]any{"id": "example"},
+    "path":   "${dx.path}",
+    "method": "${dx.method}",
+    "params": map[string]any{"${dx.param}": "example"},
 })
 if err != nil {
     panic(err)

@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, requiredItems, matchExampleItems, requestExampleItems, envLocalAt, cdTarget, fact, serverVarEnv } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, requiredItems, matchExampleItems, requestExampleItems, envLocalAt, cdTarget, fact, serverVarEnv, directRoute } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -25,6 +25,7 @@ function csLit(type: any): string {
 
 const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   const { target, ctx$: { model } } = props
+  const dx = directRoute(model)
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
   // Pick an entity with a real op (prefer a read op). primaryOp is null only
@@ -92,9 +93,9 @@ For endpoints not covered by entity methods:
 \`\`\`csharp
 var result = client.Direct(new Dictionary<string, object?>
 {
-    ["path"] = "/api/resource/{id}",
-    ["method"] = "GET",
-    ["params"] = new Dictionary<string, object?> { ["id"] = "example" },
+    ["path"] = "${dx.path}",
+    ["method"] = "${dx.method}",
+    ["params"] = new Dictionary<string, object?> { ["${dx.param}"] = "example" },
 });
 
 if (Equals(result["ok"], true))
@@ -119,9 +120,9 @@ else
 // Prepare() returns the fetch definition and raises on error.
 var fetchdef = client.Prepare(new Dictionary<string, object?>
 {
-    ["path"] = "/api/resource/{id}",
-    ["method"] = "DELETE",
-    ["params"] = new Dictionary<string, object?> { ["id"] = "example" },
+    ["path"] = "${dx.path}",
+    ["method"] = "${dx.method}",
+    ["params"] = new Dictionary<string, object?> { ["${dx.param}"] = "example" },
 });
 
 Console.WriteLine(fetchdef["url"]);

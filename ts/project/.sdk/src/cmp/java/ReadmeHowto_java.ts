@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, entityIdField, pickExampleEntity, requiredItems, javaMapOf, matchExampleItems, javaMapItems, requestExampleItems, envLocalAt, cdTarget, fact, serverVarEnv } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, entityIdField, pickExampleEntity, requiredItems, javaMapOf, matchExampleItems, javaMapItems, requestExampleItems, envLocalAt, cdTarget, fact, serverVarEnv, directRoute } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -11,6 +11,7 @@ import { javaVarName, javaLit } from './utility_java'
 
 const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   const { target, ctx$: { model } } = props
+  const dx = directRoute(model)
 
   const SDK = model.const.Name + 'SDK'
 
@@ -75,9 +76,9 @@ For endpoints not covered by entity methods:
 
 \`\`\`java
 Map<String, Object> result = client.direct(Map.of(
-    "path", "/api/resource/{id}",
-    "method", "GET",
-    "params", Map.of("id", "example")));
+    "path", "${dx.path}",
+    "method", "${dx.method}",
+    "params", Map.of("${dx.param}", "example")));
 
 if (Boolean.TRUE.equals(result.get("ok"))) {
     System.out.println(result.get("status"));  // 200
@@ -96,9 +97,9 @@ else {
 \`\`\`java
 // prepare() returns the fetch definition and raises on error.
 Map<String, Object> fetchdef = client.prepare(Map.of(
-    "path", "/api/resource/{id}",
-    "method", "DELETE",
-    "params", Map.of("id", "example")));
+    "path", "${dx.path}",
+    "method", "${dx.method}",
+    "params", Map.of("${dx.param}", "example")));
 
 System.out.println(fetchdef.get("url"));
 System.out.println(fetchdef.get("method"));

@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, luaKey, requiredItems, matchExampleItems, requestExampleItems, envLocalAt, cdTarget, fact, serverVarEnv } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, luaKey, requiredItems, matchExampleItems, requestExampleItems, envLocalAt, cdTarget, fact, serverVarEnv, directRoute } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -21,6 +21,7 @@ function luaLit(type: any): string {
 
 const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   const { target, ctx$: { model } } = props
+  const dx = directRoute(model)
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
   // Pick an entity with a real op (prefer a read op) — never fabricate a
@@ -67,9 +68,9 @@ For endpoints not covered by entity methods:
 
 \`\`\`lua
 local result, err = client:direct({
-  path = "/api/resource/{id}",
-  method = "GET",
-  params = { id = "example" },
+  path = "${dx.path}",
+  method = "${dx.method}",
+  params = { ${luaKey(dx.param)} = "example" },
 })
 if err then error(err) end
 
@@ -83,9 +84,9 @@ end
 
 \`\`\`lua
 local fetchdef, err = client:prepare({
-  path = "/api/resource/{id}",
-  method = "DELETE",
-  params = { id = "example" },
+  path = "${dx.path}",
+  method = "${dx.method}",
+  params = { ${luaKey(dx.param)} = "example" },
 })
 if err then error(err) end
 

@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, requiredItems, matchExampleItems, requestExampleItems, envLocalAt, cdTarget, fact } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, requiredItems, matchExampleItems, requestExampleItems, envLocalAt, cdTarget, fact, directRoute } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -23,6 +23,7 @@ function cppLit(type: any): string {
 
 const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   const { target, ctx$: { model } } = props
+  const dx = directRoute(model)
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
   // Pick an entity with a real op (prefer a read op) — never fabricate a
@@ -80,9 +81,9 @@ For endpoints not covered by entity methods:
 
 \`\`\`cpp
 Value result = client->direct(vmap({
-    {"path", Value("/api/resource/{id}")},
-    {"method", Value("GET")},
-    {"params", vmap({{"id", Value("example")}})},
+    {"path", Value("${dx.path}")},
+    {"method", Value("${dx.method}")},
+    {"params", vmap({{"${dx.param}", Value("example")}})},
 }));
 
 if (getp(result, "ok") == Value(true)) {
@@ -104,9 +105,9 @@ if (getp(result, "ok") == Value(true)) {
 \`\`\`cpp
 // prepare() returns the fetch definition and throws on error.
 Value fetchdef = client->prepare(vmap({
-    {"path", Value("/api/resource/{id}")},
-    {"method", Value("DELETE")},
-    {"params", vmap({{"id", Value("example")}})},
+    {"path", Value("${dx.path}")},
+    {"method", Value("${dx.method}")},
+    {"params", vmap({{"${dx.param}", Value("example")}})},
 }));
 
 std::cout << Struct::stringify(getp(fetchdef, "url")) << std::endl;

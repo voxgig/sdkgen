@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, phpEntityAccessor, seededList, litPair, matchExampleItems, requestExampleItems, envLocalAt, cdTarget, fact, serverVarEnv } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, phpEntityAccessor, seededList, litPair, matchExampleItems, requestExampleItems, envLocalAt, cdTarget, fact, serverVarEnv, directRoute } from '@voxgig/sdkgen'
 
 import { KIT, getModelPath, nom } from '@voxgig/apidef'
 
@@ -16,6 +16,7 @@ function phpLit(type: any): string {
 
 const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   const { target, ctx$: { model } } = props
+  const dx = directRoute(model)
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
   // Pick an entity with a real op (prefer a read op) — never fabricate a
@@ -81,9 +82,9 @@ For endpoints not covered by entity methods:
 // direct() is the raw-HTTP escape hatch: it returns a result array
 // (it does not throw). Branch on $result["ok"].
 $result = $client->direct([
-    "path" => "/api/resource/{id}",
-    "method" => "GET",
-    "params" => ["id" => "example"],
+    "path" => "${dx.path}",
+    "method" => "${dx.method}",
+    "params" => ["${dx.param}" => "example"],
 ]);
 
 if ($result["ok"]) {
@@ -102,9 +103,9 @@ if ($result["ok"]) {
 \`\`\`php
 // prepare() throws on error and returns the fetch definition.
 $fetchdef = $client->prepare([
-    "path" => "/api/resource/{id}",
-    "method" => "DELETE",
-    "params" => ["id" => "example"],
+    "path" => "${dx.path}",
+    "method" => "${dx.method}",
+    "params" => ["${dx.param}" => "example"],
 ]);
 
 echo $fetchdef["url"];

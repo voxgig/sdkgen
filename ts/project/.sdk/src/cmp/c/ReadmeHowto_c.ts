@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, requiredItems, matchExampleItems, targetFeatures, requestExampleItems, envLocalAt, cdTarget, fact } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, requiredItems, matchExampleItems, targetFeatures, requestExampleItems, envLocalAt, cdTarget, fact, directRoute } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -64,6 +64,7 @@ With the \`proxy\` feature, a request goes through its \`http://\` proxy, and an
 
 const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   const { target, ctx$: { model } } = props
+  const dx = directRoute(model)
 
   const ident = cIdent(model)
   const entity = getModelPath(model, `main.${KIT}.entity`)
@@ -119,9 +120,9 @@ For endpoints not covered by entity operations:
 \`\`\`c
 PNError* err = NULL;
 voxgig_value* result = sdk_direct(client, cmap(3,
-    "path", v_str("/api/resource/{id}"),
-    "method", v_str("GET"),
-    "params", cmap(1, "id", v_str("example"))), &err);
+    "path", v_str("${dx.path}"),
+    "method", v_str("${dx.method}"),
+    "params", cmap(1, "${dx.param}", v_str("example"))), &err);
 
 if (voxgig_as_bool(getp(result, "ok"))) {
     printf("%lld\\n", (long long)to_int(getp(result, "status")));  // 200
@@ -141,9 +142,9 @@ a result map you branch on via \`getp(result, "ok")\`.
 \`\`\`c
 PNError* err = NULL;
 voxgig_value* fetchdef = sdk_prepare(client, cmap(3,
-    "path", v_str("/api/resource/{id}"),
-    "method", v_str("DELETE"),
-    "params", cmap(1, "id", v_str("example"))), &err);
+    "path", v_str("${dx.path}"),
+    "method", v_str("${dx.method}"),
+    "params", cmap(1, "${dx.param}", v_str("example"))), &err);
 
 printf("%s\\n", get_str(fetchdef, "url"));
 printf("%s\\n", get_str(fetchdef, "method"));

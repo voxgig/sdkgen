@@ -304,6 +304,14 @@ The items as a series: `a`, `a and b`, `a, b, and c`. Each language's quick
 start heads its step over the entity's writes with it, naming only the
 operations the entity has.
 
+### `directRoute(model) → DirectRoute`
+
+The route a `direct()` or `prepare()` example calls, as `{ path, method,
+param }`: a route with one path parameter that no generated method reaches,
+else an active entity's own, else the placeholder `/api/resource/{id}` when
+the model has neither. Each language's how-to, quick reference, and error
+section call it, so every example names a route the API has.
+
 ### `featureDocs(model, target?) → FeatureDoc[]`
 
 The features a target's documents describe: every active feature of the

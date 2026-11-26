@@ -1,16 +1,17 @@
 
-import { cmp, Content } from '@voxgig/sdkgen'
+import { cmp, Content, directRoute } from '@voxgig/sdkgen'
 
 
 const ReadmeTopHowto = cmp(function ReadmeTopHowto(props: any) {
   const { target } = props
+  const dx = directRoute(props.ctx$.model)
 
   Content(`**Rust:**
 \`\`\`rust
 let result = client.direct(jo(vec![
-    ("path", Value::str("/api/resource/{id}")),
-    ("method", Value::str("GET")),
-    ("params", jo(vec![("id", Value::str("example"))])),
+    ("path", Value::str("${dx.path}")),
+    ("method", Value::str("${dx.method}")),
+    ("params", jo(vec![("${dx.param}", Value::str("example"))])),
 ]));
 \`\`\`
 

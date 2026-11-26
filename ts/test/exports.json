@@ -89,6 +89,7 @@
     "definitionPath",
     "definitionPlan",
     "deriveEntityNames",
+    "directRoute",
     "each",
     "elixirAccessor",
     "elixirAccessorNames",

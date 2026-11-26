@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, entityIdField, pickExampleEntity, elixirAccessor, entityCollection, exampleVarName, requiredItems, matchExampleItems, requestExampleItems, envLocalAt, cdTarget, fact } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, entityIdField, pickExampleEntity, elixirAccessor, entityCollection, exampleVarName, requiredItems, matchExampleItems, requestExampleItems, envLocalAt, cdTarget, fact, directRoute } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -12,6 +12,7 @@ import { elixirLit, elixirString } from './utility_elixir'
 
 const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   const { target, ctx$: { model } } = props
+  const dx = directRoute(model)
 
   const Name = model.const.Name
   const entity = getModelPath(model, `main.${KIT}.entity`)
@@ -68,9 +69,9 @@ alias Voxgig.Struct, as: S
 alias ${Name}.Helpers, as: H
 
 result = ${Name}.direct(sdk, H.deep(%{
-  "path" => "/api/resource/{id}",
-  "method" => "GET",
-  "params" => %{"id" => "example"}
+  "path" => "${dx.path}",
+  "method" => "${dx.method}",
+  "params" => %{"${dx.param}" => "example"}
 }))
 
 if S.getprop(result, "ok") do
@@ -90,9 +91,9 @@ alias ${Name}.Helpers, as: H
 
 # prepare/2 returns the fetch definition and raises on error.
 fetchdef = ${Name}.prepare(sdk, H.deep(%{
-  "path" => "/api/resource/{id}",
-  "method" => "DELETE",
-  "params" => %{"id" => "example"}
+  "path" => "${dx.path}",
+  "method" => "${dx.method}",
+  "params" => %{"${dx.param}" => "example"}
 }))
 
 IO.inspect(Voxgig.Struct.getprop(fetchdef, "url"))

@@ -8,7 +8,7 @@ import { memfs } from 'memfs'
 import { Jostraca, Project, Folder, File } from 'jostraca'
 
 import { SdkGen, ReadmeModel, entityCollection } from '../dist/sdkgen.js'
-import { STAGE, SCAFFOLD, makeModel, makeRoot, makeLog, layeredFs, idlessUpdate, ROUTING_MODEL } from './generateharness'
+import { STAGE, SCAFFOLD, makeModel, makeRoot, makeLog, layeredFs, idlessUpdate, ROUTING_MODEL, underscoreKeyed } from './generateharness'
 import { emptyTables } from './textguard'
 
 
@@ -108,6 +108,36 @@ main: kit: entity: gadget: {
 main: kit: flow: BasicGadgetFlow: {
   entity: "gadget", kind: "basic", name: "BasicGadgetFlow"
   step: [ { o: "load", i: { ref: "gadget_ref01", srcdatavar: "gadget_ref01_data", suffix: "_dt0" } } ]
+}
+`
+
+
+// Its ping is an operation no generated method reaches.
+const PROBE = `
+main: kit: entity: probe: {
+  alias: field: {}
+  name: "probe"
+  id: { field: "id", name: "id" }
+  fields: {
+    "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" }
+  }
+  op: {
+    load: { name: "load", points: [ {
+      g: { params: [ { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`" } ] }
+      m: "GET", o: "/probe/{id}", s: [{ lit: "probe" }, { var: "id" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" }
+    } ] }
+    ping: { name: "ping", points: [ {
+      g: { params: [ { k: "param", n: "probe_id", or: "probe_id", r: true, t: "\`$STRING\`" } ] }
+      m: "POST", o: "/probe/{probe_id}/ping", s: [{ lit: "probe" }, { var: "probe_id" }, { lit: "ping" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" }
+    } ] }
+  }
+}
+
+main: kit: flow: BasicProbeFlow: {
+  entity: "probe", kind: "basic", name: "BasicProbeFlow"
+  step: [ { o: "load", i: { ref: "probe_ref01", srcdatavar: "probe_ref01_data", suffix: "_dt0" } } ]
 }
 `
 
@@ -324,5 +354,40 @@ describe('operation-dependent prose', () => {
     deepStrictEqual(TARGETS.filter((t: string) => ALL.test(nested[t + '/REFERENCE.md'] + nested[t + '/README.md'])), [])
     deepStrictEqual(listing.filter((t: string) =>
       !nested[t + '/REFERENCE.md'].includes('The match must include `planet_id`.')), [])
+  })
+
+
+  test('a direct or prepare example calls a route the model has', async () => {
+    const PLACEHOLDER = '/api/resource/{id}'
+    const docs = (all: Record<string, string>, t: string) =>
+      [t + '/README.md', t + '/REFERENCE.md', 'README.md'].map((p: string) => all[p] ?? '').join('\n')
+
+    const base = await documents()
+    deepStrictEqual(TARGETS.filter((t: string) => docs(base, t).includes(PLACEHOLDER)), [])
+    deepStrictEqual(TARGETS.filter((t: string) => !base[t + '/README.md'].includes('/planet/{id}')), [])
+
+    const probe = await documents(only() + '\n' + PROBE)
+    for (const t of TARGETS) {
+      const text = docs(probe, t)
+      strictEqual(text.includes(PLACEHOLDER), false, t)
+      strictEqual(text.includes('/probe/{probe_id}/ping'), true, t)
+      strictEqual(2 <= (probe[t + '/README.md'].match(/probe_id\b/g) || []).length, true, t + ': no probe_id key')
+      strictEqual(/\bPOST\b/.test(probe[t + '/README.md']), true, t + ': no POST')
+    }
+
+    // A renamed parameter is filled by the name the path gives it.
+    const renamed = await documents(underscoreKeyed())
+    for (const t of TARGETS) {
+      const lines = renamed[t + '/README.md'].split('\n')
+      const calls = lines.map((line: string, i: number) => line.includes('/boxes/{boxId}') ?
+        lines.slice(i, i + 4).join('\n') : null).filter((call: string | null) => null != call) as string[]
+      strictEqual(0 < calls.length, true, t + ': no direct call to /boxes/{boxId}')
+      deepStrictEqual(calls.filter((call: string) => !/params[\s\S]*boxId/.test(call)), [],
+        t + ': a direct call fills the path by another name')
+    }
+
+    // With no route of one parameter there is nothing real to call.
+    const lone = await documents(only('ambient'))
+    deepStrictEqual(TARGETS.filter((t: string) => !docs(lone, t).includes(PLACEHOLDER)), [])
   })
 })
