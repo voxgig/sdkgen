@@ -51,19 +51,6 @@ npx voxgig-sdkgen target add <t> --force
 
 Then compare with `git diff` and restore any local change by hand.
 
-## An empty operation list in a README introduction
-
-From 4.48.0, `introOps` names no operation when no active entity has one,
-where it named `list` and `load` before. The README introductions copied
-before 4.48.0 call it, so under the newer package they print an empty
-list, `()`. The safe path brings the copies up with the package; this
-happens only where the package moved alone, by an `npm install` say.
-Re-add each target to bring its copies up to the package:
-
-```bash
-npx voxgig-sdkgen target add <t>
-```
-
 ## Releases up to 4.41.0 do not run on a fresh install
 
 A project whose pin resolves to 4.41.0 or earlier, such as `~4.40.1`,
@@ -99,6 +86,31 @@ Handle the error where the client is made, as the regenerated README's quick
 start does. The test-mode constructors, `TestSDK` in Go and `test_sdk`
 elsewhere, keep their single result, because test mode fills every server
 variable and so cannot refuse.
+
+## An API that declares no authentication receives no key
+
+From 4.48.0, the SDK of an API whose spec declares no authentication places
+no credential, unless the project switches auth on. Earlier releases
+documented no authentication for such an API and still sent an API key the
+caller passed. A caller that relies on that key reaching the API now sends
+none. Where the API takes a key its spec does not declare, switch auth
+on in the project's model, as
+[`isAuthActive`](../reference/api.md#isauthactivemodel--boolean) describes,
+and regenerate.
+
+## An empty operation list in a README introduction
+
+From 4.48.0, `introOps` returns no operation for an API none of whose active
+entities has one, where it returned `list` and `load` before. A README
+introduction copied from an earlier release prints what it returns in
+parentheses, so for such an API it prints an empty list, `()`, until the
+copy moves on. The safe path moves the copies with the package. Where the
+package moved alone, after a bare `npm install` for example, re-add each
+target:
+
+```bash
+npx voxgig-sdkgen target add <t>
+```
 
 ## Copies newer than the package
 
