@@ -808,6 +808,12 @@ class PrimaryUtilityTest extends TestCase
 
     public function test_prepare_auth_basic(): void
     {
+        // Read from the config, never from a probe: a probe that finds no
+        // credential is the regression this section exists to catch.
+        if (!array_key_exists('auth', ProjectNameConfig::shared_config()['options'] ?? [])) {
+            $this->markTestSkipped("this SDK's config declares no auth, so it places no credential");
+        }
+
         $R = self::runpack();
         $setup = $R['spec']['prepareAuth']['DEF']['setup']['a'] ?? null;
         $auth_client = ProjectNameSDK::test(null, is_array($setup) ? $setup : null);

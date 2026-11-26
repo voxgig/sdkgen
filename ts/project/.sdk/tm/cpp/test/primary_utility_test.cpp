@@ -83,6 +83,12 @@ static void runsection(const std::string& name, const res::Subject& subject) {
   }
   sdktest::checks()++;
   if (name == "prepareAuth") {
+    // Read from the config, never from a probe: a probe that finds no
+    // credential is the regression this section exists to catch.
+    if (!getp(getp(sharedConfig(), Value("options")), Value("auth")).is_map()) {
+      std::cout << "  SKIP [prepareAuth]: this SDK's config declares no auth, so it places no credential\n";
+      return;
+    }
     auto cred = authCredential();
     if (cred.name.empty()) {
       sdktest::record_fail(name, "prepareAuth placed no credential in headers or query");

@@ -22,6 +22,7 @@ import threading
 import pytest
 
 from projectname_sdk import ProjectNameSDK
+from projectname_sdk.config import shared_config
 from projectname_sdk.core.spec import ProjectNameSpec
 from projectname_sdk.core.result import ProjectNameResult
 from projectname_sdk.core.operation import ProjectNameOperation
@@ -790,6 +791,11 @@ class TestPrimaryUtility:
         runsection('param', lambda ctx, name=None: utility.param(ctx, name))
 
     def test_prepare_auth_basic(self):
+        # Read from the config, never from a probe: a probe that finds no
+        # credential is the regression this section exists to catch.
+        if "auth" not in shared_config().get("options", {}):
+            pytest.skip("this SDK's config declares no auth, so it places no credential")
+
         setup = spec.get('prepareAuth', {}).get('DEF', {}).get('setup', {})
         auth_client = ProjectNameSDK.test(None, setup.get('a') or {})
 

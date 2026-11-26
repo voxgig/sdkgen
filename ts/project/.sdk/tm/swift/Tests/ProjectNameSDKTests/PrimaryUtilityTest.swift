@@ -939,7 +939,13 @@ final class PrimaryUtilityTest: XCTestCase {
     }
   }
 
+  // Read from the config, never from a probe: a probe that finds no
+  // credential is the regression this section exists to catch.
   func testPrepareAuthBasic() throws {
+    guard nil != gp(SdkConfig.sharedConfig(), "options").asMap?.entries["auth"] else {
+      throw XCTSkip("this SDK's config declares no auth, so it places no credential")
+    }
+
     let setupOpts = try setupOptions("prepareAuth", "a")
     let authClient = ProjectNameSDK.testSDK(nil, setupOpts)
     let authUtility = authClient.getUtility()

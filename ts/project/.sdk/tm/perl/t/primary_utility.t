@@ -870,7 +870,12 @@ runsection('param', sub {
 
 # === prepareAuth ===
 
-{
+SKIP: {
+  # Read from the config, never from a probe: a probe that finds no
+  # credential is the regression this section exists to catch.
+  skip("this SDK's config declares no auth, so it places no credential", 2)
+    unless exists ProjectNameConfig::make_config()->{options}{auth};
+
   my $auth_client = ProjectNameSDK->test(undef, _def_setup('prepareAuth'));
 
   # The corpus writes the credential as `headers.authorization`: a

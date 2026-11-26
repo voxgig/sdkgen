@@ -901,7 +901,13 @@ fn authSubject(a: std.mem.Allocator, args: []const StdJson, po: *?StdJson, em: *
 
 // prepare_auth reads its defaults off the CLIENT, so the section's own
 // DEF.setup block configures it.
+// Read from the config, never from a probe: a probe that finds no credential
+// is the regression this section exists to catch.
 test "primary corpus: prepareAuth, on this SDK's own credential" {
+    if (h.getp(h.getp(sdk.make_config(), "options"), "auth") != .object) {
+        std.debug.print("\n  SKIP primary prepareAuth: this SDK's config declares no auth, so it places no credential\n", .{});
+        return error.SkipZigTest;
+    }
     var arena = std.heap.ArenaAllocator.init(testing.allocator);
     defer arena.deinit();
     var run = try omnirun.makeRunner(testing.allocator, "primary");

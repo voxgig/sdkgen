@@ -438,6 +438,12 @@ static int auth_prep(omni_json* basic, const char** why) {
   return 1;
 }
 
+/* Read from the config, never from a probe: a probe that finds no credential
+ * is the regression this section exists to catch. */
+static int places_credential(void) {
+  return voxgig_is_map(mget(mget(shared_config(), "options"), "auth"));
+}
+
 static voxgig_value* s_prepare_auth(Context* c, voxgig_value* a, char** e) {
   (void)a;
   PNError* pe = NULL;
@@ -576,7 +582,12 @@ int main(int argc, char** argv) {
   runset("makeRequest", s_make_request, NULL);
   runset("makeResponse", s_make_response, NULL);
   runset("makeSpec", s_make_spec, NULL);
-  runset_with("prepareAuth", s_prepare_auth, NULL, auth_prep);
+  if (places_credential()) {
+    runset_with("prepareAuth", s_prepare_auth, NULL, auth_prep);
+  }
+  else if (wanted("prepareAuth")) {
+    printf("PRIMARY-SKIP prepareAuth - this SDK's config declares no auth, so it places no credential\n");
+  }
   runset("prepareBody", s_prepare_body, NULL);
   runset("prepareHeaders", s_prepare_headers, NULL);
   runset("prepareMethod", s_prepare_method, NULL);

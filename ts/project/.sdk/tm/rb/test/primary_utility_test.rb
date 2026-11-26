@@ -712,6 +712,12 @@ class PrimaryUtilityTest < Minitest::Test
   # === prepareAuth ===
 
   def test_prepare_auth_basic
+    # Read from the config, never from a probe: a probe that finds no
+    # credential is the regression this section exists to catch.
+    unless ProjectNameConfig.shared_config["options"].key?("auth")
+      skip("this SDK's config declares no auth, so it places no credential")
+    end
+
     setup_opts = @spec.dig("prepareAuth", "DEF", "setup", "a")
     auth_client = ProjectNameSDK.test(nil, setup_opts)
 

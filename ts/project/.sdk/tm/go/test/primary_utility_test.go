@@ -872,6 +872,12 @@ func TestPrimaryUtility(t *testing.T) {
 	})
 
 	t.Run("prepareAuth-basic", func(t *testing.T) {
+		// Read from the config, never from a probe: a probe that finds no
+		// credential is the regression this section exists to catch.
+		if options, _ := sdk.MakeConfig()["options"].(map[string]any); nil == options["auth"] {
+			t.Skip("this SDK's config declares no auth, so it places no credential")
+		}
+
 		setupOpts := getSpec(primary, "prepareAuth", "DEF", "setup", "a")
 		authClient := sdk.TestSDK(nil, setupOpts)
 		authUtility := authClient.GetUtility()

@@ -26,8 +26,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
 
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 
+import JAVAPACKAGE.core.Config;
 import JAVAPACKAGE.core.Context;
 import JAVAPACKAGE.core.Entity;
 import JAVAPACKAGE.core.Helpers;
@@ -987,8 +989,14 @@ public class PrimaryUtilityTest {
     });
   }
 
+  // Read from the config, never from a probe: a probe that finds no
+  // credential is the regression this section exists to catch.
   @Test
   public void prepareAuthBasic() {
+    Map<String, Object> options = Helpers.toMapAny(Config.sharedConfig().get("options"));
+    Assumptions.assumeTrue(null != options && options.containsKey("auth"),
+        "this SDK's config declares no auth, so it places no credential");
+
     Map<String, Object> setupOpts =
         RunnerSupport.getSpec(run().spec, "prepareAuth", "DEF", "setup", "a");
     ProjectNameSDK authClient = ProjectNameSDK.testSDK(null, setupOpts);
