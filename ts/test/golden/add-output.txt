@@ -7,7 +7,7 @@ model/feature/test.aontu c6ebe063b562
 model/sdk.aontu deb90c7d4659
 model/target/c.aontu a815ea8be12c
 model/target/target-index.aontu 221a8f331196
-src/cmp/c/Config_c.ts 25d671979d39
+src/cmp/c/Config_c.ts 62a3fb616fa1
 src/cmp/c/EntityBase_c.ts 70f610b1220f
 src/cmp/c/EntityOperation_c.ts 2f10c1394cb9
 src/cmp/c/EntityTypes_c.ts f00a21c238c1
@@ -171,7 +171,7 @@ src/cmp/clojure/utility_clojure.ts fa25f9feb766
 tm/clojure/LICENSE 52acd47c245f
 tm/clojure/Makefile d3ac03fe6a52
 tm/clojure/VERSION e6635045e1d2
-tm/clojure/feature/secrets/sdk/feature/secrets.clj b7de61ebf569
+tm/clojure/feature/secrets/sdk/feature/secrets.clj 4ec23df59edb
 tm/clojure/feature/secrets/voxgig/plugin.clj eda66525b164
 tm/clojure/feature/secrets/voxgig/plugin/capability.clj b95da92fb675
 tm/clojure/feature/secrets/voxgig/plugin/catalog.clj 0b97b9f7d05c
@@ -236,7 +236,7 @@ tm/clojure/src/sdk/features.clj d36ce8927f97
 tm/clojure/src/voxgig/struct.clj 007fea2d9426
 tm/clojure/test/sdk/test/concurrency.clj a9bfd623695b
 tm/clojure/test/sdk/test/feature.clj 590d662e1233
-tm/clojure/test/sdk/test/feature/secrets.clj ef0134a7fd63
+tm/clojure/test/sdk/test/feature/secrets.clj b16ed3c0f749
 tm/clojure/test/sdk/test/netsim.clj 2e797c353a8b
 tm/clojure/test/sdk/test/omni.clj cabff67d9640
 tm/clojure/test/sdk/test/omni_smoke.clj eb96d122a518
@@ -1821,7 +1821,7 @@ tm/scala/feature/ProxyFeature.scala c93944c9ada6
 tm/scala/feature/RatelimitFeature.scala 4b96e4be9fd5
 tm/scala/feature/RbacFeature.scala 978c969eccca
 tm/scala/feature/RetryFeature.scala 117b343c03a4
-tm/scala/feature/SecretsFeature.scala 913d21c1b86d
+tm/scala/feature/SecretsFeature.scala 2e66b3902c5c
 tm/scala/feature/StreamingFeature.scala 8ce264ff9371
 tm/scala/feature/TelemetryFeature.scala b1bf710a5667
 tm/scala/feature/TestFeature.scala 4beda610ed9b
@@ -1869,7 +1869,7 @@ tm/scala/sdktest/SdkTestMain.scala 7c2fd5d309c0
 tm/scala/sdktest/SdkTestSupport.scala 9a0a70dcb153
 tm/scala/sdktest/ServerVariableTest.scala 0c041b23fd44
 tm/scala/sdktest/StructCorpus.scala 9d5a9f2f8795
-tm/scala/sdktest/feature/secrets/SecretsTestMain.scala 46fcc5c8a13b
+tm/scala/sdktest/feature/secrets/SecretsTestMain.scala 0de5bda64991
 tm/scala/sdktest/sdk-test-control.json acadc87764f6
 tm/scala/sdktest/vendor/omni/Json.scala 832ecba5fdf8
 tm/scala/sdktest/vendor/omni/Runner.scala 004f6fce4126
@@ -2221,7 +2221,7 @@ tm/zig/feature/proxy.zig cbe0d0918153
 tm/zig/feature/ratelimit.zig 635710bddb9a
 tm/zig/feature/rbac.zig 4d095a24a6d9
 tm/zig/feature/retry.zig 684949f0d189
-tm/zig/feature/secrets.zig 0ad0ba1bc98f
+tm/zig/feature/secrets.zig 794ca9995400
 tm/zig/feature/secrets/plugin/capability.zig 7984c09f8071
 tm/zig/feature/secrets/plugin/catalog.zig 860e5471d9c3
 tm/zig/feature/secrets/plugin/config.zig 973b702b9e21
@@ -2283,7 +2283,7 @@ tm/zig/src/feature/telemetry/.gitkeep e3b0c44298fc
 tm/zig/src/feature/test/.gitkeep e3b0c44298fc
 tm/zig/src/feature/timeout/.gitkeep e3b0c44298fc
 tm/zig/src/feature/validate/.gitkeep e3b0c44298fc
-tm/zig/test/feature/secrets/secrets_test.zig fd57451acf0c
+tm/zig/test/feature/secrets/secrets_test.zig 4afa048d3277
 tm/zig/test/feature_test.zig dfbcd6a18307
 tm/zig/test/fh.zig fd96cda8dbdc
 tm/zig/test/gotcha_test.zig adfd2d0772c0
