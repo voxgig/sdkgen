@@ -5,7 +5,7 @@ require_relative '../core/helpers'
 
   # Remove an EntityName matching the given criteria.
   #
-  # @param reqmatch [EntityNameRemoveMatch, Hash, nil] match criteria (id/query fields)
+  # @param reqmatch [EntityNameRemoveMatch, Hash, nil] match fields
   # @param ctrl [Object, nil] optional per-call control
   # @return [EntyClass] the removed EntityName entity, marked as deleted; raises
   #   ProjectNameError on failure

@@ -2,9 +2,9 @@
 
 # Remove an EntityName matching the given criteria.
 #
-# reqmatch: match criteria hashref (id/query fields; EntityNameRemoveMatch
-# shape). ctrl: optional per-call control. Returns the removed EntityName
-# entity, marked as deleted; dies with ProjectNameError on failure.
+# reqmatch: match fields hashref (EntityNameRemoveMatch shape). ctrl:
+# optional per-call control. Returns the removed EntityName entity, marked
+# as deleted; dies with ProjectNameError on failure.
 sub remove {
   my ($self, $reqmatch, $ctrl) = @_;
   my $utility = $self->{_utility};

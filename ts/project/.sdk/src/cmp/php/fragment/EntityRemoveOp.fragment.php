@@ -6,8 +6,8 @@ require_once __DIR__ . '/../core/Helpers.php';
     /**
      * Remove an EntityName matching the given criteria.
      *
-     * @param EntityNameRemoveMatch|array|null $reqmatch Match criteria (id/query
-     *   fields) as an assoc-array; EntityNameRemoveMatch names the shape.
+     * @param EntityNameRemoveMatch|array|null $reqmatch Match fields as an
+     *   assoc-array; EntityNameRemoveMatch names the shape.
      * @param mixed $ctrl Optional per-call control overrides.
      * @return EntyClass The removed EntityName entity, marked as deleted; throws
      *   ProjectNameError on failure (item-5 convention).

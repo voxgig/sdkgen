@@ -1,5 +1,5 @@
 ; EJECT-START
-;; Load a single EntityName (reqmatch: id/query fields; nil = empty match).
+;; Load a single EntityName (reqmatch: match fields; nil = empty match).
 (defn load [ent reqmatch ctrl]
   (let [ctx (core/make-context
              (vs/jm "opname" "load" "ctrl" ctrl

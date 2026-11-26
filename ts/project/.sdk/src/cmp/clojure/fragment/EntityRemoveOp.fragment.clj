@@ -1,5 +1,5 @@
 ; EJECT-START
-;; Remove an EntityName matching the criteria (reqmatch: id/query fields).
+;; Remove an EntityName matching the criteria (reqmatch: match fields).
 ;; Resolves to THIS entity, marked as deleted (see AGENTS.md). The instance
 ;; keeps the data it held, so a caller can still read what was removed.
 (defn remove [ent reqmatch ctrl]
