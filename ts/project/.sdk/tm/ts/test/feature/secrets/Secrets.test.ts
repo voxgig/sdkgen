@@ -876,13 +876,17 @@ describe('secrets exchange', { skip: NOAUTH }, () => {
 
   test('with the option, a redirect on the exchange\'s own origin is followed, and no other', async () => {
     await withOrigins(async (o: any) => {
-      const moved = 'POST /api/moved/token {"refresh_token":"' + REFRESH + '"}'
-      const cases: [number, string, boolean][] = [
-        [307, '/api/moved/token', true],
-        [308, o.origin + '/api/moved/token', true],
-        [307, o.away, false],
-        [302, '/api/moved/token', false],
-        [307, '/api/auth/token', false],
+      const sent = ' {"refresh_token":"' + REFRESH + '"}'
+      // Each case: the status, the Location, and the path the exchange is
+      // asked again at, or null where the redirect is refused.
+      const cases: [number, string, string | null][] = [
+        [307, '/api/moved/token', '/api/moved/token'],
+        [308, o.origin + '/api/moved/token', '/api/moved/token'],
+        // A Location of a query alone keeps the path that answered.
+        [307, '?step=2', '/api/auth/token?step=2'],
+        [307, o.away, null],
+        [302, '/api/moved/token', null],
+        [307, '/api/auth/token', null],
       ]
 
       const wrong: string[] = []
@@ -890,7 +894,7 @@ describe('secrets exchange', { skip: NOAUTH }, () => {
       let refused = 0
       let looped = 0
 
-      for (const [status, location, follows] of cases) {
+      for (const [status, location, path] of cases) {
         o.answer = [status, location]
         o.followed.length = 0
         o.exchanged = 0
@@ -899,8 +903,9 @@ describe('secrets exchange', { skip: NOAUTH }, () => {
         const message = String(null == res || null == res.err ? res : res.err.message)
         const seen = status + ' to ' + location + ': ' + message + ' ' + JSON.stringify(o.followed)
 
-        if (follows) {
-          if (true === res.ok && moved === o.followed[0] && 2 === o.followed.length) followed++
+        if (null != path) {
+          if (true === res.ok && 'POST ' + path + sent === o.followed[0] &&
+            2 === o.followed.length) followed++
           else wrong.push(seen)
         }
         else if (0 === o.followed.length && message.includes(
@@ -920,7 +925,7 @@ describe('secrets exchange', { skip: NOAUTH }, () => {
 
       assert.deepEqual(o.elsewhere, [], 'the exchange reached another origin')
       assert.deepEqual(wrong, [])
-      assert.equal(followed, 2)
+      assert.equal(followed, 3)
       assert.equal(refused, 3)
       // A redirect to itself stops at the hop limit.
       assert.equal(looped, 6)
