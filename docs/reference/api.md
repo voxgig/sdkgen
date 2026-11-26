@@ -107,8 +107,13 @@ implementation in `ts/project/.sdk/src/cmp/<lang>/`:
 
 `Main`, `Entity`, `Feature`, `Test`, `Readme`, `ReadmeTop`,
 `ReadmeInstall`, `ReadmeQuick`, `ReadmeIntro`, `ReadmeModel`,
-`ReadmeOptions`, `ReadmeEntity`, `ReadmeHowto`, `ReadmeExplanation`,
-`ReadmeRef`, and `FeatureHook`.
+`ReadmeEntity`, `ReadmeHowto`, `ReadmeExplanation`, `ReadmeRef`, and
+`FeatureHook`.
+
+`ReadmeOptions` is still exported and writes nothing. The client options
+table is in the section `ReadmeModel` writes, and in `REFERENCE.md`, both
+from `clientOptions`. No bundled target ships a `ReadmeOptions_<lang>`
+component, and generation loads none that a package ships.
 
 #### `ReadmeIntro`
 

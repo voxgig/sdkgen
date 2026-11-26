@@ -9,7 +9,6 @@ const ReadmeQuick_1 = require("./ReadmeQuick");
 const ReadmeErrors_1 = require("./ReadmeErrors");
 const ReadmeStation_1 = require("./ReadmeStation");
 const ReadmeModel_1 = require("./ReadmeModel");
-const ReadmeOptions_1 = require("./ReadmeOptions");
 const ReadmeEntity_1 = require("./ReadmeEntity");
 const ReadmeUnions_1 = require("./ReadmeUnions");
 const ReadmeHowto_1 = require("./ReadmeHowto");
@@ -27,7 +26,6 @@ const Readme = (0, component_1.cmp)(function Readme(props) {
         (0, ReadmeErrors_1.ReadmeErrors)({ target });
         (0, ReadmeHowto_1.ReadmeHowto)({ target });
         (0, ReadmeModel_1.ReadmeModel)({ target });
-        (0, ReadmeOptions_1.ReadmeOptions)({ target });
         (0, ReadmeEntity_1.ReadmeEntity)({ target });
         (0, ReadmeFeatures_1.ReadmeFeatures)({ target });
         (0, ReadmeUnions_1.ReadmeUnions)({ target });

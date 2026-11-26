@@ -2,17 +2,9 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReadmeOptions = void 0;
 const component_1 = require("../helpers/component");
-const optional_1 = require("../helpers/optional");
-// Per-language Options block lives in
-// `project/.sdk/src/cmp/<lang>/ReadmeOptions_<lang>.ts`.
-// Each language emits its own constructor-call shape and option-table
-// formatting; they share the data source (target.options).
-const ReadmeOptions = (0, component_1.cmp)(function ReadmeOptions(props) {
-    const { target, ctx$ } = props;
-    const ReadmeOptions_sdk = (0, optional_1.optionalComponent)(ctx$, target, 'ReadmeOptions');
-    if (ReadmeOptions_sdk) {
-        ReadmeOptions_sdk['ReadmeOptions']({ target });
-    }
+// Writes nothing. It stays exported for a project's own components that call
+// it; ReadmeModel and ReadmeRef write the options tables, from `clientOptions`.
+const ReadmeOptions = (0, component_1.cmp)(function ReadmeOptions() {
 });
 exports.ReadmeOptions = ReadmeOptions;
 //# sourceMappingURL=ReadmeOptions.js.map
