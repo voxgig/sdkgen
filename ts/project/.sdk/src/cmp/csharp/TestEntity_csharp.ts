@@ -504,7 +504,7 @@ const generateCreate: OpGen = (ctx, step, index) => {
 
   Content(`
         var ${datavar}Result = ${entvar}.Create(${datavar}, null);
-        ${datavar} = Helpers.ToMapAny(${datavar}Result is IEntity ce ? ce.Data() : ${datavar}Result);
+        ${datavar} = Helpers.ToMapAny(${datavar}Result is IEntity ${datavar}Entity ? ${datavar}Entity.Data() : ${datavar}Result);
         Assert.True(${datavar} != null, "expected create result to be a map");
 `)
   if (null != ctx.entity.id) {
@@ -650,7 +650,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
 
   Content(`
         var ${resdatavar}Result = ${entvar}.${step.o[0].toUpperCase() + step.o.slice(1)}(${datavar}Up, null);
-        var ${resdatavar} = Helpers.ToMapAny(${resdatavar}Result is IEntity ue ? ue.Data() : ${resdatavar}Result);
+        var ${resdatavar} = Helpers.ToMapAny(${resdatavar}Result is IEntity ${resdatavar}Entity ? ${resdatavar}Entity.Data() : ${resdatavar}Result);
         Assert.True(${resdatavar} != null, "expected ${step.o} result to be a map");
 `)
   if (hasEntIdU) {
@@ -718,7 +718,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
             ["id"] = ${srcdatavar}![${rid(entity)}],
         };
 ${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar, flow)}        var ${datavar}Loaded = ${entvar}.Load(${matchvar}, null);
-        var ${datavar}LoadResult = Helpers.ToMapAny(${datavar}Loaded is IEntity le ? le.Data() : ${datavar}Loaded);
+        var ${datavar}LoadResult = Helpers.ToMapAny(${datavar}Loaded is IEntity ${datavar}LoadedEntity ? ${datavar}LoadedEntity.Data() : ${datavar}Loaded);
         Assert.True(${datavar}LoadResult != null, "expected load result to be a map");
 ${sameId(liveLoadComparesId(entity, flow), `StructUtils.GetProp(${datavar}LoadResult, ${rid(entity)})`,
   `StructUtils.GetProp(${srcdatavar}, ${rid(entity)})`, 'expected load result id to match')}`)
