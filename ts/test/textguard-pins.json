@@ -65,7 +65,7 @@
       "relation": "parity",
       "chain": "ReadmeHowto@clojure",
       "cause": "auth",
-      "reason": "Found by the guard: clojure's how-to builds the client with no credential, where every other how-to reads the API key; to be catalogued.",
+      "reason": "clojure has no live test suite, so its how-to has no live-test environment to name the credential's variables in; its examples build their clients from an explicit base URL.",
       "line": "",
       "variations": [
         "baseline"
@@ -94,8 +94,28 @@
     {
       "relation": "parity",
       "chain": "ReadmeHowto@c",
+      "cause": "auth",
+      "reason": "c has no live test suite, so its how-to has no live-test environment to name the credential's variables in; its examples build their clients in test mode or from an explicit base URL.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeHowto@c",
       "cause": "servers",
-      "reason": "c's live-test section documents a suite this target does not have: no generated test reads its environment, so there is no server variable for it to name.",
+      "reason": "c has no live test suite, so its how-to has no live-test environment to name a server variable in; its examples build their clients in test mode or from an explicit base URL.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeHowto@elixir",
+      "cause": "auth",
+      "reason": "elixir has no live test suite, so its how-to has no live-test environment to name the credential's variables in; its examples build their clients in test mode or from an explicit base URL.",
       "line": "",
       "variations": [
         "baseline"
@@ -105,7 +125,17 @@
       "relation": "parity",
       "chain": "ReadmeHowto@elixir",
       "cause": "servers",
-      "reason": "elixir's live-test section documents a suite this target does not have: no generated test reads its environment, so there is no server variable for it to name.",
+      "reason": "elixir has no live test suite, so its how-to has no live-test environment to name a server variable in; its examples build their clients in test mode or from an explicit base URL.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeHowto@ocaml",
+      "cause": "auth",
+      "reason": "ocaml has no live test suite, so its how-to has no live-test environment to name the credential's variables in; its examples build their clients in test mode or from an explicit base URL.",
       "line": "",
       "variations": [
         "baseline"
@@ -115,7 +145,17 @@
       "relation": "parity",
       "chain": "ReadmeHowto@ocaml",
       "cause": "servers",
-      "reason": "ocaml's live-test section documents a suite this target does not have: no generated test reads its environment, so there is no server variable for it to name.",
+      "reason": "ocaml has no live test suite, so its how-to has no live-test environment to name a server variable in; its examples build their clients in test mode or from an explicit base URL.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeHowto@scala",
+      "cause": "auth",
+      "reason": "scala has no live test suite, so its how-to has no live-test environment to name the credential's variables in; its examples build their clients in test mode or from an explicit base URL.",
       "line": "",
       "variations": [
         "baseline"
@@ -125,7 +165,17 @@
       "relation": "parity",
       "chain": "ReadmeHowto@scala",
       "cause": "servers",
-      "reason": "scala's live-test section documents a suite this target does not have: no generated test reads its environment, so there is no server variable for it to name.",
+      "reason": "scala has no live test suite, so its how-to has no live-test environment to name a server variable in; its examples build their clients in test mode or from an explicit base URL.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeHowto@swift",
+      "cause": "auth",
+      "reason": "swift has no live test suite, so its how-to has no live-test environment to name the credential's variables in; its examples build their clients in test mode or from an explicit base URL.",
       "line": "",
       "variations": [
         "baseline"
@@ -135,7 +185,17 @@
       "relation": "parity",
       "chain": "ReadmeHowto@swift",
       "cause": "servers",
-      "reason": "swift's live-test section documents a suite this target does not have: no generated test reads its environment, so there is no server variable for it to name.",
+      "reason": "swift has no live test suite, so its how-to has no live-test environment to name a server variable in; its examples build their clients in test mode or from an explicit base URL.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeHowto@zig",
+      "cause": "auth",
+      "reason": "zig has no live test suite, so its how-to has no live-test environment to name the credential's variables in; its examples build their clients in test mode or from an explicit base URL.",
       "line": "",
       "variations": [
         "baseline"
@@ -145,7 +205,7 @@
       "relation": "parity",
       "chain": "ReadmeHowto@zig",
       "cause": "servers",
-      "reason": "zig's live-test section documents a suite this target does not have: no generated test reads its environment, so there is no server variable for it to name.",
+      "reason": "zig has no live test suite, so its how-to has no live-test environment to name a server variable in; its examples build their clients in test mode or from an explicit base URL.",
       "line": "",
       "variations": [
         "baseline"
