@@ -908,8 +908,8 @@ src/cmp/kotlin/ReadmeTopTest_kotlin.ts 6707235865eb
 src/cmp/kotlin/Schema_kotlin.ts 4ad41ad6b320
 src/cmp/kotlin/SdkError_kotlin.ts dc0cd7ddcc31
 src/cmp/kotlin/TestClean_kotlin.ts fcbdbc7e3104
-src/cmp/kotlin/TestDirect_kotlin.ts 8856aeab235f
-src/cmp/kotlin/TestEntity_kotlin.ts 4c7ebb4fa1c2
+src/cmp/kotlin/TestDirect_kotlin.ts 5ac5800688d1
+src/cmp/kotlin/TestEntity_kotlin.ts ae045b3f0bc7
 src/cmp/kotlin/Test_kotlin.ts 322f28ee5f6e
 src/cmp/kotlin/fragment/Entity.fragment.kt 39df6554e3aa
 src/cmp/kotlin/fragment/EntityBase.fragment.kt 6cd6f4810661
@@ -951,7 +951,7 @@ tm/kotlin/test/OmniResolver.kt 177193e3e49a
 tm/kotlin/test/OmniSmokeTest.kt ec9e888beb69
 tm/kotlin/test/PipelineTest.kt c654fb25bc20
 tm/kotlin/test/PrimaryUtilityTest.kt 9fb8140a4c14
-tm/kotlin/test/RunnerSupport.kt 9a14f7be245b
+tm/kotlin/test/RunnerSupport.kt 658e60d7adb2
 tm/kotlin/test/ServerVariableTest.kt cf52d241cde8
 tm/kotlin/test/StructCorpusTest.kt e240d16295a8
 tm/kotlin/test/sdk-test-control.json bb1582608f2f

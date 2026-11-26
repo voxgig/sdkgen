@@ -1949,7 +1949,7 @@ main: kit: target: js: phase: feature: active: false
   test('every live-capable target wires server variables and test.client.options',
     async () => {
       const LIVE_TARGETS = [
-        'ts', 'js', 'go', 'py', 'java',
+        'ts', 'js', 'go', 'py', 'java', 'kotlin',
         'php', 'rb', 'lua', 'rust', 'csharp', 'perl',
       ]
 
@@ -2021,10 +2021,10 @@ main: kit: target: js: phase: feature: active: false
             gaps.push(`${target}:${name} reads a server env var by dotted access`)
           }
 
-          // The default must survive as text. Dart/Perl/PHP interpolate `$eu`
-          // and Ruby interpolates `#{x}` inside a double-quoted literal, so a
-          // JSON-stringified default is wrong for those targets specifically.
-          if (['perl', 'php'].includes(target) && /"\$eu/.test(src)) {
+          // The default must survive as text. Dart/Perl/PHP/Kotlin interpolate
+          // `$eu` and Ruby interpolates `#{x}` inside a double-quoted literal, so
+          // a JSON-stringified default is wrong for those targets specifically.
+          if (['perl', 'php', 'kotlin'].includes(target) && /"\$eu/.test(src)) {
             gaps.push(`${target}:${name} emits an interpolating default literal`)
           }
           if ('rb' === target && /[^\\]#\{x\}/.test(src)) {

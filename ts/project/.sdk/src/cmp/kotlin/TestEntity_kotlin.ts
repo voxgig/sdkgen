@@ -353,7 +353,7 @@ ${fixtureIdentity(entity)}
       envm["${entidEnvVar}"] = idmap
       envm["${ENVVAR.live}"] = "FALSE"
       envm["${PROJUPPER}_TEST_EXPLAIN"] = "FALSE"
-${authActive ? `      envm["${ENVVAR.apikey}"] = "NONE"\n` : ''}${authSecret ? `      envm["${ENVVAR.secret}"] = "NONE"\n` : ''}${serverEnvEntry}      val env = RunnerSupport.envOverride(envm)
+${authActive ? `      envm["${ENVVAR.apikey}"] = ""\n` : ''}${authSecret ? `      envm["${ENVVAR.secret}"] = ""\n` : ''}${serverEnvEntry}      val env = RunnerSupport.envOverride(envm)
 
       var idmapResolved = Helpers.toMapAny(env["${entidEnvVar}"])
       if (idmapResolved == null) {
@@ -372,7 +372,9 @@ ${authActive ? `      envm["${ENVVAR.apikey}"] = "NONE"\n` : ''}${authSecret ? `
     Content(`
       val live = "TRUE" == env["${ENVVAR.live}"]
       if (live) {
-        val liveOpts = linkedMapOf<String, Any?>()
+        // sdk-test-control.json's test.client.options seeds the live
+        // client; the generated fields below overwrite anything they name.
+        val liveOpts = RunnerSupport.liveClientOptions()
 ${authActive ? `        liveOpts["apikey"] = env["${ENVVAR.apikey}"]\n` : ''}${authSecret ? `        liveOpts["secret"] = env["${ENVVAR.secret}"]\n` : ''}${serverLiveField}        // An empty map, not null: merge answers null when its last entry is null.
         val mergedOpts = Struct.merge(Struct.jt(liveOpts, extra ?: linkedMapOf<String, Any?>()))
         client = ${SDK}(Helpers.toMapAny(mergedOpts))

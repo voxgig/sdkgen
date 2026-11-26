@@ -509,7 +509,7 @@ ${loadSkipBlock}    if (setup.live) {
       val envm = linkedMapOf<String, Any?>()
       envm["${entidEnvVar}"] = linkedMapOf<String, Any?>()
       envm["${ENVVAR.live}"] = "FALSE"
-${authActive ? `      envm["${ENVVAR.apikey}"] = "NONE"\n` : ''}${authSecret ? `      envm["${ENVVAR.secret}"] = "NONE"\n` : ''}${serverEnvEntry}      val env = RunnerSupport.envOverride(envm)
+${authActive ? `      envm["${ENVVAR.apikey}"] = ""\n` : ''}${authSecret ? `      envm["${ENVVAR.secret}"] = ""\n` : ''}${serverEnvEntry}      val env = RunnerSupport.envOverride(envm)
 
       val live = "TRUE" == env["${ENVVAR.live}"]
 
@@ -517,7 +517,9 @@ ${authActive ? `      envm["${ENVVAR.apikey}"] = "NONE"\n` : ''}${authSecret ? `
       setup.calls = calls
 
       if (live) {
-        val mergedOpts = linkedMapOf<String, Any?>()
+        // sdk-test-control.json's test.client.options seeds the live
+        // client; the generated fields below overwrite anything they name.
+        val mergedOpts = RunnerSupport.liveClientOptions()
 ${authActive ? `        mergedOpts["apikey"] = env["${ENVVAR.apikey}"]\n` : ''}${authSecret ? `        mergedOpts["secret"] = env["${ENVVAR.secret}"]\n` : ''}${serverLiveField}        setup.client = ${SDK}(mergedOpts)
         setup.live = true
 
