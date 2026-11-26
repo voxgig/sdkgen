@@ -349,6 +349,24 @@ class TestCacheFeature:
         assert json_func() == {"v": 1}
         assert json_func() == {"v": 1}
 
+    def test_a_body_that_declares_another_type_than_json_passes_by_unread(self):
+        sent = []
+
+        def reply(_n, _fd):
+            res = make_response(200, None, {"content-type": "audio/wav"})
+            res["body"] = b"RIFF"
+            sent.append(res)
+            return res
+
+        server, calls = recording_server(reply)
+        h = make_client([{"name": "cache"}], server=server)
+        a = h.op(op="load", path="/w/1/audio")
+        b = h.op(op="load", path="/w/1/audio")
+        assert len(calls) == 2, "the body was stored"
+        assert a["ctx"].response is sent[0], "the cache handed on a copy it had read"
+        assert b["ctx"].response is sent[1]
+        assert h.client._cache["bypass"] == 2
+
     def test_inactive_cache_does_not_wrap(self):
         server, calls = recording_server()
         h = make_client([{"name": "cache", "options": {"active": False}}],
