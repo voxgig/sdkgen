@@ -28,7 +28,8 @@ function featureDocs(model, target) {
             .map((k) => ({ name: k, type: (0, facts_1.fact)(f, 'option')[k].type.cell }));
         return {
             name: f.name,
-            Name: f.Name || f.name,
+            Name: f.Name || (0, jostraca_1.camelify)(f.name),
+            version: String(f.version ?? ''),
             title: (0, facts_1.fact)(f, 'title').inline,
             titleCell: (0, facts_1.fact)(f, 'title').cell,
             transport: f.transport || 'none',

@@ -6,6 +6,7 @@ import {
   List, File, Content, Copy, Folder, Fragment, Line, FeatureHook,
   inactiveFeatureExcludes,
   entityClassName, entityCollection, srcFeatureExcludes, pluginExcludes,
+  fact,
   stationLibrary,
   targetFeatures,
   TEST_CONTROL_EXCLUDE
@@ -75,7 +76,7 @@ const Main = cmp(async function Main(props: any) {
 
     File({ name: model.const.Name + 'SDK.' + target.ext }, () => {
 
-      Line(`// ${model.const.Name} ${target.Name} SDK\n`)
+      Line(`// ${model.const.Name} ${fact(target, 'title')} SDK\n`)
 
       List({ item: entity }, ({ item }: any) => {
         const cls = entityClassName(item, entityCollection(model))
@@ -120,12 +121,6 @@ if (null != this._secrets) {
 
             '// #SecretsExport': ({ indent }: any) => secrets ?
               Line({ indent }, 'sekreto,') : undefined,
-
-            '#BuildFeatures': ({ indent }: any) => {
-              List({ item: feature, line: false }, ({ item }: any) =>
-                Line({ indent },
-                  `featureAdd(this._rootctx, new ${item.Name}Feature())`))
-            },
 
             '#Feature-Hook': ({ name, indent }: any) => Content({ indent }, `
 fres = featureHook(ctx, '${name}')

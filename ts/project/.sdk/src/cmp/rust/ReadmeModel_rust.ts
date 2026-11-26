@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, fact } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, entityClassName, entityCollection, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -78,7 +78,7 @@ Creates a test-mode client with mock transport. Both arguments may be
 
   each(entityList, (ent: any) => {
     const article = /^[aeiou]/i.test(ent.Name) ? 'an' : 'a'
-    Content(`| \`${rustMethodName(ent.name)}\` | \`(entopts: Value) -> Rc<${ent.Name}Entity>\` | Create ${article} ${ent.Name} entity instance. |
+    Content(`| \`${rustMethodName(ent.name)}\` | \`(entopts: Value) -> Rc<${entityClassName(ent, entityCollection(model))}>\` | Create ${article} ${ent.Name} entity instance. |
 `)
   })
 

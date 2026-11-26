@@ -27,7 +27,7 @@ scala/
 ├── project.scala               -- scala-cli project config (Scala 3, no deps)
 ├── core/                        -- Main SDK client, config, entity base, error type
 ├── entity/                      -- Entity implementations
-├── feature/                     -- Built-in features (Base, Test, Log, ...)
+├── feature/                     -- Feature implementations
 ├── utility/                     -- Utility functions and the vendored struct library
 └── sdktest/                     -- Generated per-entity tests (scala-cli mains)
 \`\`\`

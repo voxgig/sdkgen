@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, safeVarName, exampleVarName, luaKey, targetFeatures, opNeedsAction, bodyNote, listMatchArg, matchExampleItems, litString, requestExampleItems, fact } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, safeVarName, exampleVarName, luaKey, opNeedsAction, bodyNote, listMatchArg, matchExampleItems, litString, requestExampleItems, entityClassName, entityCollection, featureDocs, fact } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -63,8 +63,6 @@ const ReadmeRef = cmp(function ReadmeRef(props: any) {
   const { model } = props.ctx$
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
-  const feature = targetFeatures(model, target)
-
   const publishedEntities = each(entity).filter((e: any) => e.active !== false)
 
 
@@ -183,7 +181,7 @@ same parameters as \`direct()\`.
       Content(`
 ---
 
-## ${ent.Name}Entity
+## ${entityClassName(ent, entityCollection(model))}
 
 `)
 
@@ -359,7 +357,7 @@ Set the entity match criteria.
 
 #### \`make() -> Entity\`
 
-Create a new \`${ent.Name}Entity\` instance with the same client and
+Create a new \`${entityClassName(ent, entityCollection(model))}\` instance with the same client and
 options.
 
 #### \`get_name() -> string\`
@@ -370,7 +368,7 @@ Return the entity name.
     })
 
 
-    const activeFeatures = each(feature).filter((f: any) => f.active)
+    const activeFeatures = featureDocs(model, target)
     if (activeFeatures.length > 0) {
       Content(`
 ---
@@ -382,7 +380,7 @@ Return the entity name.
 `)
 
       activeFeatures.map((f: any) => {
-        Content(`| \`${f.name}\` | ${f.version || '0.0.1'} | ${f.title || ''} |
+        Content(`| \`${f.name}\` | ${f.version} | ${f.titleCell} |
 `)
       })
 

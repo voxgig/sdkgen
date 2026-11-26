@@ -21,7 +21,7 @@ const log: any = {
 }
 
 function makeModel() {
-  return {
+  return applyFacts({
     name: 'demo',
     const: { name: 'demo', Name: 'Demo' },
     main: { kit: {
@@ -32,12 +32,12 @@ function makeModel() {
         },
       },
       feature: {
-        test: { active: true, name: 'test', title: 'Test mode (offline)' },
-        log: { active: true, name: 'log', title: 'Structured logging' },
-        retry: { active: false, name: 'retry', title: 'Retry' },
+        test: { active: true, name: 'test', title: 'Test mode (offline)', config: { options: { active: false } } },
+        log: { active: true, name: 'log', title: 'Structured logging', config: { options: { active: true } } },
+        retry: { active: false, name: 'retry', title: 'Retry', config: { options: { active: false } } },
       },
     } },
-  }
+  })
 }
 
 async function render(comp: any, langName: string, model: any = makeModel()): Promise<string> {

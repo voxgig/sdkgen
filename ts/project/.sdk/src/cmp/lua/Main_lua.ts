@@ -151,10 +151,9 @@ feature/secrets/native/sekretovault.so: feature/secrets/native/sekretovault.c
             `-- Typed-model annotations (LuaLS ---@class); empty at runtime.\n` +
             `require("${model.name}_types")`),
 
-          '-- #BuildFeatures': ({ indent }: any) => {
+          '/(?<indent>[ \\t]*)--[ \\t]*#BuildFeatures[ \\t]*\\n?/': ({ indent }: any) => {
             each(feature, (feat: any) => {
-              const fname = feat.name.charAt(0).toUpperCase() + feat.name.slice(1)
-              Content({ indent }, `  -- feature: ${feat.name}
+              Content({ indent }, `-- feature: ${feat.name}
 `)
             })
           },

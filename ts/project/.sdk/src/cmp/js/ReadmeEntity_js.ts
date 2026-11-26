@@ -111,7 +111,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
         : ''
       Content(`#### Example: Load
 
-\`\`\`ts
+\`\`\`js
 const ${eVar} = await client.${entity.Name}().load(${loadArg})
 \`\`\`
 
@@ -121,7 +121,7 @@ const ${eVar} = await client.${entity.Name}().load(${loadArg})
     if (callable.includes('list')) {
       Content(`#### Example: List
 
-\`\`\`ts
+\`\`\`js
 const ${eVar}s = await client.${entity.Name}().list(${listMatchArg('js', entity)})
 \`\`\`
 
@@ -138,7 +138,7 @@ const ${eVar}s = await client.${entity.Name}().list(${listMatchArg('js', entity)
         .filter((it: any) => !it.optional)
       Content(`#### Example: Create
 
-\`\`\`ts
+\`\`\`js
 const ${eVar} = await client.${entity.Name}().create({
 `)
       createItems.map((it: any) => {

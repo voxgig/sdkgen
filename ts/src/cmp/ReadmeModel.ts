@@ -8,6 +8,7 @@ import {
 } from '../types'
 
 import { fact } from '../helpers/facts'
+import { entityClassName, entityCollection } from '../helpers/opShape'
 import { optionalComponent } from '../helpers/optional'
 
 
@@ -67,7 +68,7 @@ ${apikeyRow}| \`base\` | \`string\` | Base URL of the API server. |
 
   each(entityList, (ent: any) => {
     const article = /^[aeiou]/i.test(ent.Name) ? 'an' : 'a'
-    Content(`| \`${ent.Name}(data?)\` | \`${ent.Name}Entity\` | Create ${article} ${ent.Name} entity instance. |
+    Content(`| \`${ent.Name}(data?)\` | \`${entityClassName(ent, entityCollection(model))}\` | Create ${article} ${ent.Name} entity instance. |
 `)
   })
 

@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, fact } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, entityClassName, entityCollection, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -83,7 +83,7 @@ ${apikeyOptionRow}| \`base\` | \`string\` | Base URL of the API server. |
 
   each(entityList, (ent: any) => {
     const article = /^[aeiou]/i.test(ent.Name) ? 'an' : 'a'
-    Content(`| \`${ent.Name}(data?)\` | \`${ent.Name}Entity\` | Create ${article} ${ent.Name} entity instance. |
+    Content(`| \`${ent.Name}(data?)\` | \`${entityClassName(ent, entityCollection(model))}\` | Create ${article} ${ent.Name} entity instance. |
 `)
   })
 

@@ -495,7 +495,7 @@ When the entity interface does not cover an endpoint, use \`direct\`:
     });
 });
 const ReadmeTopAdvanced = (0, component_1.cmp)(function ReadmeTopAdvanced(props) {
-    const { feature } = props.s;
+    const { model, sdkTargets } = props.s;
     (0, jostraca_1.Content)(`## Advanced
 
 > Everyday use only needs the sections above. This explains the internals
@@ -510,16 +510,21 @@ A feature hook fires before each stage (e.g. \`${FeatureHook_1.PIPELINE_STAGES[0
 forking the SDK.
 
 `);
-    const active = (0, jostraca_1.each)(feature).filter((feat) => feat.active);
-    if (0 < active.length) {
+    // The features some SDK target documents.
+    const documented = new Map();
+    for (const tgt of sdkTargets) {
+        for (const f of (0, FeatureDocs_1.featureDocs)(model, tgt))
+            documented.set(f.name, f);
+    }
+    const features = [...documented.values()].sort((a, b) => a.name.localeCompare(b.name));
+    if (0 < features.length) {
         (0, jostraca_1.Content)(`### Features
 
 | Feature | Purpose |
 | --- | --- |
 `);
-        for (const feat of active) {
-            const purpose = (0, facts_1.fact)(feat, 'title').cell || feat.Name || feat.name;
-            (0, jostraca_1.Content)(`| **${feat.Name || feat.name}Feature** | ${purpose} |
+        for (const f of features) {
+            (0, jostraca_1.Content)(`| **${f.Name}Feature** | ${f.titleCell || f.Name} |
 `);
         }
         (0, jostraca_1.Content)(`
@@ -734,7 +739,6 @@ const ReadmeTop = (0, component_1.cmp)(function ReadmeTop(props) {
         apiSummary,
         websiteLine,
         metaSourceLine,
-        feature,
         activeEntities,
         hasCli,
         hasMcp,

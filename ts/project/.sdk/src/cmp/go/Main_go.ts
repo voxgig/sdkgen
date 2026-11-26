@@ -83,14 +83,6 @@ const Main = cmp(async function Main(props: any) {
             'ProjectNameModule': gomodule,
             '"github.com/voxgig/struct"': `"${gomodule}/utility/struct"`,
 
-            '#BuildFeatures': ({ indent }: any) => {
-              each(feature, (feat: any) => {
-                const fname = goFeatureName(feat)
-                Content({ indent }, `u.FeatureAdd(s.rootctx, New${fname}FeatureFunc())
-`)
-              })
-            },
-
             '#Feature-Hook': ({ name, indent }: any) => Content({ indent }, `
 s.utility.FeatureHook(s.rootctx, "${name}")
 `),

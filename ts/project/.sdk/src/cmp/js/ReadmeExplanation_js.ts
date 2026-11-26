@@ -12,7 +12,7 @@ ${model.name}/
 ├── src/
 │   ├── ${model.Name}SDK.js        # Main SDK class
 │   ├── entity/             # Entity implementations
-│   ├── feature/            # Built-in features (Base, Test, Log)
+│   ├── feature/            # Feature implementations
 │   └── utility/            # Utility functions
 └── test/                   # Test suites
 \`\`\`

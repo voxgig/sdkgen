@@ -2,149 +2,6 @@
   "suspended": [],
   "pins": [
     {
-      "relation": "fence",
-      "chain": "Readme > ReadmeEntity",
-      "cause": "ts",
-      "reason": "N11: the js copies fence their entity blocks as ts; WP37 fences them as js in the copy wave.",
-      "line": "```ts",
-      "variations": [
-        "auth-basic",
-        "auth-basic-query",
-        "auth-off",
-        "baseline",
-        "entities-lone",
-        "entity-zqa",
-        "entity-zqb",
-        "entity-zqc",
-        "entity-zqd",
-        "entity-zqe",
-        "entity-zqf",
-        "entity-zqg",
-        "feature-audit",
-        "feature-cache",
-        "feature-clienttrack",
-        "feature-cost",
-        "feature-debug",
-        "feature-idempotency",
-        "feature-log",
-        "feature-metrics",
-        "feature-netsim",
-        "feature-paging",
-        "feature-proxy",
-        "feature-ratelimit",
-        "feature-rbac",
-        "feature-retry",
-        "feature-secrets",
-        "feature-streaming",
-        "feature-telemetry",
-        "feature-timeout",
-        "feature-validate",
-        "features-empty",
-        "features-lone",
-        "phase-agentguide-off-ts",
-        "phase-build-off",
-        "phase-readme-off-ts",
-        "phase-top-off",
-        "server-defaulted",
-        "server-plain",
-        "server-required",
-        "target-c",
-        "target-clojure",
-        "target-cpp",
-        "target-csharp",
-        "target-elixir",
-        "target-go",
-        "target-go-cli",
-        "target-go-mcp",
-        "target-java",
-        "target-kotlin",
-        "target-lua",
-        "target-ocaml",
-        "target-perl",
-        "target-php",
-        "target-py",
-        "target-py-data",
-        "target-rb",
-        "target-rust",
-        "target-scala",
-        "target-swift",
-        "target-ts",
-        "target-zig"
-      ]
-    },
-    {
-      "relation": "fence",
-      "chain": "Readme > ReadmeRef",
-      "cause": "ts",
-      "reason": "N11: the js copies fence their reference blocks as ts; WP37 fences them as js in the copy wave.",
-      "line": "```ts",
-      "variations": [
-        "auth-basic",
-        "auth-basic-query",
-        "auth-off",
-        "baseline",
-        "entities-empty",
-        "entities-lone",
-        "entity-zqa",
-        "entity-zqb",
-        "entity-zqc",
-        "entity-zqd",
-        "entity-zqe",
-        "entity-zqf",
-        "entity-zqg",
-        "feature-audit",
-        "feature-cache",
-        "feature-clienttrack",
-        "feature-cost",
-        "feature-debug",
-        "feature-idempotency",
-        "feature-log",
-        "feature-metrics",
-        "feature-netsim",
-        "feature-paging",
-        "feature-proxy",
-        "feature-ratelimit",
-        "feature-rbac",
-        "feature-retry",
-        "feature-secrets",
-        "feature-streaming",
-        "feature-telemetry",
-        "feature-timeout",
-        "feature-validate",
-        "features-empty",
-        "features-lone",
-        "phase-agentguide-off-ts",
-        "phase-build-off",
-        "phase-readme-off-ts",
-        "phase-top-off",
-        "server-defaulted",
-        "server-plain",
-        "server-required",
-        "target-c",
-        "target-clojure",
-        "target-cpp",
-        "target-csharp",
-        "target-elixir",
-        "target-go",
-        "target-go-cli",
-        "target-go-mcp",
-        "target-java",
-        "target-kotlin",
-        "target-lua",
-        "target-ocaml",
-        "target-perl",
-        "target-php",
-        "target-py",
-        "target-py-data",
-        "target-rb",
-        "target-rust",
-        "target-scala",
-        "target-swift",
-        "target-ts",
-        "target-zig"
-      ]
-    },
-    {
       "relation": "link",
       "chain": "Readme > ReadmeHowto",
       "cause": "cd ts",
@@ -192,6 +49,26 @@
       "line": "value model (ordered, Java-backed maps and lists) rather than typed",
       "variations": [
         "target-java"
+      ]
+    },
+    {
+      "relation": "off",
+      "chain": "Readme > ReadmeFeatures > ReadmeFeatureOptions",
+      "cause": "feature",
+      "reason": "Generic word: `cache` here is the secrets feature's own option, which keeps a resolved credential, not the cache feature.",
+      "line": "| `cache` | `true` |",
+      "variations": [
+        "feature-cache"
+      ]
+    },
+    {
+      "relation": "off",
+      "chain": "Readme > ReadmeRef > ReadmeRefFeatures > ReadmeRefFeatureOptions",
+      "cause": "feature",
+      "reason": "Generic word: `cache` here is the secrets feature's own option, which keeps a resolved credential, not the cache feature.",
+      "line": "| `cache` | `true` |",
+      "variations": [
+        "feature-cache"
       ]
     },
     {
@@ -552,6 +429,36 @@
       "line": "",
       "variations": [
         "baseline"
+      ]
+    },
+    {
+      "relation": "reaction",
+      "chain": "AgentGuide > AgentGuideFeatureTable",
+      "cause": "empty",
+      "reason": "Per-target fact: the Template column shows only where a feature has a template of its own; clojure and ocaml have one for secrets alone, so without secrets their tables drop the column while their siblings keep it.",
+      "line": "| Feature | Template | Active hooks |",
+      "variations": [
+        "features-empty"
+      ]
+    },
+    {
+      "relation": "reaction",
+      "chain": "AgentGuide > AgentGuideFeatureTable",
+      "cause": "feature",
+      "reason": "Per-target fact: the Template column shows only where a feature has a template of its own; clojure and ocaml have one for secrets alone, so without secrets their tables drop the column while their siblings keep it.",
+      "line": "| Feature | Template | Active hooks |",
+      "variations": [
+        "feature-secrets"
+      ]
+    },
+    {
+      "relation": "reaction",
+      "chain": "AgentGuide > AgentGuideFeatureTable",
+      "cause": "lone",
+      "reason": "Per-target fact: the Template column shows only where a feature has a template of its own; clojure and ocaml have one for secrets alone, so without secrets their tables drop the column while their siblings keep it.",
+      "line": "| Feature | Template | Active hooks |",
+      "variations": [
+        "features-lone"
       ]
     }
   ]

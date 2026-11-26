@@ -1,7 +1,7 @@
 import { featureApplies } from '../helpers/applicability'
 import { fact } from '../helpers/facts'
 
-import { each } from 'jostraca'
+import { camelify, each } from 'jostraca'
 
 import { KIT, getModelPath } from '../types'
 
@@ -10,6 +10,7 @@ import { KIT, getModelPath } from '../types'
 type FeatureDoc = {
   name: string
   Name: string
+  version: string
   title: string
   titleCell: string
   transport: string
@@ -48,7 +49,8 @@ function featureDocs(model: any, target?: any): FeatureDoc[] {
         .map((k) => ({ name: k, type: fact(f, 'option')[k].type.cell }))
       return {
         name: f.name,
-        Name: f.Name || f.name,
+        Name: f.Name || camelify(f.name),
+        version: String(f.version ?? ''),
         title: fact(f, 'title').inline,
         titleCell: fact(f, 'title').cell,
         transport: f.transport || 'none',

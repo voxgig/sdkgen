@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, safeVarName, exampleVarName, targetFeatures, opNeedsAction, bodyNote, listMatchArg, entityClassName, entityCollection, matchExampleItems, litString, requestExampleItems, fact } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, safeVarName, exampleVarName, opNeedsAction, bodyNote, listMatchArg, entityClassName, entityCollection, matchExampleItems, litString, requestExampleItems, featureDocs, fact } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -61,8 +61,6 @@ const ReadmeRef = cmp(function ReadmeRef(props: any) {
   const { model } = props.ctx$
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
-  const feature = targetFeatures(model, target)
-
   const publishedEntities = each(entity).filter((e: any) => e.active !== false)
 
 
@@ -127,7 +125,7 @@ client = ${model.const.Name}SDK.test()
     publishedEntities.map((ent: any) => {
       Content(`#### \`${ent.Name}(data=None)\`
 
-Create a new \`${ent.Name}Entity\` instance. Pass \`None\` for no initial data.
+Create a new \`${entityClassName(ent, entityCollection(model))}\` instance. Pass \`None\` for no initial data.
 
 `)
     })
@@ -178,7 +176,7 @@ Prepare a fetch definition without sending. Returns the \`fetchdef\` and raises 
       Content(`
 ---
 
-## ${ent.Name}Entity
+## ${entityClassName(ent, entityCollection(model))}
 
 `)
 
@@ -359,7 +357,7 @@ Set the entity match criteria.
 
 #### \`make() -> Entity\`
 
-Create a new \`${ent.Name}Entity\` instance with the same options.
+Create a new \`${entityClassName(ent, entityCollection(model))}\` instance with the same options.
 
 #### \`get_name() -> str\`
 
@@ -369,7 +367,7 @@ Return the entity name.
     })
 
 
-    const activeFeatures = each(feature).filter((f: any) => f.active)
+    const activeFeatures = featureDocs(model, target)
     if (activeFeatures.length > 0) {
       Content(`
 ---
@@ -381,7 +379,7 @@ Return the entity name.
 `)
 
       activeFeatures.map((f: any) => {
-        Content(`| \`${f.name}\` | ${f.version || '0.0.1'} | ${f.title || ''} |
+        Content(`| \`${f.name}\` | ${f.version} | ${f.titleCell} |
 `)
       })
 

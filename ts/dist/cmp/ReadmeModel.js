@@ -5,6 +5,7 @@ const jostraca_1 = require("jostraca");
 const component_1 = require("../helpers/component");
 const types_1 = require("../types");
 const facts_1 = require("../helpers/facts");
+const opShape_1 = require("../helpers/opShape");
 const optional_1 = require("../helpers/optional");
 const ReadmeModel = (0, component_1.cmp)(function ReadmeModel(props) {
     const { target, ctx$ } = props;
@@ -54,7 +55,7 @@ ${apikeyRow}| \`base\` | \`string\` | Base URL of the API server. |
 `);
     (0, jostraca_1.each)(entityList, (ent) => {
         const article = /^[aeiou]/i.test(ent.Name) ? 'an' : 'a';
-        (0, jostraca_1.Content)(`| \`${ent.Name}(data?)\` | \`${ent.Name}Entity\` | Create ${article} ${ent.Name} entity instance. |
+        (0, jostraca_1.Content)(`| \`${ent.Name}(data?)\` | \`${(0, opShape_1.entityClassName)(ent, (0, opShape_1.entityCollection)(model))}\` | Create ${article} ${ent.Name} entity instance. |
 `);
     });
     (0, jostraca_1.Content)(`| \`options()\` | \`object\` | Deep copy of current SDK options. |

@@ -1,6 +1,7 @@
 type FeatureDoc = {
     name: string;
     Name: string;
+    version: string;
     title: string;
     titleCell: string;
     transport: string;

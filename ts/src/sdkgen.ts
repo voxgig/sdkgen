@@ -55,6 +55,8 @@ import { ReadmeHowto } from './cmp/ReadmeHowto'
 import { ReadmeExplanation } from './cmp/ReadmeExplanation'
 import { ReadmeRef } from './cmp/ReadmeRef'
 import { ReadmeRefFeatures } from './cmp/ReadmeRefFeatures'
+import { featureDocs } from './cmp/FeatureDocs'
+import type { FeatureDoc } from './cmp/FeatureDocs'
 import { FeatureHook } from './cmp/FeatureHook'
 import { registerComponent } from './cmp/Registered'
 
@@ -1025,6 +1027,7 @@ export type {
   RegisterOptions,
   Manifest,
   ManifestRead,
+  FeatureDoc,
 }
 
 export type {
@@ -1288,6 +1291,7 @@ export {
 
   featureApplies,
   targetFeatures,
+  featureDocs,
   featureTags,
   unknownTags,
   TAGS,

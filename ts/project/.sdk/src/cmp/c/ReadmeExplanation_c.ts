@@ -11,7 +11,9 @@ The C SDK uses a single dynamic \`voxgig_value*\` type throughout rather than
 a typed struct per entity. \`voxgig_value\` is the vendored voxgig struct
 port (a JSON-shaped tagged union: string, number, bool, list, map, null,
 undef). This mirrors the dynamic nature of the API and keeps the SDK
-flexible — no code generation is needed when the API schema changes.
+flexible: code that works with \`voxgig_value\` needs no regeneration when
+the API schema changes. The typed models in \`entity/types.h\` follow the
+schema only when the SDK is regenerated.
 
 Build request maps with the \`cmap\` / \`clist\` / \`v_str\` / \`v_num\` /
 \`v_bool\` helper builders, and read fields back with \`getp\` (or the typed
@@ -35,7 +37,7 @@ Always initialise \`PNError* err = NULL;\` and branch on it after each call.
 ${target.name}/
 ├── core/          -- Pipeline types, config, client (client.c), api.h + sdk.h
 ├── entity/        -- Per-entity implementations (one .c each)
-├── feature/       -- Built-in features (base, test, log, ...)
+├── feature/       -- Feature implementations
 ├── utility/       -- Utilities + the vendored voxgig struct port (utility/struct)
 ├── tests/         -- Test binaries (each a standalone main())
 └── Makefile       -- Builds libsdk.a and runs every tests/*.c

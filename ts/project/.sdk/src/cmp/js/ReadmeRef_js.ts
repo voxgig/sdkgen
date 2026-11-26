@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField, safeVarName, exampleVarName, jsKey , targetFeatures, opNeedsAction, bodyNote, listMatchArg, matchExampleItems, requestExampleItems, fact } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField, safeVarName, exampleVarName, jsKey, opNeedsAction, bodyNote, listMatchArg, matchExampleItems, requestExampleItems, entityClassName, entityCollection, featureDocs, fact } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -49,8 +49,6 @@ const ReadmeRef = cmp(function ReadmeRef(props: any) {
   const { model } = props.ctx$
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
-  const feature = targetFeatures(model, target)
-
   const publishedEntities = each(entity).filter((e: any) => e.active !== false)
 
 
@@ -67,8 +65,8 @@ Complete API reference for the ${model.Name} ${target.title} SDK.
 
 `)
 
-    Content(`\`\`\`ts
-new ${model.Name}SDK(options?: object)
+    Content(`\`\`\`js
+new ${model.Name}SDK(options)
 \`\`\`
 
 Create a new SDK client instance.
@@ -97,7 +95,7 @@ ${isAuthActive(model) ? '| \`options.apikey\` | \`string\` | API key for authent
 
 Create a test client with mock features active.
 
-\`\`\`ts
+\`\`\`js
 const client = ${model.Name}SDK.test()
 \`\`\`
 
@@ -131,7 +129,7 @@ Create a new \`${ent.Name}\` entity instance.
 | --- | --- | --- |
 | \`data\` | \`object\` | Initial entity data. |
 
-**Returns:** \`${ent.Name}Entity\` instance.
+**Returns:** \`${entityClassName(ent, entityCollection(model))}\` instance.
 
 `)
     })
@@ -206,7 +204,7 @@ as \`callopts.signal\`, and ends when it aborts.
       Content(`
 ---
 
-## ${ent.Name}Entity
+## ${entityClassName(ent, entityCollection(model))}
 
 `)
 
@@ -216,7 +214,7 @@ as \`callopts.signal\`, and ends when it aborts.
 `)
       }
 
-      Content(`\`\`\`ts
+      Content(`\`\`\`js
 const ${eVar} = client.${ent.Name}()
 \`\`\`
 
@@ -302,14 +300,14 @@ ${info.desc}
                 `${jsKey(it.name)}: ${exampleValue(ent, ent.op && ent.op[opname], it.name,
                   it.name === idF ? ent.name + '_id' : it.name)}`).join(', ')} }`
               : ''
-            Content(`\`\`\`ts
+            Content(`\`\`\`js
 const result = await client.${ent.Name}().${opname}(${arg})
 \`\`\`
 
 `)
           }
           else if ('list' === opname) {
-            Content(`\`\`\`ts
+            Content(`\`\`\`js
 const results = await client.${ent.Name}().${opname}(${listMatchArg('js', ent)})
 \`\`\`
 
@@ -323,7 +321,7 @@ const results = await client.${ent.Name}().${opname}(${listMatchArg('js', ent)})
             // `name: /* type */` comment is not a value and yields invalid code.
             const createItems = requestExampleItems(ent, 'create')
               .filter((it: any) => !it.optional)
-            Content(`\`\`\`ts
+            Content(`\`\`\`js
 const result = await client.${ent.Name}().create({
 `)
             createItems.map((it: any) => {
@@ -345,7 +343,7 @@ const result = await client.${ent.Name}().create({
             const updateLines = updateItems.map((it: any) =>
               `  ${jsKey(it.name)}: ${exampleValue(ent, ent.op && ent.op[opname], it.name,
                 it.name === idF ? ent.name + '_id' : it.name)},\n`).join('')
-            Content(`\`\`\`ts
+            Content(`\`\`\`js
 const result = await client.${ent.Name}().${opname}({
 ${updateLines}  // ${'patch' === opname ? 'Only the fields to change' : 'Fields to update'}
 })
@@ -380,7 +378,7 @@ Get or set the entity match criteria. Works the same as \`data()\`.
 
 #### \`make()\`
 
-Create a new \`${ent.Name}Entity\` instance with the same client and
+Create a new \`${entityClassName(ent, entityCollection(model))}\` instance with the same client and
 options.
 
 #### \`client()\`
@@ -396,7 +394,7 @@ Return a copy of the entity options.
 
 
     // Features section
-    const activeFeatures = each(feature).filter((f: any) => f.active)
+    const activeFeatures = featureDocs(model, target)
     if (activeFeatures.length > 0) {
       Content(`
 ---
@@ -408,7 +406,7 @@ Return a copy of the entity options.
 `)
 
       activeFeatures.map((f: any) => {
-        Content(`| \`${f.name}\` | ${f.version || '0.0.1'} | ${f.title || ''} |
+        Content(`| \`${f.name}\` | ${f.version} | ${f.titleCell} |
 `)
       })
 
@@ -418,7 +416,7 @@ Features are activated via the \`feature\` option:
 
 `)
 
-      Content(`\`\`\`ts
+      Content(`\`\`\`js
 const client = new ${model.Name}SDK({
   feature: {
 `)

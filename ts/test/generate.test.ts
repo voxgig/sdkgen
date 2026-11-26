@@ -12,7 +12,7 @@ import { memfs } from 'memfs'
 import { cmp, each, names, Project, Folder } from 'jostraca'
 import * as sucrase from 'sucrase'
 
-import { SdkGen, mcpTools, alongsideNote, applyFacts } from '../dist/sdkgen.js'
+import { SdkGen, mcpTools, alongsideNote, applyFacts, featureDocs, targetFeatures } from '../dist/sdkgen.js'
 import { aliasCmpText } from '../dist/action/target.js'
 
 // Fixture, miniature Root and memfs layering — shared with
@@ -22,7 +22,7 @@ import {
   FOLD_ENTITY, UNGENERATED_OP, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, CREATELESS_ENTITY,
   ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY, DOC_MODELS, namedEntity, toolchain,
   REQUEST_SHAPED_ENTITY, exampleParams, wireNameParams, slashRoutes, getOnlyFlows, getOnlyBuildctx, multiRouteLoad, keylessLoad,
-  directDiscovery, liveFallbacks, slugKeyed, liveIdentities, BASIC_TEMPLATED, BASIC_QUERY,
+  directDiscovery, liveFallbacks, slugKeyed, liveIdentities, BASIC_TEMPLATED, BASIC_QUERY, offFeature,
 } from './generateharness'
 
 
@@ -316,6 +316,24 @@ function loadTsConfig(src: string): any {
 function findFile(out: Record<string, string>, suffix: string): string | undefined {
   const hit = Object.entries(out).find(([p]) => p.endsWith(suffix))
   return hit ? hit[1] : undefined
+}
+
+
+// The lines of the layout tree a README draws under its `### ... structure`
+// heading, each with the path it names below the tree's root.
+function structureTree(readme: string): { line: string, path: string }[] {
+  const block = /^### [A-Za-z ]*[Ss]tructure\n\n```\n([\s\S]*?)\n```/m.exec(readme)
+  if (null == block) return []
+  const stack: string[] = []
+  return block[1].split('\n').slice(1).map((line: string) => {
+    const m = /^((?:│ {3}| {4})*)(?:├── |└── )(\S+)/.exec(line)
+    if (null == m) return { line, path: '' }
+    const depth = m[1].length / 4
+    stack.length = depth
+    const path = [...stack, m[2]].join('/')
+    stack[depth] = m[2].replace(/\/$/, '')
+    return { line, path }
+  })
 }
 
 
@@ -719,6 +737,110 @@ describe('generate', () => {
   })
 
 
+  // A build writes these, and generation does not.
+  const BUILD_OUTPUT: Record<string, string[]> = { ts: ['dist/'] }
+
+  test('every path a README layout tree names is one the target writes', async () => {
+    const targets = sdkTargets()
+    const out = await generate(targets)
+
+    for (const target of targets) {
+      const tree = structureTree(out[target + '/README.md'])
+      ok(0 < tree.length, target + ': the README draws no layout tree')
+      const written = filesFor(out, target).map(([p]) => p.slice(target.length + 1))
+
+      for (const { line, path } of tree) {
+        ok('' !== path, target + ': a tree line names no path: ' + line)
+        if ((BUILD_OUTPUT[target] || []).includes(path)) continue
+        const pattern = new RegExp('^' + path.split('*')
+          .map((part: string) => part.replace(/[.+?^${}()|[\]\\]/g, '\\$&')).join('[^/]*') +
+          (path.endsWith('/') ? '' : '$'))
+        ok(written.some((p: string) => pattern.test(p)),
+          target + ': the layout tree names ' + path + ', which generation does not write')
+      }
+    }
+  })
+
+
+  test('a README says a schema change needs no regeneration only where no typed model follows it', async () => {
+    const cmpdir = Path.resolve(__dirname, '..', 'project', '.sdk', 'src', 'cmp')
+    const targets = sdkTargets()
+    const out = await generate(targets)
+
+    for (const target of targets) {
+      const readme = out[target + '/README.md']
+      const typed = existsSync(Path.join(cmpdir, target, 'EntityTypes_' + target + '.ts'))
+      ok(!(typed && /no code generation is\s+needed/.test(readme)),
+        target + ': the README says no regeneration is needed beside the typed models it generates')
+      for (const m of readme.matchAll(/typed models in\s+`([^`]+)`/g)) {
+        ok(null != out[target + '/' + m[1]],
+          target + ': the README names typed models in ' + m[1] + ', which generation does not write')
+      }
+    }
+  })
+
+
+  // A comment holding nothing but `#Name` or `#Name-Tag` is a fragment marker
+  // no replacement fired on.
+  test('no fragment marker line survives into generated source', async () => {
+    const MARKER =
+      /^\s*(\/\/|#|--|;+|\(\*|\/\*|\*)\s*#[A-Z][A-Za-z0-9]*(-[A-Z][A-Za-z0-9]*)?\s*(\*\)|\*\/)?\s*$/
+    const features = readdirSync(Path.resolve(__dirname, '..', 'project', '.sdk', 'model', 'feature'))
+      .filter((f: string) => f.endsWith('.aontu') && !f.includes('-index'))
+      .map((f: string) => f.replace(/\.aontu$/, ''))
+    const targets = [...sdkTargets(), ...NON_SDK_TARGETS]
+
+    const left: string[] = []
+    for (const featureSet of [undefined, features]) {
+      const out = await generate(targets, undefined, undefined, undefined, featureSet)
+      for (const [path, text] of Object.entries(out)) {
+        if (path.endsWith('.md') || 'string' !== typeof text) continue
+        text.split('\n').forEach((line: string, i: number) => {
+          if (MARKER.test(line)) left.push(path + ':' + (i + 1) + ': ' + line.trim())
+        })
+      }
+    }
+    deepStrictEqual(left, [])
+  })
+
+
+  test('lua: each feature comment is indented as the constructor body around it', async () => {
+    const main = (await generate(['lua']))['lua/demo_sdk.lua']
+    deepStrictEqual(main.split('\n').filter((line: string) => line.includes('-- feature: ')),
+      ['  -- feature: log', '  -- feature: test'])
+  })
+
+
+  // The title, which an alias keeps, rather than the key, which it renames.
+  test('ts, js: the main SDK file is headed with the target\'s title', async () => {
+    for (const target of ['ts', 'js']) {
+      const out = await generate([target])
+      const main = out[target + '/src/DemoSDK.' + target]
+      ok(null != main, target + ': no main SDK file')
+      strictEqual(main.split('\n')[0], '// Demo ' + targetTitle(target) + ' SDK')
+    }
+  })
+
+
+  test('clojure: the namespace example names an entity namespace the run writes', async () => {
+    const structure = (readme: string): string =>
+      readme.slice(readme.indexOf('### Namespace structure'), readme.indexOf('### Entity state'))
+
+    const out = await generate(['clojure'])
+    const named = [...structure(out['clojure/README.md']).matchAll(/\[sdk\.entity\.(\S+) :as e-(\S+)\]/g)]
+    strictEqual(named.length, 1, 'the namespace paragraph names no single entity namespace')
+    strictEqual(named[0][1], named[0][2], 'the alias names another entity')
+    ok(null != out['clojure/src/sdk/entity/' + named[0][1] + '.clj'],
+      'the example names sdk.entity.' + named[0][1] + ', which no entity file declares')
+
+    const entities = Object.keys(makeModel([], undefined, '', []).main[KIT].entity)
+    const none = await generateWarning(['clojure'], undefined,
+      entities.map((name: string) => `main: kit: entity: ${name}: active: false\n`).join(''))
+    ok(!structure(none['clojure/README.md']).includes('sdk.entity.'),
+      'with no active entity the namespace paragraph still names an entity namespace')
+  })
+
+
   // A bundled target leaves some optional components to a shared default, and
   // that is no news to a consumer: a warning there is noise in every run.
   test('a bundled target generates with no optional component warning', async () => {
@@ -764,9 +886,9 @@ describe('generate', () => {
     ok(null != out['rb/README.md'], 'rb: no README.md')
 
     const top = topSections(out['README.md'])
-    deepStrictEqual(subheads(top['Quickstart']), ['Golang'], 'the lead quickstart')
+    deepStrictEqual(subheads(top['Quickstart']), ['Go'], 'the lead quickstart')
     deepStrictEqual(subheads(top['Quickstart in other languages']), ['Ruby'])
-    deepStrictEqual(subheads(top['Offline unit testing']), ['Golang', 'Ruby'])
+    deepStrictEqual(subheads(top['Offline unit testing']), ['Go', 'Ruby'])
     ok(top['How-to guides'].includes('client.Direct('),
       'the direct call guide has no go example')
     deepStrictEqual(sink.filter((e: any) => 'optional-component-missing' === e?.point), [])
@@ -863,7 +985,7 @@ describe('generate', () => {
     ok(zig.includes('(Zig)') && !zig.includes('TypeScript'), zig)
 
     const cli = await entry(['go', 'go-cli'])
-    ok(cli.includes('(Golang, plus the CLI surface)') && !cli.includes('MCP'), cli)
+    ok(cli.includes('(Go, plus the CLI surface)') && !cli.includes('MCP'), cli)
   })
 
 
@@ -1898,9 +2020,9 @@ main: kit: target: js: phase: feature: active: false
     const shipped: string[] = []
 
     for (const target of allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))) {
-      const off = 'main: kit: feature: secrets: { active: false plugin: vault: active: true }'
+      const off = offFeature('secrets') + 'main: kit: feature: secrets: plugin: vault: active: true'
       const trims = false !== makeModel([target]).main[KIT].target[target].feature?.trim
-      const out = await generate([target], undefined, off, undefined, ['test', 'log', 'secrets'])
+      const out = await generate([target], undefined, off, undefined, ['test', 'log'])
 
       for (const [path] of filesFor(out, target)) {
         if (/hashicorp/i.test(path) || (trims && SECRETS.test(path.slice(target.length)))) {
@@ -2132,6 +2254,90 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
     ok(null != line, 'the root readme has no Features line')
     ok(!line!.includes('undefined'), 'the Features line prints undefined: ' + line)
     ok(line!.includes('`test`'), 'the Features line does not name the test feature: ' + line)
+  })
+
+
+  // A layout tree is the same whatever the model declares, so the line for
+  // the feature directory or file names no feature.
+  test('no README layout tree names a feature', async () => {
+    const targets = sdkTargets()
+    const out = await generate(targets)
+    const named = new RegExp('\\b(base|' + ['test', 'log'].join('|') + ')\\b', 'i')
+
+    const found: string[] = []
+    for (const target of targets) {
+      const block = /^### [A-Za-z ]*[Ss]tructure\n\n```\n([\s\S]*?)\n```/m.exec(out[target + '/README.md'])
+      ok(null != block, target + ': the README draws no layout tree')
+      for (const line of block![1].split('\n').filter((l: string) => /feature/i.test(l))) {
+        const comment = line.replace(/^.*?(--|#)\s*/, '')
+        if (named.test(comment)) found.push(target + ': ' + line.trim())
+      }
+    }
+    deepStrictEqual(found, [])
+  })
+
+
+  // One answer to which features a target documents: featureDocs, the active
+  // features targetFeatures gives the target, less `base`. Every feature list
+  // a document prints is that answer.
+  test('every feature list a document prints is featureDocs for its target', async () => {
+    const all = readdirSync(Path.resolve(__dirname, '..', 'project', '.sdk', 'model', 'feature'))
+      .filter((f: string) => f.endsWith('.aontu') && !f.includes('-index'))
+      .map((f: string) => f.replace(/\.aontu$/, ''))
+    const targets = sdkTargets()
+    const rows = (doc: string, header: string, cell: RegExp): string[] => {
+      const at = doc.indexOf(header)
+      return at < 0 ? [] : doc.slice(at + header.length).split('\n\n')[0].split('\n')
+        .map((line: string) => (cell.exec(line) || [])[1]).filter((name) => null != name) as string[]
+    }
+
+    for (const features of [undefined, ['test'], all]) {
+      const model = makeModel(targets, undefined, undefined, features)
+      const out = await generate(targets, undefined, undefined, undefined, features)
+      const union = new Map<string, string>()
+
+      for (const target of targets) {
+        const docs = featureDocs(model, model.main[KIT].target[target])
+        const applies = targetFeatures(model, target)
+        deepStrictEqual(docs.map((f: any) => f.name),
+          Object.keys(applies).filter((n: string) => 'base' !== n && false !== applies[n].active).sort(),
+          target + ': featureDocs is not the active features the target has, less base')
+        docs.forEach((f: any) => union.set(f.name, f.Name))
+
+        deepStrictEqual(rows(out[target + '/REFERENCE.md'], '| Feature | Version | Description |\n',
+          /^\| `([^`]+)` \|/), docs.map((f: any) => f.name), target + ': the REFERENCE feature table')
+        deepStrictEqual(rows(out[target + '/README.md'], 'The SDK ships with built-in features:\n\n',
+          /^- \*\*(\w+)Feature\*\*: /), docs.map((f: any) => f.Name), target + ': the README feature list')
+      }
+
+      deepStrictEqual(rows(out['README.md'], '| Feature | Purpose |\n', /^\| \*\*(\w+)Feature\*\* \|/),
+        [...union.keys()].sort().map((name: string) => union.get(name)), 'the root README feature table')
+    }
+  })
+
+
+  // The sentence over an agent guide's feature table says what its Template
+  // column shows: a template for every feature, for none, or for some.
+  test('an agent guide says which features run from a template of their own', async () => {
+    const targets = sdkTargets()
+    const out = await generate(targets, undefined, 'main: kit: feature: secrets: active: true',
+      undefined, ['test', 'log', 'secrets'])
+
+    const mixed: string[] = []
+    for (const target of targets) {
+      const guide = out[target + '/AGENTS.md']
+      const at = guide.indexOf('## Features in this target')
+      if (at < 0 || !guide.slice(at).includes('| Feature | Template |')) continue
+      const section = guide.slice(at, guide.indexOf('\n---\n', at))
+      const some = [...section.matchAll(/^\| \*\*[^|]+\| ([^|]+) \|/gm)].some((m) => '—' === m[1].trim())
+      const prose = section.replace(/\s+/g, ' ')
+      strictEqual(prose.includes('Its runtime is generated from the template listed here'), !some,
+        target + ': the guide says every feature has a template')
+      strictEqual(prose.includes('The others run from the runtime under'), some,
+        target + ': the guide says nothing of the features without a template')
+      if (some) mixed.push(target)
+    }
+    ok(mixed.includes('clojure'), 'no target templates some of its features: ' + mixed.join(', '))
   })
 
 
@@ -4607,8 +4813,8 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
     // no kind file, and the accessor emitted EMPTY - it exists in every
     // config.c so sdk.h's prototype always has a definition.
     const off = await genc(
-      'main: kit: feature: secrets: { active: false plugin: vault: active: true }',
-      ['test', 'log', 'secrets'])
+      offFeature('secrets') + 'main: kit: feature: secrets: plugin: vault: active: true',
+      ['test', 'log'])
     ok(null == findFile(off, 'c/feature/secrets/kinds.c') &&
       null == findFile(off, 'c/feature/secrets/kinds.mk'),
       'c: an inactive feature still generated its wiring files')
@@ -4815,8 +5021,8 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
     })
     const offres = await off.generate({
       model: makeModel(['zig'], undefined,
-        'main: kit: feature: secrets: { active: false }',
-        ['test', 'log', 'secrets']),
+        offFeature('secrets'),
+        ['test', 'log']),
       root: makeRoot(),
     })
     strictEqual(offres.ok, true, 'generation did not report ok')
@@ -5042,8 +5248,8 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
     // no kind file, no include, and the accessor emitted EMPTY - it exists
     // in every config.hpp so a caller can always ask.
     const off = await gencpp(
-      'main: kit: feature: secrets: { active: false plugin: vault: active: true }',
-      ['test', 'log', 'secrets'])
+      offFeature('secrets') + 'main: kit: feature: secrets: plugin: vault: active: true',
+      ['test', 'log'])
     ok(null == findFile(off, 'cpp/feature/secrets/kinds.cpp') &&
       null == findFile(off, 'cpp/feature/secrets/kinds.mk'),
       'cpp: an inactive feature still generated its wiring files')
@@ -5300,8 +5506,8 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
     // no container, no kind module, and the accessor emitted EMPTY and
     // untyped - it exists in every sdk_config.ml.
     const off = await genml(
-      'main: kit: feature: secrets: { active: false plugin: vault: active: true }',
-      ['test', 'log', 'secrets'])
+      offFeature('secrets') + 'main: kit: feature: secrets: plugin: vault: active: true',
+      ['test', 'log'])
     ok(null == findFile(off, 'ocaml/feature/secrets/feature.mk'),
       'ocaml: an inactive feature still generated its build fragment')
     ok(null == findFile(off, 'ocaml/feature/secrets_feature.ml') &&
@@ -5774,7 +5980,7 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
       fs: layeredFs(offfs), folder: STAGE, root: '', pino: makeLog(),
     })
     const offres = await offgen.generate({
-      model: makeModel(['clojure'], undefined, undefined, ['test', 'log', 'secrets']),
+      model: makeModel(['clojure'], undefined, offFeature('secrets'), ['test', 'log']),
       root: makeRoot(),
     })
     strictEqual(offres.ok, true, 'feature-off generation did not report ok')
@@ -5904,7 +6110,7 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
       fs: layeredFs(offfs), folder: STAGE, root: '', pino: makeLog(),
     })
     const offres = await offgen.generate({
-      model: makeModel(['elixir'], undefined, undefined, ['test', 'log', 'secrets']),
+      model: makeModel(['elixir'], undefined, offFeature('secrets'), ['test', 'log']),
       root: makeRoot(),
     })
     strictEqual(offres.ok, true, 'feature-off generation did not report ok')
@@ -6037,14 +6243,15 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
     ok(null == findFile(out, 'swift/src/feature/secrets/.gitkeep'),
       'swift: the feature-add copy-target dir leaked into the package')
 
-    for (const [label, features] of [['undeclared', undefined],
-      ['declared-inactive', ['test', 'log', 'secrets']]] as [string, string[] | undefined][]) {
+    for (const [label, features, extra] of [['undeclared', undefined, undefined],
+      ['declared-inactive', ['test', 'log'], offFeature('secrets')]] as
+      [string, string[] | undefined, string | undefined][]) {
       const { fs: offfs, vol: offvol } = memfs({})
       const offgen = SdkGen({
         fs: layeredFs(offfs), folder: STAGE, root: '', pino: makeLog(),
       })
       const offres = await offgen.generate({
-        model: makeModel(['swift'], undefined, undefined, features),
+        model: makeModel(['swift'], undefined, extra, features),
         root: makeRoot(),
       })
       strictEqual(offres.ok, true, label + ': generation did not report ok')

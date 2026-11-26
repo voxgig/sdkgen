@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField , targetFeatures, opNeedsAction, bodyNote, matchExampleItems, requestExampleItems, fact } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opNeedsAction, bodyNote, matchExampleItems, requestExampleItems, entityClassName, entityCollection, featureDocs, fact } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -30,8 +30,6 @@ const ReadmeRef = cmp(function ReadmeRef(props: any) {
 
   const rustcrate = crateIdent(model)
   const entity = getModelPath(model, `main.${KIT}.entity`)
-  const feature = targetFeatures(model, target)
-
   const publishedEntities = each(entity).filter((e: any) => e.active !== false)
 
   const errType = `${model.const.Name}Error`
@@ -126,9 +124,9 @@ let client = test_sdk(Value::Noval, Value::Noval);
 
     // Entity factory methods
     publishedEntities.map((ent: any) => {
-      Content(`#### \`${rustMethodName(ent.name)}(entopts: Value) -> Rc<${ent.Name}Entity>\`
+      Content(`#### \`${rustMethodName(ent.name)}(entopts: Value) -> Rc<${entityClassName(ent, entityCollection(model))}>\`
 
-Create a new \`${ent.Name}Entity\` instance. Pass \`Value::Noval\` for no
+Create a new \`${entityClassName(ent, entityCollection(model))}\` instance. Pass \`Value::Noval\` for no
 initial options.
 
 `)
@@ -179,7 +177,7 @@ Prepare a fetch definition without sending. Returns the fetchdef on \`Ok\`.
       Content(`
 ---
 
-## ${ent.Name}Entity
+## ${entityClassName(ent, entityCollection(model))}
 
 `)
 
@@ -342,7 +340,7 @@ Get the entity match criteria. Pass \`Some(&map)\` to set it.
 
 #### \`make() -> Rc<dyn Entity>\`
 
-Create a new \`${ent.Name}Entity\` instance with the same options.
+Create a new \`${entityClassName(ent, entityCollection(model))}\` instance with the same options.
 
 #### \`get_name() -> String\`
 
@@ -353,7 +351,7 @@ Return the entity name.
 
 
     // Features section
-    const activeFeatures = each(feature).filter((f: any) => f.active)
+    const activeFeatures = featureDocs(model, target)
     if (activeFeatures.length > 0) {
       Content(`
 ---
@@ -365,7 +363,7 @@ Return the entity name.
 `)
 
       activeFeatures.map((f: any) => {
-        Content(`| \`${f.name}\` | ${f.version || '0.0.1'} | ${f.title || ''} |
+        Content(`| \`${f.name}\` | ${f.version} | ${f.titleCell} |
 `)
       })
 

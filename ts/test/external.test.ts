@@ -544,7 +544,7 @@ describe('external target', () => {
       const readme = inside['README.md']
       const agents = inside['AGENTS.md']
 
-      ok(readme.includes('> TypeScript, Golang SDKs, and the ' + LINKED + ' — all generated from one'), readme)
+      ok(readme.includes('> TypeScript, Go SDKs, and the ' + LINKED + ' — all generated from one'), readme)
       ok(readme.includes('| **' + LINKED + '** | generated into its own repository |'), readme)
       ok(agents.includes('**Targets** (3):'), agents)
       ok(agents.includes('| `go-cli` | ' + LINKED + ', generated into its own repository | — |'), agents)
@@ -560,7 +560,7 @@ describe('external target', () => {
       const readme = inside['README.md']
       const agents = inside['AGENTS.md']
 
-      ok(readme.includes('> TypeScript, Golang SDKs, and the Go CLI — all generated from one'), readme)
+      ok(readme.includes('> TypeScript, Go SDKs, and the Go CLI — all generated from one'), readme)
       ok(readme.includes('| **Go CLI** | generated into its own repository |'), readme)
       ok(agents.includes('| `go-cli` | Go CLI, generated into its own repository | — |'), agents)
       ok(!(readme + agents).includes('[Go CLI]('), 'a link with no repository to link')
@@ -588,12 +588,12 @@ describe('external target', () => {
       ok(/^TARGETS := .*\bgo\b/m.test(both.inside['Makefile']), 'control: go is not released in tree')
 
       const { inside } = await generate(['ts', 'go'], 'go', "main: kit: target: go: output: repo: 'acme/demo-go'")
-      ok(inside['README.md'].includes('| **[Golang SDK](https://github.com/acme/demo-go)** | generated into its own repository |'),
+      ok(inside['README.md'].includes('| **[Go SDK](https://github.com/acme/demo-go)** | generated into its own repository |'),
         inside['README.md'])
       ok(inside['SECURITY.md'].includes('repository (npm).'), inside['SECURITY.md'])
       ok(!inside['SECURITY.md'].includes('Go module'), inside['SECURITY.md'])
       ok(/^TARGETS := ts$/m.test(inside['Makefile']), 'the release Makefile acts on go')
-      ok(!inside['CHANGELOG.md'].includes('Golang'), inside['CHANGELOG.md'])
+      ok(!/\bGo\b/.test(inside['CHANGELOG.md']), inside['CHANGELOG.md'])
     })
 
 

@@ -29,7 +29,7 @@ swift/
 ├── Sources/${swiftTargetDir(model)}/
 │   ├── core/                         -- Main client, config, entity base, error type
 │   ├── entity/                       -- Generated entity clients
-│   ├── feature/                      -- Built-in features (Base, Test, Log, ...)
+│   ├── feature/                      -- Feature implementations
 │   ├── utility/                      -- Utility functions
 │   └── Struct/                       -- Vendored Voxgig Struct port
 └── Tests/${swiftTestDir(model)}/    -- Test suites (XCTest)
