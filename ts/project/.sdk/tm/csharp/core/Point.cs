@@ -19,6 +19,8 @@ public class Point
     public List<object?>? Relations;
     public Dictionary<string, object?> Alias = new();
     public Dictionary<string, object?> Transform = new();
+    // The fields a list, load or remove sends in a request body.
+    public List<object?>? Fields;
 
     public Point(Dictionary<string, object?>? pointmap)
     {
@@ -65,6 +67,10 @@ public class Point
         if (StructUtils.GetProp(pointmap, "transform") is Dictionary<string, object?> tf)
         {
             Transform = tf;
+        }
+        if (StructUtils.GetProp(pointmap, "fields") is List<object?> fl)
+        {
+            Fields = fl;
         }
     }
 }

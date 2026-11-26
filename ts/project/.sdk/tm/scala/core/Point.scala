@@ -18,6 +18,8 @@ class Point(pointmap: JMap[String, Object]) {
   var relations: JList[Object] = null
   var alias: JMap[String, Object] = new LinkedHashMap[String, Object]()
   var transform: JMap[String, Object] = new LinkedHashMap[String, Object]()
+  // The fields a list, load or remove sends in a request body.
+  var fields: JList[Object] = null
 
   locally {
     Struct.getprop(pointmap, "args") match { case m: JMap[_, _] => args = m.asInstanceOf[JMap[String, Object]]; case _ => }
@@ -41,5 +43,6 @@ class Point(pointmap: JMap[String, Object]) {
     Struct.getprop(pointmap, "relations") match { case l: JList[_] => relations = l.asInstanceOf[JList[Object]]; case _ => }
     Struct.getprop(pointmap, "alias") match { case m: JMap[_, _] => alias = m.asInstanceOf[JMap[String, Object]]; case _ => }
     Struct.getprop(pointmap, "transform") match { case m: JMap[_, _] => transform = m.asInstanceOf[JMap[String, Object]]; case _ => }
+    Struct.getprop(pointmap, "fields") match { case l: JList[_] => fields = l.asInstanceOf[JList[Object]]; case _ => }
   }
 }

@@ -48,7 +48,7 @@ function makeSpec(ctx) {
   if ('graphql' === point.kind) {
     // GraphQL addresses one endpoint: no path parts, no query string, and
     // the body carries the operation. prepareBody is skipped deliberately —
-    // it only emits a body for data-input ops (create/update), whereas every
+    // it builds only a REST body, whereas every
     // GraphQL op posts one, including load/list/remove.
     ctx.spec.body = utility.graphqlBody(ctx)
     ctx.spec.path = ''

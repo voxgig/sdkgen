@@ -24,6 +24,8 @@ public class Point {
   public List<Object> relations;
   public Map<String, Object> alias = new LinkedHashMap<>();
   public Map<String, Object> transform = new LinkedHashMap<>();
+  // The fields a list, load or remove sends in a request body.
+  public List<Object> fields;
 
   public Point(Map<String, Object> pointmap) {
     Object v = Struct.getprop(pointmap, "args");
@@ -87,6 +89,11 @@ public class Point {
     v = Struct.getprop(pointmap, "transform");
     if (v instanceof Map) {
       this.transform = (Map<String, Object>) v;
+    }
+
+    v = Struct.getprop(pointmap, "fields");
+    if (v instanceof List) {
+      this.fields = (List<Object>) v;
     }
   }
 }

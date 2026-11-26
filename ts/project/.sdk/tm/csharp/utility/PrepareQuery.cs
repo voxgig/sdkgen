@@ -32,8 +32,9 @@ public static partial class SdkUtility
         }
 
         // A header or cookie parameter travels in the headers, which
-        // PrepareHeaders fills, unless a query parameter shares its name: then
-        // both are sent.
+        // PrepareHeaders fills, and a field the point's body declares travels in
+        // the body, which PrepareBody fills, unless a query parameter shares its
+        // name: then both are sent.
         var declared = new List<object?>();
         if (point != null &&
             StructUtils.GetPath(point, StructUtils.Jt("args", "query")) is List<object?> dql)
@@ -62,6 +63,16 @@ public static partial class SdkUtility
                 if (StructUtils.GetProp(cd, "name") is string cname && !declared.Contains(cname))
                 {
                     paramnames.Add(cname);
+                }
+            }
+        }
+        if (point != null && StructUtils.GetProp(point, "fields") is List<object?> afl)
+        {
+            foreach (var fd in afl)
+            {
+                if (fd is string fname && !declared.Contains(fname))
+                {
+                    paramnames.Add(fname);
                 }
             }
         }

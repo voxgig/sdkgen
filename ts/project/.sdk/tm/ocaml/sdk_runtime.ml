@@ -875,8 +875,9 @@ let prepare_query_util (ctx : ctx) : value =
     | _ -> []
   in
   (* A header or cookie parameter travels in the headers, which
-   * prepare_headers fills, unless a query parameter shares its name: then
-   * both are sent. *)
+   * prepare_headers fills, and a field the point's body declares travels in
+   * the body, which prepare_body fills, unless a query parameter shares its
+   * name: then both are sent. *)
   let declared =
     match getp (getp ctx.c_point "args") "query" with
     | List r -> List.map (fun qd -> getp qd "name") !r
@@ -892,7 +893,9 @@ let prepare_query_util (ctx : ctx) : value =
     | List r -> List.map (fun cd -> getp cd "name") !r
     | _ -> []
   in
-  let elsewhere = List.filter (fun n -> not (List.mem n declared)) (header_names @ cookie_names) in
+  let fields = match getp ctx.c_point "fields" with List r -> !r | _ -> [] in
+  let elsewhere =
+    List.filter (fun n -> not (List.mem n declared)) (header_names @ cookie_names @ fields) in
   let params = params @ arg_names @ elsewhere in
   let contains_param s = List.exists (fun v -> match v with Str x -> x = s | _ -> false) params in
   (* A query parameter travels under the name the definition gives it, its
@@ -921,8 +924,40 @@ let prepare_query_util (ctx : ctx) : value =
     (call_args ctx "query");
   out
 
+(* A list, load or remove routed to a method with a body sends the match
+ * fields that body declares, never a path parameter, and never a header,
+ * cookie or query argument the body does not also declare as a field. *)
+let match_body (ctx : ctx) (fields : value list) : value =
+  let point = ctx.c_point in
+  let arg_names kind keep =
+    match getp (getp point "args") kind with
+    | List r ->
+      List.filter_map (fun ad ->
+          match getp ad "name" with Str n when keep ad -> Some n | _ -> None) !r
+    | _ -> []
+  in
+  let unkept ad = match getp ad "field" with Bool true -> false | _ -> true in
+  let routed =
+    (match getp point "params" with
+     | List r -> List.filter_map (function Str s -> Some s | _ -> None) !r
+     | _ -> [])
+    @ arg_names "params" (fun _ -> true)
+    @ List.concat_map (fun kind -> arg_names kind unkept) ["header"; "cookie"; "query"]
+  in
+  let body = empty_map () in
+  List.iter (function
+      | Str name when name <> "$action" && not (List.mem name routed) ->
+        (match getp ctx.c_reqmatch name with
+         | Noval | Null -> ()
+         | v -> setp body name v)
+      | _ -> ()) fields;
+  body
+
 let prepare_body_util (ctx : ctx) : value =
-  if ctx.c_op.op_input <> "data" then Noval
+  if ctx.c_op.op_input <> "data" then
+    (match getp ctx.c_point "fields" with
+     | List { contents = _ :: _ as fields } -> match_body ctx fields
+     | _ -> Noval)
   else if is_raw_request ctx.c_point then raw_body ctx.c_reqdata
   else (cu ctx).u_transform_request ctx
 
@@ -1383,7 +1418,7 @@ let make_spec_util (ctx : ctx) : (spec option * sdk_error option) =
       if get_str_d ctx.c_point "kind" "" = "graphql" then begin
         (* GraphQL addresses one endpoint: no path parts, no query string, and
          * the body carries the operation. prepare_body is skipped
-         * deliberately — it only emits a body for data-input ops, whereas
+         * deliberately — it builds only a REST body, whereas
          * every GraphQL op posts one, including load/list/remove. *)
         sp.sp_body <- u.u_graphql_body ctx;
         sp.sp_path <- "";

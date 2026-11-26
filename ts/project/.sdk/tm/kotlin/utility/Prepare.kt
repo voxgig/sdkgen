@@ -128,7 +128,40 @@ fun prepareBody(ctx: Context): Any? {
     }
     return ctx.utility!!.transformRequest(ctx)
   }
+  val fields = Struct.getprop(ctx.point, "fields")
+  if (fields is List<*> && fields.isNotEmpty()) {
+    return matchBody(ctx, fields)
+  }
   return null
+}
+
+// A list, load or remove routed to a method with a body sends the match
+// fields that body declares, never a path parameter, and never a header,
+// cookie or query argument the body does not also declare as a field.
+private fun matchBody(ctx: Context, fields: List<*>): MutableMap<String, Any?> {
+  val point = ctx.point
+  val routed = mutableListOf<Any?>()
+  (Struct.getprop(point, "params") as? List<*>)?.let { routed.addAll(it) }
+  (Struct.getpath(point, listOf("args", "params")) as? List<*>)?.forEach {
+    routed.add(Struct.getprop(it, "name"))
+  }
+  for (kind in listOf("header", "cookie", "query")) {
+    (Struct.getpath(point, listOf("args", kind)) as? List<*>)?.forEach {
+      if (true != Struct.getprop(it, "field")) routed.add(Struct.getprop(it, "name"))
+    }
+  }
+
+  val body = linkedMapOf<String, Any?>()
+  for (name in fields) {
+    if (name !is String) {
+      continue
+    }
+    val v = Struct.getprop(ctx.reqmatch, name, null)
+    if (v != null && "\$action" != name && name !in routed) {
+      body[name] = v
+    }
+  }
+  return body
 }
 
 @Suppress("UNCHECKED_CAST")
@@ -272,19 +305,16 @@ fun prepareQuery(ctx: Context): MutableMap<String, Any?> {
       }
     }
     // A header or cookie parameter travels in the headers, which prepareHeaders
-    // fills, unless a query parameter shares its name: then both are sent.
+    // fills, and a field the point's body declares travels in the body, which
+    // prepareBody fills, unless a query parameter shares its name: then both
+    // are sent.
     val declared = (Struct.getpath(point, listOf("args", "query")) as? List<*>)
       ?.map { Struct.getprop(it, "name") } ?: emptyList()
     val located = listOf(Struct.getpath(point, listOf("args", "header")),
-      Struct.getpath(point, listOf("args", "cookie")))
-    for (hl in located) {
-      if (hl is List<*>) {
-        for (hd in hl) {
-          val name = Struct.getprop(hd, "name")
-          if (name is String && name !in declared) {
-            params.add(name)
-          }
-        }
+      Struct.getpath(point, listOf("args", "cookie"))).flatMap { (it as? List<*>) ?: emptyList() }
+    for (name in located.map { Struct.getprop(it, "name") } + ((Struct.getprop(point, "fields") as? List<*>) ?: emptyList())) {
+      if (name is String && name !in declared) {
+        params.add(name)
       }
     }
   }

@@ -80,21 +80,20 @@ object PrepareQuery {
           }
         case _ =>
       }
-      // A header or cookie name leaves the query unless a query parameter shares it: then both are sent.
+      // A header or cookie name leaves the query for the headers, and a field the point's body
+      // declares leaves it for the body, unless a query parameter shares it: then both are sent.
       val declared = new ArrayList[Object]()
       Struct.getpath(point, java.util.List.of("args", "query")) match {
         case l: JList[_] => val dit = l.iterator(); while (dit.hasNext) declared.add(Struct.getprop(dit.next(), "name"))
         case _ =>
       }
-      for (located <- Seq(Struct.getpath(point, java.util.List.of("args", "header")),
-        Struct.getpath(point, java.util.List.of("args", "cookie")))) located match {
-        case l: JList[_] =>
-          val hit = l.iterator()
-          while (hit.hasNext) {
-            Struct.getprop(hit.next(), "name") match { case s: String if !declared.contains(s) => params.add(s); case _ => }
-          }
-        case _ =>
+      val located = Seq(Struct.getpath(point, java.util.List.of("args", "header")),
+        Struct.getpath(point, java.util.List.of("args", "cookie"))).flatMap {
+        case l: JList[_] => l.toArray.toSeq.map(ad => Struct.getprop(ad, "name"))
+        case _ => Seq.empty
       }
+      val fields = Struct.getprop(point, "fields") match { case l: JList[_] => l.toArray.toSeq; case _ => Seq.empty }
+      (located ++ fields).foreach { case s: String if !declared.contains(s) => params.add(s); case _ => }
     }
 
     // A query parameter travels under the name the definition gives it, its
@@ -222,9 +221,51 @@ object PrepareHeaders {
 
 object PrepareBody {
   def prepareBody(ctx: Context): Object =
-    if ("data" != ctx.op.input) null
-    else if (Media.isRawRequest(ctx.point)) Media.rawBody(ctx.reqdata)
-    else ctx.utility.transformRequest(ctx)
+    if ("data" == ctx.op.input) {
+      if (Media.isRawRequest(ctx.point)) Media.rawBody(ctx.reqdata)
+      else ctx.utility.transformRequest(ctx)
+    }
+    else Struct.getprop(ctx.point, "fields") match {
+      case fields: JList[_] if !fields.isEmpty => matchBody(ctx, fields)
+      case _ => null
+    }
+
+  // A list, load or remove routed to a method with a body sends the match
+  // fields that body declares, never a path parameter, and never a header,
+  // cookie or query argument the body does not also declare as a field.
+  private def matchBody(ctx: Context, fields: JList[_]): JMap[String, Object] = {
+    val routed = new ArrayList[Object]()
+    Struct.getprop(ctx.point, "params") match { case l: JList[_] => routed.addAll(l.asInstanceOf[JList[Object]]); case _ => }
+    Struct.getpath(ctx.point, java.util.List.of("args", "params")) match {
+      case l: JList[_] =>
+        val pit = l.iterator()
+        while (pit.hasNext) routed.add(Struct.getprop(pit.next(), "name"))
+      case _ =>
+    }
+    for (kind <- Seq("header", "cookie", "query")) {
+      Struct.getpath(ctx.point, java.util.List.of("args", kind)) match {
+        case l: JList[_] =>
+          val ait = l.iterator()
+          while (ait.hasNext) {
+            val ad = ait.next()
+            if (java.lang.Boolean.TRUE != Struct.getprop(ad, "field")) routed.add(Struct.getprop(ad, "name"))
+          }
+        case _ =>
+      }
+    }
+
+    val body = new LinkedHashMap[String, Object]()
+    val fit = fields.iterator()
+    while (fit.hasNext) {
+      fit.next() match {
+        case name: String =>
+          val v = Struct.getprop(ctx.reqmatch, name, null)
+          if (v != null && "$action" != name && !routed.contains(name)) body.put(name, v)
+        case _ =>
+      }
+    }
+    body
+  }
 }
 
 // NO `object PrepareAuth` HERE, and its absence is the point.

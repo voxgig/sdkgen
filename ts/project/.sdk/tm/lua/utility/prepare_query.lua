@@ -36,7 +36,9 @@ local function prepare_query_util(ctx)
       end
     end
     -- A header or cookie parameter travels in the headers, which prepare_headers
-    -- fills, unless a query parameter shares its name: then both are sent.
+    -- fills, and a field the point's body declares travels in the body, which
+    -- prepare_body fills, unless a query parameter shares its name: then both
+    -- are sent.
     local declared = {}
     local ql = vs.getpath(point, "args.query")
     if type(ql) == "table" then
@@ -56,6 +58,14 @@ local function prepare_query_util(ctx)
           if type(name) == "string" and not declared[name] then
             table.insert(params, name)
           end
+        end
+      end
+    end
+    local fields = vs.getprop(point, "fields")
+    if type(fields) == "table" then
+      for _, name in ipairs(fields) do
+        if type(name) == "string" and not declared[name] then
+          table.insert(params, name)
         end
       end
     end
