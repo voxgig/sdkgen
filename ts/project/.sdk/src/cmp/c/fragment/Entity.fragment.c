@@ -141,8 +141,6 @@ static voxgig_value* entyvar_stream_items(voxgig_value* data, PNError** err) {
 // caller walks (voxgig_as_list). `callopts` parameterises the call:
 //   - inbound (download): the items/chunks the streaming feature produces when
 //     active, else the materialised items;
-//   - outbound (upload): a `body` in `callopts` is attached to the request
-//     (reqdata `body$`) so the transport can stream a payload;
 //   - `ctrl` (pipeline control) threads pipeline options.
 voxgig_value* entyvar_stream(Entity* e, const char* action, voxgig_value* args,
                              voxgig_value* callopts, PNError** err) {
@@ -173,14 +171,6 @@ voxgig_value* entyvar_stream(Entity* e, const char* action, voxgig_value* args,
   cs.data = self->data;
   cs.reqmatch = reqmatch;
   Context* ctx = make_context_util(cs, entyvar_ent_ctx(self));
-
-  // Outbound: attach a caller `body` so the transport can stream a payload.
-  voxgig_value* body = getp(stream_opts, "body");
-  if (!v_is_noval(body) && !v_is_null(body)) {
-    voxgig_value* reqdata = voxgig_is_map(ctx->reqdata) ? ctx->reqdata : voxgig_new_map();
-    setp(reqdata, "body$", v_share(body));
-    ctx->reqdata = reqdata;
-  }
 
   PNError* pe = NULL;
 

@@ -8,6 +8,7 @@ use crate::core::error::ProjectNameError;
 use crate::core::helpers::{call_json, get_str, getp, jo, json_thunk, setp};
 use crate::core::types::{Feature, FetcherFn};
 use crate::feature::support::*;
+use crate::utility::media::is_json_media;
 use crate::utility::voxgigstruct::Value;
 
 pub struct CacheSnapshot {
@@ -119,7 +120,7 @@ fn through(
     let out = inner(ctx, url, fetchdef);
 
     if let Ok(res) = &out {
-        if storable(res) {
+        if storable(res) && json(res) {
             let snap = Rc::new(snapshot(res));
             let ttl = fopt_int(options, "ttl", 5000);
             let mut t = track.borrow_mut();
@@ -145,6 +146,19 @@ fn through(
 fn storable(res: &Value) -> bool {
     matches!(fres_status(res), Some(status) if (200..300).contains(&status))
         && !matches!(getp(res, "unreadable"), Value::Bool(true))
+}
+
+// A body that declares another type than JSON passes by, unread.
+fn json(res: &Value) -> bool {
+    let mut declared = String::new();
+    if let Value::Map(hm) = getp(res, "headers") {
+        for (k, v) in hm.borrow().iter() {
+            if let (true, Value::Str(t)) = (k.eq_ignore_ascii_case("content-type"), v) {
+                declared = t.clone();
+            }
+        }
+    }
+    declared.trim().is_empty() || is_json_media(&declared)
 }
 
 fn snapshot(res: &Value) -> CacheSnapshot {

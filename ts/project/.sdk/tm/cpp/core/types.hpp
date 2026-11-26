@@ -743,8 +743,7 @@ public:
   // materialises the whole result). This runtime is synchronous, so the
   // returned vector is a materialised cursor the caller iterates. `callopts`
   // parameterises the call: inbound yields the streaming feature's items when
-  // active, else the materialised items; outbound attaches an iterable `body`
-  // to the request (reqdata `body$`); `ctrl` threads pipeline control.
+  // active, else the materialised items; `ctrl` threads pipeline control.
   std::vector<Value> stream(const std::string& action,
                             const Value& args = Value::undef(),
                             const Value& callopts = Value::undef());
@@ -1430,15 +1429,6 @@ inline std::vector<Value> EntityBase::stream(const std::string& action,
   cs.data = data_;
   cs.reqmatch = args.is_map() ? args : vmap();
   CtxPtr ctx = u->makeContext(cs, entctx);
-
-  // Outbound: attach a caller iterable `body` so the transport can stream a
-  // request payload.
-  Value body = getp(streamOpts, "body");
-  if (!is_nullish(body)) {
-    Value reqdata = ctx->reqdata.is_map() ? ctx->reqdata : vmap();
-    map_put(reqdata, "body$", body);
-    ctx->reqdata = reqdata;
-  }
 
   try {
     u->featureHook(ctx, "PrePoint");

@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "../core/types.hpp"
+#include "../utility/pipeline.hpp"
 #include "base.hpp"
 #include "options.hpp"
 
@@ -110,7 +111,7 @@ private:
       throw err;
     }
 
-    if (storable(res)) {
+    if (storable(res) && json(res)) {
       CacheSnapshot snap = snapshot(res);
       int ttl = fopt::foptInt(options, "ttl", 5000);
       evict();
@@ -132,6 +133,18 @@ private:
     int status = fopt::fresStatus(res);
     Value unreadable = getp(res, "unreadable");
     return status >= 200 && status < 300 && !(unreadable.is_bool() && unreadable.as_bool());
+  }
+
+  // A body that declares another type than JSON passes by, unread.
+  bool json(const Value& res) {
+    Value headers = getp(res, "headers");
+    if (!headers.is_map()) return true;
+    for (const auto& kv : *headers.as_map()) {
+      if (util::mediaLower(kv.first) != "content-type" || !kv.second.is_string()) continue;
+      return std::string::npos == kv.second.as_string().find_first_not_of(" \t") ||
+             util::isJsonMedia(kv.second);
+    }
+    return true;
   }
 
   CacheSnapshot snapshot(const Value& res) {
