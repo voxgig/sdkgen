@@ -173,6 +173,7 @@ public class SecretsFeature : BaseFeature
                 Response = FoptStr(xopts, "response", "access_token"),
                 Statuses = statuses,
                 Retries = FoptInt(xopts, "retries", 1),
+                SameOrigin = "same-origin" == FoptStr(xopts, "redirect", "refuse"),
             };
         }
 
@@ -781,7 +782,7 @@ public class SecretsFeature : BaseFeature
                 ["content-type"] = "application/json",
             },
             ["body"] = body,
-            // Never followed: a redirect would carry the refresh token on.
+            // Never followed by the client: a redirect would carry the refresh token on.
             ["redirect"] = "manual",
         };
 
@@ -800,18 +801,32 @@ public class SecretsFeature : BaseFeature
         // system.fetch seam promises.
         var sysfetch = StructUtils.GetPath(options, StructUtils.Jt("system", "fetch"));
 
-        object? res;
-        if (sysfetch is Func<string, Dictionary<string, object?>, Dictionary<string, object?>> ff)
+        object? Fetch(string at)
         {
-            res = ff(url, fetchdef);
+            if (sysfetch is Func<string, Dictionary<string, object?>, Dictionary<string, object?>> ff)
+            {
+                return ff(at, fetchdef);
+            }
+            if (sysfetch is Func<string, Dictionary<string, object?>, object?> ffa)
+            {
+                return ffa(at, fetchdef);
+            }
+            return SdkUtility.DefaultHttpFetch(at, fetchdef);
         }
-        else if (sysfetch is Func<string, Dictionary<string, object?>, object?> ffa)
+
+        var res = Fetch(url);
+
+        // By option alone, and only while the exchange stays on its own origin.
+        var here = url;
+        for (var hops = 0; x.SameOrigin && hops < RedirectMax; hops++)
         {
-            res = ffa(url, fetchdef);
-        }
-        else
-        {
-            res = SdkUtility.DefaultHttpFetch(url, fetchdef);
+            var next = Moved(url, here, res);
+            if (null == next)
+            {
+                break;
+            }
+            here = next;
+            res = Fetch(here);
         }
 
         var status = Helpers.ToInt(StructUtils.GetProp(res, "status"));
@@ -859,6 +874,27 @@ public class SecretsFeature : BaseFeature
         Register(token);
 
         return token;
+    }
+
+    private const int RedirectMax = 5;
+
+    // Where a redirect that keeps method and body points, when that is on the
+    // exchange's own origin. Any other would drop the body or leave the origin.
+    private static string? Moved(string url, string at, object? res)
+    {
+        var status = Helpers.ToInt(StructUtils.GetProp(res, "status"));
+        if ((307 != status && 308 != status) ||
+            StructUtils.GetProp(StructUtils.GetProp(res, "headers"), "location") is not string location ||
+            "" == location ||
+            !Uri.TryCreate(at, UriKind.Absolute, out var here) ||
+            !Uri.TryCreate(here, location, out var next) ||
+            !Uri.TryCreate(url, UriKind.Absolute, out var own))
+        {
+            return null;
+        }
+        var same = own.Scheme == next.Scheme && own.Port == next.Port &&
+            string.Equals(own.Host, next.Host, StringComparison.OrdinalIgnoreCase);
+        return same ? next.AbsoluteUri : null;
     }
 
     // ---------------------------------------------------------------
@@ -919,6 +955,7 @@ internal sealed class SecretsExchange
     public string Response = "access_token";
     public List<int> Statuses = new() { 401 };
     public int Retries = 1;
+    public bool SameOrigin;
 }
 
 // One shared in-flight resolution: late arrivals wait on Done and read Err.
