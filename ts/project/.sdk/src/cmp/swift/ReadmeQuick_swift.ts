@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems, sendsId, fact } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems, sendsId, fact, seriesList } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -12,6 +12,7 @@ import { swiftVarName, swiftListMatch, swiftString } from './utility_swift'
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   const { target, ctx$: { model } } = props
+  let step = 0
 
   const SDK = model.const.Name + 'SDK'
   const MODULE = model.const.Name + 'Sdk'
@@ -60,7 +61,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
     ? `let client = ${SDK}()`
     : ['let options = VMap()', ...ctorLines, `let client = ${SDK}(options)`].join('\n')
 
-  Content(`### 1. Create a client
+  Content(`### ${++step}. Create a client
 
 \`\`\`swift
 import ${MODULE}
@@ -81,7 +82,7 @@ ${ctor}
     const idF = entityIdField(exampleEntity)
 
     if (opnames.includes('list')) {
-      Content(`### 2. List ${eName.toLowerCase()} records
+      Content(`### ${++step}. List ${eName.toLowerCase()} records
 
 \`list(nil, nil)\` returns a \`Value\` list of entities, one per record, and
 throws on error; \`asNative as? Entity\` unwraps an item, and its \`data()\`
@@ -123,7 +124,7 @@ catch {
         `(${swiftString(it.name)}, ${swiftLit(it.type,
           it.name === neIdF ? 'example_id' : 'example_' + it.name)})`)
 
-      Content(`### 3. Load ${neArticle} ${neName.toLowerCase()}
+      Content(`### ${++step}. Load ${neArticle} ${neName.toLowerCase()}
 
 ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
 \`load()\` returns the ENTITY — call data() for the record — and throws on error.
@@ -153,7 +154,7 @@ catch {
             it.name === idF ? 'example_id' : 'example_' + it.name)})`).join(', ')}])`
         : 'nil'
 
-      Content(`### 3. Load ${article} ${eName.toLowerCase()}
+      Content(`### ${++step}. Load ${article} ${eName.toLowerCase()}
 
 \`load()\` returns the ENTITY — call data() for the record — and throws on error.
 
@@ -193,7 +194,8 @@ catch {
 
     if (opnames.includes('create') || opnames.includes('update') || opnames.includes('patch') ||
       opnames.includes('remove')) {
-      Content(`### 4. Create, update, and remove
+      Content(`### ${++step}. ${seriesList(['create', 'update', 'patch', 'remove']
+        .filter((o: string) => opnames.includes(o))).replace(/^./, (c: string) => c.toUpperCase())}
 
 \`\`\`swift
 `)

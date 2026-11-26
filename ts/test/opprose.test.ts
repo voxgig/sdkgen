@@ -248,4 +248,27 @@ describe('operation-dependent prose', () => {
       .map((f: any) => f.doc + ': ' + f.line), [])
     strictEqual(TARGETS.every((t: string) => docs[t + '/README.md'].includes('#### Beacon')), true)
   })
+
+
+  test('a quick start promises the steps it takes and heads its writes with them', async () => {
+    const lead = (docs: Record<string, string>, t: string) =>
+      (/This tutorial walks through ([^.]*)\./.exec(docs[t + '/README.md']) || [])[1]
+    const writes = (docs: Record<string, string>, t: string) =>
+      [...docs[t + '/README.md'].matchAll(/^### \d+\. ((Create|Update|Patch|Remove)\b.*)$/gm)].map((m) => m[1])
+        .filter((h: string) => 'Create a client' !== h)
+    const numbered = TARGETS.filter((t: string) => !['go', 'js'].includes(t))
+
+    const ambient = await documents()
+    for (const t of TARGETS) {
+      strictEqual(lead(ambient, t), 'creating a client and loading a specific record', t)
+    }
+    const planet = await documents(only('planet'))
+    const update = await documents(only('planet') + '\n' + opsOff('planet', 'list', 'load', 'create', 'patch', 'remove'))
+    for (const t of numbered) {
+      strictEqual(lead(planet, t), 'creating a client, listing entities, and loading a specific record', t)
+      deepStrictEqual(writes(planet, t), ['Create, update, patch, and remove'], t)
+      strictEqual(lead(update, t), 'creating a client', t)
+      deepStrictEqual(writes(update, t), ['Update'], t)
+    }
+  })
 })

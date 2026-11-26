@@ -6,7 +6,7 @@ import Path from 'node:path'
 
 import {
   FEATURES, variations, generateDocs, link, off, marker, codeFences, reaction, parity, startsOff,
-  emptyTables, negativeControl, key,
+  emptyTables, numbering, negativeControl, key,
 } from './textguard'
 import type { Finding, Pin, Run, Variation } from './textguard'
 import { makeRoot } from './generateharness'
@@ -25,7 +25,7 @@ const SUBSET = ['baseline', 'phase-top-off', 'phase-readme-off-ts', 'phase-agent
 
 
 function findings(base: Run, run: Run, v: Variation, full: boolean): Finding[] {
-  const out = [...link(run), ...codeFences(run)]
+  const out = [...link(run), ...codeFences(run), ...numbering(run)]
   if (!full) return out
   out.push(...marker(run))
   out.push(...startsOff(run))
@@ -88,7 +88,8 @@ describe('textguard', () => {
       report(unpinned))
 
     const stale = PINNED.pins.filter((p: Pin) =>
-      (FULL || (['link', 'fence'].includes(p.relation) && p.variations.some((id: string) => ran.has(id)))) &&
+      (FULL || (['link', 'fence', 'numbering'].includes(p.relation) &&
+        p.variations.some((id: string) => ran.has(id)))) &&
       !byKey.has(key(p)))
     deepStrictEqual(stale.map(key), [], 'pins that match nothing; remove them')
 
@@ -129,6 +130,19 @@ describe('textguard', () => {
     deepStrictEqual(tables(['| A | B |', '| --- | --- |', '', '| 1 | 2 |']), ['| A | B |'])
     deepStrictEqual(tables(['| A |', '|---|']), ['| A |'])
     deepStrictEqual(tables(['```', '| A |', '| --- |', '```']), [])
+  })
+
+  test('numbered headings under one parent count without a gap', () => {
+    const gaps = (texts: string[]): string[] => numbering({
+      id: 'control', files: {}, present: new Set(), on: {}, applies: {},
+      lines: { 'ts/README.md': texts.map((text: string) => ({ text, chain: 'Control' })) },
+    }).map((f: Finding) => f.line)
+
+    deepStrictEqual(gaps(['## A', '### 1. One', '### 2. Two', '## B', '### 1. Again']), [])
+    deepStrictEqual(gaps(['## A', '### 1. One', '### 3. Three']), ['### 3. Three'])
+    deepStrictEqual(gaps(['## A', '### 2. Two']), ['### 2. Two'])
+    deepStrictEqual(gaps(['### 1. One', '#### 1. Sub', '### 2. Two', '#### 1. Sub']), [])
+    deepStrictEqual(gaps(['```', '### 3. Not a heading', '```']), [])
   })
 
   test('a sentence says features start off only when every feature it covers does', () => {

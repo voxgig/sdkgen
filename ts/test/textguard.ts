@@ -23,8 +23,8 @@ import {
 // model, read for unresolved links (`link`), lines naming what the run removed
 // (`off`), siblings reading different facts (`parity`), a fix that reached one
 // sibling only (`reaction`), unfired markers (`marker`), features said to start
-// off that start on (`starts-off`), foreign code (`fence`) and a table header
-// with no row (`table`).
+// off that start on (`starts-off`), foreign code (`fence`), a table header
+// with no row (`table`) and numbered headings with a gap (`numbering`).
 
 
 type Line = { text: string, chain: string }
@@ -659,6 +659,35 @@ function emptyTables(run: Run): Finding[] {
 }
 
 
+// Numbered headings under one parent count 1, 2, 3 with no gap.
+function numbering(run: Run): Finding[] {
+  const out: Finding[] = []
+  for (const [doc, lines] of Object.entries(run.lines)) {
+    const next = new Map<number, number>()
+    let fence = false
+    for (const l of lines) {
+      if (/^\s*(```|~~~)/.test(l.text)) {
+        fence = !fence
+        continue
+      }
+      const h = fence ? null : /^(#{1,6})\s+(?:(\d+)\.\s)?/.exec(l.text)
+      if (null == h) continue
+      const level = h[1].length
+      for (const deeper of [...next.keys()].filter((k: number) => level < k)) next.delete(deeper)
+      if (null == h[2]) {
+        next.delete(level)
+        continue
+      }
+      if (Number(h[2]) !== (next.get(level) ?? 1)) {
+        out.push({ relation: 'numbering', chain: l.chain, cause: 'gap', doc, line: l.text, variation: run.id })
+      }
+      next.set(level, Number(h[2]) + 1)
+    }
+  }
+  return out
+}
+
+
 // A test-only component: a stale sentence, a dangling link and an unfired
 // marker, each of which the guard must report.
 function negativeControl(feature: string): () => void {
@@ -701,6 +730,7 @@ export {
   parity,
   startsOff,
   emptyTables,
+  numbering,
   negativeControl,
   key,
 }

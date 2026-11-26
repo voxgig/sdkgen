@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, safeVarName, exampleVarName, luaKey, listMatchArg, matchExampleItems, requiredItems, litString, requestExampleItems, sendsId, fact } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, safeVarName, exampleVarName, luaKey, listMatchArg, matchExampleItems, requiredItems, litString, requestExampleItems, sendsId, fact, seriesList } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -10,6 +10,7 @@ import {
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   const { target, ctx$: { model } } = props
+  let step = 0
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
 
@@ -36,7 +37,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
     ? `sdk.new()`
     : `sdk.new({${ctorFields.map((f: string) => '\n  ' + f).join('')}\n})`
 
-  Content(`### 1. Create a client
+  Content(`### ${++step}. Create a client
 
 \`\`\`lua
 local sdk = require("${model.name}_sdk")
@@ -97,7 +98,7 @@ local client = ${ctor}
     const printLine = printRecord('item', printCols, '  ')
 
     if (opnames.includes('list')) {
-      Content(`### 2. List ${eName.toLowerCase()} records
+      Content(`### ${++step}. List ${eName.toLowerCase()} records
 
 Entity operations return \`(value, err)\`. For \`list\`, \`value\` is an
 array of entities, one per record — iterate it directly (there is no
@@ -132,7 +133,7 @@ end
         `${luaKey(it.name)} = ${luaLit(it.type,
           it.name === neIdF ? 'example_id' : 'example_' + it.name)}`)
 
-      Content(`### 3. Load ${neArticle} ${neName.toLowerCase()}
+      Content(`### ${++step}. Load ${neArticle} ${neName.toLowerCase()}
 
 ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
 
@@ -156,7 +157,7 @@ ${printRecord(neVar, neDataIdF ? `rec[${litString('lua', neDataIdF)}]` : '', '')
             it.name === idF ? 'example_id' : 'example_' + it.name)}`).join(', ')} }`
         : ''
 
-      Content(`### 3. Load ${article} ${eName.toLowerCase()}
+      Content(`### ${++step}. Load ${article} ${eName.toLowerCase()}
 
 \`load\` returns the entity; \`data_get()\` reads its record.
 
@@ -192,7 +193,8 @@ ${printRecord(eVar, printCols, '')}
 
     if (opnames.includes('create') || opnames.includes('update') || opnames.includes('patch') ||
       opnames.includes('remove')) {
-      Content(`### 4. Create, update, and remove
+      Content(`### ${++step}. ${seriesList(['create', 'update', 'patch', 'remove']
+        .filter((o: string) => opnames.includes(o))).replace(/^./, (c: string) => c.toUpperCase())}
 
 \`\`\`lua
 `)

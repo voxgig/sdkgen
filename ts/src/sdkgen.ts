@@ -172,7 +172,7 @@ import {
   SECURITY_EMAIL,
   GENERATOR_URL,
 } from './helpers/packageMeta'
-import { modelText } from './helpers/text'
+import { modelText, seriesList } from './helpers/text'
 import { alongsideNote } from './helpers/alongside'
 import {
   npmScriptRm,
@@ -1358,6 +1358,7 @@ export {
   SECURITY_EMAIL,
   GENERATOR_URL,
   modelText,
+  seriesList,
   alongsideNote,
   consumedTarget,
   npmScriptRm,

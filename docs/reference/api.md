@@ -298,6 +298,12 @@ the MCP server, read from the active targets. It returns an empty string when
 the project generates nothing else. A per-language component that writes its
 whole introduction itself can call it for the same note.
 
+### `seriesList(items) → string`
+
+The items as a series: `a`, `a and b`, `a, b, and c`. Each language's quick
+start heads its step over the entity's writes with it, naming only the
+operations the entity has.
+
 ### `featureDocs(model, target?) → FeatureDoc[]`
 
 The features a target's documents describe: every active feature of the

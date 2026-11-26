@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems, sendsId, fact } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems, sendsId, fact, seriesList } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -12,6 +12,7 @@ import { crateIdent, rustVarName, rustMethodName, rustListMatch } from './utilit
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   const { target, ctx$: { model } } = props
+  let step = 0
 
   const rustcrate = crateIdent(model)
   const entity = getModelPath(model, `main.${KIT}.entity`)
@@ -54,7 +55,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
     return `Value::str(${JSON.stringify(placeholder)})`
   }
 
-  Content(`### 1. Create a client
+  Content(`### ${++step}. Create a client
 
 \`\`\`rust
 use ${rustcrate}::{getp, jo, ${model.const.Name}EntityBase, ${model.const.Name}SDK, Entity, Value};
@@ -76,7 +77,7 @@ let client = ${ctor};
     const dataIdF = entityDataIdField(exampleEntity)
 
     if (opnames.includes('list')) {
-      Content(`### 2. List ${eName.toLowerCase()} records
+      Content(`### ${++step}. List ${eName.toLowerCase()} records
 
 \`list()\` returns one entity per record, and \`Err\` on failure — match on
 the \`Result\`. \`data(None)\` reads an entity's record.
@@ -112,7 +113,7 @@ match client.${method}(Value::Noval).list(${rustListMatch(exampleEntity)}, Value
         `(${JSON.stringify(it.name)}, ${rustLit(it.type,
           it.name === neIdF ? 'example_id' : 'example_' + it.name)})`)
 
-      Content(`### 3. Load ${neArticle} ${neName.toLowerCase()}
+      Content(`### ${++step}. Load ${neArticle} ${neName.toLowerCase()}
 
 ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
 \`load()\` returns the entity, and \`Err\` on failure; \`data(None)\` reads its
@@ -137,7 +138,7 @@ match client.${neMethod}(Value::Noval).load(jo(vec![${neMatch.join(', ')}]), Val
             it.name === idF ? 'example_id' : 'example_' + it.name)})`).join(', ')}])`
         : 'Value::Noval'
 
-      Content(`### 3. Load ${article} ${eName.toLowerCase()}
+      Content(`### ${++step}. Load ${article} ${eName.toLowerCase()}
 
 \`load()\` returns the entity, and \`Err\` on failure; \`data(None)\` reads its
 record.
@@ -179,7 +180,8 @@ match client.${method}(Value::Noval).load(${loadArg}, Value::Noval) {
 
     if (opnames.includes('create') || opnames.includes('update') || opnames.includes('patch') ||
       opnames.includes('remove')) {
-      Content(`### 4. Create, update, and remove
+      Content(`### ${++step}. ${seriesList(['create', 'update', 'patch', 'remove']
+        .filter((o: string) => opnames.includes(o))).replace(/^./, (c: string) => c.toUpperCase())}
 
 \`\`\`rust
 `)

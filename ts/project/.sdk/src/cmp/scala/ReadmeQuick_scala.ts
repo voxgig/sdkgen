@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, opRequestShape, entityIdField, entityOps, javaMapOf, matchExampleItems, requiredItems, javaMapItems, requestExampleItems, sendsId, fact } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, opRequestShape, entityIdField, entityOps, javaMapOf, matchExampleItems, requiredItems, javaMapItems, requestExampleItems, sendsId, fact, seriesList } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -12,6 +12,7 @@ import { scalaVarName, scalaPackage, scalaListMatch, scalaLit } from './utility_
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   const { target, ctx$: { model } } = props
+  let step = 0
 
   const SDK = model.const.Name + 'SDK'
 
@@ -46,7 +47,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
     : ['val options = new java.util.LinkedHashMap[String, Object]()', ...ctorLines,
       `val client = new ${SDK}(options)`].join('\n')
 
-  Content(`### 1. Create a client
+  Content(`### ${++step}. Create a client
 
 \`\`\`scala
 import ${scalaPackage(model)}.core.${SDK}
@@ -70,7 +71,7 @@ ${ctor}
     const idF = entityIdField(exampleEntity)
 
     if (opnames.includes('list')) {
-      Content(`### 2. List ${eName.toLowerCase()} records
+      Content(`### ${++step}. List ${eName.toLowerCase()} records
 
 \`list(null, null)\` returns a list of entities, one per record (as \`Object\`),
 and raises on error; an entity's \`data()\` reads its record.
@@ -107,7 +108,7 @@ catch {
         `${JSON.stringify(it.name)}, ${scalaLit(it.type,
           it.name === neIdF ? 'example_id' : 'example_' + it.name)}`)
 
-      Content(`### 3. Load ${neArticle} ${neName.toLowerCase()}
+      Content(`### ${++step}. Load ${neArticle} ${neName.toLowerCase()}
 
 ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
 \`load()\` returns the ENTITY — call data() for the record — and raises on error.
@@ -135,7 +136,7 @@ catch {
             it.name === idF ? 'example_id' : 'example_' + it.name)}`), 'java.util.')
         : 'null'
 
-      Content(`### 3. Load ${article} ${eName.toLowerCase()}
+      Content(`### ${++step}. Load ${article} ${eName.toLowerCase()}
 
 \`load()\` returns the ENTITY — call data() for the record — and raises on error.
 
@@ -173,7 +174,8 @@ catch {
 
     if (opnames.includes('create') || opnames.includes('update') || opnames.includes('patch') ||
       opnames.includes('remove')) {
-      Content(`### 4. Create, update, and remove
+      Content(`### ${++step}. ${seriesList(['create', 'update', 'patch', 'remove']
+        .filter((o: string) => opnames.includes(o))).replace(/^./, (c: string) => c.toUpperCase())}
 
 \`\`\`scala
 `)

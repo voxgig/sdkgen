@@ -183,12 +183,12 @@ func main() {
 
   Content(`### Quickstart
 
-A complete program: create a client, then call the entity operations.
+${0 === body.length ? 'A complete program that creates a client.' : `A complete program: create a client, then call the entity operations.
 Each operation returns \`(value, error)\` — the value is the entity${
   null != exampleEntity && entityOps(exampleEntity).includes('list') ? `, and for
 \`List\` a \`[]any\` of entities, one per record` : ''} (there is no \`{ok, data}\`
 wrapper), so check \`err\` and read a record through the entity's
-\`Data()\`.
+\`Data()\`.`}
 
 \`\`\`go
 ${program}

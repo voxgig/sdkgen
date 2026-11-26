@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems, sendsId, fact } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems, sendsId, fact, seriesList } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -12,6 +12,7 @@ import { zigVarName, zigListMatch } from './utility_zig'
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   const { target, ctx$: { model } } = props
+  let step = 0
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
 
@@ -53,7 +54,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
     return `h.vstr(${JSON.stringify(placeholder)})`
   }
 
-  Content(`### 1. Create a client
+  Content(`### ${++step}. Create a client
 
 \`\`\`zig
 const std = @import("std");
@@ -74,7 +75,7 @@ ${authActive ? '// init is the std.process.Init that main receives.\n' : ''}cons
     const idF = entityIdField(exampleEntity)
 
     if (opnames.includes('list')) {
-      Content(`### 2. List ${eName.toLowerCase()} records
+      Content(`### ${++step}. List ${eName.toLowerCase()} records
 
 \`list()\`'s \`.ok\` is a slice of entities, one per record — \`switch\` on
 it. \`asEntity().data(null)\` reads an entity's record.
@@ -110,7 +111,7 @@ switch (client.${method}(h.vnull()).list(${zigListMatch(exampleEntity)}, h.vnull
         `.{ ${JSON.stringify(it.name)}, ${zigLit(it.type,
           it.name === neIdF ? 'example_id' : 'example_' + it.name)} }`)
 
-      Content(`### 3. Load ${neArticle} ${neName.toLowerCase()}
+      Content(`### ${++step}. Load ${neArticle} ${neName.toLowerCase()}
 
 ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
 \`load()\`'s \`.ok\` carries the entity; \`asEntity().data(null)\` reads its
@@ -135,7 +136,7 @@ switch (client.${neMethod}(h.vnull()).load(h.jo(&.{${neMatch.join(', ')}}), h.vn
             it.name === idF ? 'example_id' : 'example_' + it.name)} }`).join(', ')}})`
         : 'h.vnull()'
 
-      Content(`### 3. Load ${article} ${eName.toLowerCase()}
+      Content(`### ${++step}. Load ${article} ${eName.toLowerCase()}
 
 \`load()\`'s \`.ok\` carries the entity; \`asEntity().data(null)\` reads its
 record.
@@ -172,7 +173,8 @@ switch (client.${method}(h.vnull()).load(${loadArg}, h.vnull())) {
 
     if (opnames.includes('create') || opnames.includes('update') || opnames.includes('patch') ||
       opnames.includes('remove')) {
-      Content(`### 4. Create, update, and remove
+      Content(`### ${++step}. ${seriesList(['create', 'update', 'patch', 'remove']
+        .filter((o: string) => opnames.includes(o))).replace(/^./, (c: string) => c.toUpperCase())}
 
 \`\`\`zig
 `)

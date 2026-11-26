@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems, sendsId, fact } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems, sendsId, fact, seriesList } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -12,6 +12,7 @@ import { cIdent, cVarName, cListMatch, cString } from './utility_c'
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   const { target, ctx$: { model } } = props
+  let step = 0
 
   const ident = cIdent(model)
   const entity = getModelPath(model, `main.${KIT}.entity`)
@@ -58,7 +59,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   const cmapExpr = (pairs: string[]): string =>
     pairs.length ? `cmap(${pairs.length}, ${pairs.join(', ')})` : 'NULL'
 
-  Content(`### 1. Create a client
+  Content(`### ${++step}. Create a client
 
 \`\`\`c
 ${authActive ? '#include <stdlib.h>\n' : ''}#include "core/api.h"
@@ -81,7 +82,7 @@ PNError* err = NULL;
     const dataIdF = entityDataIdField(exampleEntity)
 
     if (opnames.includes('list')) {
-      Content(`### 2. List ${eName.toLowerCase()} records
+      Content(`### ${++step}. List ${eName.toLowerCase()} records
 
 \`list()\` returns a \`NULL\`-terminated array of entities, one per record,
 and sets \`*err\` on failure — check \`err\` after the call. \`vt->data\`
@@ -119,7 +120,7 @@ if (err) {
         `${cString(it.name)}, ${cLit(it.type,
           it.name === neIdF ? 'example_id' : 'example_' + it.name)}`))
 
-      Content(`### 3. Load ${neArticle} ${neName.toLowerCase()}
+      Content(`### ${++step}. Load ${neArticle} ${neName.toLowerCase()}
 
 ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
 \`load()\` returns the entity and sets \`*err\` on failure; \`vt->data\` reads
@@ -148,7 +149,7 @@ if (err) {
         ? ''
         : `Entity* ${evar} = ${acc}(client, NULL);\n`
 
-      Content(`### 3. Load ${article} ${eName.toLowerCase()}
+      Content(`### ${++step}. Load ${article} ${eName.toLowerCase()}
 
 \`load()\` returns the entity and sets \`*err\` on failure; \`vt->data\` reads
 its record.
@@ -196,7 +197,8 @@ if (err) {
       const acquire = (opnames.includes('list') || opnames.includes('load'))
         ? ''
         : `Entity* ${evar} = ${acc}(client, NULL);\n`
-      Content(`### 4. Create, update, and remove
+      Content(`### ${++step}. ${seriesList(['create', 'update', 'patch', 'remove']
+        .filter((o: string) => opnames.includes(o))).replace(/^./, (c: string) => c.toUpperCase())}
 
 \`\`\`c
 ${acquire}`)

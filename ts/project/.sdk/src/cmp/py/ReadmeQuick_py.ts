@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, safeVarName, exampleVarName, listMatchArg, matchExampleItems, requiredItems, litString, requestExampleItems, sendsId, fact } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, safeVarName, exampleVarName, listMatchArg, matchExampleItems, requiredItems, litString, requestExampleItems, sendsId, fact, seriesList } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -10,6 +10,7 @@ import {
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   const { target, ctx$: { model } } = props
+  let step = 0
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
 
@@ -38,7 +39,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
       ? `${model.const.Name}SDK()`
       : `${model.const.Name}SDK({${pyServerField}\n})`)
 
-  Content(`### 1. Create a client
+  Content(`### ${++step}. Create a client
 
 \`\`\`python
 ${apikeyImport}from ${model.const.Name.toLowerCase()}_sdk import ${model.const.Name}SDK
@@ -78,7 +79,7 @@ client = ${ctor}
     }
 
     if (opnames.includes('list')) {
-      Content(`### 2. List ${eName.toLowerCase()} records
+      Content(`### ${++step}. List ${eName.toLowerCase()} records
 
 \`list()\` returns a \`list\` of entities, one per record, and raises on
 error; an entity's \`data_get()\` reads its record (a \`dict\`).
@@ -111,7 +112,7 @@ except Exception as err:
         `${litString('py', it.name)}: ${pyLit(it.type,
           it.name === neIdF ? 'example_id' : 'example_' + it.name)}`)
 
-      Content(`### 3. Load ${neArticle} ${neName.toLowerCase()}
+      Content(`### ${++step}. Load ${neArticle} ${neName.toLowerCase()}
 
 ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
 \`load()\` returns the ENTITY — call data_get() for the record — and raises on error.
@@ -136,7 +137,7 @@ except Exception as err:
             it.name === idF ? 'example_id' : 'example_' + it.name)}`).join(', ')}}`
         : ''
 
-      Content(`### 3. Load ${article} ${eName.toLowerCase()}
+      Content(`### ${++step}. Load ${article} ${eName.toLowerCase()}
 
 \`load()\` returns the ENTITY — call data_get() for the record — and raises on error.
 
@@ -176,7 +177,8 @@ except Exception as err:
 
     if (opnames.includes('create') || opnames.includes('update') || opnames.includes('patch') ||
       opnames.includes('remove')) {
-      Content(`### 4. Create, update, and remove
+      Content(`### ${++step}. ${seriesList(['create', 'update', 'patch', 'remove']
+        .filter((o: string) => opnames.includes(o))).replace(/^./, (c: string) => c.toUpperCase())}
 
 \`\`\`python
 `)

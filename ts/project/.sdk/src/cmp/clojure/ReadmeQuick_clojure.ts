@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems, sendsId, fact } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems, sendsId, fact, seriesList } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -11,6 +11,7 @@ import { cljListMatch, cljString } from './utility_clojure'
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   const { target, ctx$: { model } } = props
+  let step = 0
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
 
@@ -62,7 +63,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   }
   requireLines.push(`         '[voxgig.struct :as vs])`)
 
-  Content(`### 1. Create a client
+  Content(`### ${++step}. Create a client
 
 \`\`\`clojure
 ${requireLines.join('\n')}
@@ -82,7 +83,7 @@ ${requireLines.join('\n')}
     const dataIdF = entityDataIdField(exampleEntity)
 
     if (opnames.includes('list')) {
-      Content(`### 2. List ${eLow} records
+      Content(`### ${++step}. List ${eLow} records
 
 \`list\` returns a vector of entities, one per record, and raises on error.
 Read each record with \`((:data-get ${eLow}))\`.
@@ -115,7 +116,7 @@ Read each record with \`((:data-get ${eLow}))\`.
         `${cljString(it.name)} ${cljLit(it.type,
           it.name === neIdF ? 'example_id' : 'example_' + it.name)}`)
 
-      Content(`### 3. Load ${neArticle} ${neLow}
+      Content(`### ${++step}. Load ${neArticle} ${neLow}
 
 ${nestedEntity.Name} is nested under ${parentName}, so provide the
 \`${parentParam}\`. \`load\` returns the entity and raises on error;
@@ -141,7 +142,7 @@ ${nestedEntity.Name} is nested under ${parentName}, so provide the
             it.name === idF ? 'example_id' : 'example_' + it.name)}`).join(' ')})`
         : 'nil'
 
-      Content(`### 3. Load ${article} ${eLow}
+      Content(`### ${++step}. Load ${article} ${eLow}
 
 \`load\` returns the entity and raises on error; \`((:data-get ${eLow}))\` reads
 its record.
@@ -180,7 +181,8 @@ its record.
 
     if (opnames.includes('create') || opnames.includes('update') || opnames.includes('patch') ||
       opnames.includes('remove')) {
-      Content(`### 4. Create, update, and remove
+      Content(`### ${++step}. ${seriesList(['create', 'update', 'patch', 'remove']
+        .filter((o: string) => opnames.includes(o))).replace(/^./, (c: string) => c.toUpperCase())}
 
 \`\`\`clojure
 `)

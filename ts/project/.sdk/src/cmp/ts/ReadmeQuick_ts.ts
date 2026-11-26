@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, packageName, envName, opRequestShape, entityIdField, entityDataIdField, entityOps, safeVarName, exampleVarName, jsKey, listMatchArg, matchExampleItems, requiredItems, jsProp, requestExampleItems, sendsId, fact } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, packageName, envName, opRequestShape, entityIdField, entityDataIdField, entityOps, safeVarName, exampleVarName, jsKey, listMatchArg, matchExampleItems, requiredItems, jsProp, requestExampleItems, sendsId, fact, seriesList } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -12,6 +12,7 @@ import { exampleValue } from './utility_ts'
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   const { target, ctx$: { model } } = props
+  let step = 0
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
 
@@ -43,7 +44,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
     ? `new ${model.const.Name}SDK()`
     : `new ${model.const.Name}SDK({${ctorFields}\n})`
 
-  Content(`### 1. Create a client
+  Content(`### ${++step}. Create a client
 
 \`\`\`ts
 import { ${model.const.Name}SDK } from '${packageName(model, target.name)}'
@@ -67,7 +68,7 @@ const client = ${ctor}
     const dataIdF = entityDataIdField(exampleEntity)
 
     if (opnames.includes('list')) {
-      Content(`### 2. List ${eName.toLowerCase()} records
+      Content(`### ${++step}. List ${eName.toLowerCase()} records
 
 \`list()\` resolves to an array of ${eName} ENTITIES — every operation
 resolves to entities, not raw records. Iterate them directly, and call
@@ -101,7 +102,7 @@ for (const ${eVar} of ${eVar}s) {
         `    ${jsKey(it.name)}: ${exampleValue(nestedEntity, loadOp, it.name,
           it.name === neIdF ? 'example_id' : 'example_' + it.name)},`)
 
-      Content(`### 3. Load ${neArticle} ${neName.toLowerCase()}
+      Content(`### ${++step}. Load ${neArticle} ${neName.toLowerCase()}
 
 ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
 \`load()\` returns the entity and throws on failure; \`.data()\` reads its record:
@@ -129,7 +130,7 @@ ${neMatchLines.join('\n')}
             it.name === idF ? 'example_id' : 'example_' + it.name)}`).join(', ')} }`
         : ''
 
-      Content(`### 3. Load ${article} ${eName.toLowerCase()}
+      Content(`### ${++step}. Load ${article} ${eName.toLowerCase()}
 
 \`load()\` returns the entity and throws on failure; \`.data()\` reads its record:
 
@@ -189,7 +190,8 @@ try {
         ? `${jsProp('created.data()', dataIdF as string)}!`
         : exampleValue(exampleEntity, exampleEntity.op[opname], idF as string, 'example_id')
 
-      Content(`### 4. Create, update, and remove
+      Content(`### ${++step}. ${seriesList(['create', 'update', 'patch', 'remove']
+        .filter((o: string) => opnames.includes(o))).replace(/^./, (c: string) => c.toUpperCase())}
 
 \`\`\`ts
 `)
