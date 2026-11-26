@@ -3,7 +3,6 @@ import { test, describe, before, after } from 'node:test'
 import { ok, strictEqual, deepStrictEqual } from 'node:assert'
 
 import Fs from 'node:fs'
-import Os from 'node:os'
 import Path from 'node:path'
 
 import { Aontu } from 'aontu'
@@ -384,11 +383,18 @@ async function generated(targets: string[], extra = '', root = makeRoot()): Prom
 }
 
 
+// Under the stage, not the system temporary directory, which a Windows
+// runner keeps on another drive than the stage the generation writes to.
+function aliasWork(): string {
+  return Fs.mkdtempSync(Path.join(STAGE, 'alias-'))
+}
+
+
 // What `<origin>~<alias>` alone generates. Components read their templates
 // relative to the working directory, so the alias's are copied into one.
 async function generatedAlias(origin: string, alias: string): Promise<Record<string, string>> {
   const staged = stageAlias(origin, alias)
-  const work = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-alias-'))
+  const work = aliasWork()
   const cwd = process.cwd()
   try {
     Fs.cpSync(Path.join(SDK_SCAFFOLD, 'tm', origin), Path.join(work, 'tm', alias), { recursive: true })
@@ -442,9 +448,8 @@ describe('aliased targets in the generated documents', () => {
   // reads from its working directory.
   test('go~fz enters its own folder, never the origin\'s', async () => {
     const staged = stageAlias('go', 'fz')
-    const tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-alias-'))
-    Fs.mkdirSync(Path.join(tmp, 'tm'))
-    Fs.symlinkSync(Path.join(SDK_SCAFFOLD, 'tm', 'go'), Path.join(tmp, 'tm', 'fz'))
+    const tmp = aliasWork()
+    Fs.cpSync(Path.join(SDK_SCAFFOLD, 'tm', 'go'), Path.join(tmp, 'tm', 'fz'), { recursive: true })
     const back = process.cwd()
     try {
       process.chdir(tmp)

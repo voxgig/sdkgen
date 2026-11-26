@@ -119,8 +119,11 @@ describe('the generated introductions', () => {
     const { fs, vol } = memfs({})
     await SdkGen({ fs: layeredFs(fs), folder: STAGE, root: '', pino: makeLog() })
       .generate({ model, root: makeRoot() })
-    const out: any = vol.toJSON()
-    return Object.fromEntries(intros().map((t: string) => [t, out[Path.join(STAGE, t, 'README.md')]]))
+    const out: Record<string, string> = {}
+    for (const [path, text] of Object.entries(vol.toJSON() as Record<string, string>)) {
+      out[Path.relative(STAGE, path).split(Path.sep).join('/')] = text
+    }
+    return Object.fromEntries(intros().map((t: string) => [t, out[t + '/README.md']]))
   }
 
   test('call the Entities capitalised only beside an accessor that is', async () => {
