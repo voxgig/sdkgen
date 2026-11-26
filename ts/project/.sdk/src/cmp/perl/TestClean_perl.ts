@@ -697,13 +697,23 @@ SKIP: {
     'a registered value used as a property name is masked, collisions kept');
   push @sinks, forms('named', $named);
 
-  # An exception object of another class is the caller's own: it leaves an
-  # operation, a stream and direct() as the object it is.
-  my $own = ${Name}CleanOwnError->new('refused');
+  # An exception object of another class, its message quoting the key,
+  # leaves an operation and a stream as the SDK's error with that message
+  # cleaned; the object is its cause. direct() hands back a fetcher's own.
+  my $own = ${Name}CleanOwnError->new("hook saw $CANARY{apikey}");
   my $same = sub { return (ref $_[0] && Scalar::Util::refaddr($_[0]) == Scalar::Util::refaddr($own)) ? 1 : 0 };
-  my $operr = drive(make_sdk($SCENARIOS[0], \\@sinks, undef, [ ${Name}CleanDieFeature->new($own) ]),
-    $target, {}, \\@sinks);
-  ok($same->($operr), "a hook's own exception object leaves the operation as it is");
+  my $wraps = sub {
+    my ($err) = @_;
+    return (Scalar::Util::blessed($err) && $err->isa('${Name}Error') && $same->($err->cause)) ? 1 : 0;
+  };
+  my %ownerr;
+  for my $variant (@VARIANTS) {
+    my ($vname, $make_ctrl) = @$variant;
+    $ownerr{$vname} = drive(make_sdk($SCENARIOS[0], \\@sinks, undef, [ ${Name}CleanDieFeature->new($own) ]),
+      $target, $make_ctrl->(), \\@sinks);
+  }
+  ok($wraps->($ownerr{throw}), "a hook's own exception object leaves the operation as the SDK's error, its cause");
+  ok($wraps->($ownerr{explain}), "explained, a hook's own exception object leaves as the SDK's error, its cause");
   my $pullerr;
   eval {
     my ($acc, $op) = ($target->{accessor}, $target->{op});
@@ -712,9 +722,12 @@ SKIP: {
     1 while defined $next->();
     1;
   } or $pullerr = $@;
-  ok($same->($pullerr), "a stream's own exception object leaves the stream as it is");
-  my $raw = make_sdk([ 'own', sub { return (undef, $own) } ], \\@sinks)->direct({ 'path' => 'raw' });
-  ok(!$raw->{ok} && $same->($raw->{err}), "a fetcher's own error object comes back from direct() as it is");
+  push @sinks, forms('stream:own', $pullerr) if defined $pullerr;
+  ok($wraps->($pullerr), "a stream's own exception object leaves the stream as the SDK's error, its cause");
+  my $fetched = ${Name}CleanOwnError->new('refused');
+  my $raw = make_sdk([ 'own', sub { return (undef, $fetched) } ], \\@sinks)->direct({ 'path' => 'raw' });
+  ok(!$raw->{ok} && ref $raw->{err} && Scalar::Util::refaddr($raw->{err}) == Scalar::Util::refaddr($fetched),
+    "a fetcher's own error object comes back from direct() as it is");
 
   # The live spec, cleaned on its own as it is when it sits in a record:
   # what comes back is dumped whole, as a hook's logger would print it.
