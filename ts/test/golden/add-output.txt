@@ -733,7 +733,7 @@ tm/java/test/NetsimTest.java 9969f77c3cb3
 tm/java/test/OmniResolver.java 54333ccce204
 tm/java/test/OmniSmokeTest.java 722cc2d6bfe7
 tm/java/test/PipelineTest.java 2bde7fdedd64
-tm/java/test/PrimaryUtilityTest.java 51231ee1825a
+tm/java/test/PrimaryUtilityTest.java 68f598529151
 tm/java/test/RunnerSupport.java d8b0e6f8e5f7
 tm/java/test/StructCorpusTest.java bbf193fcd96e
 tm/java/test/sdk-test-control.json acadc87764f6
@@ -771,7 +771,7 @@ tm/java/utility/ResultBasic.java ef96b4823075
 tm/java/utility/ResultBody.java 2bbd84dffff9
 tm/java/utility/ResultHeaders.java 9fab31e3503b
 tm/java/utility/TransformRequest.java eb4e1242448f
-tm/java/utility/TransformResponse.java 1cd65d69d927
+tm/java/utility/TransformResponse.java 57d3cd8e82e1
 tm/java/utility/struct/Struct.java d551d07016d0
 
 ## target js
@@ -1236,7 +1236,7 @@ tm/perl/t/netsim.t e5829249c5e9
 tm/perl/t/omni.pm e4e64f2ea2e9
 tm/perl/t/omni_smoke.t 5b5284fad82f
 tm/perl/t/pipeline.t b9dfbf3bdc49
-tm/perl/t/primary_utility.t 3d3bf6d4a30d
+tm/perl/t/primary_utility.t 0e7c3205e705
 tm/perl/t/runner.pm faf289b7cd5d
 tm/perl/t/sdk-test-control.json b75ea700c514
 tm/perl/t/server_variables.t 4404608c9256
@@ -1275,7 +1275,7 @@ tm/perl/utility/result_basic.pm 6dcc7e8f1dd2
 tm/perl/utility/result_body.pm 970e6b7be233
 tm/perl/utility/result_headers.pm 79b7d0f73ff3
 tm/perl/utility/transform_request.pm 07892f852313
-tm/perl/utility/transform_response.pm 035accca42c2
+tm/perl/utility/transform_response.pm 842c083a6204
 
 ## target php
 model/feature/feature-index.aontu 0351fe150e6a
@@ -1308,7 +1308,7 @@ src/cmp/php/ReadmeTopTest_php.ts c1a4a8bb5d36
 src/cmp/php/Schema_php.ts 9750487a267a
 src/cmp/php/TestClean_php.ts 95acb51e7b0a
 src/cmp/php/TestDirect_php.ts 8731b768120c
-src/cmp/php/TestEntity_php.ts 5f5f4d87574f
+src/cmp/php/TestEntity_php.ts 4e8862aade33
 src/cmp/php/Test_php.ts 4b04d7202c7a
 src/cmp/php/fragment/Entity.fragment.php 76a9ceae92d3
 src/cmp/php/fragment/EntityCreateOp.fragment.php 685a8e173d2a
@@ -1326,7 +1326,7 @@ tm/php/VERSION e6635045e1d2
 tm/php/core/Context.php 1d48cfbe8e57
 tm/php/core/Control.php 6cb0e03bea15
 tm/php/core/Error.php d3ddfe0c0238
-tm/php/core/Helpers.php 75cc7fb2f06c
+tm/php/core/Helpers.php 354fdb076279
 tm/php/core/Operation.php dde7df1447a3
 tm/php/core/Response.php d3755dc0a931
 tm/php/core/Result.php b64c27a0b2ea
@@ -1343,7 +1343,7 @@ tm/php/test/NetsimTest.php fac241d6b75a
 tm/php/test/Omni.php a5fdc0be95cc
 tm/php/test/OmniSmokeTest.php cad939a73897
 tm/php/test/PipelineTest.php 286ea2f18635
-tm/php/test/PrimaryUtilityTest.php 2cf1ca929598
+tm/php/test/PrimaryUtilityTest.php 5243523733ee
 tm/php/test/Runner.php df683b0bb54e
 tm/php/test/StructUtilityTest.php 84496814910f
 tm/php/test/sdk-test-control.json 0ef7278caec2
@@ -1359,7 +1359,7 @@ tm/php/utility/Graphql.php 15b35cc5d0ee
 tm/php/utility/MakeContext.php 22320c69e453
 tm/php/utility/MakeError.php 708cebcf9353
 tm/php/utility/MakeFetchDef.php 8f8141558539
-tm/php/utility/MakeOptions.php 601bdaa73810
+tm/php/utility/MakeOptions.php 0990a43a197b
 tm/php/utility/MakePoint.php 9a46e3e4cce4
 tm/php/utility/MakeRequest.php 0d5c61684da6
 tm/php/utility/MakeResponse.php 84a420b02660
@@ -1379,7 +1379,7 @@ tm/php/utility/ResultBasic.php d87abb6e80d7
 tm/php/utility/ResultBody.php e0731440789f
 tm/php/utility/ResultHeaders.php 378a2c5bfdd9
 tm/php/utility/TransformRequest.php 6532e5142cc8
-tm/php/utility/TransformResponse.php 4dc432711490
+tm/php/utility/TransformResponse.php 5a4119171b02
 tm/php/utility/struct/Struct.php a018bafe8c3c
 
 ## target py
@@ -1865,7 +1865,7 @@ tm/scala/sdktest/ConcurrencyTest.scala f27840bb67d8
 tm/scala/sdktest/OmniResolver.scala 2bbd5639ca7c
 tm/scala/sdktest/OmniSmoke.scala 5c22c83fb51f
 tm/scala/sdktest/PrimaryCorpus.scala 2ac88f150d4e
-tm/scala/sdktest/SdkTestMain.scala 7c2fd5d309c0
+tm/scala/sdktest/SdkTestMain.scala 995c804e06f3
 tm/scala/sdktest/SdkTestSupport.scala 9a0a70dcb153
 tm/scala/sdktest/ServerVariableTest.scala 0c041b23fd44
 tm/scala/sdktest/StructCorpus.scala 9d5a9f2f8795
@@ -1908,7 +1908,7 @@ tm/scala/utility/Prepare.scala 918d6262bddd
 tm/scala/utility/Register.scala 8168a7d87226
 tm/scala/utility/Results.scala 474c78263b3a
 tm/scala/utility/StructUtility.scala 2dc27377f838
-tm/scala/utility/Transform.scala 9a1ca6db6e2d
+tm/scala/utility/Transform.scala 0ccb3018997b
 tm/scala/utility/struct/Struct.java 231bab0dfa04
 tm/scala/utility/struct/voxgig_struct.scala c2f8554a4c45
 

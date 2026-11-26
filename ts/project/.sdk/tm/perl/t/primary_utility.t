@@ -995,4 +995,16 @@ runsection('transformResponse', sub {
   return $utility->{transform_response}->(ProjectNameOmni::livectx($view));
 });
 
+# A 204 has no body: struct's no-value sentinel is truthy, so held as resdata
+# an update would take it for data and replace the entity's.
+{
+  my $ctx = make_test_ctx($client, $utility, undef);
+  $ctx->{result} = { 'ok' => 1, 'status' => 204, 'body' => undef };
+  $ctx->{spec} = { 'step' => '' };
+  $ctx->{point} = { 'transform' => { 'res' => '`body.data`' } };
+  my $out = $utility->{transform_response}->($ctx);
+  ok(!defined $out, 'transformResponse no value: nothing is returned');
+  ok(!defined $ctx->{result}{resdata}, 'transformResponse no value: resdata holds nothing');
+}
+
 done_testing();

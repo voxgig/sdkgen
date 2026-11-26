@@ -4,6 +4,7 @@ declare(strict_types=1);
 // ProjectName SDK validate feature
 
 require_once __DIR__ . '/BaseFeature.php';
+require_once __DIR__ . '/../core/Helpers.php';
 require_once __DIR__ . '/../schema.php';
 
 // Payload validation against the model's own field types. The php port of
@@ -265,7 +266,7 @@ class ProjectNameValidateFeature extends ProjectNameBaseFeature
         $injdef = (object)['errs' => $errs];
 
         try {
-            \Voxgig\Struct\Struct::validate($data, $spec, $injdef);
+            \Voxgig\Struct\Struct::validate(ProjectNameHelpers::empty_maps($data, $spec), $spec, $injdef);
         } catch (\Throwable $e) {
             // A spec this port cannot run at all (rather than a payload that
             // fails it) must not take the operation down with it: report it
