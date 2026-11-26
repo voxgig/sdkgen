@@ -14,7 +14,6 @@ import {
   snakify,
   isAuthActive, envName, envToken,
   serverVarEnv,
-  serverVariables,
   pointParts,
   pointSlash,
   pointPlaceholders,
@@ -117,7 +116,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
     ? `("apikey", getp(&env, "${PROJECTNAME}_APIKEY"))${authSecret ? `, ("secret", getp(&env, "${PROJECTNAME}_SECRET"))` : ''}`
     : ''
 
-  const svars = serverVariables(model)
+  const svars = fact(model.main[KIT], 'server')
   const serverEnvEntry = svars
     .map((v: any) => `\n        ("${serverVarEnv(PROJECTNAME, v.name)}", Value::str(${JSON.stringify(v.dflt)})),`).join('')
   const serverLiveEntry = 0 === svars.length ? '' :

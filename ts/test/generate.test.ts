@@ -7843,6 +7843,44 @@ main: kit: flow: BasicNoteFlow: {
   })
 
 
+  // BASIC_TEMPLATED's client needs its key, its secret and `tenant`, not `region`.
+  test('the root entities example builds its client with what the constructor needs', async () => {
+    for (const [target, ctor] of [
+      ['ts', "const client = new DemoSDK({ apikey: '...', secret: '...', server: { tenant: '...' } })"],
+      ['js', "const client = new DemoSDK({ apikey: '...', secret: '...', server: { tenant: '...' } })"],
+      ['py', 'client = DemoSDK({"apikey": "...", "secret": "...", "server": {"tenant": "..."}})'],
+      ['go', 'client := sdk.NewDemoSDK(map[string]any{"apikey": "...", "secret": "...", ' +
+        '"server": map[string]any{"tenant": "..."}})'],
+      ['php', '$client = new DemoSDK(["apikey" => "...", "secret" => "...", "server" => ["tenant" => "..."]]);'],
+      ['rb', 'client = DemoSDK.new({"apikey" => "...", "secret" => "...", "server" => {"tenant" => "..."}})'],
+      ['lua', 'local client = sdk.new({["apikey"] = "...", ["secret"] = "...", ["server"] = {["tenant"] = "..."}})'],
+    ]) {
+      const readme = String((await generate([target], undefined, BASIC_TEMPLATED))['README.md'])
+      const at = readme.indexOf('## Entities, not endpoints')
+      ok(readme.slice(at, readme.indexOf('\n## ', at + 3)).includes('\n' + ctor + '\n'), target + ': ' +
+        readme.slice(at, readme.indexOf('\n## ', at + 3)))
+    }
+    const plain = String((await generate(['ts']))['README.md'])
+    ok(plain.includes('\nconst client = new DemoSDK()\n'), 'ts: a public API\'s client takes options')
+  })
+
+  // The live suites read the secret exactly where PrepareAuth reads one.
+  test('every live suite reads a secret exactly where PrepareAuth reads one', async () => {
+    const live = ['ts', 'js', 'go', 'py', 'java', 'kotlin', 'php', 'rb', 'lua', 'rust', 'csharp', 'perl']
+    for (const [extra, wanted] of [[BASIC_TEMPLATED, true], [BASIC_QUERY, false]] as [string, boolean][]) {
+      const out = await generate(live, undefined, extra)
+      for (const target of live) {
+        const tests = Object.entries(out).filter(([file]) => file.startsWith(target + '/') &&
+          /(Entity|Direct)[._]?[Tt]est|_(entity|direct)(_test|\.t$)|test_[a-z_]+_(entity|direct)/.test(file))
+        ok(0 < tests.length, target + ': no live suite')
+        for (const [file, text] of tests) {
+          strictEqual(String(text).includes('DEMO_SECRET'), wanted, file)
+        }
+      }
+    }
+  })
+
+
   test('the root entities example is in a language the SDK has', async () => {
     const section = (readme: string) => {
       const at = readme.indexOf('## Entities, not endpoints')

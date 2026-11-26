@@ -14,7 +14,7 @@ import {
   snakify,
   isAuthActive,
   serverVarEnv,
-  serverVariables, envName, envToken, liveStrict, liveStrictNote,
+  envName, envToken, liveStrict, liveStrictNote,
   pointParts,
   pointSlash,
   pointPlaceholders,
@@ -98,7 +98,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
   // impossible to construct without values: makeOptions refuses rather than
   // request a URL with a literal `{account_id}` in it. Taken from the
   // environment, the same way the apikey is.
-  const svars = serverVariables(model)
+  const svars = fact(model.main[KIT], 'server')
   const serverEnvEntry = svars
     .map((v: any) => `\n\t\t"${serverVarEnv(PROJECTNAME, v.name)}": ${JSON.stringify(v.dflt)},`).join('')
   const serverLiveField = 0 === svars.length ? '' :

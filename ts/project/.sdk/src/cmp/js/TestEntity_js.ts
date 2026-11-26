@@ -34,7 +34,6 @@ import {
   each,
   isAuthActive,
   serverVarEnv,
-  serverVariables,
   entityDataIdField, entityRecordIdField, envName, envToken,
   jsKey,
   jsProp,
@@ -103,7 +102,7 @@ const TestEntity = cmp(function TestEntity(props: any) {
         secret: env.${PROJENVNAME}_SECRET,` : ''}`
     : ''
 
-  const svars = serverVariables(model)
+  const svars = fact(model.main[KIT], 'server')
   const serverEnvEntry = svars
     .map((v: any) => `\n    '${serverVarEnv(PROJENVNAME, v.name)}': ${templateSafe('js', JSON.stringify(v.dflt))},`).join('')
   const serverLiveField = 0 === svars.length ? '' : `
