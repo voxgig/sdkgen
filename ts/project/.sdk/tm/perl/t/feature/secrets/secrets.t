@@ -1012,9 +1012,9 @@ sub exchange_sdk {
 
 # Real listeners and the SDK's raw HTTP fetch: a stub follows nothing. One
 # child per case serves both origins, printing each request it records,
-# until it is told to stop. The exchange itself is not recorded.
+# until it is told to stop. The exchange itself is only counted.
 sub redirect_exchange {
-  my ($status, $location) = @_;
+  my ($status, $location, $exchange) = @_;
   require IO::Socket::INET;
   require IO::Select;
   require POSIX;
@@ -1023,6 +1023,7 @@ sub redirect_exchange {
   my $other = IO::Socket::INET->new(@listen);
   my $apiport = $api->sockport;
   $location =~ s/OTHER/$other->sockport/e;
+  $location =~ s/ORIGIN/$apiport/;
   pipe(my $seen_r, my $seen_w) or return;
   my $pid = fork();
   return unless defined $pid;
@@ -1041,9 +1042,10 @@ sub redirect_exchange {
           $length = $value if 'content-length' eq lc $name;
         }
         read($sock, $sent, $length) if $length;
+        $sent =~ s/\r?\n/ /g;
         my $hop = $srv == $api && '/api/auth/token' eq $rpath;
-        print {$seen_w} join("\t", $srv == $api ? 'origin' : 'other', $method, $rpath, $sent), "\n"
-          unless $hop;
+        print {$seen_w} join("\t", $hop ? 'exchange' : $srv == $api ? 'origin' : 'other',
+          $method, $rpath, $sent), "\n";
         my $body = $srv == $api ? '{"access_token":"MOVED01"}' : '{"access_token":"ELSEWHERE01"}';
         $body = '' if $hop;
         print {$sock} 'HTTP/1.1 ' . ($hop ? $status : 200) . " X\r\n"
@@ -1064,7 +1066,7 @@ sub redirect_exchange {
     'feature' => { 'secrets' => {
       'active' => 1,
       'name' => 'refresh_token',
-      'exchange' => { 'active' => 1, 'refresh' => 'REFRESH01' },
+      'exchange' => { 'active' => 1, 'refresh' => 'REFRESH01', %{ $exchange // {} } },
     } },
   });
   my $res = eval { $sdk->direct({ 'path' => '/thing' }) };
@@ -1072,13 +1074,14 @@ sub redirect_exchange {
 
   my $stop = IO::Socket::INET->new(PeerAddr => '127.0.0.1', PeerPort => $apiport);
   print {$stop} "GET /stop HTTP/1.0\r\n\r\n" if $stop;
-  my @arrived;
+  my ($exchanged, @arrived) = (0);
   while (defined(my $line = <$seen_r>)) {
     chomp $line;
-    push @arrived, $line;
+    if (0 == index($line, "exchange\t")) { $exchanged++ }
+    else { push @arrived, $line }
   }
   waitpid($pid, 0);
-  return ($message, \@arrived, $base);
+  return ($message, \@arrived, $base, $exchanged);
 }
 
 SKIP: {
@@ -1105,6 +1108,54 @@ SKIP: {
   is_deeply(\@followed, [], 'exchange redirect: nothing followed a refused exchange');
   is_deeply(\@allowed, [], 'exchange redirect: each redirect is a failed exchange');
   is($refused, scalar @answers, 'exchange redirect: every case refused');
+}
+
+SKIP: {
+  clear_env();
+  require JSON::PP;
+  my $moved = sub {
+    my ($tag, $method, $rpath, $sent) = split /\t/, ($_[0] // ''), 4;
+    my $body = eval { JSON::PP::decode_json($sent // '') };
+    return 'origin' eq $tag && 'POST' eq $method && '/api/moved/token' eq $rpath
+      && 'HASH' eq ref $body && 1 == keys %$body && 'REFRESH01' eq ($body->{refresh_token} // '');
+  };
+  my @cases = ([307, '/api/moved/token', 1],
+    [308, 'http://127.0.0.1:ORIGIN/api/moved/token', 1],
+    [307, 'http://127.0.0.1:OTHER/api/auth/token', 0],
+    [302, '/api/moved/token', 0], [307, '/api/auth/token', 0]);
+  my ($followed, $refused, $looped, $elsewhere, @wrong) = (0, 0, 0, 0);
+  for my $case (@cases) {
+    my ($status, $location, $follows) = @$case;
+    my ($message, $arrived, $base, $exchanged) =
+      redirect_exchange($status, $location, { 'redirect' => 'same-origin' });
+    skip('no fork', 5) unless $arrived;
+    my @origin = grep { 0 == index($_, "origin\t") } @$arrived;
+    $elsewhere += grep { 0 == index($_, "other\t") } @$arrived;
+    my $seen = "$status to $location: $message [" . join(' | ', @$arrived) . ']';
+    if ($follows) {
+      if ('ok' eq $message && 2 == @origin && $moved->($origin[0])) { $followed++ }
+      else { push @wrong, $seen }
+    }
+    elsif (0 == @origin
+      && 0 <= index($message, "token exchange failed: $status from $base/auth/token")) {
+      $refused++;
+    }
+    else {
+      push @wrong, $seen;
+    }
+    $looped = $exchanged if '/api/auth/token' eq $location;
+  }
+
+  print STDERR 'secrets: exchange opt-in followed ' . $followed
+    . ' redirect(s) on its own origin, refused ' . $refused . ', ' . $elsewhere
+    . " elsewhere\n";
+
+  is($elsewhere, 0, 'exchange opt-in: nothing reached another origin');
+  is_deeply(\@wrong, [], 'exchange opt-in: each case as the rule says');
+  is($followed, 2, 'exchange opt-in: two redirects on its own origin followed');
+  is($refused, 3, 'exchange opt-in: three redirects refused');
+  # A redirect to itself is followed up to the hop limit and no more.
+  is($looped, 6, 'exchange opt-in: the loop asked the exchange six times');
 }
 
 clear_env();
