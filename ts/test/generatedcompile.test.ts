@@ -8635,12 +8635,15 @@ describe('a basic flow calls patch where the entity has it', () => {
   let tmp = ''
   const LONG = 30 * 60 * 1000
 
+  // Every entity's data, since scala runs every entity's test in one main.
   before(() => {
     tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-patchflow-'))
-    const dir = Path.join(tmp, '.sdk', 'test', 'entity', 'planet')
-    Fs.mkdirSync(dir, { recursive: true })
-    Fs.writeFileSync(Path.join(dir, 'PlanetTestData.json'),
-      JSON.stringify(entityTestData(makeModel(['ts']).main.kit.entity.planet)))
+    for (const entity of Object.values(makeModel(['ts']).main.kit.entity) as any[]) {
+      const Name = entity.name.split('_').map((w: string) => w[0].toUpperCase() + w.slice(1)).join('')
+      const dir = Path.join(tmp, '.sdk', 'test', 'entity', entity.name)
+      Fs.mkdirSync(dir, { recursive: true })
+      Fs.writeFileSync(Path.join(dir, Name + 'TestData.json'), JSON.stringify(entityTestData(entity)))
+    }
   })
 
   after(() => {
@@ -8648,9 +8651,9 @@ describe('a basic flow calls patch where the entity has it', () => {
   })
 
   // The flow's patch step, whatever the target names its variables.
-  async function generatePatching(target: string, test: string): Promise<string> {
+  async function generatePatching(target: string, test: string, top?: boolean): Promise<string> {
     const root = Path.join(tmp, target)
-    await generateTo(target, root)
+    await generateTo(target, root, undefined, undefined, { top })
     const src = Fs.readFileSync(Path.join(root, test), 'utf8')
     ok(/(\.|->|:)[Pp]atch\(/.test(src) && /planet_?[Rr]ef01_?[Dd]ata_?[Pp]t0/.test(src),
       target + ': the planet flow test makes no patch call:\n' + src.slice(0, 2000))
@@ -8790,7 +8793,8 @@ describe('a basic flow calls patch where the entity has it', () => {
 
 
   test('scala: the planet flow patches its record', async (t) => {
-    const root = await generatePatching('scala', Path.join('sdktest', 'PlanetEntityTest.scala'))
+    // Its one main also reads the root README.
+    const root = await generatePatching('scala', Path.join('sdktest', 'PlanetEntityTest.scala'), true)
     const scalacli = toolchain('scala-cli')
     if (null == scalacli) return t.skip('needs scala-cli (which resolves the Scala compiler from the network)')
     const res = run(scalacli, ['run', '.', '--main-class', 'SdkEntityTestMain'], root, undefined, LONG)
