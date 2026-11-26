@@ -16,6 +16,42 @@ function M.is_json_media(media)
   return m == "application/json" or m == "text/json" or m:sub(-5) == "+json"
 end
 
+local TEXT_MEDIA = { "json", "xml", "html", "javascript", "ecmascript", "yaml", "urlencoded", "graphql" }
+
+-- A type whose body is text: none declared, text/*, or a structured text
+-- format.
+function M.is_text_media(ctype)
+  local m = string.lower((string.match(tostring(ctype or ""), "^%s*([^;]*)") or ""))
+  m = string.gsub(m, "%s+$", "")
+  if m == "" or string.sub(m, 1, 5) == "text/" then
+    return true
+  end
+  for _, part in ipairs(TEXT_MEDIA) do
+    if string.find(m, part, 1, true) then
+      return true
+    end
+  end
+  return false
+end
+
+-- A response whose body is bytes: by the model, or by the type it declares.
+function M.is_binary_response(point, ctype)
+  return vs.getprop(vs.getprop(point, "response"), "binary") == true or not M.is_text_media(ctype)
+end
+
+-- A header's value, whatever the spelling of its name.
+function M.header_value(headers, name)
+  if type(headers) ~= "table" then
+    return ""
+  end
+  for k, v in pairs(headers) do
+    if string.lower(tostring(k)) == name then
+      return tostring(v)
+    end
+  end
+  return ""
+end
+
 -- The declared JSON type alone, else every declared type in the model's
 -- order; nil when no success response declares a body.
 function M.accept_of(point)

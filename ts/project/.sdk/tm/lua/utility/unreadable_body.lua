@@ -1,19 +1,8 @@
 -- ProjectName SDK utility: unreadable_body
 
+local media = require("utility.media")
+
 local PREVIEW_LENGTH = 160
-
-
-local function header_value(headers, name)
-  if type(headers) ~= "table" then
-    return ""
-  end
-  for k, v in pairs(headers) do
-    if string.lower(tostring(k)) == name then
-      return tostring(v)
-    end
-  end
-  return ""
-end
 
 
 -- Cleaned whole: a secret the bound would split could leave its prefix.
@@ -36,41 +25,19 @@ local function preview(ctx, text)
 end
 
 
-local TEXT_MEDIA = { "json", "xml", "html", "javascript", "ecmascript", "yaml", "urlencoded", "graphql" }
-
--- Only text is quoted: bytes are a file's, by the model or by their type.
--- Text is no declared type, text/*, or a structured text format.
-local function quotable(ctx, ctype)
-  local response = type(ctx.point) == "table" and ctx.point.response or nil
-  if type(response) == "table" and response.binary == true then
-    return false
-  end
-  local media = string.lower((string.match(ctype or "", "^%s*([^;]*)") or ""))
-  media = string.gsub(media, "%s+$", "")
-  if media == "" or string.sub(media, 1, 5) == "text/" then
-    return true
-  end
-  for _, part in ipairs(TEXT_MEDIA) do
-    if string.find(media, part, 1, true) then
-      return true
-    end
-  end
-  return false
-end
-
-
 -- A body that is not JSON. An HTTP failure keeps its own error, with the
 -- response described; otherwise the code tells a wrong content type from
 -- malformed JSON.
 local function unreadable_body(ctx, status, headers, text, sent, failed)
-  local ctype = header_value(headers, "content-type")
-  local agent = ctx.utility.clean(ctx, header_value(sent, "user-agent"))
+  local ctype = media.header_value(headers, "content-type")
+  local agent = ctx.utility.clean(ctx, media.header_value(sent, "user-agent"))
   if agent == nil or agent == "" then
     agent = "transport default"
   end
   local detail = "HTTP " .. tostring(status) .. ", content-type " ..
     (ctype == "" and "none" or ctype) .. ", user-agent " .. tostring(agent)
-  if text ~= nil and quotable(ctx, ctype) then
+  -- Only text is quoted: bytes are a file's, by the model or by their type.
+  if text ~= nil and not media.is_binary_response(ctx.point, ctype) then
     detail = detail .. ", body: " .. preview(ctx, text)
   end
 

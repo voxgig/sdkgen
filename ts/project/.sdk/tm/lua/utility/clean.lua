@@ -291,41 +291,58 @@ local function clean_name(cfg, out, key)
 end
 
 
--- The live request body of a point the model marks binary, and its type.
--- A string shorter than the registry accepts is not told from ordinary text.
-local function binary_body(ctx, cfg)
-  local point = type(ctx) == "table" and ctx.point or nil
-  local body = type(point) == "table" and point.body or nil
-  if type(body) ~= "table" or body.kind ~= "raw" or body.binary ~= true then
-    return nil
+-- The request body of a point the model marks binary, and a response body
+-- that is bytes, each with its type. A response read as text does not say
+-- how many bytes it was, so it is not sized. A string shorter than the
+-- registry accepts is not told from ordinary text.
+local function binary_bodies(ctx, cfg)
+  local bodies = {}
+  if type(ctx) ~= "table" then
+    return bodies
   end
-  local live = {}
-  local function take(v)
-    if v ~= nil and (type(v) ~= "string" or cfg.min <= #v) then
-      live[#live + 1] = v
+
+  local function add(ctype, sized, ...)
+    local live = {}
+    for i = 1, select("#", ...) do
+      local v = (select(i, ...))
+      if v ~= nil and (type(v) ~= "string" or cfg.min <= #v) then
+        live[#live + 1] = v
+      end
+    end
+    if 0 < #live then
+      bodies[#bodies + 1] = { live = live, type = ctype, sized = sized }
     end
   end
-  if type(ctx.spec) == "table" then
-    take(ctx.spec.body)
+
+  local body = type(ctx.point) == "table" and ctx.point.body or nil
+  if type(body) == "table" and body.kind == "raw" and body.binary == true then
+    add(type(body.media) == "string" and body.media or nil, true,
+      type(ctx.spec) == "table" and ctx.spec.body or nil,
+      type(ctx.reqdata) == "table" and ctx.reqdata[media.RAW_BODY] or nil)
   end
-  if type(ctx.reqdata) == "table" then
-    take(ctx.reqdata[media.RAW_BODY])
+
+  local response = ctx.response
+  if type(response) == "table" then
+    local ctype = media.header_value(response.headers, "content-type")
+    if media.is_binary_response(ctx.point, ctype) then
+      add(ctype ~= "" and ctype or nil, false, response.body)
+    end
   end
-  if #live == 0 then
-    return nil
-  end
-  return { live = live, type = type(body.media) == "string" and body.media or nil }
+
+  return bodies
 end
 
 
--- Bytes are described, never copied (ADR-006): the kind, the size, and the
--- media type the point declares. A string is the only carrier here, and it
--- is bytes only as the body of a point the model marks binary.
-local function describe_binary(val, bin)
-  if bin == nil or not contains(bin.live, val) then
-    return nil
+-- Bytes are described, never copied (ADR-006): the kind, and the size and
+-- media type where they are known. A string is the only carrier here, and
+-- it is bytes only as a live body.
+local function describe_binary(val, bins)
+  for _, bin in ipairs(bins) do
+    if contains(bin.live, val) then
+      return { [BINARY] = "bytes", size = bin.sized and #val or nil, type = bin.type }
+    end
   end
-  return { [BINARY] = "bytes", size = #val, type = bin.type }
+  return nil
 end
 
 
@@ -402,7 +419,7 @@ local function clean_util(ctx, val)
     return clean_string(cfg, val)
   end
 
-  local bin = binary_body(ctx, cfg)
+  local bin = binary_bodies(ctx, cfg)
 
   if type(val) == "table" and val.is_sdk_error == true then
     for _, k in ipairs(sorted_keys(val)) do
