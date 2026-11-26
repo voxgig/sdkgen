@@ -131,13 +131,6 @@ class ProjectNameEntityBase<D = any> {
       ...(args || {}),
     }, this._entctx)
 
-    // Outbound: expose the caller's async-iterable payload so the request
-    // builder / transport can stream it as the request body.
-    if (null != callopts.body) {
-      ;(ctx as any).reqdata = { ...((ctx as any).reqdata || {}), body$: callopts.body }
-      ;(ctx as any).stream_out = callopts.body
-    }
-
     try {
       const failed = await this._streamSteps(ctx)
       const result: any = ctx.result
