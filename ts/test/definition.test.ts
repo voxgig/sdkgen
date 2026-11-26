@@ -491,7 +491,8 @@ describe('definitionPlan', () => {
   })
 
   // LearnWorlds declares no security scheme, and an Authorization header
-  // parameter on every operation. The SDK's credential goes in that header.
+  // parameter on every operation. Its project switches auth on, and the SDK's
+  // credential goes in that header; with no switch the SDK places none.
   test('a header parameter in the credential header is left to the credential', () => {
     const def = { ...DEF, security: undefined, components: {}, paths: { '/courses': { get: {
       parameters: [
@@ -500,15 +501,20 @@ describe('definitionPlan', () => {
       ],
       responses: { '200': { content: { 'application/json': { example: [] } } } },
     } } } }
-    const model = { main: { kit: { info: { auth: false }, entity: { course: {
-      name: 'course', id: { field: 'id' }, op: { list: { points: [{ m: 'GET', o: '/courses',
-        g: { header: [{ n: 'authorization', or: 'Authorization' }, { n: 'lw_client', or: 'Lw-Client' }] },
-      }] } },
-    } } } } }
-    const [list] = definitionPlan({ model, meta: { apidef: {
+    const headers = (kit: any) => definitionPlan({ model: { main: { kit: { info: { auth: false },
+      entity: { course: {
+        name: 'course', id: { field: 'id' }, op: { list: { points: [{ m: 'GET', o: '/courses',
+          g: { header: [{ n: 'authorization', or: 'Authorization' }, { n: 'lw_client', or: 'Lw-Client' }] },
+        }] } },
+      } }, ...kit } } }, meta: { apidef: {
       operation: (m: string, o: string) => operationFacts(def, { m, o }),
-    } } })
-    deepStrictEqual(list.headers, [{ name: 'lw_client', wire: 'Lw-Client', value: 'h1' }])
+    } } })[0].headers
+    deepStrictEqual(headers({ config: { auth: { active: true } } }),
+      [{ name: 'lw_client', wire: 'Lw-Client', value: 'h1' }])
+    deepStrictEqual(headers({}), [
+      { name: 'authorization', wire: 'Authorization', value: 'h1' },
+      { name: 'lw_client', wire: 'Lw-Client', value: 'h2' },
+    ])
   })
 
   // An API that also declares its session cookie as a parameter: the SDK's
@@ -640,9 +646,11 @@ describe('definitionPlan', () => {
     ok(plan({ config: { auth: { in: 'query', name: 'key' } } })
       .every((p: any) => 'key' === p.ownQuery))
     // A model that says `auth: false` is not checked for a credential, and
-    // its prepareAuth still sends one.
+    // its prepareAuth sends one only where the project switches auth on.
     ok(plan({ info: { auth: false, security: { in: 'query', name: 'apikey' } } })
-      .every((p: any) => null === p.auth && 'apikey' === p.ownQuery))
+      .every((p: any) => null === p.auth && undefined === p.ownQuery))
+    ok(plan({ info: { auth: false, security: { in: 'query', name: 'apikey' } },
+      config: { auth: { active: true } } }).every((p: any) => null === p.auth && 'apikey' === p.ownQuery))
     ok(plan({ config: { auth: { active: false } } }).every((p: any) => undefined === p.ownQuery))
     ok(definitionPlan(ctx$).every((p: any) => undefined === p.ownQuery))
   })

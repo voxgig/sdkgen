@@ -72,10 +72,9 @@ import Foundation
 
   if (spec.suppressed) {
     return head + `
-// This SDK is configured with authentication OFF
-// (main.kit.config.auth.active is false), so there is no credential to
-// place. The function stays in the pipeline because Register binds it
-// unconditionally and makeSpec calls it on every request.
+// This SDK is configured with authentication OFF, so there is no
+// credential to place. The function stays in the pipeline because Register
+// binds it unconditionally and makeSpec calls it on every request.
 func prepareAuthUtil(_ ctx: Context) throws -> Spec {
   guard let spec = ctx.spec else {
     throw ctx.makeError("auth_no_spec", "Expected context spec property to be defined.")

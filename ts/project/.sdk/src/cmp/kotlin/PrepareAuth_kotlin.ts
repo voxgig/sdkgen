@@ -61,8 +61,8 @@ function render(spec: AuthSpec): string {
     return head(spec) + `import ${spec.kotlinpackage}.core.Context
 import ${spec.kotlinpackage}.core.Spec
 
-// This SDK is built with \`config.auth.active: false\`, so there is no
-// credential to place. The function stays in the pipeline because Register
+// This SDK is built with authentication off, so there is no credential
+// to place. The function stays in the pipeline because Register
 // binds it unconditionally and MakeSpecUrl calls it on every request, and a
 // missing spec is still the same error it always was.
 fun prepareAuth(ctx: Context): Spec {

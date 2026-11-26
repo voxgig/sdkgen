@@ -1863,6 +1863,25 @@ main: kit: target: js: phase: feature: active: false
   })
 
 
+  // An API that declares no auth, with no project switch, is the project's
+  // switch-off: the documents say so, and the code places no credential.
+  test('every target generates for an API with no auth what it does with auth switched off', async () => {
+    const targets = allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))
+    const declared = await generate(targets)
+    const off = await generate(targets, undefined, 'main: kit: config: auth: active: false')
+    for (const target of targets) {
+      const files = filesFor(declared, target).map(([file]) => file)
+      deepStrictEqual(filesFor(off, target).map(([file]) => file), files, target + ': the file sets differ')
+      const auth = files.filter((file) => /prepare_?auth|clean|(^|\/)(sdk_)?config\.[a-z]+$/i.test(file) &&
+        !file.includes('feature/'))
+      ok(3 <= auth.length, target + ': no PrepareAuth, TestClean and Config output among ' + auth.length)
+      for (const file of auth) {
+        strictEqual(off[file], declared[file], file)
+      }
+    }
+  })
+
+
   // Every literal takes its auth block from configDefinition, which flags Basic
   // only where PrepareAuth composes it: with the key in the header.
   test('every config flags Basic where the key is in the header, and nowhere else', async () => {

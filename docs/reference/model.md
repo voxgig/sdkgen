@@ -708,7 +708,8 @@ The spec's metadata. The README components read their wording through
 `title`, `summary`, `website`, `tagline`, `about_md`, `homepage`,
 `docs_url`, `meta_source` and `entity_desc` (a map of
 `entity → description`). `info.auth` set to `false` marks the API as
-needing no authentication.
+needing no authentication, and its SDK carries no credential code unless
+`config.auth.active` is `true`.
 
 ## `main.kit.config` (from apidef)
 

@@ -39,8 +39,8 @@ function render(spec: {
 
   if (!spec.active) {
     return `
-// This API declares no authentication, so there is no credential to
-// place. The function stays in the pipeline because makeSpec calls it
+// This SDK is configured with authentication off, so there is no credential
+// to place. The function stays in the pipeline because makeSpec calls it
 // unconditionally.
 function prepareAuth(ctx) {
   const spec = ctx.spec

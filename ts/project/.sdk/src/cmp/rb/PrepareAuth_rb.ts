@@ -47,9 +47,9 @@ ${'cookie' === spec.where ? "require_relative 'prepare_headers'\n" : ''}module $
   // NO AUTH AT ALL. A public API's SDK gets a prepare_auth that is honest
   // about it rather than one that deletes a header nobody set.
   if (!spec.active) {
-    return head + `  # This API declares no authentication, so there is no credential to
-  # place. The utility stays in the pipeline because make_spec calls it
-  # unconditionally, and register.rb binds it unconditionally.
+    return head + `  # This SDK is configured with authentication off, so there is no
+  # credential to place. The utility stays in the pipeline because make_spec
+  # calls it unconditionally, and register.rb binds it unconditionally.
 ${guard}
     return spec, nil
   }

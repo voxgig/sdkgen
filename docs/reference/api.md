@@ -172,10 +172,11 @@ when it says so explicitly; otherwise the spec-derived signal governs:
 2. `main.kit.info.auth === false` (apidef: the spec declares no
    authentication)
 
-Templates use it to gate API-key code, docs, and examples for public
-APIs that need no authentication. An API whose spec omits its security
-schemes (GitHub's official OpenAPI does) still gets a credential when the
-project sets `config: auth: { active: true, prefix: 'Bearer' }`.
+The generated credential code, documents, and examples all follow it, so
+the SDK of a public API places no credential and documents none. An API
+whose spec omits its security schemes (GitHub's official OpenAPI does) gets
+a credential only when the project sets
+`config: auth: { active: true, prefix: 'Bearer' }`.
 
 ### `guardModel(model, log?) → model`
 

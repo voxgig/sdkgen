@@ -51,9 +51,9 @@ function resolveAuthPrefix(model) {
         return String(security.prefix);
     return 'Bearer';
 }
+// No credential code where the documents say auth is off.
 function isAuthSuppressed(model) {
-    const auth = (0, apidef_1.getModelPath)(model, `main.${apidef_1.KIT}.config.auth`, { only_active: false, required: false });
-    return null != auth && false === auth.active;
+    return !isAuthActive(model);
 }
 function resolveAuthIn(model) {
     const auth = (0, apidef_1.getModelPath)(model, `main.${apidef_1.KIT}.config.auth`, { only_active: false, required: false });

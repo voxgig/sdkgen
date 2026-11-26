@@ -54,8 +54,8 @@ function render(spec: AuthSpec): string {
 //
 // GENERATED, not templated - see PrepareAuth_rust.
 //
-// This API declares no authentication, so there is no credential to place.
-// The function stays in the pipeline because make_spec calls it
+// This SDK is configured with authentication off, so there is no credential
+// to place. The function stays in the pipeline because make_spec calls it
 // unconditionally.
 
 use std::cell::RefCell;

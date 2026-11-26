@@ -89,8 +89,8 @@ namespace util {
   // guard stays, because makeSpec calls this unconditionally and the rest
   // of the pipeline relies on the SpecPtr coming back.
   if (!spec.active) {
-    return head + `// This SDK is configured with authentication off
-// (main.kit.config.auth.active: false), so there is no credential to place.
+    return head + `// This SDK is configured with authentication off, so there is no credential
+// to place.
 // The function stays in the pipeline because makeSpec calls it
 // unconditionally and uses the Spec it returns.
 inline SpecPtr prepareAuth(CtxPtr ctx) {

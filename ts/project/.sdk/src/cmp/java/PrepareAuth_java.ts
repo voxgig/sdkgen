@@ -47,9 +47,9 @@ function render(spec: {
 import ${jp}.core.Context;
 import ${jp}.core.Spec;
 
-// This API declares no authentication, so there is no credential to place.
-// The class stays in the pipeline because Register wires prepareAuth
-// unconditionally and MakeSpec calls it on every request.
+// This SDK is configured with authentication off, so there is no credential
+// to place. The class stays in the pipeline because Register wires
+// prepareAuth unconditionally and MakeSpec calls it on every request.
 final class PrepareAuth {
 
   private PrepareAuth() {}

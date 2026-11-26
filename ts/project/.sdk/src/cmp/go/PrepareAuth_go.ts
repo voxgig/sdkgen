@@ -58,8 +58,8 @@ import (
 	"${spec.gomodule}/core"
 )
 
-// This API declares no authentication, so there is no credential to place.
-// The function stays in the pipeline because makeSpec calls it
+// This SDK is configured with authentication off, so there is no credential
+// to place. The function stays in the pipeline because makeSpec calls it
 // unconditionally.
 func prepareAuthUtil(ctx *core.Context) (*core.Spec, error) {
 	spec := ctx.Spec
