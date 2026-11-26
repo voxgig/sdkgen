@@ -175,6 +175,11 @@ let resolve_url (at : string) (location : string) : string option =
     | Some (scheme, auth, rest) ->
       if String.starts_with ~prefix:"//" location then Some (scheme ^ ":" ^ location)
       else if String.starts_with ~prefix:"/" location then Some (scheme ^ "://" ^ auth ^ location)
+      else if String.starts_with ~prefix:"?" location then
+        let cut = match String.index_from_opt rest 0 '?', String.index_from_opt rest 0 '#' with
+          | Some i, Some j -> min i j | Some i, None | None, Some i -> i
+          | None, None -> String.length rest in
+        Some (scheme ^ "://" ^ auth ^ String.sub rest 0 cut ^ location)
       else
         let path = match String.index_opt rest '?' with Some i -> String.sub rest 0 i | None -> rest in
         let dir = match String.rindex_opt path '/' with

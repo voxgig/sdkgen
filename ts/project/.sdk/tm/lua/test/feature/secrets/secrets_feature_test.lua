@@ -988,9 +988,13 @@ describe("secrets", function()
     ;(has_socket and it or pending)(
       "with the option, a redirect on the exchange's own origin is followed, and no other",
       function()
-      local moved = 'POST /api/moved/token {"refresh_token":"REFRESH01"}'
+      local sent = ' {"refresh_token":"REFRESH01"}'
       local followed, refused, elsewhere, looped, wrong = 0, 0, 0, 0, {}
-      for _, case in ipairs({ { 307, "/api/moved/token", true }, { 308, "ORIGIN", true },
+      -- Each case: the status, the Location, and the target the exchange is
+      -- asked again at, or false where the redirect is refused. A Location of
+      -- a query alone keeps the path that answered.
+      for _, case in ipairs({ { 307, "/api/moved/token", "/api/moved/token" },
+        { 308, "ORIGIN", "/api/moved/token" }, { 307, "?step=2", "/api/auth/token?step=2" },
         { 307, "OTHER", false }, { 302, "/api/moved/token", false },
         { 307, "/api/auth/token", false } }) do
         local res, base, location, seen = against_origins(case[1], case[2],
@@ -1008,7 +1012,8 @@ describe("secrets", function()
 
         local message = tostring(res and res.err)
         local want = "token exchange failed: " .. case[1] .. " from " .. base .. "/auth/token"
-        if case[3] and res and res.ok == true and #mine == 2 and mine[1] == moved then
+        if case[3] and res and res.ok == true and #mine == 2
+          and mine[1] == "POST " .. case[3] .. sent then
           followed = followed + 1
         elseif not case[3] and #mine == 0 and message:find(want, 1, true) then
           refused = refused + 1
@@ -1024,7 +1029,7 @@ describe("secrets", function()
 
       assert.are.equal(0, elsewhere, "the exchange reached another origin")
       assert.are.same({}, wrong)
-      assert.are.equal(2, followed)
+      assert.are.equal(3, followed)
       assert.are.equal(3, refused)
       -- A redirect to itself stops at the hop limit.
       assert.are.equal(6, looped)

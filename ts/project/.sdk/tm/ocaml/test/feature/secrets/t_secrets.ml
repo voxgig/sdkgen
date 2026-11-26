@@ -919,17 +919,20 @@ let () =
       let away = "http://elsewhere.test/api/auth/token" in
       let url_of c = match getp c "url" with Str u -> u | _ -> "" in
       let on_origin u = String.starts_with ~prefix:"http://secrets.test/" u in
-      let cases = [(307, "/api/moved/token", true); (308, moved, true); (307, away, false);
-                   (302, "/api/moved/token", false); (307, "/api/auth/token", false)] in
-      let results = List.map (fun (status, location, follows) ->
+      (* Each case: the status, the Location, and the url the exchange is asked
+       * again at; a Location of a query alone keeps the path that answered. *)
+      let cases = [(307, "/api/moved/token", Some moved); (308, moved, Some moved);
+                   (307, "?step=2", Some (exchange ^ "?step=2")); (307, away, None);
+                   (302, "/api/moved/token", None); (307, "/api/auth/token", None)] in
+      let results = List.map (fun (status, location, next) ->
           let (r, fetch) = recorder () in
           r.reply <- Some (fun _ url _ ->
               if url = exchange then
                 jo [("status", vint_of status); ("statusText", Str "X");
                     ("headers", jo [("location", Str location)]); ("body", Str "");
                     ("json", json_thunk Noval)]
-              else if url = moved then ok200 (jo [("access_token", Str "MOVED01")])
-              else if on_origin url then ok200 (jo [("id", Str "r01")])
+              else if url = base ^ "/thing" then ok200 (jo [("id", Str "r01")])
+              else if on_origin url then ok200 (jo [("access_token", Str "MOVED01")])
               else ok200 (jo [("access_token", Str "ELSEWHERE01")]));
           let client = live ~base fetch [("name", Str "refresh_token");
                                          xchg [("refresh", Str "REFRESH01");
@@ -947,8 +950,9 @@ let () =
           let urls = List.map url_of asked in
           let want = "token exchange failed: " ^ string_of_int status ^ " from " ^ exchange in
           let verdict =
-            if follows && res_ok res && manual && same && urls = [exchange; moved] then `Followed
-            else if (not follows) && manual && contains message want
+            if None <> next && res_ok res && manual && same
+               && Some urls = Option.map (fun n -> [exchange; n]) next then `Followed
+            else if None = next && manual && contains message want
                     && List.for_all (fun u -> u = exchange) urls then `Refused
             else `Wrong (string_of_int status ^ " to " ^ location ^ ": " ^ message
                          ^ " " ^ String.concat "; " urls) in
@@ -963,7 +967,7 @@ let () =
         (count `Followed) (count `Refused) elsewhere;
       check_int "the exchange reached another origin" elsewhere 0;
       List.iter (function (`Wrong m, _, _, _) -> check m false | _ -> ()) results;
-      check_int "followed" (count `Followed) 2;
+      check_int "followed" (count `Followed) 3;
       check_int "refused" (count `Refused) 3;
       (* A redirect to itself stops at the hop limit. *)
       check_int "the loop's exchange count" looped 6);

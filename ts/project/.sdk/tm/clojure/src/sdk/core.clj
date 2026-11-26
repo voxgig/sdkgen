@@ -1988,6 +1988,13 @@
     (boolean (or (contains? CREDENTIAL-HEADERS (.toLowerCase (str name) java.util.Locale/ROOT))
                  ((if (fn? secret) secret u-clean-secret) ctx name value)))))
 
+;; Where a Location points from `from`, as RFC 3986 resolves it: URI.resolve
+;; drops the last path segment for a Location of a query alone.
+(defn resolve-location ^URI [^URI from ^String location]
+  (if (str/starts-with? location "?")
+    (URI/create (str (first (str/split (str from) #"[?#]" 2)) location))
+    (.resolve from (URI/create location))))
+
 ;; The request a followed redirect sends next, or nil where the response is the
 ;; answer. As the client rewrote it: a 303, and a 301 or 302 answering a POST,
 ;; become a GET without the body. A body is not sent on to another origin.
@@ -1996,7 +2003,7 @@
         location (mget (vs/getprop res "headers") "location")
         from (URI/create url)
         ^URI to (when (and (contains? REDIRECT-STATUS status) (string? location))
-                  (try (.resolve from (URI/create location)) (catch Exception _ nil)))
+                  (try (resolve-location from location) (catch Exception _ nil)))
         scheme (when to (.getScheme to))]
     ;; As the client's NORMAL policy: never from https to http.
     (when (and scheme (or (.equalsIgnoreCase ^String scheme (.getScheme from))

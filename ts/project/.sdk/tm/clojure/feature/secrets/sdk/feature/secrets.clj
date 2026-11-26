@@ -213,7 +213,7 @@
         location (vs/getprop (vs/getprop res "headers") "location")]
     (when (and (contains? #{307 308} status) (string? location) (seq location))
       (try
-        (let [next (.resolve (java.net.URI/create at) (java.net.URI/create location))]
+        (let [next (core/resolve-location (java.net.URI/create at) location)]
           (when (= (origin next) (origin (java.net.URI/create url)))
             (str next)))
         (catch Exception _ nil)))))

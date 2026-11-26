@@ -1099,19 +1099,23 @@ defmodule ProjectName.SecretsTest do
       at = "http://127.0.0.1:#{elem(origin, 1)}"
       base = at <> "/api"
       away = "http://127.0.0.1:#{elem(other, 1)}/api/auth/token"
-      moved = {"POST", "/api/moved/token", ~s({"refresh_token":"#{@refresh}"})}
+      sent = ~s({"refresh_token":"#{@refresh}"})
 
+      # Each case: the status, the Location, and the target the exchange is
+      # asked again at, or nil where the redirect is refused.
       cases = [
-        {307, "/api/moved/token", true},
-        {308, at <> "/api/moved/token", true},
-        {307, away, false},
-        {302, "/api/moved/token", false},
-        {307, "/api/auth/token", false}
+        {307, "/api/moved/token", "/api/moved/token"},
+        {308, at <> "/api/moved/token", "/api/moved/token"},
+        # A Location of a query alone keeps the path that answered.
+        {307, "?step=2", "/api/auth/token?step=2"},
+        {307, away, nil},
+        {302, "/api/moved/token", nil},
+        {307, "/api/auth/token", nil}
       ]
 
       try do
         results =
-          Enum.map(cases, fn {status, location, follows} ->
+          Enum.map(cases, fn {status, location, path} ->
             Agent.update(answer, fn _ -> {status, location} end)
 
             client =
@@ -1137,11 +1141,11 @@ defmodule ProjectName.SecretsTest do
 
             verdict =
               cond do
-                follows and S.getprop(res, "ok") == true and length(followed) == 2 and
-                    hd(followed) == moved ->
+                path != nil and S.getprop(res, "ok") == true and length(followed) == 2 and
+                    hd(followed) == {"POST", path, sent} ->
                   :followed
 
-                not follows and followed == [] and String.contains?(message, want) ->
+                path == nil and followed == [] and String.contains?(message, want) ->
                   :refused
 
                 true ->
@@ -1162,7 +1166,7 @@ defmodule ProjectName.SecretsTest do
 
         assert elsewhere == 0, "the exchange reached another origin"
         assert wrong == []
-        assert followed == 2
+        assert followed == 3
         assert refused == 3
         # A redirect to itself stops at the hop limit.
         assert looped == 6

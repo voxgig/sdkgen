@@ -184,7 +184,9 @@
     (.createContext server "/"
                     (reify com.sun.net.httpserver.HttpHandler
                       (handle [_ ex]
-                        (let [path (.getRawPath (.getRequestURI ex))
+                        (let [uri (.getRequestURI ex)
+                              ;; The target with its query: a query alone is another request.
+                              path (str (.getRawPath uri) (when-let [q (.getRawQuery uri)] (str "?" q)))
                               sent (String. (.readAllBytes (.getRequestBody ex)) "UTF-8")
                               [code to text] (answer path)
                               body (.getBytes ^String text "UTF-8")
@@ -664,24 +666,28 @@
            (fn []
              (with-origins
                (fn [{:keys [elsewhere seen base away origin] :as o}]
-                 (let [moved {:method "POST" :path "/api/moved/token"
-                              :body "{\"refresh_token\":\"REFRESH01\"}"}
+                 (let [moved (fn [path] {:method "POST" :path path
+                                         :body "{\"refresh_token\":\"REFRESH01\"}"})
+                       ;; Each case: the status, the Location, and the target the exchange
+                       ;; is asked again at, or nil where the redirect is refused.
                        results
                        (doall
-                        (for [[status location follows] [[307 "/api/moved/token" true]
-                                                         [308 (str origin "/api/moved/token") true]
-                                                         [307 away false]
-                                                         [302 "/api/moved/token" false]
-                                                         [307 "/api/auth/token" false]]]
+                        (for [[status location path] [[307 "/api/moved/token" "/api/moved/token"]
+                                                      [308 (str origin "/api/moved/token") "/api/moved/token"]
+                                                      ;; A Location of a query alone keeps the path that answered.
+                                                      [307 "?step=2" "/api/auth/token?step=2"]
+                                                      [307 away nil]
+                                                      [302 "/api/moved/token" nil]
+                                                      [307 "/api/auth/token" nil]]]
                           (let [res (redirect-direct o status location {"redirect" "same-origin"})
                                 err (vs/getprop res "err")
                                 message (if (some? err) (str (core/err-msg err)) (brief res))
                                 mine (remove #(= "/api/auth/token" (:path %)) (vec seen))
                                 verdict (cond
-                                          (and follows (= true (vs/getprop res "ok"))
-                                               (= 2 (count mine)) (= moved (first mine)))
+                                          (and path (= true (vs/getprop res "ok"))
+                                               (= 2 (count mine)) (= (moved path) (first mine)))
                                           :followed
-                                          (and (not follows) (empty? mine)
+                                          (and (nil? path) (empty? mine)
                                                (str/includes? message (str "token exchange failed: " status
                                                                            " from " base "/auth/token")))
                                           :refused
@@ -699,7 +705,7 @@
                                  elsewhere " elsewhere"))
                    (t/is-eq elsewhere 0 "the exchange reached another origin")
                    (t/is-eq (vec (remove keyword? (map :verdict results))) [] "wrong")
-                   (t/is-eq followed 2 "followed")
+                   (t/is-eq followed 3 "followed")
                    (t/is-eq refused 3 "refused")
                    ;; A redirect to itself stops at the hop limit.
                    (t/is-eq looped 6 "the loop's exchange count"))))))
