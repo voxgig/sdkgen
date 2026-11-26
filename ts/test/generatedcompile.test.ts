@@ -1467,7 +1467,8 @@ pub fn main() void {
 
   // go-mcp builds on the go SDK it wraps, and an agent host reads each tool's
   // schema and hints from tools/list. ROUTING_MODEL's signal and ambient load
-  // without a plain list, and planet alone creates, updates and removes.
+  // without a plain list, and planet alone creates, updates, patches and
+  // removes.
   test('go-mcp: the server builds, and lists each tool with its entities and hints',
     async (t) => {
       const go = toolchain('go')
@@ -1510,6 +1511,9 @@ pub fn main() void {
           hints: { destructiveHint: false }, required: ['entity', 'data'], ...served(['planet']),
         },
         demo_update: {
+          hints: { destructiveHint: true }, required: ['entity', 'data'], ...served(['planet']),
+        },
+        demo_patch: {
           hints: { destructiveHint: true }, required: ['entity', 'data'], ...served(['planet']),
         },
         demo_remove: {
