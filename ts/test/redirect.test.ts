@@ -411,3 +411,72 @@ describe('redirects', () => {
     }
   })
 })
+
+
+// The secrets feature's token exchange makes its own request, outside every
+// transport above, and follows no redirect: its fetch definition says
+// "manual", and each target's own secrets suite answers it with redirects.
+const EXCHANGES: Record<string, { feature: string, test: string }> = {
+  ts: { feature: 'ts/src/feature/secrets/SecretsFeature.ts',
+    test: 'ts/test/feature/secrets/Secrets.test.ts' },
+  js: { feature: 'js/src/feature/secrets/SecretsFeature.js',
+    test: 'js/test/feature/secrets/Secrets.test.js' },
+  go: { feature: 'go/feature/secrets_feature.go',
+    test: 'go/test/feature/secrets/secrets_feature_test.go' },
+  py: { feature: 'py/pkg/feature/secrets_feature.py',
+    test: 'py/test/feature/secrets/test_secrets.py' },
+  php: { feature: 'php/feature/SecretsFeature.php',
+    test: 'php/test/feature/secrets/SecretsTest.php' },
+  rb: { feature: 'rb/feature/secrets_feature.rb',
+    test: 'rb/test/feature/secrets/secrets_feature_test.rb' },
+  lua: { feature: 'lua/feature/secrets_feature.lua',
+    test: 'lua/test/feature/secrets/secrets_feature_test.lua' },
+  perl: { feature: 'perl/feature/secrets_feature.pm',
+    test: 'perl/t/feature/secrets/secrets.t' },
+  java: { feature: 'java/feature/SecretsFeature.java',
+    test: 'java/test/feature/secrets/SecretsFeatureTest.java' },
+  kotlin: { feature: 'kotlin/feature/SecretsFeature.kt',
+    test: 'kotlin/test/feature/secrets/SecretsTest.kt' },
+  scala: { feature: 'scala/feature/SecretsFeature.scala',
+    test: 'scala/sdktest/feature/secrets/SecretsTestMain.scala' },
+  csharp: { feature: 'csharp/feature/SecretsFeature.cs',
+    test: 'csharp/test/feature/secrets/SecretsFeatureTest.cs' },
+  rust: { feature: 'rust/feature/secrets.rs',
+    test: 'rust/tests/feature/secrets/main.rs' },
+  c: { feature: 'c/feature/secrets.c',
+    test: 'c/tests/feature/secrets/secrets_test.c' },
+  swift: { feature: 'swift/Sources/ProjectNameSDK/feature/SecretsFeature.swift',
+    test: 'swift/Tests/ProjectNameSDKTests/feature/secrets/SecretsFeatureTest.swift' },
+  clojure: { feature: 'clojure/feature/secrets/sdk/feature/secrets.clj',
+    test: 'clojure/test/sdk/test/feature/secrets.clj' },
+  elixir: { feature: 'elixir/lib/projectname/feature/secrets.ex',
+    test: 'elixir/test/feature/secrets/secrets_test.exs' },
+  cpp: { feature: 'cpp/feature/secrets.hpp',
+    test: 'cpp/test/feature/secrets/secrets_test.cpp' },
+  zig: { feature: 'zig/feature/secrets.zig',
+    test: 'zig/test/feature/secrets/secrets_test.zig' },
+  ocaml: { feature: 'ocaml/feature/secrets_feature.ml',
+    test: 'ocaml/test/feature/secrets/t_secrets.ml' },
+}
+
+// The key, then the quoted value on the same line, however the language
+// writes a map entry or wraps a string.
+const ASKS_MANUAL = /redirect[^\n]{1,40}?["']manual["']/
+
+
+describe('the token exchange follows no redirect', () => {
+
+  test('every SDK target is listed', () => {
+    assert.deepEqual(Object.keys(EXCHANGES).sort(), sdkTargets())
+  })
+
+
+  for (const [target, spec] of Object.entries(EXCHANGES)) {
+    test(target + ': the exchange asks for a manual redirect, and a test answers it with one', () => {
+      assert.ok(ASKS_MANUAL.test(read(spec.feature)),
+        target + ': ' + spec.feature + ' never asks for a manual redirect')
+      assert.ok(read(spec.test).includes('exchange refused '),
+        target + ': ' + spec.test + ' never answers the exchange with a redirect')
+    })
+  }
+})

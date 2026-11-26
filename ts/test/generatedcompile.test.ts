@@ -1795,6 +1795,7 @@ describe('auth null', () => {
       .filter((l: string) => /^\s*not ok /.test(l))
     ok(probe.ok, 'js secrets suite failed:\n' + failed.join('\n') +
       '\n' + tail(probe.out))
+    exchangeRefused('js', probe.out)
   })
 
 
@@ -1868,6 +1869,7 @@ describe('auth null', () => {
       .filter((l: string) => /^(Failure|Error) ->/.test(l))
     ok(probe.ok, 'lua secrets suite failed:\n' + failed.join('\n') +
       '\n' + tail(out))
+    exchangeRefused('lua', out)
 
     // POSITIVE EVIDENCE THE TESTS RAN. busted prints one summary line;
     // without it - or with a count that says the suite was trimmed to a
@@ -1930,6 +1932,7 @@ describe('auth null', () => {
       .filter((l: string) => /^\s*\d+\) (Failure|Error):/.test(l))
     ok(probe.ok, 'rb secrets suite failed:\n' + failed.join('\n') +
       '\n' + tail(probe.out))
+    exchangeRefused('rb', probe.out)
 
     // A minitest file that defines no test method EXITS ZERO. Without this
     // the lane would go green on a suite `target add` had trimmed to
@@ -2027,6 +2030,14 @@ abort("FAIL: a multi-segment envelope was not synthesised - #{n} of 3 records") 
 
     const failed = out.split('\n').filter((l: string) => /^FAIL \[/.test(l))
     ok(probe.ok, 'c secrets suite failed:\n' + failed.join('\n') + '\n' + tail(out))
+    // The case's listeners are POSIX sockets; elsewhere it says it skipped.
+    if ('win32' === process.platform) {
+      ok(/^secrets: redirect skipped, /m.test(out),
+        'c: the redirect case neither ran nor said it skipped:\n' + tail(out))
+    }
+    else {
+      exchangeRefused('c', out)
+    }
 
     const ran = /^secrets: ran (\d+) case\(s\)$/m.exec(out)
     ok(null != ran, 'c: the suite printed no case count:\n' + tail(out))
@@ -2427,6 +2438,7 @@ int main(void) {
     const failed = lines.filter((l: string) => /^not ok /.test(l))
     ok(probe.ok, 'perl secrets suite failed:\n' + failed.join('\n') +
       '\n' + tail(probe.out))
+    exchangeRefused('perl', probe.out)
 
     const plan = lines
       .map((l: string) => /^1\.\.(\d+)$/.exec(l))
@@ -2490,6 +2502,7 @@ int main(void) {
       .filter((l: string) => /^error: '.*' failed/.test(l))
     ok(probe.ok, 'zig secrets suite failed:\n' + failed.join('\n') +
       '\n' + tail(out))
+    exchangeRefused('zig', out)
 
     const tally = /(\d+)\/(\d+) tests passed( \(([^)]*)\))?/.exec(out)
     ok(null != tally,
@@ -2554,6 +2567,7 @@ int main(void) {
       /^Test Case '.*' failed/.test(l) || /error: /.test(l))
     ok(probe.ok, 'swift secrets suite failed:\n' + failed.join('\n') +
       '\n' + tail(probe.out))
+    exchangeRefused('swift', probe.out)
 
     // POSITIVE evidence the tests RAN. XCTest prints `Executed N tests,
     // with F failures (U unexpected)` per suite and then for the run; the
@@ -2676,10 +2690,11 @@ func TestTypesProbe(t *testing.T) {
     // `dotnet test` builds the library through the project reference, so
     // a broken vendored file fails HERE, naming the file - which is also
     // why the build is not run separately first. `-v quiet` silences the
-    // console logger as well, so the logger asks for failure messages back.
+    // console logger as well; at detailed verbosity it shows a passing
+    // test's output, which the exchange line is.
     const probe = run(dotnet,
       ['test', '--nologo', '-v', 'quiet',
-        '--logger', 'console;verbosity=minimal',
+        '--logger', 'console;verbosity=detailed',
         '--filter', 'FullyQualifiedName~SecretsFeatureTest',
         Path.join('test', testproj[0])],
       sdkroot)
@@ -2691,15 +2706,18 @@ func TestTypesProbe(t *testing.T) {
     ok(probe.ok, 'csharp secrets suite failed:\n' + dotnetFailures(probe.out) +
       '\n' + tail(probe.out))
 
-    const summary = /Passed!\s+-\s+Failed:\s+(\d+),\s+Passed:\s+(\d+),\s+Skipped:\s+(\d+),\s+Total:\s+(\d+)/
-      .exec(probe.out)
-    ok(null != summary, 'csharp: dotnet test printed no Passed! summary:\n' + tail(probe.out))
-    const [, nfailed, npassed, nskipped] = (summary as RegExpExecArray).map(Number)
+    // The detailed summary names a count only when it is not zero.
+    ok(/^Test Run Successful\.\s*$/m.test(probe.out),
+      'csharp: dotnet test printed no summary:\n' + tail(probe.out))
+    const count = (label: string) => Number(
+      (new RegExp('^\\s*' + label + ':\\s+(\\d+)\\s*$', 'm').exec(probe.out) || ['', '0'])[1])
+    const [nfailed, npassed, nskipped] = [count('Failed'), count('Passed'), count('Skipped')]
     strictEqual(nfailed, 0, 'csharp: the secrets suite reported failures:\n' + tail(probe.out))
     strictEqual(nskipped, 0, 'csharp: the secrets suite skipped cases:\n' + tail(probe.out))
     ok(10 < npassed,
       'csharp: the secrets suite ran only ' + npassed +
       ' tests - it was trimmed, not run:\n' + tail(probe.out))
+    exchangeRefused('csharp', probe.out)
   })
 
 
@@ -2746,6 +2764,7 @@ func TestTypesProbe(t *testing.T) {
 
     const failed = out.split('\n').filter((l: string) => /^\s*FAIL \[/.test(l))
     ok(probe.ok, 'cpp secrets suite failed:\n' + failed.join('\n') + '\n' + tail(out))
+    exchangeRefused('cpp', out)
 
     // POSITIVE evidence the tests RAN: the case count the suite prints from
     // its own RUN macro, and testlib's summary. A suite that `target add`
@@ -3090,6 +3109,7 @@ echo get_class($client->ContactsField(null)), ' ',
       .filter((l: string) => /^FAIL /.test(l))
     ok(probe.ok, 'clojure secrets suite failed:\n' + failed.join('\n') +
       '\n' + tail(probe.out))
+    exchangeRefused('clojure', probe.out)
 
     const ran = /^feature\.secrets: ran (\d+) check\(s\)$/m.exec(probe.out)
     ok(null != ran,
@@ -3154,6 +3174,7 @@ echo get_class($client->ContactsField(null)), ' ',
 
     const failed = out.split('\n').filter((l: string) => /^FAIL /.test(l))
     ok(probe.ok, 'ocaml secrets suite failed:\n' + failed.join('\n') + '\n' + tail(out))
+    exchangeRefused('ocaml', out)
 
     const ran = /^feature\.secrets: ran (\d+) check\(s\)$/m.exec(out)
     ok(null != ran,
@@ -3238,6 +3259,21 @@ const UNUSABLE = [
   /Can't locate builtin\.pm/,
   /requires perl 5\.36 or later/,
 ]
+
+
+// The shipped secrets suite answers its token exchange with redirects and
+// says how many it refused. Exit zero is not enough: a case that skipped
+// passes in every one of these frameworks.
+const EXCHANGE_LINE = /secrets: exchange refused (\d+) redirect\(s\), (\d+) followed/
+
+function exchangeRefused(target: string, out: string) {
+  const line = EXCHANGE_LINE.exec(out)
+  ok(null != line, target + ': the secrets suite did not say what its token exchange ' +
+    'did with a redirect:\n' + tail(out))
+  ok(0 < Number(line![1]), target + ': the token exchange refused no redirect')
+  strictEqual(Number(line![2]), 0,
+    target + ': a redirect that answered the token exchange was followed')
+}
 
 
 function tail(out: string, lines = 40): string {
@@ -4471,6 +4507,7 @@ describe('the elixir secrets feature runs from a generated SDK', () => {
       ' tests - it was trimmed, not run:\n' + tail(out))
     strictEqual(counted!.failed, 0,
       'elixir: ' + counted!.failed + ' secrets tests failed:\n' + tail(out))
+    exchangeRefused('elixir', out)
 
     for (const name of [
       'auth nil suppresses the credential, chain or no chain',
@@ -7800,6 +7837,139 @@ describe('the feature suite runs from a generated SDK', () => {
       }
       strictEqual(tapRan(ran.out, 'abort'), FEATURE_SUITE_ABORT_TESTS,
         lane.target + ': not every abort test ran in the generated feature suite:\n' + tail(ran.out))
+    })
+  }
+})
+
+
+// The secrets suite of each target that has no secrets lane of its own above.
+const SECRETS_MODEL =
+  'main: kit: feature: secrets: { active: true plugin: vault: active: true }'
+
+type SecretsLane = {
+  target: string,
+  runner: string,
+  command: () => { bin: string, args: string[], env?: NodeJS.ProcessEnv } | null,
+}
+
+const SECRETS_LANES: SecretsLane[] = [
+  {
+    target: 'ts',
+    runner: 'test/feature/secrets/Secrets.test.ts',
+    command: () => ({
+      bin: process.execPath,
+      args: ['--test', '--test-reporter=tap',
+        Path.join('dist-test', 'feature', 'secrets', 'Secrets.test.js')],
+      env: nestedTestEnv(),
+    }),
+  },
+  {
+    target: 'go',
+    runner: 'test/feature/secrets/secrets_feature_test.go',
+    command: () => {
+      const go = toolchain('go')
+      return null == go ? null
+        : { bin: go, args: ['test', './test/feature/secrets/', '-v', '-count=1'] }
+    },
+  },
+  {
+    target: 'py',
+    runner: 'test/feature/secrets/test_secrets.py',
+    command: () => pytest(['test/feature/secrets/test_secrets.py', '-q', '-s']),
+  },
+  {
+    target: 'php',
+    runner: 'test/feature/secrets/SecretsTest.php',
+    command: () => phpunitViaComposer(['test/feature/secrets/SecretsTest.php']),
+  },
+  {
+    target: 'java',
+    runner: 'test/feature/secrets/SecretsFeatureTest.java',
+    command: () => {
+      const mvn = toolchain('mvn')
+      if (null == mvn || null == toolchain('java')) return null
+      return {
+        bin: mvn,
+        args: ['-q', '-B', 'test', '-Dtest=SecretsFeatureTest', '-DfailIfNoSpecifiedTests=false'],
+      }
+    },
+  },
+  {
+    target: 'kotlin',
+    runner: 'test/feature/secrets/SecretsTest.kt',
+    command: () => {
+      const gradle = toolchain('gradle')
+      return null == gradle ? null
+        : { bin: gradle, args: ['--console=plain', 'test', '--tests', '*SecretsTest*'] }
+    },
+  },
+  {
+    target: 'rust',
+    runner: 'tests/feature/secrets/main.rs',
+    // cargo hides a passing test's stdout; the exchange line must reach the lane.
+    command: () => {
+      const cargo = toolchain('cargo')
+      return null == cargo ? null
+        : { bin: cargo, args: ['test', '--test', 'secrets_feature', '--', '--nocapture'] }
+    },
+  },
+  {
+    target: 'scala',
+    runner: 'sdktest/feature/secrets/SecretsTestMain.scala',
+    command: () => {
+      const scalacli = toolchain('scala-cli')
+      return null == scalacli ? null
+        : { bin: scalacli, args: ['run', '.', '--main-class', 'SecretsTestMain'] }
+    },
+  },
+]
+
+
+describe('the secrets suite runs from a generated SDK', () => {
+
+  let tmp = ''
+
+  before(() => {
+    tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-secrets-'))
+  })
+
+  after(() => {
+    if ('' !== tmp) Fs.rmSync(tmp, { recursive: true, force: true })
+  })
+
+  for (const lane of SECRETS_LANES) {
+    test(lane.target + ': the token exchange follows no redirect', async (t) => {
+      const clean = CLEAN_LANES.find((l) => l.target === lane.target)!
+      const cmd = null == clean.command() ? null : lane.command()
+      if (null == cmd) {
+        return t.skip('no usable ' + lane.target + ' toolchain here (' + clean.needs + ')')
+      }
+
+      const sdkroot = Path.join(tmp, lane.target)
+      const files = await generateTo(lane.target, sdkroot, SECRETS_MODEL,
+        ['test', 'log', 'secrets'])
+      ok(null != files[lane.runner], lane.target + ': the secrets suite was not generated: ' +
+        'expected ' + lane.runner)
+
+      const notready = null == clean.prepare ? null : clean.prepare(sdkroot)
+      ok(null == notready, lane.target + ': ' + notready)
+
+      const ran = run(cmd.bin, cmd.args, sdkroot, cmd.env)
+
+      if (ran.unlaunchable) {
+        return t.skip(lane.target + ': the toolchain could not be started here: ' +
+          tail(ran.out, 3))
+      }
+
+      const gap = UNUSABLE.find((re) => re.test(ran.out))
+      if (null != gap && !ran.ok) {
+        return t.skip(lane.target + ': toolchain present but not usable (' +
+          gap.source + '):\n' + tail(ran.out))
+      }
+
+      ok(ran.ok, 'the generated ' + lane.target + ' secrets suite FAILED:\n' +
+        tail(ran.out, 60))
+      exchangeRefused(lane.target, ran.out)
     })
   }
 })
