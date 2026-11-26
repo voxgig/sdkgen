@@ -123,10 +123,11 @@ On error, \`ok\` is \`false\` and \`err\` contains the error value.
 `)
     })
 
+    // C# spells each operation's method capitalised.
     Content(`
-Operations: ${opnames.map((n: string) => n.charAt(0).toUpperCase() + n.slice(1)).join(', ')}.
+${0 === opnames.length ? '' : `Operations: ${opnames.map((n: string) => n.charAt(0).toUpperCase() + n.slice(1)).join(', ')}.
 
-${'' === path ? '' : `API path: \`${path}\`
+`}${'' === path ? '' : `API path: \`${path}\`
 
 `}`)
   })

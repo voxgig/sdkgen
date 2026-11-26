@@ -174,9 +174,9 @@ ${0 < entityList.length ? '### Entities\n\n' : ''}`)
     })
 
     Content(`
-Operations: ${opnames.join(', ')}.
+${0 === opnames.length ? '' : `Operations: ${opnames.join(', ')}.
 
-${'' === path ? '' : `API path: \`${path}\`
+`}${'' === path ? '' : `API path: \`${path}\`
 
 `}`)
   })

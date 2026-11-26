@@ -125,9 +125,9 @@ returns a result \`Hash\` with these keys:
     })
 
     Content(`
-Operations: ${opnames.map((n: string) => n.charAt(0).toUpperCase() + n.slice(1)).join(', ')}.
+${0 === opnames.length ? '' : `Operations: ${opnames.join(', ')}.
 
-${'' === path ? '' : `API path: \`${path}\`
+`}${'' === path ? '' : `API path: \`${path}\`
 
 `}`)
   })

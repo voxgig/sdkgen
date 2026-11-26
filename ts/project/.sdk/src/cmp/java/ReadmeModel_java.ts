@@ -126,9 +126,9 @@ On error, \`ok\` is \`false\` and \`err\` contains the error value.
     })
 
     Content(`
-Operations: ${opnames.join(', ')}.
+${0 === opnames.length ? '' : `Operations: ${opnames.join(', ')}.
 
-${'' === path ? '' : `API path: \`${path}\`
+`}${'' === path ? '' : `API path: \`${path}\`
 
 `}`)
   })

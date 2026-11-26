@@ -133,10 +133,11 @@ On error, \`ok\` is \`Bool false\` and \`err\` carries the error value.
 `)
     })
 
+    // Each operation is the entity record's e_<op> field.
     Content(`
-Operations: ${opnames.map((n: string) => n.charAt(0).toUpperCase() + n.slice(1)).join(', ')}.
+${0 === opnames.length ? '' : `Operations: ${opnames.map((n: string) => 'e_' + n).join(', ')}.
 
-${'' === path ? '' : `API path: \`${path}\`
+`}${'' === path ? '' : `API path: \`${path}\`
 
 `}`)
   })

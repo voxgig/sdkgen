@@ -7,7 +7,7 @@ import Path from 'node:path'
 import { memfs } from 'memfs'
 import { Jostraca, Project, Folder, File } from 'jostraca'
 
-import { SdkGen, ReadmeModel } from '../dist/sdkgen.js'
+import { SdkGen, ReadmeModel, entityCollection } from '../dist/sdkgen.js'
 import { STAGE, SCAFFOLD, makeModel, makeRoot, makeLog, layeredFs } from './generateharness'
 import { emptyTables } from './textguard'
 
@@ -62,16 +62,42 @@ main: kit: flow: BasicMissionFlow: {
 `
 
 
-async function documents(extra = ''): Promise<Record<string, string>> {
+async function generated(extra = ''): Promise<Record<string, string>> {
   const { fs, vol } = memfs({})
   await SdkGen({ fs: layeredFs(fs), folder: STAGE, root: '', pino: makeLog() })
     .generate({ model: makeModel(TARGETS, undefined, extra), root: makeRoot() })
   const out: Record<string, string> = {}
   for (const [path, text] of Object.entries(vol.toJSON() as Record<string, string>)) {
     const rel = Path.relative(STAGE, path).split(Path.sep).join('/')
-    if (rel.endsWith('.md') && !rel.startsWith('.jostraca/') && null != text) out[rel] = text
+    if (!rel.startsWith('.jostraca/') && null != text) out[rel] = text
   }
   return out
+}
+
+
+async function documents(extra = ''): Promise<Record<string, string>> {
+  return Object.fromEntries(Object.entries(await generated(extra)).filter(([path]) => path.endsWith('.md')))
+}
+
+
+// The generated source of one entity in one target: its own file, not a test.
+function entitySource(files: Record<string, string>, target: string, entity: string): string {
+  const flat = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '')
+  return Object.entries(files).filter(([path]) => path.startsWith(target + '/') &&
+    !/(^|\/)(test|tests|t)\//.test(path) && !/test|\.md$/i.test(Path.basename(path)) &&
+    flat(Path.basename(path, Path.extname(path))).replace(/^sdkentity|entity$/g, '') === flat(entity))
+    .map(([, text]) => text).join('\n')
+}
+
+
+// A method, function or field the source defines or assigns under this name;
+// c's entity defines `<entity>_<op>`, which its vtable holds as `<op>`.
+function defines(source: string, name: string, cPrefix?: string): boolean {
+  const n = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return new RegExp('(?<![\\w$])' + n + '(?![\\w$])\\s*[(=\\[]').test(source) ||
+    new RegExp('\\b(defn|sub|def|fun|fn|func|function)\\s+' + n + '(?!\\w)').test(source) ||
+    new RegExp('[:.]' + n + '\\s*\\(').test(source) ||
+    (null != cPrefix && new RegExp('\\b' + cPrefix + '_' + n + '\\(').test(source))
 }
 
 
@@ -168,5 +194,29 @@ describe('operation-dependent prose', () => {
       strictEqual(paths(target).includes('/mission/{id}'), true, target + ': ' + paths(target).join(', '))
       strictEqual(paths(target).includes('/mission/{id}/launch'), false, target)
     }
+  })
+
+
+  test('every name on an Operations line is a method the entity\'s source defines', async () => {
+    const files = await generated()
+    const byName = Object.fromEntries(Object.values(entityCollection(makeModel([])))
+      .map((e: any) => [e.Name, e.name]))
+    let named = 0
+    for (const target of TARGETS) {
+      let heading = ''
+      for (const line of files[target + '/README.md'].split('\n')) {
+        if (line.startsWith('#### ')) heading = line.slice(5).trim()
+        if (!line.startsWith('Operations: ') || null == byName[heading]) continue
+        const source = entitySource(files, target, byName[heading])
+        strictEqual('' !== source, true, target + ': no source for ' + heading)
+        for (const name of line.slice('Operations: '.length).replace(/\.$/, '').split(', ')) {
+          strictEqual(defines(source, name, 'c' === target ? byName[heading] : undefined), true,
+            target + ': ' + heading + ' has no method ' + name)
+          named++
+        }
+      }
+    }
+    strictEqual(0 < named, true, 'no Operations line was read')
+    strictEqual(defines(entitySource(files, 'py', 'planet'), 'Load'), false)
   })
 })
