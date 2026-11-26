@@ -399,6 +399,8 @@ static char* secrets_moved(sek_pool* pool, const char* url, const char* at, voxg
     next = sek_fmt(pool, "%.*s:%s", (int)(strstr(at, "://") - at), at, location);
   } else if ('/' == location[0]) {
     next = sek_fmt(pool, "%.*s%s", (int)(rest - at), at, location);
+  } else if ('?' == location[0]) {
+    next = sek_fmt(pool, "%.*s%s", (int)strcspn(at, "?#"), at, location);
   } else {
     size_t dir = (size_t)(rest - at);
     for (size_t i = dir; '\0' != at[i] && '?' != at[i] && '#' != at[i]; i++) {

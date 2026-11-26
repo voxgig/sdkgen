@@ -1808,13 +1808,15 @@ fn with_the_option_a_redirect_on_the_exchanges_own_origin_is_followed_and_no_oth
     use std::sync::atomic::Ordering;
 
     let o = Origins::start();
-    let moved = format!("POST /api/moved/token {{\"refresh_token\":\"{}\"}}", REFRESH);
-    let cases: Vec<(i64, String, bool)> = vec![
-        (307, "/api/moved/token".to_string(), true),
-        (308, format!("{}/api/moved/token", o.origin), true),
-        (307, o.away.clone(), false),
-        (302, "/api/moved/token".to_string(), false),
-        (307, "/api/auth/token".to_string(), false),
+    // The target the exchange is asked again at, if followed; a Location of a
+    // query alone keeps the path that answered.
+    let cases: Vec<(i64, String, Option<&str>)> = vec![
+        (307, "/api/moved/token".to_string(), Some("/api/moved/token")),
+        (308, format!("{}/api/moved/token", o.origin), Some("/api/moved/token")),
+        (307, "?step=2".to_string(), Some("/api/auth/token?step=2")),
+        (307, o.away.clone(), None),
+        (302, "/api/moved/token".to_string(), None),
+        (307, "/api/auth/token".to_string(), None),
     ];
 
     let mut wrong: Vec<String> = Vec::new();
@@ -1822,7 +1824,7 @@ fn with_the_option_a_redirect_on_the_exchanges_own_origin_is_followed_and_no_oth
     let mut refused = 0;
     let mut looped = 0;
 
-    for (status, location, follows) in cases.iter() {
+    for (status, location, next) in cases.iter() {
         *o.case.lock().unwrap() = (*status, location.clone());
         o.followed.lock().unwrap().clear();
         o.exchanged.store(0, Ordering::SeqCst);
@@ -1836,8 +1838,9 @@ fn with_the_option_a_redirect_on_the_exchanges_own_origin_is_followed_and_no_oth
             o.followed.lock().unwrap().iter().map(|s| s.trim().to_string()).collect();
         let report = format!("{} to {}: {} {:?}", status, location, message, seen);
 
-        if *follows {
-            if ok && 2 == seen.len() && moved == seen[0] {
+        if let Some(next) = next {
+            let asked = format!("POST {} {{\"refresh_token\":\"{}\"}}", next, REFRESH);
+            if ok && 2 == seen.len() && asked == seen[0] {
                 followed += 1;
             } else {
                 wrong.push(report);
@@ -1869,7 +1872,7 @@ fn with_the_option_a_redirect_on_the_exchanges_own_origin_is_followed_and_no_oth
 
     assert!(elsewhere.is_empty(), "the exchange reached another origin: {:?}", elsewhere);
     assert!(wrong.is_empty(), "{:?}", wrong);
-    assert_eq!(followed, 2);
+    assert_eq!(followed, 3);
     assert_eq!(refused, 3);
     // A redirect to itself stops at the hop limit.
     assert_eq!(looped, 6);

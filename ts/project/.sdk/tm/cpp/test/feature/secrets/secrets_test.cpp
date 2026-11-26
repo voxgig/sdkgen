@@ -1006,18 +1006,20 @@ static void t_exchange_redirect_same_origin() {
   const std::string base = "http://api.test/api";
   const std::string sent = " POST manual {\"refresh_token\":\"REFRESH01\"}";
   const std::string asked = base + "/auth/token" + sent;
-  const std::string moved = base + "/moved/token" + sent;
+  // The url the exchange is asked again at, empty when refused; a Location of
+  // a query alone keeps the path that answered.
   struct Case {
     int status;
     std::string location;
-    bool follows;
+    std::string next;
   };
   const std::vector<Case> cases = {
-    {307, "/api/moved/token", true},
-    {308, "http://api.test/api/moved/token", true},
-    {307, "http://other.test/api/auth/token", false},
-    {302, "/api/moved/token", false},
-    {307, "/api/auth/token", false}};
+    {307, "/api/moved/token", base + "/moved/token"},
+    {308, "http://api.test/api/moved/token", base + "/moved/token"},
+    {307, "?step=2", base + "/auth/token?step=2"},
+    {307, "http://other.test/api/auth/token", ""},
+    {302, "/api/moved/token", ""},
+    {307, "/api/auth/token", ""}};
 
   int followed = 0;
   int refused = 0;
@@ -1046,11 +1048,12 @@ static void t_exchange_redirect_same_origin() {
 
     bool loop = "/api/auth/token" == c.location;
     if (loop) looped = calls.size();
-    std::vector<std::string> want = c.follows ? std::vector<std::string>{asked, moved}
+    bool follows = !c.next.empty();
+    std::vector<std::string> want = follows ? std::vector<std::string>{asked, c.next + sent}
       : std::vector<std::string>(loop ? std::max<size_t>(calls.size(), 1) : 1, asked);
     bool failed = !okOf(res) && contains(errOf(res), redirectWant(c.status, base));
-    if (calls == want && (c.follows ? okOf(res) : failed)) {
-      (c.follows ? followed : refused)++;
+    if (calls == want && (follows ? okOf(res) : failed)) {
+      (follows ? followed : refused)++;
     } else {
       std::string seen;
       for (const auto& call : calls) seen += "[" + call + "]";
@@ -1062,7 +1065,7 @@ static void t_exchange_redirect_same_origin() {
               "%d elsewhere\n", followed, refused, elsewhere);
   for (const auto& w : wrong) ASSERT_TRUE(false, "same-origin: " + w);
   ASSERT_EQ(elsewhere, 0, "same-origin: the exchange reached another origin");
-  ASSERT_EQ(followed, 2, "same-origin: both redirects on the origin followed");
+  ASSERT_EQ(followed, 3, "same-origin: every redirect on the origin followed");
   ASSERT_EQ(refused, 3, "same-origin: every other redirect refused");
   ASSERT_EQ(looped, (size_t)6, "same-origin: a redirect to itself is followed five times");
 }

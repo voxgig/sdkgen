@@ -1091,7 +1091,7 @@ const Mover = struct {
             h.get_str(fetchdef, "redirect") orelse "",
             h.get_str(fetchdef, "body") orelse "",
         }));
-        if (!std.mem.endsWith(u8, url, "/api/auth/token")) {
+        if (!std.mem.eql(u8, url, "http://api.test/api/auth/token")) {
             return response(200, h.jo(&.{.{ "access_token", h.vstr("MOVED01") }}));
         }
         return h.jo(&.{
@@ -1109,14 +1109,16 @@ test "secrets exchange: with the option, a redirect on the exchange's own origin
     const base = "http://api.test/api";
     const sent = " POST manual {\"refresh_token\":\"REFRESH01\"}";
     const asked = base ++ "/auth/token" ++ sent;
-    const moved = base ++ "/moved/token" ++ sent;
-    const Case = struct { status: i64, location: []const u8, follows: bool };
+    // The request the exchange is asked again with, null when refused; a
+    // Location of a query alone keeps the path that answered.
+    const Case = struct { status: i64, location: []const u8, next: ?[]const u8 };
     const cases = [_]Case{
-        .{ .status = 307, .location = "/api/moved/token", .follows = true },
-        .{ .status = 308, .location = "http://api.test/api/moved/token", .follows = true },
-        .{ .status = 307, .location = "http://other.test/api/auth/token", .follows = false },
-        .{ .status = 302, .location = "/api/moved/token", .follows = false },
-        .{ .status = 307, .location = "/api/auth/token", .follows = false },
+        .{ .status = 307, .location = "/api/moved/token", .next = base ++ "/moved/token" ++ sent },
+        .{ .status = 308, .location = "http://api.test/api/moved/token", .next = base ++ "/moved/token" ++ sent },
+        .{ .status = 307, .location = "?step=2", .next = base ++ "/auth/token?step=2" ++ sent },
+        .{ .status = 307, .location = "http://other.test/api/auth/token", .next = null },
+        .{ .status = 302, .location = "/api/moved/token", .next = null },
+        .{ .status = 307, .location = "/api/auth/token", .next = null },
     };
 
     var followed: usize = 0;
@@ -1151,16 +1153,17 @@ test "secrets exchange: with the option, a redirect on the exchange's own origin
         if (loop) looped = m.calls.items.len;
         elsewhere += m.elsewhere;
 
-        var right = if (c.follows)
-            ok and 2 == m.calls.items.len and std.mem.eql(u8, m.calls.items[1], moved)
+        const follows = null != c.next;
+        var right = if (c.next) |next|
+            ok and 2 == m.calls.items.len and std.mem.eql(u8, m.calls.items[1], next)
         else
             !ok and contains(msg, want) and 0 < m.calls.items.len and (loop or 1 == m.calls.items.len);
         for (m.calls.items, 0..) |seen, i| {
-            if ((0 == i or !c.follows) and !std.mem.eql(u8, seen, asked)) right = false;
+            if ((0 == i or !follows) and !std.mem.eql(u8, seen, asked)) right = false;
         }
         if (!right) {
             try wrong.append(h.A(), try std.fmt.allocPrint(h.A(), "{d} to {s}: {s} {d} call(s)", .{ c.status, c.location, msg, m.calls.items.len }));
-        } else if (c.follows) {
+        } else if (follows) {
             followed += 1;
         } else {
             refused += 1;
@@ -1171,7 +1174,7 @@ test "secrets exchange: with the option, a redirect on the exchange's own origin
     for (wrong.items) |w| std.debug.print("same-origin not as expected: {s}\n", .{w});
     try testing.expect(0 == wrong.items.len);
     try testing.expect(0 == elsewhere);
-    try testing.expect(2 == followed);
+    try testing.expect(3 == followed);
     try testing.expect(3 == refused);
     // A redirect to itself is followed five times and no more.
     try testing.expect(6 == looped);

@@ -694,6 +694,8 @@ private:
       next = at.substr(0, at.find("://") + 1) + location;
     } else if ('/' == location[0]) {
       next = at.substr(0, rest) + location;
+    } else if ('?' == location[0]) {
+      next = at.substr(0, at.find_first_of("?#")) + location;
     } else {
       size_t dir = at.find_last_of('/', std::min(at.find_first_of("?#", rest), at.size()) - 1);
       next = (std::string::npos == dir || dir < rest) ? at.substr(0, rest) + "/" + location

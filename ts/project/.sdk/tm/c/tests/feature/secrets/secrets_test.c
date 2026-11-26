@@ -791,6 +791,57 @@ static void t_exchange_test_mode_buys_nothing(void) {
   CHECK_INT_EQ(fh_track_int(feats[0].f, "buys"), 1, "test mode: counted as a (fake) purchase");
 }
 
+// The bundled transport hands the feature a Location already resolved, so
+// only a supplied system.fetch reaches the feature's own resolver with it raw.
+typedef struct {
+  voxgig_value* calls;
+  const char* exchange;
+  const char* next;
+} QueryFetch;
+
+static voxgig_value* query_fetch(void* ud, voxgig_value* args) {
+  QueryFetch* q = (QueryFetch*)ud;
+  voxgig_value* urlv = voxgig_getelem(args, v_int(0), voxgig_new_undef());
+  voxgig_value* fetchdef = voxgig_getelem(args, v_int(1), voxgig_new_undef());
+  const char* url = voxgig_is_string(urlv) ? voxgig_as_string(urlv) : "";
+  voxgig_list_push(voxgig_as_list(q->calls),
+                   cmap(2, "url", v_str(url), "fetchdef", voxgig_clone(fetchdef)));
+  if (0 == strcmp(url, q->exchange)) {
+    voxgig_value* moved = respond(307, v_map());
+    setp(moved, "headers", cmap(1, "location", v_str("?step=2")));
+    return moved;
+  }
+  if (0 == strcmp(url, q->next)) return respond(200, cmap(1, "access_token", v_str("MOVED01")));
+  return respond(200, cmap(1, "ok", v_bool(true)));
+}
+
+static void t_exchange_redirect_query_supplied(void) {
+  QueryFetch q = { v_list(), "http://api.test/auth/token", "http://api.test/auth/token?step=2" };
+  voxgig_value* exchange = cmap(3, "active", v_bool(true), "refresh", v_str("REFRESH01"),
+                                "redirect", v_str("same-origin"));
+  ProjectNameSDK* sdk = projectname_sdk_new(cmap(3,
+    "base", v_str("http://api.test"),
+    "system", cmap(1, "fetch", vfn(query_fetch, &q)),
+    "feature", cmap(1, "secrets", cmap(3,
+      "active", v_bool(true),
+      "name", v_str("refresh_token"),
+      "exchange", exchange))), NULL);
+  voxgig_value* res = direct(sdk);
+  voxgig_value* first = voxgig_getelem(q.calls, v_int(0), voxgig_new_undef());
+  voxgig_value* second = voxgig_getelem(q.calls, v_int(1), voxgig_new_undef());
+  CHECK(res_ok(res), res_err(res));
+  CHECK_INT_EQ((int)voxgig_list_len(voxgig_as_list(q.calls)), 3,
+               "query-only: the exchange, once again, then the API call");
+  CHECK_STR_EQ(get_str(first, "url"), q.exchange, "query-only: the exchange is asked first");
+  CHECK_STR_EQ(get_str(second, "url"), q.next, "query-only: asked again at its own path");
+  CHECK_STR_EQ(get_str(getp(second, "fetchdef"), "method"), get_str(getp(first, "fetchdef"), "method"),
+               "query-only: the same method");
+  CHECK_STR_EQ(get_str(getp(second, "fetchdef"), "body"), get_str(getp(first, "fetchdef"), "body"),
+               "query-only: the same body");
+  CHECK_STR_EQ(get_str(getp(first, "fetchdef"), "redirect"), "manual", "query-only: manual first");
+  CHECK_STR_EQ(get_str(getp(second, "fetchdef"), "redirect"), "manual", "query-only: manual again");
+}
+
 #if !defined(_WIN32)
 
 static int redirect_listener(int* port) {
@@ -881,7 +932,7 @@ static int redirect_lines(int log, char* into, size_t size) {
   return lines;
 }
 
-enum { TO_MOVED, TO_AWAY, TO_MOVED_ABSOLUTE, TO_SELF };
+enum { TO_MOVED, TO_AWAY, TO_MOVED_ABSOLUTE, TO_SELF, TO_QUERY };
 
 typedef struct {
   voxgig_value* res;
@@ -911,6 +962,8 @@ static void redirect_run(int status, int where, const char* redirect, RedirectRu
     snprintf(r->location, sizeof(r->location), "http://127.0.0.1:%d/api/auth/token", otherport);
   } else if (TO_MOVED_ABSOLUTE == where) {
     snprintf(r->location, sizeof(r->location), "http://127.0.0.1:%d/api/moved/token", port);
+  } else if (TO_QUERY == where) {
+    snprintf(r->location, sizeof(r->location), "?step=2");
   } else {
     snprintf(r->location, sizeof(r->location), TO_SELF == where ? "/api/auth/token" : "/api/moved/token");
   }
@@ -987,12 +1040,15 @@ static void t_exchange_redirect_refused(void) {
   CHECK_INT_EQ(followed, 0, "redirect: nothing followed a refused exchange");
 }
 
+// Each case names the target the exchange is asked again at, or NULL when
+// refused; a Location of a query alone keeps the path that answered.
 static void t_exchange_redirect_same_origin(void) {
-  struct { int status; int where; int follows; } cases[] = {
-    {307, TO_MOVED, 1}, {308, TO_MOVED_ABSOLUTE, 1}, {307, TO_AWAY, 0},
-    {302, TO_MOVED, 0}, {307, TO_SELF, 0} };
-  char labels[5][1400];
-  int clean[5];
+  struct { int status; int where; const char* next; } cases[] = {
+    {307, TO_MOVED, "/api/moved/token"}, {308, TO_MOVED_ABSOLUTE, "/api/moved/token"},
+    {307, TO_QUERY, "/api/auth/token?step=2"}, {307, TO_AWAY, NULL},
+    {302, TO_MOVED, NULL}, {307, TO_SELF, NULL} };
+  char labels[6][1400];
+  int clean[6];
   int followed = 0;
   int refused = 0;
   int elsewhere = 0;
@@ -1004,9 +1060,11 @@ static void t_exchange_redirect_same_origin(void) {
     redirect_run(cases[i].status, cases[i].where, "same-origin", &r);
     elsewhere += r.reached;
 
-    if (cases[i].follows) {
-      clean[i] = res_ok(r.res) && 2 == r.after && 0 == strncmp(r.again,
-        "POST /api/moved/token {\"refresh_token\":\"REFRESH01\"}\n", 52);
+    if (NULL != cases[i].next) {
+      char want[160];
+      int wn = snprintf(want, sizeof(want), "POST %s {\"refresh_token\":\"REFRESH01\"}\n",
+                        cases[i].next);
+      clean[i] = res_ok(r.res) && 2 == r.after && 0 == strncmp(r.again, want, (size_t)wn);
       followed += clean[i];
     } else {
       clean[i] = 0 == r.after && redirect_refused_with(&r, cases[i].status);
@@ -1022,7 +1080,7 @@ static void t_exchange_redirect_same_origin(void) {
   printf("secrets: exchange opt-in followed %d redirect(s) on its own origin, "
          "refused %d, %d elsewhere\n", followed, refused, elsewhere);
   for (int i = 0; i < ncases; i++) CHECK(clean[i], labels[i]);
-  CHECK_INT_EQ(followed, 2, "same-origin: both redirects on the origin followed");
+  CHECK_INT_EQ(followed, 3, "same-origin: every redirect on the origin followed");
   CHECK_INT_EQ(refused, 3, "same-origin: every other redirect refused");
   CHECK_INT_EQ(elsewhere, 0, "same-origin: the other origin got nothing");
   CHECK_INT_EQ(looped, 6, "same-origin: a redirect to itself is followed five times");
@@ -1085,6 +1143,7 @@ int main(void) {
   RUN(t_exchange_test_mode_buys_nothing);
   RUN(t_exchange_redirect_refused);
   RUN(t_exchange_redirect_same_origin);
+  RUN(t_exchange_redirect_query_supplied);
 
   // The generator's runtime lane reads this line: a suite that RAN fewer
   // cases than it declares was trimmed, not passed.
