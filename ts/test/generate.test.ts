@@ -12,7 +12,7 @@ import { memfs } from 'memfs'
 import { cmp, each, names, Project, Folder } from 'jostraca'
 import * as sucrase from 'sucrase'
 
-import { SdkGen, mcpTools, alongsideNote, applyFacts, installCommand, packageName, featureDocs, targetFeatures } from '../dist/sdkgen.js'
+import { SdkGen, mcpTools, alongsideNote, applyFacts, installCommand, packageName, featureDocs, targetFeatures, Main, fact } from '../dist/sdkgen.js'
 import { aliasCmpText } from '../dist/action/target.js'
 
 // Fixture, miniature Root and memfs layering — shared with
@@ -23,7 +23,11 @@ import {
   ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY, DOC_MODELS, namedEntity, toolchain,
   REQUEST_SHAPED_ENTITY, exampleParams, wireNameParams, slashRoutes, getOnlyFlows, getOnlyBuildctx, multiRouteLoad, keylessLoad,
   directDiscovery, liveFallbacks, slugKeyed, liveIdentities, BASIC_TEMPLATED, BASIC_QUERY, offFeature,
+  stageAlias, CREATE_ONLY_ENTITY,
 } from './generateharness'
+
+
+const BEARER = "main: kit: config: auth: { active: true, prefix: 'Bearer', in: 'header', name: 'Authorization' }"
 
 
 const SCHEMA_FILE = /(^|\/)(sdk_)?schema\.[a-z]+$/i
@@ -119,11 +123,11 @@ const PLACEHOLDER_PINNED = [
 ]
 
 
-const NON_SDK_SIBLING: Record<string, string> = {
-  'go-cli': 'go',
-  'go-mcp': 'go',
-  'py-data': 'py',
-}
+// A consumer names the target it builds on in its own model file.
+const NON_SDK_SIBLING: Record<string, string> = Object.fromEntries(
+  Object.entries(makeModel(allTargets(), undefined, '', []).main[KIT].target)
+    .filter(([, t]: [string, any]) => '' !== t.consumes)
+    .map(([name, t]: [string, any]) => [name, t.consumes]))
 
 const NON_SDK_TARGETS = Object.keys(NON_SDK_SIBLING)
 
@@ -192,10 +196,10 @@ function docBreaks(warnings: any[]): any[] {
 // in this suite fails on one.
 async function generate(
   targetNames: string[], name?: string, extra?: string, sink?: any[], features?: string[],
-  buildctx?: any,
+  buildctx?: any, root?: any,
 ): Promise<Record<string, string>> {
   const warnings: any[] = []
-  const out = await generateWarning(targetNames, name, extra, sink, features, buildctx, warnings)
+  const out = await generateWarning(targetNames, name, extra, sink, features, buildctx, warnings, root)
   deepStrictEqual(docBreaks(warnings), [], 'a generated document breaks a table or a link')
   return out
 }
@@ -203,7 +207,7 @@ async function generate(
 
 async function generateWarning(
   targetNames: string[], name?: string, extra?: string, sink?: any[], features?: string[],
-  buildctx?: any, warnings?: any[],
+  buildctx?: any, warnings?: any[], root?: any,
 ): Promise<Record<string, string>> {
   const { fs, vol } = memfs({})
 
@@ -218,7 +222,7 @@ async function generateWarning(
   // throw reach the caller, which names the target it came from.
   const res = await sdkgen.generate({
     model: makeModel(targetNames, name, extra, features),
-    root: makeRoot(),
+    root: root ?? makeRoot(),
     buildctx,
   })
   strictEqual(res.ok, true, 'generation did not report ok')
@@ -2159,7 +2163,7 @@ main: kit: target: js: phase: feature: active: false
       for (const [path, content] of files) {
         ok('string' === typeof content, target + ': ' + path + ' has no content')
 
-        for (const token of ['ProjectName', 'PROJECTENV', 'PROJECTVERSION', 'SDKREL', 'RELEASETAG']) {
+        for (const token of ['ProjectName', 'PROJECTENV', 'PROJECTVERSION', 'SDKREL', 'RELEASETAG', 'CONSUMEDREL']) {
           if (content.includes(token) &&
             !PLACEHOLDER_PINNED.some((re) => re.test(path))) {
             leaks.push(path + ': ' + token)
@@ -2180,6 +2184,87 @@ main: kit: target: js: phase: feature: active: false
     strictEqual(leaks.length, 0,
       'a consumer target leaked a placeholder into its output:\n  ' +
       leaks.join('\n  '))
+  })
+
+
+  // A consumer reads what it builds on from its `consumes` fact, so without
+  // an active target of that origin there is nothing for it to wrap.
+  test('a consumer refuses a model without the target it builds on', async () => {
+    const refused = async (targets: string[], extra = ''): Promise<string> => {
+      try {
+        await generate(targets, undefined, extra)
+      }
+      catch (err: any) {
+        return String(err.message)
+      }
+      return fail(targets.join(', ') + ': generated without the target it builds on')
+    }
+
+    for (const [target, sibling] of Object.entries(NON_SDK_SIBLING)) {
+      const absent = await refused([target])
+      ok(absent.includes('Target "' + target + '" builds on the `' + sibling + '` target, and the model has none') &&
+        absent.includes('`voxgig-sdkgen target add ' + sibling + '`'), absent)
+
+      const off = await refused([sibling, target], `main: kit: target: ${sibling}: active: false`)
+      ok(off.includes('builds on the `' + sibling + '` target, which the model switches off'), off)
+    }
+  })
+
+
+  // A Root that runs only the consumers, as an alias of an SDK target has no
+  // templates staged here.
+  const ConsumersOnly = cmp(function Root(props: any) {
+    const { model, ctx$ } = props
+    model.const = { name: model.name, year: 2026 }
+    names(model.const, model.name)
+    names(model, model.name)
+    ctx$.model = model
+    ctx$.stdrep = {}
+    names(ctx$.stdrep, model.Name, 'ProjectName')
+    Project({}, () => each(model.main[KIT].target)
+      .filter((target: any) => false !== target.active && '' !== fact(target, 'consumes'))
+      .map((target: any) => {
+        names(target, target.name)
+        Folder({ name: target.name }, () => Main({ target }))
+      }))
+  })
+
+  test('a consumer builds on an alias of its target, by the alias', async () => {
+    const golang = stageAlias('go', 'golang')
+    try {
+      const out = await generate(['go-cli', 'go-mcp'], undefined, golang.model,
+        undefined, undefined, undefined, ConsumersOnly)
+      for (const target of ['go-cli', 'go-mcp']) {
+        const mod = out[target + '/go.mod']
+        ok(/^require \S+\/golang v0\.0\.0$/m.test(mod) && /^replace \S+\/golang => \.\.\/golang$/m.test(mod),
+          target + ': go.mod does not reach golang:\n' + mod)
+        ok(out[target + '/README.md'].includes('the sibling Go SDK at `../golang`'), target + ': README')
+        ok(!/`\.\.\/go`/.test(out[target + '/README.md']), target + ': README names ../go')
+      }
+    }
+    finally {
+      golang.remove()
+    }
+
+    const py2 = stageAlias('py', 'py2')
+    try {
+      // The link to py2 resolves once a full Root writes py2.
+      const warnings: any[] = []
+      const out = await generateWarning(['py-data'], undefined, py2.model,
+        undefined, undefined, undefined, warnings, ConsumersOnly)
+      deepStrictEqual(docBreaks(warnings).map((w: any) => w.file + ' ' + w.note), ['py-data/README.md py2'])
+      ok(out['py-data/README.md'].includes('Built on the sibling [Python SDK](../py2) in this repo.'),
+        out['py-data/README.md'])
+      ok(out['py-data/README.md'].includes('#subdirectory=py2"'), 'py-data installs py from another folder')
+      ok(!/#subdirectory=py"/.test(out['py-data/README.md'] + out['py-data/notebooks/quickstart.ipynb']),
+        'py-data installs the absent py')
+      ok(out['py-data/AGENTS.md'].includes('the sibling Python SDK at `../py2`'), out['py-data/AGENTS.md'])
+      ok(/pip install -e \.\.\/py2$/m.test(out['py-data/Makefile']), out['py-data/Makefile'])
+      ok(out['py-data/test/conftest.py'].includes('_here.parent / "../py2"'), out['py-data/test/conftest.py'])
+    }
+    finally {
+      py2.remove()
+    }
   })
 
 
@@ -6745,6 +6830,102 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
   })
 
 
+  // The binaries print and read what the model has: the fixture's API has no
+  // auth, and only planet updates.
+  test('go-cli, go-mcp: the binaries say and read only what the model has', async () => {
+    const off = await generate(['go', 'go-cli', 'go-mcp'], undefined,
+      'main: kit: entity: planet: op: update: active: false')
+    for (const target of ['go-cli', 'go-mcp']) {
+      ok(!/APIKEY/.test(off[target + '/main.go']), target + ': main.go reads a key without auth')
+    }
+    ok(off['go-cli/main.go'].startsWith('// Command demo-cli is a CLI'), off['go-cli/main.go'].split('\n')[0])
+    for (const file of ['go-cli/main.go', 'go-cli/words.go']) {
+      ok(!/update/.test(off[file]), file + ' offers update, which no entity has')
+    }
+    ok(/range \[\]string\{"list", "load"\}/.test(off['go-cli/words.go']), 'go-cli: the registered words')
+    const tools = off['go-mcp/tools.go']
+    ok(!/\{\\"id\\":1\}|first page/.test(tools), 'go-mcp: a tool says {"id":1} or first page:\n' + tools)
+
+    const basic = await generate(['go', 'go-cli', 'go-mcp'], undefined, BASIC_TEMPLATED, undefined,
+      ['test', 'log', 'paging'])
+    ok(basic['go-cli/main.go'].includes(
+      '"Env:      DEMO_APIKEY (api key), DEMO_SECRET (api secret), DEMO_SERVER_TENANT (tenant in the url), ' +
+      'DEMO_BASE (base url override)"'), 'go-cli: the env help line')
+    ok(basic['go-mcp/tools.go'].includes('Returns the first page of records as JSON.'),
+      'go-mcp: the list tool of an SDK with paging')
+    ok(basic['go-mcp/tools.go'].includes('match map naming the record, such as {\\"id\\":\\"example_id\\"}') ||
+      basic['go-mcp/tools.go'].includes('match map naming the record by its identifying fields'), 'go-mcp: load help')
+
+    const nested = await generate(['go', 'go-mcp'], undefined, ROUTING_MODEL)
+    ok(nested['go-mcp/tools.go'].includes('moon needs one naming the parent'), 'go-mcp: the nested list')
+  })
+
+
+  // The fixture's features are test and log; paging is the feature that pages.
+  test('py-data fetches every page only where the SDK pages, and turns paging on there', async () => {
+    const one = await generate(['py', 'py-data'])
+    const docs = ['README.md', 'AGENTS.md', 'notebooks/quickstart.ipynb', 'demo_data/entity_frames.py']
+      .map((file) => one['py-data/' + file]).join('\n')
+    ok(!/every page|Every page/.test(docs), 'py-data promises every page without paging')
+    ok(/One page is fetched: the SDK has no paging feature/.test(docs), 'py-data does not say it fetches one page')
+    ok(!/"paging"/.test(one['py-data/demo_data/__init__.py']), 'data() sets paging without the feature')
+    ok(/^PAGING = False$/m.test(one['py-data/test/test_entity_frames.py']), 'the generated test expects paging')
+
+    const all = await generate(['py', 'py-data'], undefined, '', undefined, ['test', 'log', 'paging'])
+    ok(/feature\.setdefault\("paging", \{"active": True\}\)/.test(all['py-data/demo_data/__init__.py']),
+      'data() does not switch paging on')
+    ok(all['py-data/README.md'].includes('**Every page, eagerly.**'), 'py-data: the README with paging')
+    ok(/^PAGING = True$/m.test(all['py-data/test/test_entity_frames.py']), 'the generated test expects no paging')
+  })
+
+
+  // planet alone writes in the fixture; with its writes off the API has none.
+  test('consumers name a write only where the API has one', async () => {
+    const readonly = await generate(['go', 'go-mcp', 'py', 'py-data'], undefined,
+      'main: kit: entity: planet: op: { create: { active: false }, update: { active: false }, ' +
+      'remove: { active: false } }')
+    for (const doc of [readonly['go-mcp/README.md'], readonly['README.md']]) {
+      ok(!/become tools|becomes a tool|Turn on the write tools/.test(doc), 'a write that would become a tool:\n' + doc)
+      ok(/only reads(:|, as) no entity has a create, update, patch or remove/.test(doc), doc)
+    }
+    const data = Object.entries(readonly).filter(([path]) => path.startsWith('py-data/'))
+    deepStrictEqual(data.filter(([, text]) => /SomeEntity/.test(text)).map(([path]) => path), [])
+    ok(!/\.(create|update|remove)\(/.test(readonly['py-data/README.md'] + readonly['py-data/AGENTS.md']),
+      'py-data shows a write the API lacks')
+
+    const writes = await generate(['go', 'go-mcp', 'py', 'py-data'])
+    ok(writes['go-mcp/README.md'].includes('Create, update and remove become tools too'),
+      'go-mcp: the write tools it would add')
+    ok(writes['README.md'].includes('create, update and remove become tools when'),
+      'the root README: the write tools the MCP server would add')
+    for (const file of ['README.md', 'AGENTS.md', 'demo_data/__init__.py']) {
+      ok(writes['py-data/' + file].includes('result = ad.sdk.Planet().create({'), 'py-data: ' + file)
+    }
+  })
+
+
+  // planet's id is a string, ambient has none, and console only lists.
+  test('go-cli: examples send each entity\'s own query, and the entity table its words', async () => {
+    const off = (names: string[]) =>
+      names.map((name) => `main: kit: entity: ${name}: active: false\n`).join('')
+    const out = await generate(['go', 'go-cli'], undefined,
+      off(['ambient', 'console', 'graph_ql', 'history']) + BASIC_TEMPLATED + CREATE_ONLY_ENTITY +
+      'main: kit: flow: BasicZincFlow: { entity: "zinc", kind: "basic", name: "BasicZincFlow", ' +
+      'step: [ { o: "create", i: { ref: "zinc_ref01" } } ] }\n')
+    const readme = out['go-cli/README.md']
+    ok(!readme.includes('{id:1}') && !/ load 1 /.test(readme), 'go-cli: a numeric id for a string one:\n' + readme)
+    ok(readme.includes(`./demo-cli load '{id:"example_id"}' planet`), 'go-cli: no planet load')
+    ok(/^\.\/demo-cli update '\{id:"example",\w+:[^}]+\}' planet$/m.test(readme), 'go-cli: no planet update')
+    ok(readme.includes('| `planet` | `list`, `load`, `update` |'), 'go-cli: the entity table')
+    ok(!/^\| `zinc` \|/m.test(readme) && readme.includes('other entity, `zinc`, has no list'),
+      'go-cli: an entity no word runs on has a row')
+
+    const single = await generate(['go', 'go-cli'], undefined, off(['console', 'graph_ql', 'history',
+      'planet', 'record', 'utility']))
+    ok(single['go-cli/README.md'].includes('./demo-cli load ambient\n'), 'go-cli: ambient takes no query')
+  })
+
+
   // ROUTING_MODEL's `signal` lists only through its actions, so a plain list
   // of it is refused. With the entities between it and `ambient` off, it is
   // the next entity holding a list operation.
@@ -6768,7 +6949,7 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
     const first = await commands(off(['ambient', ...between]))
     ok(!first.some((c) => c.startsWith('list signal')),
       'go-cli: the quick start lists signal first, which lists only by action: ' + first)
-    ok(first.some((c) => c.startsWith('load 1 signal')),
+    ok(first.some((c) => c === `load '{id:"example_id"}' signal`),
       'go-cli: the quick start does not fall back to loading signal: ' + first)
   })
 
@@ -6781,7 +6962,7 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
     const out = await generate(['go', 'go-mcp'], undefined, ROUTING_MODEL + off)
     const readme = findFile(out, 'go-mcp/README.md')
     ok(null != readme, 'go-mcp: no README generated')
-    const listed = readme!.match(/_list: first page of records\n\{ "entity": "(\w+)" \}/)?.[1]
+    const listed = readme!.match(/_list: records\n\{ "entity": "(\w+)" \}/)?.[1]
     ok('utility' === listed,
       'go-mcp: the list example names ' + listed + ', not utility, the first entity a plain list runs on')
   })
@@ -6790,7 +6971,7 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
   // A key shown in the README is an example in no vendor's format, so it
   // cannot be read as a real key or as another vendor's.
   test('go-cli, go-mcp: every example API key starts apikey_', async () => {
-    const out = await generate(['go', 'go-cli', 'go-mcp'])
+    const out = await generate(['go', 'go-cli', 'go-mcp'], undefined, BEARER)
     for (const target of ['go-cli', 'go-mcp']) {
       const readme = findFile(out, target + '/README.md')
       ok(null != readme, target + ': no README generated')
@@ -6798,6 +6979,52 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
       ok(0 < keys.length, target + ': the README shows no example key')
       deepStrictEqual(keys.filter((key) => !key.startsWith('apikey_')), [],
         target + ': an example key does not start apikey_')
+    }
+  })
+
+
+  // The fixture's API has no auth; BASIC_TEMPLATED takes a key and a secret,
+  // and a URL with one variable to fill and one defaulted.
+  test('consumers ask for the credential and server variables the SDK needs, and no other', async () => {
+    const off = await generate(['go', 'go-cli', 'go-mcp', 'py', 'py-data'])
+    for (const target of ['go-cli', 'go-mcp']) {
+      ok(!/APIKEY/.test(off[target + '/README.md']), target + ': names an API key without auth')
+      ok(!/_SERVER_/.test(off[target + '/README.md'] + off[target + '/main.go']), target + ': server variables')
+    }
+    ok(!/Credentials|APIKEY|token/.test(off['py-data/README.md'] + off['py-data/AGENTS.md']),
+      'py-data documents a credential without auth')
+    ok(!/APIKEY|Credentials/.test(off['py-data/notebooks/quickstart.ipynb']), 'the notebook asks for a key')
+    const client = off['py-data/demo_data/__init__.py']
+    ok(!/missing_token_message|token/.test(client) && /opts: dict = \{\}/.test(client), client)
+
+    const basic = await generate(['go', 'go-cli', 'go-mcp', 'py', 'py-data'], undefined, BASIC_TEMPLATED)
+    for (const target of ['go-cli', 'go-mcp']) {
+      const readme = basic[target + '/README.md']
+      const main = basic[target + '/main.go']
+      for (const name of ['DEMO_APIKEY', 'DEMO_SECRET', 'DEMO_SERVER_TENANT']) {
+        ok(readme.includes('| `' + name + '` |'), target + ': the README does not list ' + name)
+      }
+      ok(!/DEMO_SERVER_REGION/.test(readme + main), target + ': asks for the defaulted region')
+      ok(/os\.Getenv\("DEMO_SECRET"\)/.test(main) && /opts\["secret"\] = secret/.test(main),
+        target + ': main.go does not read the secret')
+      ok(/"tenant": "DEMO_SERVER_TENANT"/.test(main) && /opts\["server"\] = serverVars/.test(main),
+        target + ': main.go does not read the server variable')
+    }
+    ok(/"secret": secret/.test(basic['py-data/demo_data/__init__.py']), 'py-data data() drops the secret')
+    for (const file of ['README.md', 'AGENTS.md', 'notebooks/quickstart.ipynb']) {
+      ok(basic['py-data/' + file].includes('DEMO_SECRET'), 'py-data: ' + file + ' omits the secret')
+    }
+  })
+
+
+  // A doubled or edge separator collapses in an environment name, as the SDK spells it.
+  test('go-cli, go-mcp: environment names are the SDK\'s own', async () => {
+    const out = await generate(['go', 'go-cli', 'go-mcp'], '-acme--x-', BEARER)
+    for (const target of ['go-cli', 'go-mcp']) {
+      const main = out[target + '/main.go']
+      ok(main.includes('os.Getenv("ACME_X_APIKEY")') && main.includes('os.Getenv("ACME_X_BASE")'), main)
+      ok(out[target + '/README.md'].includes('`ACME_X_APIKEY`'), target + ': README')
+      ok(!/ACME__X|_ACME_X/.test(main + out[target + '/README.md']), target + ': a separator survives')
     }
   })
 
@@ -6889,7 +7116,7 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
     const out = await generate(['go', 'go-mcp'], undefined,
       ROUTING_MODEL + off + "main: kit: target: 'go-mcp': tool: write: true")
     const readme = findFile(out, 'go-mcp/README.md')!
-    const list = JSON.parse(readme.match(/_list: first page of records\n(\{.*\})/)![1])
+    const list = JSON.parse(readme.match(/_list: records\n(\{.*\})/)![1])
     strictEqual(list.entity, 'moon')
     ok(null != list.query?.planet_id, 'go-mcp: the moon list example omits its planet')
     const update = JSON.parse(readme.match(/_update: change a record's fields\n(\{.*\})/)![1])

@@ -1,10 +1,10 @@
 .PHONY: test build clean publish dev notebook
 
-# Install the sibling ProjectName SDK from the same repo (../py) plus this
+# Install the ProjectName SDK this package wraps (CONSUMEDREL) plus this
 # package, both editable, so a working copy tests against the SDK it was
 # generated alongside rather than whatever is on PyPI.
 dev:
-	python3 -m pip install -e ../py
+	python3 -m pip install -e CONSUMEDREL
 	python3 -m pip install -e .
 
 test:

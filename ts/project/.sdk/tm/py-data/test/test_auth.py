@@ -89,6 +89,11 @@ class TestMessages:
         assert "os.environ" in msg
         assert "data(token=" in msg
 
+    def test_secret_message_names_its_key_and_argument(self):
+        msg = missing_token_message("ACME", "ACME_SECRET", "secret")
+        assert "ACME_SECRET" in msg
+        assert "data(secret=" in msg
+
     def test_base_message_names_the_real_key(self):
         msg = missing_base_message("ACME")
         assert "ACME_BASE" in msg

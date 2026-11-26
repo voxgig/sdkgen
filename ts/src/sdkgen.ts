@@ -86,6 +86,8 @@ import { isReservedName, safeVarName, exampleVarName, phpEntityAccessor, entityC
 import { serverVariables, hasServerVariables, serverVarEnv } from './helpers/serverVars'
 import { mcpTools, MCP_READ_OPS, MCP_WRITE_OPS } from './helpers/mcpTools'
 import type { McpTool } from './helpers/mcpTools'
+import { consumedTarget } from './helpers/consumer'
+import type { Consumed } from './helpers/consumer'
 import {
   primaryOpCall, idLiteral, requiredItems, requestExampleItems, sendsId, matchExampleItems, matchArg, listMatchArg, seededList, dataArg, javaMap, javaMapOf, javaMapItems, litFor,
   litPair, litString,
@@ -1013,6 +1015,7 @@ export type {
   ExampleLang,
   LiteralLang,
   McpTool,
+  Consumed,
   DepEntry,
   LiveFlowNeeds,
   LiveIdentity,
@@ -1354,6 +1357,7 @@ export {
   GENERATOR_URL,
   modelText,
   alongsideNote,
+  consumedTarget,
   npmScriptRm,
   npmScriptEnv,
   npmScriptTestSome,

@@ -158,15 +158,12 @@ function baseline(): Variation {
 }
 
 
-// Consumers switch every phase off and wrap the target their name begins with.
+// Each consumer, with the installed target it builds on.
 function consumers(model: any): Record<string, string> {
   const out: Record<string, string> = {}
   for (const name of Object.keys(model.main[KIT].target).sort()) {
-    const phase = fact(model.main[KIT].target[name], 'phase')
-    if (Object.values(phase).every((on: any) => false === on)) {
-      const wrapped = TARGETS.find((t: string) => name.startsWith(t + '-'))
-      if (null != wrapped) out[name] = wrapped
-    }
+    const wrapped = fact(model.main[KIT].target[name], 'consumes')
+    if ('' !== wrapped) out[name] = wrapped
   }
   return out
 }
