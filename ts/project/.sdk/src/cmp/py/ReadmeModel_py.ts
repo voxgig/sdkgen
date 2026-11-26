@@ -28,6 +28,7 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   }
   const opRows = ['load', 'list', 'create', 'update', 'patch', 'remove']
     .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o]).join('\n')
+  const listResult = opUnion.has('list') ? ', and `list` a `list` of entities, one\nper record' : ''
 
   const OPTION_KIND: Record<string, string> = { string: 'str', map: 'dict', list: 'list' }
   const optionRows = clientOptions(model)
@@ -87,8 +88,7 @@ ${opRows}
 
 ### Result shape
 
-Entity operations return the entity, and \`list\` a \`list\` of entities, one
-per record; an entity's \`data_get()\` reads its record (a \`dict\`). They raise
+Entity operations return the entity${listResult}; an entity's \`data_get()\` reads its record (a \`dict\`). They raise
 on error, so wrap calls in \`try\`/\`except\` to handle failures.
 
 The \`direct()\` escape hatch never raises — it returns a result \`dict\`

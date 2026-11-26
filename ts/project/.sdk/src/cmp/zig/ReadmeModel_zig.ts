@@ -28,6 +28,7 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   }
   const opRows = ['load', 'list', 'create', 'update', 'patch', 'remove']
     .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o]).join('\n')
+  const listResult = opUnion.has('list') ? ', or for `list` a slice of entities, one per record\n(`EntListResult`)' : ''
 
   // A closed value union holds no feature instance, so there is no `extend`.
   const OPTION_KIND: Record<string, string> = { string: 'string', map: 'map', list: '' }
@@ -90,8 +91,7 @@ ${opRows}
 ### Result shape
 
 Entity operations return a result union — \`switch\` on it: \`.ok\` carries
-the entity (\`EntResult\`), or for \`list\` a slice of entities, one per record
-(\`EntListResult\`), and \`asEntity().data(null)\` reads an entity's record;
+the entity (\`EntResult\`)${listResult}, and \`asEntity().data(null)\` reads an entity's record;
 \`.err\` carries the branded error pointer.
 
 The \`direct()\` escape hatch returns a result \`Value\` map directly (no

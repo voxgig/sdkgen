@@ -28,6 +28,7 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   }
   const opRows = ['load', 'list', 'create', 'update', 'patch', 'remove']
     .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o]).join('\n')
+  const listResult = opUnion.has('list') ? ', and `list` an `Array` of entities, one\nper record' : ''
 
   const OPTION_KIND: Record<string, string> = { string: 'String', map: 'Hash', list: 'Array' }
   const optionRows = clientOptions(model)
@@ -86,8 +87,7 @@ ${opRows}
 
 ### Result shape
 
-Entity operations return the entity, and \`list\` an \`Array\` of entities, one
-per record; an entity's \`data_get\` reads its record. On failure they raise a
+Entity operations return the entity${listResult}; an entity's \`data_get\` reads its record. On failure they raise a
 \`${model.const.Name}Error\` (a \`StandardError\` subclass), so wrap calls in
 \`begin\`/\`rescue\` where you need to handle errors.
 

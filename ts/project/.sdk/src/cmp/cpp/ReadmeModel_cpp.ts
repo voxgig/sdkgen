@@ -29,6 +29,7 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   }
   const opRows = ['load', 'list', 'create', 'update', 'patch', 'remove']
     .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o]).join('\n')
+  const listResult = opUnion.has('list') ? ', and `list` a `std::vector` of\nentities, one per record' : ''
 
   // A closed value union holds no feature instance, so there is no `extend`.
   const OPTION_KIND: Record<string, string> = { string: 'std::string', map: 'Value', list: '' }
@@ -92,8 +93,7 @@ ${opRows}
 
 ### Result shape
 
-Entity operations return the entity, and \`list\` a \`std::vector\` of
-entities, one per record; \`data()\` reads an entity's record. They throw
+Entity operations return the entity${listResult}; \`data()\` reads an entity's record. They throw
 \`sdk::SdkErrorPtr\` on error, so wrap calls in \`try\`/\`catch\` to handle
 failures.
 

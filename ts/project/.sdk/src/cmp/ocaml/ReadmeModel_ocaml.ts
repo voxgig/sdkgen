@@ -28,6 +28,9 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   }
   const opRows = ['load', 'list', 'create', 'update', 'patch', 'remove']
     .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o]).join('\n')
+  const listResult = opUnion.has('list') ? ' \u2014 `e_list` to\none entity per record \u2014' : ','
+  const removeResult = opUnion.has('remove') ?
+    '\n`e_remove` resolves to the entity marked deleted (`e_deleted`); it keeps the\ndata it held.' : ''
 
   // A closed value union holds no feature instance, so there is no `extend`.
   const OPTION_KIND: Record<string, string> = { string: 'string', map: 'map', list: '' }
@@ -93,11 +96,8 @@ ${opRows}
 
 ### Result shape
 
-Entity operations resolve to the ENTITY, not the raw record \u2014 \`e_list\` to
-one entity per record \u2014 and raise \`Sdk_error.E\` on error. The record is
-reached through \`e_data_get\`, which returns the entity's data container.
-\`e_remove\` resolves to the entity marked deleted (\`e_deleted\`); it keeps the
-data it held. Wrap calls in \`try\`/\`with\` to handle failures.
+Entity operations resolve to the ENTITY, not the raw record${listResult} and raise \`Sdk_error.E\` on error. The record is
+reached through \`e_data_get\`, which returns the entity's data container.${removeResult} Wrap calls in \`try\`/\`with\` to handle failures.
 
 The \`direct\` escape hatch never raises — it returns a result \`value\` map
 you branch on via \`getp result "ok"\`:

@@ -30,6 +30,7 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   }
   const opRows = ['load', 'list', 'create', 'update', 'patch', 'remove']
     .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o]).join('\n')
+  const listResult = opUnion.has('list') ? ', and `list` a `Value` list of entities,\none per record' : ''
 
   const OPTION_KIND: Record<string, string> = { string: 'String', map: 'VMap', list: 'VList' }
   const optionRows = clientOptions(model)
@@ -85,8 +86,7 @@ ${opRows}
 
 ### Result shape
 
-Entity operations return the entity, and \`list\` a \`Value\` list of entities,
-one per record; each entity comes wrapped in a native \`Value\`, which
+Entity operations return the entity${listResult}; each entity comes wrapped in a native \`Value\`, which
 \`asNative as? Entity\` unwraps, and its \`data()\` reads the record. They
 throw on error, so wrap calls in \`do\`/\`catch\` to handle failures.
 

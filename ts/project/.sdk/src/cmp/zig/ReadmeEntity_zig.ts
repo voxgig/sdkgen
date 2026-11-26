@@ -104,7 +104,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 
       Content(`
 Each operation returns a result union — \`switch\` on it: \`.ok\` carries the
-entity (for \`list\`, a slice of entities, one per record), whose record
+entity${opnames.includes('list') ? ' (for `list`, a slice of entities, one per record)' : ''}, whose record
 \`asEntity().data(null)\` reads, and \`.err => |e|\` the branded error.
 
 `)

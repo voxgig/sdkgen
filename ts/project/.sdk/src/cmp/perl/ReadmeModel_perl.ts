@@ -26,6 +26,7 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   }
   const opRows = ['load', 'list', 'create', 'update', 'patch', 'remove']
     .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o]).join('\n')
+  const listResult = opUnion.has('list') ? ', and `list` an `arrayref` of\nentities, one per record' : ''
 
   const OPTION_KIND: Record<string, string> = { string: 'string', map: 'hashref', list: 'arrayref' }
   const optionRows = clientOptions(model)
@@ -86,8 +87,7 @@ ${opRows}
 
 ### Result shape
 
-Entity operations return the entity, and \`list\` an \`arrayref\` of
-entities, one per record; \`data_get\` reads an entity's record (a
+Entity operations return the entity${listResult}; \`data_get\` reads an entity's record (a
 \`hashref\`). They die on error, so wrap calls in \`eval { ... }\` and
 inspect \`$@\` to handle failures.
 

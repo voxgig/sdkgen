@@ -37,11 +37,11 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   // Cryptography (create-only), so the generated README demonstrated
   // `client:Cryptography():load()` and the readme_examples test died with
   // "attempt to call a nil value (method 'load')".
-  const exEnt: any =
-    entityList.find((e: any) => (e.op || {}).load) || entityList[0] || {}
-  const eName = exEnt.Name || 'Entity'
-  const eLower = String(exEnt.name || 'entity').toLowerCase()
-  const hasLoad = null != (exEnt.op || {}).load
+  const exEnt: any = entityList.find((e: any) => entityOps(e).includes('load')) ||
+    entityList.find((e: any) => entityOps(e).includes('list')) || {}
+  const eName = exEnt.Name
+  const eLower = String(exEnt.name).toLowerCase()
+  const hasLoad = null != exEnt.name && entityOps(exEnt).includes('load')
   const idF = entityIdField(exEnt)
   const loadItems = hasLoad ? matchExampleItems(exEnt, 'load', idF)
     .sort((a: any, b: any) => (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1)) : []
@@ -112,14 +112,14 @@ itself — there is no wrapper:
 | --- | --- |
 ${resultShapeRows}
 
-Check \`err\` first (it is non-\`nil\` on failure), then use \`value\`:
+${null == exEnt.name ? '' : `Check \`err\` first (it is non-\`nil\` on failure), then use \`value\`:
 
     local ${eLower}, err = client:${eName}():${hasLoad ? 'load' : 'list'}(${
       hasLoad ? loadArg : listMatchArg('lua', exEnt)})
     if err then error(err) end
     -- ${eLower} is ${hasLoad ? 'the loaded entity' : 'an array of entities, one per record'}
 
-Only \`direct()\` returns a response envelope — a \`table\` with \`ok\`,
+`}Only \`direct()\` returns a response envelope — a \`table\` with \`ok\`,
 \`status\`, \`headers\`, and \`data\` keys.
 
 `)

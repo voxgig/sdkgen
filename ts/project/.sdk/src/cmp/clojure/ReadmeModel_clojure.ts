@@ -27,6 +27,7 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   }
   const opRows = ['load', 'list', 'create', 'update', 'patch', 'remove']
     .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o]).join('\n')
+  const listResult = opUnion.has('list') ? ', and `list` to a `vector` of\nentities, one per record' : ''
 
   const OPTION_KIND: Record<string, string> = { string: 'string', map: 'map', list: 'vector' }
   const optionRows = clientOptions(model)
@@ -92,8 +93,7 @@ State accessors are called by looking up the fn and applying it, e.g.
 
 ### Result shape
 
-Entity operations resolve to the entity, and \`list\` to a \`vector\` of
-entities, one per record. Read an entity's record with
+Entity operations resolve to the entity${listResult}. Read an entity's record with
 \`((:data-get ent))\`. They raise (via \`ex-info\`) on error, so wrap calls
 in \`try\`/\`catch\` to handle failures.
 

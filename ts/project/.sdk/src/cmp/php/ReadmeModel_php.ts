@@ -31,6 +31,7 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   }
   const opRows = ['load', 'list', 'create', 'update', 'patch', 'remove']
     .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o]).join('\n')
+  const listResult = opUnion.has('list') ? ', and `list` an `array` of entities, one\nper record' : ''
 
   const OPTION_KIND: Record<string, string> = { string: 'string', map: 'array', list: 'array' }
   const optionRows = clientOptions(model)
@@ -89,8 +90,7 @@ ${opRows}
 
 ### Result shape
 
-Entity operations return the entity, and \`list\` an \`array\` of entities, one
-per record; an entity's \`data_get()\` reads its record (an \`array\`). They
+Entity operations return the entity${listResult}; an entity's \`data_get()\` reads its record (an \`array\`). They
 throw on error, so wrap calls in \`try\`/\`catch\` to handle failures.
 
 The \`direct()\` escape hatch never throws — it returns a result \`array\`

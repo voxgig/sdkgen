@@ -29,6 +29,7 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   }
   const opRows = ['load', 'list', 'create', 'update', 'patch', 'remove']
     .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o]).join('\n')
+  const listResult = opUnion.has('list') ? ', and `list` a `Vec` of\nentities, one per record' : ''
 
   // A closed value union holds no feature instance, so there is no `extend`.
   const OPTION_KIND: Record<string, string> = { string: 'string', map: 'map', list: '' }
@@ -91,8 +92,7 @@ ${opRows}
 
 ### Result shape
 
-Entity operations return the entity on \`Ok\`, and \`list\` a \`Vec\` of
-entities, one per record; \`data(None)\` reads an entity's record. \`Err\` is
+Entity operations return the entity on \`Ok\`${listResult}; \`data(None)\` reads an entity's record. \`Err\` is
 the branded error. The operations are methods of the
 \`${model.const.Name}EntityBase\` trait and \`data\` of the \`Entity\` trait, so
 import both.
