@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, entityIdField, phpEntityAccessor, opNeedsAction, listMatchArg, matchExampleItems, litString, requestExampleItems, fact } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, entityIdField, phpEntityAccessor, entityOps, listMatchArg, matchExampleItems, litString, requestExampleItems, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -54,9 +54,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 `)
 
   publishedEntities.map((entity: any) => {
-    const opnames = Object.keys(entity.op || {})
-    // An op that needs an action has no plain call to show.
-    const callable = opnames.filter((o: string) => !opNeedsAction(entity.op[o]))
+    const opnames = entityOps(entity)
     const fields = Object.values(entity.fields || {})
     const idF = entityIdField(entity)
 
@@ -110,7 +108,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 `)
     }
 
-    if (callable.includes('load')) {
+    if (opnames.includes('load')) {
       const loadItems = matchExampleItems(entity, 'load', idF)
         .sort((a: any, b: any) =>
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
@@ -129,7 +127,7 @@ $${entity.name} = $client->${phpEntityAccessor(entity.Name)}()->load(${loadArg})
 `)
     }
 
-    if (callable.includes('list')) {
+    if (opnames.includes('list')) {
       Content(`#### Example: List
 
 \`\`\`php
@@ -140,7 +138,7 @@ $${entity.name}s = $client->${phpEntityAccessor(entity.Name)}()->list(${listMatc
 `)
     }
 
-    if (callable.includes('create')) {
+    if (opnames.includes('create')) {
       // Members come from the SAME shape the runtime validates
       // (opRequestShape): every required member must appear — including a
       // required id and parent keys like page_id.

@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, File, isAuthActive, entityIdField, opNeedsAction, bodyNote, javaMap, javaMapOf, matchExampleItems, javaMapItems, requestExampleItems, featureDocs, fact, clientOptions } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, File, isAuthActive, entityIdField, entityOps, bodyNote, javaMap, javaMapOf, matchExampleItems, javaMapItems, requestExampleItems, featureDocs, fact, clientOptions } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -158,7 +158,7 @@ Prepare a fetch definition without sending. Returns the \`fetchdef\` and raises 
 
     // Entity reference sections
     publishedEntities.map((ent: any) => {
-      const opnames = Object.keys(ent.op || {})
+      const opnames = entityOps(ent)
       const fields = Object.values(ent.fields || {})
       // Model-driven id key: null when this entity has no id-like field.
       const idF = entityIdField(ent)
@@ -207,7 +207,7 @@ SdkEntity ${eVar} = client.${accessor}(null);
         const hasFieldOps = fields.some((f: any) => f.op && Object.keys(f.op).length > 0)
         if (hasFieldOps) {
           const opcols = ['load', 'list', 'create', 'update', 'patch', 'remove']
-            .filter((op: string) => opnames.includes(op) && ent.op[op]?.active !== false)
+            .filter((op: string) => opnames.includes(op))
           Content(`### Field Usage by Operation
 
 | Field | ${opcols.join(' | ')} |
@@ -246,10 +246,6 @@ SdkEntity ${eVar} = client.${accessor}(null);
 ${info.desc}
 
 `)
-
-          if (opNeedsAction(ent.op[opname])) {
-            return
-          }
 
           if ('load' === opname || 'remove' === opname) {
             const matchItems = javaMapItems(matchExampleItems(ent, opname, idF))

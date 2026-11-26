@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField, entityActions, safeVarName, exampleVarName, jsKey, opNeedsAction, bodyNote, listMatchArg, matchExampleItems, requestExampleItems, entityClassName, entityCollection, featureDocs, fact, clientOptions } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField, entityActions, safeVarName, exampleVarName, jsKey, entityOps, bodyNote, listMatchArg, matchExampleItems, requestExampleItems, entityClassName, entityCollection, featureDocs, fact, clientOptions } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -192,7 +192,7 @@ as \`callopts.signal\`, and ends when it aborts.
 
     // Entity reference sections
     publishedEntities.map((ent: any) => {
-      const opnames = Object.keys(ent.op || {})
+      const opnames = entityOps(ent)
       const fields = Object.values(ent.fields || {})
       // Model-driven id key: null when this entity has no id-like field, in
       // which case load/remove match on no argument and update omits the id.
@@ -242,7 +242,7 @@ const ${eVar} = client.${ent.Name}()
           // Only emit columns for operations this entity actually exposes —
           // never advertise a create/update/remove column the entity lacks.
           const opcols = ['load', 'list', 'create', 'update', 'patch', 'remove']
-            .filter((op: string) => opnames.includes(op) && ent.op[op]?.active !== false)
+            .filter((op: string) => opnames.includes(op))
           Content(`### Field Usage by Operation
 
 | Field | ${opcols.join(' | ')} |
@@ -311,10 +311,6 @@ const result = await client.${ent.Name}().${actions[0].op}({
 ${info.desc}
 
 `)
-
-          if (opNeedsAction(ent.op[opname])) {
-            return
-          }
 
           // Show example
           if ('load' === opname || 'remove' === opname) {

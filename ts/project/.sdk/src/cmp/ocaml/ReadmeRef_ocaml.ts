@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opNeedsAction, bodyNote, matchExampleItems, requestExampleItems, featureDocs, fact, clientOptions } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonKey, canonScalarKey, File, isAuthActive, entityIdField, entityOps, bodyNote, matchExampleItems, requestExampleItems, featureDocs, fact, clientOptions } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -180,7 +180,7 @@ on error.
 
     // Entity reference sections
     publishedEntities.map((ent: any) => {
-      const opnames = Object.keys(ent.op || {})
+      const opnames = entityOps(ent)
       const fields = Object.values(ent.fields || {})
       const idF = entityIdField(ent)
       const fn = ocamlVarName(ent.name)
@@ -226,7 +226,7 @@ let ${fn} = Sdk_client.${fn} client Noval
         const hasFieldOps = fields.some((f: any) => f.op && Object.keys(f.op).length > 0)
         if (hasFieldOps) {
           const opcols = ['load', 'list', 'create', 'update', 'patch', 'remove']
-            .filter((op: string) => opnames.includes(op) && ent.op[op]?.active !== false)
+            .filter((op: string) => opnames.includes(op))
           Content(`### Field Usage by Operation
 
 | Field | ${opcols.join(' | ')} |
@@ -265,10 +265,6 @@ let ${fn} = Sdk_client.${fn} client Noval
 ${info.desc}
 
 `)
-
-          if (opNeedsAction(ent.op[opname])) {
-            return
-          }
 
           if ('load' === opname || 'remove' === opname) {
             const matchItems = matchExampleItems(ent, opname, idF)

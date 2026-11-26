@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, phpEntityAccessor, opNeedsAction, bodyNote, listMatchArg, matchExampleItems, litString, requestExampleItems, entityClassName, entityCollection, featureDocs, fact, clientOptions } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, phpEntityAccessor, entityOps, bodyNote, listMatchArg, matchExampleItems, litString, requestExampleItems, entityClassName, entityCollection, featureDocs, fact, clientOptions } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -172,7 +172,7 @@ Prepare a fetch definition without sending the request. Returns the
 
     // Entity reference sections
     publishedEntities.map((ent: any) => {
-      const opnames = Object.keys(ent.op || {})
+      const opnames = entityOps(ent)
       const fields = Object.values(ent.fields || {})
       // Model-driven id key: null when this entity has no id-like field, in
       // which case load/remove match on no argument and update omits the id.
@@ -220,7 +220,7 @@ $${ent.name} = $client->${phpEntityAccessor(ent.Name)}();
           // Only emit columns for operations this entity actually exposes —
           // never advertise a create/update/remove column the entity lacks.
           const opcols = ['load', 'list', 'create', 'update', 'patch', 'remove']
-            .filter((op: string) => opnames.includes(op) && ent.op[op]?.active !== false)
+            .filter((op: string) => opnames.includes(op))
           Content(`### Field Usage by Operation
 
 | Field | ${opcols.join(' | ')} |
@@ -259,10 +259,6 @@ $${ent.name} = $client->${phpEntityAccessor(ent.Name)}();
 ${info.desc}
 
 `)
-
-          if (opNeedsAction(ent.op[opname])) {
-            return
-          }
 
           if ('load' === opname || 'remove' === opname) {
             // The id key plus every REQUIRED match key (parent path params

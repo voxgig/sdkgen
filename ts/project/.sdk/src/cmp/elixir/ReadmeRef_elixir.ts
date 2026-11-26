@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField, opNeedsAction, bodyNote, elixirAccessor, entityCollection, exampleVarName, matchExampleItems, requestExampleItems, featureDocs, fact, clientOptions } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField, entityOps, bodyNote, elixirAccessor, entityCollection, exampleVarName, matchExampleItems, requestExampleItems, featureDocs, fact, clientOptions } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -140,7 +140,7 @@ on error.
       const EName = ent.Name
       const eVar = exampleVarName(ent.name, 'elixir')
       const eCall = elixirAccessor(ent, entityCollection(model))
-      const opnames = Object.keys(ent.op || {})
+      const opnames = entityOps(ent)
       const fields = Object.values(ent.fields || {})
       const idF = entityIdField(ent)
 
@@ -198,10 +198,6 @@ ${eVar} = ${Name}.${eCall}(sdk)
 ${info.desc}
 
 `)
-
-          if (opNeedsAction(ent.op[opname])) {
-            return
-          }
 
           if ('load' === opname || 'remove' === opname) {
             const matchItems = matchExampleItems(ent, opname, idF)
