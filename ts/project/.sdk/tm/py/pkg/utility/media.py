@@ -36,6 +36,30 @@ def accept_of(point):
     return ", ".join(types)
 
 
+# A header's value, from a map in any spelling of its name.
+def header_value(headers, name):
+    if not isinstance(headers, dict):
+        return ""
+    for key, val in headers.items():
+        if name == str(key).lower():
+            return str(val)
+    return ""
+
+
+_TEXT_MEDIA = ("json", "xml", "html", "javascript", "ecmascript", "yaml", "urlencoded", "graphql")
+
+
+# A response whose body is bytes: by the model, or by the type it declares.
+# Text is no declared type, text/*, or a structured text format.
+def is_binary_response(point, ctype):
+    response = point.get("response") if isinstance(point, dict) else None
+    if isinstance(response, dict) and response.get("binary") is True:
+        return True
+    media = str(ctype or "").split(";", 1)[0].strip().lower()
+    return not (media == "" or media.startswith("text/")
+                or any(part in media for part in _TEXT_MEDIA))
+
+
 def is_raw_request(point):
     return vs.getpath(point, "body.kind") == "raw"
 

@@ -781,6 +781,8 @@ public class SecretsFeature : BaseFeature
                 ["content-type"] = "application/json",
             },
             ["body"] = body,
+            // Never followed: a redirect would carry the refresh token on.
+            ["redirect"] = "manual",
         };
 
         // Deliberately NOT the SDK transport. The transport is what this

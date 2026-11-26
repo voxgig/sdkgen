@@ -624,6 +624,8 @@ public final class SecretsFeature: BaseFeature {
     fetchdef.entries["method"] = .string(x.method)
     fetchdef.entries["headers"] = .map(vm(("content-type", .string("application/json"))))
     fetchdef.entries["body"] = .string(body)
+    // Never followed: a redirect would carry the refresh token on.
+    fetchdef.entries["redirect"] = .string("manual")
 
     // Deliberately NOT the SDK transport. The transport is what this feature
     // wraps, and sending the token request back through it would recurse on

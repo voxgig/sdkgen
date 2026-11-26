@@ -60,9 +60,10 @@ public class Response
     {
         var type = HeaderValue(headers, "content-type");
         var agent = Clean(ctx, HeaderValue(sent, "user-agent"));
+        // Only text is quoted: bytes are a file's, by the model or by their type.
         var detail = "HTTP " + status + ", content-type " + (type == "" ? "none" : type) +
             ", user-agent " + (agent == "" ? "transport default" : agent) +
-            (text != null && Quotable(ctx, type) ? ", body: " + Preview(ctx, text) : "");
+            (text != null && !IsBinary(ctx.Point, type) ? ", body: " + Preview(ctx, text) : "");
 
         if (failed is ProjectNameError sdkErr)
         {
@@ -80,7 +81,7 @@ public class Response
                 "response: expected JSON, got " + type + " (" + detail + ")");
     }
 
-    private static string HeaderValue(object? headers, string name)
+    internal static string HeaderValue(object? headers, string name)
     {
         if (headers is IDictionary<string, object?> map)
         {
@@ -103,19 +104,19 @@ public class Response
     private static readonly Regex TextMedia =
         new("json|xml|html|javascript|ecmascript|yaml|urlencoded|graphql");
 
-    // Only text is quoted: bytes are a file's, by the model or by their type.
-    // Text is no declared type, text/*, or a structured text format.
-    private static bool Quotable(Context ctx, string type)
+    // A response whose body is bytes: by the model, or by the type it
+    // declares. Text is no declared type, text/*, or a structured text format.
+    internal static bool IsBinary(Dictionary<string, object?>? point, string type)
     {
-        if (ctx.Point != null && ctx.Point.TryGetValue("response", out var response) &&
+        if (point != null && point.TryGetValue("response", out var response) &&
             response is IDictionary<string, object?> rs &&
             rs.TryGetValue("binary", out var binary) && binary is true)
         {
-            return false;
+            return true;
         }
         var media = type.Split(';', 2)[0].Trim().ToLowerInvariant();
-        return media == "" || media.StartsWith("text/", StringComparison.Ordinal) ||
-            TextMedia.IsMatch(media);
+        return media != "" && !media.StartsWith("text/", StringComparison.Ordinal) &&
+            !TextMedia.IsMatch(media);
     }
 
     // Cleaned whole: a secret the bound would split could leave its prefix.

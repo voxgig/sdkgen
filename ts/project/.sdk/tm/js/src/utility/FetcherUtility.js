@@ -154,11 +154,15 @@ async function fetcher(ctx, fullurl, fetchdef) {
   defaultUserAgent(fetchdef)
 
   // Only where a manual redirect can be read: a browser hides its Location.
-  const own = fetch === globalThis.fetch && null != globalThis.process?.versions?.node &&
+  const readable = null != globalThis.process?.versions?.node
+  const follows = fetch === globalThis.fetch &&
     (null == fetchdef.redirect || 'follow' === fetchdef.redirect)
 
-  const response = own ? await followRedirects(ctx, fetch, fullurl, fetchdef) :
-    await fetch(fullurl, fetchdef)
+  // Elsewhere a request with a body refuses a redirect: nothing could be dropped.
+  const refuses = follows && !readable && null != fetchdef.body
+
+  const response = follows && readable ? await followRedirects(ctx, fetch, fullurl, fetchdef) :
+    await fetch(fullurl, refuses ? { ...fetchdef, redirect: 'error' } : fetchdef)
 
   return response
 }

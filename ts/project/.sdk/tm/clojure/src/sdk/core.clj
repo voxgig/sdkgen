@@ -605,35 +605,48 @@
         (let [c (str n "#" i)]
           (if (has? c) (recur (inc i)) c))))))
 
-(declare RAW-BODY)
+(declare RAW-BODY binary-response? header-value)
 
-;; The live request body of a point the model marks binary, and its type.
-;; A string shorter than the registry accepts is not told from ordinary text.
-(defn- binary-body [ctx cfg]
+;; The request body of a point the model marks binary, and a response body
+;; that is bytes, each with its type. A response read as text does not say
+;; how many bytes it was, so it is not sized. A string shorter than the
+;; registry accepts is not told from ordinary text.
+(defn- binary-bodies [ctx cfg]
   (when (instance? clojure.lang.IDeref ctx)
-    (let [body (mget (oget ctx :point) "body")]
-      (when (and (= "raw" (mget body "kind")) (true? (mget body "binary")))
-        (let [spec (oget ctx :spec)
-              minlen (long (or (mget cfg "min") 4))
-              live (filterv #(and (some? %) (or (not (string? %)) (<= minlen (count %))))
-                            [(when (instance? clojure.lang.IDeref spec) (:body (deref spec)))
-                             (mget (oget ctx :reqdata) RAW-BODY)])
-              media (mget body "media")]
-          (when (seq live)
-            {:live live :type (when (string? media) media)}))))))
+    (let [minlen (long (or (mget cfg "min") 4))
+          live (fn [vals] (filterv #(and (some? %) (or (not (string? %)) (<= minlen (count %)))) vals))
+          point (oget ctx :point)
+          body (mget point "body")
+          media (mget body "media")
+          spec (oget ctx :spec)
+          response (oget ctx :response)
+          rtype (when (instance? clojure.lang.IDeref response)
+                  (header-value (oget response :headers) "content-type"))]
+      (filterv (comp seq :live)
+               [(when (and (= "raw" (mget body "kind")) (true? (mget body "binary")))
+                  {:live (live [(when (instance? clojure.lang.IDeref spec) (:body (deref spec)))
+                                (mget (oget ctx :reqdata) RAW-BODY)])
+                   :type (when (string? media) media)
+                   :sized true})
+                (when (and (some? rtype) (binary-response? point rtype))
+                  {:live (live [(oget response :body)])
+                   :type (when-not (= "" rtype) rtype)
+                   :sized false})]))))
 
 ;; Bytes are described, never copied (ADR-006): the kind, and the size and
-;; media type where they are known. A string is bytes only as the body of a
-;; point the model marks binary.
-(defn- describe-binary [val bin]
-  (let [declared (boolean (some #(or (identical? % val) (and (string? val) (= % val))) (:live bin)))
+;; media type where they are known. A string is bytes only as a live body.
+(defn- describe-binary [val bins]
+  (let [bin (some (fn [b] (when (some #(or (identical? % val) (and (string? val) (= % val))) (:live b)) b))
+                  bins)
         desc (cond
                (string? val)
-               (when declared
-                 (vs/jm "binary$" "bytes" "size" (long (alength (.getBytes ^String val "UTF-8")))))
+               (when bin
+                 (if (:sized bin)
+                   (vs/jm "binary$" "bytes" "size" (long (alength (.getBytes ^String val "UTF-8"))))
+                   (vs/jm "binary$" "bytes")))
                (bytes? val) (vs/jm "binary$" "bytes" "size" (long (alength ^bytes val)))
                (instance? java.io.InputStream val) (vs/jm "binary$" "stream"))]
-    (when (and desc declared (:type bin))
+    (when (and desc (:type bin))
       (.put ^java.util.Map desc "type" (:type bin)))
     desc))
 
@@ -697,8 +710,8 @@
     (cond
       (= false (mget cfg "active")) val
       (string? val) (clean-string cfg val)
-      (sdk-error? val) (clean-error cfg (binary-body ctx cfg) val)
-      :else (let [out (clean-snapshot cfg (binary-body ctx cfg) val nil 0 [])]
+      (sdk-error? val) (clean-error cfg (binary-bodies ctx cfg) val)
+      :else (let [out (clean-snapshot cfg (binary-bodies ctx cfg) val nil 0 [])]
               (if (identical? DROP out) nil out)))))
 
 ;; A Throwable is immutable, so one that never passed through make-error (a
@@ -709,7 +722,7 @@
     (if (= false (mget cfg "active"))
       t
       (let [sdkerr (ex->sdk t)
-            bin (binary-body ctx cfg)
+            bin (binary-bodies ctx cfg)
             out (if (sdk-error? sdkerr)
                   (let [e (clean-error cfg bin sdkerr)]
                     (ex-info (err-msg e) {::sdk-error e}))
@@ -815,6 +828,10 @@
 (defn text-media? [media]
   (let [m (-> (if (string? media) media "") (str/split #";" 2) first (or "") str/trim str/lower-case)]
     (boolean (or (= "" m) (str/starts-with? m "text/") (some #(str/includes? m %) TEXT-MEDIA)))))
+
+;; A response whose body is bytes: by the model, or by the type it declares.
+(defn binary-response? [point media]
+  (or (true? (mget (mget point "response") "binary")) (not (text-media? media))))
 
 ;; The declared JSON type alone, else every declared type in the model's
 ;; order; nil when no success response declares a body.
@@ -1543,8 +1560,7 @@
   (let [ctype (header-value headers "content-type")
         ua (str (ucall ctx :clean (header-value sent "user-agent")))
         ;; Only text is quoted: bytes are a file's, by the model or by their type.
-        quoted (and (some? text) (text-media? ctype)
-                    (not (true? (mget (mget (oget ctx :point) "response") "binary"))))
+        quoted (and (some? text) (not (binary-response? (oget ctx :point) ctype)))
         detail (str "HTTP " status ", content-type " (if (= "" ctype) "none" ctype)
                     ", user-agent " (if (= "" ua) "transport default" ua)
                     (if quoted (str ", body: " (body-preview ctx text)) ""))]
@@ -2005,22 +2021,22 @@
             [(str to) hop]))))))
 
 ;; java.net.http has no hook on a redirect, so the hops its NORMAL policy took
-;; are taken here. Each passes the GET-only guard; at the limit, which counts
-;; requests as the client's did, the 3xx is the answer.
+;; are taken here. Each passes the GET-only guard; past the last hop allowed,
+;; the 3xx is the answer.
 (defn- follow-redirects [ctx fullurl fetchdef]
   (let [manual (= "manual" (vs/getprop fetchdef "redirect"))
         ^java.util.Map given (if (vs/ismap fetchdef) fetchdef {})]
     (loop [url fullurl
            fdef (doto (java.util.LinkedHashMap. given) (.put "redirect" "manual"))
-           sent 1]
+           hops 0]
       (let [[res err :as answer] (default-http-fetch url fdef)
-            [next-url next-def :as hop] (when (and (nil? err) (not manual) (< sent REDIRECT-MAX))
+            [next-url next-def :as hop] (when (and (nil? err) (not manual) (< hops REDIRECT-MAX))
                                           (next-hop ctx url fdef res))
             refused (when hop (getonly-refusal ctx next-url (vs/getprop next-def "method")))]
         (cond
           (nil? hop) answer
           refused [nil refused]
-          :else (recur next-url next-def (inc sent)))))))
+          :else (recur next-url next-def (inc hops)))))))
 
 (defn u-fetcher [ctx fullurl fetchdef]
   (let [client (oget ctx :client)]

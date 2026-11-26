@@ -408,37 +408,63 @@ let clean_name (cfg : value) (out : value) (key : string) : string =
       if List.mem n taken then next (i + 1) else n in
     next 1
 
-(* The live request body of a point the model marks binary, and its type.
- * A Str shorter than the registry accepts is not told from ordinary text. *)
-type binary_body = { bin_live : string list; bin_type : string option }
+(* A type whose body is text: none declared, text/*, or a structured text
+ * format. A body of any other type is bytes, which no message quotes. *)
+let is_text_media (media : string) : bool =
+  let base = match String.index_opt media ';' with
+    | Some i -> String.sub media 0 i
+    | None -> media in
+  let m = String.lowercase_ascii (String.trim base) in
+  m = "" || (String.length m >= 5 && String.sub m 0 5 = "text/")
+  || List.exists (substr_contains m)
+    ["json"; "xml"; "html"; "javascript"; "ecmascript"; "yaml"; "urlencoded"; "graphql"]
 
-let binary_body (ctx : ctx) (cfg : value) : binary_body option =
+(* A response whose body is bytes: by the model, or by the type it declares. *)
+let is_binary_response (point : value) (ctype : string) : bool =
+  getp (getp point "response") "binary" = Bool true || not (is_text_media ctype)
+
+(* A live body of this call that is bytes, and its type. A response read as
+ * text does not say how many bytes it was, so it is not sized. *)
+type binary_body = { bin_live : string list; bin_type : string option; bin_sized : bool }
+
+(* The request body of a point the model marks binary, and a response body
+ * that is bytes. A Str shorter than the registry accepts is not told from
+ * ordinary text. *)
+let binary_bodies (ctx : ctx) (cfg : value) : binary_body list =
+  let minlen = match getp cfg "min" with Num n -> int_of_float n | _ -> 4 in
+  let live = List.filter_map (function Str s when minlen <= String.length s -> Some s | _ -> None) in
   let body = getp ctx.c_point "body" in
-  match getp body "kind", getp body "binary" with
-  | Str "raw", Bool true ->
-    let minlen = match getp cfg "min" with Num n -> int_of_float n | _ -> 4 in
-    let spec_body = match ctx.c_spec with Some sp -> sp.sp_body | None -> Noval in
-    let live = List.filter_map (function Str s when minlen <= String.length s -> Some s | _ -> None)
-        [spec_body; getp ctx.c_reqdata raw_body_key] in
-    if live = [] then None
-    else Some { bin_live = live;
-                bin_type = (match getp body "media" with Str m -> Some m | _ -> None) }
-  | _ -> None
+  let sent = match getp body "kind", getp body "binary" with
+    | Str "raw", Bool true ->
+      let spec_body = match ctx.c_spec with Some sp -> sp.sp_body | None -> Noval in
+      [{ bin_live = live [spec_body; getp ctx.c_reqdata raw_body_key];
+         bin_type = (match getp body "media" with Str m -> Some m | _ -> None); bin_sized = true }]
+    | _ -> [] in
+  let answered = match ctx.c_response with
+    | Some r ->
+      let ctype = vstring (header_ci r.rs_headers "content-type") in
+      if is_binary_response ctx.c_point ctype then
+        [{ bin_live = live [r.rs_body]; bin_type = (if ctype = "" then None else Some ctype);
+           bin_sized = false }]
+      else []
+    | None -> [] in
+  List.filter (fun b -> b.bin_live <> []) (sent @ answered)
 
-(* Bytes are described, never copied (ADR-006): the kind, the size, and the
- * media type the point declares. A Str is the only carrier here, and it is
- * bytes only as the body of a point the model marks binary. *)
-let describe_binary (bin : binary_body option) (s : string) : value option =
-  match bin with
-  | Some b when List.mem s b.bin_live ->
-    let desc = jo [("binary$", Str "bytes"); ("size", vint_of (String.length s))] in
+(* Bytes are described, never copied (ADR-006): the kind, and the size and
+ * media type where they are known. A Str is the only carrier here, and it
+ * is bytes only as a live body. *)
+let describe_binary (bins : binary_body list) (s : string) : value option =
+  match List.find_opt (fun b -> List.mem s b.bin_live) bins with
+  | Some b ->
+    let desc = jo [("binary$", Str "bytes")] in
+    if b.bin_sized then setp desc "size" (vint_of (String.length s));
     (match b.bin_type with Some m -> setp desc "type" (Str m) | None -> ());
     Some desc
-  | _ -> None
+  | None -> None
 
 (* A masked plain-data COPY: functions dropped, cycles cut, and nothing
  * shared with the live value, whose spec must stay raw. *)
-let rec clean_snapshot (cfg : value) (bin : binary_body option) (v : value) (key : string option)
+let rec clean_snapshot (cfg : value) (bin : binary_body list) (v : value) (key : string option)
     (depth : int) (seen : value list) : value =
   match v with
   | Noval | Null -> v
@@ -474,7 +500,7 @@ let clean_util (ctx : ctx) (v : value) : value =
   else match v with
     | Str s -> Str (clean_string cfg s)
     | _ ->
-      (match clean_snapshot cfg (binary_body ctx cfg) v None 0 [] with
+      (match clean_snapshot cfg (binary_bodies ctx cfg) v None 0 [] with
        | Sentinel "clean_drop" -> Noval
        | c -> c)
 
@@ -685,17 +711,6 @@ let is_json_media (media : string) : bool =
   let n = String.length m in
   m = "application/json" || m = "text/json"
   || (n >= 5 && String.sub m (n - 5) 5 = "+json")
-
-(* A type whose body is text: none declared, text/*, or a structured text
- * format. A body of any other type is bytes, which no message quotes. *)
-let is_text_media (media : string) : bool =
-  let base = match String.index_opt media ';' with
-    | Some i -> String.sub media 0 i
-    | None -> media in
-  let m = String.lowercase_ascii (String.trim base) in
-  m = "" || (String.length m >= 5 && String.sub m 0 5 = "text/")
-  || List.exists (substr_contains m)
-    ["json"; "xml"; "html"; "javascript"; "ecmascript"; "yaml"; "urlencoded"; "graphql"]
 
 (* The declared JSON type alone, else every declared type in the model's
  * order; nothing when no success response declares a body. *)
@@ -1158,8 +1173,8 @@ let unreadable_body (ctx : ctx) (status : int) (headers : value) (text : value) 
   let ctype = vstring (header_ci headers "content-type") in
   let agent = vstring (clean_util ctx (Str (vstring (header_ci sent "user-agent")))) in
   (* Only text is quoted: bytes are a file's, by the model or by their type. *)
-  let quoted = (match text with Noval | Null -> false | _ -> true) && is_text_media ctype
-               && getp (getp ctx.c_point "response") "binary" <> Bool true in
+  let quoted = (match text with Noval | Null -> false | _ -> true)
+               && not (is_binary_response ctx.c_point ctype) in
   let detail = "HTTP " ^ string_of_int status ^ ", content-type " ^
                (if ctype = "" then "none" else ctype) ^ ", user-agent " ^
                (if agent = "" then "transport default" else agent) ^

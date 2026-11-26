@@ -26,6 +26,7 @@ import java.util.function.Supplier;
 import JAVAPACKAGE.core.Context;
 import JAVAPACKAGE.core.Entity;
 import JAVAPACKAGE.core.Helpers;
+import JAVAPACKAGE.core.Response;
 import JAVAPACKAGE.core.Schema;
 import JAVAPACKAGE.core.SdkClient;
 import JAVAPACKAGE.core.SdkError;
@@ -56,8 +57,9 @@ final class Clean {
   // The key of what stands in for a body of bytes; its value is the kind.
   private static final String BINARY = "binary$";
 
-  // The live request body of a point the model marks binary, and its type.
-  private record BinaryBody(List<Object> live, String type) {
+  // A live body of this call that is bytes, and its type. A response read as
+  // text does not say how many bytes it was, so it is not sized.
+  private record BinaryBody(List<Object> live, String type, boolean sized) {
 
     // The same object, or for a string an equal one.
     boolean holds(Object val) {
@@ -394,45 +396,68 @@ final class Clean {
     return n;
   }
 
-  // A string shorter than the registry accepts is not told from ordinary text.
-  private static BinaryBody binaryBody(Context ctx, Map<String, Object> cfg) {
+  // The request body of a point the model marks binary, and a response body
+  // that is bytes. A string shorter than the registry accepts is not told
+  // from ordinary text.
+  private static List<BinaryBody> binaryBodies(Context ctx, Map<String, Object> cfg) {
+    List<BinaryBody> bodies = new ArrayList<>();
     if (ctx == null) {
-      return null;
+      return bodies;
     }
+
     Object body = Struct.getprop(ctx.point, "body");
-    if (!"raw".equals(Struct.getprop(body, "kind"))
-        || !Boolean.TRUE.equals(Struct.getprop(body, "binary"))) {
-      return null;
+    if ("raw".equals(Struct.getprop(body, "kind"))
+        && Boolean.TRUE.equals(Struct.getprop(body, "binary"))) {
+      Object media = Struct.getprop(body, "media");
+      addBody(bodies, cfg, media instanceof String ? (String) media : null, true,
+          ctx.spec == null ? null : ctx.spec.body,
+          ctx.reqdata == null ? null : ctx.reqdata.get(Media.RAW_BODY));
     }
-    List<Object> live = new ArrayList<>();
-    for (Object given : new Object[] {
-        ctx.spec == null ? null : ctx.spec.body,
-        ctx.reqdata == null ? null : ctx.reqdata.get(Media.RAW_BODY)}) {
-      if (given != null
-          && (!(given instanceof String) || min(cfg) <= ((String) given).length())) {
-        live.add(given);
+
+    if (ctx.response != null) {
+      String type = Response.headerValue(ctx.response.headers, "content-type");
+      if (Response.isBinaryResponse(ctx.point, type)) {
+        addBody(bodies, cfg, type.isEmpty() ? null : type, false, ctx.response.body);
       }
     }
-    if (live.isEmpty()) {
-      return null;
+
+    return bodies;
+  }
+
+  private static void addBody(List<BinaryBody> bodies, Map<String, Object> cfg, String type,
+      boolean sized, Object... given) {
+    List<Object> live = new ArrayList<>();
+    for (Object body : given) {
+      if (body != null && (!(body instanceof String) || min(cfg) <= ((String) body).length())) {
+        live.add(body);
+      }
     }
-    Object media = Struct.getprop(body, "media");
-    return new BinaryBody(live, media instanceof String ? (String) media : null);
+    if (!live.isEmpty()) {
+      bodies.add(new BinaryBody(live, type, sized));
+    }
   }
 
   // Bytes are described, never copied (ADR-006): the kind, and the size and
-  // media type where they are known. A string is bytes only as the body of a
-  // point the model marks binary. Null for a value that is not bytes.
-  private static Map<String, Object> describeBinary(Object val, BinaryBody bin) {
-    boolean declared = bin != null && bin.holds(val);
+  // media type where they are known. A string is bytes only as a live body.
+  // Null for a value that is not bytes.
+  private static Map<String, Object> describeBinary(Object val, List<BinaryBody> bins) {
+    BinaryBody bin = null;
+    for (BinaryBody b : bins) {
+      if (b.holds(val)) {
+        bin = b;
+        break;
+      }
+    }
     Map<String, Object> desc = new LinkedHashMap<>();
 
     if (val instanceof String) {
-      if (!declared) {
+      if (bin == null) {
         return null;
       }
       desc.put(BINARY, "bytes");
-      desc.put("size", utf8Length((String) val));
+      if (bin.sized()) {
+        desc.put("size", utf8Length((String) val));
+      }
     }
     else if (val instanceof byte[]) {
       desc.put(BINARY, "bytes");
@@ -449,7 +474,7 @@ final class Clean {
       return null;
     }
 
-    if (declared && bin.type() != null) {
+    if (bin != null && bin.type() != null) {
       desc.put("type", bin.type());
     }
     return desc;
@@ -461,8 +486,8 @@ final class Clean {
   // and any other object through its public fields. Functions are dropped,
   // cycles are cut, and no live object is shared with the copy - masking the
   // copy must never mask the pipeline's own spec.
-  private static Object snapshot(Map<String, Object> cfg, BinaryBody bin, Object val, Object key,
-      int depth, IdentityHashMap<Object, Boolean> seen) {
+  private static Object snapshot(Map<String, Object> cfg, List<BinaryBody> bin, Object val,
+      Object key, int depth, IdentityHashMap<Object, Boolean> seen) {
     if (val == null || val == Struct.UNDEF) {
       return null;
     }
@@ -551,8 +576,8 @@ final class Clean {
     }
   }
 
-  private static Map<String, Object> fields(Map<String, Object> cfg, BinaryBody bin, Object val,
-      int depth, IdentityHashMap<Object, Boolean> seen) {
+  private static Map<String, Object> fields(Map<String, Object> cfg, List<BinaryBody> bin,
+      Object val, int depth, IdentityHashMap<Object, Boolean> seen) {
     Map<String, Object> out = new LinkedHashMap<>();
     for (Field f : val.getClass().getFields()) {
       if (Modifier.isStatic(f.getModifiers())) {
@@ -607,7 +632,7 @@ final class Clean {
       return cleanString(cfg, (String) val);
     }
 
-    BinaryBody bin = binaryBody(ctx, cfg);
+    List<BinaryBody> bin = binaryBodies(ctx, cfg);
 
     if (val instanceof SdkError) {
       SdkError err = (SdkError) val;
@@ -632,7 +657,7 @@ final class Clean {
     return out == DROP ? null : out;
   }
 
-  private static Object cleanField(Map<String, Object> cfg, BinaryBody bin, String key,
+  private static Object cleanField(Map<String, Object> cfg, List<BinaryBody> bin, String key,
       Object val) {
     if (val instanceof String) {
       return sensitive(cfg, key) ? maskValue(cfg, (String) val) : cleanString(cfg, (String) val);

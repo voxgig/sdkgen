@@ -441,9 +441,11 @@ facts decide where bytes may go.
 2. **A file's bytes never reach a diagnostic.** In an error, an explain
    record, a log, an audit record or a span, a body of bytes is a
    placeholder that states its kind, and its size and media type where
-   they are known. `clean` writes it, by two rules: a value of a byte or
-   stream type is described wherever it sits, and the request body of a
-   point the model marks binary is described whatever carries it.
+   they are known. `clean` writes it, by three rules: a value of a byte or
+   stream type is described wherever it sits; the request body of a point
+   the model marks binary is described whatever carries it; and so is the
+   body of a response that is bytes, by the model or by the media type the
+   response declares.
 3. **A local file is opened only through a source the caller's own code
    constructed.** A string in request data, an option, a model value, an
    environment variable or a response is never opened as a path, and a
@@ -490,10 +492,21 @@ What exists, for an uploaded body:
 - `ts/test/cleanbinary.test.ts` runs the shipped `ts` and `js` `clean`,
   `makeError` and `done` against each of those value types.
 
+What exists, for a response:
+
+- **The response canary**, in the same sweep: an operation is answered
+  with bytes under a media type that is not text, at 200, 404 and 500,
+  and every surface that leaves is searched for a marker in the response.
+  The response body stays on the context in the form the transport read
+  it, so before the rule existed the serialised context and the log
+  record carried it. With `clean` off the marker must show.
+- The lanes above require that sweep's
+  `clean: response swept N surface(s), 0 leak(s)` line.
+
 What does not exist yet:
 
-- **The same canary for a downloaded body.** No target reads one into a
-  result today. Work items `p0-binary-response` and `p2-corpus-feature`
+- **A canary for a body an operation hands its caller as a binary slot.**
+  No target reads one into a result today. Work item `p2-corpus-feature`
   of the plan.
 - **The path guard**: a source scan that finds no file open outside the
   `fs` plugin, and a corpus case that sends a path-shaped string in a

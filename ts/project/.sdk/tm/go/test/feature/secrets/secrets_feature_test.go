@@ -4,10 +4,12 @@ package secretstest
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"reflect"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -37,10 +39,11 @@ var credheader = func() string {
 // exchange tests.
 
 type wirecall struct {
-	url  string
-	auth string
-	has  bool
-	body string
+	url      string
+	auth     string
+	has      bool
+	body     string
+	redirect string
 }
 
 type wire struct {
@@ -76,7 +79,9 @@ func (w *wire) fetch(url string, fetchdef map[string]any) (map[string]any, error
 		}
 	}
 	body, _ := fetchdef["body"].(string)
-	w.calls = append(w.calls, wirecall{url: url, auth: auth, has: has, body: body})
+	redirect, _ := fetchdef["redirect"].(string)
+	w.calls = append(w.calls,
+		wirecall{url: url, auth: auth, has: has, body: body, redirect: redirect})
 
 	if strings.HasSuffix(url, "/"+w.tokenpath) {
 		token := w.tokens[min(w.issued, len(w.tokens)-1)]
@@ -647,6 +652,9 @@ func TestSecretsExchange(t *testing.T) {
 		if !strings.Contains(w.token()[0].body, "REFRESH01") {
 			t.Fatalf("the refresh token is sent in the request body, got %q", w.token()[0].body)
 		}
+		if "manual" != w.token()[0].redirect {
+			t.Fatalf("the exchange must ask for redirect manual, got %q", w.token()[0].redirect)
+		}
 
 		api := w.api()
 		if 2 != len(api) {
@@ -778,6 +786,117 @@ func TestSecretsExchangeRawFetch(t *testing.T) {
 			"(marshalled, not concatenated): want %q got %q", tricky, gotrefresh)
 	}
 	credentialIs(t, gotauth, "RAWTOK01")
+}
+
+// Real listeners and the raw fallback transport: a stub follows nothing.
+func TestSecretsExchangeRedirectRefused(t *testing.T) {
+	t.Run("a redirect answering the exchange is a failure, and nothing follows it", func(t *testing.T) {
+		entity, opname := routableOp(t)
+
+		var mu sync.Mutex
+		elsewhere := []string{}
+		followed := []string{}
+		answer := struct {
+			status   int
+			location string
+		}{}
+
+		other := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+			body, _ := io.ReadAll(req.Body)
+			mu.Lock()
+			elsewhere = append(elsewhere, req.Method+" "+req.URL.Path+" "+string(body))
+			mu.Unlock()
+			res.Header().Set("content-type", "application/json")
+			res.Write([]byte(`{"access_token":"ELSEWHERE01"}`))
+		}))
+		defer other.Close()
+
+		origin := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+			io.Copy(io.Discard, req.Body)
+			mu.Lock()
+			defer mu.Unlock()
+			if "/api/auth/token" == req.URL.Path {
+				res.Header().Set("location", answer.location)
+				res.WriteHeader(answer.status)
+				return
+			}
+			followed = append(followed, req.Method+" "+req.URL.Path)
+			res.Header().Set("content-type", "application/json")
+			res.Write([]byte(`{"access_token":"MOVED01"}`))
+		}))
+		defer origin.Close()
+
+		base := origin.URL + "/api"
+		away := other.URL + "/api/auth/token"
+
+		answers := []struct {
+			status   int
+			location string
+		}{{307, away}, {308, away}, {302, away}, {307, "/api/moved/token"}}
+
+		allowed := []string{}
+		refused := 0
+
+		for _, a := range answers {
+			mu.Lock()
+			answer = a
+			mu.Unlock()
+
+			client := withSecrets(func(extend bool) *sdk.ProjectNameSDK {
+				opts := map[string]any{
+					"base": base,
+					"feature": map[string]any{"secrets": map[string]any{
+						"active":   true,
+						"name":     "refresh_token",
+						"exchange": map[string]any{"active": true, "refresh": "REFRESH01"},
+					}},
+				}
+				if extend {
+					opts["extend"] = []any{feat.NewSecretsFeature()}
+				}
+				return sdk.NewProjectNameSDK(opts)
+			})
+
+			message := fmt.Sprint(callNamedOp(client, entity, opname))
+			if strings.Contains(message, "token exchange failed: "+
+				strconv.Itoa(a.status)+" from "+base+"/auth/token") {
+				refused++
+			} else {
+				allowed = append(allowed, fmt.Sprintf("%d to %s: %s", a.status, a.location, message))
+			}
+		}
+
+		mu.Lock()
+		defer mu.Unlock()
+		fmt.Printf("secrets: exchange refused %d redirect(s), %d followed\n",
+			refused, len(elsewhere)+len(followed))
+
+		if 0 != len(elsewhere) {
+			t.Errorf("the exchange reached another origin: %v", elsewhere)
+		}
+		if 0 != len(followed) {
+			t.Errorf("a request followed a refused exchange: %v", followed)
+		}
+		if 0 != len(allowed) {
+			t.Errorf("a redirect was not a failed exchange: %v", allowed)
+		}
+		if len(answers) != refused {
+			t.Errorf("expected %d refused exchanges, got %d", len(answers), refused)
+		}
+	})
+}
+
+// callNamedOp drives one operation and returns its error result.
+func callNamedOp(client *sdk.ProjectNameSDK, entity string, opname string) any {
+	accessor := reflect.ValueOf(client).MethodByName(exported(entity))
+	ent := accessor.Call([]reflect.Value{reflect.Zero(accessor.Type().In(0))})[0]
+	op := ent.MethodByName(opname)
+	in := make([]reflect.Value, op.Type().NumIn())
+	for i := range in {
+		in[i] = reflect.Zero(op.Type().In(i))
+	}
+	out := op.Call(in)
+	return out[len(out)-1].Interface()
 }
 
 // With `cache: false`, a provider that answered once and then reports a

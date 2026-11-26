@@ -116,7 +116,8 @@
         other-seen (java.util.Collections/synchronizedList (java.util.ArrayList.))
         other (origin-server other-seen (fn [_] [200 nil]))
         landed (str "http://127.0.0.1:" (.getPort (.getAddress other)) "/landed")
-        moved {"/cross" [302 landed] "/same" [302 "/landed"] "/upload" [307 landed]}
+        moved {"/cross" [302 landed] "/same" [302 "/landed"] "/upload" [307 landed]
+               "/loop" [302 "/loop"]}
         api (origin-server api-seen (fn [path] (get moved path [200 nil])))
         base (str "http://127.0.0.1:" (.getPort (.getAddress api)))
         fetch (fn [path method body & opts]
@@ -161,6 +162,13 @@
       (t/is-eq (mapv :body api-seen) [7] (str method ": the API origin"))
       (t/is-eq (count other-seen) 0 (str method ": another origin")))))
 
+;; Five hops are followed, so six requests; the last 3xx is the answer.
+(defn- redirect-limit-check [fetch api-seen _other-seen]
+  (let [[res err] (fetch "/loop" "GET" nil)]
+    (t/is-eq err nil "error")
+    (t/is-eq (mget res "status") 302 "status")
+    (t/is-eq (mapv :path api-seen) (vec (repeat 6 "/loop")) "requests")))
+
 ;; A JVM cannot set its own environment, so the probe runs in a child JVM.
 (defn- getonly-child []
   (let [pb (ProcessBuilder. ^java.util.List
@@ -192,6 +200,7 @@
       (chk "fetcher-redirect-credential" #(with-origins redirect-credential-check))
       (chk "fetcher-redirect-same-origin" #(with-origins redirect-same-origin-check))
       (chk "fetcher-redirect-body" #(with-origins redirect-body-check))
+      (chk "fetcher-redirect-limit" #(with-origins redirect-limit-check))
 
       ;; ---- make-point ----
       (chk "point-rejects-disallowed-op"

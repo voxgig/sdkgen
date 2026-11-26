@@ -346,6 +346,8 @@ class ProjectNameSecretsFeature(ProjectNameBaseFeature):
             "method": x["method"],
             "headers": {"content-type": "application/json"},
             "body": json.dumps({x["request"]: self._refresh}),
+            # Never followed: a redirect would carry the refresh token on.
+            "redirect": "manual",
         })
 
         if err is not None:
@@ -469,6 +471,15 @@ class ProjectNameSecretsFeature(ProjectNameBaseFeature):
             prefix + " " + token if prefix else token
 
 
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+# A 3xx then surfaces as HTTPError, the exchange's own failed answer.
+_NO_REDIRECT = urllib.request.build_opener(_NoRedirect)
+
+
 def _raw_exchange_fetch(fullurl, fetchdef):
     """Token-exchange transport of last resort: stdlib urllib, answering
     the same (res, err) shape the system.fetch seam promises. Exists so an
@@ -486,7 +497,7 @@ def _raw_exchange_fetch(fullurl, fetchdef):
         for k, v in (fetchdef.get("headers") or {}).items():
             if isinstance(v, str):
                 req.add_header(k, v)
-        with urllib.request.urlopen(req, timeout=30) as res:
+        with _NO_REDIRECT.open(req, timeout=30) as res:
             raw = res.read()
             status = res.status
 

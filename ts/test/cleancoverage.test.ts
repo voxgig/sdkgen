@@ -113,6 +113,8 @@ describe('secret redaction coverage is honest', () => {
       ok(Fs.existsSync(sweep), row.target + ': no TestClean component at ' + sweep)
       ok(Fs.readFileSync(sweep, 'utf8').includes('clean: content swept'),
         row.target + ': the sweep never searches for a body of bytes')
+      ok(Fs.readFileSync(sweep, 'utf8').includes('clean: response swept'),
+        row.target + ': the sweep never searches for a response of bytes')
       const aggregator = Path.join(CMP, row.target, 'Test_' + row.target + '.ts')
       ok(Fs.readFileSync(aggregator, 'utf8').includes('TestClean'),
         row.target + ': Test_' + row.target + '.ts does not register TestClean')

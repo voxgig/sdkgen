@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 // ProjectName SDK utility: result_body
 
+require_once __DIR__ . '/Media.php';
+
 class ProjectNameResultBody
 {
     public const PREVIEW_LENGTH = 160;
@@ -28,14 +30,15 @@ class ProjectNameResultBody
     public static function unreadable(ProjectNameContext $ctx, int $status, mixed $headers,
         mixed $text, mixed $sent, mixed $failed): mixed
     {
-        $type = self::header($headers, 'content-type');
-        $agent = (string)($ctx->utility->clean)($ctx, self::header($sent, 'user-agent'));
+        $type = ProjectNameMedia::headerValue($headers, 'content-type');
+        $agent = (string)($ctx->utility->clean)($ctx, ProjectNameMedia::headerValue($sent, 'user-agent'));
         if ('' === $agent) {
             $agent = 'transport default';
         }
         $detail = "HTTP {$status}, content-type " . ('' === $type ? 'none' : $type) .
             ", user-agent {$agent}";
-        if (null !== $text && self::quotable($ctx, $type)) {
+        // Only text is quoted: bytes are a file's, by the model or by their type.
+        if (null !== $text && !ProjectNameMedia::isBinaryResponse($ctx->point, $type)) {
             $detail .= ', body: ' . self::preview($ctx, $text);
         }
 
@@ -58,31 +61,6 @@ class ProjectNameResultBody
         }
         return $ctx->make_error('response_content_type',
             "response: expected JSON, got {$type} ({$detail})");
-    }
-
-    private static function header(mixed $headers, string $name): string
-    {
-        if (!is_array($headers)) {
-            return '';
-        }
-        foreach ($headers as $key => $val) {
-            if (strtolower((string)$key) === $name) {
-                return (string)$val;
-            }
-        }
-        return '';
-    }
-
-    // Only text is quoted: bytes are a file's, by the model or by their type.
-    // Text is no declared type, text/*, or a structured text format.
-    private static function quotable(ProjectNameContext $ctx, string $type): bool
-    {
-        if (true === ($ctx->point['response']['binary'] ?? null)) {
-            return false;
-        }
-        $media = strtolower(trim(explode(';', $type, 2)[0]));
-        return '' === $media || str_starts_with($media, 'text/') ||
-            1 === preg_match('/json|xml|html|javascript|ecmascript|yaml|urlencoded|graphql/', $media);
     }
 
     // Cleaned whole: a secret the bound would split could leave its prefix.

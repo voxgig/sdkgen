@@ -87,6 +87,10 @@ var cleanForms = func() []string {
 // The marker a body of bytes carries.
 const cleanContent = "CANARY-CONTENT-b7n3v9x1c5"
 
+// The marker a response of bytes carries, as the default transport hands
+// the body on: read into text.
+const cleanResponseMark = "CANARY-RESPONSE-k2m8q4w6z0"
+
 // A reader whose state is exported: what a walk into it would copy.
 type cleanOpenReader struct {
 	Data []byte
@@ -123,20 +127,24 @@ var cleanCarriers = []struct {
 
 // The forms bytes travel in once copied: the text, a list of byte values as
 // encoding/json and the fmt verbs print one, hex, base64.
-var cleanContentForms = func() [][2]string {
+func cleanBytesForms(marker string) [][2]string {
 	decimal, hexed := []string{}, []string{}
-	for _, b := range []byte(cleanContent) {
+	for _, b := range []byte(marker) {
 		decimal = append(decimal, strconv.Itoa(int(b)))
 		hexed = append(hexed, fmt.Sprintf("%#x", b))
 	}
 	return [][2]string{
-		{"text", cleanContent},
+		{"text", marker},
 		{"byte values", strings.Join(decimal, ",")},
 		{"byte values in hex", strings.Join(hexed, ",")},
-		{"hex", hex.EncodeToString([]byte(cleanContent))},
-		{"base64", base64.StdEncoding.EncodeToString([]byte(cleanContent))},
+		{"hex", hex.EncodeToString([]byte(marker))},
+		{"base64", base64.StdEncoding.EncodeToString([]byte(marker))},
 	}
-}()
+}
+
+var cleanContentForms = cleanBytesForms(cleanContent)
+
+var cleanResponseForms = cleanBytesForms(cleanResponseMark)
 
 type cleanSink struct {
 	name string
@@ -165,12 +173,12 @@ func cleanLeaks(text string) []string {
 }
 
 // A printed list separates its values with a comma, a space or both.
-func cleanContentLeaks(text string) []string {
+func cleanContentLeaks(text string, forms [][2]string) []string {
 	flat := strings.Join(strings.FieldsFunc(text, func(r rune) bool {
 		return ',' == r || unicode.IsSpace(r)
 	}), ",")
 	found := []string{}
-	for _, form := range cleanContentForms {
+	for _, form := range forms {
 		if strings.Contains(flat, form[1]) {
 			found = append(found, form[0])
 		}
@@ -309,6 +317,25 @@ func cleanResponse(status int, data any, headers map[string]any) map[string]any 
 		"json":       (func() any)(func() any { return data }),
 		"body":       string(raw),
 	}
+}
+
+// A response of bytes under the type it declares, as the default transport
+// hands one on: read into text, and marked as not read as JSON.
+func cleanBytesScenario(status int, ctype string) cleanScenario {
+	statusText := "OK"
+	if status >= 400 {
+		statusText = "ERR"
+	}
+	return cleanScenario{"bytes", func(string, map[string]any) (any, error) {
+		return map[string]any{
+			"status":     status,
+			"statusText": statusText,
+			"headers":    map[string]any{"content-type": ctype},
+			"json":       (func() any)(func() any { return nil }),
+			"body":       cleanResponseMark,
+			"unreadable": true,
+		}, nil
+	}}
 }
 
 var cleanScenarios = []cleanScenario{
@@ -1080,7 +1107,7 @@ func TestCleanContentSweep(t *testing.T) {
 
 	leaked := []string{}
 	for _, s := range sinks {
-		if found := cleanContentLeaks(s.text); 0 < len(found) {
+		if found := cleanContentLeaks(s.text, cleanContentForms); 0 < len(found) {
 			leaked = append(leaked, s.name+" ["+strings.Join(found, ", ")+"]")
 		}
 	}
@@ -1184,13 +1211,84 @@ func TestCleanContentSensitivity(t *testing.T) {
 		}
 		leaked := 0
 		for _, s := range sinks {
-			if 0 < len(cleanContentLeaks(s.text)) {
+			if 0 < len(cleanContentLeaks(s.text, cleanContentForms)) {
 				leaked++
 			}
 		}
 		if leaked == 0 {
 			t.Errorf("%s: with clean off, nothing showed the bytes: the sweep is blind", carrier.name)
 		}
+	}
+}
+
+func TestCleanResponseSweep(t *testing.T) {
+	defer cleanHarness(t)
+	op, found := cleanUsableOp()
+	if !found {
+		t.Skip(cleanNoOp)
+	}
+
+	sinks := []cleanSink{}
+	errs := map[string]error{}
+
+	for _, status := range []int{200, 404, 500} {
+		for _, variant := range cleanVariants {
+			client := cleanMakeSdk(cleanBytesScenario(status, "audio/wav"), &sinks, nil)
+			if err := cleanDrive(client, op, variant.ctrl(), &sinks); err != nil {
+				errs[strconv.Itoa(status)+"/"+variant.name] = err
+			}
+			sinks = append(sinks, cleanSurfaces("sdk", client)...)
+		}
+	}
+
+	leaked := []string{}
+	for _, s := range sinks {
+		if found := cleanContentLeaks(s.text, cleanResponseForms); 0 < len(found) {
+			leaked = append(leaked, s.name+" ["+strings.Join(found, ", ")+"]")
+		}
+	}
+
+	fmt.Printf("clean: response swept %d surface(s), %d leak(s)\\n", len(sinks), len(leaked))
+
+	if 0 < len(leaked) {
+		t.Fatalf("a response of bytes leaked through: %s", strings.Join(leaked, "; "))
+	}
+
+	// The failure still names what it could not read.
+	failed, _ := errs["200/throw"].(*sdk.${Name}Error)
+	if failed == nil {
+		t.Fatalf("a response of bytes must fail the operation, got %v", errs["200/throw"])
+	}
+	if "response_content_type" != failed.Code {
+		t.Errorf("expected the code response_content_type, got %q", failed.Code)
+	}
+	if !strings.Contains(failed.Error(), "audio/wav") {
+		t.Errorf("the error does not name the type: %s", failed.Error())
+	}
+}
+
+func TestCleanResponseSensitivity(t *testing.T) {
+	defer cleanHarness(t)
+	op, found := cleanUsableOp()
+	if !found {
+		t.Skip(cleanNoOp)
+	}
+
+	// Clean off leaves a context encoding/json refuses (a func field), so the
+	// sight is proved by a response of text, which clean leaves as it is.
+	sinks := []cleanSink{}
+	client := cleanMakeSdk(cleanBytesScenario(200, "text/plain"), &sinks, nil)
+	if nil == cleanDrive(client, op, map[string]any{}, &sinks) {
+		t.Fatal("a response that is not JSON must fail the operation")
+	}
+	leaked := 0
+	for _, s := range sinks {
+		if 0 < len(cleanContentLeaks(s.text, cleanResponseForms)) {
+			leaked++
+		}
+	}
+	if leaked == 0 {
+		t.Error("a response of text showed nowhere: the sweep is blind")
 	}
 }
 `

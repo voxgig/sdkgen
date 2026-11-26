@@ -200,10 +200,12 @@ const CleanCfg = struct {
     min: i64,
 };
 
-// The live request body of a point the model marks binary, and its type.
+// The live bodies of this call that are bytes, each with its type. A
+// response read as text does not say how many bytes it was, so is unsized.
 const CleanBinary = struct {
-    live: [2]Value,
-    media: ?[]const u8,
+    live: [3]Value,
+    media: [3]?[]const u8,
+    sized: [3]bool,
 };
 
 fn clean_normkey(key: []const u8) []const u8 {
@@ -391,28 +393,43 @@ fn clean_name(c: CleanCfg, out: Value, key: []const u8) []const u8 {
     return fmt("{s}#{d}", .{ name, i });
 }
 
-// A string shorter than the registry accepts is not told from ordinary text.
+// The request body of a point the model marks binary, and a response body
+// that is bytes. A string shorter than the registry accepts is not told
+// from ordinary text.
 fn clean_binary_body(ctx: *Context) ?CleanBinary {
+    var bin = CleanBinary{ .live = .{ h.vnull(), h.vnull(), h.vnull() }, .media = .{ null, null, null }, .sized = .{ true, true, false } };
     const body = h.getp(ctx.point, "body");
-    if (!is_raw_request(ctx.point) or !is_true(h.getp(body, "binary"))) return null;
-    const min = clean_view(clean_config(ctx)).min;
-    var live = [2]Value{ if (ctx.spec) |s| s.body else h.vnull(), raw_body(ctx.reqdata) };
-    for (&live) |*at| {
-        if (at.* != .string or @as(i64, @intCast(at.string.len)) < min) at.* = h.vnull();
+    if (is_raw_request(ctx.point) and is_true(h.getp(body, "binary"))) {
+        bin.live[0] = if (ctx.spec) |s| s.body else h.vnull();
+        bin.live[1] = raw_body(ctx.reqdata);
+        bin.media[0] = h.get_str(body, "media");
+        bin.media[1] = bin.media[0];
     }
-    if (live[0] == .null and live[1] == .null) return null;
-    return .{ .live = live, .media = h.get_str(body, "media") };
+    if (ctx.response) |resp| {
+        const ctype = body_header(resp.headers, "content-type");
+        if (is_binary_response(ctx.point, ctype)) {
+            bin.live[2] = resp.body;
+            bin.media[2] = if (ctype.len == 0) null else ctype;
+        }
+    }
+    const min = clean_view(clean_config(ctx)).min;
+    var any = false;
+    for (&bin.live) |*at| {
+        if (at.* != .string or @as(i64, @intCast(at.string.len)) < min) at.* = h.vnull() else any = true;
+    }
+    return if (any) bin else null;
 }
 
 // Bytes are described, never copied (ADR-006). The value union has no
-// variant for bytes: a string is bytes only as the body of a point the
-// model marks binary, by equal content.
+// variant for bytes: a string is bytes only as a live body, by equal
+// content.
 fn clean_describe_binary(bin: ?CleanBinary, s: []const u8) ?Value {
     const b = bin orelse return null;
-    for (b.live) |live| {
+    for (b.live, b.media, b.sized) |live, media, sized| {
         if (live != .string or !std.mem.eql(u8, live.string, s)) continue;
-        const desc = h.jo(&.{ .{ CLEAN_BINARY_KEY, h.vstr("bytes") }, .{ "size", h.vnum(@intCast(s.len)) } });
-        if (b.media) |media| h.setp(desc, "type", h.vstr(media));
+        const desc = h.jo(&.{.{ CLEAN_BINARY_KEY, h.vstr("bytes") }});
+        if (sized) h.setp(desc, "size", h.vnum(@intCast(s.len)));
+        if (media) |m| h.setp(desc, "type", h.vstr(m));
         return desc;
     }
     return null;
@@ -2145,7 +2162,7 @@ pub fn unreadable_body(
         status,
         if (ctype.len == 0) "none" else ctype,
         if (agent.len == 0) "transport default" else agent,
-        if (h.is_noval(text) or text == .null or !body_quotable(ctx, ctype))
+        if (h.is_noval(text) or text == .null or is_binary_response(ctx.point, ctype))
             ""
         else
             fmt(", body: {s}", .{body_preview(ctx, text)}),
@@ -2180,17 +2197,17 @@ const TEXT_MEDIA = [_][]const u8{
     "json", "xml", "html", "javascript", "ecmascript", "yaml", "urlencoded", "graphql",
 };
 
-// Only text is quoted: bytes are a file's, by the model or by their type.
+// A response whose body is bytes: by the model, or by the type it declares.
 // Text is no declared type, text/*, or a structured text format.
-fn body_quotable(ctx: *Context, ctype: []const u8) bool {
-    if (is_true(h.getp(h.getp(ctx.point, "response"), "binary"))) return false;
+pub fn is_binary_response(point: Value, ctype: []const u8) bool {
+    if (is_true(h.getp(h.getp(point, "response"), "binary"))) return true;
     const end = std.mem.indexOfScalar(u8, ctype, ';') orelse ctype.len;
     const media = std.mem.trim(u8, ctype[0..end], &std.ascii.whitespace);
-    if (media.len == 0 or std.ascii.startsWithIgnoreCase(media, "text/")) return true;
+    if (media.len == 0 or std.ascii.startsWithIgnoreCase(media, "text/")) return false;
     for (TEXT_MEDIA) |part| {
-        if (std.ascii.indexOfIgnoreCase(media, part) != null) return true;
+        if (std.ascii.indexOfIgnoreCase(media, part) != null) return false;
     }
-    return false;
+    return true;
 }
 
 // Cleaned whole: a secret the bound would split could leave its prefix.

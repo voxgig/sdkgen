@@ -564,10 +564,12 @@ private:
     // must arrive as that literal value, not as malformed JSON.
     std::string bodytext = vs::jsonify(vmap({{x.request, Value(refresh_)}}), 0);
 
+    // Never followed: a redirect would carry the refresh token on.
     Value fetchdef = vmap({
       {"method", Value(x.method)},
       {"headers", vmap({{"content-type", Value(std::string("application/json"))}})},
-      {"body", Value(bodytext)}});
+      {"body", Value(bodytext)},
+      {"redirect", Value(std::string("manual"))}});
 
     // Deliberately NOT the SDK transport. The transport is what this feature
     // wraps, and sending the token request back through it would recurse on

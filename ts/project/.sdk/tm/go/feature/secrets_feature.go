@@ -480,6 +480,8 @@ func (f *SecretsFeature) buyonce() (string, error) {
 		"method":  x.method,
 		"headers": map[string]any{"content-type": "application/json"},
 		"body":    string(bodybytes),
+		// Never followed: a redirect would carry the refresh token on.
+		"redirect": "manual",
 	})
 	if nil != err {
 		return "", err
@@ -541,7 +543,12 @@ func rawExchangeFetch(fullurl string, fetchdef map[string]any) (map[string]any, 
 		}
 	}
 
-	client := &http.Client{Timeout: 30 * time.Second}
+	client := &http.Client{
+		Timeout: 30 * time.Second,
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
 	res, err := client.Do(req)
 	if nil != err {
 		return nil, err

@@ -411,6 +411,120 @@ class TestSecretsReviewPins(unittest.TestCase):
             srv.shutdown()
             srv.server_close()
 
+    # Real listeners and the raw fallback transport: a stub follows nothing.
+    def test_a_redirect_answering_the_exchange_is_a_failure(self):
+        elsewhere = []
+        followed = []
+        answer = [307, ""]
+
+        def _recorder(log, respond):
+            class _Handler(http.server.BaseHTTPRequestHandler):
+                def _any(self):
+                    raw = self.rfile.read(
+                        int(self.headers.get("content-length") or 0))
+                    if respond(self):
+                        return
+                    log.append((self.command, self.path, raw.decode("utf-8")))
+                    out = b'{"access_token":"ELSEWHERE01"}'
+                    self.send_response(200)
+                    self.send_header("content-type", "application/json")
+                    self.send_header("content-length", str(len(out)))
+                    self.end_headers()
+                    self.wfile.write(out)
+
+                do_GET = do_POST = do_PUT = do_PATCH = do_DELETE = _any
+
+                def log_message(self, *args):
+                    pass
+            return _Handler
+
+        def _exchange(handler):
+            if "/api/auth/token" != handler.path:
+                return False
+            handler.send_response(answer[0])
+            handler.send_header("location", answer[1])
+            handler.send_header("content-length", "0")
+            handler.end_headers()
+            return True
+
+        origin = http.server.HTTPServer(
+            ("127.0.0.1", 0), _recorder(followed, _exchange))
+        other = http.server.HTTPServer(
+            ("127.0.0.1", 0), _recorder(elsewhere, lambda h: False))
+        for srv in (origin, other):
+            threading.Thread(target=srv.serve_forever, daemon=True).start()
+
+        base = "http://127.0.0.1:%d/api" % origin.server_port
+        away = "http://127.0.0.1:%d/api/auth/token" % other.server_port
+
+        try:
+            answers = [[307, away], [308, away], [302, away],
+                       [307, "/api/moved/token"]]
+            allowed = []
+            refused = 0
+
+            for case in answers:
+                answer[:] = case
+                sdk = secrets_sdk({
+                    "base": base,
+                    "feature": {"secrets": {
+                        "active": True,
+                        "name": "refresh_token",
+                        "exchange": {"active": True, "refresh": "REFRESH01"},
+                    }},
+                })
+
+                res = sdk.direct({"path": "/thing"})
+                err = res.get("err") if isinstance(res, dict) else None
+                message = str(res if err is None else err)
+
+                if ("token exchange failed: %d from %s/auth/token"
+                        % (case[0], base)) in message:
+                    refused += 1
+                else:
+                    allowed.append("%d to %s: %s" % (case[0], case[1], message))
+
+            print("secrets: exchange refused %d redirect(s), %d followed"
+                  % (refused, len(elsewhere) + len(followed)))
+
+            self.assertEqual([], elsewhere, "the exchange reached another origin")
+            self.assertEqual([], followed, "a request followed a refused exchange")
+            self.assertEqual([], allowed, "a redirect was not a failed exchange")
+            self.assertEqual(len(answers), refused)
+        finally:
+            for srv in (origin, other):
+                srv.shutdown()
+                srv.server_close()
+
+    def test_a_supplied_fetch_is_asked_not_to_follow_the_exchange(self):
+        calls = []
+
+        def fetch(url, fetchdef):
+            calls.append({"url": url, "fetchdef": dict(fetchdef)})
+            return {"status": 307, "statusText": "Temporary Redirect",
+                    "headers": {"location": "http://other.test/api/auth/token"},
+                    "json": lambda: {}, "body": ""}, None
+
+        sdk = secrets_sdk({
+            "base": "http://exchange.test/api",
+            "system": {"fetch": fetch},
+            "feature": {"secrets": {
+                "active": True,
+                "name": "refresh_token",
+                "exchange": {"active": True, "refresh": "REFRESH01"},
+            }},
+        })
+
+        res = sdk.direct({"path": "/thing"})
+        err = res.get("err") if isinstance(res, dict) else None
+
+        self.assertEqual(1, len(calls), "a redirect was followed through system.fetch")
+        self.assertEqual("http://exchange.test/api/auth/token", calls[0]["url"])
+        self.assertEqual("manual", calls[0]["fetchdef"].get("redirect"))
+        self.assertIn(
+            "token exchange failed: 307 from http://exchange.test/api/auth/token",
+            str(err))
+
     def test_uncached_miss_retracts_the_credential(self):
         # `cache: False` re-asks the chain per operation; when a provider
         # that answered once reports a MISS (a revoked secret), the value

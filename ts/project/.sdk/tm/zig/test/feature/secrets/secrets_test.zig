@@ -96,6 +96,7 @@ const Call = struct {
     url: []const u8,
     auth: ?[]const u8,
     body: ?[]const u8,
+    redirect: ?[]const u8,
 };
 
 /// A `system.fetch` that records every call it is handed, so "sent" is a
@@ -130,7 +131,8 @@ const Wire = struct {
         const headers = h.getp(fetchdef, "headers");
         const auth: ?[]const u8 = if (h.get_str(headers, cred_header())) |a| (h.A().dupe(u8, a) catch a) else null;
         const body: ?[]const u8 = if (h.get_str(fetchdef, "body")) |b| (h.A().dupe(u8, b) catch b) else null;
-        self.calls.append(h.A(), .{ .url = h.A().dupe(u8, url) catch url, .auth = auth, .body = body }) catch {};
+        const redirect = h.get_str(fetchdef, "redirect");
+        self.calls.append(h.A(), .{ .url = h.A().dupe(u8, url) catch url, .auth = auth, .body = body, .redirect = redirect }) catch {};
 
         const suffix = std.fmt.allocPrint(h.A(), "/{s}", .{self.tokenpath}) catch "/auth/token";
         if (std.mem.endsWith(u8, url, suffix)) {
@@ -751,6 +753,7 @@ test "secrets exchange: the refresh token buys an access token, and the request 
     try testing.expect(w.token_calls() == 1);
     try testing.expect(contains(w.calls.items[0].body orelse "", "\"refresh_token\":\"REFRESH01\""));
     try testing.expect(std.mem.endsWith(u8, w.calls.items[0].url, "/api/auth/token"));
+    try testing.expectEqualStrings("manual", w.calls.items[0].redirect orelse "");
     try testing.expect(w.api().len == 1);
     try credential_is(w.api()[0].auth, "ACCESS01");
 }
@@ -917,4 +920,144 @@ test "secrets exchange: without system.fetch the bundled HTTP transport buys the
     try testing.expect(!(h.get_bool(res, "ok") orelse true));
     const msg = h.get_str(res, "err") orelse "";
     try testing.expect(contains(msg, "sekreto: cannot reach http://127.0.0.1:9/api/auth/token"));
+}
+
+// A loopback listener on its own thread. The origin's token path answers
+// `moved`; every other request is logged as one line and answered with a
+// token. `close` wakes the blocked accept with one connection, then joins.
+const Listener = struct {
+    threaded: std.Io.Threaded = .init_single_threaded,
+    server: std.Io.net.Server = undefined,
+    port: u16 = 0,
+    moved: ?[]const u8 = null,
+    stop: std.atomic.Value(bool) = .init(false),
+    thread: std.Thread = undefined,
+    log: [2048]u8 = undefined,
+    loglen: usize = 0,
+    lines: usize = 0,
+
+    fn open(moved: ?[]const u8) !*Listener {
+        const l = try std.heap.page_allocator.create(Listener);
+        l.* = .{ .moved = moved };
+        const io = l.threaded.io();
+        const addr = try std.Io.net.IpAddress.parseIp4("127.0.0.1", 0);
+        l.server = try addr.listen(io, .{});
+        l.port = l.server.socket.address.getPort();
+        l.thread = try std.Thread.spawn(.{}, serve, .{l});
+        return l;
+    }
+
+    fn serve(l: *Listener) void {
+        const io = l.threaded.io();
+        while (true) {
+            const stream = l.server.accept(io) catch continue;
+            defer stream.close(io);
+            if (l.stop.load(.seq_cst)) return;
+            l.answer(io, stream) catch {};
+        }
+    }
+
+    fn answer(l: *Listener, io: std.Io, stream: std.Io.net.Stream) !void {
+        var rbuf: [4096]u8 = undefined;
+        var wbuf: [512]u8 = undefined;
+        var reader = stream.reader(io, &rbuf);
+        var writer = stream.writer(io, &wbuf);
+        var first_buf: [512]u8 = undefined;
+        const taken = try reader.interface.takeDelimiterInclusive('\n');
+        const first = first_buf[0..@min(first_buf.len, taken.len)];
+        @memcpy(first, taken[0..first.len]);
+        var words = std.mem.tokenizeScalar(u8, first, ' ');
+        const method: []const u8 = words.next() orelse "";
+        const target: []const u8 = words.next() orelse "";
+        var size: usize = 0;
+        while (true) {
+            const line = std.mem.trimEnd(u8, try reader.interface.takeDelimiterInclusive('\n'), "\r\n");
+            if (0 == line.len) break;
+            if (std.ascii.startsWithIgnoreCase(line, "content-length:")) {
+                size = std.fmt.parseInt(usize, std.mem.trim(u8, line[15..], " "), 10) catch 0;
+            }
+        }
+        const body = try reader.interface.take(size);
+        if (l.moved) |moved| {
+            if (std.mem.eql(u8, target, "/api/auth/token")) {
+                try writer.interface.writeAll(moved);
+                try writer.interface.flush();
+                return;
+            }
+        }
+        const entry = std.fmt.bufPrint(l.log[l.loglen..], "{s} {s} {s}\n", .{ method, target, body }) catch "";
+        l.loglen += entry.len;
+        l.lines += 1;
+        try writer.interface.writeAll("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n" ++
+            "Content-Length: 30\r\nConnection: close\r\n\r\n{\"access_token\":\"ELSEWHERE01\"}");
+        try writer.interface.flush();
+    }
+
+    fn close(l: *Listener) void {
+        const io = l.threaded.io();
+        l.stop.store(true, .seq_cst);
+        const addr = std.Io.net.IpAddress.parseIp4("127.0.0.1", l.port) catch unreachable;
+        if (addr.connect(io, .{ .mode = .stream })) |wake| wake.close(io) else |_| {}
+        l.thread.join();
+        l.server.deinit(io);
+    }
+};
+
+// Real listeners and the bundled exchange client: a stub follows nothing.
+test "secrets exchange: a redirect answering the exchange is a failure, and nothing follows it" {
+    if (!present()) return error.SkipZigTest;
+    const Case = struct { status: i64, away: bool };
+    const cases = [_]Case{
+        .{ .status = 307, .away = true },
+        .{ .status = 308, .away = true },
+        .{ .status = 302, .away = true },
+        .{ .status = 307, .away = false },
+    };
+
+    var refused: usize = 0;
+    var followed: usize = 0;
+    var allowed: std.ArrayList([]const u8) = .empty;
+
+    for (cases) |c| {
+        const other = try Listener.open(null);
+        const location = if (c.away)
+            try std.fmt.allocPrint(h.A(), "http://127.0.0.1:{d}/api/auth/token", .{other.port})
+        else
+            "/api/moved/token";
+        const moved = try std.fmt.allocPrint(h.A(), "HTTP/1.1 {d} Moved\r\nLocation: {s}\r\n" ++
+            "Content-Length: 0\r\nConnection: close\r\n\r\n", .{ c.status, location });
+        const origin = try Listener.open(moved);
+
+        const base = try std.fmt.allocPrint(h.A(), "http://127.0.0.1:{d}/api", .{origin.port});
+        const opts = h.jo(&.{
+            .{ "base", h.vstr(base) },
+            .{ "feature", h.jo(&.{.{ "secrets", h.jo(&.{
+                .{ "active", h.vbool(true) },
+                .{ "name", h.vstr("refresh_token") },
+                .{ "exchange", h.jo(&.{ .{ "active", h.vbool(true) }, .{ "refresh", h.vstr("REFRESH01") } }) },
+            }) }}) },
+        });
+        const client = sdk.SDK.new_with(opts, &.{sdk.SecretsFeature.make()});
+        const res = client.direct(h.jo(&.{.{ "path", h.vstr("/thing") }}));
+
+        origin.close();
+        other.close();
+
+        const msg = h.get_str(res, "err") orelse "";
+        const want = try std.fmt.allocPrint(h.A(), "token exchange failed: {d} from {s}/auth/token", .{ c.status, base });
+        const failed = !(h.get_bool(res, "ok") orelse true) and contains(msg, want);
+        if (failed) refused += 1;
+        followed += other.lines + origin.lines;
+        if (!failed or 0 < other.lines or 0 < origin.lines) {
+            try allowed.append(h.A(), try std.fmt.allocPrint(h.A(), "{d} to {s}: other origin got [{s}], origin got [{s}], ended: {s}", .{
+                c.status, location, other.log[0..other.loglen], origin.log[0..origin.loglen], msg,
+            }));
+        }
+    }
+
+    std.debug.print("secrets: exchange refused {d} redirect(s), {d} followed\n", .{ refused, followed });
+    for (allowed.items) |a| std.debug.print("redirect not refused: {s}\n", .{a});
+    try testing.expect(0 == allowed.items.len);
+    try testing.expect(cases.len == refused);
+    try testing.expect(0 == followed);
 }

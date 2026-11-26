@@ -53,9 +53,10 @@ debugger and is excluded from everything that prints it.
 
 ## Bodies of bytes
 
-The payload of an upload is not a diagnostic. `clean` replaces a body of bytes
-with a description of it, so a failed upload does not carry the file into
-the error it throws, and a logged request does not hold it:
+The payload of an upload is not a diagnostic, and neither is a file that an
+operation is answered with. `clean` replaces a body of bytes with a
+description of it, so a failed upload does not carry the file into the error
+it throws, and a logged request or response does not hold it:
 
 ```json
 { "binary$": "bytes", "size": 1048576, "type": "audio/wav" }
@@ -63,11 +64,11 @@ the error it throws, and a logged request does not hold it:
 
 | Key | Value |
 | --- | --- |
-| `binary$` | `bytes` when the size is known. `stream` for a source that is read once, such as a stream, a reader or a file handle. |
-| `size` | The number of bytes the request sends. Absent for a stream. |
+| `binary$` | `bytes` for a body held whole. `stream` for a source that is read once, such as a stream, a reader or a file handle. |
+| `size` | The number of bytes. Absent for a stream, and for a response body that the transport read into text, which no longer says how many bytes it was. |
 | `type` | The media type, where it is known. |
 
-Two rules decide what is described:
+Three rules decide what is described:
 
 - **By type.** A value of a byte or stream type is described wherever it
   sits in what leaves. Which types those are depends on the language: they
@@ -77,9 +78,16 @@ Two rules decide what is described:
   whatever carries it, and the description states the declared media
   type. This rule covers a string that holds the bytes, which is the only
   carrier in several targets.
+- **By the response.** In an operation whose response is bytes, the
+  response body is described whatever carries it, and the description
+  states the media type that the response declared. A response is bytes
+  when the API definition marks it as binary, or when the media type it
+  declares is not text. A response that declares no type, a `text/` type,
+  or a structured text format such as JSON or XML is text.
 
 A raw body that the definition does not mark as binary is text. Text is
-data: it stays in the copy, masked like any other string.
+data: it stays in the copy, masked like any other string. The record of
+an ordinary JSON call is unchanged.
 
 A value under a sensitive key name is still masked, since the mask says
 less than a description does. The request itself is untouched: the

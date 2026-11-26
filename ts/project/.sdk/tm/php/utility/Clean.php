@@ -35,7 +35,7 @@ class ProjectNameClean
             return self::clean_string($cfg, $val);
         }
 
-        $bin = self::binary_body($ctx);
+        $bin = self::binary_bodies($ctx);
 
         if ($val instanceof \Throwable) {
             self::clean_throwable($cfg, $bin, $val);
@@ -272,21 +272,39 @@ class ProjectNameClean
         return false;
     }
 
-    // The live request body of a point the model marks binary, and its type.
-    private static function binary_body(?ProjectNameContext $ctx): ?array
+    // The request body of a point the model marks binary, and a response
+    // body that is bytes, each with its type. A response read as text does
+    // not say how many bytes it was, so it is not sized.
+    private static function binary_bodies(?ProjectNameContext $ctx): array
     {
-        $body = $ctx?->point['body'] ?? null;
-        if (!is_array($body) || 'raw' !== ($body['kind'] ?? null) || true !== ($body['binary'] ?? null)) {
-            return null;
+        if (null === $ctx) {
+            return [];
         }
         // A string shorter than the registry accepts is not told from
         // ordinary text.
         $min = self::config_of($ctx)->min;
-        $live = array_values(array_filter(
-            [$ctx->spec?->body, $ctx->reqdata[ProjectNameMedia::RAW_BODY] ?? null],
+        $known = fn (array $vals): array => array_values(array_filter($vals,
             fn (mixed $v): bool => null !== $v && (!is_string($v) || $min <= strlen($v))));
-        $media = $body['media'] ?? null;
-        return 0 === count($live) ? null : ['live' => $live, 'type' => is_string($media) ? $media : null];
+        $bodies = [];
+
+        $body = $ctx->point['body'] ?? null;
+        if (is_array($body) && 'raw' === ($body['kind'] ?? null) && true === ($body['binary'] ?? null)) {
+            $media = $body['media'] ?? null;
+            $bodies[] = [
+                'live' => $known([$ctx->spec?->body, $ctx->reqdata[ProjectNameMedia::RAW_BODY] ?? null]),
+                'type' => is_string($media) ? $media : null,
+                'sized' => true,
+            ];
+        }
+
+        $response = $ctx->response ?? null;
+        $type = ProjectNameMedia::headerValue($response?->headers, 'content-type');
+        if (null !== $response && ProjectNameMedia::isBinaryResponse($ctx->point ?? null, $type)) {
+            $bodies[] = ['live' => $known([$response->body]), 'type' => '' === $type ? null : $type,
+                'sized' => false];
+        }
+
+        return array_values(array_filter($bodies, fn (array $bin): bool => 0 < count($bin['live'])));
     }
 
     // A closed stream is a stream still, which is_resource denies.
@@ -296,20 +314,26 @@ class ProjectNameClean
     }
 
     // Bytes are described, never copied (ADR-006): the kind, and the size and
-    // media type where they are known. A string is bytes only as the body of
-    // a point the model marks binary; a resource is read once, so a stream.
-    private static function describe_binary(mixed $val, ?array $bin): ?array
+    // media type where they are known. A string is bytes only as a live
+    // body; a resource is read once, so a stream.
+    private static function describe_binary(mixed $val, array $bins): ?array
     {
-        $declared = null !== $bin && in_array($val, $bin['live'], true);
+        $bin = null;
+        foreach ($bins as $b) {
+            if (in_array($val, $b['live'], true)) {
+                $bin = $b;
+                break;
+            }
+        }
         $desc = null;
         if (is_string($val)) {
-            if ($declared) {
-                $desc = [self::BINARY => 'bytes', 'size' => strlen($val)];
+            if (null !== $bin) {
+                $desc = $bin['sized'] ? [self::BINARY => 'bytes', 'size' => strlen($val)] : [self::BINARY => 'bytes'];
             }
         } elseif (self::is_stream($val)) {
             $desc = [self::BINARY => 'stream'];
         }
-        if (null !== $desc && $declared && null !== $bin['type']) {
+        if (null !== $desc && null !== $bin && null !== $bin['type']) {
             $desc['type'] = $bin['type'];
         }
         return $desc;
@@ -320,7 +344,7 @@ class ProjectNameClean
     // cut, and no live object is shared with the copy - masking the copy
     // must never mask the pipeline's own spec.
     private static function snapshot(
-        \stdClass $cfg, ?array $bin, mixed $val, mixed $key, int $depth, array &$seen
+        \stdClass $cfg, array $bin, mixed $val, mixed $key, int $depth, array &$seen
     ): mixed {
         if (null === $val) {
             return null;
@@ -390,7 +414,7 @@ class ProjectNameClean
         }
     }
 
-    private static function plain(\stdClass $cfg, ?array $bin, array $val, int $depth, array &$seen): array
+    private static function plain(\stdClass $cfg, array $bin, array $val, int $depth, array &$seen): array
     {
         $out = [];
         foreach ($val as $k => $v) {
@@ -423,7 +447,7 @@ class ProjectNameClean
     // In place: the message, the public fields, and the trace arguments,
     // which hold every context the failing frames were handed. The previous
     // chain too, since var_export walks it.
-    private static function clean_throwable(\stdClass $cfg, ?array $bin, \Throwable $top): void
+    private static function clean_throwable(\stdClass $cfg, array $bin, \Throwable $top): void
     {
         $seen = [];
         for ($err = $top; null !== $err && !in_array(spl_object_id($err), $seen, true);
@@ -433,7 +457,7 @@ class ProjectNameClean
         }
     }
 
-    private static function clean_one(\stdClass $cfg, ?array $bin, \Throwable $err): void
+    private static function clean_one(\stdClass $cfg, array $bin, \Throwable $err): void
     {
         $msg = self::clean_string($cfg, $err->getMessage());
         if ($msg !== $err->getMessage()) {

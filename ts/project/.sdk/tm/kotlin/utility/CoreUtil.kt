@@ -33,8 +33,9 @@ private const val CIRCULAR = "[circular]"
 // The key of what stands in for a body of bytes; its value is the kind.
 private const val BINARY = "binary\$"
 
-// The live request body of a point the model marks binary, and its type.
-private class BinaryBody(val live: List<Any>, val type: String?) {
+// A live body of this call that is bytes, and its type. A response read as
+// text does not say how many bytes it was, so it is not sized.
+private class BinaryBody(val live: List<Any>, val type: String?, val sized: Boolean) {
   // The same object, or for a string an equal one.
   fun holds(v: Any): Boolean = live.any { it === v || (v is String && v == it) }
 }
@@ -295,34 +296,46 @@ private fun utf8Length(text: String): Int {
   return n
 }
 
-// A string shorter than the registry accepts is not told from ordinary text.
-private fun binaryBody(ctx: Context?, cfg: CleanConfig): BinaryBody? {
+// The request body of a point the model marks binary, and a response body
+// that is bytes. A string shorter than the registry accepts is not told from
+// ordinary text.
+private fun binaryBodies(ctx: Context?, cfg: CleanConfig): List<BinaryBody> {
+  val known = { v: Any? -> v != null && (v !is String || cfg.min <= v.length) }
+  val bodies = mutableListOf<BinaryBody>()
+
   val body = Struct.getprop(ctx?.point, "body", null)
-  if ("raw" != Struct.getprop(body, "kind", null) || true != Struct.getprop(body, "binary", null)) {
-    return null
+  if ("raw" == Struct.getprop(body, "kind", null) && true == Struct.getprop(body, "binary", null)) {
+    bodies.add(BinaryBody(
+      listOf(ctx?.spec?.body, ctx?.reqdata?.get(Media.RAW_BODY)).filter(known).filterNotNull(),
+      Struct.getprop(body, "media", null) as? String, true))
   }
-  val live = listOfNotNull(ctx?.spec?.body, ctx?.reqdata?.get(Media.RAW_BODY))
-    .filter { it !is String || cfg.min <= it.length }
-  if (live.isEmpty()) {
-    return null
+
+  val response = ctx?.response
+  val type = Response.headerValue(response?.headers, "content-type")
+  if (response != null && Response.isBinaryResponse(ctx?.point, type)) {
+    bodies.add(BinaryBody(listOf(response.body).filter(known).filterNotNull(),
+      type.ifEmpty { null }, false))
   }
-  return BinaryBody(live, Struct.getprop(body, "media", null) as? String)
+
+  return bodies.filter { it.live.isNotEmpty() }
 }
 
 // Bytes are described, never copied (ADR-006): the kind, and the size and
-// media type where they are known. A string is bytes only as the body of a
-// point the model marks binary. Null for a value that is not bytes.
-private fun describeBinary(v: Any, bin: BinaryBody?): MutableMap<String, Any?>? {
-  val declared = bin != null && bin.holds(v)
+// media type where they are known. A string is bytes only as a live body.
+// Null for a value that is not bytes.
+private fun describeBinary(v: Any, bins: List<BinaryBody>): MutableMap<String, Any?>? {
+  val bin = bins.firstOrNull { it.holds(v) }
   val desc = linkedMapOf<String, Any?>()
 
   when (v) {
     is String -> {
-      if (!declared) {
+      if (bin == null) {
         return null
       }
       desc[BINARY] = "bytes"
-      desc["size"] = utf8Length(v)
+      if (bin.sized) {
+        desc["size"] = utf8Length(v)
+      }
     }
     is ByteArray -> {
       desc[BINARY] = "bytes"
@@ -336,7 +349,7 @@ private fun describeBinary(v: Any, bin: BinaryBody?): MutableMap<String, Any?>? 
     else -> return null
   }
 
-  val type = if (declared) bin?.type else null
+  val type = bin?.type
   if (type != null) {
     desc["type"] = type
   }
@@ -416,7 +429,7 @@ private fun record(v: Any): MutableMap<String, Any?> {
 // shared with the live value, whose spec must stay raw.
 @Suppress("UNCHECKED_CAST")
 private fun snapshot(
-  cfg: CleanConfig, bin: BinaryBody?, v: Any?, key: Any?, depth: Int, seen: MutableList<Any>,
+  cfg: CleanConfig, bin: List<BinaryBody>, v: Any?, key: Any?, depth: Int, seen: MutableList<Any>,
 ): Any? {
   if (v == null || v === Struct.UNDEF) {
     return v
@@ -474,7 +487,7 @@ private fun snapshot(
 }
 
 private fun plain(
-  cfg: CleanConfig, bin: BinaryBody?, v: Map<*, *>, depth: Int, seen: MutableList<Any>,
+  cfg: CleanConfig, bin: List<BinaryBody>, v: Map<*, *>, depth: Int, seen: MutableList<Any>,
 ): MutableMap<String, Any?> {
   val out = linkedMapOf<String, Any?>()
   for ((k, item) in v) {
@@ -510,7 +523,7 @@ internal fun cleanWith(cfg: CleanConfig, value: Any?, ctx: Context? = null): Any
     return cleanString(cfg, value)
   }
 
-  val bin = binaryBody(ctx, cfg)
+  val bin = binaryBodies(ctx, cfg)
 
   // An SdkError is cleaned in place, since it is about to be thrown.
   if (value is SdkError) {

@@ -486,6 +486,8 @@ class SecretsFeature extends BaseFeature("secrets", "0.1.0", true) {
     fetchdef.put("method", this.xmethod)
     fetchdef.put("headers", headers)
     fetchdef.put("body", Struct.jsonify(bodymap, flags))
+    // Never followed: a redirect would carry the refresh token on.
+    fetchdef.put("redirect", "manual")
 
     val res = exchangefetch(url, fetchdef)
     if (res == null) {

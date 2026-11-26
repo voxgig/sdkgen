@@ -38,8 +38,9 @@ object Clean {
   // The key of what stands in for a body of bytes; its value is the kind.
   private val BINARY = "binary$"
 
-  // The live request body of a point the model marks binary, and its type.
-  private final class BinaryBody(val live: List[Object], val media: String) {
+  // A live body of this call that is bytes, and its type. A response read as
+  // text does not say how many bytes it was, so it is not sized.
+  private final class BinaryBody(val live: List[Object], val media: String, val sized: Boolean) {
     // The same object, or for a string an equal one.
     def holds(v: Object): Boolean =
       live.exists(b => (b eq v) || (v.isInstanceOf[String] && v == b))
@@ -203,39 +204,51 @@ object Clean {
     n
   }
 
-  // A string shorter than the registry accepts is not told from ordinary text.
-  private def binaryBody(ctx: Context, cfg: CleanConfig): BinaryBody = {
-    if (ctx == null) return null
-    val body = Struct.getprop(ctx.point, "body")
-    if ("raw" != Struct.getprop(body, "kind") ||
-        java.lang.Boolean.TRUE != Struct.getprop(body, "binary")) {
-      return null
-    }
+  // The request body of a point the model marks binary, and a response body
+  // that is bytes. A string shorter than the registry accepts is not told
+  // from ordinary text.
+  private def binaryBodies(ctx: Context, cfg: CleanConfig): List[BinaryBody] = {
+    if (ctx == null) return Nil
     def isBody(v: Object): Boolean = v match {
       case null => false
       case s: String => cfg.min <= s.length
       case _ => true
     }
-    var live: List[Object] = Nil
-    if (ctx.spec != null && isBody(ctx.spec.body)) live = live :+ ctx.spec.body
-    val raw = if (ctx.reqdata == null) null else ctx.reqdata.get(Media.RawBody)
-    if (isBody(raw)) live = live :+ raw
-    if (live.isEmpty) return null
-    new BinaryBody(live, Struct.getprop(body, "media") match { case s: String => s; case _ => null })
+    var bodies: List[BinaryBody] = Nil
+
+    val body = Struct.getprop(ctx.point, "body")
+    if ("raw" == Struct.getprop(body, "kind") &&
+        java.lang.Boolean.TRUE == Struct.getprop(body, "binary")) {
+      val raw = if (ctx.reqdata == null) null else ctx.reqdata.get(Media.RawBody)
+      val media = Struct.getprop(body, "media") match { case s: String => s; case _ => null }
+      bodies = bodies :+ new BinaryBody(
+        List(if (ctx.spec == null) null else ctx.spec.body, raw).filter(isBody), media, true)
+    }
+
+    val response = ctx.response
+    if (response != null) {
+      val ctype = Response.headerValue(response.headers, "content-type")
+      if (Response.isBinaryResponse(ctx.point, ctype)) {
+        bodies = bodies :+ new BinaryBody(
+          List(response.body).filter(isBody), if (ctype.isEmpty) null else ctype, false)
+      }
+    }
+
+    bodies.filter(_.live.nonEmpty)
   }
 
   // Bytes are described, never copied (ADR-006): the kind, and the size and
-  // media type where they are known. A string is bytes only as the body of a
-  // point the model marks binary. Null for a value that is not bytes.
-  private def describeBinary(v: Object, bin: BinaryBody): JMap[String, Object] = {
-    val declared = bin != null && bin.holds(v)
+  // media type where they are known. A string is bytes only as a live body.
+  // Null for a value that is not bytes.
+  private def describeBinary(v: Object, bins: List[BinaryBody]): JMap[String, Object] = {
+    val bin = bins.find(_.holds(v)).orNull
     val desc = new LinkedHashMap[String, Object]()
 
     v match {
       case s: String =>
-        if (!declared) return null
+        if (bin == null) return null
         desc.put(BINARY, "bytes")
-        desc.put("size", java.lang.Integer.valueOf(utf8Length(s)))
+        if (bin.sized) desc.put("size", java.lang.Integer.valueOf(utf8Length(s)))
       case b: Array[Byte] =>
         desc.put(BINARY, "bytes")
         desc.put("size", java.lang.Integer.valueOf(b.length))
@@ -247,7 +260,7 @@ object Clean {
       case _ => return null
     }
 
-    if (declared && bin.media != null) desc.put("type", bin.media)
+    if (bin != null && bin.media != null) desc.put("type", bin.media)
     desc
   }
 
@@ -318,7 +331,7 @@ object Clean {
 
   // A masked plain-data copy: functions dropped, cycles cut, and nothing
   // shared with the live value, whose spec must stay raw.
-  private def snapshot(cfg: CleanConfig, bin: BinaryBody, v: Object, key: Object, depth: Int,
+  private def snapshot(cfg: CleanConfig, bin: List[BinaryBody], v: Object, key: Object, depth: Int,
       seen: IdentityHashMap[Object, Object]): Object = {
     if (v == null || (v eq Struct.UNDEF)) return v
 
@@ -367,7 +380,7 @@ object Clean {
     finally seen.remove(v)
   }
 
-  private def plain(cfg: CleanConfig, bin: BinaryBody, m: JMap[_, _], depth: Int,
+  private def plain(cfg: CleanConfig, bin: List[BinaryBody], m: JMap[_, _], depth: Int,
       seen: IdentityHashMap[Object, Object]): JMap[String, Object] = {
     val out = new LinkedHashMap[String, Object]()
     val it = m.asInstanceOf[JMap[Object, Object]].entrySet().iterator()
@@ -397,7 +410,7 @@ object Clean {
       case s: String => return cleanString(cfg, s)
       case err: SdkError =>
         // Cleaned in place, since it is about to be thrown.
-        val bin = binaryBody(ctx, cfg)
+        val bin = binaryBodies(ctx, cfg)
         err.msg = cleanString(cfg, err.msg)
         err.code = cleanString(cfg, err.code)
         err.result = snapshot(cfg, bin, err.result, "result", 1, new IdentityHashMap[Object, Object]())
@@ -410,7 +423,7 @@ object Clean {
       case _ =>
     }
 
-    val out = snapshot(cfg, binaryBody(ctx, cfg), value, null, 0, new IdentityHashMap[Object, Object]())
+    val out = snapshot(cfg, binaryBodies(ctx, cfg), value, null, 0, new IdentityHashMap[Object, Object]())
     if (out eq DROP) null else out
   }
 

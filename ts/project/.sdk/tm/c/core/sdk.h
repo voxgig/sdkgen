@@ -250,6 +250,12 @@ Response* response_new(voxgig_value* resmap);
 PNError* unreadable_body(Context* ctx, int64_t status, voxgig_value* headers,
                          voxgig_value* text, voxgig_value* sent, PNError* failed);
 
+// A header's value under its name in any case; "" when it has none.
+const char* response_header(voxgig_value* headers, const char* name);
+
+// A response whose body is bytes: by the model, or by the type it declares.
+bool response_is_binary(voxgig_value* point, const char* type);
+
 // ===========================================================================
 // SdkResult (mirrors core/result.rs)
 // ===========================================================================

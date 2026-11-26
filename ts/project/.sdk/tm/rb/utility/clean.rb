@@ -126,21 +126,39 @@ module ProjectNameUtilities
       cfg["keys"].any? { |k| nk.include?(k) }
     end
 
-    # The live request body of a point the model marks binary, and its type.
-    def self.binary_body(ctx)
-      return nil unless ctx.respond_to?(:point)
-      body = VoxgigStruct.getprop(ctx.point, "body")
-      return nil unless VoxgigStruct.getprop(body, "kind") == "raw" &&
-        VoxgigStruct.getprop(body, "binary") == true
-      spec = ctx.respond_to?(:spec) ? ctx.spec : nil
-      reqdata = ctx.respond_to?(:reqdata) ? ctx.reqdata : nil
+    # The request body of a point the model marks binary, and a response
+    # body that is bytes, each with its type. A response read as text does
+    # not say how many bytes it was, so it is not sized.
+    def self.binary_bodies(ctx)
       # A String shorter than the registry accepts is not told from ordinary text.
       min = config(ctx)["min"]
-      live = [spec.respond_to?(:body) ? spec.body : nil,
-        reqdata.is_a?(Hash) ? reqdata[RAW_BODY] : nil]
-        .reject { |v| v.nil? || (v.is_a?(String) && v.length < min) }
-      media = VoxgigStruct.getprop(body, "media")
-      live.empty? ? nil : { "live" => live, "type" => media.is_a?(String) ? media : nil }
+      known = ->(v) { !v.nil? && !(v.is_a?(String) && v.length < min) }
+      point = ctx.respond_to?(:point) ? ctx.point : nil
+      bodies = []
+
+      body = VoxgigStruct.getprop(point, "body")
+      if VoxgigStruct.getprop(body, "kind") == "raw" && VoxgigStruct.getprop(body, "binary") == true
+        spec = ctx.respond_to?(:spec) ? ctx.spec : nil
+        reqdata = ctx.respond_to?(:reqdata) ? ctx.reqdata : nil
+        media = VoxgigStruct.getprop(body, "media")
+        bodies << {
+          "live" => [spec.respond_to?(:body) ? spec.body : nil,
+            reqdata.is_a?(Hash) ? reqdata[RAW_BODY] : nil].select(&known),
+          "type" => media.is_a?(String) ? media : nil,
+          "sized" => true,
+        }
+      end
+
+      response = ctx.respond_to?(:response) ? ctx.response : nil
+      if response.respond_to?(:body) && response.respond_to?(:headers)
+        type = ProjectNameUtilities.header_value(response.headers, "content-type")
+        if ProjectNameUtilities.binary_response?(point, type)
+          bodies << { "live" => [response.body].select(&known),
+            "type" => type.empty? ? nil : type, "sized" => false }
+        end
+      end
+
+      bodies.reject { |bin| bin["live"].empty? }
     end
 
     # The same object, or a String of the same bytes whatever its encoding.
@@ -151,17 +169,20 @@ module ProjectNameUtilities
     end
 
     # Bytes are described, never copied (ADR-006): the kind, and the size and
-    # media type where they are known. A String is bytes only as the body of
-    # a point the model marks binary; an IO is read once, so it is a stream.
-    def self.describe_binary(val, bin)
-      declared = !bin.nil? && bin["live"].any? { |live| same_body?(live, val) }
+    # media type where they are known. A String is bytes only as a live
+    # body; an IO is read once, so it is a stream.
+    def self.describe_binary(val, bins)
+      bin = bins.find { |b| b["live"].any? { |live| same_body?(live, val) } }
       desc = nil
       if val.is_a?(String)
-        desc = { BINARY => "bytes", "size" => val.bytesize } if declared
+        unless bin.nil?
+          desc = { BINARY => "bytes" }
+          desc["size"] = val.bytesize if bin["sized"]
+        end
       elsif val.respond_to?(:read)
         desc = { BINARY => "stream" }
       end
-      desc["type"] = bin["type"] if !desc.nil? && declared && !bin["type"].nil?
+      desc["type"] = bin["type"] if !desc.nil? && !bin.nil? && !bin["type"].nil?
       desc
     end
 
@@ -286,7 +307,7 @@ module ProjectNameUtilities
 
       return clean_string(cfg, val) if val.is_a?(String)
 
-      bin = binary_body(ctx)
+      bin = binary_bodies(ctx)
 
       if val.is_a?(Exception)
         if val.is_a?(ProjectNameError)

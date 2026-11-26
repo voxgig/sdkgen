@@ -655,6 +655,8 @@ class SecretsFeature : BaseFeature("secrets", "0.1.0", true) {
       "method" to x.method,
       "headers" to linkedMapOf<String, Any?>("content-type" to "application/json"),
       "body" to body,
+      // Never followed: a redirect would carry the refresh token on.
+      "redirect" to "manual",
     )
 
     // Deliberately NOT the SDK transport. The transport is what this feature

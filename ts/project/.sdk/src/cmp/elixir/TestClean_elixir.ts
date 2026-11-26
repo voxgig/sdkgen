@@ -84,8 +84,9 @@ function render(model: any, entity: any[], auth: {
 # Every credential slot holds a distinctive value, every diagnostic feature
 # this SDK ships is switched on with a capturing sink, a real operation runs
 # through every outcome, and every string that leaves is searched for the
-# canaries and their encoded forms; a second sweep does the same for a body
-# of bytes. With clean switched off the canary MUST show.
+# canaries and their encoded forms; further sweeps do the same for a body
+# of bytes and a response of bytes. With clean switched off the canary MUST
+# show.
 #
 # A struct node inspects as a handle, so the SDK's own records (the error's
 # result and spec, the explain record, every sink record, the context's
@@ -124,20 +125,23 @@ defmodule ${Name}.CleanTest do
   # The marker a body of bytes carries.
   @content "CANARY-CONTENT-b7n3v9x1c5"
 
+  # The marker a response of bytes carries, as the transport hands it on.
+  @response "CANARY-RESPONSE-k2m8q4w6z0"
+
   # Every value this SDK accepts as a raw body: a binary, as text and as
   # bytes that are not text, which print as a list of byte values.
   defp carriers, do: [{"string", @content}, {"bytes", <<137>> <> @content}]
 
   # The forms bytes travel in once copied: text, a list of byte values, hex,
   # base64.
-  defp content_leaks(text) do
+  defp content_leaks(text, marker \\\\ @content) do
     flat = String.replace(text, ~r/\\s+/, "")
 
     [
-      {"text", [@content]},
-      {"byte values", [Enum.join(:binary.bin_to_list(@content), ",")]},
-      {"hex", [Base.encode16(@content), Base.encode16(@content, case: :lower)]},
-      {"base64", [Base.encode64(@content)]}
+      {"text", [marker]},
+      {"byte values", [Enum.join(:binary.bin_to_list(marker), ",")]},
+      {"hex", [Base.encode16(marker), Base.encode16(marker, case: :lower)]},
+      {"base64", [Base.encode64(marker)]}
     ]
     |> Enum.filter(fn {_form, needles} -> String.contains?(flat, needles) end)
     |> Enum.map(&elem(&1, 0))
@@ -237,6 +241,19 @@ defmodule ${Name}.CleanTest do
       "headers", h,
       "body", S.jsonify(data),
       "json", fn -> data end
+    ])
+  end
+
+  # A response of bytes under the type it declares, as the transport hands
+  # on a body it could not read as JSON.
+  defp bytes_response(status, type) do
+    S.jm([
+      "status", status,
+      "statusText", if(status < 400, do: "OK", else: "ERR"),
+      "headers", S.jm(["content-type", type]),
+      "body", @response,
+      "json", fn -> nil end,
+      "unreadable", true
     ])
   end
 
@@ -822,6 +839,68 @@ ${candidates(Name, entity, model)}
       assert Enum.any?(sink_list(sinks), fn s -> content_leaks(s.text) != [] end),
              cname <> ": with clean off, nothing showed the bytes: the sweep is blind"
     end
+  end
+
+  test "no response of bytes leaves the SDK in any form" do
+    case usable_op() do
+      nil -> IO.puts("SKIP no response of bytes leaves the SDK in any form: " <> @no_target)
+      target -> sweep_response(target)
+    end
+  end
+
+  test "the sweep can see a response: clean switched off shows the bytes" do
+    case usable_op() do
+      nil -> IO.puts("SKIP the sweep can see a response: " <> @no_target)
+      target -> sweep_response_blind(target)
+    end
+  end
+
+  defp sweep_response(target) do
+    sinks = S.jt([])
+
+    variants = [
+      {"throw", fn -> S.jm([]) end},
+      {"explain", fn -> S.jm(["explain", S.jm([])]) end},
+      {"nothrow", fn -> S.jm(["throw", false, "explain", S.jm([])]) end}
+    ]
+
+    errors =
+      for status <- [200, 404, 500], {vname, mkctrl} <- variants, reduce: %{} do
+        errors ->
+          sdk = make_sdk(fn _url, _fd -> {bytes_response(status, "audio/wav"), nil} end, sinks, [])
+          err = drive(sdk, target, mkctrl.(), sinks)
+          add(sinks, forms("sdk", sdk))
+          if err != nil, do: Map.put(errors, "#{status}/" <> vname, err), else: errors
+      end
+
+    all = sink_list(sinks)
+    leaked = Enum.filter(all, fn s -> content_leaks(s.text, @response) != [] end)
+
+    IO.puts("clean: response swept #{length(all)} surface(s), #{length(leaked)} leak(s)")
+
+    assert leaked == [],
+           "a response of bytes leaked through: " <>
+             Enum.map_join(leaked, "; ", fn s ->
+               s.name <> " [" <> Enum.join(content_leaks(s.text, @response), ", ") <> "]"
+             end)
+
+    # The failure still names what it could not read.
+    failed = errors["200/throw"]
+    assert match?(%${Name}.Error{}, failed), "a response of bytes must fail the operation"
+    assert failed.code == "response_content_type"
+
+    assert String.contains?(Exception.message(failed), "audio/wav"),
+           "the error does not name the type: " <> Exception.message(failed)
+  end
+
+  defp sweep_response_blind(target) do
+    sinks = S.jt([])
+    respond = fn _url, _fd -> {bytes_response(200, "audio/wav"), nil} end
+    err = drive(make_sdk(respond, sinks, [{"active", false}]), target, S.jm([]), sinks)
+    assert err != nil, "a response of bytes must fail the operation"
+
+    assert Enum.any?(sink_list(sinks), fn s -> content_leaks(s.text, @response) != [] end),
+           "with clean off, nothing showed the response: the sweep is blind"
   end
 end
 `

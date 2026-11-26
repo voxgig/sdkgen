@@ -87,6 +87,10 @@ FORMS.append(_b64(CANARY["apikey"] + ":" + CANARY["secret"]))
 CONTENT = "CANARY-CONTENT-b7n3v9x1c5"
 CONTENT_BYTES = CONTENT.encode("ascii")
 
+# The marker a response of bytes carries, as the default transport hands the
+# body on: read into text.
+RESPONSE = "CANARY-RESPONSE-k2m8q4w6z0"
+
 
 # A file object whose state is public: what a walk into it would copy.
 class _OpenFile:
@@ -134,16 +138,17 @@ def _leaks(text):
 
 # The forms bytes travel in once copied: the text, which is also how a
 # bytes object prints, a list of byte values, hex, base64.
-def _content_leaks(text):
+def _content_leaks(text, marker=CONTENT):
     flat = "".join(text.split())
+    raw = marker.encode("ascii")
     found = []
-    if CONTENT in text:
+    if marker in text:
         found.append("text")
-    if ",".join(str(b) for b in CONTENT_BYTES) in flat:
+    if ",".join(str(b) for b in raw) in flat:
         found.append("byte values")
-    if CONTENT_BYTES.hex() in flat:
+    if raw.hex() in flat:
         found.append("hex")
-    if base64.b64encode(CONTENT_BYTES).decode("ascii") in flat:
+    if base64.b64encode(raw).decode("ascii") in flat:
         found.append("base64")
     return found
 
@@ -244,6 +249,19 @@ def _response(status, data, headers=None):
         "headers": h,
         "json": lambda: data,
         "body": json.dumps(data),
+    }
+
+
+# A response of bytes under the type it declares, as the default transport
+# hands one on: read into text, and marked as not read as JSON.
+def _bytes_response(status, ctype):
+    return {
+        "status": status,
+        "statusText": "OK" if status < 400 else "ERR",
+        "headers": {"content-type": ctype},
+        "json": lambda: None,
+        "body": RESPONSE,
+        "unreadable": True,
     }
 
 
@@ -818,6 +836,53 @@ class TestClean:
             leaked = [name for name, text in sinks if 0 < len(_content_leaks(text))]
             assert 0 < len(leaked), \\
                 carrier + ": with clean off, nothing showed the bytes: the sweep is blind"
+
+    def test_no_response_of_bytes_leaves_the_sdk_in_any_form(self):
+        target = _usable_op()
+        if target is None:
+            pytest.skip(NO_OP)
+
+        sinks = []
+        errors = {}
+
+        for status in [200, 404, 500]:
+            for vname, make_ctrl in VARIANTS:
+                def respond(url, fetchdef, status=status):
+                    return _bytes_response(status, "audio/wav"), None
+
+                sdk = _make_sdk(respond, sinks)
+                err = _drive(sdk, target, make_ctrl(), sinks)
+                if err is not None:
+                    errors[str(status) + "/" + vname] = err
+                sinks.extend(_forms("sdk", sdk))
+
+        leaked = [(name, _content_leaks(text, RESPONSE)) for name, text in sinks]
+        leaked = [(name, found) for name, found in leaked if 0 < len(found)]
+
+        print("clean: response swept " + str(len(sinks)) + " surface(s), " + str(len(leaked)) + " leak(s)")
+
+        assert len(leaked) == 0, "a response of bytes leaked through: " + "; ".join(
+            name + " [" + ", ".join(found) + "]" for name, found in leaked)
+
+        # The failure still names what it could not read.
+        failed = errors.get("200/throw")
+        assert failed is not None, "a response of bytes must fail the operation"
+        assert failed.code == "response_content_type", repr(failed)
+        assert "audio/wav" in str(failed), "the error does not name the type: " + str(failed)
+
+    def test_the_sweep_can_see_a_response(self):
+        target = _usable_op()
+        if target is None:
+            pytest.skip(NO_OP)
+
+        # Clean off leaves the response an object, printed as its address, so
+        # the sight is proved by a response of text, which clean leaves as it is.
+        sinks = []
+        sdk = _make_sdk(lambda url, fetchdef: (_bytes_response(200, "text/plain"), None), sinks)
+        err = _drive(sdk, target, {}, sinks)
+        assert err is not None, "a response that is not JSON must fail the operation"
+        leaked = [name for name, text in sinks if 0 < len(_content_leaks(text, RESPONSE))]
+        assert 0 < len(leaked), "a response of text showed nowhere: the sweep is blind"
 `
 }
 
