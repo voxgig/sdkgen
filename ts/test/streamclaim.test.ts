@@ -13,7 +13,7 @@ const SDK = Path.resolve(__dirname, '..', 'project', '.sdk')
 
 const VENDORED = /[\\/](struct|voxgigstruct|voxgig_struct|sekreto|plugins|node_modules)[\\/]/
 
-const CLAIM = /body\$|stream_out|streamOut|stream-out|StreamOut/
+const CLAIM = /body\$|stream[_-]?out/i
 
 
 function files(dir: string): string[] {
