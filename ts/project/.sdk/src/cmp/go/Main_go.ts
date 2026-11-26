@@ -210,8 +210,8 @@ var SharedConfig = core.SharedConfig
 // so these aliases let callers write \`sdk.New()\` / \`sdk.Test()\`
 // instead of \`sdk.New${model.const.Name}SDK(nil)\` / \`sdk.TestSDK(nil, nil)\`
 // for the common no-options case.
-func New() *${model.const.Name}SDK  { return New${model.const.Name}SDK(nil) }
-func Test() *${model.const.Name}SDK { return TestSDK(nil, nil) }
+func New() (*${model.const.Name}SDK, error) { return New${model.const.Name}SDK(nil) }
+func Test() *${model.const.Name}SDK          { return TestSDK(nil, nil) }
 `)
 
     // Feature constructor re-exports - base is always present

@@ -90,7 +90,7 @@ func TestCustomUtility(t *testing.T) {
 			}, nil
 		}
 
-		client := sdk.NewProjectNameSDK(map[string]any{
+		client := newClient(map[string]any{
 			"test":    map[string]any{"active": true},
 			"utility": map[string]any{"fetcher": scripted},
 		})
@@ -118,9 +118,9 @@ func TestCustomUtility(t *testing.T) {
 		reached := 0
 		// "test" is the OPTION, not the `test` FEATURE: it says "this client
 		// is not live", so a REQUIRED OpenAPI server variable resolves to a
-		// deterministic test-<name> instead of panicking at construction. It
+		// deterministic test-<name> instead of refusing construction. It
 		// installs no transport, so the override under test still stands.
-		client := sdk.NewProjectNameSDK(map[string]any{
+		client := newClient(map[string]any{
 			"test": map[string]any{"active": true},
 			"utility": map[string]any{
 				"fetcher": sdk.FetcherFunc(func(
@@ -154,9 +154,9 @@ func TestCustomUtility(t *testing.T) {
 	t.Run("an unknown key is still attached", func(t *testing.T) {
 		// "test" is the OPTION, not the `test` FEATURE: it says "this client
 		// is not live", so a REQUIRED OpenAPI server variable resolves to a
-		// deterministic test-<name> instead of panicking at construction. It
+		// deterministic test-<name> instead of refusing construction. It
 		// installs no transport, so the override under test still stands.
-		client := sdk.NewProjectNameSDK(map[string]any{
+		client := newClient(map[string]any{
 			"test": map[string]any{"active": true},
 			"utility": map[string]any{
 				"notAUtilityMember": func() string { return "EXTRA" },

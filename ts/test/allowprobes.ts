@@ -127,8 +127,6 @@ import (
 	"os"
 	"strings"
 	"testing"
-
-	sdk "GOMODULE"
 )
 
 func allowProbeOutcome(err any) string {
@@ -158,9 +156,9 @@ func allowProbeCall(name string, res map[string]any, err error) {
 
 func TestAllowProbe(t *testing.T) {
 	base := os.Getenv("ALLOW_BASE")
-	a := sdk.NewDemoSDK(map[string]any{"base": base,
+	a := newClient(map[string]any{"base": base,
 		"allow": map[string]any{"method": "PUT,\n get", "op": "direct,load"}})
-	b := sdk.NewDemoSDK(map[string]any{"base": base,
+	b := newClient(map[string]any{"base": base,
 		"allow": map[string]any{"op": "indirect,reload"}})
 
 	for _, method := range []string{"get", "POST", "PU"} {

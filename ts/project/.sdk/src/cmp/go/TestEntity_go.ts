@@ -377,7 +377,7 @@ ${fixtureIdentity(entity)}
 			},
 			extraOpts,
 		})
-		client = sdk.New${model.const.Name}SDK(core.ToMapAny(mergedOpts))
+		client = newClient(core.ToMapAny(mergedOpts))
 	}
 
 	live := env["${ENVVAR.live}"] == "TRUE"

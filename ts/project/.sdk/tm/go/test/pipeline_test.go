@@ -420,7 +420,10 @@ func TestPipelineFeatureOrder(t *testing.T) {
 		}, client.GetRootCtx())
 		ctx.Options = map[string]any{"feature": feature}
 		ctx.Config = map[string]any{"options": map[string]any{}}
-		opts := utility.MakeOptions(ctx)
+		opts, err := utility.MakeOptions(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
 		derived, _ := opts["__derived__"].(map[string]any)
 		fo, _ := derived["featureorder"].([]any)
 		out := ""

@@ -242,8 +242,6 @@ import (
 	"os"
 	"regexp"
 	"testing"
-
-	sdk "GOMODULE"
 )
 
 type nonjsonCase struct {
@@ -268,7 +266,7 @@ func TestNonjsonProbe(t *testing.T) {
 		if c.Agent != "" {
 			opts["headers"] = map[string]any{"user-agent": c.Agent}
 		}
-		client := sdk.NewDemoSDK(opts)
+		client := newClient(opts)
 		_, err := client.Cat(nil).List(map[string]any{}, nil)
 		nonjsonReport("probe", c.Name, err)
 		res, _ := client.Direct(map[string]any{"path": "cat"})
@@ -284,7 +282,7 @@ func TestNonjsonProbe(t *testing.T) {
 		if c.Agent != "" {
 			copts["headers"] = map[string]any{"user-agent": c.Agent}
 		}
-		cached := sdk.NewDemoSDK(copts)
+		cached := newClient(copts)
 		for _, path := range []string{"cache1", "cache2"} {
 			_, err := cached.Cat(nil).List(map[string]any{}, nil)
 			nonjsonReport(path, c.Name, err)

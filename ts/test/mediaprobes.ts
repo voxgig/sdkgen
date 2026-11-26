@@ -486,7 +486,7 @@ func TestMediaProbe(t *testing.T) {
 		if h, ok := c["headers"].(map[string]any); ok {
 			opts["headers"] = h
 		}
-		client := sdk.NewDemoSDK(opts)
+		client := newClient(opts)
 		input := map[string]any{}
 		if in, ok := c["input"].(map[string]any); ok {
 			for k, v := range in {

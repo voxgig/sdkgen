@@ -162,12 +162,15 @@ mockFetch := func(url string, init map[string]any) (map[string]any, error) {
     }, nil
 }
 
-client := sdk.New${model.const.Name}SDK(map[string]any{
+client, err := sdk.New${model.const.Name}SDK(map[string]any{
     "base": "http://localhost:8080",
     "system": map[string]any{
         "fetch": (func(string, map[string]any) (map[string]any, error))(mockFetch),
     },
 })
+if err != nil {
+    panic(err)
+}
 \`\`\`
 
 ### Run live tests

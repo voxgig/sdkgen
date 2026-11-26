@@ -16,7 +16,7 @@ type ProjectNameSDK struct {
 	rootctx  *Context
 }
 
-func NewProjectNameSDK(options map[string]any) *ProjectNameSDK {
+func NewProjectNameSDK(options map[string]any) (*ProjectNameSDK, error) {
 	sdk := &ProjectNameSDK{
 		Mode:     "live",
 		Features: []Feature{},
@@ -34,7 +34,11 @@ func NewProjectNameSDK(options map[string]any) *ProjectNameSDK {
 		"shared":  map[string]any{},
 	}, nil)
 
-	sdk.options = sdk.utility.MakeOptions(sdk.rootctx)
+	opts, err := sdk.utility.MakeOptions(sdk.rootctx)
+	if err != nil {
+		return nil, err
+	}
+	sdk.options = opts
 
 	if vs.GetPath(sdk.options, []any{"feature", "test", "active"}) == true {
 		sdk.Mode = "test"
@@ -82,7 +86,7 @@ func NewProjectNameSDK(options map[string]any) *ProjectNameSDK {
 
 	sdk.utility.FeatureHook(sdk.rootctx, "PostConstruct")
 
-	return sdk
+	return sdk, nil
 }
 
 // The client holds the credential in its options, so a print or a JSON dump
@@ -401,7 +405,11 @@ func TestSDK(testopts map[string]any, sdkopts map[string]any) *ProjectNameSDK {
 
 	vs.SetPath(sdkopts, []any{"feature", "test"}, testopts)
 
-	sdk := NewProjectNameSDK(sdkopts)
+	sdk, err := NewProjectNameSDK(sdkopts)
+	if err != nil {
+		// Test mode fills every server variable, so only a custom makeOptions refuses.
+		panic(err)
+	}
 	sdk.Mode = "test"
 
 	return sdk

@@ -359,7 +359,7 @@ func cleanNew(opts map[string]any) *sdk.${Name}SDK {
 			panic(cleanHarnessError{r})
 		}
 	}()
-	return sdk.New${Name}SDK(cleanOffline(opts))
+	return newClient(cleanOffline(opts))
 }
 
 func cleanHarness(t *testing.T) {
@@ -755,7 +755,7 @@ func TestCleanSweep(t *testing.T) {
 	// sweep what the constructor produced, and what clean makes of the value
 	// should anything later quote it.
 	cleanCatch("mistyped", &sinks, func() error {
-		client := sdk.New${Name}SDK(cleanOffline(map[string]any{
+		client := newClient(cleanOffline(map[string]any{
 			"apikey": map[string]any{"value": cleanCanary["apikey"]},
 			"clean":  map[string]any{"values": cleanCanary["value"]},
 		}))
@@ -845,11 +845,15 @@ func TestCleanSweep(t *testing.T) {
 	// and is not changed by it.
 	cfgclean := map[string]any{"keys": "zzsens", "values": cleanCanary["config"]}
 	util := probe.GetUtility()
-	cfgctx := &core.Context{Options: util.MakeOptions(&core.Context{
+	cfgopts, err := util.MakeOptions(&core.Context{
 		Utility: util,
 		Config:  map[string]any{"options": map[string]any{"clean": cfgclean}},
 		Options: map[string]any{"clean": map[string]any{"values": cleanCanary["value"]}},
-	})}
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfgctx := &core.Context{Options: cfgopts}
 	seeded, _ := util.Clean(cfgctx, "config "+cleanCanary["config"]+" caller "+cleanCanary["value"]).(string)
 	sinks = append(sinks, cleanSink{"config-clean", seeded})
 	if want := "config " + cleanMask + " caller " + cleanMask; seeded != want {

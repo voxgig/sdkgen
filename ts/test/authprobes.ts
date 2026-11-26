@@ -294,7 +294,7 @@ func TestAuthProbe(t *testing.T) {
   for _, c := range cases {
     spec := sdk.NewSpec(map[string]any{"headers": c.Headers, "query": c.Query})
     for _, s := range c.Steps {
-      client := sdk.NewDemoSDK(s.Options)
+      client := newClient(s.Options)
       utility := client.GetUtility()
       ctx := sdk.NewContext(map[string]any{"client": client, "spec": spec}, nil)
       result, err := utility.PrepareAuth(ctx)

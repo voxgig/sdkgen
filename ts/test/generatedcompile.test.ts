@@ -1598,7 +1598,7 @@ import (
 func TestReqformProbe(t *testing.T) {
 	sent := 0
 
-	client := sdk.NewDemoSDK(map[string]any{
+	client := newClient(map[string]any{
 		"utility": map[string]any{
 			// Stands in for \`vs.Transform\` reporting an error: an error
 			// VALUE out of the seam, which is exactly what
@@ -1653,7 +1653,6 @@ func TestReqformProbe(t *testing.T) {
 import (
 	"testing"
 
-	sdk "github.com/voxgig-sdk/demo-sdk/go"
 	"github.com/voxgig-sdk/demo-sdk/go/core"
 )
 
@@ -1664,7 +1663,7 @@ import (
 // result.Ok already true. resultBasic never sets Ok, so the makeResponse call
 // returns at the !result.Ok guard and only the makeResult call gets this far.
 func TestResformProbe(t *testing.T) {
-	client := sdk.NewDemoSDK(map[string]any{})
+	client := newClient(map[string]any{})
 	utility := client.GetUtility()
 
 	result := core.NewResult(map[string]any{})
@@ -1754,7 +1753,7 @@ func TestAuthNullProbe(t *testing.T) {
 			}),
 		}
 
-		client := sdk.NewDemoSDK(full)
+		client := newClient(full)
 		_, _ = client.Planet(nil).Create(map[string]any{"name": "p1"}, map[string]any{})
 
 		str, _ := seen.(string)
@@ -1774,7 +1773,7 @@ func TestAuthNullProbe(t *testing.T) {
 
 	// And the option survives validation rather than being replaced by the
 	// optspec's default auth map.
-	client := sdk.NewDemoSDK(map[string]any{"apikey": "OPTKEY01", "auth": nil})
+	client := newClient(map[string]any{"apikey": "OPTKEY01", "auth": nil})
 	if av, ok := client.OptionsMap()["auth"]; !ok || av != nil {
 		t.Errorf("FAIL: options.auth is %#v, not nil - validate replaced the suppression", av)
 	}
@@ -6782,6 +6781,21 @@ function cxxCompiler(): string | null {
 }
 
 const SERVER_LANES: ServerLane[] = [
+  {
+    target: 'go',
+    runner: 'test/server_variable_test.go',
+    needs: 'go',
+    command: () => {
+      const go = toolchain('go')
+      return null == go ? null
+        : { bin: go, args: ['test', '-v', '-count=1', '-run', '^TestServerVariable', './test/'] }
+    },
+    ran: [
+      /^--- PASS: TestServerVariableMissingOrEmptyRefusesConstruction /m,
+      /^--- PASS: TestServerVariableFillsTheBase /m,
+      /^--- PASS: TestServerVariableTestModeFillsTheBase /m,
+    ],
+  },
   {
     target: 'kotlin',
     runner: 'test/ServerVariableTest.kt',

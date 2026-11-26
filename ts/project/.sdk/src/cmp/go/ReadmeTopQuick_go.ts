@@ -39,7 +39,10 @@ const ReadmeTopQuick = cmp(function ReadmeTopQuick(props: any) {
   Content(`\`\`\`go
 import sdk "${gomodule}"
 
-client := ${ctor}
+client, err := ${ctor}
+if err != nil {
+    panic(err)
+}
 
 `)
 

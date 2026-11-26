@@ -91,7 +91,7 @@ function entityExample(lang, Name, call, args) {
             (call ? `\nconst ${call.resultVar} = await ${call.expr}` : '');
         case 'py': return `client = ${Name}SDK(${args})` +
             (call ? `\n${call.resultVar} = ${call.expr}` : '');
-        case 'go': return `client := sdk.New${Name}SDK(${'' === args ? 'nil' : args})` +
+        case 'go': return `client, err := sdk.New${Name}SDK(${'' === args ? 'nil' : args})` +
             (call ? `\n${call.resultVar}, err := ${call.expr}` : '');
         case 'php': return `$client = new ${Name}SDK(${args});` +
             (call ? `\n$${call.resultVar} = ${call.expr};` : '');

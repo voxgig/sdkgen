@@ -171,7 +171,10 @@ ${imports.join('\n')}
 )
 
 func main() {
-    client := ${ctor}
+    client, err := ${ctor}
+    if err != nil {
+        panic(err)
+    }
 
 `
   if (body.length > 0) {

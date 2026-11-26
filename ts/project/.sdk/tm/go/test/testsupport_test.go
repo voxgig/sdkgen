@@ -17,6 +17,16 @@ import (
 	sdk "GOMODULE"
 )
 
+// newClient builds a client, and stops the run where construction refuses one,
+// as it does a live client whose server variable the environment leaves unset.
+func newClient(opts map[string]any) *sdk.ProjectNameSDK {
+	client, err := sdk.NewProjectNameSDK(opts)
+	if err != nil {
+		panic(err)
+	}
+	return client
+}
+
 var envLocalOnce sync.Once
 
 func loadEnvLocal() {

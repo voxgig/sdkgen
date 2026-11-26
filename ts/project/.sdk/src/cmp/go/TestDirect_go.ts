@@ -601,7 +601,7 @@ func ${entity.name}DirectSetup(mockres any) *${entity.name}DirectSetupResult {
 		} {
 			mergedOpts[k] = v
 		}
-		client := sdk.New${model.const.Name}SDK(mergedOpts)
+		client := newClient(mergedOpts)
 
 		idmap := map[string]any{}
 		if entidRaw, ok := env["${entidEnvVar}"]; ok {
@@ -630,7 +630,7 @@ ${exampleIdBlock}
 		}, nil
 	}
 
-	client := sdk.New${model.const.Name}SDK(map[string]any{
+	client := newClient(map[string]any{
 		"base": "http://localhost:8080",
 		"system": map[string]any{
 			"fetch": (func(string, map[string]any) (map[string]any, error))(mockFetch),

@@ -7925,7 +7925,7 @@ main: kit: flow: BasicNoteFlow: {
       ['ts', "const client = new DemoSDK({ apikey: '...', secret: '...', server: { tenant: '...' } })"],
       ['js', "const client = new DemoSDK({ apikey: '...', secret: '...', server: { tenant: '...' } })"],
       ['py', 'client = DemoSDK({"apikey": "...", "secret": "...", "server": {"tenant": "..."}})'],
-      ['go', 'client := sdk.NewDemoSDK(map[string]any{"apikey": "...", "secret": "...", ' +
+      ['go', 'client, err := sdk.NewDemoSDK(map[string]any{"apikey": "...", "secret": "...", ' +
         '"server": map[string]any{"tenant": "..."}})'],
       ['php', '$client = new DemoSDK(["apikey" => "...", "secret" => "...", "server" => ["tenant" => "..."]]);'],
       ['rb', 'client = DemoSDK.new({"apikey" => "...", "secret" => "...", "server" => {"tenant" => "..."}})'],
