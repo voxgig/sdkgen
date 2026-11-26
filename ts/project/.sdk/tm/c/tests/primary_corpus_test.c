@@ -535,14 +535,16 @@ static voxgig_value* s_make_context(voxgig_value* a, char** e) {
   return cmap(1, "op", op);
 }
 static voxgig_value* s_make_options(voxgig_value* a, char** e) {
-  (void)e;
   voxgig_value* in = arg_at(a, 0);
   Context* c = corpus_ctx(SHARED, v_map());
   voxgig_value* cf = mget(in, "config");
   if (cf) c->config = voxgig_retain(cf);
   voxgig_value* op = mget(in, "options");
   if (op) c->options = voxgig_retain(op);
-  return make_options_util(c);
+  PNError* pe = NULL;
+  voxgig_value* r = make_options_util(c, &pe);
+  ERRSET(e, pe);
+  return r;
 }
 static voxgig_value* s_operator(voxgig_value* a, char** e) {
   (void)e;

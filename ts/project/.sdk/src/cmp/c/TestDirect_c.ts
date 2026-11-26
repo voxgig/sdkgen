@@ -136,7 +136,7 @@ static ${Name}SDK* ${evar}_direct_setup(voxgig_value* mockres) {
   voxgig_value* opts = cmap(2,
     "base", v_str("http://localhost:8080"),
     "system", cmap(1, "fetch", vfn(${evar}_mock, mockres)));
-  return ${ident}_sdk_new(opts);
+  return ${ident}_sdk_new(opts, NULL);
 }
 `)
     }

@@ -1101,7 +1101,7 @@ int main(void) {
     if (getenv("NONJSON_SEAM")) setp(opts, "system", cmap(1, "fetch", vfn(stub, c)));
     const char* agent = get_str(c, "agent");
     if (agent) setp(opts, "headers", cmap(1, "user-agent", v_str(agent)));
-    DemoSDK* sdk = demo_sdk_new(opts);
+    DemoSDK* sdk = demo_sdk_new(opts, NULL);
     PNError* err = NULL;
     Entity* e = demo_cat(sdk, NULL);
     e->vt->list(e, v_map(), v_map(), &err);
@@ -1117,7 +1117,7 @@ int main(void) {
       "feature", cmap(1, "cache", cmap(1, "active", v_bool(true))));
     if (getenv("NONJSON_SEAM")) setp(copts, "system", cmap(1, "fetch", vfn(stub, c)));
     if (agent) setp(copts, "headers", cmap(1, "user-agent", v_str(agent)));
-    DemoSDK* cached = demo_sdk_new(copts);
+    DemoSDK* cached = demo_sdk_new(copts, NULL);
     const char* paths[] = { "cache1", "cache2" };
     for (int n = 0; n < 2; n++) {
       PNError* cerr = NULL;

@@ -1175,7 +1175,7 @@ int main(void) {
     if (getenv("MEDIA_SEAM")) setp(opts, "system", cmap(1, "fetch", vfn(printer, NULL)));
     voxgig_value* headers = getp(c, "headers");
     if (!v_is_noval(headers)) setp(opts, "headers", headers);
-    DemoSDK* sdk = demo_sdk_new(opts);
+    DemoSDK* sdk = demo_sdk_new(opts, NULL);
     voxgig_value* input = voxgig_clone(getp(c, "input"));
     const char* hex = get_str(c, "bodyHex");
     if (hex) setp(input, "$body", unhex(hex));

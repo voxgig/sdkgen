@@ -7,7 +7,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-ProjectNameSDK* projectname_sdk_new(voxgig_value* options) {
+ProjectNameSDK* projectname_sdk_new(voxgig_value* options, PNError** err) {
+  if (err) *err = NULL;
   ProjectNameSDK* sdk = (ProjectNameSDK*)calloc(1, sizeof(ProjectNameSDK));
   sdk->mode = strdup("live");
   sdk->options = voxgig_new_undef();
@@ -30,7 +31,12 @@ ProjectNameSDK* projectname_sdk_new(voxgig_value* options) {
   cs.shared = voxgig_new_map();
   Context* rootctx = make_context_util(cs, NULL);
 
-  voxgig_value* opts = make_options_util(rootctx);
+  voxgig_value* opts = make_options_util(rootctx, err);
+  if (NULL == opts) {
+    free(sdk->mode);
+    free(sdk);
+    return NULL;
+  }
   sdk->options = v_share(opts);
 
   voxgig_value* testactive;
@@ -352,7 +358,13 @@ ProjectNameSDK* test_sdk(voxgig_value* testopts, voxgig_value* sdkopts) {
   voxgig_value* path = clist(2, v_str("feature"), v_str("test"));
   voxgig_setpath(sdkopts, path, testopts, NULL);
 
-  ProjectNameSDK* sdk = projectname_sdk_new(sdkopts);
+  // Test mode fills every server variable, so construction cannot refuse.
+  PNError* err = NULL;
+  ProjectNameSDK* sdk = projectname_sdk_new(sdkopts, &err);
+  if (NULL == sdk) {
+    fprintf(stderr, "%s\n", NULL != err ? err->msg : "test_sdk: construction refused");
+    abort();
+  }
   free(sdk->mode);
   sdk->mode = strdup("test");
   return sdk;

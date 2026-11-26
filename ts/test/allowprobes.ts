@@ -904,7 +904,7 @@ static void report(const char* name, const char* result) {
 static DemoSDK* client(voxgig_value* allow) {
   voxgig_value* opts = cmap(2, "base", v_str(getenv("ALLOW_BASE")), "allow", allow);
   if (getenv("ALLOW_SEAM")) setp(opts, "system", cmap(1, "fetch", vfn(stub, NULL)));
-  return demo_sdk_new(opts);
+  return demo_sdk_new(opts, NULL);
 }
 
 static void load(const char* name, DemoSDK* sdk) {

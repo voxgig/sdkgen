@@ -175,7 +175,7 @@ static ProjectNameSDK* live(Rec* r, voxgig_value* secretsopts, voxgig_value* ext
     voxgig_map* m = voxgig_as_map(extra);
     for (size_t i = 0; i < m->len; i++) setp(opts, m->entries[i].key, m->entries[i].value);
   }
-  return projectname_sdk_new(opts);
+  return projectname_sdk_new(opts, NULL);
 }
 
 static voxgig_value* direct(ProjectNameSDK* sdk) {

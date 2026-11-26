@@ -178,9 +178,11 @@ static voxgig_value* mock_fetch(void* ud, voxgig_value* args) {
         "json", json_thunk(cmap(1, "id", v_str("mock01"))));
 }
 
+PNError* err = NULL;
 ${model.const.Name}SDK* client = ${ident}_sdk_new(cmap(2,
     "base", v_str("http://localhost:8080"),
-    "system", cmap(1, "fetch", vfn(mock_fetch, NULL))));
+    "system", cmap(1, "fetch", vfn(mock_fetch, NULL))), &err);
+if (NULL == client) fprintf(stderr, "%s\\n", err->msg);
 \`\`\`
 
 ### Point at a different server
@@ -188,8 +190,10 @@ ${model.const.Name}SDK* client = ${ident}_sdk_new(cmap(2,
 Override the base URL to reach a local or staging server:
 
 \`\`\`c
+PNError* err = NULL;
 ${model.const.Name}SDK* client = ${ident}_sdk_new(cmap(1,
-    "base", v_str("http://localhost:8080")));
+    "base", v_str("http://localhost:8080")), &err);
+if (NULL == client) fprintf(stderr, "%s\\n", err->msg);
 \`\`\`
 
 ### Run the test suite

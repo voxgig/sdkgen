@@ -2201,7 +2201,8 @@ static voxgig_value* answer(void* ud, voxgig_value* args) {
 
 int ${name}_part(void) {
   PNError* err = NULL;
-  ${pascal(name)}SDK* client = ${name}_sdk_new(cmap(1, "system", cmap(1, "fetch", vfn(answer, NULL))));
+  ${pascal(name)}SDK* client = ${name}_sdk_new(cmap(1, "system", cmap(1, "fetch", vfn(answer, NULL))), &err);
+  if (NULL == client) { printf("${name}: %s\\n", err->msg); return 1; }
   Entity* planet = ${name}_planet(client, NULL);
   Entity* got = planet->vt->load(planet, cmap(1, "id", v_str("p01")), NULL, &err);
   if (err) { printf("${name}: %s\\n", err->msg); return 1; }
@@ -6889,10 +6890,7 @@ const SERVER_LANES: ServerLane[] = [
       return null == toolchain('make') || null == cCompiler() || null == sh ? null
         : { bin: sh, args: ['-c', './tests/server_variable_test.out'] }
     },
-    // Without fork() the stopped construction cannot be watched, and is left out.
-    ran: ['win32' === process.platform
-      ? /server_variable_test: [1-9]\d* checks, 0 failed/
-      : /server_variable_test: 11 checks, 0 failed/],
+    ran: [/server_variable_test: 11 checks, 0 failed/],
   },
   {
     target: 'cpp',
