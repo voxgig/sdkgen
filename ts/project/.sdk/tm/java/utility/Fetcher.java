@@ -28,7 +28,7 @@ import JAVAPACKAGE.core.SdkError;
 import JAVAPACKAGE.utility.struct.Struct;
 
 @SuppressWarnings({"unchecked"})
-final class Fetcher {
+public final class Fetcher {
 
   private Fetcher() {}
 
@@ -103,6 +103,22 @@ final class Fetcher {
         : Clean.cleanSecret(ctx, name, value);
   }
 
+  // A reference of a query alone keeps the path, as RFC 3986 resolves it;
+  // URI.resolve follows RFC 2396 there and drops the last segment.
+  public static URI resolveLocation(URI from, String location) {
+    String loc = location.trim();
+    if (loc.startsWith("?")) {
+      String base = from.toString();
+      int cut = base.indexOf('?');
+      int hash = base.indexOf('#');
+      if (cut < 0 || (0 <= hash && hash < cut)) {
+        cut = hash;
+      }
+      return URI.create((cut < 0 ? base : base.substring(0, cut)) + loc);
+    }
+    return from.resolve(URI.create(loc));
+  }
+
   // Left to follow, the JDK client sends another origin every header it does
   // not know for a credential, and a 307's body with them. Followed here
   // instead: each hop passes the GET-only guard; past REDIRECT_MAX hops, or
@@ -127,7 +143,7 @@ final class Fetcher {
       URI next;
       try {
         from = URI.create(url);
-        next = from.resolve(URI.create(((String) location).trim()));
+        next = resolveLocation(from, (String) location);
       }
       catch (RuntimeException e) {
         return res;

@@ -1271,7 +1271,8 @@ class SecretsTest {
       java.net.InetSocketAddress("127.0.0.1", 0), 0)
     origin.createContext("/") { ex ->
       val body = String(ex.requestBody.readAllBytes(), Charsets.UTF_8)
-      val path = ex.requestURI.rawPath
+      val query = ex.requestURI.rawQuery
+      val path = ex.requestURI.rawPath + (if (query == null) "" else "?" + query)
       if ("/api/auth/token" == path) {
         o.exchanged.incrementAndGet()
         val answer = o.answer
@@ -1362,13 +1363,17 @@ class SecretsTest {
   @Test
   fun withTheOptionARedirectOnTheExchangesOwnOriginIsFollowedAndNoOther() {
     withOrigins { o ->
-      val moved = "POST /api/moved/token {\"refresh_token\":\"REFRESH01\"}"
-      val cases = listOf(
-        Triple(307, "/api/moved/token", true),
-        Triple(308, o.origin + "/api/moved/token", true),
-        Triple(307, o.away, false),
-        Triple(302, "/api/moved/token", false),
-        Triple(307, "/api/auth/token", false),
+      val sent = " {\"refresh_token\":\"REFRESH01\"}"
+      // Each case: the status, the Location, and the path the exchange is
+      // asked again at, or null where the redirect is refused.
+      val cases = listOf<Triple<Int, String, String?>>(
+        Triple(307, "/api/moved/token", "/api/moved/token"),
+        Triple(308, o.origin + "/api/moved/token", "/api/moved/token"),
+        // A Location of a query alone keeps the path that answered.
+        Triple(307, "?step=2", "/api/auth/token?step=2"),
+        Triple(307, o.away, null),
+        Triple(302, "/api/moved/token", null),
+        Triple(307, "/api/auth/token", null),
       )
 
       val wrong = mutableListOf<String>()
@@ -1376,7 +1381,7 @@ class SecretsTest {
       var refused = 0
       var looped = 0
 
-      for ((status, location, follows) in cases) {
+      for ((status, location, path) in cases) {
         o.answer = status to location
         o.followed.clear()
         o.exchanged.set(0)
@@ -1384,8 +1389,8 @@ class SecretsTest {
         val (res, message) = directOutcome(redirectClient(o, mapOf("redirect" to "same-origin")))
         val seen = "" + status + " to " + location + ": " + message + " " + o.followed.toList()
 
-        if (follows) {
-          if (true == res?.get("ok") && 2 == o.followed.size && moved == o.followed[0]) {
+        if (path != null) {
+          if (true == res?.get("ok") && 2 == o.followed.size && "POST " + path + sent == o.followed[0]) {
             followed++
           } else {
             wrong.add(seen)
@@ -1408,9 +1413,9 @@ class SecretsTest {
 
       assertEquals(listOf<String>(), o.elsewhere.toList(), "the exchange reached another origin")
       assertEquals(listOf<String>(), wrong)
-      assertEquals(2, followed)
+      assertEquals(3, followed)
       assertEquals(3, refused)
-      // A redirect to itself is followed five times and no more.
+      // A redirect to itself stops at the hop limit.
       assertEquals(6, looped)
     }
   }

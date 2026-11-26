@@ -1115,7 +1115,8 @@ public class SecretsFeatureTest {
     origin.createContext("/", (ex) -> {
       String body = new String(ex.getRequestBody().readAllBytes(),
           java.nio.charset.StandardCharsets.UTF_8);
-      String path = ex.getRequestURI().getRawPath();
+      String query = ex.getRequestURI().getRawQuery();
+      String path = ex.getRequestURI().getRawPath() + (query == null ? "" : "?" + query);
       if ("/api/auth/token".equals(path)) {
         o.exchanged.incrementAndGet();
         Object[] answer = o.answer;
@@ -1207,13 +1208,17 @@ public class SecretsFeatureTest {
   @Test
   public void exchange_withTheOptionARedirectOnTheExchangesOwnOriginIsFollowedAndNoOther() throws Exception {
     withOrigins((o) -> {
-      String moved = "POST /api/moved/token {\"refresh_token\":\"REFRESH01\"}";
+      String sent = " {\"refresh_token\":\"REFRESH01\"}";
+      // Each case: the status, the Location, and the path the exchange is
+      // asked again at, or null where the redirect is refused.
       Object[][] cases = {
-        {307, "/api/moved/token", true},
-        {308, o.origin + "/api/moved/token", true},
-        {307, o.away, false},
-        {302, "/api/moved/token", false},
-        {307, "/api/auth/token", false},
+        {307, "/api/moved/token", "/api/moved/token"},
+        {308, o.origin + "/api/moved/token", "/api/moved/token"},
+        // A Location of a query alone keeps the path that answered.
+        {307, "?step=2", "/api/auth/token?step=2"},
+        {307, o.away, null},
+        {302, "/api/moved/token", null},
+        {307, "/api/auth/token", null},
       };
 
       List<String> wrong = new ArrayList<>();
@@ -1231,9 +1236,9 @@ public class SecretsFeatureTest {
             redirectClient(o, map("redirect", "same-origin")));
         String seen = c[0] + " to " + c[1] + ": " + message + " " + o.followed;
 
-        if (Boolean.TRUE.equals(c[2])) {
+        if (c[2] != null) {
           if (out[0] != null && Boolean.TRUE.equals(out[0].get("ok"))
-              && 2 == o.followed.size() && moved.equals(o.followed.get(0))) {
+              && 2 == o.followed.size() && ("POST " + c[2] + sent).equals(o.followed.get(0))) {
             followed++;
           }
           else {
@@ -1259,9 +1264,9 @@ public class SecretsFeatureTest {
 
       assertEquals(List.of(), o.elsewhere, "the exchange reached another origin");
       assertEquals(List.of(), wrong);
-      assertEquals(2, followed);
+      assertEquals(3, followed);
       assertEquals(3, refused);
-      // A redirect to itself is followed five times and no more.
+      // A redirect to itself stops at the hop limit.
       assertEquals(6, looped);
     });
   }

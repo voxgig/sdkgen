@@ -21,6 +21,7 @@ import KOTLINPACKAGE.feature.secrets.sekreto.envkey
 import KOTLINPACKAGE.feature.secrets.sekreto.specof
 import KOTLINPACKAGE.feature.secrets.sekreto.Json as SekJson
 import KOTLINPACKAGE.utility.defaultHttpFetch
+import KOTLINPACKAGE.utility.resolveLocation
 import KOTLINPACKAGE.utility.struct.Struct
 
 // Secret access via a vendored @voxgig/sekreto provider chain, and the
@@ -647,7 +648,7 @@ class SecretsFeature : BaseFeature("secrets", "0.1.0", true) {
       return null
     }
     return try {
-      val next = URI.create(at).resolve(URI.create(location.trim()))
+      val next = resolveLocation(URI.create(at), location)
       val origin = originOf(next)
       if (null != origin && origin == originOf(URI.create(url))) next.toString() else null
     } catch (e: RuntimeException) {

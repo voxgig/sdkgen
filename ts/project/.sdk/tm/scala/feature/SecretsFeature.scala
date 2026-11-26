@@ -581,7 +581,7 @@ class SecretsFeature extends BaseFeature("secrets", "0.1.0", true) {
     val location = FeatureOptions.fresHeader(res, "location")
     if ("" == location) return null
     try {
-      val next = URI.create(at).resolve(URI.create(location.trim))
+      val next = Fetcher.resolveLocation(URI.create(at), location)
       val origin = originOf(next)
       if (origin != null && origin == originOf(URI.create(url))) next.toString else null
     }

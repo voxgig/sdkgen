@@ -96,7 +96,7 @@ object Fetcher {
     var next: URI = null
     try {
       from = URI.create(fullurl)
-      next = from.resolve(URI.create(location.asInstanceOf[String].trim))
+      next = resolveLocation(from, location.asInstanceOf[String])
     }
     catch { case _: RuntimeException => return res }
 
@@ -138,6 +138,18 @@ object Fetcher {
     if (body == null) nextdef.remove("body")
 
     followRedirects(ctx, next.toString, nextdef, hops + 1)
+  }
+
+  // A reference of a query alone keeps the path, as RFC 3986 resolves it;
+  // URI.resolve follows RFC 2396 there and drops the last segment.
+  def resolveLocation(from: URI, location: String): URI = {
+    val loc = location.trim
+    if (loc.startsWith("?")) {
+      val base = from.toString
+      val cut = base.indexWhere(c => c == '?' || c == '#')
+      URI.create((if (cut < 0) base else base.substring(0, cut)) + loc)
+    }
+    else from.resolve(URI.create(loc))
   }
 
   // For a caller with no operation context, as the secrets exchange is: a

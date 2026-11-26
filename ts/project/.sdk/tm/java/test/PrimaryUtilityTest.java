@@ -463,6 +463,45 @@ public class PrimaryUtilityTest {
     }
   }
 
+  // A Location of a query alone keeps the path that answered.
+  @Test
+  @SuppressWarnings("unchecked")
+  public void fetcherRedirectToAQueryKeepsThePath() throws Exception {
+    List<String> seen = java.util.Collections.synchronizedList(new ArrayList<>());
+    com.sun.net.httpserver.HttpServer server = com.sun.net.httpserver.HttpServer.create(
+        new java.net.InetSocketAddress("127.0.0.1", 0), 0);
+    server.createContext("/", (exchange) -> {
+      String query = exchange.getRequestURI().getRawQuery();
+      seen.add(exchange.getRequestURI().getRawPath() + (query == null ? "" : "?" + query));
+      if (query == null) {
+        exchange.getResponseHeaders().set("Location", "?step=2");
+        exchange.sendResponseHeaders(302, -1);
+      }
+      else {
+        byte[] body = "{\"id\":\"q1\"}".getBytes();
+        exchange.getResponseHeaders().set("Content-Type", "application/json");
+        exchange.sendResponseHeaders(200, body.length);
+        exchange.getResponseBody().write(body);
+      }
+      exchange.close();
+    });
+    server.start();
+    String base = "http://127.0.0.1:" + server.getAddress().getPort();
+    try {
+      ProjectNameSDK liveClient = new ProjectNameSDK(fhMap("base", base));
+      Utility liveUtility = liveClient.getUtility();
+      Context ctx = liveUtility.makeContext.apply(fhMap(
+          "opname", "load", "client", liveClient, "utility", liveUtility), null);
+      Map<String, Object> res = (Map<String, Object>) liveUtility.fetcher.fetch(ctx, base + "/redirect/q1",
+          fhMap("method", "GET", "headers", new LinkedHashMap<>()));
+      assertEquals(200, res.get("status"));
+      assertEquals(List.of("/redirect/q1", "/redirect/q1?step=2"), seen);
+    }
+    finally {
+      server.stop(0);
+    }
+  }
+
   // The API's origin, which redirects, and another origin, which records
   // what reaches it: another port on the same host is another origin.
   static final class RedirectOrigins implements AutoCloseable {

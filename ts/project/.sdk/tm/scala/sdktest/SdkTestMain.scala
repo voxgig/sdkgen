@@ -791,6 +791,44 @@ object SdkTestMain {
     finally server.stop(0)
   }
 
+  // A Location of a query alone keeps the path that answered.
+  private def testRedirectToAQuery(): Unit = {
+    val seen = java.util.Collections.synchronizedList(new ArrayList[String]())
+    val server = com.sun.net.httpserver.HttpServer.create(new java.net.InetSocketAddress("127.0.0.1", 0), 0)
+    server.createContext("/", (exchange: com.sun.net.httpserver.HttpExchange) => {
+      val query = exchange.getRequestURI.getRawQuery
+      seen.add(exchange.getRequestURI.getRawPath + (if (query == null) "" else "?" + query))
+      if (query == null) {
+        exchange.getResponseHeaders.set("Location", "?step=2")
+        exchange.sendResponseHeaders(302, -1L)
+      } else {
+        val body = "{\"id\":\"q1\"}".getBytes("UTF-8")
+        exchange.getResponseHeaders.set("Content-Type", "application/json")
+        exchange.sendResponseHeaders(200, body.length.toLong)
+        exchange.getResponseBody.write(body)
+      }
+      exchange.close()
+    })
+    server.start()
+    val base = "http://127.0.0.1:" + server.getAddress.getPort
+    try {
+      val opts = new LinkedHashMap[String, Object]()
+      opts.put("base", base)
+      val client = new ProjectNameSDK(opts)
+      val utility = client.getUtility()
+      val cm = new LinkedHashMap[String, Object]()
+      cm.put("opname", "load")
+      val ctx = utility.makeContext(cm, client.getRootCtx())
+      val fetchdef = new LinkedHashMap[String, Object]()
+      fetchdef.put("method", "GET")
+      fetchdef.put("headers", new LinkedHashMap[String, Object]())
+      val res = utility.fetcher(ctx, base + "/redirect/q1", fetchdef).asInstanceOf[JMap[String, Object]]
+      eq("redirect.query.status", Integer.valueOf(200), res.get("status"))
+      eq("redirect.query.hops", "[/redirect/q1, /redirect/q1?step=2]", seen.toString)
+    }
+    finally server.stop(0)
+  }
+
   private val REDIRECT_SECRET = "REDIRECT-SECRET-q7w3e9r1"
   private val REDIRECT_CREDENTIALS =
     Seq("authorization", "cookie", "x-api-key", "private-token", "x-acme-auth")
@@ -1015,7 +1053,7 @@ object SdkTestMain {
       "composition" -> testComposition, "featureAdd" -> testFeatureAdd,
       "featureOrder" -> testFeatureOrder, "entityCrud" -> testEntityCrud,
       "entityStream" -> testEntityStream, "getOnlyGuard" -> testGetOnlyGuard,
-      "redirect" -> testRedirect, "redirectToAnotherOrigin" -> testRedirectToAnotherOrigin,
+      "redirect" -> testRedirect, "redirectToAQuery" -> testRedirectToAQuery, "redirectToAnotherOrigin" -> testRedirectToAnotherOrigin,
       "redirectOnTheSameOrigin" -> testRedirectOnTheSameOrigin,
       "redirectBody" -> testRedirectBody, "redirectMethods" -> testRedirectMethods,
       "redirectLimit" -> testRedirectLimit,

@@ -1041,7 +1041,8 @@ object SecretsTestMain {
       new java.net.InetSocketAddress("127.0.0.1", 0), 0)
     origin.createContext("/", (ex: com.sun.net.httpserver.HttpExchange) => {
       val body = new String(ex.getRequestBody.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8)
-      val path = ex.getRequestURI.getRawPath
+      val query = ex.getRequestURI.getRawQuery
+      val path = ex.getRequestURI.getRawPath + (if (query == null) "" else "?" + query)
       if ("/api/auth/token" == path) {
         o.exchanged.incrementAndGet()
         val answer = o.answer
@@ -1126,13 +1127,17 @@ object SecretsTestMain {
   }
 
   private def testExchangeRedirectSameOrigin(): Unit = withOrigins { o =>
-    val moved = "POST /api/moved/token {\"refresh_token\":\"REFRESH01\"}"
-    val cases = List(
-      (307, "/api/moved/token", true),
-      (308, o.origin + "/api/moved/token", true),
-      (307, o.away, false),
-      (302, "/api/moved/token", false),
-      (307, "/api/auth/token", false),
+    val sent = " {\"refresh_token\":\"REFRESH01\"}"
+    // Each case: the status, the Location, and the path the exchange is
+    // asked again at, or null where the redirect is refused.
+    val cases: List[(Int, String, String)] = List(
+      (307, "/api/moved/token", "/api/moved/token"),
+      (308, o.origin + "/api/moved/token", "/api/moved/token"),
+      // A Location of a query alone keeps the path that answered.
+      (307, "?step=2", "/api/auth/token?step=2"),
+      (307, o.away, null),
+      (302, "/api/moved/token", null),
+      (307, "/api/auth/token", null),
     )
 
     val wrong = ListBuffer.empty[String]
@@ -1140,7 +1145,7 @@ object SecretsTestMain {
     var refused = 0
     var looped = 0
 
-    for ((status, location, follows) <- cases) {
+    for ((status, location, path) <- cases) {
       o.answer = (status, location)
       o.followed.clear()
       o.exchanged.set(0)
@@ -1148,9 +1153,9 @@ object SecretsTestMain {
       val (res, message) = directOutcome(redirectClient(o, "redirect" -> "same-origin"))
       val seen = status.toString + " to " + location + ": " + message + " " + o.followed
 
-      if (follows) {
+      if (path != null) {
         if (res != null && java.lang.Boolean.TRUE == res.get("ok") &&
-          2 == o.followed.size() && moved == o.followed.get(0)) followed += 1
+          2 == o.followed.size() && ("POST " + path + sent) == o.followed.get(0)) followed += 1
         else wrong += seen
       } else if (o.followed.isEmpty && message.contains(
           "token exchange failed: " + status + " from " + o.base + "/auth/token")) {
@@ -1169,9 +1174,9 @@ object SecretsTestMain {
     check("exchange.sameorigin.elsewhere", o.elsewhere.isEmpty,
       "the exchange reached another origin: " + o.elsewhere)
     check("exchange.sameorigin.wrong", wrong.isEmpty, wrong.mkString("; "))
-    eqi("exchange.sameorigin.followed", 2, followed)
+    eqi("exchange.sameorigin.followed", 3, followed)
     eqi("exchange.sameorigin.refused", 3, refused)
-    // A redirect to itself is followed five times and no more.
+    // A redirect to itself stops at the hop limit.
     eqi("exchange.sameorigin.looped", 6, looped)
   }
 

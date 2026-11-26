@@ -20,6 +20,7 @@ import JAVAPACKAGE.core.Config;
 import JAVAPACKAGE.core.Context;
 import JAVAPACKAGE.core.SdkClient;
 import JAVAPACKAGE.core.Utility;
+import JAVAPACKAGE.utility.Fetcher;
 import JAVAPACKAGE.feature.secrets.plugin.Definition;
 import JAVAPACKAGE.feature.secrets.sekreto.Json;
 import JAVAPACKAGE.feature.secrets.sekreto.Sekreto;
@@ -772,7 +773,7 @@ public class SecretsFeature extends BaseFeature {
       return null;
     }
     try {
-      URI next = URI.create(at).resolve(URI.create(location.trim()));
+      URI next = Fetcher.resolveLocation(URI.create(at), location);
       String origin = originOf(next);
       return origin != null && origin.equals(originOf(URI.create(url))) ? next.toString() : null;
     }
