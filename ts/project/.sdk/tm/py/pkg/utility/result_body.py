@@ -2,6 +2,8 @@
 
 import re
 
+from projectname_sdk.utility.media import header_value, is_binary_response
+
 
 PREVIEW_LENGTH = 160
 
@@ -26,12 +28,13 @@ def result_body_util(ctx):
 # response described; otherwise the code tells a wrong content type from
 # malformed JSON.
 def unreadable_body(ctx, status, headers, text, sent, failed):
-    ctype = _header_value(headers, "content-type")
-    agent = ctx.utility.clean(ctx, _header_value(sent, "user-agent")) or "transport default"
+    ctype = header_value(headers, "content-type")
+    agent = ctx.utility.clean(ctx, header_value(sent, "user-agent")) or "transport default"
+    # Only text is quoted: bytes are a file's.
+    quoted = text is not None and not is_binary_response(getattr(ctx, "point", None), ctype)
     detail = ("HTTP " + str(status) + ", content-type " + (ctype or "none") +
               ", user-agent " + str(agent) +
-              (", body: " + _preview(ctx, text)
-               if text is not None and _quotable(ctx, ctype) else ""))
+              (", body: " + _preview(ctx, text) if quoted else ""))
 
     if failed is not None:
         if isinstance(failed, str):
@@ -47,29 +50,6 @@ def unreadable_body(ctx, status, headers, text, sent, failed):
                               "response: body is not valid JSON (" + detail + ")")
     return ctx.make_error("response_content_type",
                           "response: expected JSON, got " + ctype + " (" + detail + ")")
-
-
-def _header_value(headers, name):
-    if not isinstance(headers, dict):
-        return ""
-    for key, val in headers.items():
-        if name == str(key).lower():
-            return str(val)
-    return ""
-
-
-_TEXT_MEDIA = ("json", "xml", "html", "javascript", "ecmascript", "yaml", "urlencoded", "graphql")
-
-
-# Only text is quoted: bytes are a file's, by the model or by their type.
-# Text is no declared type, text/*, or a structured text format.
-def _quotable(ctx, ctype):
-    point = getattr(ctx, "point", None)
-    response = point.get("response") if isinstance(point, dict) else None
-    if isinstance(response, dict) and response.get("binary") is True:
-        return False
-    media = str(ctype or "").split(";", 1)[0].strip().lower()
-    return media == "" or media.startswith("text/") or any(part in media for part in _TEXT_MEDIA)
 
 
 # Cleaned whole: a secret the bound would split could leave its prefix.
