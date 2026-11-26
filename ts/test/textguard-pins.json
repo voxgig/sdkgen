@@ -72,6 +72,86 @@
       ]
     },
     {
+      "relation": "parity",
+      "chain": "ReadmeHowto@clojure",
+      "cause": "servers",
+      "reason": "clojure's how-to has no live-test environment to name a server variable in, and its tests build no live client.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeHowto@cpp",
+      "cause": "servers",
+      "reason": "cpp's entity tests read the live flag but build no live client, so nothing reads a server variable and its live-test environment names none.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeHowto@c",
+      "cause": "servers",
+      "reason": "c's live-test section documents a suite this target does not have: no generated test reads its environment, so there is no server variable for it to name.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeHowto@elixir",
+      "cause": "servers",
+      "reason": "elixir's live-test section documents a suite this target does not have: no generated test reads its environment, so there is no server variable for it to name.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeHowto@ocaml",
+      "cause": "servers",
+      "reason": "ocaml's live-test section documents a suite this target does not have: no generated test reads its environment, so there is no server variable for it to name.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeHowto@scala",
+      "cause": "servers",
+      "reason": "scala's live-test section documents a suite this target does not have: no generated test reads its environment, so there is no server variable for it to name.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeHowto@swift",
+      "cause": "servers",
+      "reason": "swift's live-test section documents a suite this target does not have: no generated test reads its environment, so there is no server variable for it to name.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
+      "relation": "parity",
+      "chain": "ReadmeHowto@zig",
+      "cause": "servers",
+      "reason": "zig's live-test section documents a suite this target does not have: no generated test reads its environment, so there is no server variable for it to name.",
+      "line": "",
+      "variations": [
+        "baseline"
+      ]
+    },
+    {
       "relation": "reaction",
       "chain": "AgentGuide > AgentGuideFeatureTable",
       "cause": "empty",

@@ -342,7 +342,7 @@ src/cmp/csharp/PrepareAuth_csharp.ts 388ee6e503c9
 src/cmp/csharp/ReadmeEntity_csharp.ts 9a6049295e3c
 src/cmp/csharp/ReadmeExamplesTest_csharp.ts ee7a79c93f15
 src/cmp/csharp/ReadmeExplanation_csharp.ts abb62895ddb9
-src/cmp/csharp/ReadmeHowto_csharp.ts 54d23bc80f12
+src/cmp/csharp/ReadmeHowto_csharp.ts 923f3a38dad9
 src/cmp/csharp/ReadmeInstall_csharp.ts a1a5bb46916b
 src/cmp/csharp/ReadmeIntro_csharp.ts a4751721738b
 src/cmp/csharp/ReadmeModel_csharp.ts b6daf4eee1df
@@ -527,7 +527,7 @@ src/cmp/go/PrepareAuth_go.ts 683ef17e720b
 src/cmp/go/ReadmeEntity_go.ts 95f84755fcee
 src/cmp/go/ReadmeExamplesTest_go.ts 5b977d8f902c
 src/cmp/go/ReadmeExplanation_go.ts beb59ccca103
-src/cmp/go/ReadmeHowto_go.ts df21eafa421d
+src/cmp/go/ReadmeHowto_go.ts 8387ce6fdbb5
 src/cmp/go/ReadmeInstall_go.ts eebf5bfe33ae
 src/cmp/go/ReadmeIntro_go.ts 40fb911321fe
 src/cmp/go/ReadmeModel_go.ts bb808c3bd584
@@ -662,7 +662,7 @@ src/cmp/java/PrepareAuth_java.ts aef42104c65e
 src/cmp/java/ReadmeEntity_java.ts 42bbf5669da4
 src/cmp/java/ReadmeExamplesTest_java.ts 40e3f79a3fa0
 src/cmp/java/ReadmeExplanation_java.ts 99418c944105
-src/cmp/java/ReadmeHowto_java.ts cb66ca99881c
+src/cmp/java/ReadmeHowto_java.ts ad38a9d37790
 src/cmp/java/ReadmeInstall_java.ts 32d67da3dcad
 src/cmp/java/ReadmeIntro_java.ts 3ff7e1f4fff1
 src/cmp/java/ReadmeModel_java.ts 6eb3d6ae95a5
@@ -779,7 +779,7 @@ src/cmp/js/Package_js.ts bf2c5d8163f2
 src/cmp/js/PrepareAuth_js.ts 5065aebf2dca
 src/cmp/js/ReadmeEntity_js.ts 2619e51fd1ee
 src/cmp/js/ReadmeExplanation_js.ts f7fd22a35f09
-src/cmp/js/ReadmeHowto_js.ts 86472b4c796f
+src/cmp/js/ReadmeHowto_js.ts 6137e71fc561
 src/cmp/js/ReadmeInstall_js.ts 9518bc782f84
 src/cmp/js/ReadmeIntro_js.ts ff6e22583d99
 src/cmp/js/ReadmeModel_js.ts 63932d7b6fc7
@@ -904,7 +904,7 @@ src/cmp/kotlin/PrepareAuth_kotlin.ts 3b908b6d42e0
 src/cmp/kotlin/ReadmeEntity_kotlin.ts 6cf77fa823f9
 src/cmp/kotlin/ReadmeExamplesTest_kotlin.ts 6304f45cb224
 src/cmp/kotlin/ReadmeExplanation_kotlin.ts b5145b187904
-src/cmp/kotlin/ReadmeHowto_kotlin.ts 9c9338257906
+src/cmp/kotlin/ReadmeHowto_kotlin.ts e436f2a06d11
 src/cmp/kotlin/ReadmeInstall_kotlin.ts 31dbcf1c575f
 src/cmp/kotlin/ReadmeIntro_kotlin.ts 398a0fc2ae2f
 src/cmp/kotlin/ReadmeModel_kotlin.ts 49e42d99c111
@@ -917,8 +917,8 @@ src/cmp/kotlin/ReadmeTopTest_kotlin.ts 6707235865eb
 src/cmp/kotlin/Schema_kotlin.ts 4ad41ad6b320
 src/cmp/kotlin/SdkError_kotlin.ts dc0cd7ddcc31
 src/cmp/kotlin/TestClean_kotlin.ts fcbdbc7e3104
-src/cmp/kotlin/TestDirect_kotlin.ts c8736438f69a
-src/cmp/kotlin/TestEntity_kotlin.ts 5575f3ca6422
+src/cmp/kotlin/TestDirect_kotlin.ts d4538a5e3680
+src/cmp/kotlin/TestEntity_kotlin.ts 86a3b320f48e
 src/cmp/kotlin/Test_kotlin.ts 322f28ee5f6e
 src/cmp/kotlin/fragment/Entity.fragment.kt 39df6554e3aa
 src/cmp/kotlin/fragment/EntityBase.fragment.kt 8ca16d54a4f6
@@ -1000,7 +1000,7 @@ src/cmp/lua/PrepareAuth_lua.ts c43d35034fca
 src/cmp/lua/ReadmeEntity_lua.ts 0892f98e0721
 src/cmp/lua/ReadmeExamplesTest_lua.ts 491f3286a9f4
 src/cmp/lua/ReadmeExplanation_lua.ts 92961440f875
-src/cmp/lua/ReadmeHowto_lua.ts c8da61ce0254
+src/cmp/lua/ReadmeHowto_lua.ts 77b4316376c9
 src/cmp/lua/ReadmeInstall_lua.ts 7b73e18637c2
 src/cmp/lua/ReadmeIntro_lua.ts 77962cc9ab21
 src/cmp/lua/ReadmeModel_lua.ts e067dde085d0
@@ -1169,7 +1169,7 @@ src/cmp/perl/PrepareAuth_perl.ts 9346cbd0217d
 src/cmp/perl/ReadmeEntity_perl.ts 9c58157c4646
 src/cmp/perl/ReadmeExamplesTest_perl.ts 82fe5ea7e496
 src/cmp/perl/ReadmeExplanation_perl.ts 955c9fd61eee
-src/cmp/perl/ReadmeHowto_perl.ts 2fa94e005ed8
+src/cmp/perl/ReadmeHowto_perl.ts b97e4a35b120
 src/cmp/perl/ReadmeInstall_perl.ts 911456ae0bbe
 src/cmp/perl/ReadmeIntro_perl.ts 7068d774730b
 src/cmp/perl/ReadmeModel_perl.ts 4329ac9334fb
@@ -1275,7 +1275,7 @@ src/cmp/php/PrepareAuth_php.ts 6d7420c3deff
 src/cmp/php/ReadmeEntity_php.ts 229e3203a8da
 src/cmp/php/ReadmeExamplesTest_php.ts c3f4b304d367
 src/cmp/php/ReadmeExplanation_php.ts 7fe26ca80832
-src/cmp/php/ReadmeHowto_php.ts dd0b4d1a9496
+src/cmp/php/ReadmeHowto_php.ts 605aca5b00e8
 src/cmp/php/ReadmeInstall_php.ts 3d4e0d182519
 src/cmp/php/ReadmeIntro_php.ts ec27ddafd34d
 src/cmp/php/ReadmeModel_php.ts c264f108a083
@@ -1378,7 +1378,7 @@ src/cmp/py/PrepareAuth_py.ts c46b2034b2b8
 src/cmp/py/ReadmeEntity_py.ts 14d6ef86e515
 src/cmp/py/ReadmeExamplesTest_py.ts e962e254edcb
 src/cmp/py/ReadmeExplanation_py.ts 96d01b6f00b7
-src/cmp/py/ReadmeHowto_py.ts a4a4961098a8
+src/cmp/py/ReadmeHowto_py.ts e10935208e97
 src/cmp/py/ReadmeInstall_py.ts 24864b0e5b42
 src/cmp/py/ReadmeIntro_py.ts 606b93bc8b3a
 src/cmp/py/ReadmeModel_py.ts 131767397df5
@@ -1511,7 +1511,7 @@ src/cmp/rb/PrepareAuth_rb.ts 70e76b6cbff5
 src/cmp/rb/ReadmeEntity_rb.ts 24dee0667a49
 src/cmp/rb/ReadmeExamplesTest_rb.ts 0c8afcfed641
 src/cmp/rb/ReadmeExplanation_rb.ts c2a7bad0e0ad
-src/cmp/rb/ReadmeHowto_rb.ts c4e3361673ee
+src/cmp/rb/ReadmeHowto_rb.ts c94fa4d4dff0
 src/cmp/rb/ReadmeInstall_rb.ts 9b902d4a86c9
 src/cmp/rb/ReadmeIntro_rb.ts 9c3538077a54
 src/cmp/rb/ReadmeModel_rb.ts 19ec2de0b2dd
@@ -1618,7 +1618,7 @@ src/cmp/rust/PrepareAuth_rust.ts 68f9d338564f
 src/cmp/rust/ReadmeEntity_rust.ts 3163a179b85e
 src/cmp/rust/ReadmeExamplesTest_rust.ts fe0bd437773e
 src/cmp/rust/ReadmeExplanation_rust.ts ae117bc8a6b6
-src/cmp/rust/ReadmeHowto_rust.ts 0ed586356aa3
+src/cmp/rust/ReadmeHowto_rust.ts 6043f92b59c3
 src/cmp/rust/ReadmeInstall_rust.ts 562fe858e901
 src/cmp/rust/ReadmeIntro_rust.ts 007e0e40f094
 src/cmp/rust/ReadmeModel_rust.ts 0f5f40f31866
@@ -2005,7 +2005,7 @@ src/cmp/ts/ReadmeEntity_ts.ts 1f76cb4c36fd
 src/cmp/ts/ReadmeExampleTest_ts.ts 12829706c57a
 src/cmp/ts/ReadmeExamplesTest_ts.ts d86e740bc444
 src/cmp/ts/ReadmeExplanation_ts.ts b4826fdb74b9
-src/cmp/ts/ReadmeHowto_ts.ts 4ec0645031a1
+src/cmp/ts/ReadmeHowto_ts.ts 88d6db5c2000
 src/cmp/ts/ReadmeInstall_ts.ts 45f7a559d8d1
 src/cmp/ts/ReadmeIntro_ts.ts 0c116a147317
 src/cmp/ts/ReadmeModel_ts.ts cbff91a48afc
