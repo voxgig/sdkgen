@@ -177,8 +177,7 @@ function entityOps(entity: any): Record<string, string[]> {
 }
 
 
-// Whether every active entity has the same operations, so one interface
-// describes them all.
+// Every active entity has the same operations: one interface describes all.
 function sharedOps(entity: any, ops: Record<string, string[]>): boolean {
   const active = Object.keys(ops).filter((name: string) => false !== entity[name].active)
   return 0 < active.length && active.every((name: string) => ops[name].join() === ops[active[0]].join())

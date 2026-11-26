@@ -144,8 +144,7 @@ function entityOps(entity) {
         .filter(([, ent]) => isMap(ent))
         .map(([name, ent]) => [name, opShape_1.CANON_OP_ORDER.filter((op) => isMap(ent.op?.[op]) && false !== ent.op[op].active)]));
 }
-// Whether every active entity has the same operations, so one interface
-// describes them all.
+// Every active entity has the same operations: one interface describes all.
 function sharedOps(entity, ops) {
     const active = Object.keys(ops).filter((name) => false !== entity[name].active);
     return 0 < active.length && active.every((name) => ops[name].join() === ops[active[0]].join());

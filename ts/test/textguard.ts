@@ -20,11 +20,10 @@ import {
 
 
 // The text guard: the documentation under single-switch variations of the
-// model, read for unresolved links (`link`), lines naming what the run removed
-// (`off`), siblings reading different facts (`parity`), a fix that reached one
-// sibling only (`reaction`), unfired markers (`marker`), features said to start
-// off that start on (`starts-off`), foreign code (`fence`), a table header
-// with no row (`table`) and numbered headings with a gap (`numbering`).
+// model, read for each relation AGENTS.md lists: unresolved links, lines naming
+// what the run removed, siblings reading different facts, a fix that reached
+// one sibling only, unfired markers, features said to start off that start on,
+// foreign code, header-only tables and numbered headings with a gap.
 
 
 type Line = { text: string, chain: string }
