@@ -35,7 +35,7 @@ defmodule ProjectName.PrimaryUtilityTest do
   alias ProjectName.Utility, as: U
 
   setup_all do
-    testfile = Path.join(File.cwd!(), "../.sdk/test/test.json")
+    testfile = Path.join(File.cwd!(), "SDKREL/.sdk/test/test.json")
     sdk = ProjectName.test()
     runner = O.make_runner(testfile, sdk)
     {:ok, run: runner.("primary"), sdk: sdk}

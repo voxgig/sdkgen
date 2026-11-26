@@ -1,7 +1,7 @@
 
 const { SDK } = require('../..')
 
-const TEST_JSON_FILE = '../../.sdk/test/test.json'
+const TEST_JSON_FILE = '../SDKREL/.sdk/test/test.json'
 
 module.exports = {
   SDK,

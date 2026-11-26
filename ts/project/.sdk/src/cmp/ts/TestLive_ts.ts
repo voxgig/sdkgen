@@ -29,7 +29,7 @@ const TestLive = cmp(function TestLive(props: any) {
 import { SDK } from '..'
 import { runLiveScenarios } from './live-scenarios'
 import { loadEnvLocal } from './utility'
-loadEnvLocal(__dirname + '/../.env.local')
+loadEnvLocal(__dirname + '/../${props.ctx$.stdrep.SDKREL}/.env.local')
 ${liveStrictNote(liveStrict(model, props.target.name), '//')}
 test('live operation coverage', { skip: process.env.${envName(model)}_TEST_LIVE !== 'TRUE' }, async (t) => {
   await runLiveScenarios(SDK, ${JSON.stringify(plan, null, 2)}, '${envName(model)}', { server: { ${server} }, secret: process.env.${envName(model)}_SECRET }, { strict: ${liveStrict(model, props.target.name)}, t })

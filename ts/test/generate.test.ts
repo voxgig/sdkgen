@@ -12,7 +12,7 @@ import { memfs } from 'memfs'
 import { cmp, each, names, Project, Folder } from 'jostraca'
 import * as sucrase from 'sucrase'
 
-import { SdkGen, mcpTools, alongsideNote, applyFacts, featureDocs, targetFeatures } from '../dist/sdkgen.js'
+import { SdkGen, mcpTools, alongsideNote, applyFacts, installCommand, packageName, featureDocs, targetFeatures } from '../dist/sdkgen.js'
 import { aliasCmpText } from '../dist/action/target.js'
 
 // Fixture, miniature Root and memfs layering — shared with
@@ -438,7 +438,7 @@ describe('generate', () => {
         // map without the standard replacements — the generated SDK then names
         // itself "ProjectName" at runtime, or fails to compile outright. Every
         // offender is collected so one fix pass can clear them all.
-        if (/ProjectName|PROJECTNAME|projectname|PROJECTUSERAGENT/.test(content) &&
+        if (/ProjectName|PROJECTNAME|projectname|PROJECTUSERAGENT|SDKREL|RELEASETAG/.test(content) &&
           !PLACEHOLDER_PINNED.some((re) => re.test(path))) {
           leaks.push(path)
         }
@@ -451,7 +451,7 @@ describe('generate', () => {
     }
 
     strictEqual(leaks.length, 0,
-      'generated files leak a ProjectName, PROJECTNAME or projectname placeholder:\n  ' +
+      'generated files leak a ProjectName, PROJECTNAME, projectname, SDKREL or RELEASETAG placeholder:\n  ' +
       leaks.join('\n  '))
     deepStrictEqual(undef, [], 'direct tests that name undefined')
   })
@@ -1032,12 +1032,203 @@ describe('generate', () => {
   })
 
 
+  test('a published js README installs the package its manifest names, in a shell block', async () => {
+    const out = await generate(['js'], undefined, 'main: kit: target: js: publish: registry: active: true')
+    const name = JSON.parse(out['js/package.json']).name
+    ok(out['js/README.md'].includes('```bash\nnpm install ' + name + '\n```'),
+      'the js README does not install ' + name + ':\n' + out['js/README.md'].slice(0, 900))
+  })
+
+
+  // A placeholder a reader has to replace is a step the generator could take.
+  test('no install section asks for the repository URL by placeholder', async () => {
+    const targets = ['swift', 'rust', 'cpp', 'zig']
+    for (const extra of ['', targets.map((t) => `main: kit: target: ${t}: publish: registry: active: true`).join('\n')]) {
+      const out = await generate(targets, undefined, extra)
+      const left = Object.keys(out).filter((path) => out[path].includes('<repo-url>'))
+      deepStrictEqual(left, [], 'these print <repo-url>')
+    }
+  })
+
+
+  // Bundled content collects no dependency for these targets; a project's own
+  // does, and then the documents stop calling the SDK dependency-free.
+  test('an SDK with a dependency is not called dependency-free', async () => {
+    const targets = ['c', 'ocaml', 'perl', 'scala', 'swift']
+    const claim = /dependency-free|no external dependencies|no third-party runtime|zero non-core runtime/
+    const claims = (out: Record<string, string>) => Object.keys(out)
+      .filter((path) => (path.endsWith('.md') || path.endsWith('.opam')) && claim.test(out[path])).sort()
+
+    const free = claims(await generate(targets))
+    deepStrictEqual(targets.filter((t) => !free.some((path) => path.startsWith(t + '/'))), [],
+      'a target without dependencies no longer says so')
+    const dep = targets.map((t) => `main: kit: target: ${t}: deps: extralib: { active: true, version: '1.0.0' }`)
+      .join('\n')
+    deepStrictEqual(claims(await generate(targets, undefined, dep)), [],
+      'a target with a dependency is called dependency-free')
+  })
+
+
+  test('a hyphenated slug names the elixir app once, in snake case, everywhere', async () => {
+    const out = await generate(['elixir'], 'acme-shop')
+    ok(out['elixir/mix.exs'].includes('app: :acme_shop,'), 'mix.exs names another app')
+    for (const file of ['lib/acme_shop.ex', 'lib/acme_shop_types.ex']) {
+      ok(null != out['elixir/' + file], 'no ' + file)
+    }
+    deepStrictEqual(Object.keys(out).filter((path) => path.startsWith('elixir/lib/acme-shop')), [],
+      'a file is named after the slug')
+    ok(Object.keys(out).some((path) => path.startsWith('elixir/lib/acme_shop/')),
+      'the module folder is named otherwise')
+    ok(/├── acme_shop\.ex\s/.test(out['elixir/README.md']) && /└── acme_shop\//.test(out['elixir/README.md']),
+      'the README tree names other files')
+    ok(out['elixir/README.md'].includes('{:acme_shop, '), 'the install names another app')
+  })
+
+
+  // The Maven coordinates are the package name: the declared one, else the
+  // origin's group and the SDK's artifact.
+  test('a JVM target publishes and documents the coordinates its model declares', async () => {
+    const declare = (pkg: string, targets: string[]) => targets.map((t) =>
+      `main: kit: target: ${t}: publish: registry: { package: '${pkg}', active: true }`).join('\n')
+
+    const jvm = ['java', 'kotlin', 'scala']
+    const out = await generate(jvm, undefined, declare('io.acme:acme-client', jvm))
+    ok(/<groupId>io\.acme<\/groupId>\s*<artifactId>acme-client<\/artifactId>/.test(out['java/pom.xml']), 'pom')
+    ok(out['kotlin/build.gradle.kts'].includes('group = "io.acme"'), 'gradle group')
+    ok(out['kotlin/settings.gradle.kts'].includes('rootProject.name = "acme-client"'), 'gradle artifact')
+    ok(/<groupId>io\.acme<\/groupId>\s*<artifactId>acme-client<\/artifactId>/.test(out['java/README.md']), 'java README')
+    ok(out['kotlin/README.md'].includes('implementation("io.acme:acme-client:'), 'kotlin README')
+    ok(out['scala/README.md'].includes('"io.acme:acme-client_3:'), 'scala README')
+    for (const t of ['Java', 'Kotlin', 'Scala']) {
+      ok(new RegExp('\\| ' + t + ' \\| `io\\.acme:acme-client` \\|').test(out['README.md']), t + ' packages row')
+    }
+
+    const bare = await generate(['java'], undefined, declare('acme-client', ['java']))
+    ok(/<groupId>com\.voxgig<\/groupId>\s*<artifactId>acme-client<\/artifactId>/.test(bare['java/pom.xml']),
+      'a declared artifact keeps the default group')
+  })
+
+
+  // A reader installs the name the manifest publishes and the root Packages
+  // table lists, whatever state the registry is in.
+  test('the install line, the Packages row and the manifest name agree in every registry state', async () => {
+    const file = (out: Record<string, string>, t: string, re: RegExp) =>
+      out[Object.keys(out).find((path) => path.startsWith(t + '/') && re.test(path))!]
+    const first = (text: string, re: RegExp) => String(re.exec(text)?.[1])
+    const MANIFEST: Record<string, (out: Record<string, string>) => string> = {
+      ts: (out) => JSON.parse(out['ts/package.json']).name,
+      js: (out) => JSON.parse(out['js/package.json']).name,
+      py: (out) => first(out['py/pyproject.toml'], /^name = "([^"]+)"/m),
+      php: (out) => JSON.parse(out['php/composer.json']).name,
+      rb: (out) => first(file(out, 'rb', /\.gemspec$/), /spec\.name\s*=\s*"([^"]+)"/),
+      lua: (out) => first(file(out, 'lua', /\.rockspec$/), /^package = "([^"]+)"/m),
+      go: (out) => first(out['go/go.mod'], /^module (\S+)/m),
+      rust: (out) => first(out['rust/Cargo.toml'], /^name = "([^"]+)"/m),
+      csharp: (out) => first(file(out, 'csharp', /\.csproj$/), /<PackageId>([^<]+)</),
+      perl: (out) => first(out['perl/Makefile.PL'], /NAME\s*=>\s*'([^']+)'/),
+      ocaml: (out) => first(file(out, 'ocaml', /\.opam$/), /^name: "([^"]+)"/m),
+      java: (out) => first(out['java/pom.xml'], /<groupId>([^<]+)</) + ':' +
+        first(out['java/pom.xml'], /<artifactId>([^<]+)</),
+      kotlin: (out) => first(out['kotlin/build.gradle.kts'], /^group = "([^"]+)"/m) + ':' +
+        first(out['kotlin/settings.gradle.kts'], /rootProject\.name = "([^"]+)"/),
+      zig: (out) => first(out['zig/build.zig.zon'], /\.name = \.(\w+)/),
+      elixir: (out) => first(out['elixir/mix.exs'], /app: :(\w+)/),
+      swift: (out) => first(out['swift/Package.swift'], /name: "([^"]+)"/),
+    }
+    // swift's and zig's install sections give a URL, and c and cpp have no package.
+    const NAMED = ['ts', 'js', 'py', 'php', 'rb', 'lua', 'go', 'rust', 'csharp', 'perl', 'ocaml',
+      'java', 'kotlin', 'elixir', 'scala', 'clojure']
+    const targets = [...Object.keys(MANIFEST), 'scala', 'clojure', 'c', 'cpp']
+
+    for (const active of [true, false]) {
+      const extra = targets.map((t) => `main: kit: target: ${t}: publish: registry: active: ${active}`).join('\n')
+      const model = makeModel(targets, undefined, extra)
+      const out = await generate(targets, undefined, extra)
+      const row = (t: string) => out['README.md'].split('\n').find((line) => line.startsWith(
+        '| ' + model.main[KIT].target[t].fact.title + ' | `' + packageName(model, t) + '` | '))
+
+      for (const t of targets.filter((t) => !['c', 'cpp'].includes(t))) {
+        const pkg = packageName(model, t)
+        ok(null != row(t), t + ': the Packages table does not list ' + pkg)
+        if (null != MANIFEST[t]) strictEqual(MANIFEST[t](out), pkg, t + ': the manifest publishes another name')
+      }
+      if (!active) continue
+
+      for (const t of NAMED) {
+        const pkg = packageName(model, t)
+        const install = out[t + '/README.md'].split('## Install')[1].split('\n## ')[0]
+        ok(pkg.split(':').every((part) => install.includes(part)), t + ': the install section does not name ' +
+          pkg + ':\n' + install)
+        const command = installCommand(model, t)
+        if ('' !== command) {
+          ok(install.includes(command), t + ': the install section does not run ' + command)
+          ok(row(t)!.includes('`' + command + '`'), t + ': the Packages row does not run ' + command)
+        }
+      }
+    }
+  })
+
+
+  // One release tag per port: the tag fact, which the publish workflow and the
+  // root Makefile's recipe read, is what the port's own Makefile and its
+  // install section name.
+  test('a port\'s Makefile and install section name the release tag the model gives it', async () => {
+    const targets = ['ts', 'js', 'go', 'py', 'rb', 'php', 'lua', 'rust', 'java', 'kotlin', 'csharp',
+      'perl', 'swift', 'cpp', 'c', 'zig', 'ocaml', 'scala', 'clojure', 'elixir']
+    const model = makeModel(targets)
+    const out = await generate(targets)
+    for (const t of targets) {
+      const tag = model.main[KIT].target[t].fact.tag
+      const make = out[t + '/Makefile']
+      if (/^TAG := /m.test(make)) {
+        ok(make.includes('\nTAG := ' + tag + '$(VERSION)\n'), t + ': the Makefile tags otherwise')
+      }
+      const install = out[t + '/README.md'].split('## Install')[1].split('\n## ')[0]
+      deepStrictEqual(install.match(/\b[\w-]+\/vX\.Y\.Z/g)?.filter((m) => m !== tag + 'X.Y.Z') ?? [], [],
+        t + ': the install section names another tag')
+    }
+    ok(out['ts/Makefile'].includes('\nTAG := v$(VERSION)\n'), 'the primary npm package keeps its bare tag')
+
+    const off = await generate(targets, undefined,
+      targets.map((t) => `main: kit: target: ${t}: publish: tag: active: false`).join('\n'))
+    for (const t of targets) {
+      ok(!/^TAG := \S/m.test(off[t + '/Makefile'] ?? ''), t + ': a Makefile tags with no tag')
+      ok(!/vX\.Y\.Z/.test(off[t + '/README.md'].split('## Install')[1].split('\n## ')[0]),
+        t + ': the install section names a tag the model does not cut')
+    }
+  })
+
+
+  // Written at every generate from the model, not copied once at add.
+  test('a port\'s VERSION is its publish version and its LICENSE the project\'s', async () => {
+    const out = await generate(['go', 'ts'], undefined, "main: kit: target: go: publish: version: '2.3.4'")
+    strictEqual(out['go/VERSION'], '2.3.4\n')
+    for (const t of ['go', 'ts']) {
+      strictEqual(out[t + '/LICENSE'], out['LICENSE'], t + ': the LICENSE is not the project\'s')
+    }
+    ok(out['LICENSE'].includes('Copyright (c) 2026 Voxgig'), out['LICENSE'].slice(0, 80))
+  })
+
+
+  // The rockspec's source dir is the target's folder in the cloned repository.
+  test('the lua rockspec finds the package where the target is placed', async () => {
+    const dir = (out: Record<string, string>, file: string) => /^\s*dir = "([^"]+)"/m.exec(out[file])?.[1]
+    strictEqual(dir(await generate(['lua']), 'lua/demo.rockspec'), 'demo-sdk/lua')
+    const root = await generate(['lua'], undefined,
+      'main: kit: phase: top: active: false\nmain: kit: target: lua: output: root: true')
+    strictEqual(dir(root, 'demo.rockspec'), 'demo-sdk')
+  })
+
+
   test('a manifest description names its target by title and by what it is', async () => {
     const expected: Record<string, string> = {
       ts: 'TypeScript SDK', js: 'JavaScript SDK', py: 'Python SDK', php: 'PHP SDK',
       rb: 'Ruby SDK', lua: 'Lua SDK', csharp: 'C# SDK', elixir: 'Elixir SDK',
       perl: 'Perl SDK', 'py-data': 'Python Data package',
+      rust: 'Rust SDK', java: 'Java SDK', ocaml: 'OCaml SDK', kotlin: 'Kotlin SDK',
     }
+    // go has no manifest slot, and says it in its package doc comment.
+    expected.go = makeModel(['go']).main[KIT].target.go.fact.title + ' SDK'
     const out = await generate(Object.keys(expected))
     for (const [target, name] of Object.entries(expected)) {
       const named = filesFor(out, target)
@@ -1968,7 +2159,7 @@ main: kit: target: js: phase: feature: active: false
       for (const [path, content] of files) {
         ok('string' === typeof content, target + ': ' + path + ' has no content')
 
-        for (const token of ['ProjectName', 'PROJECTENV', 'PROJECTVERSION']) {
+        for (const token of ['ProjectName', 'PROJECTENV', 'PROJECTVERSION', 'SDKREL', 'RELEASETAG']) {
           if (content.includes(token) &&
             !PLACEHOLDER_PINNED.some((re) => re.test(path))) {
             leaks.push(path + ': ' + token)
@@ -2802,9 +2993,12 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
 
 
   describe('the publisher', () => {
-    const tmDir = Path.join(SCAFFOLD, 'tm')
-    const licensed = readdirSync(tmDir)
-      .filter((t) => existsSync(Path.join(tmDir, t, 'LICENSE')))
+    // The ports whose Main writes their LICENSE.
+    const cmpDir = Path.join(SCAFFOLD, 'src', 'cmp')
+    const licensed = readdirSync(cmpDir).filter((t) => {
+      const main = Path.join(cmpDir, t, 'Main_' + t + '.ts')
+      return existsSync(main) && /\bTargetLicense\(/.test(readFileSync(main, 'utf8'))
+    })
 
     // Each consumer target generates beside the target it wraps.
     const targets = [...licensed.filter((t) => !NON_SDK_TARGETS.includes(t)),
@@ -2948,7 +3142,8 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
   test('an API title holding quotes, an ampersand and an interpolation reaches every manifest description intact', async () => {
     const TITLE = 'Bob\'s "Shop" & Co #{x}'
     const want = 'for the ' + TITLE + ' public API.'
-    const out = await generate(['csharp', 'elixir', 'js', 'lua', 'perl', 'php', 'py', 'py-data', 'rb', 'ts'],
+    const out = await generate(['csharp', 'elixir', 'js', 'lua', 'perl', 'php', 'py', 'py-data', 'rb', 'ts',
+      'rust', 'java', 'ocaml', 'kotlin', 'go'],
       undefined, "main: kit: text: { title: 'Bob\\'s \"Shop\" & Co #{x}' }")
     const bad: string[] = []
 
@@ -2968,6 +3163,11 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
       ['py/pyproject.toml', 'for the Bob\'s \\"Shop\\" & Co #{x} public API.'],
       ['py-data/pyproject.toml', 'for the Bob\'s \\"Shop\\" & Co #{x} public API.'],
       ['rb/Demo_sdk.gemspec', 'for the Bob\'s \\"Shop\\" & Co \\#{x} public API.'],
+      ['rust/Cargo.toml', 'for the Bob\'s \\"Shop\\" & Co #{x} public API.'],
+      ['java/pom.xml', 'for the Bob\'s "Shop" &amp; Co #{x} public API.'],
+      ['ocaml/voxgig-demo-sdk.opam', 'for the Bob\'s \\"Shop\\" & Co #{x} public API.'],
+      ['kotlin/build.gradle.kts', 'for the Bob\'s \\"Shop\\" & Co #{x} public API.'],
+      ['go/demo.go', 'for the Bob\'s "Shop" & Co #{x} public API.'],
     ]
     for (const [file, text] of literal) {
       if (!String(out[file]).includes(text)) bad.push(file + ' lacks ' + text)

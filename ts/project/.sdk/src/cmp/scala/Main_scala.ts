@@ -7,7 +7,9 @@ import {
   targetFeatures,
   inactiveFeatureExcludes,
   pluginExcludes,
-  TEST_CONTROL_EXCLUDE
+  TEST_CONTROL_EXCLUDE,
+  TargetLicense,
+  TargetVersion,
 } from '@voxgig/sdkgen'
 
 
@@ -58,6 +60,8 @@ const Main = cmp(async function Main(props: any) {
   Package({ target })
 
   Gitignore({})
+  TargetLicense({ target })
+  TargetVersion({ target })
 
   // Copy tm/scala files with replacements. SCALAPACKAGE is the package-root
   // token used throughout the templates (package/import statements);

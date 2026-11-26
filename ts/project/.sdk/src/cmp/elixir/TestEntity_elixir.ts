@@ -19,7 +19,7 @@ import {
 
 // Emit a per-entity ExUnit test that drives the real op pipeline against the
 // `test` feature's in-memory mock, seeded from the scaffolded fixture
-// (../.sdk/test/entity/<Name>/<Name>TestData.json -> existing.<entity>).
+// (the project's .sdk/test/entity/<Name>/<Name>TestData.json -> existing.<entity>).
 const TestEntity = cmp(function TestEntity(props: any) {
   const { model }: { model: Model } = props.ctx$
   const target = props.target
@@ -37,7 +37,7 @@ const TestEntity = cmp(function TestEntity(props: any) {
   const hasList = opReachable(ops.list, [])
   const hasCreate = opReachable(ops.create, ['name'])
 
-  const fixture = `../.sdk/test/entity/${ename}/${EName}TestData.json`
+  const fixture = `${props.ctx$.stdrep.SDKREL}/.sdk/test/entity/${ename}/${EName}TestData.json`
   const bad = invalidRequest(entity)
 
   // Only what the emitted tests call: elixir warns on an unused alias or

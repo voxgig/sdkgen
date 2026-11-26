@@ -36,6 +36,11 @@ function registryOf(t) {
 function pendingWord(state) {
     return 'inactive' === state ? 'inactive' : 'pending';
 }
+// An active registry the port's template has no recipe for is deployed as a
+// tag, as a pending one is; such a target model declares `publish.recipe: false`.
+function uploads(model, t) {
+    return 'active' === (0, packageMeta_1.registryState)(model, t.name) && false !== t.publish?.recipe;
+}
 function aliasVarName(name) {
     return name.toUpperCase().replace(/[^A-Z0-9]+/g, '_') + '_ALIAS';
 }
@@ -77,7 +82,9 @@ function makeDeployMakefile(model, targets) {
         const reg = registryOf(t);
         const rs = (0, packageMeta_1.registryState)(model, t.name);
         const state = 'tag' === rs ? 'tag-only' :
-            `${reg.name} (${'active' === rs ? 'ACTIVE' : 'publish ' + pendingWord(rs) + ': deploy publishes the git tag only'}) ${reg.url || ''}`.trim();
+            `${reg.name} (${uploads(model, t) ? 'ACTIVE' : 'active' === rs ?
+                'ACTIVE, no publish recipe in the port: deploy publishes the git tag only' :
+                'publish ' + pendingWord(rs) + ': deploy publishes the git tag only'}) ${reg.url || ''}`.trim();
         return `#   ${t.name.padEnd(8)} ${state}`;
     }).join('\n');
     const deployRules = targets.map((t) => {
@@ -90,7 +97,7 @@ function makeDeployMakefile(model, targets) {
         const dir = (0, facts_1.fact)(t, 'dir');
         const rs = (0, packageMeta_1.registryState)(model, t.name);
         const tag = (0, facts_1.fact)(t, 'tag');
-        if (('tag' === rs && (reg || 'root' === via)) || ('tag' !== rs && 'active' !== rs)) {
+        if (('tag' === rs && (reg || 'root' === via)) || ('tag' !== rs && !uploads(model, t))) {
             if ('' === tag) {
                 return `
 deploy-${t.name}:
@@ -111,16 +118,18 @@ deploy-dry-${t.name}:
 ${tagPushRecipe(t.name, tag, (0, packageMeta_1.packageVersion)(model, t.name), 'tag-only port')}
 `;
         }
-        if ('tag' !== rs && 'active' !== rs) {
-            const word = pendingWord(rs);
+        if ('tag' !== rs && !uploads(model, t)) {
+            const why = 'active' === rs ?
+                `${reg.name} is active, but the ${t.name} port has no recipe that publishes there` :
+                `${reg.name} publication is ${pendingWord(rs)}`;
             return `
 deploy-${t.name}:
-\t@echo "deploy-${t.name}: ${reg.name} publication is ${word} — publishing the git tag only."
+\t@echo "deploy-${t.name}: ${why} — publishing the git tag only."
 \tboru vault exec ${ghArgs} -- $(MAKE) tag-push-${t.name}
 
 deploy-dry-${t.name}:
 \tboru vault exec --dry-run ${ghArgs} -- $(MAKE) tag-push-${t.name}
-${tagPushRecipe(t.name, tag, (0, packageMeta_1.packageVersion)(model, t.name), reg.name + ' publication ' + word + ' — tag-only deploy')}
+${tagPushRecipe(t.name, tag, (0, packageMeta_1.packageVersion)(model, t.name), why + ' — tag-only deploy')}
 `;
         }
         return `
@@ -137,7 +146,7 @@ deploy-dry-${t.name}:
 # on every \`npm run generate\` in .sdk/; publication details live in the
 # model (.sdk/model/target/<target>.aontu, \`publish\` section).
 #
-${commentBlock(tagSentence(targets) + ' Ports with an ACTIVE registry also publish a package there.' +
+${commentBlock(tagSentence(targets) + ' Ports with an ACTIVE registry and a publish recipe also publish a package there.' +
         ' Credentials are injected at exec time by the boru key vault' +
         ' (https://github.com/boru-lang/boru) — never stored on disk or passed on the command line.', 72)}
 #
@@ -176,7 +185,8 @@ ${targets.map((t) => {
         const reg = registryOf(t);
         const rs = (0, packageMeta_1.registryState)(model, t.name);
         const state = 'tag' === rs ? 'tag-only' :
-            `${reg.name} ${'active' === rs ? 'ACTIVE' : 'publish ' + pendingWord(rs) + ' (deploy = git tag only)'}`;
+            `${reg.name} ${uploads(model, t) ? 'ACTIVE' : 'active' === rs ? 'ACTIVE, no publish recipe (deploy = git tag only)' :
+                'publish ' + pendingWord(rs) + ' (deploy = git tag only)'}`;
         return `\t@echo "  deploy-${t.name.padEnd(8)} ${state}"`;
     }).join('\n')}
 \t@echo "Rehearse everything safely first: make deploy-dry"

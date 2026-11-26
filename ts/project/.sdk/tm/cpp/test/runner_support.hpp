@@ -1,6 +1,6 @@
 // ProjectName SDK — shared test runner SUPPORT (mirrors java
 // test/RunnerSupport.java): env overrides, sdk-test-control.json skips, the
-// ../.sdk/test/test.json loader, and Context construction from a test-entry
+// SDKREL/.sdk/test/test.json loader, and Context construction from a test-entry
 // ctx map.
 //
 // SUPPORT ONLY. The runset/match ENGINE that used to live here (and the
@@ -49,7 +49,7 @@ inline bool& env_local_loaded() { static bool b = false; return b; }
 inline void load_env_local() {
   if (env_local_loaded()) return;
   env_local_loaded() = true;
-  std::string data = read_file("../.env.local");
+  std::string data = read_file("SDKREL/.env.local");
   std::istringstream iss(data);
   std::string line;
   while (std::getline(iss, line)) {
@@ -109,7 +109,7 @@ inline Value env_override(Value m) {
 inline Value& cached_spec() { static Value v = Value::undef(); return v; }
 inline Value load_test_spec() {
   if (cached_spec().is_undef()) {
-    std::string data = read_file("../.sdk/test/test.json");
+    std::string data = read_file("SDKREL/.sdk/test/test.json");
     cached_spec() = vs::parse_json(data);
   }
   return cached_spec();

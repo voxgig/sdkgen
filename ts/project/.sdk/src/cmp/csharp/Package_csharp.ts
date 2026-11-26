@@ -9,6 +9,7 @@ import {
   repoInfo,
   packageVersion,
   authorInfo,
+  packageName,
 } from '@voxgig/sdkgen'
 
 
@@ -65,7 +66,7 @@ const Package = cmp(async function Package(props: any) {
 
     <!-- NuGet package metadata (publication pending; see Makefile). -->
     <Version>${packageVersion(model, target.name)}</Version>
-    <PackageId>${Name}.Sdk</PackageId>
+    <PackageId>${packageName(model, target.name)}</PackageId>
     <Authors>${xmlText(authorInfo(model, target.name).name)}</Authors>
     <Description>${xmlText(pkgDescription(model, target.name))}</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>

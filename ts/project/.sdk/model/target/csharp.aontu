@@ -32,6 +32,7 @@ main: kit: feature: &: target: csharp: deps: &: {
 
 
 main: kit: target: csharp: publish: {
+  recipe: false
   registry: {
     name: 'nuget'
     url: 'https://www.nuget.org'

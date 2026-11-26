@@ -438,6 +438,35 @@ describe('aliased targets in the generated documents', () => {
     }
   })
 
+  // The add writes the origin's templates to `tm/<alias>`, which a generate
+  // reads from its working directory.
+  test('go~fz enters its own folder, never the origin\'s', async () => {
+    const staged = stageAlias('go', 'fz')
+    const tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-alias-'))
+    Fs.mkdirSync(Path.join(tmp, 'tm'))
+    Fs.symlinkSync(Path.join(SDK_SCAFFOLD, 'tm', 'go'), Path.join(tmp, 'tm', 'fz'))
+    const back = process.cwd()
+    try {
+      process.chdir(tmp)
+      const out = await generated([], staged.model)
+      const files = Object.keys(out).filter((file: string) => file.startsWith('fz/'))
+      ok(0 < files.length, 'nothing generated for fz')
+      ok(out['fz/README.md'].includes('cd fz && go test'), 'the how-to does not enter fz/')
+      ok(out['fz/Makefile'].includes('\nTAG := fz/v$(VERSION)\n'), 'the Makefile tags another folder')
+      ok(out['Makefile'].includes('$(MAKE) -C fz publish'), 'the root Makefile deploys fz elsewhere')
+      const origin = files.flatMap((file: string) => out[file].split('\n')
+        .filter((line: string) => /\bcd go\b|\.\.\/[\w.-]+\/go\b|\bgo\/v[$\dX]/.test(line))
+        .map((line: string) => file + ': ' + line))
+      deepStrictEqual(origin, [], 'these name the origin\'s folder')
+    }
+    finally {
+      process.chdir(back)
+      staged.remove()
+      Fs.rmSync(tmp, { recursive: true, force: true })
+    }
+  })
+
+
   test('go~go2 sorts where go sorts in the root README packages table', async () => {
     const rows = async (targets: string[], extra = '') => {
       const readme = (await generated(targets, extra, TopOnly))['README.md']

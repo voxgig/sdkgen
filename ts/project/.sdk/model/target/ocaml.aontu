@@ -33,6 +33,7 @@ main: kit: feature: &: target: ocaml: deps: &: {
 
 
 main: kit: target: ocaml: publish: {
+  recipe: false
   registry: {
     name: 'opam'
     url: 'https://opam.ocaml.org'

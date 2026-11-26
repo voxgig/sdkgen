@@ -303,7 +303,7 @@ ${liveExcludedLines(plan).map((line) => '            print(' + pyLit(line) + ')\
 def _${entity.name}_basic_setup(extra):
     runner.load_env_local()
 
-    entity_data_file = os.path.join(_TEST_DIR, "../../.sdk/test/entity/${entity.name}/${entity.Name}TestData.json")
+    entity_data_file = os.path.join(_TEST_DIR, "../${ctx$.stdrep.SDKREL}/.sdk/test/entity/${entity.name}/${entity.Name}TestData.json")
     with open(entity_data_file, "r", encoding="utf-8") as f:
         entity_data_source = f.read()
 

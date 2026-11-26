@@ -324,7 +324,7 @@ end
     Content(`def ${entity.name}_basic_setup(extra)
   Runner.load_env_local
 
-  entity_data_file = File.join(__dir__, "..", "..", ".sdk", "test", "entity", "${entity.name}", "${entity.Name}TestData.json")
+  entity_data_file = File.join(__dir__, "..", "${ctx$.stdrep.SDKREL}", ".sdk", "test", "entity", "${entity.name}", "${entity.Name}TestData.json")
   entity_data_source = File.read(entity_data_file, encoding: "UTF-8")
   entity_data = JSON.parse(entity_data_source)
 ${fixtureIdentity(entity)}

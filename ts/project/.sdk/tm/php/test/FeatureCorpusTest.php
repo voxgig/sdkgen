@@ -33,7 +33,7 @@ class FeatureCorpusTest extends TestCase
 
     private static function corpus(): array
     {
-        $path = __DIR__ . '/../../.sdk/test/test.json';
+        $path = __DIR__ . '/../SDKREL/.sdk/test/test.json';
         $raw = file_get_contents($path);
         if (false === $raw) {
             throw new RuntimeException("Failed to load test.json: $path");

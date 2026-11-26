@@ -21,7 +21,7 @@ const PINNED: { suspended: { family: string, reason: string }[], pins: Pin[] } =
 const FULL = '1' === process.env.SDKGEN_TEXTGUARD_FULL
 const UPDATE = '1' === process.env.SDKGEN_TEXTGUARD_UPDATE
 const SUBSET = ['baseline', 'phase-top-off', 'phase-readme-off-ts', 'phase-agentguide-off-ts',
-  'root-ts', 'external-go-cli', 'targets-lone']
+  'root-ts', 'external-go-cli', 'external-ts', 'targets-lone']
 
 
 function findings(base: Run, run: Run, v: Variation, full: boolean): Finding[] {

@@ -7,6 +7,8 @@ import {
   fact,
 } from '@voxgig/sdkgen'
 
+import { elixirApp } from './app_elixir'
+
 
 import {
   KIT,
@@ -23,7 +25,7 @@ const PrepareAuth = cmp(async function PrepareAuth(props: any) {
   const { model } = props.ctx$
   const authFact = fact(model.main[KIT], 'auth')
 
-  Folder({ name: model.const.name }, () => {
+  Folder({ name: elixirApp(model, target) }, () => {
     File({ name: 'prepare_auth.' + target.ext }, () => {
       Content(render({
         Name: model.const.Name,

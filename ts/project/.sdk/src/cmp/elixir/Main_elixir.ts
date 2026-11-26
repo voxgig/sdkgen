@@ -7,7 +7,11 @@ import {
   inactiveFeatureExcludes,
   pluginExcludes,
   targetFeatures,
+  TargetLicense,
+  TargetVersion,
 } from '@voxgig/sdkgen'
+
+import { elixirApp } from './app_elixir'
 
 
 import {
@@ -49,6 +53,8 @@ const Main = cmp(async function Main(props: any) {
 
   Package({ target })
   Gitignore({})
+  TargetLicense({ target })
+  TargetVersion({ target })
 
   // Generate the documented typespec module (lib/<app>_types.ex).
   EntityTypes({ target })
@@ -64,7 +70,7 @@ const Main = cmp(async function Main(props: any) {
   Folder({ name: 'lib' }, () => {
     Copy({
       from: 'tm/' + target.name + '/lib/projectname',
-      to: model.const.name,
+      to: elixirApp(model, target),
       exclude: [
         ...inactiveFeatureExcludes(props.ctx$, target, 'tm/' + target.name + '/lib/projectname'),
         ...pluginExcludes(model),
@@ -78,7 +84,7 @@ const Main = cmp(async function Main(props: any) {
   Folder({ name: 'lib' }, () => {
 
     // Main SDK module (entity factory fns injected at the slot).
-    File({ name: model.const.name + '.' + target.ext }, () => {
+    File({ name: elixirApp(model, target) + '.' + target.ext }, () => {
       Fragment(
         {
           from: ff + 'Main.fragment.ex',

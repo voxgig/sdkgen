@@ -327,7 +327,7 @@ end)
     Content(`function ${entity.name}_basic_setup(extra)
   runner.load_env_local()
 
-  local entity_data_file = _test_dir .. "../../.sdk/test/entity/${entity.name}/${entity.Name}TestData.json"
+  local entity_data_file = _test_dir .. "../${ctx$.stdrep.SDKREL}/.sdk/test/entity/${entity.name}/${entity.Name}TestData.json"
   local f = io.open(entity_data_file, "r")
   if f == nil then
     error("failed to read ${entity.name} test data: " .. entity_data_file)

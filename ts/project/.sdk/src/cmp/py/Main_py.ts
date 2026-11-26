@@ -8,7 +8,8 @@ import {
   inactiveFeatureExcludes,
   pluginExcludes,
   targetFeatures,
-  TEST_CONTROL_EXCLUDE
+  TEST_CONTROL_EXCLUDE,
+  TargetLicense,
 } from '@voxgig/sdkgen'
 
 
@@ -50,6 +51,7 @@ const Main = cmp(async function Main(props: any) {
   Package({ target })
 
   Gitignore({})
+  TargetLicense({ target })
 
   Copy({
     from: 'tm/' + target.name,

@@ -1,7 +1,7 @@
 import { Content, File } from 'jostraca'
 import { cmp } from '../helpers/component'
 
-import { nonAffiliation, publisherInfo } from '../helpers/packageMeta'
+import { nonAffiliation, packageVersion, publisherInfo } from '../helpers/packageMeta'
 
 
 // Root MIT LICENSE for the generated SDK repo. The copyright holder is the
@@ -21,14 +21,9 @@ import { nonAffiliation, publisherInfo } from '../helpers/packageMeta'
 // The disclosure is not lost. It leads the README, and it now has its own
 // NOTICE file, which is the conventional home for exactly this and is not
 // parsed as a licence.
-const License = cmp(function License(props: any) {
-  const { ctx$ } = props
-  const { model } = ctx$
-
+function licenseText(model: any): string {
   const year = (model.const && model.const.year) || new Date().getFullYear()
-
-  File({ name: 'LICENSE' }, () => {
-    Content(`MIT License
+  return `MIT License
 
 Copyright (c) ${year} ${publisherInfo(model).name}
 
@@ -49,7 +44,16 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-`)
+`
+}
+
+
+const License = cmp(function License(props: any) {
+  const { ctx$ } = props
+  const { model } = ctx$
+
+  File({ name: 'LICENSE' }, () => {
+    Content(licenseText(model))
   })
 
   File({ name: 'NOTICE' }, () => {
@@ -59,6 +63,25 @@ SOFTWARE.
 })
 
 
+// A port's own LICENSE and VERSION, written at every generate: a template copied
+// at add would keep the year and the version it was copied with.
+const TargetLicense = cmp(function TargetLicense(props: any) {
+  File({ name: 'LICENSE' }, () => {
+    Content(licenseText(props.ctx$.model))
+  })
+})
+
+
+const TargetVersion = cmp(function TargetVersion(props: any) {
+  const { target, ctx$ } = props
+  File({ name: 'VERSION' }, () => {
+    Content(packageVersion(ctx$.model, target.name) + '\n')
+  })
+})
+
+
 export {
-  License
+  License,
+  TargetLicense,
+  TargetVersion,
 }

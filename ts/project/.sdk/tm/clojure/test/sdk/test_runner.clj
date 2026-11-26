@@ -88,7 +88,7 @@
 
 (defn- find-corpus-file []
   (first (filter (fn [p] (.exists (java.io.File. ^String p)))
-                 ["../.sdk/test/test.json" ".sdk/test/test.json" "../../.sdk/test/test.json" "test/test.json"])))
+                 ["SDKREL/.sdk/test/test.json" ".sdk/test/test.json" "../SDKREL/.sdk/test/test.json" "test/test.json"])))
 
 ;; The agent pool keeps the JVM alive for a minute after the last task, so a
 ;; run that passes exits as one that fails does.

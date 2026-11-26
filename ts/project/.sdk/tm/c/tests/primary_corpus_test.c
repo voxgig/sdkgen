@@ -39,7 +39,7 @@
 
 /* The shared corpus, compiled by the project build. Relative to the target
  * root, which is where the Makefile runs each test binary from. */
-#define TEST_JSON_FILE "../.sdk/test/test.json"
+#define TEST_JSON_FILE "SDKREL/.sdk/test/test.json"
 
 static omni_pool* POOL = NULL;
 static omni_runner* RUNNER = NULL;

@@ -35,7 +35,7 @@ local ProjectNameError = require("core.error")
 
 -- Resolved against test/omni.lua's own directory, so the suite works from
 -- any working directory.
-local TEST_JSON_FILE = "../../.sdk/test/test.json"
+local TEST_JSON_FILE = "../SDKREL/.sdk/test/test.json"
 
 
 local runner = omni.makeRunner(TEST_JSON_FILE, sdk.test(nil, nil))

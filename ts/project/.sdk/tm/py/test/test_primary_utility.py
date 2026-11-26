@@ -33,7 +33,7 @@ from test.omni import makeRunner
 
 # Resolved against test/omni.py's own directory, so the suite works from
 # any working directory.
-TEST_JSON_FILE = '../../.sdk/test/test.json'
+TEST_JSON_FILE = '../SDKREL/.sdk/test/test.json'
 
 
 _runner = makeRunner(TEST_JSON_FILE, ProjectNameSDK.test(None, None))

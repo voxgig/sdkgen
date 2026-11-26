@@ -23,7 +23,7 @@ func loadEnvLocal() {
 	envLocalOnce.Do(func() {
 		_, filename, _, _ := runtime.Caller(0)
 		dir := filepath.Dir(filename)
-		envFile := filepath.Join(dir, "..", "..", ".env.local")
+		envFile := filepath.Join(dir, "..", "SDKREL", ".env.local")
 
 		data, err := os.ReadFile(envFile)
 		if err != nil {
@@ -214,7 +214,7 @@ func loadTestSpec(t *testing.T) map[string]any {
 	if cachedTestSpec != nil {
 		return cachedTestSpec
 	}
-	data, err := os.ReadFile("../../.sdk/test/test.json")
+	data, err := os.ReadFile("../SDKREL/.sdk/test/test.json")
 	if err != nil {
 		t.Fatalf("Failed to load test.json: %v", err)
 	}

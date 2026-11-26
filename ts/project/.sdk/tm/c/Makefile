@@ -270,5 +270,6 @@ clean:
 
 # C has no central registry — publishing IS the git tag.
 VERSION := $(shell cat VERSION 2>/dev/null || echo 0.0.1)
+TAG := RELEASETAG
 publish:
-	@echo "C target: tag-only publish (c/v$(VERSION)); no registry."
+	@echo "C target: $(if $(TAG),tag-only publish ($(TAG)),no release tag); no registry."

@@ -346,7 +346,7 @@ ${liveExcludedLines(plan).map((line) => '        println!("{}", ' + JSON.stringi
     load_env_local();
 
     let mut entity_data_file = manifest_dir();
-    entity_data_file.push("..");
+    entity_data_file.push("${ctx$.stdrep.SDKREL}");
     entity_data_file.push(".sdk");
     entity_data_file.push("test");
     entity_data_file.push("entity");

@@ -1,7 +1,7 @@
 package JAVAPACKAGE.sdktest;
 
 // Drives the primary utility functions against the shared test.json spec
-// (../.sdk/test/test.json, section "primary") through the VENDORED omni
+// (SDKREL/.sdk/test/test.json, section "primary") through the VENDORED omni
 // runner (OmniResolver over test/vendor/omni). Mirrors
 // tm/go/test/primary_utility_test.go.
 //
@@ -42,7 +42,7 @@ import JAVAPACKAGE.feature.BaseFeature;
 @SuppressWarnings({"unchecked"})
 public class PrimaryUtilityTest {
 
-  static final String TEST_JSON_FILE = "../.sdk/test/test.json";
+  static final String TEST_JSON_FILE = "SDKREL/.sdk/test/test.json";
 
   // PENDING sections are the ones deliberately left empty in the shared
   // corpus (.sdk/test/primary/<name>.aontu). Everything else MUST contribute

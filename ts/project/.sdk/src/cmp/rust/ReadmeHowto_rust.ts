@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, requiredItems, matchExampleItems, requestExampleItems } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, requiredItems, matchExampleItems, requestExampleItems, envLocalAt, cdTarget } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -135,7 +135,7 @@ let client = ${model.const.Name}SDK::new(jo(vec![
 
 ### Run live tests
 
-Create a \`.env.local\` file at the crate root:
+Create a \`.env.local\` file ${envLocalAt(props.ctx$, target)}:
 
 \`\`\`
 ${envName(model)}_TEST_LIVE=TRUE${apikeyEnvLine}
@@ -144,7 +144,7 @@ ${envName(model)}_TEST_LIVE=TRUE${apikeyEnvLine}
 Then run:
 
 \`\`\`bash
-cd ${target.name} && cargo test
+${cdTarget(target)}cargo test
 \`\`\`
 
 `)

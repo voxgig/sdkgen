@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, luaKey, requiredItems, matchExampleItems, requestExampleItems } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, luaKey, requiredItems, matchExampleItems, requestExampleItems, envLocalAt, cdTarget } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -140,7 +140,7 @@ local client = sdk.new({
 
 ### Run live tests
 
-Create a \`.env.local\` file at the project root:
+Create a \`.env.local\` file ${envLocalAt(props.ctx$, target)}:
 
 \`\`\`
 ${envName(model)}_TEST_LIVE=TRUE${apikeyEnvLine}
@@ -149,7 +149,7 @@ ${envName(model)}_TEST_LIVE=TRUE${apikeyEnvLine}
 Then run:
 
 \`\`\`bash
-cd lua && busted test/
+${cdTarget(target)}busted test/
 \`\`\`
 
 `)

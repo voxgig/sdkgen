@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, entityIdField, entityDataIdField, pickExampleEntity, safeVarName, exampleVarName, jsKey, requiredItems, matchExampleItems, jsProp, requestExampleItems } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, entityIdField, entityDataIdField, pickExampleEntity, safeVarName, exampleVarName, jsKey, requiredItems, matchExampleItems, jsProp, requestExampleItems, envLocalAt, cdTarget } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -164,7 +164,7 @@ const client = new ${model.const.Name}SDK({${apikeyExtendField}
 
 ### Run live tests
 
-Create a \`.env.local\` file at the project root:
+Create a \`.env.local\` file ${envLocalAt(props.ctx$, target)}:
 
 \`\`\`
 ${envName(model)}_TEST_LIVE=TRUE${apikeyEnvLine}
@@ -173,7 +173,7 @@ ${envName(model)}_TEST_LIVE=TRUE${apikeyEnvLine}
 Then run:
 
 \`\`\`bash
-cd js && npm test
+${cdTarget(target)}npm test
 \`\`\`
 
 `)

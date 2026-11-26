@@ -1,15 +1,12 @@
 
-import { cmp, Content, isPublished, repoInfo, packageVersion, sdkName } from '@voxgig/sdkgen'
-
-import { gradleGroup } from './utility_kotlin'
+import { cmp, Content, isPublished, repoInfo, packageVersion, cdTarget, packageName, registryNote, fact } from '@voxgig/sdkgen'
 
 
 const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
   const { target, ctx$ } = props
   const { model } = ctx$
 
-  const group = gradleGroup(model)
-  const artifactId = sdkName(model.name)
+  const [group, artifactId] = packageName(model, target.name).split(':')
 
   if (isPublished(model, target.name)) {
     Content(`Add the dependency to your \`build.gradle.kts\`:
@@ -23,7 +20,7 @@ dependencies {
 Or build and install from a source checkout:
 
 \`\`\`bash
-cd kotlin && gradle build
+${cdTarget(target)}gradle build
 \`\`\`
 
 `)
@@ -33,12 +30,13 @@ cd kotlin && gradle build
   // Publish pending: not yet on Maven Central. Install from the git release
   // tag or from a local source checkout built with Gradle.
   const { hostName, tagsUrl } = repoInfo(model)
-  Content(`This package is not yet published to Maven Central. Install it from the ${hostName}
-release tag (\`${target.name}/vX.Y.Z\`, see [Tags](${tagsUrl})) or
-from a source checkout — build the library with Gradle:
+  const tag = fact(target, 'tag')
+  Content(`${registryNote(model, target.name)} Install it from ${'' === tag ? '' : `the ${hostName}
+release tag (\`${tag}X.Y.Z\`, see [Tags](${tagsUrl})) or
+from `}a source checkout — build the library with Gradle:
 
 \`\`\`bash
-cd kotlin && gradle build
+${cdTarget(target)}gradle build
 \`\`\`
 
 `)

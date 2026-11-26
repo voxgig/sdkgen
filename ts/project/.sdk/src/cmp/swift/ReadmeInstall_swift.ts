@@ -1,5 +1,5 @@
 
-import { cmp, Content, isPublished, repoInfo, packageVersion } from '@voxgig/sdkgen'
+import { cmp, Content, isPublished, repoInfo, packageVersion, cdTarget, collectDeps, registryNote, fact } from '@voxgig/sdkgen'
 
 
 const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
@@ -11,42 +11,42 @@ const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
 
 \`\`\`swift
 dependencies: [
-    .package(url: "<repo-url>", from: "${packageVersion(model, target.name)}"),
+    .package(url: "${repoInfo(model).repoUrl}", from: "${packageVersion(model, target.name)}"),
 ],
 \`\`\`
 
 Or build from a source checkout — the SDK is a plain SwiftPM package:
 
 \`\`\`bash
-cd swift && swift build
+${cdTarget(target)}swift build
 \`\`\`
 
 `)
     return
   }
 
-  // Publish pending: not yet on the SwiftPM registry (git-tag only). The
-  // generated SDK is a dependency-free SwiftPM package (Foundation + the
-  // vendored Voxgig Struct port), so install it from the git release tag or a
-  // local source checkout and build with SwiftPM.
+  // Publish pending: not yet on the SwiftPM registry (git-tag only), so
+  // install it from the git release tag or a local source checkout.
   const { hostName, tagsUrl } = repoInfo(model)
-  Content(`This package is not yet published to a SwiftPM registry. The generated SDK
+  const free = 0 === collectDeps(model, target.name, target.deps).length
+  const tag = fact(target, 'tag')
+  Content(`${registryNote(model, target.name)}${free ? ` The generated SDK
 is a dependency-free SwiftPM package (Foundation only, plus the vendored
-Voxgig Struct port). Depend on it from the ${hostName} release tag
-(\`${target.name}/vX.Y.Z\`, see [Tags](${tagsUrl})) by adding it to
+Voxgig Struct port).` : ''}${'' === tag ? ' Build it' : ` Depend on it from the ${hostName} release tag
+(\`${tag}X.Y.Z\`, see [Tags](${tagsUrl})) by adding it to
 your \`Package.swift\`:
 
 \`\`\`swift
 dependencies: [
     // From the git release tag:
-    .package(url: "<repo-url>", exact: "${packageVersion(model, target.name)}"),
+    .package(url: "${repoInfo(model).repoUrl}", exact: "${packageVersion(model, target.name)}"),
 ],
 \`\`\`
 
-Or build from a source checkout with SwiftPM:
+Or build`} from a source checkout with SwiftPM:
 
 \`\`\`bash
-cd swift && swift build
+${cdTarget(target)}swift build
 \`\`\`
 
 `)

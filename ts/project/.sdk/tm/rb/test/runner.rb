@@ -6,7 +6,7 @@ module ProjectNameTestRunner
   @env = {}
 
   def self.load_env_local
-    env_file = File.join(File.dirname(__FILE__), '..', '..', '.env.local')
+    env_file = File.join(File.dirname(__FILE__), '..', 'SDKREL', '.env.local')
     return unless File.exist?(env_file)
 
     File.readlines(env_file, encoding: 'UTF-8').each do |line|

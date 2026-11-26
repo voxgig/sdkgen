@@ -120,6 +120,14 @@ is not promised an MCP server, and a project with one target gets no note. A
 per-language file that exports a whole `ReadmeIntro` instead writes the
 introduction itself, unframed.
 
+#### `TargetLicense` and `TargetVersion`
+
+A port's own `LICENSE` and `VERSION` files, which a per-language `Main` writes
+into the target's directory on every `generate`. The licence is the project's
+MIT text, with the year and the publisher the root `LICENSE` names; the
+version file holds the target's `publish.version`. A template copied at
+`target add` would keep the year and the version of the day it was copied.
+
 #### `FeatureHook`
 
 ```ts
@@ -198,6 +206,33 @@ it was. A component passes formatted data that holds text from the spec
 through it, so the template pass reads no model path in that text, and a lone
 `$`, such as a type sentinel, is unchanged. Each `$$` in the source must lie
 inside a string literal.
+
+### `envLocalAt(ctx$, target) → string`
+
+Where `.env.local` goes, as a target's own README states it: every generated
+live test reads the file from the project directory. It answers
+`at the project root`, unless the target is generated in another repository:
+then it names the SDK project that generates the target, with the path back
+to it from the target's directory. A `ReadmeHowto_<lang>` component ends its
+"Create a `.env.local` file" sentence with it.
+
+### `registryNote(model, targetName) → string`
+
+The sentence a target's install section states its registry with, read from
+the target's registry state: published to the registry, not yet published to
+it, not published to it, or not published to any package registry. A
+`ReadmeInstall_<lang>` component writes it where the section turns to a
+release tag or a source checkout.
+
+### `readerDir(target) → string` and `cdTarget(target) → string`
+
+A target's directory as its own documents name it. For a target generated
+in a folder of the repository, `readerDir` answers that folder, so a command
+the README gives from the repository root enters it, and `cdTarget` answers
+`cd <folder> && `. A target generated at the project root or in another
+repository is the directory its README sits in: `readerDir` answers `.` and
+`cdTarget` answers an empty string. The per-language `ReadmeHowto` and
+`ReadmeInstall` components build every `cd` line and checkout path with them.
 
 ### `collectDeps(model, targetName, targetDeps) → DepEntry[]`
 

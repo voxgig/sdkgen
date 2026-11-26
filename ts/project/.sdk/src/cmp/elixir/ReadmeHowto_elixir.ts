@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, entityIdField, pickExampleEntity, elixirAccessor, entityCollection, exampleVarName, requiredItems, matchExampleItems, requestExampleItems } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, entityIdField, pickExampleEntity, elixirAccessor, entityCollection, exampleVarName, requiredItems, matchExampleItems, requestExampleItems, envLocalAt, cdTarget } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -138,7 +138,7 @@ sdk = ${Name}.new(H.deep(%{
 
 ### Run live tests
 
-Create a \`.env.local\` file at the project root:
+Create a \`.env.local\` file ${envLocalAt(props.ctx$, target)}:
 
 \`\`\`
 ${envName(model)}_TEST_LIVE=TRUE${apikeyEnvLine}
@@ -147,7 +147,7 @@ ${envName(model)}_TEST_LIVE=TRUE${apikeyEnvLine}
 Then run:
 
 \`\`\`bash
-cd ${target.name} && mix test
+${cdTarget(target)}mix test
 \`\`\`
 
 `)

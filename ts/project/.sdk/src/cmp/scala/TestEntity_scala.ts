@@ -104,7 +104,7 @@ ${failureTests(SDK, entity, accessor)}
 ${failureScopes(SDK, entity, accessor)}
     rep.scope("${ENTLOWER}.basic") {
       val entityData = Helpers.toMapAny(SdkTestSupport.readJson(
-          "../.sdk/test/entity/${ENTLOWER}/${EntityName}TestData.json"))
+          "${ctx$.stdrep.SDKREL}/.sdk/test/entity/${ENTLOWER}/${EntityName}TestData.json"))
 ${fixtureIdentity(entity)}      val options = new LinkedHashMap[String, Object]()
       options.put("entity", entityData.get("existing"))
       val client = ${SDK}.testSDK(options, null)

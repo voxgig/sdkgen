@@ -9,7 +9,7 @@ class ProjectNameTestRunner
 
     public static function load_env_local(): void
     {
-        $env_file = __DIR__ . '/../../.env.local';
+        $env_file = __DIR__ . '/../SDKREL/.env.local';
         if (!file_exists($env_file)) {
             return;
         }

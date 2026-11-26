@@ -4,6 +4,8 @@ import {
   File, Content, Copy, Folder,
   inactiveFeatureExcludes,
   pluginExcludes,
+  TargetLicense,
+  TargetVersion,
 } from '@voxgig/sdkgen'
 
 
@@ -40,6 +42,8 @@ const Main = cmp(async function Main(props: any) {
   Package({ target })
 
   Gitignore({})
+  TargetLicense({ target })
+  TargetVersion({ target })
 
   const featureGate = extraFeatures(model, target).map((f: any) => f.name)
   const containerExcludes = CONTAINED

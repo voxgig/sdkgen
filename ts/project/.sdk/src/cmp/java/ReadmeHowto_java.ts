@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, entityIdField, pickExampleEntity, requiredItems, javaMapOf, matchExampleItems, javaMapItems, requestExampleItems } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, entityIdField, pickExampleEntity, requiredItems, javaMapOf, matchExampleItems, javaMapItems, requestExampleItems, envLocalAt, cdTarget } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -137,7 +137,7 @@ ${SDK} client = new ${SDK}(options);
 
 ### Run live tests
 
-Create a \`.env.local\` file at the project root:
+Create a \`.env.local\` file ${envLocalAt(props.ctx$, target)}:
 
 \`\`\`
 ${envName(model)}_TEST_LIVE=TRUE${apikeyEnvLine}
@@ -146,7 +146,7 @@ ${envName(model)}_TEST_LIVE=TRUE${apikeyEnvLine}
 Then run:
 
 \`\`\`bash
-cd java && mvn test
+${cdTarget(target)}mvn test
 \`\`\`
 
 `)

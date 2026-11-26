@@ -28,6 +28,7 @@ declare function registryState(model: any, target: string): 'tag' | 'pending' | 
 declare function isPublished(model: any, target: string): boolean;
 declare function registryName(model: any, target: string): string;
 declare function registryLabel(name: string): string;
+declare function registryNote(model: any, target: string): string;
 declare function vendorCommand(model: any, target: string): string;
 declare function apiName(model: any): string;
 declare function packageName(model: any, eco: string): string;
@@ -55,4 +56,4 @@ declare function contributorList(model: any): {
 }[];
 declare function envToken(name: any): string;
 declare function envName(model: any): string;
-export { sdkName, PUBLISHER, PUBLISHER_URL, SECURITY_EMAIL, GENERATOR_URL, LANG_LABEL, langLabel, originName, repoInfo, releaseBranch, apiName, packageName, hasPackageName, installCommand, registryState, isPublished, registryName, registryLabel, vendorCommand, pkgDescription, tomlString, nonAffiliation, keywords, publisherInfo, isDefaultPublisher, securityContact, authorInfo, contributorList, envName, envToken, goModule, goVersion, goPackageIdent, packageVersion, docsSiteUrl, };
+export { sdkName, PUBLISHER, PUBLISHER_URL, SECURITY_EMAIL, GENERATOR_URL, LANG_LABEL, langLabel, originName, repoInfo, releaseBranch, apiName, packageName, hasPackageName, installCommand, registryState, isPublished, registryName, registryLabel, registryNote, vendorCommand, pkgDescription, tomlString, nonAffiliation, keywords, publisherInfo, isDefaultPublisher, securityContact, authorInfo, contributorList, envName, envToken, goModule, goVersion, goPackageIdent, packageVersion, docsSiteUrl, };

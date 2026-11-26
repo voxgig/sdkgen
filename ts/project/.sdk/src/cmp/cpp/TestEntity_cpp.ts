@@ -93,7 +93,7 @@ struct ${entity.Name}Setup {
 static ${entity.Name}Setup ${evar}_basic_setup(const Value& extra) {
   load_env_local();
 
-  std::string entity_data_file = "../.sdk/test/entity/${entity.name}/${entity.Name}TestData.json";
+  std::string entity_data_file = "${ctx$.stdrep.SDKREL}/.sdk/test/entity/${entity.name}/${entity.Name}TestData.json";
   Value entity_data = vs::parse_json(read_file(entity_data_file));
 ${fixtureIdentity(entity)}
   Value options = vmap({{"entity", getp(entity_data, "existing")}});

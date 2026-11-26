@@ -30,7 +30,7 @@ rescue
 end
 
 # Path to the JSON test file
-STRUCT_TEST_JSON_FILE = File.join(__dir__, '../../.sdk/test/test.json')
+STRUCT_TEST_JSON_FILE = File.join(__dir__, '../SDKREL/.sdk/test/test.json')
 
 class StructUtilityTest < Minitest::Test
   def setup

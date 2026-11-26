@@ -25,7 +25,7 @@ use ProjectNameSDK;
 
 require(Cwd::abs_path("$FindBin::Bin/omni.pm"));
 
-my $corpus_path = Cwd::abs_path("$FindBin::Bin/../../.sdk/test/test.json");
+my $corpus_path = Cwd::abs_path("$FindBin::Bin/../SDKREL/.sdk/test/test.json");
 
 unless (defined $corpus_path && -e $corpus_path) {
   plan skip_all => "Corpus file not found";

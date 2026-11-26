@@ -1,15 +1,12 @@
 
-import { cmp, Content, isPublished, repoInfo, packageVersion, sdkName } from '@voxgig/sdkgen'
-
-import { mavenGroupId } from './utility_scala'
+import { cmp, Content, isPublished, repoInfo, packageVersion, cdTarget, collectDeps, packageName, registryNote, fact } from '@voxgig/sdkgen'
 
 
 const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
   const { target, ctx$ } = props
   const { model } = ctx$
 
-  const groupId = mavenGroupId(model)
-  const artifactId = sdkName(model.name)
+  const [groupId, artifactId] = packageName(model, target.name).split(':')
 
   if (isPublished(model, target.name)) {
     Content(`Add the dependency with scala-cli:
@@ -27,26 +24,25 @@ libraryDependencies += "${groupId}" %% "${artifactId}" % "${packageVersion(model
 Or build from a source checkout — the SDK is a plain scala-cli project:
 
 \`\`\`bash
-cd scala && scala-cli compile .
+${cdTarget(target)}scala-cli compile .
 \`\`\`
 
 `)
     return
   }
 
-  // Publish pending: not yet on Maven Central. The generated SDK is a
-  // dependency-free, plain-source scala-cli project (no sbt/mill build, no
-  // third-party runtime deps), so install it from the git release tag or a
-  // local source checkout and compile with scala-cli.
+  // Publish pending: not yet on Maven Central, so install it from the git
+  // release tag or a local source checkout and compile with scala-cli.
   const { hostName, tagsUrl } = repoInfo(model)
-  Content(`This package is not yet published to Maven Central. The generated SDK is a
-plain-source scala-cli project (no build tool, no third-party runtime
-dependencies). Install it from the ${hostName} release tag
-(\`${target.name}/vX.Y.Z\`, see [Tags](${tagsUrl})) or from a source
+  const tag = fact(target, 'tag')
+  const free = 0 === collectDeps(model, target.name, target.deps).length
+  Content(`${registryNote(model, target.name)} The generated SDK is a
+plain-source scala-cli project (no build tool${free ? ', no third-party runtime\ndependencies' : ''}). Install it from ${'' === tag ? '' : `the ${hostName} release tag
+(\`${tag}X.Y.Z\`, see [Tags](${tagsUrl})) or from `}a source
 checkout — compile it with scala-cli:
 
 \`\`\`bash
-cd scala && scala-cli compile .
+${cdTarget(target)}scala-cli compile .
 \`\`\`
 
 `)

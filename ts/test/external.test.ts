@@ -7,7 +7,7 @@ import Path from 'node:path'
 
 import { memfs } from 'memfs'
 
-import { SdkGen, registerComponent } from '../dist/sdkgen.js'
+import { SdkGen, fact, registerComponent } from '../dist/sdkgen.js'
 
 import { makeModel, makeRoot, layeredFs, makeLog, STAGE, SCAFFOLD } from './generateharness'
 
@@ -17,6 +17,11 @@ const OUT = '/elsewhere/acme-cli'
 const OUT2 = '/elsewhere/acme-sdk'
 
 const REL = '../elsewhere/rel-cli'
+
+
+// The in-tree walk from a target back to the project's `.sdk` or
+// `.env.local`: `../.sdk`, `"..", ".sdk"`, or `push("..")` then `push(".sdk")`.
+const IN_TREE_BACK = /\.\.(?:\/|["'],\s*["']|["']\);\s*\w+\.push\(["'])\.(?:sdk|env\.local)\b/
 
 
 const norm = (path: string) =>
@@ -173,6 +178,14 @@ describe('external target', () => {
       ok(String(url).includes('github.com/acme/demo-ts'), JSON.stringify(url))
     }
     ok(outside['README.md'].includes('github.com/acme/demo-ts'), 'the install text names the SDK repository')
+  })
+
+
+  test('a relocated rockspec builds from the root of its own repository', async () => {
+    const { outside } = await generate(['lua'], 'lua', "main: kit: target: lua: output: repo: 'acme/demo-lua'")
+    const spec = outside['demo.rockspec']
+    ok(spec.includes('url = "git+https://github.com/acme/demo-lua.git"'), spec)
+    ok(/^  dir = "demo-lua"$/m.test(spec), spec)
   })
 
 
@@ -648,6 +661,87 @@ describe('external target', () => {
       const warn = sink.find((e: any) => 'external-sdkrel-derived' === e.point)
       strictEqual(warn, undefined,
         'a destination one level from the SDK project should derive cleanly')
+    })
+
+
+    // Outside its documents, a target generated out of tree is the target
+    // generated in tree, but for the path back, which every reader of the
+    // project's `.sdk` and `.env.local` takes from the run.
+    test('every SDK target reads the project through its declared path back', async () => {
+      const all = Fs.readdirSync(Path.join(SCAFFOLD, 'model', 'target'))
+        .filter((f: string) => f.endsWith('.aontu') && !f.includes('-index'))
+        .map((f: string) => f.replace(/\.aontu$/, ''))
+      const kit = makeModel(all).main.kit
+      const sdks = all.filter((t: string) => 'sdk' === fact(kit.target[t], 'surface'))
+      ok(15 < sdks.length, 'expected every bundled SDK target: ' + sdks.join(', '))
+
+      // The ts README example test reads whichever README the placement writes.
+      const code = (tree: Record<string, string>) => Object.keys(tree)
+        .filter((path: string) => !path.endsWith('.md') && 'test/ReadmeExample.test.ts' !== path).sort()
+
+      for (const t of sdks) {
+        const tree = under((await generate([t], {})).inside, t)
+        const away = (await generate([t], t,
+          `main: kit: target: '${t}': output: sdkrel: '../../zzproj'`)).outside
+
+        deepStrictEqual(code(away), code(tree), t + ': out of tree writes other files')
+        // A target out of tree is not the tree's one npm package, its release
+        // tag follows the tag fact, and its rockspec builds from the root of
+        // the clone.
+        const placed = (text: string) => text.replace(/^TAG := .*$/m, 'TAG :=')
+          .replace(/^  dir = ".*"$/m, '  dir =')
+        const differ = code(tree).filter((path: string) =>
+          placed(away[path].split('../../zzproj').join('..')) !== placed(tree[path]))
+        deepStrictEqual(differ, [], t + ': these differ from the in-tree files by more than the path back')
+        ok(code(away).some((path: string) => away[path].includes('zzproj')),
+          t + ': no file names the declared path back')
+        deepStrictEqual(code(away).filter((path: string) => IN_TREE_BACK.test(away[path])), [],
+          t + ': these still walk back to the project as they do in tree')
+      }
+    })
+
+
+    // The live tests read `.env.local` from the project, so the how-to says
+    // where that is from the README's own directory.
+    test('a how-to puts .env.local where the live tests read it', async () => {
+      for (const t of ['ts', 'go', 'rust']) {
+        const tree = under((await generate([t], {})).inside, t)
+        const away = (await generate([t], t,
+          `main: kit: target: '${t}': output: sdkrel: '../../zzproj'`)).outside
+
+        ok(tree['README.md'].includes('Create a `.env.local` file at the project root:'),
+          t + ': in tree the file is not at the project root')
+        ok(away['README.md'].includes('Create a `.env.local` file in the SDK project that ' +
+          'generates this package, `../../zzproj/` from this directory:'),
+          t + ': out of tree the README does not name the path back')
+      }
+    })
+
+
+    // Out of tree the reader of a target's README stands in its directory.
+    test('a relocated target\'s documents enter no folder of the SDK repository', async () => {
+      for (const t of ['ts', 'go', 'c']) {
+        const away = (await generate([t], t,
+          `main: kit: target: '${t}': output: sdkrel: '../../zzproj'`)).outside
+        const entered = Object.keys(away).flatMap((path: string) => away[path].split('\n')
+          .filter((line: string) => new RegExp('\\bcd ' + t + '\\b|(?<![\\w/.-])' + t + '/core\\b').test(line))
+          .map((line: string) => path + ': ' + line))
+        deepStrictEqual(entered, [], t + ': a relocated tree enters ' + t + '/')
+      }
+    })
+
+
+    test('a relocated ts runs the quick start of its own README', async () => {
+      const read = "const readmePath = Path.join(__dirname, '..', "
+      const tree = under((await generate(['ts'], {})).inside, 'ts')
+      ok(tree['test/ReadmeExample.test.ts'].includes(read + "'../README.md')"),
+        'in tree the test does not read the root README')
+      const away = (await generate(['ts'], 'ts',
+        "main: kit: target: ts: output: sdkrel: '../../zzproj'")).outside
+      ok(away['test/ReadmeExample.test.ts'].includes(read + "'README.md')"),
+        'out of tree the test does not read its own README')
+      ok(away['test/ReadmeExample.test.ts'].includes("'Tutorial: your first API call'"),
+        'out of tree the test does not read the tutorial')
     })
 
 

@@ -4,6 +4,7 @@ import {
   File,
   cmp,
   packageVersion,
+  packageName,
 } from '@voxgig/sdkgen'
 
 
@@ -12,7 +13,7 @@ import type {
 } from '@voxgig/apidef'
 
 
-import { zigModuleName, zigPackageFingerprint } from './utility_zig'
+import { zigPackageFingerprint } from './utility_zig'
 
 
 const Package = cmp(async function Package(props: any) {
@@ -20,7 +21,7 @@ const Package = cmp(async function Package(props: any) {
   const target = props.target
   const model: Model = ctx$.model
 
-  const name = zigModuleName(model)
+  const name = packageName(model, target.name)
 
   // A fetched package keeps only `.paths`: the module source, the license
   // and the docs the README links.

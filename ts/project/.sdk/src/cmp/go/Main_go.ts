@@ -7,7 +7,10 @@ import {
   inactiveFeatureExcludes,
   entityConstructorName, entityCollection, goModule, goPackageIdent, pluginExcludes,
   targetFeatures,
-  TEST_CONTROL_EXCLUDE
+  TEST_CONTROL_EXCLUDE,
+  TargetLicense,
+  TargetVersion,
+  pkgDescription,
 } from '@voxgig/sdkgen'
 
 
@@ -53,6 +56,8 @@ const Main = cmp(async function Main(props: any) {
   Package({ target })
 
   Gitignore({})
+  TargetLicense({ target })
+  TargetVersion({ target })
 
   Copy({
     from: 'tm/' + target.name,
@@ -131,7 +136,8 @@ var NewBaseFeatureFunc func() Feature
   const hasEntities = Object.keys(entity || {}).length > 0
   const entityImport = hasEntities ? `\n\t"${gomodule}/entity"` : ''
   File({ name: model.name + '.' + target.ext }, () => {
-    Content(`package ${gopackage}
+    Content(`// Package ${gopackage}: ${pkgDescription(model, target.name)}
+package ${gopackage}
 
 import (
 	"${gomodule}/core"${entityImport}

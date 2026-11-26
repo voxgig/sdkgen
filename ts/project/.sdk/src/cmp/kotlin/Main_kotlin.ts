@@ -6,7 +6,9 @@ import {
   File, Copy, Folder, Fragment,
   TEST_CONTROL_EXCLUDE,
   inactiveFeatureExcludes,
-  pluginExcludes
+  pluginExcludes,
+  TargetLicense,
+  TargetVersion,
 } from '@voxgig/sdkgen'
 
 
@@ -47,6 +49,8 @@ const Main = cmp(async function Main(props: any) {
   Package({ target })
 
   Gitignore({})
+  TargetLicense({ target })
+  TargetVersion({ target })
 
   // Copy tm/kotlin files with replacements. KOTLINPACKAGE is the package root
   // token used throughout the templates (package/import statements).

@@ -9,6 +9,7 @@ function ensureStdrep(ctx$, target) {
     const stdrep = ctx$.stdrep = (ctx$.stdrep || {});
     if (null != target) {
         stdrep.SDKREL = null != ctx$.sdkrelpath ? ctx$.sdkrelpath : (0, facts_1.fact)(target, 'sdkrel');
+        stdrep.RELEASETAG = '' === (0, facts_1.fact)(target, 'tag') ? '' : (0, facts_1.fact)(target, 'tag') + '$(VERSION)';
     }
     if (null == stdrep.PROJECTENV) {
         stdrep.PROJECTENV = (0, packageMeta_1.envName)(ctx$.model);
@@ -21,9 +22,8 @@ function ensureStdrep(ctx$, target) {
 function templateReplacements(model, tname) {
     return {
         ProjectName: model?.const?.Name,
-        // The port's release version, read by its Makefile to build the
-        // `<target>/v<version>` tag. It comes from the same model field the
-        // generated manifest uses, so the tag and the package cannot disagree.
+        // The port's release version, which its Makefile tags. It comes from the
+        // model field the generated manifest uses, so the two cannot disagree.
         PROJECTVERSION: (0, packageMeta_1.packageVersion)(model, tname),
     };
 }

@@ -1,11 +1,13 @@
 
 import { cmp, Content } from '@voxgig/sdkgen'
 
+import { elixirApp } from './app_elixir'
+
 
 const ReadmeExplanation = cmp(function ReadmeExplanation(props: any) {
   const { target, ctx$: { model } } = props
 
-  const app = model.const.name.toLowerCase()
+  const app = elixirApp(model, target)
 
   Content(`### Data as struct value nodes
 

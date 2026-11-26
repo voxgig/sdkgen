@@ -27,7 +27,7 @@ class PrimaryUtilityTest < Minitest::Test
 
   # Resolved against test/omni.rb's own directory, so the suite works
   # from any working directory.
-  TEST_JSON_FILE = "../../.sdk/test/test.json"
+  TEST_JSON_FILE = "../SDKREL/.sdk/test/test.json"
 
   # Sections deliberately left empty in the shared corpus
   # (.sdk/test/primary/<name>.aontu carries a PENDING header). Everything

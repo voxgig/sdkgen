@@ -1,6 +1,6 @@
 // Primary-utility corpus driver.
 //
-// Drives every `primary` section of the shared corpus (../.sdk/test/test.json)
+// Drives every `primary` section of the shared corpus (SDKREL/.sdk/test/test.json)
 // through this SDK's utilities, the way the ts reference harness does.
 //
 // The ENGINE is the vendored @voxgig/omni runner (sdktest/vendor/omni),
@@ -316,7 +316,7 @@ object PrimaryCorpus {
 
 object PrimaryCorpusMain {
   def main(args: Array[String]): Unit = {
-    val testfile = if (args.length > 0) args(0) else "../.sdk/test/test.json"
+    val testfile = if (args.length > 0) args(0) else "SDKREL/.sdk/test/test.json"
     System.exit(PrimaryCorpus.run(testfile))
   }
 }

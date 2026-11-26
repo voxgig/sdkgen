@@ -268,7 +268,7 @@ let run_all (r : R.run) =
 (* ---------------- main ---------------- *)
 
 let () =
-  let testfile = if Array.length Sys.argv > 1 then Sys.argv.(1) else "../.sdk/test/test.json" in
+  let testfile = if Array.length Sys.argv > 1 then Sys.argv.(1) else "SDKREL/.sdk/test/test.json" in
   let r = R.make_run testfile "struct" in
   run_all r;
   R.report r ""

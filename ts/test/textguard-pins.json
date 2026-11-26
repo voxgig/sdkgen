@@ -2,16 +2,6 @@
   "suspended": [],
   "pins": [
     {
-      "relation": "link",
-      "chain": "Readme > ReadmeHowto",
-      "cause": "cd ts",
-      "reason": "Known stale, S41: `cd ts` assumes the target has its own directory; WP32.",
-      "line": "cd ts && npm test",
-      "variations": [
-        "root-ts"
-      ]
-    },
-    {
       "relation": "off",
       "chain": "AgentGuideTop > AgentGuideTopCustomise",
       "cause": "target",

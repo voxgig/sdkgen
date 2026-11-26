@@ -1,7 +1,7 @@
 package KOTLINPACKAGE.sdktest
 
 // Drives the primary utility functions against the shared test.json spec
-// (../.sdk/test/test.json, section "primary") through the VENDORED omni
+// (SDKREL/.sdk/test/test.json, section "primary") through the VENDORED omni
 // runner (OmniResolver over test/vendor/omni). Mirrors
 // tm/java/test/PrimaryUtilityTest.java and tm/go/test/primary_utility_test.go.
 //
@@ -37,7 +37,7 @@ import KOTLINPACKAGE.utility.defaultHttpFetch
 class PrimaryUtilityTest {
 
   companion object {
-    const val TEST_JSON_FILE = "../.sdk/test/test.json"
+    const val TEST_JSON_FILE = "SDKREL/.sdk/test/test.json"
 
     // PENDING sections are the ones deliberately left empty in the shared
     // corpus (.sdk/test/primary/<name>.aontu). Everything else MUST

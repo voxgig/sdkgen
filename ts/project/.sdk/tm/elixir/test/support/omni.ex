@@ -324,7 +324,7 @@ defmodule ProjectName.Omni do
   The corpus runner, in the shape the suites use.
 
   `specref` is a path to the shared corpus JSON (relative paths resolve
-  against the current working directory, as the suites' `../.sdk/...`
+  against the current working directory, as the suites' `SDKREL/.sdk/...`
   constant assumes) or an already-parsed spec in omni's value model, which
   keeps the smoke test free of fixture files.
 

@@ -1,5 +1,5 @@
 // Primary utility tests (C port of tm/rust/tests/primary_utility_test.rs).
-// The rust suite drives the shared `primary` subtree of ../.sdk/test/test.json
+// The rust suite drives the shared `primary` subtree of SDKREL/.sdk/test/test.json
 // through the pipeline utilities; the C port exercises the same utility surface
 // with deterministic, directly-constructed contexts (one focused unit test per
 // utility) so every make_*/prepare_*/result_*/transform_*/feature_* entry point
