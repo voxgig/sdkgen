@@ -279,6 +279,10 @@ A fetch definition whose `redirect` is `manual`, which a transport feature
 sets under a hosts policy, is answered by the redirect response itself in
 every target.
 
+The token exchange of the [`secrets`](#secrets) feature makes its own
+request and follows no redirect: a redirect that answers it is a failed
+exchange.
+
 ### Cancelling a request
 
 In `ts` and `js` a call takes an `AbortSignal`: as `ctrl.signal` on an
@@ -1194,6 +1198,13 @@ to `base` — so a templated server URL's account or tenant segment is already
 in it), the access token is written into the live options where the
 synchronous `prepareAuth` reads it, and a response in `exchange.statuses`
 buys another and retries the request once.
+
+The exchange follows no redirect. A `3xx` from the token endpoint is a
+failed exchange, reported as `secrets: token exchange failed: 307 from
+<url>`, and nothing is sent to its `Location`, whichever origin that names.
+The refresh token is the longest-lived credential the SDK holds, so it goes
+to the token endpoint under `base` and nowhere else. A `system.fetch` the
+caller supplies is handed `redirect: 'manual'` in the fetch definition.
 
 Set `name` to the refresh secret when exchanging — `name` is what the chain
 is asked for.

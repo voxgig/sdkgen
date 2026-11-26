@@ -196,6 +196,7 @@ Independent of any design here. H1 is documented; the others are not.
 | H10 | Basic flows exercise file routes as record routes (O4) | **ran** (the flows); the failure they cause not run | Phase 0 |
 | H11 | The SDK's own redirect loops drop three fixed header names on a hop to another origin (`authorization`, `cookie`, `proxy-authorization`). A credential the model places under another header name is not among them | **reproduced, then fixed** (`p0-redirect-credentials`): on Node's `fetch`, `x-api-key` and `private-token` reached another origin and a 307 sent a `PUT` body on, and each target's own redirect test found the same against a second listener. Fifteen targets now follow in their own loop and `go` and `py` in their client's hook, in every target that ships a transport | Phase 0 |
 | H12 | `rbac` cannot grant a record read without granting every action on `load` | **read** `RbacFeature.ts`, `_required` | Phase 2 |
+| H13 | The `secrets` feature's token exchange makes its own request, outside the transport's redirect rule. Where its HTTP client follows a redirect, the refresh token goes where the token endpoint's answer points | **reproduced, then fixed** (`p0-exchange-redirect`): against two local listeners, a 307 or 308 sent the refresh token to another origin in `ts`, `js`, `go`, `elixir` and `clojure`. A 302 fetched the access token from another origin, which the API was then sent, in those five and in `py`, `csharp`, `kotlin`, `scala` and `rust`. The other ten refused every redirect already, `swift` by reading. The exchange now follows none in any target (R23) | Phase 0 |
 
 ---
 
@@ -833,6 +834,7 @@ Sizes are relative. Each phase ends at something that can be released.
 - Characterise H2, H3 and H11 with failing tests, then fix them in every
   target: placeholders for byte bodies in `clean`, one error for a
   non-JSON response, the credential set the redirect loops drop.
+- The token exchange follows no redirect (H13).
 - `cache` skips non-JSON bodies (H5). `stream()`'s upload claim is removed
   or made true (H4).
 - apidef A1 and A2.
@@ -895,7 +897,7 @@ ruling of this document that the item answers.
 | `p0-browser-upload-redirect` | In a browser, a request with a body refuses every redirect, in `ts` and `js` | sdkgen | R21, S7 |
 | `p0-perl-hook-exception` | perl masks an exception a feature hook throws, as `rb` and `php` do | sdkgen | R22 |
 | `p0-clojure-hop-limit` | `clojure` follows five hops, as the other targets do | sdkgen | H11 |
-| `p0-exchange-redirect` | The secrets feature's token exchange follows no redirect, so its refresh token stays on its origin | sdkgen | S5, S7 |
+| `p0-exchange-redirect` | The secrets feature's token exchange follows no redirect, so its refresh token stays on its origin | sdkgen | H13, S5, R23 |
 | `p0-perl-clean-copy` | perl's `clean` returns a copy of a value cleaned on its own, never the live object | sdkgen | S9 |
 | `p0-feature-claims` | `cache` passes a body that is not JSON by; `stream()` stops documenting an upload nothing sends | sdkgen | H4, H5 |
 | `p0-apidef-verb-noun` | A collection named for a verb keeps its plain create, in both ports | apidef | H9, A1 |
@@ -960,7 +962,9 @@ ruling of this document that the item answers.
 
 Every question the plan raised is ruled. R1 to R8 were given on
 2026-11-21, R9 to R19 on 2026-11-23, and R20 to R22 on 2026-11-25, on
-questions the security work of Phase 0 raised.
+questions the security work of Phase 0 raised. R23 is not ruled yet: the
+work is built on the answer its row gives, and the row says what the other
+answer is.
 
 | # | Question | Ruling | Gates |
 | --- | --- | --- | --- |
@@ -986,6 +990,7 @@ questions the security work of Phase 0 raised.
 | **R20** | Whether `clean.active: false` also switches the description of bytes off | Yes. It is the one opt-out of all cleaning, and there is no switch for bytes alone | S9, ADR-006 |
 | **R21** | A redirect where the SDK cannot follow by hand, as in a browser | A request that carries a body refuses every redirect; one without a body is left to the platform | S7, `p0-browser-upload-redirect` |
 | **R22** | perl: an exception object a feature hook throws | Masked. The caller gets the SDK's error with the cleaned message, and the hook's own object as its cause | `p0-perl-hook-exception` |
+| **R23** | Whether the secrets feature's token exchange follows a redirect | **Proposed, not ruled.** It follows none: a 3xx that answers the exchange is a failed exchange, on another origin or the same one. The other answer is the transport's rule, which follows on the same origin and never sends a body to another | S5, `p0-exchange-redirect` |
 
 Three more rulings came with them:
 

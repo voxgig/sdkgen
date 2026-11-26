@@ -930,6 +930,18 @@ emitted broken source reached the fleet unchallenged.
   `clean: content swept N surface(s), 0 leak(s)` line. The response canary
   needs none: the sweep answers an ordinary operation with bytes, and the
   lanes require `clean: response swept N surface(s), 0 leak(s)`.
+- **A request a feature makes itself is outside the transport's redirect
+  rule.** The `secrets` token exchange cannot go through `utility.fetcher`:
+  the feature wraps it, and the test mock would answer. So it sends its own
+  request, and where its client followed a redirect, a 307 carried the
+  refresh token to another origin in five targets and a 302 let another
+  origin choose the access token in ten. It now follows none: the fetch
+  definition says `redirect: manual`, a client of the feature's own is told
+  to follow nothing, and a 3xx is a failed exchange. `ts/test/redirect.test.ts`
+  lists every target's exchange; each shipped secrets suite answers it with
+  redirects against two listeners and prints `secrets: exchange refused N
+  redirect(s), M followed`, which the secrets lanes require. A new request
+  of a feature's own needs the same answer.
 - **The HTTP status is on the error, not just in `err.result`.** `err.status`
   (-1 when there was no response) plus a `notFound` predicate, so a consumer
   never couples itself to the internal shape of `result`.
