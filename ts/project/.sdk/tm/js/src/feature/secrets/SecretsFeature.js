@@ -41,8 +41,8 @@ const { Sekreto, envkey } = require('./sekreto')
 const REDIRECT_MAX = 5
 
 
-// Where a 307 or 308 points, when that is on the exchange's own origin. Any
-// other redirect would drop the body or leave the origin.
+// The next URL of a redirect that keeps its method, when that URL is on the
+// exchange's own origin. Any other redirect would drop the body or leave it.
 function moved(url, at, res) {
   const status = null == res ? 0 : res.status
   if (307 !== status && 308 !== status) {

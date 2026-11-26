@@ -772,7 +772,7 @@ describe('secrets exchange', () => {
   })
 
 
-  // Two real listeners and the platform fetch: a stub follows nothing. The
+  // Real listeners and the platform fetch: a stub follows nothing. The
   // origin answers the exchange as `answer` says and records what else it gets.
   async function withOrigins(run: (o: any) => Promise<void>) {
     const o: any = { elsewhere: [], followed: [], exchanged: 0, answer: [307, ''] }
@@ -914,7 +914,7 @@ describe('secrets exchange', () => {
       assert.deepEqual(wrong, [])
       assert.equal(followed, 2)
       assert.equal(refused, 3)
-      // A redirect to itself is followed five times and no more.
+      // A redirect to itself stops at the hop limit.
       assert.equal(looped, 6)
     })
   })
