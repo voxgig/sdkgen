@@ -949,7 +949,7 @@ class CleanTest extends TestCase
     {
         // With clean off nothing strips the trace arguments, and var_export
         // renders the whole context through them: 43 MB of text on a
-        // 31-operation API (#292). The control proves the sweep sees a raw
+        // 31-operation API. The control proves the sweep sees a raw
         // value, which the arguments are not needed for.
         $args = ini_set('zend.exception_ignore_args', '1');
         try {

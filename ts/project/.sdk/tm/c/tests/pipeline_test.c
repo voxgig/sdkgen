@@ -571,7 +571,7 @@ static voxgig_value* make_opts_feature(voxgig_value* feature) {
   cs.options = cmap(1, "feature", feature);
   cs.config = cmap(1, "options", v_map());
   Context* ctx = make_context_util(cs, NULL);
-  return make_options_util(ctx);
+  return make_options_util(ctx, NULL);
 }
 
 static void order_join(voxgig_value* opts, char* out, size_t n) {

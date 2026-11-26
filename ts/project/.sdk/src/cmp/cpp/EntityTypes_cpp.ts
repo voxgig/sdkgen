@@ -61,16 +61,11 @@ const EntityTypes = cmp(function EntityTypes(props: any) {
   const target = props.target || {}
   const ext = target.ext || 'hpp'
 
-  // only_active:false — getModelPath DROPS active:false entries by default,
-  // but the consumer scaffold (create-sdkgen Root.ts) iterates the RAW entity
-  // collection, so inactive entities still get generated entity code that
-  // references these typed names. The typed model must cover them too.
+  // only_active:false — a Root scaffolded before create-sdkgen filtered on
+  // `active` still generates entity code for inactive entities, and a project
+  // keeps its Root until it re-scaffolds; that code needs these typed names.
   const entity = getModelPath(model, `main.${KIT}.entity`, { only_active: false, required: false })
-  // Emit for EVERY entity that gets generated entity code: the consumer
-  // scaffold (create-sdkgen Root.ts) iterates entities WITHOUT an active
-  // filter, so inactive entities still get class files referencing these
-  // typed names. Filter on `name` (always present), NOT `active` — parity
-  // with the go emitter's fix.
+  // Filter on `name` (always present), not `active`.
   const entityList = deriveEntityNames(entity)
 
   warnEntityTypeCollisions(entity, log, LANG)

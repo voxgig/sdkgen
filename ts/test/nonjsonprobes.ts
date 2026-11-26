@@ -242,8 +242,6 @@ import (
 	"os"
 	"regexp"
 	"testing"
-
-	sdk "GOMODULE"
 )
 
 type nonjsonCase struct {
@@ -268,7 +266,7 @@ func TestNonjsonProbe(t *testing.T) {
 		if c.Agent != "" {
 			opts["headers"] = map[string]any{"user-agent": c.Agent}
 		}
-		client := sdk.NewDemoSDK(opts)
+		client := newClient(opts)
 		_, err := client.Cat(nil).List(map[string]any{}, nil)
 		nonjsonReport("probe", c.Name, err)
 		res, _ := client.Direct(map[string]any{"path": "cat"})
@@ -284,7 +282,7 @@ func TestNonjsonProbe(t *testing.T) {
 		if c.Agent != "" {
 			copts["headers"] = map[string]any{"user-agent": c.Agent}
 		}
-		cached := sdk.NewDemoSDK(copts)
+		cached := newClient(copts)
 		for _, path := range []string{"cache1", "cache2"} {
 			_, err := cached.Cat(nil).List(map[string]any{}, nil)
 			nonjsonReport(path, c.Name, err)
@@ -888,7 +886,7 @@ fn nonjson_probe() {
         if !f[3].is_empty() {
             opts.push(("headers", jo(vec![("user-agent", Value::str(f[3]))])));
         }
-        let client = DemoSDK::new(jo(opts));
+        let client = DemoSDK::new(jo(opts)).unwrap();
         match client.cat(Value::Noval).list(jo(vec![]), Value::Noval) {
             Ok(_) => report("probe", f[0], "ok", None),
             Err(e) => report("probe", f[0], &e.code, Some(e.msg.clone())),
@@ -909,7 +907,7 @@ fn nonjson_probe() {
         if !f[3].is_empty() {
             copts.push(("headers", jo(vec![("user-agent", Value::str(f[3]))])));
         }
-        let cached = DemoSDK::new(jo(copts));
+        let cached = DemoSDK::new(jo(copts)).unwrap();
         for path in ["cache1", "cache2"] {
             match cached.cat(Value::Noval).list(jo(vec![]), Value::Noval) {
                 Ok(_) => report(path, f[0], "ok", None),
@@ -1103,7 +1101,7 @@ int main(void) {
     if (getenv("NONJSON_SEAM")) setp(opts, "system", cmap(1, "fetch", vfn(stub, c)));
     const char* agent = get_str(c, "agent");
     if (agent) setp(opts, "headers", cmap(1, "user-agent", v_str(agent)));
-    DemoSDK* sdk = demo_sdk_new(opts);
+    DemoSDK* sdk = demo_sdk_new(opts, NULL);
     PNError* err = NULL;
     Entity* e = demo_cat(sdk, NULL);
     e->vt->list(e, v_map(), v_map(), &err);
@@ -1119,7 +1117,7 @@ int main(void) {
       "feature", cmap(1, "cache", cmap(1, "active", v_bool(true))));
     if (getenv("NONJSON_SEAM")) setp(copts, "system", cmap(1, "fetch", vfn(stub, c)));
     if (agent) setp(copts, "headers", cmap(1, "user-agent", v_str(agent)));
-    DemoSDK* cached = demo_sdk_new(copts);
+    DemoSDK* cached = demo_sdk_new(copts, NULL);
     const char* paths[] = { "cache1", "cache2" };
     for (int n = 0; n < 2; n++) {
       PNError* cerr = NULL;
@@ -1292,7 +1290,7 @@ test "nonjson probe" {
         });
         const agent = h.getp(c, "agent");
         if (agent == .string) h.setp(opts, "headers", h.jo(&.{.{ "user-agent", agent }}));
-        const client = sdk.SDK.new(opts);
+        const client = sdk.SDK.new(opts).ok;
         switch (client.cat(vnull()).list(h.omap(), h.omap())) {
             .ok => report("probe", name, "ok", null),
             .err => |e| report("probe", name, e.code, e.msg),
@@ -1311,7 +1309,7 @@ test "nonjson probe" {
             .{ "feature", h.jo(&.{.{ "cache", h.jo(&.{.{ "active", h.vbool(true) }}) }}) },
         });
         if (agent == .string) h.setp(copts, "headers", h.jo(&.{.{ "user-agent", agent }}));
-        const cached = sdk.SDK.new(copts);
+        const cached = sdk.SDK.new(copts).ok;
         for ([_][]const u8{ "cache1", "cache2" }) |path| {
             switch (cached.cat(vnull()).list(h.omap(), h.omap())) {
                 .ok => report(path, name, "ok", null),

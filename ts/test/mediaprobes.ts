@@ -486,7 +486,7 @@ func TestMediaProbe(t *testing.T) {
 		if h, ok := c["headers"].(map[string]any); ok {
 			opts["headers"] = h
 		}
-		client := sdk.NewDemoSDK(opts)
+		client := newClient(opts)
 		input := map[string]any{}
 		if in, ok := c["input"].(map[string]any); ok {
 			for k, v := range in {
@@ -1088,7 +1088,7 @@ fn media_probe() {
         if !headers.is_noval() {
             setp(&opts, "headers", headers);
         }
-        let client = DemoSDK::new(opts);
+        let client = DemoSDK::new(opts).unwrap();
         let data = vs::clone(&getp(&c, "input"));
         if let Value::Str(h) = getp(&c, "bodyHex") {
             let bytes: Vec<u8> = (0..h.len() / 2)
@@ -1175,7 +1175,7 @@ int main(void) {
     if (getenv("MEDIA_SEAM")) setp(opts, "system", cmap(1, "fetch", vfn(printer, NULL)));
     voxgig_value* headers = getp(c, "headers");
     if (!v_is_noval(headers)) setp(opts, "headers", headers);
-    DemoSDK* sdk = demo_sdk_new(opts);
+    DemoSDK* sdk = demo_sdk_new(opts, NULL);
     voxgig_value* input = voxgig_clone(getp(c, "input"));
     const char* hex = get_str(c, "bodyHex");
     if (hex) setp(input, "$body", unhex(hex));
@@ -1358,7 +1358,7 @@ test "media probe" {
         });
         const headers = h.getp(c, "headers");
         if (headers == .object) h.setp(opts, "headers", headers);
-        const client = sdk.SDK.new(opts);
+        const client = sdk.SDK.new(opts).ok;
         const data = h.clone(h.getp(c, "input"));
         const hex = h.getp(c, "bodyHex");
         if (hex == .string) h.setp(data, "$body", h.vstr(unhex(hex.string)));

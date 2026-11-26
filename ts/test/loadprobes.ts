@@ -61,7 +61,7 @@ func TestLoadProbe(t *testing.T) {
 		}
 		client := sdk.TestSDK(nil, nil)
 		if base := os.Getenv("LOAD_BASE"); "" != base {
-			client = sdk.NewDemoSDK(map[string]any{"base": base})
+			client = newClient(map[string]any{"base": base})
 		}
 		_, err := client.Cat(nil).Load(match, nil)
 		var se *sdk.DemoError

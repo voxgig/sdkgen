@@ -33,8 +33,7 @@ import {
   cmp,
   each,
   isAuthActive,
-  serverVarEnv,
-  entityDataIdField, entityRecordIdField, envName, envToken,
+  entityDataIdField, entityRecordIdField,
   jsKey,
   jsProp,
   hasLiveScenarios,
@@ -89,26 +88,26 @@ const TestEntity = cmp(function TestEntity(props: any) {
   const target = props.target
   const entity: ModelEntity = props.entity
 
-  const PROJENVNAME = envName(model)
-  const ENTENVNAME = envToken(entity.name)
+  const ENVVAR = fact(model.main[KIT], 'env')
+  const PROJENVNAME = ENVVAR.prefix
   const authActive = isAuthActive(model)
   const authSecret = authActive && fact(model.main[KIT], 'auth').secret
   const apikeyEnvEntry = authActive
-    ? `\n    '${PROJENVNAME}_APIKEY': '',${authSecret ? `\n    '${PROJENVNAME}_SECRET': '',` : ''}`
+    ? `\n    '${ENVVAR.apikey}': '',${authSecret ? `\n    '${ENVVAR.secret}': '',` : ''}`
     : ''
   const apikeyLiveField = authActive
     ? `
-        apikey: env.${PROJENVNAME}_APIKEY,${authSecret ? `
-        secret: env.${PROJENVNAME}_SECRET,` : ''}`
+        apikey: env.${ENVVAR.apikey},${authSecret ? `
+        secret: env.${ENVVAR.secret},` : ''}`
     : ''
 
   const svars = fact(model.main[KIT], 'server')
   const serverEnvEntry = svars
-    .map((v: any) => `\n    '${serverVarEnv(PROJENVNAME, v.name)}': ${templateSafe('js', JSON.stringify(v.dflt))},`).join('')
+    .map((v: any) => `\n    '${ENVVAR.server[v.name]}': ${templateSafe('js', JSON.stringify(v.dflt))},`).join('')
   const serverLiveField = 0 === svars.length ? '' : `
         server: {${svars
       .map((v: any) => `
-          ${jsKey(v.name)}: ${jsProp('env', serverVarEnv(PROJENVNAME, v.name))},`).join('')}
+          ${jsKey(v.name)}: ${jsProp('env', ENVVAR.server[v.name])},`).join('')}
         },`
 
   const ff = projectPath('src/cmp/js/fragment/')
@@ -185,17 +184,17 @@ ${fixtureIdentity(entity)}
     })
 
   const env = envOverride({
-    '${PROJENVNAME}_TEST_${ENTENVNAME}_ENTID': idmap,
-    '${PROJENVNAME}_TEST_LIVE': 'FALSE',
+    '${ENVVAR.entid[entity.name]}': idmap,
+    '${ENVVAR.live}': 'FALSE',
     '${PROJENVNAME}_TEST_EXPLAIN': 'FALSE',${apikeyEnvEntry}${serverEnvEntry}
   })
 
-  idmap = env['${PROJENVNAME}_TEST_${ENTENVNAME}_ENTID']
+  idmap = env['${ENVVAR.entid[entity.name]}']
 
-  const live = 'TRUE' === env.${PROJENVNAME}_TEST_LIVE
+  const live = 'TRUE' === env.${ENVVAR.live}
   const transport = createLiveTransport()
   if (live) {
-    const rawIds = process.env['${PROJENVNAME}_TEST_${ENTENVNAME}_ENTID']
+    const rawIds = process.env['${ENVVAR.entid[entity.name]}']
     idmap = rawIds && rawIds.trim() ? JSON.parse(rawIds) : {}
     if (!idmap || Array.isArray(idmap) || typeof idmap !== 'object') {
       throw new Error('Live ENTID must be a JSON object')
@@ -240,7 +239,7 @@ ${fixtureIdentity(entity)}
           )
 
           Content(`
-    ${hasLiveScenarios(model) ? `if (process.env.${PROJENVNAME}_TEST_LIVE === 'TRUE') { t.skip('Covered by live operation scenarios'); return }` : ''}
+    ${hasLiveScenarios(model) ? `if (process.env.${ENVVAR.live} === 'TRUE') { t.skip('Covered by live operation scenarios'); return }` : ''}
     const setup = basicSetup()
     if (setup.live) {
       return runLiveEntity(setup, ${templateSafe('js', JSON.stringify(liveEntity(ctx$, entity)))}, ${templateSafe('js', JSON.stringify(liveFlowRoutes(entity, basicflow)))}, '${nom(entity, 'Name')}', ${templateSafe('js', JSON.stringify(liveFacts))}, { strict: LIVE_STRICT, t }${excludedArg(entity, basicflow)})

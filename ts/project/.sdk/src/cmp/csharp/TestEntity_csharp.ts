@@ -18,8 +18,7 @@ import {
   each,
   buildIdNames,
   getMatchEntries,
-  isAuthActive, envName, envToken, entityRecordIdField,
-  serverVarEnv,
+  isAuthActive, entityRecordIdField,
   liveFlowNeeds, liveStrict, liveStrictNote,
   liveGates, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
   liveRouteExamples, liveStepExamples,
@@ -139,16 +138,16 @@ const TestEntity = cmp(function TestEntity(props: any) {
   }
 
   const Name = model.const.Name
-  const PROJUPPER = envName(model)
-  const ENTUPPER = envToken(entity.name)
+  const ENVVAR = fact(model.main[KIT], 'env')
+  const PROJUPPER = ENVVAR.prefix
 
   const authActive = isAuthActive(model)
   const authSecret = authActive && fact(model.main[KIT], 'auth').secret
   const apikeyEnvEntry = authActive
-    ? `\n            ["${PROJUPPER}_APIKEY"] = "",${authSecret ? `\n            ["${PROJUPPER}_SECRET"] = "",` : ''}`
+    ? `\n            ["${ENVVAR.apikey}"] = "",${authSecret ? `\n            ["${ENVVAR.secret}"] = "",` : ''}`
     : ''
   const apikeyLiveField = authActive
-    ? `\n                    ["apikey"] = env["${PROJUPPER}_APIKEY"],${authSecret ? `\n                    ["secret"] = env["${PROJUPPER}_SECRET"],` : ''}`
+    ? `\n                    ["apikey"] = env["${ENVVAR.apikey}"],${authSecret ? `\n                    ["secret"] = env["${ENVVAR.secret}"],` : ''}`
     : ''
 
   // A templated server URL (OpenAPI server variables) makes a LIVE client
@@ -157,12 +156,12 @@ const TestEntity = cmp(function TestEntity(props: any) {
   // takes them from the environment the same way it takes the apikey.
   const svars = fact(model.main[KIT], 'server')
   const serverEnvEntry = svars
-    .map((v: any) => `\n            ["${serverVarEnv(PROJUPPER, v.name)}"] = ${JSON.stringify(v.dflt)},`).join('')
+    .map((v: any) => `\n            ["${ENVVAR.server[v.name]}"] = ${JSON.stringify(v.dflt)},`).join('')
   const serverLiveField = 0 === svars.length ? '' : `
                     ["server"] = new Dictionary<string, object?>
                     {${svars
       .map((v: any) => `
-                        ["${v.name}"] = env["${serverVarEnv(PROJUPPER, v.name)}"],`).join('')}
+                        ["${v.name}"] = env["${ENVVAR.server[v.name]}"],`).join('')}
                     },`
 
   const idnames = buildIdNames(entity, basicflow)
@@ -178,7 +177,7 @@ const TestEntity = cmp(function TestEntity(props: any) {
   const genCtx: GenCtx = { model, entity, flow: basicflow, PROJUPPER }
 
   const strict = liveStrict(model, target.name)
-  const entidEnvVar = `${PROJUPPER}_TEST_${ENTUPPER}_ENTID`
+  const entidEnvVar = ENVVAR.entid[entity.name]
 
   const opNames = Array.from(new Set(
     (allSteps as any[]).map((s: any) => s.o).filter(Boolean)))
@@ -397,18 +396,18 @@ ${fixtureIdentity(entity)}
         // Whether *_ENTID supplied the idmap, read before EnvOverride consumes
         // it: without it, the ids a live flow binds are the fixture's synthetic ones.
         var entidEnvRaw = Environment.GetEnvironmentVariable(
-            "${PROJUPPER}_TEST_${ENTUPPER}_ENTID") ?? "";
+            "${ENVVAR.entid[entity.name]}") ?? "";
         var idmapOverridden = entidEnvRaw != "" &&
             entidEnvRaw.Trim().StartsWith("{");
 
         var env = TestRunner.EnvOverride(new Dictionary<string, object?>
         {
-            ["${PROJUPPER}_TEST_${ENTUPPER}_ENTID"] = idmap,
-            ["${PROJUPPER}_TEST_LIVE"] = "FALSE",
+            ["${ENVVAR.entid[entity.name]}"] = idmap,
+            ["${ENVVAR.live}"] = "FALSE",
             ["${PROJUPPER}_TEST_EXPLAIN"] = "FALSE",${apikeyEnvEntry}${serverEnvEntry}
         });
 
-        var idmapResolved = Helpers.ToMapAny(env["${PROJUPPER}_TEST_${ENTUPPER}_ENTID"])
+        var idmapResolved = Helpers.ToMapAny(env["${ENVVAR.entid[entity.name]}"])
             ?? Helpers.ToMapAny(idmap)
             ?? new Dictionary<string, object?>();
 `)
@@ -425,7 +424,7 @@ ${fixtureIdentity(entity)}
     }
 
     Content(`
-        if (Equals(env["${PROJUPPER}_TEST_LIVE"], "TRUE"))
+        if (Equals(env["${ENVVAR.live}"], "TRUE"))
         {
             // 'extra ?? new ...', not a bare 'extra': Merge returns null when
             // the last entry is null, and BasicSetup is normally called with no
@@ -445,7 +444,7 @@ ${fixtureIdentity(entity)}
             client = new ${Name}SDK(Helpers.ToMapAny(mergedOpts));
         }
 
-        var live = Equals(env["${PROJUPPER}_TEST_LIVE"], "TRUE");
+        var live = Equals(env["${ENVVAR.live}"], "TRUE");
         return new EntityTestSetup
         {
             Client = client,

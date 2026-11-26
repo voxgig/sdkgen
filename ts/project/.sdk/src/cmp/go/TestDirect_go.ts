@@ -13,8 +13,7 @@ import {
   cmp,
   snakify,
   isAuthActive,
-  serverVarEnv,
-  envName, envToken, liveStrict, liveStrictNote,
+  liveStrict, liveStrictNote,
   pointParts,
   pointSlash,
   pointPlaceholders,
@@ -80,7 +79,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
   const entity: ModelEntity = liveEntity(ctx$, props.entity)
   const gomodule = props.gomodule
 
-  const PROJECTNAME = envName(model)
+  const ENVVAR = fact(model.main[KIT], 'env')
 
   const strict = liveStrict(model, target.name)
   const strictConst = entity.name + 'DirectLiveStrict'
@@ -88,10 +87,10 @@ const TestDirect = cmp(function TestDirect(props: any) {
   const authActive = isAuthActive(model)
   const authSecret = authActive && fact(model.main[KIT], 'auth').secret
   const apikeyEnvEntry = authActive
-    ? `\n\t\t"${PROJECTNAME}_APIKEY":       "",${authSecret ? `\n\t\t"${PROJECTNAME}_SECRET":       "",` : ''}`
+    ? `\n\t\t"${ENVVAR.apikey}":       "",${authSecret ? `\n\t\t"${ENVVAR.secret}":       "",` : ''}`
     : ''
   const apikeyLiveField = authActive
-    ? `\n\t\t\t"apikey": env["${PROJECTNAME}_APIKEY"],${authSecret ? `\n\t\t\t"secret": env["${PROJECTNAME}_SECRET"],` : ''}`
+    ? `\n\t\t\t"apikey": env["${ENVVAR.apikey}"],${authSecret ? `\n\t\t\t"secret": env["${ENVVAR.secret}"],` : ''}`
     : ''
 
   // A templated server URL (OpenAPI server variables) makes a LIVE client
@@ -100,11 +99,11 @@ const TestDirect = cmp(function TestDirect(props: any) {
   // environment, the same way the apikey is.
   const svars = fact(model.main[KIT], 'server')
   const serverEnvEntry = svars
-    .map((v: any) => `\n\t\t"${serverVarEnv(PROJECTNAME, v.name)}": ${JSON.stringify(v.dflt)},`).join('')
+    .map((v: any) => `\n\t\t"${ENVVAR.server[v.name]}": ${JSON.stringify(v.dflt)},`).join('')
   const serverLiveField = 0 === svars.length ? '' :
     `\n\t\t"server": map[string]any{` +
     svars.map((v: any) =>
-      `\n\t\t\t"${v.name}": env["${serverVarEnv(PROJECTNAME, v.name)}"],`).join('') +
+      `\n\t\t\t"${v.name}": env["${ENVVAR.server[v.name]}"],`).join('') +
     `\n\t\t},`
 
 
@@ -165,7 +164,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
     ? loadParams.map((p: any) => `\t\t\tparams["${p.n}"] = ${JSON.stringify(p.ex)}`).join('\n')
     : ''
 
-  const entidEnvVar = `${PROJECTNAME}_TEST_${envToken(entity.name)}_ENTID`
+  const entidEnvVar = ENVVAR.entid[entity.name]
 
   const exampleIds = liveExampleIds(entity)
   const exampleIdBlock = 0 === exampleIds.length ? '' :
@@ -586,10 +585,10 @@ func ${entity.name}DirectSetup(mockres any) *${entity.name}DirectSetupResult {
 
 	env := envOverride(map[string]any{
 		"${entidEnvVar}": map[string]any{},
-		"${PROJECTNAME}_TEST_LIVE":    "FALSE",${apikeyEnvEntry}${serverEnvEntry}
+		"${ENVVAR.live}":    "FALSE",${apikeyEnvEntry}${serverEnvEntry}
 	})
 
-	live := env["${PROJECTNAME}_TEST_LIVE"] == "TRUE"
+	live := env["${ENVVAR.live}"] == "TRUE"
 
 	if live {
 		// sdk-test-control.json's test.client.options seeds the live
@@ -602,7 +601,7 @@ func ${entity.name}DirectSetup(mockres any) *${entity.name}DirectSetupResult {
 		} {
 			mergedOpts[k] = v
 		}
-		client := sdk.New${model.const.Name}SDK(mergedOpts)
+		client := newClient(mergedOpts)
 
 		idmap := map[string]any{}
 		if entidRaw, ok := env["${entidEnvVar}"]; ok {
@@ -631,7 +630,7 @@ ${exampleIdBlock}
 		}, nil
 	}
 
-	client := sdk.New${model.const.Name}SDK(map[string]any{
+	client := newClient(map[string]any{
 		"base": "http://localhost:8080",
 		"system": map[string]any{
 			"fetch": (func(string, map[string]any) (map[string]any, error))(mockFetch),

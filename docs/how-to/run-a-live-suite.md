@@ -31,10 +31,9 @@ servers:
 ```
 
 A variable with no usable default is REQUIRED: the SDK refuses to construct
-rather than issue requests to a URL with a literal `{account_id}` in it. Most
-targets raise that refusal as an error from the constructor. Go and Rust
-panic, and C, Swift and Zig stop the process, because their constructors
-cannot return an error. So a live suite for such an API cannot run at all
+rather than issue requests to a URL with a literal `{account_id}` in it. Every
+target but Swift reports that refusal as an error from the constructor, and
+Swift stops the process. So a live suite for such an API cannot run at all
 until it is given the values, which is what `<PROJ>_SERVER_<NAME>` is for.
 `account_id` becomes `<PROJ>_SERVER_ACCOUNT_ID`.
 
@@ -80,10 +79,14 @@ it names read that from the environment or a gitignored `.env`.
 
 ## Target coverage
 
-Twelve targets carry the full live wiring — credential, server variables and
+Thirteen targets carry the full live wiring — credential, server variables and
 `test.client.options`:
 
-`ts`, `js`, `go`, `py`, `java`, `kotlin`, `php`, `rb`, `lua`, `rust`, `csharp`, `perl`
+`ts`, `js`, `go`, `py`, `java`, `kotlin`, `php`, `rb`, `lua`, `rust`, `csharp`, `perl`, `cpp`
+
+In `cpp` only the entity tests build a live client, and the SDK has no
+transport of its own, so that client sends nothing without a `system.fetch`:
+a live run fails at its first request with `fetch_no_transport`.
 
 The rest generate the mock suite only: they have no live client to configure,
 so those environment variables do nothing there. `ts/test/generate.test.ts`

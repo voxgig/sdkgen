@@ -18,12 +18,11 @@ import {
   each,
   buildIdNames,
   getMatchEntries,
-  isAuthActive, envName, envToken, entityRecordIdField,
+  isAuthActive, entityRecordIdField,
   liveFlowNeeds, liveStrict, liveStrictNote,
   liveGates, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
   liveRouteExamples, liveStepExamples,
   liveEntity, liveIdentity, liveRepeatsId, liveLoadComparesId, liveUnrouted,
-  serverVarEnv,
 } from '@voxgig/sdkgen'
 
 
@@ -129,9 +128,9 @@ const TestEntity = cmp(function TestEntity(props: any) {
     return
   }
 
-  const PROJUPPER = envName(model)
-  const ENTUPPER = envToken(entity.name)
-  const entidEnvVar = `${PROJUPPER}_TEST_${ENTUPPER}_ENTID`
+  const ENVVAR = fact(model.main[KIT], 'env')
+  const PROJUPPER = ENVVAR.prefix
+  const entidEnvVar = ENVVAR.entid[entity.name]
 
   const SDK = model.const.Name + 'SDK'
   const accessor = kotlinVarName(entity.name)
@@ -140,10 +139,10 @@ const TestEntity = cmp(function TestEntity(props: any) {
   const authSecret = authActive && fact(model.main[KIT], 'auth').secret
   const svars = fact(model.main[KIT], 'server')
   const serverEnvEntry = svars.map((v: any) =>
-    `      envm[${kotlinLit(serverVarEnv(PROJUPPER, v.name))}] = ${kotlinLit(v.dflt)}\n`).join('')
+    `      envm[${kotlinLit(ENVVAR.server[v.name])}] = ${kotlinLit(v.dflt)}\n`).join('')
   const serverLiveField = 0 === svars.length ? '' :
     '        liveOpts["server"] = linkedMapOf<String, Any?>(' + svars.map((v: any) =>
-      kotlinLit(v.name) + ' to env[' + kotlinLit(serverVarEnv(PROJUPPER, v.name)) + ']').join(', ') + ')\n'
+      kotlinLit(v.name) + ' to env[' + kotlinLit(ENVVAR.server[v.name]) + ']').join(', ') + ')\n'
 
   const idnames = buildIdNames(entity, basicflow)
 
@@ -352,9 +351,9 @@ ${fixtureIdentity(entity)}
 
       val envm = linkedMapOf<String, Any?>()
       envm["${entidEnvVar}"] = idmap
-      envm["${PROJUPPER}_TEST_LIVE"] = "FALSE"
+      envm["${ENVVAR.live}"] = "FALSE"
       envm["${PROJUPPER}_TEST_EXPLAIN"] = "FALSE"
-${authActive ? `      envm["${PROJUPPER}_APIKEY"] = "NONE"\n` : ''}${authSecret ? `      envm["${PROJUPPER}_SECRET"] = "NONE"\n` : ''}${serverEnvEntry}      val env = RunnerSupport.envOverride(envm)
+${authActive ? `      envm["${ENVVAR.apikey}"] = ""\n` : ''}${authSecret ? `      envm["${ENVVAR.secret}"] = ""\n` : ''}${serverEnvEntry}      val env = RunnerSupport.envOverride(envm)
 
       var idmapResolved = Helpers.toMapAny(env["${entidEnvVar}"])
       if (idmapResolved == null) {
@@ -371,10 +370,12 @@ ${authActive ? `      envm["${PROJUPPER}_APIKEY"] = "NONE"\n` : ''}${authSecret 
     }
 
     Content(`
-      val live = "TRUE" == env["${PROJUPPER}_TEST_LIVE"]
+      val live = "TRUE" == env["${ENVVAR.live}"]
       if (live) {
-        val liveOpts = linkedMapOf<String, Any?>()
-${authActive ? `        liveOpts["apikey"] = env["${PROJUPPER}_APIKEY"]\n` : ''}${authSecret ? `        liveOpts["secret"] = env["${PROJUPPER}_SECRET"]\n` : ''}${serverLiveField}        // An empty map, not null: merge answers null when its last entry is null.
+        // sdk-test-control.json's test.client.options seeds the live
+        // client; the generated fields below overwrite anything they name.
+        val liveOpts = RunnerSupport.liveClientOptions()
+${authActive ? `        liveOpts["apikey"] = env["${ENVVAR.apikey}"]\n` : ''}${authSecret ? `        liveOpts["secret"] = env["${ENVVAR.secret}"]\n` : ''}${serverLiveField}        // An empty map, not null: merge answers null when its last entry is null.
         val mergedOpts = Struct.merge(Struct.jt(liveOpts, extra ?: linkedMapOf<String, Any?>()))
         client = ${SDK}(Helpers.toMapAny(mergedOpts))
       }

@@ -98,16 +98,24 @@ Complete API reference for the ${model.Name} ${target.title} SDK.
     const OPTION_KIND: Record<string, string> = { string: 'string', map: 'map', list: '' }
     const optionRows = clientOptions(model).filter((o: any) => 'extend' !== o.name)
       .map((o: any) => '| `' + o.name + '` | `' + OPTION_KIND[o.kind] + '` | ' + o.desc + ' |\n').join('')
+    const required = fact(model.main[KIT], 'server').filter((v: any) => v.required)
+      .map((v: any) => '`' + v.name + '`')
+    const refusal = 0 === required.length ? '' : `
+Construction refuses \`options\` without a \`server\` value for ${required.join(' or ')}:
+\`${ident}_sdk_new\` returns \`NULL\` and sets \`*err\` to a \`PNError\` whose
+\`code\` is \`server_var_required\` and whose message names the variable.
+`
 
     Content(`\`\`\`c
 #include "core/api.h"
 
-${Name}SDK* client = ${ident}_sdk_new(options);
+PNError* err = NULL;
+${Name}SDK* client = ${ident}_sdk_new(options, &err);
 \`\`\`
 
 Create a new SDK client instance. \`options\` is a \`voxgig_value*\` map
 (\`NULL\` for none).
-
+${refusal}
 **Parameters (\`options\` map keys):**
 
 | Key | Value type | Description |
@@ -394,6 +402,7 @@ Features are activated via the \`feature\` option:
 `)
 
       Content(`\`\`\`c
+PNError* err = NULL;
 ${Name}SDK* client = ${ident}_sdk_new(cmap(1,
     "feature", cmap(${activeFeatures.length},
 `)
@@ -402,7 +411,7 @@ ${Name}SDK* client = ${ident}_sdk_new(cmap(1,
         Content(`        "${f.name}", cmap(1, "active", v_bool(true))${comma}
 `)
       })
-      Content(`));
+      Content(`), &err);
 \`\`\`
 
 `)

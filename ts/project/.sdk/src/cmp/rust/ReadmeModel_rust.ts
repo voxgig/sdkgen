@@ -36,13 +36,20 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   const OPTION_KIND: Record<string, string> = { string: 'string', map: 'map', list: '' }
   const optionRows = clientOptions(model).filter((o: any) => 'extend' !== o.name)
     .map((o: any) => '| `' + o.name + '` | `' + OPTION_KIND[o.kind] + '` | ' + o.desc + ' |\n').join('')
+  const required = fact(model.main[KIT], 'server').filter((v: any) => v.required)
+    .map((v: any) => '`' + v.name + '`')
+  const refusal = 0 === required.length ? '' : `
+Construction refuses \`options\` without a \`server\` value for ${required.join(' or ')}:
+\`new\` returns an \`Err\` holding a \`${model.const.Name}Error\` whose \`code\` is
+\`server_var_required\` and whose message names the variable.
+`
 
   Content(`### ${model.const.Name}SDK
 
 \`\`\`rust
 use ${rustcrate}::{${model.const.Name}SDK, Value};
 
-let client = ${model.const.Name}SDK::new(options);
+let client = ${model.const.Name}SDK::new(options).expect("valid client options");
 \`\`\`
 
 Creates a new SDK client. \`options\` is a \`Value\` map (\`Value::Noval\` for
@@ -50,7 +57,7 @@ none) carrying any of the following keys:
 
 | Option | Value type | Description |
 | --- | --- | --- |
-${optionRows}
+${optionRows}${refusal}
 ### test_sdk
 
 \`\`\`rust

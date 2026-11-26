@@ -36,13 +36,21 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   const OPTION_KIND: Record<string, string> = { string: 'string', map: 'map', list: '' }
   const optionRows = clientOptions(model).filter((o: any) => 'extend' !== o.name)
     .map((o: any) => '| `' + o.name + '` | `' + OPTION_KIND[o.kind] + '` | ' + o.desc + ' |\n').join('')
+  const required = fact(model.main[KIT], 'server').filter((v: any) => v.required)
+    .map((v: any) => '`' + v.name + '`')
+  const refusal = 0 === required.length ? '' : `
+Construction refuses \`options\` without a \`server\` value for ${required.join(' or ')}:
+\`${ident}_sdk_new\` returns \`NULL\` and sets \`*err\` to a \`PNError\` whose
+\`code\` is \`server_var_required\` and whose message names the variable.
+`
 
   Content(`### ${Name}SDK
 
 \`\`\`c
 #include "core/api.h"
 
-${Name}SDK* client = ${ident}_sdk_new(options);
+PNError* err = NULL;
+${Name}SDK* client = ${ident}_sdk_new(options, &err);
 \`\`\`
 
 Creates a new SDK client. \`options\` is a \`voxgig_value*\` map (\`NULL\` for
@@ -50,7 +58,7 @@ none) carrying any of the following keys:
 
 | Option | Value type | Description |
 | --- | --- | --- |
-${optionRows}
+${optionRows}${refusal}
 ### test_sdk
 
 \`\`\`c

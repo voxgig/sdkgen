@@ -55,7 +55,7 @@ int main(void) {
   voxgig_value* opts = cmap(2,
     "base", v_str("http://localhost:8080"),
     "system", cmap(1, "fetch", vfn(mock_ok, NULL)));
-  ProjectNameSDK* sdk = projectname_sdk_new(opts);
+  ProjectNameSDK* sdk = projectname_sdk_new(opts, NULL);
   CHECK_STR_EQ(sdk->mode, "live", "plain client mode is live");
 
   PNError* err = NULL;
@@ -76,7 +76,7 @@ int main(void) {
       "active", v_bool(true),
       "minDelay", v_num(0),
       "sleep", vfn(nosleep, NULL))));
-  ProjectNameSDK* rsdk = projectname_sdk_new(ropts);
+  ProjectNameSDK* rsdk = projectname_sdk_new(ropts, NULL);
   PNError* rerr = NULL;
   voxgig_value* rres = sdk_direct(rsdk,
     cmap(2, "path", v_str("/thing"), "method", v_str("GET")), &rerr);

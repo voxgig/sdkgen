@@ -154,6 +154,25 @@ object RunnerSupport {
     return null
   }
 
+  // The extra options every live client is built with, from
+  // sdk-test-control.json `test.client.options`. A reserved name is dropped:
+  // merged under fields the model does not ask for, a `base` would redirect
+  // the whole suite, credential included.
+  private val LIVE_RESERVED = listOf("base", "prefix", "suffix", "server", "apikey", "secret")
+
+  fun liveClientOptions(): MutableMap<String, Any?> {
+    val out = linkedMapOf<String, Any?>()
+    val test = Helpers.toMapAny(loadTestControl()["test"]) ?: return out
+    val client = Helpers.toMapAny(test["client"]) ?: return out
+    val opts = Helpers.toMapAny(client["options"]) ?: return out
+    for ((key, value) in opts) {
+      if (key !in LIVE_RESERVED) {
+        out[key] = value
+      }
+    }
+    return out
+  }
+
   fun liveDelayMs(): Int {
     val ctrl = loadTestControl()
     val test = Helpers.toMapAny(ctrl["test"]) ?: return 500

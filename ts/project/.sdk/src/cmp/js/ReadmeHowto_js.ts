@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, entityIdField, entityDataIdField, pickExampleEntity, safeVarName, exampleVarName, jsKey, requiredItems, matchExampleItems, jsProp, requestExampleItems, envLocalAt, cdTarget, fact, serverVarEnv, directRoute } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, entityIdField, entityDataIdField, pickExampleEntity, exampleVarName, jsKey, requiredItems, matchExampleItems, jsProp, requestExampleItems, envLocalAt, cdTarget, fact, directRoute } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -13,6 +13,7 @@ import { exampleValue } from './utility_js'
 const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   const { target, ctx$: { model } } = props
   const dx = directRoute(model)
+  const ENVVAR = fact(model.main[KIT], 'env')
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
   // Pick an entity with a real op (prefer a read op) — never fabricate a
@@ -103,10 +104,18 @@ ${stateDataLine}
     : '') + (0 === svars.length ? '' :
       `\n  server: {${svars.map((v: any) => `\n    ${v.name}: '...',`).join('')}\n  },`)
   const apikeyEnvLine = authActive
-    ? `\n${envName(model)}_APIKEY=<your-key>${authBasic ? `\n${envName(model)}_SECRET=<your-secret>` : ''}`
+    ? `\n${ENVVAR.apikey}=<your-key>${authBasic ? `\n${ENVVAR.secret}=<your-secret>` : ''}`
     : ''
   const serverEnvLine = fact(model.main[KIT], 'server').filter((v: any) => v.required)
-    .map((v: any) => `\n${serverVarEnv(envName(model), v.name)}=<${v.name}>`).join('')
+    .map((v: any) => `\n${ENVVAR.server[v.name]}=<${v.name}>`).join('')
+  const defaulted = fact(model.main[KIT], 'server').filter((v: any) => !v.required)
+  const liveEnvNote = (0 === defaulted.length ? '' :
+    defaulted.map((v: any) => '`' + ENVVAR.server[v.name] + '`').join(', ') +
+    (1 === defaulted.length ? ', when set, replaces its server variable\'s default.\n'
+      : ', when set, replace their server variables\' defaults.\n')) +
+    'Each entity\'s tests also read `' + ENVVAR.prefix + '_TEST_<ENTITY>_ENTID`, with the\n' +
+    'entity\'s name in capitals: a JSON object of the ids of existing records, for\n' +
+    'the tests that do not create their own.\n\n'
 
   Content(`### Make a direct HTTP request
 
@@ -183,10 +192,10 @@ const client = new ${model.const.Name}SDK({${apikeyExtendField}
 Create a \`.env.local\` file ${envLocalAt(props.ctx$, target)}:
 
 \`\`\`
-${envName(model)}_TEST_LIVE=TRUE${apikeyEnvLine}${serverEnvLine}
+${ENVVAR.live}=TRUE${apikeyEnvLine}${serverEnvLine}
 \`\`\`
 
-Then run:
+${liveEnvNote}Then run:
 
 \`\`\`bash
 ${cdTarget(target)}npm test

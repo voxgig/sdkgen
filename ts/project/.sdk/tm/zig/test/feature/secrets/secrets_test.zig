@@ -228,7 +228,7 @@ fn live_client(w: *Wire, sdkopts: Value) *sdk.SDK {
     const opts: Value = if (sdkopts == .object) sdkopts else h.omap();
     h.setp(opts, "base", h.vstr(BASE));
     h.setp(opts, "system", h.jo(&.{.{ "fetch", w.fetch_fn() }}));
-    return sdk.SDK.new_with(opts, &.{sdk.SecretsFeature.make()});
+    return sdk.SDK.new_with(opts, &.{sdk.SecretsFeature.make()}).ok;
 }
 
 fn secrets_client(w: *Wire, sdkopts: Value, feature_opts: Value) *sdk.SDK {
@@ -912,7 +912,7 @@ test "secrets exchange: without system.fetch the bundled HTTP transport buys the
         .{ "base", h.vstr("http://127.0.0.1:9/api") },
         .{ "feature", h.jo(&.{.{ "secrets", exchange_opts(h.ja(&.{Scripted.new("REFRESH01", null).fn_val()}), vnull()) }}) },
     });
-    const client = sdk.SDK.new_with(opts, &.{sdk.SecretsFeature.make()});
+    const client = sdk.SDK.new_with(opts, &.{sdk.SecretsFeature.make()}).ok;
     const res = direct_probe(client);
     try testing.expect(!(h.get_bool(res, "ok") orelse true));
     const msg = h.get_str(res, "err") orelse "";

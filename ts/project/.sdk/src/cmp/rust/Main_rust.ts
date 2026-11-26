@@ -225,7 +225,7 @@ pub use crate::utility::voxgigstruct::Value;
 // \`${rustcrate}::test()\` for the common no-options case.
 use std::rc::Rc;
 
-pub fn new() -> Rc<${model.const.Name}SDK> {
+pub fn new() -> Result<Rc<${model.const.Name}SDK>, ${model.const.Name}Error> {
     ${model.const.Name}SDK::new(Value::Noval)
 }
 

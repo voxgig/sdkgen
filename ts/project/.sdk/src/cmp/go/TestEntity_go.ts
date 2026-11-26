@@ -25,8 +25,7 @@ import {
   buildIdNames,
   getMatchEntries,
   isAuthActive,
-  serverVarEnv,
-  entityDataIdField, entityRecordIdField, envName, envToken,
+  entityDataIdField, entityRecordIdField,
   invalidRequest,
   liveFlowNeeds, liveStrict, liveStrictNote,
   liveRouteExamples, liveStepExamples, flowLoadRoute, flowLoadReadsRecord,
@@ -72,15 +71,16 @@ const TestEntity = cmp(function TestEntity(props: any) {
     return
   }
 
-  const PROJUPPER = envName(model)
+  const ENVVAR = fact(model.main[KIT], 'env')
+  const PROJUPPER = ENVVAR.prefix
 
   const authActive = isAuthActive(model)
   const authSecret = authActive && fact(model.main[KIT], 'auth').secret
   const apikeyEnvEntry = authActive
-    ? `\n\t\t"${PROJUPPER}_APIKEY":         "",${authSecret ? `\n\t\t"${PROJUPPER}_SECRET":         "",` : ''}`
+    ? `\n\t\t"${ENVVAR.apikey}":         "",${authSecret ? `\n\t\t"${ENVVAR.secret}":         "",` : ''}`
     : ''
   const apikeyLiveField = authActive
-    ? `\n\t\t\t\t"apikey": env["${PROJUPPER}_APIKEY"],${authSecret ? `\n\t\t\t\t"secret": env["${PROJUPPER}_SECRET"],` : ''}`
+    ? `\n\t\t\t\t"apikey": env["${ENVVAR.apikey}"],${authSecret ? `\n\t\t\t\t"secret": env["${ENVVAR.secret}"],` : ''}`
     : ''
 
 
@@ -90,11 +90,11 @@ const TestEntity = cmp(function TestEntity(props: any) {
   // environment, the same way the apikey is.
   const svars = fact(model.main[KIT], 'server')
   const serverEnvEntry = svars
-    .map((v: any) => `\n\t\t"${serverVarEnv(PROJUPPER, v.name)}": ${JSON.stringify(v.dflt)},`).join('')
+    .map((v: any) => `\n\t\t"${ENVVAR.server[v.name]}": ${JSON.stringify(v.dflt)},`).join('')
   const serverLiveField = 0 === svars.length ? '' :
     `\n\t\t\t\t"server": map[string]any{` +
     svars.map((v: any) =>
-      `\n\t\t\t\t\t"${v.name}": env["${serverVarEnv(PROJUPPER, v.name)}"],`).join('') +
+      `\n\t\t\t\t\t"${v.name}": env["${ENVVAR.server[v.name]}"],`).join('') +
     `\n\t\t\t\t},`
 
   const idnames = buildIdNames(entity, basicflow)
@@ -152,7 +152,7 @@ func Test${entity.Name}Entity(t *testing.T) {
 		}
 	})
 ${hasList ? `
-	// Feature #4: the entity Stream(action, ...) method runs the op pipeline and
+	// The entity Stream(action, ...) method runs the op pipeline and
 	// returns a channel over result items. With the streaming feature active it
 	// yields the feature's incremental output; otherwise it falls back to the
 	// materialised list so Stream always yields.
@@ -229,7 +229,7 @@ ${failureTests(model, entity)}` : ''}${validateTest(model, entity)}
     const flowBody = (flow: any) => {
       const steps = flowSteps(flow) as any[]
       Content(liveFlowGate(entity, liveFlowNeeds(entity, flow), liveIdentity(entity, flow), strict,
-        strictConst, PROJUPPER + '_TEST_' + envToken(entity.name) + '_ENTID', steps.length > 0))
+        strictConst, ENVVAR.entid[entity.name], steps.length > 0))
 
       // Check if the flow has a create step; if not, bootstrap entity data
       const flowHasCreate = steps.some((s: any) => s.o === 'create')
@@ -334,16 +334,16 @@ ${fixtureIdentity(entity)}
     Content(`
 	// Whether *_ENTID supplied the idmap, read before envOverride consumes it:
 	// without it, the ids a live flow binds are the fixture's synthetic ones.
-	entidEnvRaw := os.Getenv("${PROJUPPER}_TEST_${envToken(entity.name)}_ENTID")
+	entidEnvRaw := os.Getenv("${ENVVAR.entid[entity.name]}")
 	idmapOverridden := entidEnvRaw != "" && strings.HasPrefix(strings.TrimSpace(entidEnvRaw), "{")
 
 	env := envOverride(map[string]any{
-		"${PROJUPPER}_TEST_${envToken(entity.name)}_ENTID": idmap,
-		"${PROJUPPER}_TEST_LIVE":      "FALSE",
+		"${ENVVAR.entid[entity.name]}": idmap,
+		"${ENVVAR.live}":      "FALSE",
 		"${PROJUPPER}_TEST_EXPLAIN":   "FALSE",${apikeyEnvEntry}${serverEnvEntry}
 	})
 
-	idmapResolved := core.ToMapAny(env["${PROJUPPER}_TEST_${envToken(entity.name)}_ENTID"])
+	idmapResolved := core.ToMapAny(env["${ENVVAR.entid[entity.name]}"])
 	if idmapResolved == nil {
 		idmapResolved = core.ToMapAny(idmap)
 	}
@@ -359,7 +359,7 @@ ${fixtureIdentity(entity)}
     }
 
     Content(`
-	if env["${PROJUPPER}_TEST_LIVE"] == "TRUE" {
+	if env["${ENVVAR.live}"] == "TRUE" {
 		// An empty map, not a nil one: Merge returns nil when its last entry
 		// is nil, and BasicSetup is normally called with no extras - so a
 		// bare nil silently discarded the apikey and server values below.
@@ -377,10 +377,10 @@ ${fixtureIdentity(entity)}
 			},
 			extraOpts,
 		})
-		client = sdk.New${model.const.Name}SDK(core.ToMapAny(mergedOpts))
+		client = newClient(core.ToMapAny(mergedOpts))
 	}
 
-	live := env["${PROJUPPER}_TEST_LIVE"] == "TRUE"
+	live := env["${ENVVAR.live}"] == "TRUE"
 	return &entityTestSetup{
 		client:        client,
 		data:          entityData,

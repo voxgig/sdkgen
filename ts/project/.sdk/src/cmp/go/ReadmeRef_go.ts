@@ -68,13 +68,20 @@ Complete API reference for the ${model.Name} ${target.title} SDK.
     const OPTION_KIND: Record<string, string> = { string: 'string', map: 'map[string]any', list: '[]any' }
     const optionRows = clientOptions(model)
       .map((o: any) => '| `options["' + o.name + '"]` | `' + OPTION_KIND[o.kind] + '` | ' + o.desc + ' |\n').join('')
+    const required = fact(model.main[KIT], 'server').filter((v: any) => v.required)
+      .map((v: any) => '`' + v.name + '`')
+    const refusal = 0 === required.length ? '' : `
+Construction refuses \`options["server"]\` without a value for ${required.join(' or ')}:
+it returns a nil client and an error whose code is \`server_var_required\`
+and whose message names the variable.
+`
 
     Content(`\`\`\`go
-func New${model.const.Name}SDK(options map[string]any) *${model.const.Name}SDK
+func New${model.const.Name}SDK(options map[string]any) (*${model.const.Name}SDK, error)
 \`\`\`
 
 Create a new SDK client instance.
-
+${refusal}
 **Parameters:**
 
 | Name | Type | Description |
@@ -409,7 +416,7 @@ Features are activated via the \`feature\` option:
 `)
 
       Content(`\`\`\`go
-client := sdk.New${model.const.Name}SDK(map[string]any{
+client, err := sdk.New${model.const.Name}SDK(map[string]any{
     "feature": map[string]any{
 `)
       activeFeatures.map((f: any) => {
@@ -418,6 +425,9 @@ client := sdk.New${model.const.Name}SDK(map[string]any{
       })
       Content(`    },
 })
+if err != nil {
+    panic(err)
+}
 \`\`\`
 
 `)

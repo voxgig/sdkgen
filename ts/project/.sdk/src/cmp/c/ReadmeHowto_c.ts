@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, requiredItems, matchExampleItems, targetFeatures, requestExampleItems, envLocalAt, cdTarget, fact, directRoute } from '@voxgig/sdkgen'
+import { cmp, Content, envName, canonScalarKey, entityIdField, pickExampleEntity, requiredItems, matchExampleItems, targetFeatures, requestExampleItems, cdTarget, directRoute } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -109,10 +109,6 @@ Entity* result = ${evar}->vt->${primaryOp}(${evar}, ${testArg}, NULL, &err);
     "method", v_str("GET")), &err);
 printf("%s\\n", voxgig_to_json(result));`
 
-  const apikeyEnvLine = isAuthActive(model)
-    ? `\n${envName(model)}_APIKEY=<your-key>${fact(model.main[KIT], 'auth').secret ? `\n${envName(model)}_SECRET=<your-secret>` : ''}`
-    : ''
-
   Content(`### Make a direct HTTP request
 
 For endpoints not covered by entity operations:
@@ -183,9 +179,11 @@ static voxgig_value* mock_fetch(void* ud, voxgig_value* args) {
         "json", json_thunk(cmap(1, "id", v_str("mock01"))));
 }
 
+PNError* err = NULL;
 ${model.const.Name}SDK* client = ${ident}_sdk_new(cmap(2,
     "base", v_str("http://localhost:8080"),
-    "system", cmap(1, "fetch", vfn(mock_fetch, NULL))));
+    "system", cmap(1, "fetch", vfn(mock_fetch, NULL))), &err);
+if (NULL == client) fprintf(stderr, "%s\\n", err->msg);
 \`\`\`
 
 ### Point at a different server
@@ -193,19 +191,16 @@ ${model.const.Name}SDK* client = ${ident}_sdk_new(cmap(2,
 Override the base URL to reach a local or staging server:
 
 \`\`\`c
+PNError* err = NULL;
 ${model.const.Name}SDK* client = ${ident}_sdk_new(cmap(1,
-    "base", v_str("http://localhost:8080")));
+    "base", v_str("http://localhost:8080")), &err);
+if (NULL == client) fprintf(stderr, "%s\\n", err->msg);
 \`\`\`
 
-### Run live tests
+### Run the test suite
 
-Create a \`.env.local\` file ${envLocalAt(props.ctx$, target)}:
-
-\`\`\`
-${envName(model)}_TEST_LIVE=TRUE${apikeyEnvLine}
-\`\`\`
-
-Then run:
+The generated suite runs offline, against the mock transport. This SDK
+has no live tests.
 
 \`\`\`bash
 ${cdTarget(target)}make test

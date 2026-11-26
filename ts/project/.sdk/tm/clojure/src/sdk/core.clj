@@ -417,8 +417,8 @@
 (defn feature-get-version [f] (:version (deref f)))
 
 ;; feature_add: position via _options (__before__/__after__/__replace__),
-;; first match wins, else append. (gotcha #4 — ordering carrier is the
-;; feature's :_options map.)
+;; first match wins, else append. The ordering carrier is the feature's
+;; :_options map.
 (defn feature-add [ctx f]
   (let [feats (client-features (oget ctx :client))
         fopts (or (:_options (deref f)) (vs/jm))

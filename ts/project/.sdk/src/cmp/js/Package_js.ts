@@ -13,11 +13,12 @@ import {
   PUBLISHER_URL,
   packageVersion,
   authorInfo,
-  targetFeatures, envName,
+  targetFeatures,
   hasLiveScenarios,
   npmScriptRm,
   npmScriptEnv,
   npmScriptTestSome,
+  fact,
 } from '@voxgig/sdkgen'
 
 
@@ -81,7 +82,7 @@ const Package = cmp(async function Package(props: any) {
     files: ['src', 'README.md', 'REFERENCE.md'],
     scripts: {
       ...(hasLiveScenarios(model) ? {
-        'test:live': 'node ' + npmScriptEnv(envName(model) + '_TEST_LIVE', 'TRUE') +
+        'test:live': 'node ' + npmScriptEnv(fact(model.main[KIT], 'env').live, 'TRUE') +
           ' --test test/live.test.js',
       } : {}),
 

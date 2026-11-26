@@ -59,7 +59,11 @@ func run(args []string, in io.Reader, out, errOut io.Writer) int {
 		}
 		opts["base"] = base
 	}
-	client := sdk.NewProjectNameSDK(opts)
+	client, err := sdk.NewProjectNameSDK(opts)
+	if err != nil {
+		fmt.Fprintf(errOut, "%v\n", err)
+		return 1
+	}
 
 	r, err := eng.NewRegistry()
 	if err != nil {

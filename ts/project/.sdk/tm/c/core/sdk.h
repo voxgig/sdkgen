@@ -479,7 +479,7 @@ Utility* sdk_get_utility(ProjectNameSDK* sdk);      // utility_copy
 Context* sdk_get_root_ctx(ProjectNameSDK* sdk);
 
 // Constructors / prepare / direct are in the generated client.c:
-ProjectNameSDK* projectname_sdk_new(voxgig_value* options);
+ProjectNameSDK* projectname_sdk_new(voxgig_value* options, PNError** err);
 ProjectNameSDK* test_sdk(voxgig_value* testopts, voxgig_value* sdkopts);
 voxgig_value* sdk_prepare(ProjectNameSDK* sdk, voxgig_value* fetchargs, PNError** err);
 voxgig_value* sdk_direct(ProjectNameSDK* sdk, voxgig_value* fetchargs, PNError** err);
@@ -538,7 +538,7 @@ void feature_hook_util(Context* ctx, const char* name);
 void feature_init_util(Context* ctx, Feature* f);
 voxgig_value* make_fetch_def_util(Context* ctx, PNError** err);
 Context* make_context_util(CtxSpec spec, Context* basectx);
-voxgig_value* make_options_util(Context* ctx);
+voxgig_value* make_options_util(Context* ctx, PNError** err);
 Response* make_request_util(Context* ctx, PNError** err);
 Response* make_response_util(Context* ctx, PNError** err);
 SdkResult* make_result_util(Context* ctx, PNError** err);

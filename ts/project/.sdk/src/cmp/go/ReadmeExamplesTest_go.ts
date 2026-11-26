@@ -318,9 +318,10 @@ func runProgs(moduleRoot string, dirs []string) string {
 // rewriteCtorsToTest replaces every sdk.New.../sdk.Test... constructor call
 // in src with a seeded test-mode client, so a documented (possibly live)
 // program runs offline against the mock, and a fragment whose constructor
-// takes undefined placeholder variables still type-checks. Single
-// left-to-right pass with balanced-paren matching; returns the rewritten
-// source and whether any replacement was made.
+// takes undefined placeholder variables still type-checks. An sdk.New...
+// call keeps its second result, a nil error. Single left-to-right pass with
+// balanced-paren matching; returns the rewritten source and whether any
+// replacement was made.
 func rewriteCtorsToTest(src string) (string, bool) {
 	repl := "sdk.TestSDK(" + seedRef + ", nil)"
 	var b strings.Builder
@@ -364,6 +365,9 @@ func rewriteCtorsToTest(src string) (string, bool) {
 			}
 		}
 		b.WriteString(repl)
+		if matched == "sdk.New" {
+			b.WriteString(", error(nil)")
+		}
 		changed = true
 		i = k
 	}
@@ -536,7 +540,7 @@ func wrapFragment(name, block, modulePath string) string {
 		block = rewritten
 	}
 
-	declaresClient := strings.Contains(block, "client :=")
+	declaresClient := strings.Contains(block, "client :=") || strings.Contains(block, "client, err :=")
 	injectClient := !declaresClient && clientVar.MatchString(block)
 
 	needSdk := injectClient || strings.Contains(block, "sdk.")

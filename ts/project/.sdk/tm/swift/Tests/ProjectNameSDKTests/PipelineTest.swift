@@ -39,7 +39,7 @@ final class PipelineTest: XCTestCase {
     return m
   }
 
-  // --- feature order (PR #2) ----------------------------------------------
+  // --- feature order ------------------------------------------------------
 
   // resolveOpts runs makeOptions over an options.feature value (map or list)
   // and returns the derived options so __derived__.featureorder can be

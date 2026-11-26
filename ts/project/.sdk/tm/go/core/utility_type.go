@@ -13,7 +13,7 @@ type Utility struct {
 	Fetcher           FetcherFunc
 	MakeFetchDef      func(ctx *Context) (map[string]any, error)
 	MakeContext       func(ctxmap map[string]any, basectx *Context) *Context
-	MakeOptions       func(ctx *Context) map[string]any
+	MakeOptions       func(ctx *Context) (map[string]any, error)
 	MakeRequest       func(ctx *Context) (*Response, error)
 	MakeResponse      func(ctx *Context) (*Response, error)
 	MakeResult        func(ctx *Context) (*Result, error)

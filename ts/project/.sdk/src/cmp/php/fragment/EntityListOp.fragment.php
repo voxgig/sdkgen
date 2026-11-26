@@ -7,7 +7,7 @@
      *   of EntityName fields) as an assoc-array; EntityNameListMatch names the shape.
      * @param mixed $ctrl Optional per-call control overrides.
      * @return EntyClass[] The EntityName entities, one per record, each read
-     *   with data_get(); throws ProjectNameError on failure (item-5 convention).
+     *   with data_get(); throws ProjectNameError on failure.
      */
     public function list(?array $reqmatch = null, $ctrl = null): mixed
     {

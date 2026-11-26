@@ -61,7 +61,10 @@ const std = @import("std");
 const sdk = @import("sdk");
 const h = sdk.h;
 
-${authActive ? '// init is the std.process.Init that main receives.\n' : ''}const client = ${ctor};
+${authActive ? '// init is the std.process.Init that main receives.\n' : ''}const client = switch (${ctor}) {
+    .ok => |c| c,
+    .err => |e| std.debug.panic("{s}", .{e.msg}),
+};
 \`\`\`
 
 `)

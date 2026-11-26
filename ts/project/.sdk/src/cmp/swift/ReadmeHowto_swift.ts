@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, requiredItems, matchExampleItems, requestExampleItems, envLocalAt, cdTarget, fact, directRoute } from '@voxgig/sdkgen'
+import { cmp, Content, canonScalarKey, entityIdField, pickExampleEntity, requiredItems, matchExampleItems, requestExampleItems, cdTarget, directRoute } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -82,10 +82,6 @@ if let ${eVar}Entity = ${eVar}.asNative as? Entity {
 ]))
 print(result)`
 
-  const apikeyEnvLine = isAuthActive(model)
-    ? `\n${envName(model)}_APIKEY=<your-key>${fact(model.main[KIT], 'auth').secret ? `\n${envName(model)}_SECRET=<your-secret>` : ''}`
-    : ''
-
   Content(`### Make a direct HTTP request
 
 For endpoints not covered by entity methods:
@@ -156,15 +152,10 @@ options.entries["system"] = .map(system)
 let client = ${SDK}(options)
 \`\`\`
 
-### Run live tests
+### Run the test suite
 
-Create a \`.env.local\` file ${envLocalAt(props.ctx$, target)}:
-
-\`\`\`
-${envName(model)}_TEST_LIVE=TRUE${apikeyEnvLine}
-\`\`\`
-
-Then run:
+The generated suite runs offline, against the mock transport. This SDK
+has no live tests.
 
 \`\`\`bash
 ${cdTarget(target)}make test

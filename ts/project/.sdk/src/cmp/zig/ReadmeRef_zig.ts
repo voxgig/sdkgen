@@ -91,16 +91,28 @@ Complete API reference for the ${model.Name} ${target.title} SDK.
     const optionRows = clientOptions(model).filter((o: any) => 'extend' !== o.name)
       .map((o: any) => '| `' + o.name + '` | `' + OPTION_KIND[o.kind] + '` | ' + o.desc + ' |\n').join('')
 
+    const required = fact(model.main[KIT], 'server').filter((v: any) => v.required)
+      .map((v: any) => '`' + v.name + '`')
+    const refusal = 0 === required.length ? '' : `
+Construction refuses \`options\` without a \`server\` value for ${required.join(' or ')}:
+\`new\` returns \`.err\`, a \`*${model.const.Name}Error\` whose \`code\` is
+\`server_var_required\` and whose message names the variable.
+`
+
     Content(`\`\`\`zig
+const std = @import("std");
 const sdk = @import("sdk");
 const h = sdk.h;
 
-const client = sdk.${model.const.Name}SDK.new(options);
+const client = switch (sdk.${model.const.Name}SDK.new(options)) {
+    .ok => |c| c,
+    .err => |e| std.debug.panic("{s}", .{e.msg}),
+};
 \`\`\`
 
 Create a new SDK client instance. \`options\` is a \`Value\` map
 (\`h.vnull()\` for none).
-
+${refusal}
 **Parameters:**
 
 | Key | Value type | Description |
@@ -402,7 +414,7 @@ Features are activated via the \`feature\` option:
 `)
 
       Content(`\`\`\`zig
-const client = sdk.${model.const.Name}SDK.new(h.jo(&.{
+const client = switch (sdk.${model.const.Name}SDK.new(h.jo(&.{
     .{ "feature", h.jo(&.{
 `)
       activeFeatures.map((f: any) => {
@@ -410,7 +422,10 @@ const client = sdk.${model.const.Name}SDK.new(h.jo(&.{
 `)
       })
       Content(`    }) },
-}));
+}))) {
+    .ok => |c| c,
+    .err => |e| std.debug.panic("{s}", .{e.msg}),
+};
 \`\`\`
 
 `)

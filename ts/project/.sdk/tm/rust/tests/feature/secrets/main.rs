@@ -214,7 +214,7 @@ fn sdk(wire: &Wire, secrets: Vec<(&str, Value)>) -> Rc<ProjectNameSDK> {
         ("allow", jo(vec![("op", Value::str("direct,graphql"))])),
         ("system", jo(vec![("fetch", wire.fetch())])),
         ("feature", jo(vec![("secrets", fopts)])),
-    ]))
+    ])).unwrap()
 }
 
 fn providers(list: Vec<Value>) -> (&'static str, Value) {
@@ -323,7 +323,7 @@ fn inactive_leaves_the_apikey_option_exactly_as_it_was() {
                 ]),
             )]),
         ),
-    ]));
+    ])).unwrap();
 
     client
         .direct(jo(vec![("path", Value::str("/thing"))]))
@@ -362,7 +362,7 @@ fn apikey_option_still_wins_over_the_chain() {
                 ]),
             )]),
         ),
-    ]));
+    ])).unwrap();
 
     client
         .direct(jo(vec![("path", Value::str("/thing"))]))
@@ -429,7 +429,7 @@ fn an_explicitly_empty_apikey_also_defers_to_the_chain() {
                 ]),
             )]),
         ),
-    ]));
+    ])).unwrap();
 
     client
         .direct(jo(vec![("path", Value::str("/thing"))]))
@@ -459,7 +459,7 @@ fn auth_null_suppresses_the_credential_chain_or_no_chain() {
                 ]),
             )]),
         ),
-    ]));
+    ])).unwrap();
 
     client
         .direct(jo(vec![("path", Value::str("/thing"))]))
@@ -500,7 +500,7 @@ fn auth_null_suppresses_an_explicit_apikey_too() {
                 ]),
             )]),
         ),
-    ]));
+    ])).unwrap();
 
     client
         .direct(jo(vec![("path", Value::str("/thing"))]))
@@ -1292,7 +1292,7 @@ fn an_explicit_apikey_is_spent_before_anything_is_bought() {
                 ]),
             )]),
         ),
-    ]));
+    ])).unwrap();
 
     client
         .direct(jo(vec![("path", Value::str("/thing"))]))
@@ -1322,7 +1322,7 @@ fn a_held_apikey_that_has_expired_falls_through_to_the_exchange() {
                 ]),
             )]),
         ),
-    ]));
+    ])).unwrap();
 
     client
         .direct(jo(vec![("path", Value::str("/thing"))]))
@@ -1397,7 +1397,7 @@ fn exchange_auth_null_suppresses_and_is_never_retried() {
                 ]),
             )]),
         ),
-    ]));
+    ])).unwrap();
 
     client
         .direct(jo(vec![("path", Value::str("/thing"))]))
@@ -1446,7 +1446,7 @@ fn the_exchange_has_a_raw_transport_when_no_system_fetch_is_given() {
                 ]),
             )]),
         ),
-    ]));
+    ])).unwrap();
 
     let res = client
         .direct(jo(vec![("path", Value::str("/thing"))]))

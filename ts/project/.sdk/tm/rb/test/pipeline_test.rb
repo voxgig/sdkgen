@@ -65,7 +65,7 @@ class PipelineTest < Minitest::Test
   end
 
 
-  # === feature order (feature #2) ===
+  # === feature order ===
   # options["feature"] accepts an ordered ARRAY (developer add-order) or a map
   # (defaults test-first); make_options records the resolved order in
   # __derived__.featureorder.

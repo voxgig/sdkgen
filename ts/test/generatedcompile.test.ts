@@ -4,6 +4,7 @@ import { ok, strictEqual, deepStrictEqual, throws } from 'node:assert'
 
 import { X509Certificate } from 'node:crypto'
 import Fs from 'node:fs'
+import Http from 'node:http'
 import Net from 'node:net'
 import Os from 'node:os'
 import Path from 'node:path'
@@ -1597,7 +1598,7 @@ import (
 func TestReqformProbe(t *testing.T) {
 	sent := 0
 
-	client := sdk.NewDemoSDK(map[string]any{
+	client := newClient(map[string]any{
 		"utility": map[string]any{
 			// Stands in for \`vs.Transform\` reporting an error: an error
 			// VALUE out of the seam, which is exactly what
@@ -1652,7 +1653,6 @@ func TestReqformProbe(t *testing.T) {
 import (
 	"testing"
 
-	sdk "github.com/voxgig-sdk/demo-sdk/go"
 	"github.com/voxgig-sdk/demo-sdk/go/core"
 )
 
@@ -1663,7 +1663,7 @@ import (
 // result.Ok already true. resultBasic never sets Ok, so the makeResponse call
 // returns at the !result.Ok guard and only the makeResult call gets this far.
 func TestResformProbe(t *testing.T) {
-	client := sdk.NewDemoSDK(map[string]any{})
+	client := newClient(map[string]any{})
 	utility := client.GetUtility()
 
 	result := core.NewResult(map[string]any{})
@@ -1753,7 +1753,7 @@ func TestAuthNullProbe(t *testing.T) {
 			}),
 		}
 
-		client := sdk.NewDemoSDK(full)
+		client := newClient(full)
 		_, _ = client.Planet(nil).Create(map[string]any{"name": "p1"}, map[string]any{})
 
 		str, _ := seen.(string)
@@ -1773,7 +1773,7 @@ func TestAuthNullProbe(t *testing.T) {
 
 	// And the option survives validation rather than being replaced by the
 	// optspec's default auth map.
-	client := sdk.NewDemoSDK(map[string]any{"apikey": "OPTKEY01", "auth": nil})
+	client := newClient(map[string]any{"apikey": "OPTKEY01", "auth": nil})
 	if av, ok := client.OptionsMap()["auth"]; !ok || av != nil {
 		t.Errorf("FAIL: options.auth is %#v, not nil - validate replaced the suppression", av)
 	}
@@ -2201,7 +2201,8 @@ static voxgig_value* answer(void* ud, voxgig_value* args) {
 
 int ${name}_part(void) {
   PNError* err = NULL;
-  ${pascal(name)}SDK* client = ${name}_sdk_new(cmap(1, "system", cmap(1, "fetch", vfn(answer, NULL))));
+  ${pascal(name)}SDK* client = ${name}_sdk_new(cmap(1, "system", cmap(1, "fetch", vfn(answer, NULL))), &err);
+  if (NULL == client) { printf("${name}: %s\\n", err->msg); return 1; }
   Entity* planet = ${name}_planet(client, NULL);
   Entity* got = planet->vt->load(planet, cmap(1, "id", v_str("p01")), NULL, &err);
   if (err) { printf("${name}: %s\\n", err->msg); return 1; }
@@ -4118,7 +4119,7 @@ fn wire(opts: Vec<(&str, Value)>) -> (bool, Value, bool) {
     let mut all = opts;
     all.push(("base", Value::str("http://localhost:8080")));
     all.push(("system", jo(vec![("fetch", mock)])));
-    let client = DemoSDK::new(jo(all));
+    let client = DemoSDK::new(jo(all)).unwrap();
     let _ = client.planet(Value::Noval).create(jo(vec![("name", Value::str("p1"))]), Value::Noval);
 
     let h = seen.borrow().clone();
@@ -4152,7 +4153,7 @@ fn authnull_probe() {
     let client = DemoSDK::new(jo(vec![
         ("apikey", Value::str("OPTKEY01")),
         ("auth", Value::Null),
-    ]));
+    ])).unwrap();
     let om = client.options_map();
     let a = match &om {
         Value::Map(m) => m.borrow().get("auth").cloned(),
@@ -6782,6 +6783,39 @@ function cxxCompiler(): string | null {
 
 const SERVER_LANES: ServerLane[] = [
   {
+    target: 'go',
+    runner: 'test/server_variable_test.go',
+    needs: 'go',
+    command: () => {
+      const go = toolchain('go')
+      return null == go ? null
+        : { bin: go, args: ['test', '-v', '-count=1', '-run', '^TestServerVariable', './test/'] }
+    },
+    ran: [
+      /^--- PASS: TestServerVariableMissingOrEmptyRefusesConstruction /m,
+      /^--- PASS: TestServerVariableFillsTheBase /m,
+      /^--- PASS: TestServerVariableTestModeFillsTheBase /m,
+    ],
+  },
+  {
+    target: 'rust',
+    runner: 'tests/server_variable_test.rs',
+    needs: 'cargo',
+    command: () => cargoTest(['--test', 'server_variable_test']),
+    ran: [
+      /^test server_variable_missing_or_empty_refuses_construction \.\.\. ok$/m,
+      /^test server_variable_fills_the_base \.\.\. ok$/m,
+      /^test server_variable_test_mode_fills_the_base \.\.\. ok$/m,
+    ],
+  },
+  {
+    target: 'zig',
+    runner: 'test/server_variable_test.zig',
+    needs: 'zig 0.16',
+    command: () => zigTest('server variable:'),
+    ran: [/\b3\/3 tests passed/],
+  },
+  {
     target: 'kotlin',
     runner: 'test/ServerVariableTest.kt',
     needs: 'gradle (which resolves the Kotlin plugin from the network)',
@@ -6856,10 +6890,7 @@ const SERVER_LANES: ServerLane[] = [
       return null == toolchain('make') || null == cCompiler() || null == sh ? null
         : { bin: sh, args: ['-c', './tests/server_variable_test.out'] }
     },
-    // Without fork() the stopped construction cannot be watched, and is left out.
-    ran: ['win32' === process.platform
-      ? /server_variable_test: [1-9]\d* checks, 0 failed/
-      : /server_variable_test: 11 checks, 0 failed/],
+    ran: [/server_variable_test: 11 checks, 0 failed/],
   },
   {
     target: 'cpp',
@@ -6931,6 +6962,125 @@ describe('a templated server URL is resolved by the generated SDK', () => {
   }
 })
 
+
+
+// A live suite builds its client from the environment its README names: the
+// key, the secret and each server variable, over the options
+// sdk-test-control.json adds, less the names a live client takes from the
+// model. A local server stands in for the API.
+describe('a live suite builds its client from the environment', () => {
+
+  const LONG = 30 * 60 * 1000
+  const LIVE_ENV = { DEMO_TEST_LIVE: 'TRUE', DEMO_APIKEY: 'livekey', DEMO_SECRET: 'livesecret' }
+  const BASIC = 'Basic ' + Buffer.from('livekey:livesecret').toString('base64')
+
+  let tmp = ''
+  let server: Http.Server
+  let port = 0
+  const seen: string[] = []
+
+  before(async () => {
+    tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-liveenv-'))
+    server = Http.createServer(async (req, res) => {
+      let body = ''
+      for await (const chunk of req) body += chunk
+      seen.push([req.method, req.url, req.headers['x-live-opt'] ?? '-', req.headers.authorization ?? '-'].join(' '))
+      const parts = new URL(req.url || '/', 'http://localhost').pathname.split('/').filter(Boolean)
+      const id = 'POST' === req.method ? 'created01' : parts[parts.length - 1]
+      res.writeHead(200, { 'content-type': 'application/json' })
+      res.end(JSON.stringify(2 === parts.length && 'GET' === req.method
+        ? [{ id: 'existing01', title: 'existing' }]
+        : { title: 'existing', ...JSON.parse(body || '{}'), id }))
+    })
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
+    port = (server.address() as any).port
+  })
+
+  after(async () => {
+    if (server) {
+      server.closeAllConnections()
+      await new Promise<void>((resolve) => server.close(() => resolve()))
+    }
+    if ('' !== tmp) Fs.rmSync(tmp, { recursive: true, force: true })
+  })
+
+  // Basic in the header, over a URL templated on a tenant, with a header and a
+  // base in test.client.options: the header reaches the API, the base does not.
+  async function generateLive(target: string): Promise<string> {
+    const extra = "main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, " +
+      "in: 'header', name: 'Authorization' }\n" +
+      `main: kit: info: servers: [{ url: 'http://127.0.0.1:${port}/{tenant}', ` +
+      "variables: { tenant: { default: '' } } }]\n"
+    const root = Path.join(tmp, target)
+    await generateTo(target, root, extra)
+    for (const entity of Object.values(makeModel([target], undefined, extra).main.kit.entity) as any[]) {
+      if (false === entity.active) continue
+      const Name = entity.name.split('_').map((w: string) => w[0].toUpperCase() + w.slice(1)).join('')
+      const dir = Path.join(tmp, '.sdk', 'test', 'entity', entity.name)
+      Fs.mkdirSync(dir, { recursive: true })
+      Fs.writeFileSync(Path.join(dir, Name + 'TestData.json'), JSON.stringify(entityTestData(entity)))
+    }
+    Fs.writeFileSync(Path.join(root, 'test', 'sdk-test-control.json'), JSON.stringify({ version: 1,
+      test: { live: { delayMs: 0 }, client: { options: {
+        headers: { 'x-live-opt': 'on' }, base: 'http://127.0.0.1:9/redirected' } } } }))
+    return root
+  }
+
+  function liveEnv(tenant?: string): NodeJS.ProcessEnv {
+    const env: NodeJS.ProcessEnv = { ...process.env, ...LIVE_ENV }
+    delete env.DEMO_SERVER_TENANT
+    return null == tenant ? env : { ...env, DEMO_SERVER_TENANT: tenant }
+  }
+
+  test('kotlin: the live suites send the key, the secret and the server variable, with test.client.options',
+    async (t) => {
+      const root = await generateLive('kotlin')
+      const gradle = toolchain('gradle')
+      if ('win32' === process.platform || null == gradle) {
+        return t.skip('needs gradle (and not windows, where it hangs)')
+      }
+      const args = ['--console=plain', 'test', '--tests', '*PlanetDirectTest*', '--tests', '*PlanetEntityTest*']
+
+      const refused = await runWatched(gradle, args, root, '', liveEnv(), LONG)
+      if (refused.timedOut) return t.skip('kotlin: ' + tail(refused.out))
+      const gap = UNUSABLE.find((re) => re.test(refused.out))
+      if (null != gap && '' === junitReport(root, 'PlanetEntityTest')) {
+        return t.skip('kotlin: toolchain present but not usable (' + gap.source + '):\n' + tail(refused.out))
+      }
+      ok(!refused.ok && /the server variable 'tenant' is required/.test(junitReport(root, 'PlanetEntityTest')),
+        'kotlin: a live run with no tenant built its client:\n' + tail(refused.out))
+
+      seen.length = 0
+      const res = await runWatched(gradle, args, root, '', liveEnv('acme'), LONG)
+      if (res.timedOut) return t.skip('kotlin: ' + tail(res.out))
+      ok(res.ok && /tests="[1-9]\d*" skipped="\d+" failures="0" errors="0"/.test(junitReport(root, 'PlanetEntityTest')),
+        'kotlin: the live suites failed:\n' + tail(res.out, 80))
+      ok(0 < seen.length, 'kotlin: no live request reached the API')
+      deepStrictEqual(seen.filter((line) => !/^[A-Z]+ \/acme\/planet\S* on /.test(line) || !line.endsWith(BASIC)), [],
+        'kotlin: a live request missed the tenant, the control file\'s header or the credential')
+    })
+
+  test('cpp: the live entity suite builds its client from the environment', async (t) => {
+    const root = await generateLive('cpp')
+    const make = toolchain('make')
+    const cxx = cleanCxx()
+    if (null == make || null == cxx) return t.skip('needs make and a C++ compiler')
+    const built = run(make, ['CXX=' + cxx, 'test/planet_entity_test.out'], root, undefined, LONG)
+    ok(built.ok, 'cpp: the planet entity test does not build:\n' + tail(built.out))
+    const bin = Path.join(root, 'test', 'planet_entity_test.out')
+
+    const refused = await runWatched(bin, [], root, '', liveEnv())
+    ok(/the server variable 'tenant' is required/.test(refused.out),
+      'cpp: a live run with no tenant built its client:\n' + tail(refused.out))
+
+    // The SDK has no transport of its own, so the client it builds sends nothing.
+    seen.length = 0
+    const res = await runWatched(bin, [], root, '', liveEnv('acme'))
+    ok(/live HTTP transport not available/.test(res.out),
+      'cpp: the live client was not the one built from the environment:\n' + tail(res.out))
+    deepStrictEqual(seen, [], 'cpp: a request reached the API')
+  })
+})
 
 type Command = { bin: string, args: string[], env?: NodeJS.ProcessEnv }
 

@@ -135,7 +135,7 @@ class EntyClass
     }
 
     /**
-     * Feature #4: run `action` through the full pipeline and yield result
+     * Run `action` through the full pipeline and yield result
      * items, so the `streaming` feature's incremental output, when that
      * feature is active, is reachable from a generated entity (a normal op
      * call materialises the whole result). `callopts` parameterises the call:

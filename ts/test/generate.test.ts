@@ -1949,9 +1949,13 @@ main: kit: target: js: phase: feature: active: false
   test('every live-capable target wires server variables and test.client.options',
     async () => {
       const LIVE_TARGETS = [
-        'ts', 'js', 'go', 'py', 'java',
-        'php', 'rb', 'lua', 'rust', 'csharp', 'perl',
+        'ts', 'js', 'go', 'py', 'java', 'kotlin',
+        'php', 'rb', 'lua', 'rust', 'csharp', 'perl', 'cpp',
       ]
+      // cpp's direct tests run against a mock fetch alone.
+      const ENTITY_ONLY = ['cpp']
+      const liveFiles = (files: Record<string, string>, target: string) =>
+        testFiles(files, target).filter(([n]) => !ENTITY_ONLY.includes(target) || /entity/i.test(n))
 
       const servers =
         "main: kit: info: servers: [ { url: 'https://{tenant}.example.com/{region}'," +
@@ -1972,7 +1976,7 @@ main: kit: target: js: phase: feature: active: false
       const hostileOut = await generate(LIVE_TARGETS, undefined, hostile)
 
       for (const target of LIVE_TARGETS) {
-        const tests = testFiles(out, target)
+        const tests = liveFiles(out, target)
         if (0 === tests.length) {
           gaps.push(`${target}: generated no entity/direct test files`)
           continue
@@ -2006,7 +2010,7 @@ main: kit: target: js: phase: feature: active: false
       // Hostile spec: nothing may reach the output as a bare identifier or as
       // a JSON literal that the target language would reinterpret.
       for (const target of LIVE_TARGETS) {
-        for (const [name, content] of testFiles(hostileOut, target)) {
+        for (const [name, content] of liveFiles(hostileOut, target)) {
           const src = String(content)
 
           // A bare `2fa:` / `2fa =` key, or a bare `edge-zone` one, is a
@@ -2021,10 +2025,10 @@ main: kit: target: js: phase: feature: active: false
             gaps.push(`${target}:${name} reads a server env var by dotted access`)
           }
 
-          // The default must survive as text. Dart/Perl/PHP interpolate `$eu`
-          // and Ruby interpolates `#{x}` inside a double-quoted literal, so a
-          // JSON-stringified default is wrong for those targets specifically.
-          if (['perl', 'php'].includes(target) && /"\$eu/.test(src)) {
+          // The default must survive as text. Dart/Perl/PHP/Kotlin interpolate
+          // `$eu` and Ruby interpolates `#{x}` inside a double-quoted literal, so
+          // a JSON-stringified default is wrong for those targets specifically.
+          if (['perl', 'php', 'kotlin'].includes(target) && /"\$eu/.test(src)) {
             gaps.push(`${target}:${name} emits an interpolating default literal`)
           }
           if ('rb' === target && /[^\\]#\{x\}/.test(src)) {
@@ -2035,6 +2039,49 @@ main: kit: target: js: phase: feature: active: false
 
       deepStrictEqual(gaps, [], 'live-suite wiring is not uniform across targets')
     })
+
+
+  // A README names the environment its generated files read, and that alone.
+  // Its own example programs may read what they like; every other name it
+  // gives is read by a generated file. Every name the env fact spells that a
+  // generated file reads is in the README, the per-entity ids by the pattern
+  // that names them.
+  test('a README names exactly the environment its generated tests read', async () => {
+    const targets = allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))
+    const out = await generate(targets, undefined, BASIC_TEMPLATED)
+    const env = fact(makeModel([], undefined, BASIC_TEMPLATED).main[KIT], 'env')
+    const entids = Object.values(env.entid) as string[]
+    const named = [env.live, env.apikey, env.secret, ...Object.values(env.server) as string[], ...entids]
+    const pattern = env.prefix + '_TEST_<ENTITY>_ENTID'
+    const NAME = new RegExp('\\b' + env.prefix + '_(?:TEST_<ENTITY>_ENTID|[A-Z0-9_]*[A-Z0-9])', 'g')
+    // The README's own programs; an env block, a shell block and prose are claims.
+    const PROGRAM = /^```(?!\s*(?:bash|sh|shell|text|dotenv)?\s*$)[^\n]*\n[\s\S]*?^```/gm
+
+    const gaps: string[] = []
+    for (const target of targets) {
+      const readme = out[target + '/README.md']
+      if (null == readme) {
+        gaps.push(target + ': no README')
+        continue
+      }
+      const read = new Set(filesFor(out, target).filter(([path]) => !path.endsWith('.md'))
+        .flatMap(([, text]) => text.match(NAME) || []))
+      const documented = new Set(readme.match(NAME) || [])
+
+      for (const name of new Set(readme.replace(PROGRAM, '').match(NAME) || [])) {
+        if (pattern === name ? !entids.some((n: string) => read.has(n)) : !read.has(name)) {
+          gaps.push(target + ': the README names ' + name + ', which no generated file reads')
+        }
+      }
+
+      for (const name of named.filter((n: string) => read.has(n))) {
+        if (!documented.has(entids.includes(name) ? pattern : name)) {
+          gaps.push(target + ': a generated file reads ' + name + ', which the README omits')
+        }
+      }
+    }
+    deepStrictEqual(gaps, [])
+  })
 
 
   // makeOptions fills a templated base URL from options.server merged over the
@@ -7878,7 +7925,7 @@ main: kit: flow: BasicNoteFlow: {
       ['ts', "const client = new DemoSDK({ apikey: '...', secret: '...', server: { tenant: '...' } })"],
       ['js', "const client = new DemoSDK({ apikey: '...', secret: '...', server: { tenant: '...' } })"],
       ['py', 'client = DemoSDK({"apikey": "...", "secret": "...", "server": {"tenant": "..."}})'],
-      ['go', 'client := sdk.NewDemoSDK(map[string]any{"apikey": "...", "secret": "...", ' +
+      ['go', 'client, err := sdk.NewDemoSDK(map[string]any{"apikey": "...", "secret": "...", ' +
         '"server": map[string]any{"tenant": "..."}})'],
       ['php', '$client = new DemoSDK(["apikey" => "...", "secret" => "...", "server" => ["tenant" => "..."]]);'],
       ['rb', 'client = DemoSDK.new({"apikey" => "...", "secret" => "...", "server" => {"tenant" => "..."}})'],

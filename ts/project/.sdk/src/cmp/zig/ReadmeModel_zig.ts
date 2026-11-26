@@ -36,13 +36,25 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   const optionRows = clientOptions(model).filter((o: any) => 'extend' !== o.name)
     .map((o: any) => '| `' + o.name + '` | `' + OPTION_KIND[o.kind] + '` | ' + o.desc + ' |\n').join('')
 
+  const required = fact(model.main[KIT], 'server').filter((v: any) => v.required)
+    .map((v: any) => '`' + v.name + '`')
+  const refusal = 0 === required.length ? '' : `
+Construction refuses \`options\` without a \`server\` value for ${required.join(' or ')}:
+\`new\` returns \`.err\`, a \`*${model.const.Name}Error\` whose \`code\` is
+\`server_var_required\` and whose message names the variable.
+`
+
   Content(`### ${model.const.Name}SDK
 
 \`\`\`zig
+const std = @import("std");
 const sdk = @import("sdk");
 const h = sdk.h;
 
-const client = sdk.${model.const.Name}SDK.new(options);
+const client = switch (sdk.${model.const.Name}SDK.new(options)) {
+    .ok => |c| c,
+    .err => |e| std.debug.panic("{s}", .{e.msg}),
+};
 \`\`\`
 
 Creates a new SDK client. \`options\` is a \`Value\` map (\`h.vnull()\` for
@@ -50,7 +62,7 @@ none) carrying any of the following keys:
 
 | Option | Value type | Description |
 | --- | --- | --- |
-${optionRows}
+${optionRows}${refusal}
 ### test_sdk
 
 \`\`\`zig

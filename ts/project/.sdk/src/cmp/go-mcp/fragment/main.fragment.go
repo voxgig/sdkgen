@@ -27,7 +27,10 @@ func main() {
 		}
 		opts["base"] = base
 	}
-	client := sdk.NewProjectNameSDK(opts)
+	client, err := sdk.NewProjectNameSDK(opts)
+	if err != nil {
+		log.Fatal(err)
+	}
 	server := mcp.NewServer(
 		&mcp.Implementation{
 			Name:    "// <[SLOT:serverName]>",

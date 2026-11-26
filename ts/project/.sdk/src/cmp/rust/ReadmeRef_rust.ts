@@ -81,16 +81,23 @@ Complete API reference for the ${model.Name} ${target.title} SDK.
     const OPTION_KIND: Record<string, string> = { string: 'string', map: 'map', list: '' }
     const optionRows = clientOptions(model).filter((o: any) => 'extend' !== o.name)
       .map((o: any) => '| `' + o.name + '` | `' + OPTION_KIND[o.kind] + '` | ' + o.desc + ' |\n').join('')
+    const required = fact(model.main[KIT], 'server').filter((v: any) => v.required)
+      .map((v: any) => '`' + v.name + '`')
+    const refusal = 0 === required.length ? '' : `
+Construction refuses \`options\` without a \`server\` value for ${required.join(' or ')}:
+\`new\` returns an \`Err\` holding a \`${model.const.Name}Error\` whose \`code\` is
+\`server_var_required\` and whose message names the variable.
+`
 
     Content(`\`\`\`rust
 use ${rustcrate}::{jo, ${model.const.Name}EntityBase, ${model.const.Name}SDK, Entity, Value};
 
-let client = ${model.const.Name}SDK::new(options);
+let client = ${model.const.Name}SDK::new(options).expect("valid client options");
 \`\`\`
 
 Create a new SDK client instance. \`options\` is a \`Value\` map
 (\`Value::Noval\` for none).
-
+${refusal}
 **Parameters:**
 
 | Key | Value type | Description |
@@ -385,7 +392,8 @@ let client = ${model.const.Name}SDK::new(jo(vec![
 `)
       })
       Content(`    ])),
-]));
+]))
+.expect("valid client options");
 \`\`\`
 
 `)

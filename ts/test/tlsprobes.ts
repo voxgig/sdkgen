@@ -27,7 +27,7 @@ const TLS_PROBE = String.raw`
 
 int main(int argc, char** argv) {
   if (argc < 2) return 2;
-  DemoSDK* sdk = demo_sdk_new(NULL);
+  DemoSDK* sdk = demo_sdk_new(NULL, NULL);
   PNError* err = NULL;
   voxgig_value* res = http_fetch(sdk_get_root_ctx(sdk), argv[1],
     cmap(2, "method", v_str("GET"), "headers", v_map()), &err);

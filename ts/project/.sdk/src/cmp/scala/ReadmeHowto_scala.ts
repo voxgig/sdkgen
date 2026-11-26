@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, entityIdField, pickExampleEntity, requiredItems, javaMapOf, matchExampleItems, javaMapItems, requestExampleItems, envLocalAt, cdTarget, fact, directRoute } from '@voxgig/sdkgen'
+import { cmp, Content, entityIdField, pickExampleEntity, requiredItems, javaMapOf, matchExampleItems, javaMapItems, requestExampleItems, cdTarget, directRoute } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -61,10 +61,6 @@ println(${eVar}.data())`
     "path", "/api/resource",
     "method", "GET"))
 println(result)`
-
-  const apikeyEnvLine = isAuthActive(model)
-    ? `\n${envName(model)}_APIKEY=<your-key>${fact(model.main[KIT], 'auth').secret ? `\n${envName(model)}_SECRET=<your-secret>` : ''}`
-    : ''
 
   Content(`### Make a direct HTTP request
 
@@ -133,15 +129,10 @@ options.put("system", java.util.Map.of("fetch", mockFetch))
 val client = new ${SDK}(options)
 \`\`\`
 
-### Run live tests
+### Run the test suite
 
-Create a \`.env.local\` file ${envLocalAt(props.ctx$, target)}:
-
-\`\`\`
-${envName(model)}_TEST_LIVE=TRUE${apikeyEnvLine}
-\`\`\`
-
-Then run:
+The generated suite runs offline, against the mock transport. This SDK
+has no live tests.
 
 \`\`\`bash
 ${cdTarget(target)}make test

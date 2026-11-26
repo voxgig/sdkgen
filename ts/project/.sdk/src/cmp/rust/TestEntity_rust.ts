@@ -18,8 +18,7 @@ import {
   each,
   buildIdNames,
   getMatchEntries,
-  isAuthActive, envName, envToken, entityRecordIdField,
-  serverVarEnv,
+  isAuthActive, entityRecordIdField,
   liveFlowNeeds, liveStrict, liveStrictNote,
   liveGates, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
   liveRouteExamples, liveStepExamples,
@@ -131,24 +130,24 @@ const TestEntity = cmp(function TestEntity(props: any) {
     return
   }
 
-  const PROJUPPER = envName(model)
-  const ENTUPPER = envToken(entity.name)
+  const ENVVAR = fact(model.main[KIT], 'env')
+  const PROJUPPER = ENVVAR.prefix
 
   const authActive = isAuthActive(model)
   const authSecret = authActive && fact(model.main[KIT], 'auth').secret
   const apikeyEnvEntry = authActive
-    ? `\n        ("${PROJUPPER}_APIKEY", Value::str("")),${authSecret ? `\n        ("${PROJUPPER}_SECRET", Value::str("")),` : ''}`
+    ? `\n        ("${ENVVAR.apikey}", Value::str("")),${authSecret ? `\n        ("${ENVVAR.secret}", Value::str("")),` : ''}`
     : ''
   const apikeyLiveField = authActive
-    ? `("apikey", getp(&env, "${PROJUPPER}_APIKEY"))${authSecret ? `, ("secret", getp(&env, "${PROJUPPER}_SECRET"))` : ''}`
+    ? `("apikey", getp(&env, "${ENVVAR.apikey}"))${authSecret ? `, ("secret", getp(&env, "${ENVVAR.secret}"))` : ''}`
     : ''
 
   const svars = fact(model.main[KIT], 'server')
   const serverEnvEntry = svars
-    .map((v: any) => `\n        ("${serverVarEnv(PROJUPPER, v.name)}", Value::str(${JSON.stringify(v.dflt)})),`).join('')
+    .map((v: any) => `\n        ("${ENVVAR.server[v.name]}", Value::str(${JSON.stringify(v.dflt)})),`).join('')
   const serverLiveEntry = 0 === svars.length ? '' :
     `("server", jo(vec![${svars
-      .map((v: any) => `("${v.name}", getp(&env, "${serverVarEnv(PROJUPPER, v.name)}"))`).join(', ')}]))`
+      .map((v: any) => `("${v.name}", getp(&env, "${ENVVAR.server[v.name]}"))`).join(', ')}]))`
   const serverLiveField = '' === serverLiveEntry ? '' :
     ('' === apikeyLiveField ? serverLiveEntry : ', ' + serverLiveEntry)
 
@@ -281,7 +280,7 @@ ${skipBlock}`)
     const flowBody = (flow: any) => {
       const steps = flowSteps(flow) as any[]
       Content(liveFlowGate(entity, liveFlowNeeds(entity, flow), liveIdentity(entity, flow),
-        PROJUPPER + '_TEST_' + ENTUPPER + '_ENTID', method, strict, steps.length > 0))
+        ENVVAR.entid[entity.name], method, strict, steps.length > 0))
 
       // No create step: bootstrap entity data from existing fixture data.
       const flowHasCreate = steps.some((s: any) => s.o === 'create')
@@ -384,17 +383,17 @@ ${fixtureIdentity(entity)}
 
     // Whether *_ENTID supplied the idmap, read before env_override consumes
     // it: without it, the ids a live flow binds are the fixture's synthetic ones.
-    let entid_env_raw = std::env::var("${PROJUPPER}_TEST_${ENTUPPER}_ENTID").unwrap_or_default();
+    let entid_env_raw = std::env::var("${ENVVAR.entid[entity.name]}").unwrap_or_default();
     let idmap_overridden =
         !entid_env_raw.trim().is_empty() && entid_env_raw.trim().starts_with('{');
 
     let env = env_override(jo(vec![
-        ("${PROJUPPER}_TEST_${ENTUPPER}_ENTID", idmap.clone()),
-        ("${PROJUPPER}_TEST_LIVE", Value::str("FALSE")),
+        ("${ENVVAR.entid[entity.name]}", idmap.clone()),
+        ("${ENVVAR.live}", Value::str("FALSE")),
         ("${PROJUPPER}_TEST_EXPLAIN", Value::str("FALSE")),${apikeyEnvEntry}${serverEnvEntry}
     ]));
 
-    let idmap_resolved = match to_map(&getp(&env, "${PROJUPPER}_TEST_${ENTUPPER}_ENTID")) {
+    let idmap_resolved = match to_map(&getp(&env, "${ENVVAR.entid[entity.name]}")) {
         Value::Map(m) => Value::Map(m),
         _ => to_map(&idmap),
     };
@@ -412,7 +411,7 @@ ${fixtureIdentity(entity)}
     }
 
     Content(`
-    let live = getp(&env, "${PROJUPPER}_TEST_LIVE") == Value::str("TRUE");
+    let live = getp(&env, "${ENVVAR.live}") == Value::str("TRUE");
 
     let client = if live {
         let merged = vs::merge(
@@ -434,7 +433,7 @@ ${fixtureIdentity(entity)}
             ]),
             None,
         );
-        ${model.const.Name}SDK::new(to_map(&merged))
+        ${model.const.Name}SDK::new(to_map(&merged)).unwrap()
     } else {
         client
     };

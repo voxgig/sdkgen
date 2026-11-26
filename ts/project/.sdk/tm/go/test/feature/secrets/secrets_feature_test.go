@@ -158,7 +158,11 @@ func secretsClient(w *wire, sdkopts map[string]any) *sdk.ProjectNameSDK {
 		if extend {
 			opts["extend"] = []any{feat.NewSecretsFeature()}
 		}
-		return sdk.NewProjectNameSDK(opts)
+		client, err := sdk.NewProjectNameSDK(opts)
+		if err != nil {
+			panic(err)
+		}
+		return client
 	})
 }
 
@@ -762,7 +766,11 @@ func TestSecretsExchangeRawFetch(t *testing.T) {
 		if extend {
 			opts["extend"] = []any{feat.NewSecretsFeature()}
 		}
-		return sdk.NewProjectNameSDK(opts)
+		client, err := sdk.NewProjectNameSDK(opts)
+		if err != nil {
+			panic(err)
+		}
+		return client
 	})
 
 	driveEntityOpUntil(t, client, "reached the httptest server", func() bool {

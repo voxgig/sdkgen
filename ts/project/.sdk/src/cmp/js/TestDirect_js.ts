@@ -18,8 +18,7 @@ import {
   cmp,
   snakify,
   isAuthActive,
-  serverVarEnv,
-  jsProp, jsOptProp, envName, envToken,
+  jsProp, jsOptProp,
   jsKey,
   pointParts,
   pointSlash,
@@ -54,27 +53,27 @@ const TestDirect = cmp(function TestDirect(props: any) {
 
   const ff = projectPath('src/cmp/js/fragment/')
 
-  const PROJECTNAME = envName(model)
-  const entidEnvVar = `${PROJECTNAME}_TEST_${envToken(entity.name)}_ENTID`
+  const ENVVAR = fact(model.main[KIT], 'env')
+  const entidEnvVar = ENVVAR.entid[entity.name]
 
   const authActive = isAuthActive(model)
   const authSecret = authActive && fact(model.main[KIT], 'auth').secret
   const apikeyEnvEntry = authActive
-    ? `\n    '${PROJECTNAME}_APIKEY': '',${authSecret ? `\n    '${PROJECTNAME}_SECRET': '',` : ''}`
+    ? `\n    '${ENVVAR.apikey}': '',${authSecret ? `\n    '${ENVVAR.secret}': '',` : ''}`
     : ''
   const apikeyLiveField = authActive
     ? `
-      apikey: env.${PROJECTNAME}_APIKEY,${authSecret ? `
-      secret: env.${PROJECTNAME}_SECRET,` : ''}`
+      apikey: env.${ENVVAR.apikey},${authSecret ? `
+      secret: env.${ENVVAR.secret},` : ''}`
     : ''
 
   const svars = fact(model.main[KIT], 'server')
   const serverEnvEntry = svars
-    .map((v: any) => `\n    '${serverVarEnv(PROJECTNAME, v.name)}': ${JSON.stringify(v.dflt)},`).join('')
+    .map((v: any) => `\n    '${ENVVAR.server[v.name]}': ${JSON.stringify(v.dflt)},`).join('')
   const serverLiveField = 0 === svars.length ? '' : `
       server: {${svars
       .map((v: any) => `
-        ${jsKey(v.name)}: ${jsProp('env', serverVarEnv(PROJECTNAME, v.name))},`).join('')}
+        ${jsKey(v.name)}: ${jsProp('env', ENVVAR.server[v.name])},`).join('')}
       },`
 
   const opnames = Object.keys(entity.op || {})
@@ -113,16 +112,16 @@ const TestDirect = cmp(function TestDirect(props: any) {
 ${liveStrictNote(liveStrict(model, target.name), '//')}
 const LIVE_STRICT = ${liveStrict(model, target.name)}
 
-function liveScenariosActive() { return ${hasLiveScenarios(model)} && process.env.${PROJECTNAME}_TEST_LIVE === 'TRUE' }
+function liveScenariosActive() { return ${hasLiveScenarios(model)} && process.env.${ENVVAR.live} === 'TRUE' }
 function directSetup(mockres) {
   const calls = []
 
   const env = envOverride({
     '${entidEnvVar}': {},
-    '${PROJECTNAME}_TEST_LIVE': 'FALSE',${apikeyEnvEntry}${serverEnvEntry}
+    '${ENVVAR.live}': 'FALSE',${apikeyEnvEntry}${serverEnvEntry}
   })
 
-  const live = 'TRUE' === env.${PROJECTNAME}_TEST_LIVE
+  const live = 'TRUE' === env.${ENVVAR.live}
 
   if (live) {
     // Merged so the generated fields win: sdk-test-control.json's

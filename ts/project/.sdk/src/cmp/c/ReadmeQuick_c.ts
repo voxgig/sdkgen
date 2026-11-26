@@ -41,8 +41,8 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
       svars.map((v: any) => `"${v.name}", v_str("<${v.name}>")`).join(', ') + `)`]),
   ]
   const ctor = 0 === ctorFields.length
-    ? `${ident}_sdk_new(NULL)`
-    : `${ident}_sdk_new(cmap(${ctorFields.length},${ctorFields.map((f: string) => '\n    ' + f).join(',')}))`
+    ? `${ident}_sdk_new(NULL, &err)`
+    : `${ident}_sdk_new(cmap(${ctorFields.length},${ctorFields.map((f: string) => '\n    ' + f).join(',')}), &err)`
 
   // A type-correct C expression constructing a voxgig struct Value.
   const cLit = (type: any, placeholder: string = 'example'): string => {
@@ -62,10 +62,16 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   Content(`### ${++step}. Create a client
 
 \`\`\`c
-${authActive ? '#include <stdlib.h>\n' : ''}#include "core/api.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include "core/api.h"
 
-${model.const.Name}SDK* client = ${ctor};
 PNError* err = NULL;
+${model.const.Name}SDK* client = ${ctor};
+if (NULL == client) {
+    fprintf(stderr, "%s\\n", err->msg);
+    exit(1);
+}
 \`\`\`
 
 `)

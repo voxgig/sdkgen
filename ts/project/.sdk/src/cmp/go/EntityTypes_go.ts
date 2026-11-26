@@ -116,10 +116,9 @@ const EntityTypes = cmp(function EntityTypes(props: any) {
   // never substituted for it — the module path has to be interpolated.
   const gomodule = goModule(model, target.name)
 
-  // only_active:false — getModelPath DROPS active:false entries by default,
-  // but the consumer scaffold (create-sdkgen Root.ts) iterates the RAW entity
-  // collection, so inactive entities still get generated entity code that
-  // references these typed names. The typed model must cover them too.
+  // only_active:false — a Root scaffolded before create-sdkgen filtered on
+  // `active` still generates entity code for inactive entities, and a project
+  // keeps its Root until it re-scaffolds; that code needs these typed names.
   const entity = getModelPath(model, `main.${KIT}.entity`, { only_active: false, required: false })
   const entityList = deriveEntityNames(entity)
   const entityColl = entityCollection(model)
