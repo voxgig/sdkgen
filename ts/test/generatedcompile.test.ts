@@ -725,6 +725,11 @@ describe('dotnet test failure reports', () => {
 })
 
 
+// The secrets suites assert the key the SDK sends, so the API takes one.
+const SECRETS_MODEL = 'main: kit: feature: secrets: { active: true plugin: vault: active: true }\n' +
+  'main: kit: config: auth: active: true'
+
+
 describe('generated SDK compiles', () => {
 
   let tmp = ''
@@ -1705,7 +1710,7 @@ func TestResformProbe(t *testing.T) {
     }
 
     const sdkroot = Path.join(tmp, 'go-authnull')
-    await generateTo('go', sdkroot)
+    await generateTo('go', sdkroot, AUTHNULL_MODEL)
 
     Fs.writeFileSync(
       Path.join(sdkroot, 'test', 'authnull_probe_test.go'),
@@ -1779,7 +1784,7 @@ func TestAuthNullProbe(t *testing.T) {
 
   test('js: auth null suppresses the credential', async () => {
     const sdkroot = Path.join(tmp, 'js-authnull')
-    await generateTo('js', sdkroot)
+    await generateTo('js', sdkroot, AUTHNULL_MODEL)
     linkDeps(sdkroot)
 
     Fs.mkdirSync(Path.join(sdkroot, 'test', 'utility'), { recursive: true })
@@ -1862,7 +1867,7 @@ describe('auth null', () => {
   test('js: the secrets feature runs with the feature active', async () => {
     const sdkroot = Path.join(tmp, 'js-secrets')
     await generateTo('js', sdkroot,
-      'main: kit: feature: secrets: { active: true plugin: vault: active: true }',
+      SECRETS_MODEL,
       ['test', 'log', 'secrets'])
     linkDeps(sdkroot)
 
@@ -1894,7 +1899,7 @@ describe('auth null', () => {
 
     const sdkroot = Path.join(tmp, 'lua-secrets')
     await generateTo('lua', sdkroot,
-      'main: kit: feature: secrets: { active: true plugin: vault: active: true }',
+      SECRETS_MODEL,
       ['test', 'log', 'secrets'])
 
     // The shipped suite must actually be there: busted over a directory
@@ -1975,7 +1980,7 @@ describe('auth null', () => {
 
     const sdkroot = Path.join(tmp, 'rb-secrets')
     await generateTo('rb', sdkroot,
-      'main: kit: feature: secrets: { active: true plugin: vault: active: true }',
+      SECRETS_MODEL,
       ['test', 'log', 'secrets'])
 
     // The shipped suite must actually be there: a `ruby <path>` on a
@@ -2075,7 +2080,7 @@ abort("FAIL: a multi-segment envelope was not synthesised - #{n} of 3 records") 
 
     const sdkroot = Path.join(tmp, 'c-secrets')
     await generateTo('c', sdkroot,
-      'main: kit: feature: secrets: { active: true plugin: vault: active: true }',
+      SECRETS_MODEL,
       ['test', 'log', 'secrets'])
 
     ok(Fs.existsSync(Path.join(sdkroot, 'feature', 'secrets', 'kinds.c')) &&
@@ -2470,7 +2475,7 @@ int main(void) {
   test('perl: the secrets feature runs with the feature active', async (t) => {
     const sdkroot = Path.join(tmp, 'perl-secrets')
     await generateTo('perl', sdkroot,
-      'main: kit: feature: secrets: { active: true plugin: vault: active: true }',
+      SECRETS_MODEL,
       ['test', 'log', 'secrets'])
 
     // The shipped suite must actually be there: `perl <path>` on a missing
@@ -2539,7 +2544,7 @@ int main(void) {
   test('zig: the secrets feature runs with the feature active', async (t) => {
     const sdkroot = Path.join(tmp, 'zig-secrets')
     await generateTo('zig', sdkroot,
-      'main: kit: feature: secrets: { active: true plugin: vault: active: true }',
+      SECRETS_MODEL,
       ['test', 'log', 'secrets'])
 
     // The shipped suite and the module root must actually be there: build.zig
@@ -2604,7 +2609,7 @@ int main(void) {
 
     const sdkroot = Path.join(tmp, 'swift-secrets')
     await generateTo('swift', sdkroot,
-      'main: kit: feature: secrets: { active: true plugin: vault: active: true }',
+      SECRETS_MODEL,
       ['test', 'log', 'secrets'])
 
     // The shipped suite must actually be there: a --filter that matches
@@ -2741,7 +2746,7 @@ func TestTypesProbe(t *testing.T) {
 
     const sdkroot = Path.join(tmp, 'csharp-secrets')
     await generateTo('csharp', sdkroot,
-      'main: kit: feature: secrets: { active: true plugin: vault: active: true }',
+      SECRETS_MODEL,
       ['test', 'log', 'secrets'])
 
     // The shipped suite must actually be there: a --filter that matches
@@ -2799,7 +2804,7 @@ func TestTypesProbe(t *testing.T) {
 
     const sdkroot = Path.join(tmp, 'cpp-secrets')
     await generateTo('cpp', sdkroot,
-      'main: kit: feature: secrets: { active: true plugin: vault: active: true }',
+      SECRETS_MODEL,
       ['test', 'log', 'secrets'])
 
     ok(Fs.existsSync(Path.join(sdkroot, 'feature', 'secrets', 'kinds.cpp')) &&
@@ -3148,7 +3153,7 @@ echo get_class($client->ContactsField(null)), ' ',
 
     const sdkroot = Path.join(tmp, 'clojure-secrets')
     await generateTo('clojure', sdkroot,
-      'main: kit: feature: secrets: { active: true plugin: vault: active: true }',
+      SECRETS_MODEL,
       ['test', 'log', 'secrets'])
 
     // The shipped suite and the feature must actually be there: the
@@ -3202,7 +3207,7 @@ echo get_class($client->ContactsField(null)), ' ',
 
     const sdkroot = Path.join(tmp, 'ocaml-secrets')
     await generateTo('ocaml', sdkroot,
-      'main: kit: feature: secrets: { active: true plugin: vault: active: true }',
+      SECRETS_MODEL,
       ['test', 'log', 'secrets'])
 
     ok(Fs.existsSync(Path.join(sdkroot, 'feature', 'secrets', 'feature.mk')),
@@ -4492,7 +4497,7 @@ describe('the elixir secrets feature runs from a generated SDK', () => {
   test('elixir: the secrets feature runs with the feature active', async (t) => {
     const sdkroot = Path.join(tmp, 'elixir-secrets')
     await generateTo('elixir', sdkroot,
-      'main: kit: feature: secrets: { active: true plugin: vault: active: true }',
+      SECRETS_MODEL,
       ['test', 'log', 'secrets'])
 
     // The shipped suite must actually be there, and the trim must have
@@ -5398,11 +5403,11 @@ describe('prepareAuth compiles for a placement it does not recognise', () => {
 
 // The entries naming `lanes` hold only the ports whose runners keep every
 // other header and query parameter in place. A public API places no
-// credential, so the corpus case, which asserts one, does not apply to it.
+// credential, so its corpus step must skip the section and say why.
 const CREDNAME_STRICT = ['c', 'cpp', 'rust', 'csharp', 'kotlin', 'swift', 'zig', 'elixir', 'ocaml']
 
 const CREDNAME_MODELS: {
-  name: string, extra: string, lanes?: string[], pipelineOnly?: boolean,
+  name: string, extra: string, lanes?: string[], public?: boolean,
 }[] = [
   {
     name: 'a credential named by the API, not `authorization`',
@@ -5447,8 +5452,7 @@ main: kit: config: auth: { active: true, in: 'header', name: 'cookie' }
     extra: `
 main: kit: config: auth: { active: false }
 `,
-    lanes: CREDNAME_STRICT,
-    pipelineOnly: true,
+    public: true,
   },
 ]
 
@@ -5503,6 +5507,9 @@ type CredNameStep = {
   byline?: boolean,
   // What `ran` reads besides the output, where the runner prints no counts.
   report?: (sdkroot: string) => string,
+  // For a public API, what the step prints in place of `ran`: the corpus
+  // step skips the section and says why. Null where the step cannot run.
+  public?: RegExp | null,
 }
 
 type CredNameLane = {
@@ -5552,6 +5559,7 @@ const CREDNAME_LANES: CredNameLane[] = [
           }
           : null,
         ran: /^\s*ok \d+ - auth-basic/m,
+        public: /^\s*ok \d+ - auth-basic # SKIP this SDK's config declares no auth, so it places no credential$/m,
       },
     ],
   },
@@ -5582,6 +5590,7 @@ const CREDNAME_LANES: CredNameLane[] = [
           env: nestedTestEnv(),
         }),
         ran: /^\s*ok \d+ - auth-basic/m,
+        public: /^\s*ok \d+ - auth-basic # SKIP this SDK's config declares no auth, so it places no credential$/m,
       },
     ],
   },
@@ -5612,6 +5621,7 @@ const CREDNAME_LANES: CredNameLane[] = [
           }
         },
         ran: /--- PASS: TestPrimaryUtility\/prepareAuth-basic/,
+        public: /^(?=[\s\S]*--- SKIP: TestPrimaryUtility\/prepareAuth-basic)(?=[\s\S]*: this SDK's config declares no auth, so it places no credential$)/m,
       },
     ],
   },
@@ -5627,8 +5637,9 @@ const CREDNAME_LANES: CredNameLane[] = [
       {
         name: 'the corpus prepareAuth section',
         corpus: true,
-        cmd: () => pytest(['test/test_primary_utility.py', '-k', 'prepare_auth', '-q']),
+        cmd: () => pytest(['test/test_primary_utility.py', '-k', 'prepare_auth', '-q', '-rs']),
         ran: /1 passed/,
+        public: /^SKIPPED \[1\] [^\n]*: this SDK's config declares no auth, so it places no credential$/m,
       },
     ],
   },
@@ -5644,8 +5655,9 @@ const CREDNAME_LANES: CredNameLane[] = [
       {
         name: 'the corpus prepareAuth section',
         corpus: true,
-        cmd: () => minitest(['test/primary_utility_test.rb', '-n', 'test_prepare_auth_basic']),
+        cmd: () => minitest(['test/primary_utility_test.rb', '-v', '-n', 'test_prepare_auth_basic']),
         ran: /1 runs, \d+ assertions, 0 failures, 0 errors/,
+        public: /Skipped:\s*\nPrimaryUtilityTest#test_prepare_auth_basic [^\n]*\nthis SDK's config declares no auth, so it places no credential$/m,
       },
     ],
   },
@@ -5663,6 +5675,9 @@ const CREDNAME_LANES: CredNameLane[] = [
         corpus: true,
         cmd: () => phpunit(['--filter', 'test_prepare_auth_basic', 'test/PrimaryUtilityTest.php']),
         ran: /OK \(1 test/,
+        // phpunit names a skip's reason only under a flag its versions spell
+        // differently, so the summary is what is read.
+        public: /Tests: 1, Assertions: \d+, Skipped: 1\./,
       },
     ],
   },
@@ -5682,6 +5697,7 @@ const CREDNAME_LANES: CredNameLane[] = [
         corpus: true,
         cmd: () => busted(['--filter', 'prepareAuth', 'test/primary_utility_test.lua']),
         ran: /1 success \/ 0 failures \/ 0 errors/,
+        public: /^(?=[\s\S]*0 successes \/ 0 failures \/ 0 errors \/ 1 pending)(?=[\s\S]*this SDK's config declares no auth, so it places no credential)/,
       },
     ],
   },
@@ -5697,6 +5713,7 @@ const CREDNAME_LANES: CredNameLane[] = [
         },
         // A cookie credential reports its placement on a line of its own.
         ran: /^ok \d+ - prepare_auth places the apikey (where this API puts it|as a cookie pair)$/m,
+        public: /^ok \d+ - prepare_auth places no credential for a public API$/m,
       },
       {
         name: 'the corpus prepareAuth section',
@@ -5708,6 +5725,7 @@ const CREDNAME_LANES: CredNameLane[] = [
             : { bin: perl, args: ['-Ilib', 't/primary_utility.t'] }
         },
         ran: /^ok \d+ - prepareAuth\.basic/m,
+        public: /^ok \d+ # skip this SDK's config declares no auth, so it places no credential$/m,
         byline: true,
       },
     ],
@@ -5724,8 +5742,10 @@ const CREDNAME_LANES: CredNameLane[] = [
       {
         name: 'the corpus prepareAuth section',
         corpus: true,
-        cmd: () => cargoTest(['--test', 'primary_utility_test', 'primary_prepare_auth_basic']),
+        cmd: () => cargoTest(['--test', 'primary_utility_test', 'primary_prepare_auth_basic',
+          '--', '--nocapture']),
         ran: /test result: ok\. 1 passed; 0 failed/,
+        public: /^SKIP prepareAuth: this SDK's config declares no auth, so it places no credential$/m,
       },
     ],
   },
@@ -5760,6 +5780,7 @@ const CREDNAME_LANES: CredNameLane[] = [
           bin: Path.join(sdkroot, 'tests', 'primary_corpus_test.out'), args: ['prepareAuth'],
         }),
         ran: /^PRIMARY CORPUS: 1 cases in 1 sections, 0 section\(s\) FAILED$/m,
+        public: /^PRIMARY-SKIP prepareAuth - this SDK's config declares no auth, so it places no credential$/m,
       },
     ],
   },
@@ -5791,6 +5812,7 @@ const CREDNAME_LANES: CredNameLane[] = [
           bin: Path.join(sdkroot, 'test', 'primary_utility_test.out'), args: ['--prepare-auth'],
         }),
         ran: /^primary_utility_test: 1 tests, [1-9]\d* checks, 0 failures$/m,
+        public: /^ {2}SKIP \[prepareAuth\]: this SDK's config declares no auth, so it places no credential$/m,
       },
     ],
   },
@@ -5814,8 +5836,9 @@ const CREDNAME_LANES: CredNameLane[] = [
       {
         name: 'the corpus prepareAuth section',
         corpus: true,
-        cmd: () => dotnetTest('PrimaryUtilityTest.PrepareAuthBasic'),
+        cmd: () => dotnetTest('PrimaryUtilityTest.PrepareAuthBasic', 'detailed'),
         ran: /Passed!\s+-\s+Failed:\s+0,\s+Passed:\s+1,\s+Skipped:\s+0/,
+        public: /SKIP PrepareAuthBasic: this SDK's config declares no auth, so it places no credential/,
       },
     ],
   },
@@ -5835,6 +5858,7 @@ const CREDNAME_LANES: CredNameLane[] = [
         cmd: () => gradleTest('*PrimaryUtilityTest.prepareAuthBasic'),
         report: (sdkroot) => junitReport(sdkroot, 'PrimaryUtilityTest'),
         ran: /<testsuite name="[^"]*\.PrimaryUtilityTest" tests="1" skipped="0" failures="0" errors="0"/,
+        public: /^(?=[\s\S]*<testsuite name="[^"]*\.PrimaryUtilityTest" tests="1" skipped="1" failures="0" errors="0")(?=[\s\S]*config declares no auth, so it places no credential)/,
       },
     ],
   },
@@ -5859,6 +5883,7 @@ const CREDNAME_LANES: CredNameLane[] = [
         corpus: true,
         cmd: () => swiftTest('PrimaryUtilityTest/testPrepareAuthBasic'),
         ran: /Executed 1 test, with 0 failures/,
+        public: /^(?=[\s\S]*Executed 1 test, with 1 test skipped and 0 failures)(?=[\s\S]*this SDK's config declares no auth, so it places no credential)/,
       },
     ],
   },
@@ -5876,6 +5901,7 @@ const CREDNAME_LANES: CredNameLane[] = [
         corpus: true,
         cmd: () => zigTest('primary corpus: prepareAuth'),
         ran: /primary prepareAuth: [1-9]\d* case/,
+        public: /SKIP primary prepareAuth: this SDK's config declares no auth, so it places no credential/,
       },
     ],
   },
@@ -5893,6 +5919,7 @@ const CREDNAME_LANES: CredNameLane[] = [
         corpus: true,
         cmd: () => mixTest([Path.join('test', 'primary_utility_test.exs'), '--only', 'prepare_auth']),
         ran: /^PRIMARY prepareAuth: CASES [1-9]\d* /m,
+        public: /^SKIP the prepareAuth corpus section, on this SDK's own credential: this SDK's config declares no auth, so it places no credential$/m,
       },
     ],
   },
@@ -5910,6 +5937,9 @@ const CREDNAME_LANES: CredNameLane[] = [
         corpus: true,
         cmd: () => ocamlMake('test-primary'),
         ran: /^PRIMARY CORPUS: PASS 1 {2}FAIL 0$/m,
+        // The runner fails a run that executes no case, and this corpus holds
+        // no case but the one a public API skips.
+        public: null,
       },
     ],
   },
@@ -5926,7 +5956,9 @@ const CREDNAME_LANES: CredNameLane[] = [
         name: 'the corpus prepareAuth section',
         corpus: true,
         cmd: () => maven(['-Dtest=PrimaryUtilityTest#prepareAuthBasic']),
-        ran: /Tests run: 1, Failures: 0, Errors: 0/,
+        report: (sdkroot) => surefireReport(sdkroot, 'PrimaryUtilityTest'),
+        ran: /Tests run: 1, Failures: 0, Errors: 0, Skipped: 0/,
+        public: /^(?=[\s\S]*Tests run: 1, Failures: 0, Errors: 0, Skipped: 1)(?=[\s\S]*config declares no auth, so it places no credential)/,
       },
     ],
   },
@@ -5975,6 +6007,16 @@ function gradleTest(filter: string) {
 }
 
 
+// surefire writes the reason a test was skipped into its report alone.
+function surefireReport(sdkroot: string, suite: string): string {
+  const dir = Path.join(sdkroot, 'target', 'surefire-reports')
+  return Fs.existsSync(dir)
+    ? Fs.readdirSync(dir).filter((f) => f.endsWith('.' + suite + '.xml'))
+      .map((f) => Fs.readFileSync(Path.join(dir, f), 'utf8')).join('\n')
+    : ''
+}
+
+
 function junitReport(sdkroot: string, suite: string): string {
   const dir = Path.join(sdkroot, 'build', 'test-results', 'test')
   return Fs.existsSync(dir)
@@ -5984,12 +6026,12 @@ function junitReport(sdkroot: string, suite: string): string {
 }
 
 
-function dotnetTest(filter: string) {
+function dotnetTest(filter: string, verbosity = 'minimal') {
   const dotnet = toolchain('dotnet')
   return null == dotnet ? null : {
     bin: dotnet,
     args: ['test', '--nologo', '--no-build', '-v', 'quiet',
-      '--logger', 'console;verbosity=minimal',
+      '--logger', 'console;verbosity=' + verbosity,
       '--filter', 'FullyQualifiedName~' + filter, 'test'],
   }
 }
@@ -6075,7 +6117,7 @@ describe('generated auth tests discover the credential name', () => {
     const strict = CREDNAME_STRICT.includes(lane.target)
     for (const model of CREDNAME_MODELS) {
       if (null != model.lanes && !model.lanes.includes(lane.target)) continue
-      const steps = lane.steps.filter((step) => !(model.pipelineOnly && step.corpus))
+      const steps = lane.steps.filter((step) => !(model.public && null === step.public))
 
     test(lane.target + ': ' + model.name,
       async (t) => {
@@ -6118,6 +6160,12 @@ describe('generated auth tests discover the credential name', () => {
             'where prepareAuth put it:\n' + tail(ran.out))
 
           const seen = ran.out + (null == step.report ? '' : '\n' + step.report(sdkroot))
+          if (model.public && null != step.public) {
+            ok(step.public.test(seen),
+              lane.target + ': ' + step.name + ' did not report what a public API ' +
+              'gets (' + step.public.source + '):\n' + tail(ran.out))
+            continue
+          }
           ok(step.ran.test(seen),
             lane.target + ': ' + step.name + ' did not report a passing ' +
             'prepareAuth case (' + step.ran.source + ') - it matched nothing ' +
