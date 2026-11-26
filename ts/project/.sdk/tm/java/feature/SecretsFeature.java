@@ -689,6 +689,8 @@ public class SecretsFeature extends BaseFeature {
     fetchdef.put("method", x.method);
     fetchdef.put("headers", headers);
     fetchdef.put("body", Json.stringify(payload));
+    // Never followed: a redirect would carry the refresh token on.
+    fetchdef.put("redirect", "manual");
 
     // Deliberately NOT the SDK transport. The transport is what this
     // feature wraps, and sending the token request back through it would
@@ -773,6 +775,7 @@ public class SecretsFeature extends BaseFeature {
     try {
       resp = HttpClient.newBuilder()
           .connectTimeout(Duration.ofSeconds(30))
+          .followRedirects(HttpClient.Redirect.NEVER)
           .build()
           .send(reqb.build(), HttpResponse.BodyHandlers.ofString());
     }
