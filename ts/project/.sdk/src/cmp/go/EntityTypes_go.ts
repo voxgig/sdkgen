@@ -6,7 +6,10 @@ import {
   File, Content, Folder, goModule
 } from '@voxgig/sdkgen'
 
-import { canonToType, opTypeName, opRequestShape, warnEntityTypeCollisions , deriveEntityNames } from '@voxgig/sdkgen'
+import {
+  canonToType, opTypeName, opRequestShape, warnEntityTypeCollisions, deriveEntityNames,
+  entityClassName, entityCollection,
+} from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -119,6 +122,7 @@ const EntityTypes = cmp(function EntityTypes(props: any) {
   // references these typed names. The typed model must cover them too.
   const entity = getModelPath(model, `main.${KIT}.entity`, { only_active: false, required: false })
   const entityList = deriveEntityNames(entity)
+  const entityColl = entityCollection(model)
 
   warnEntityTypeCollisions(entity, log, LANG)
 
@@ -160,6 +164,8 @@ type ${Name} struct {
 
 `)
 
+        // An inactive entity has types, but no entity class to carry a Typed method.
+        const owner = false === ent.active ? null : entityClassName(ent, entityColl)
         const ops = ent.op || {}
         ;['load', 'list', 'create', 'update', 'patch', 'remove'].forEach((opname: string) => {
           if (null == ops[opname]) {
@@ -168,8 +174,9 @@ type ${Name} struct {
 
           const typeName = opTypeName(Name, opname)
           const { items } = opRequestShape(ent, opname)
+          const payloadOf = null == owner ? 'the ' + opname + ' operation' : owner + '.' + cap(opname) + 'Typed'
 
-          Content(`// ${typeName} is the typed request payload for ${Name}.${cap(opname)}Typed.
+          Content(`// ${typeName} is the typed request payload for ${payloadOf}.
 type ${typeName} struct {
 `)
           const taggableItems = items.filter(

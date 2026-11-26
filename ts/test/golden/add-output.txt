@@ -10,7 +10,7 @@ model/target/target-index.aontu 221a8f331196
 src/cmp/c/Config_c.ts d3f6e64932be
 src/cmp/c/EntityBase_c.ts 70f610b1220f
 src/cmp/c/EntityOperation_c.ts 2f10c1394cb9
-src/cmp/c/EntityTypes_c.ts f00a21c238c1
+src/cmp/c/EntityTypes_c.ts bc2c9735b04b
 src/cmp/c/Entity_c.ts c3dbf7462270
 src/cmp/c/Gitignore_c.ts cfb70ab8b595
 src/cmp/c/MainEntity_c.ts d6e780384b49
@@ -517,7 +517,7 @@ model/target/go.aontu ed986520b671
 model/target/target-index.aontu c475d1cec12b
 src/cmp/go/Config_go.ts f6d1db9cf848
 src/cmp/go/EntityOperation_go.ts 76a52d6224f2
-src/cmp/go/EntityTypes_go.ts 3702d5d19fd2
+src/cmp/go/EntityTypes_go.ts 0799cd258abe
 src/cmp/go/Entity_go.ts 7ee87e28bab9
 src/cmp/go/Gitignore_go.ts 93490d4fab7a
 src/cmp/go/MainEntity_go.ts b9f011d284f8

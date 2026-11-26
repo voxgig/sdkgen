@@ -102,6 +102,7 @@ const EntityTypes = cmp(function EntityTypes(props: any) {
           fields.map((f: any) => ({ name: f.n, type: f.t, optional: false === f.r }))
         )
 
+        const owned = false !== ent.active
         const ops = ent.op || {}
         ;['load', 'list', 'create', 'update', 'patch', 'remove'].forEach((opname: string) => {
           if (null == ops[opname]) {
@@ -110,9 +111,10 @@ const EntityTypes = cmp(function EntityTypes(props: any) {
 
           const typeName = opTypeName(Name, opname)
           const { items } = opRequestShape(ent, opname)
+          const payloadOf = owned ? Name + '.' + opname : 'the ' + opname + ' operation'
 
           emitStruct(
-            `// ${typeName} is the typed request payload for ${Name}.${opname}.`,
+            `// ${typeName} is the typed request payload for ${payloadOf}.`,
             typeName,
             items
           )
