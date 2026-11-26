@@ -1,4 +1,4 @@
-import { flowSteps, invalidRequest, opReachable, flowLoadRoute, flowLoadReadsRecord } from '@voxgig/sdkgen'
+import { flowSteps, invalidRequest, opReachable, flowLoadRoute, flowLoadReadsRecord, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -17,7 +17,7 @@ import {
   cmp,
   each,
   buildIdNames,
-  getMatchEntries, envName, envToken, entityRecordIdField,
+  getMatchEntries, entityRecordIdField,
 } from '@voxgig/sdkgen'
 
 
@@ -44,7 +44,8 @@ const TestEntity = cmp(function TestEntity(props: any) {
   const entity: ModelEntity = props.entity
 
   const ProjectName = model.const.Name
-  const PROJUPPER = envName(model)
+  const ENVVAR = fact(model.main[KIT], 'env')
+  const PROJUPPER = ENVVAR.prefix
 
   const basicflow: ModelEntityFlow | undefined =
     getModelPath(model, `main.${KIT}.flow.Basic${nom(entity, 'Name')}Flow`)
@@ -111,12 +112,12 @@ ${fixtureIdentity(entity)}
   if (!idmap.is_map()) idmap = vmap();
 
   Value env = env_override(vmap({
-    {"${PROJUPPER}_TEST_${envToken(entity.name)}_ENTID", idmap},
-    {"${PROJUPPER}_TEST_LIVE", Value("FALSE")},
+    {"${ENVVAR.entid[entity.name]}", idmap},
+    {"${ENVVAR.live}", Value("FALSE")},
     {"${PROJUPPER}_TEST_EXPLAIN", Value("FALSE")}
   }));
 
-  Value idmap_resolved = Helpers::toMapAny(getp(env, "${PROJUPPER}_TEST_${envToken(entity.name)}_ENTID"));
+  Value idmap_resolved = Helpers::toMapAny(getp(env, "${ENVVAR.entid[entity.name]}"));
   if (!idmap_resolved.is_map()) idmap_resolved = idmap;
 `)
 
@@ -129,7 +130,7 @@ ${fixtureIdentity(entity)}
     }
 
     Content(`
-  bool live = getp(env, "${PROJUPPER}_TEST_LIVE") == Value("TRUE");
+  bool live = getp(env, "${ENVVAR.live}") == Value("TRUE");
 
   ${entity.Name}Setup s;
   s.client = client;

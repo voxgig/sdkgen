@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, entityIdField, entityDataIdField, pickExampleEntity, safeVarName, exampleVarName, jsKey, requiredItems, matchExampleItems, jsProp, requestExampleItems, envLocalAt, cdTarget, fact, serverVarEnv } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, entityIdField, entityDataIdField, pickExampleEntity, safeVarName, exampleVarName, jsKey, requiredItems, matchExampleItems, jsProp, requestExampleItems, envLocalAt, cdTarget, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -12,6 +12,7 @@ import { exampleValue } from './utility_js'
 
 const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   const { target, ctx$: { model } } = props
+  const ENVVAR = fact(model.main[KIT], 'env')
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
   // Pick an entity with a real op (prefer a read op) — never fabricate a
@@ -102,10 +103,10 @@ ${stateDataLine}
     : '') + (0 === svars.length ? '' :
       `\n  server: {${svars.map((v: any) => `\n    ${v.name}: '...',`).join('')}\n  },`)
   const apikeyEnvLine = authActive
-    ? `\n${envName(model)}_APIKEY=<your-key>${authBasic ? `\n${envName(model)}_SECRET=<your-secret>` : ''}`
+    ? `\n${ENVVAR.apikey}=<your-key>${authBasic ? `\n${ENVVAR.secret}=<your-secret>` : ''}`
     : ''
   const serverEnvLine = fact(model.main[KIT], 'server').filter((v: any) => v.required)
-    .map((v: any) => `\n${serverVarEnv(envName(model), v.name)}=<${v.name}>`).join('')
+    .map((v: any) => `\n${ENVVAR.server[v.name]}=<${v.name}>`).join('')
 
   Content(`### Make a direct HTTP request
 
@@ -182,7 +183,7 @@ const client = new ${model.const.Name}SDK({${apikeyExtendField}
 Create a \`.env.local\` file ${envLocalAt(props.ctx$, target)}:
 
 \`\`\`
-${envName(model)}_TEST_LIVE=TRUE${apikeyEnvLine}${serverEnvLine}
+${ENVVAR.live}=TRUE${apikeyEnvLine}${serverEnvLine}
 \`\`\`
 
 Then run:

@@ -13,8 +13,6 @@ import {
   cmp,
   snakify,
   isAuthActive,
-  serverVarEnv,
-  envName, envToken,
   pointParts,
   pointSlash,
   pointPlaceholders,
@@ -98,15 +96,15 @@ const TestDirect = cmp(function TestDirect(props: any) {
   const target = props.target
   const entity: ModelEntity = liveEntity(ctx$, props.entity)
 
-  const PROJECTNAME = envName(model)
+  const ENVVAR = fact(model.main[KIT], 'env')
 
   const authActive = isAuthActive(model)
   const authSecret = authActive && fact(model.main[KIT], 'auth').secret
   const apikeyEnvEntry = authActive
-    ? `\n        "${PROJECTNAME}_APIKEY": "",${authSecret ? `\n        "${PROJECTNAME}_SECRET": "",` : ''}`
+    ? `\n        "${ENVVAR.apikey}": "",${authSecret ? `\n        "${ENVVAR.secret}": "",` : ''}`
     : ''
   const apikeyLiveField = authActive
-    ? `\n            "apikey": env.get("${PROJECTNAME}_APIKEY"),${authSecret ? `\n            "secret": env.get("${PROJECTNAME}_SECRET"),` : ''}`
+    ? `\n            "apikey": env.get("${ENVVAR.apikey}"),${authSecret ? `\n            "secret": env.get("${ENVVAR.secret}"),` : ''}`
     : ''
 
   // A templated server URL (OpenAPI server variables) makes a LIVE client
@@ -115,11 +113,11 @@ const TestDirect = cmp(function TestDirect(props: any) {
   // environment, the same way the apikey is.
   const svars = fact(model.main[KIT], 'server')
   const serverEnvEntry = svars
-    .map((v: any) => `\n        "${serverVarEnv(PROJECTNAME, v.name)}": ${JSON.stringify(v.dflt)},`).join('')
+    .map((v: any) => `\n        "${ENVVAR.server[v.name]}": ${JSON.stringify(v.dflt)},`).join('')
   const serverLiveField = 0 === svars.length ? '' :
     `\n            "server": {` +
     svars.map((v: any) =>
-      `\n                "${v.name}": env.get("${serverVarEnv(PROJECTNAME, v.name)}"),`).join('') +
+      `\n                "${v.name}": env.get("${ENVVAR.server[v.name]}"),`).join('') +
     `\n            },`
 
 
@@ -171,7 +169,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
     ? loadParams.map((p: any) => `            params["${p.n}"] = ${JSON.stringify(p.ex)}`).join('\n')
     : ''
 
-  const entidEnvVar = `${PROJECTNAME}_TEST_${envToken(entity.name)}_ENTID`
+  const entidEnvVar = ENVVAR.entid[entity.name]
 
   const exampleIds = liveExampleIds(entity)
   const listLiveQueryLines = liveQueryExamples(listPoint)
@@ -365,10 +363,10 @@ def _${entity.name}_direct_setup(mockres):
 
     env = runner.env_override({
         "${entidEnvVar}": {},
-        "${PROJECTNAME}_TEST_LIVE": "FALSE",${apikeyEnvEntry}${serverEnvEntry}
+        "${ENVVAR.live}": "FALSE",${apikeyEnvEntry}${serverEnvEntry}
     })
 
-    live = env.get("${PROJECTNAME}_TEST_LIVE") == "TRUE"
+    live = env.get("${ENVVAR.live}") == "TRUE"
 
     if live:
         # sdk-test-control.json's test.client.options seeds the live

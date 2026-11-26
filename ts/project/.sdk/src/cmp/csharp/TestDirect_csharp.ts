@@ -12,8 +12,7 @@ import {
   File,
   cmp,
   snakify,
-  isAuthActive, envName, envToken,
-  serverVarEnv,
+  isAuthActive,
   pointParts,
   pointSlash,
   pointPlaceholders,
@@ -91,16 +90,15 @@ const TestDirect = cmp(function TestDirect(props: any) {
   const entity: ModelEntity = liveEntity(ctx$, props.entity)
 
   const Name = model.const.Name
-  const PROJECTNAME = envName(model)
-  const ENTUPPER = envToken(entity.name)
+  const ENVVAR = fact(model.main[KIT], 'env')
 
   const authActive = isAuthActive(model)
   const authSecret = authActive && fact(model.main[KIT], 'auth').secret
   const apikeyEnvEntry = authActive
-    ? `\n            ["${PROJECTNAME}_APIKEY"] = "",${authSecret ? `\n            ["${PROJECTNAME}_SECRET"] = "",` : ''}`
+    ? `\n            ["${ENVVAR.apikey}"] = "",${authSecret ? `\n            ["${ENVVAR.secret}"] = "",` : ''}`
     : ''
   const apikeyLiveField = authActive
-    ? `\n                ["apikey"] = env["${PROJECTNAME}_APIKEY"],${authSecret ? `\n                ["secret"] = env["${PROJECTNAME}_SECRET"],` : ''}`
+    ? `\n                ["apikey"] = env["${ENVVAR.apikey}"],${authSecret ? `\n                ["secret"] = env["${ENVVAR.secret}"],` : ''}`
     : ''
 
   // A templated server URL (OpenAPI server variables) makes a LIVE client
@@ -109,12 +107,12 @@ const TestDirect = cmp(function TestDirect(props: any) {
   // takes them from the environment the same way it takes the apikey.
   const svars = fact(model.main[KIT], 'server')
   const serverEnvEntry = svars
-    .map((v: any) => `\n            ["${serverVarEnv(PROJECTNAME, v.name)}"] = ${JSON.stringify(v.dflt)},`).join('')
+    .map((v: any) => `\n            ["${ENVVAR.server[v.name]}"] = ${JSON.stringify(v.dflt)},`).join('')
   const serverLiveField = 0 === svars.length ? '' : `
                 ["server"] = new Dictionary<string, object?>
                 {${svars
       .map((v: any) => `
-                    ["${v.name}"] = env["${serverVarEnv(PROJECTNAME, v.name)}"],`).join('')}
+                    ["${v.name}"] = env["${ENVVAR.server[v.name]}"],`).join('')}
                 },`
 
   const opnames = Object.keys(entity.op || {})
@@ -166,7 +164,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
       `            pathParams["${p.n}"] = ${formatCsValue(p.ex)};`).join('\n')
     : ''
 
-  const entidEnvVar = `${PROJECTNAME}_TEST_${ENTUPPER}_ENTID`
+  const entidEnvVar = ENVVAR.entid[entity.name]
 
   const exampleIds = liveExampleIds(entity)
   const listLiveQueryLines = liveQueryExamples(listPoint)
@@ -560,10 +558,10 @@ ${loadSkipBlock}        if (setup.Live)
         var env = TestRunner.EnvOverride(new Dictionary<string, object?>
         {
             ["${entidEnvVar}"] = new Dictionary<string, object?>(),
-            ["${PROJECTNAME}_TEST_LIVE"] = "FALSE",${apikeyEnvEntry}${serverEnvEntry}
+            ["${ENVVAR.live}"] = "FALSE",${apikeyEnvEntry}${serverEnvEntry}
         });
 
-        var live = Equals(env["${PROJECTNAME}_TEST_LIVE"], "TRUE");
+        var live = Equals(env["${ENVVAR.live}"], "TRUE");
 
         if (live)
         {

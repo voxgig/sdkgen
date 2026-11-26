@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, entityIdField, pickExampleEntity, requiredItems, javaMapOf, matchExampleItems, javaMapItems, requestExampleItems, envLocalAt, cdTarget, fact, serverVarEnv } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, canonKey, entityIdField, pickExampleEntity, requiredItems, javaMapOf, matchExampleItems, javaMapItems, requestExampleItems, envLocalAt, cdTarget, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -11,6 +11,7 @@ import { javaVarName, javaLit } from './utility_java'
 
 const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   const { target, ctx$: { model } } = props
+  const ENVVAR = fact(model.main[KIT], 'env')
 
   const SDK = model.const.Name + 'SDK'
 
@@ -64,10 +65,10 @@ System.out.println(${eVar}.data());`
 System.out.println(result);`
 
   const apikeyEnvLine = isAuthActive(model)
-    ? `\n${envName(model)}_APIKEY=<your-key>${fact(model.main[KIT], 'auth').secret ? `\n${envName(model)}_SECRET=<your-secret>` : ''}`
+    ? `\n${ENVVAR.apikey}=<your-key>${fact(model.main[KIT], 'auth').secret ? `\n${ENVVAR.secret}=<your-secret>` : ''}`
     : ''
   const serverEnvLine = fact(model.main[KIT], 'server').filter((v: any) => v.required)
-    .map((v: any) => `\n${serverVarEnv(envName(model), v.name)}=<${v.name}>`).join('')
+    .map((v: any) => `\n${ENVVAR.server[v.name]}=<${v.name}>`).join('')
 
   Content(`### Make a direct HTTP request
 
@@ -142,7 +143,7 @@ ${SDK} client = new ${SDK}(options);
 Create a \`.env.local\` file ${envLocalAt(props.ctx$, target)}:
 
 \`\`\`
-${envName(model)}_TEST_LIVE=TRUE${apikeyEnvLine}${serverEnvLine}
+${ENVVAR.live}=TRUE${apikeyEnvLine}${serverEnvLine}
 \`\`\`
 
 Then run:

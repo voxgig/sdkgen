@@ -25,8 +25,7 @@ import {
   buildIdNames,
   getMatchEntries,
   isAuthActive,
-  serverVarEnv,
-  entityDataIdField, entityRecordIdField, envName, envToken,
+  entityDataIdField, entityRecordIdField,
   invalidRequest,
   liveFlowNeeds, liveStrict, liveStrictNote,
   liveRouteExamples, liveStepExamples, flowLoadRoute, flowLoadReadsRecord,
@@ -116,15 +115,16 @@ const TestEntity = cmp(function TestEntity(props: any) {
     return
   }
 
-  const PROJUPPER = envName(model)
+  const ENVVAR = fact(model.main[KIT], 'env')
+  const PROJUPPER = ENVVAR.prefix
 
   const authActive = isAuthActive(model)
   const authSecret = authActive && fact(model.main[KIT], 'auth').secret
   const apikeyEnvEntry = authActive
-    ? `\n        "${PROJUPPER}_APIKEY": "",${authSecret ? `\n        "${PROJUPPER}_SECRET": "",` : ''}`
+    ? `\n        "${ENVVAR.apikey}": "",${authSecret ? `\n        "${ENVVAR.secret}": "",` : ''}`
     : ''
   const apikeyLiveField = authActive
-    ? `\n                "apikey": env.get("${PROJUPPER}_APIKEY"),${authSecret ? `\n                "secret": env.get("${PROJUPPER}_SECRET"),` : ''}`
+    ? `\n                "apikey": env.get("${ENVVAR.apikey}"),${authSecret ? `\n                "secret": env.get("${ENVVAR.secret}"),` : ''}`
     : ''
 
   // A templated server URL (OpenAPI server variables) makes a LIVE client
@@ -133,11 +133,11 @@ const TestEntity = cmp(function TestEntity(props: any) {
   // environment, the same way the apikey is.
   const svars = fact(model.main[KIT], 'server')
   const serverEnvEntry = svars
-    .map((v: any) => `\n        "${serverVarEnv(PROJUPPER, v.name)}": ${JSON.stringify(v.dflt)},`).join('')
+    .map((v: any) => `\n        "${ENVVAR.server[v.name]}": ${JSON.stringify(v.dflt)},`).join('')
   const serverLiveField = 0 === svars.length ? '' :
     `\n                "server": {` +
     svars.map((v: any) =>
-      `\n                    "${v.name}": env.get("${serverVarEnv(PROJUPPER, v.name)}"),`).join('') +
+      `\n                    "${v.name}": env.get("${ENVVAR.server[v.name]}"),`).join('') +
     `\n                },`
 
 
@@ -153,7 +153,7 @@ const TestEntity = cmp(function TestEntity(props: any) {
   const genCtx: GenCtx = { model, entity, flow: basicflow, PROJUPPER }
 
   const strict = liveStrict(model, target.name)
-  const entidEnv = PROJUPPER + '_TEST_' + envToken(entity.name) + '_ENTID'
+  const entidEnv = ENVVAR.entid[entity.name]
 
   // The stream test streams the "list" op with no match and asserts a 3-item
   // collection, so it only applies to an entity whose list a bare call can
@@ -227,7 +227,7 @@ ${hasList ? `
                     got.append(item)
             assert len(got) == 3
 ${failureTests(model, entity)}${validateListTest(model, entity)}` : ''}${validateTest(model, entity)}
-${strict ? '' : `    @runner.live_observe("${PROJUPPER}_TEST_LIVE", LIVE_STRICT)\n`}    def test_should_run_basic_flow(self):
+${strict ? '' : `    @runner.live_observe("${ENVVAR.live}", LIVE_STRICT)\n`}    def test_should_run_basic_flow(self):
         setup = _${entity.name}_basic_setup(None)
         # Per-op sdk-test-control.json skip — basic test exercises a flow with
         # multiple ops; skipping any one skips the whole flow (steps depend
@@ -332,17 +332,17 @@ ${fixtureIdentity(entity)}
     Content(`    # Whether *_ENTID supplied the idmap, read before env_override consumes
     # it: without it, the ids a live flow binds are the fixture's synthetic ones.
     _entid_env_raw = os.environ.get(
-        "${PROJUPPER}_TEST_${envToken(entity.name)}_ENTID")
+        "${ENVVAR.entid[entity.name]}")
     _idmap_overridden = _entid_env_raw is not None and _entid_env_raw.strip().startswith("{")
 
     env = runner.env_override({
-        "${PROJUPPER}_TEST_${envToken(entity.name)}_ENTID": idmap,
-        "${PROJUPPER}_TEST_LIVE": "FALSE",
+        "${ENVVAR.entid[entity.name]}": idmap,
+        "${ENVVAR.live}": "FALSE",
         "${PROJUPPER}_TEST_EXPLAIN": "FALSE",${apikeyEnvEntry}${serverEnvEntry}
     })
 
     idmap_resolved = helpers.to_map(
-        env.get("${PROJUPPER}_TEST_${envToken(entity.name)}_ENTID"))
+        env.get("${ENVVAR.entid[entity.name]}"))
     if idmap_resolved is None:
         idmap_resolved = helpers.to_map(idmap)
 `)
@@ -355,7 +355,7 @@ ${fixtureIdentity(entity)}
     }
 
     Content(`
-    if env.get("${PROJUPPER}_TEST_LIVE") == "TRUE":
+    if env.get("${ENVVAR.live}") == "TRUE":
         merged_opts = vs.merge([
             # FIRST, so the generated fields below win: sdk-test-control.json's
             # test.client.options adds to the live client, it does not
@@ -367,7 +367,7 @@ ${fixtureIdentity(entity)}
         ])
         client = ${model.const.Name}SDK(helpers.to_map(merged_opts))
 
-    _live = env.get("${PROJUPPER}_TEST_LIVE") == "TRUE"
+    _live = env.get("${ENVVAR.live}") == "TRUE"
     return {
         "client": client,
         "data": entity_data,

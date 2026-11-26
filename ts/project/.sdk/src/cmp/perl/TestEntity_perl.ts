@@ -18,8 +18,7 @@ import {
   each,
   buildIdNames,
   getMatchEntries,
-  isAuthActive, envName, envToken, entityRecordIdField,
-  serverVarEnv,
+  isAuthActive, entityRecordIdField,
   liveFlowNeeds, liveStrict, liveStrictNote,
   liveGates, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
   liveRouteExamples, liveStepExamples, flowLoadRoute, flowLoadReadsRecord,
@@ -125,17 +124,17 @@ const TestEntity = cmp(function TestEntity(props: any) {
   }
 
   const N = model.const.Name
-  const PROJUPPER = envName(model)
-  const ENTUPPER = envToken(entity.name)
-  const ENTIDVAR = `${PROJUPPER}_TEST_${ENTUPPER}_ENTID`
+  const ENVVAR = fact(model.main[KIT], 'env')
+  const PROJUPPER = ENVVAR.prefix
+  const ENTIDVAR = ENVVAR.entid[entity.name]
 
   const authActive = isAuthActive(model)
   const authSecret = authActive && fact(model.main[KIT], 'auth').secret
   const apikeyEnvEntry = authActive
-    ? `\n    '${PROJUPPER}_APIKEY' => '',${authSecret ? `\n    '${PROJUPPER}_SECRET' => '',` : ''}`
+    ? `\n    '${ENVVAR.apikey}' => '',${authSecret ? `\n    '${ENVVAR.secret}' => '',` : ''}`
     : ''
   const apikeyLiveField = authActive
-    ? `\n        'apikey' => $env->{'${PROJUPPER}_APIKEY'},${authSecret ? `\n        'secret' => $env->{'${PROJUPPER}_SECRET'},` : ''}`
+    ? `\n        'apikey' => $env->{'${ENVVAR.apikey}'},${authSecret ? `\n        'secret' => $env->{'${ENVVAR.secret}'},` : ''}`
     : ''
 
   // A templated server URL (OpenAPI server variables) makes a LIVE client
@@ -144,11 +143,11 @@ const TestEntity = cmp(function TestEntity(props: any) {
   // takes them from the environment the same way it takes the apikey.
   const svars = fact(model.main[KIT], 'server')
   const serverEnvEntry = svars
-    .map((v: any) => `\n    '${serverVarEnv(PROJUPPER, v.name)}' => ${perlStringLiteral(v.dflt)},`).join('')
+    .map((v: any) => `\n    '${ENVVAR.server[v.name]}' => ${perlStringLiteral(v.dflt)},`).join('')
   const serverLiveField = 0 === svars.length ? '' : `
         'server' => {${svars
       .map((v: any) => `
-          '${v.name}' => $env->{'${serverVarEnv(PROJUPPER, v.name)}'},`).join('')}
+          '${v.name}' => $env->{'${ENVVAR.server[v.name]}'},`).join('')}
         },`
 
   const idnames = buildIdNames(entity, basicflow)
@@ -311,7 +310,7 @@ ${fixtureIdentity(entity)}
 
   my $env = ${N}TestRunner::env_override({
     '${ENTIDVAR}' => $idmap,
-    '${PROJUPPER}_TEST_LIVE' => 'FALSE',
+    '${ENVVAR.live}' => 'FALSE',
     '${PROJUPPER}_TEST_EXPLAIN' => 'FALSE',${apikeyEnvEntry}${serverEnvEntry}
   });
 
@@ -330,7 +329,7 @@ ${fixtureIdentity(entity)}
     }
 
     Content(`
-  if ((($env->{'${PROJUPPER}_TEST_LIVE'}) || '') eq 'TRUE') {
+  if ((($env->{'${ENVVAR.live}'}) || '') eq 'TRUE') {
     my $merged_opts = Voxgig::Struct::merge([
       # FIRST, so the generated fields below win: sdk-test-control.json's
       # test.client.options adds to the live client, it does not redirect it.
@@ -342,7 +341,7 @@ ${fixtureIdentity(entity)}
     $client = ${N}SDK->new(${N}Helpers::to_map($merged_opts));
   }
 
-  my $live = ((($env->{'${PROJUPPER}_TEST_LIVE'}) || '') eq 'TRUE') ? 1 : 0;
+  my $live = ((($env->{'${ENVVAR.live}'}) || '') eq 'TRUE') ? 1 : 0;
   return {
     'client' => $client,
     'data' => $entity_data,

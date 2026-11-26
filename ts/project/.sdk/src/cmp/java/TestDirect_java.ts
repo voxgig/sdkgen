@@ -13,8 +13,6 @@ import {
   cmp,
   snakify,
   isAuthActive,
-  serverVarEnv,
-  envName, envToken,
   pointParts,
   pointSlash,
   pointPlaceholders,
@@ -103,7 +101,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
   const entity: ModelEntity = liveEntity(ctx$, props.entity)
   const javapackage: string = props.javapackage
 
-  const PROJECTNAME = envName(model)
+  const ENVVAR = fact(model.main[KIT], 'env')
   const SDK = model.const.Name + 'SDK'
 
   const authActive = isAuthActive(model)
@@ -116,11 +114,11 @@ const TestDirect = cmp(function TestDirect(props: any) {
   // environment, the same way the apikey is.
   const svars = fact(model.main[KIT], 'server')
   const serverEnvEntry = svars
-    .map((v: any) => `    envm.put("${serverVarEnv(PROJECTNAME, v.name)}", ${JSON.stringify(v.dflt)});\n`).join('')
+    .map((v: any) => `    envm.put("${ENVVAR.server[v.name]}", ${JSON.stringify(v.dflt)});\n`).join('')
   const serverLiveField = 0 === svars.length ? '' :
     `      Map<String, Object> serveropt = new LinkedHashMap<>();\n` +
     svars.map((v: any) =>
-      `      serveropt.put("${v.name}", env.get("${serverVarEnv(PROJECTNAME, v.name)}"));\n`).join('') +
+      `      serveropt.put("${v.name}", env.get("${ENVVAR.server[v.name]}"));\n`).join('') +
     `      mergedOpts.put("server", serveropt);\n`
 
   const opnames = Object.keys(entity.op || {})
@@ -172,7 +170,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
     : ''
 
   // Build the ENTID env var name for this entity
-  const entidEnvVar = `${PROJECTNAME}_TEST_${envToken(entity.name)}_ENTID`
+  const entidEnvVar = ENVVAR.entid[entity.name]
 
   const exampleIds = liveExampleIds(entity)
   const listLiveQueryLines = liveQueryExamples(listPoint)
@@ -542,10 +540,10 @@ ${loadSkipBlock}    if (setup.live) {
 
     Map<String, Object> envm = new LinkedHashMap<>();
     envm.put("${entidEnvVar}", new LinkedHashMap<>());
-    envm.put("${PROJECTNAME}_TEST_LIVE", "FALSE");
-${authActive ? `    envm.put("${PROJECTNAME}_APIKEY", "");\n` : ''}${authSecret ? `    envm.put("${PROJECTNAME}_SECRET", "");\n` : ''}${serverEnvEntry}    Map<String, Object> env = RunnerSupport.envOverride(envm);
+    envm.put("${ENVVAR.live}", "FALSE");
+${authActive ? `    envm.put("${ENVVAR.apikey}", "");\n` : ''}${authSecret ? `    envm.put("${ENVVAR.secret}", "");\n` : ''}${serverEnvEntry}    Map<String, Object> env = RunnerSupport.envOverride(envm);
 
-    boolean live = "TRUE".equals(env.get("${PROJECTNAME}_TEST_LIVE"));
+    boolean live = "TRUE".equals(env.get("${ENVVAR.live}"));
 
     DirectSetup setup = new DirectSetup();
     setup.calls = calls;
@@ -555,7 +553,7 @@ ${authActive ? `    envm.put("${PROJECTNAME}_APIKEY", "");\n` : ''}${authSecret 
       // client; the generated fields below overwrite anything they name.
       Map<String, Object> mergedOpts =
           new LinkedHashMap<>(RunnerSupport.liveClientOptions());
-${authActive ? `      mergedOpts.put("apikey", env.get("${PROJECTNAME}_APIKEY"));\n` : ''}${authSecret ? `      mergedOpts.put("secret", env.get("${PROJECTNAME}_SECRET"));\n` : ''}${serverLiveField}      setup.client = new ${SDK}(mergedOpts);
+${authActive ? `      mergedOpts.put("apikey", env.get("${ENVVAR.apikey}"));\n` : ''}${authSecret ? `      mergedOpts.put("secret", env.get("${ENVVAR.secret}"));\n` : ''}${serverLiveField}      setup.client = new ${SDK}(mergedOpts);
       setup.live = true;
 
       Map<String, Object> idmap = new LinkedHashMap<>();

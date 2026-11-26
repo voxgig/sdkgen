@@ -12,8 +12,7 @@ import {
   File,
   cmp,
   snakify,
-  isAuthActive, envName, envToken,
-  serverVarEnv,
+  isAuthActive,
   pointParts,
   pointSlash,
   pointPlaceholders,
@@ -105,23 +104,23 @@ const TestDirect = cmp(function TestDirect(props: any) {
   const entity: ModelEntity = liveEntity(ctx$, props.entity)
   const rustcrate: string = props.rustcrate
 
-  const PROJECTNAME = envName(model)
+  const ENVVAR = fact(model.main[KIT], 'env')
 
   const authActive = isAuthActive(model)
   const authSecret = authActive && fact(model.main[KIT], 'auth').secret
   const apikeyEnvEntry = authActive
-    ? `\n        ("${PROJECTNAME}_APIKEY", Value::str("")),${authSecret ? `\n        ("${PROJECTNAME}_SECRET", Value::str("")),` : ''}`
+    ? `\n        ("${ENVVAR.apikey}", Value::str("")),${authSecret ? `\n        ("${ENVVAR.secret}", Value::str("")),` : ''}`
     : ''
   const apikeyLiveField = authActive
-    ? `("apikey", getp(&env, "${PROJECTNAME}_APIKEY"))${authSecret ? `, ("secret", getp(&env, "${PROJECTNAME}_SECRET"))` : ''}`
+    ? `("apikey", getp(&env, "${ENVVAR.apikey}"))${authSecret ? `, ("secret", getp(&env, "${ENVVAR.secret}"))` : ''}`
     : ''
 
   const svars = fact(model.main[KIT], 'server')
   const serverEnvEntry = svars
-    .map((v: any) => `\n        ("${serverVarEnv(PROJECTNAME, v.name)}", Value::str(${JSON.stringify(v.dflt)})),`).join('')
+    .map((v: any) => `\n        ("${ENVVAR.server[v.name]}", Value::str(${JSON.stringify(v.dflt)})),`).join('')
   const serverLiveEntry = 0 === svars.length ? '' :
     `("server", jo(vec![${svars
-      .map((v: any) => `("${v.name}", getp(&env, "${serverVarEnv(PROJECTNAME, v.name)}"))`).join(', ')}]))`
+      .map((v: any) => `("${v.name}", getp(&env, "${ENVVAR.server[v.name]}"))`).join(', ')}]))`
   const serverLiveField = '' === serverLiveEntry ? '' :
     ('' === apikeyLiveField ? serverLiveEntry : ', ' + serverLiveEntry)
 
@@ -159,7 +158,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
   const listPath = listPoint ? normalizePathParams(pointParts(listPoint), listPoint?.g?.params || [], listPoint?.r?.param) + pointSlash(listPoint) : ''
   const listParams = listPoint?.g?.params || []
 
-  const entidEnvVar = `${PROJECTNAME}_TEST_${envToken(entity.name)}_ENTID`
+  const entidEnvVar = ENVVAR.entid[entity.name]
 
   const exampleIds = liveExampleIds(entity)
   const rustJson = (ex: any) => `json_parse(r##"${JSON.stringify(ex)}"##).unwrap_or(Value::Noval)`
@@ -211,10 +210,10 @@ fn ${evar}_direct_setup(mockres: Value) -> ${entity.Name}DirectSetup {
 
     let env = env_override(jo(vec![
         ("${entidEnvVar}", Value::empty_map()),
-        ("${PROJECTNAME}_TEST_LIVE", Value::str("FALSE")),${apikeyEnvEntry}${serverEnvEntry}
+        ("${ENVVAR.live}", Value::str("FALSE")),${apikeyEnvEntry}${serverEnvEntry}
     ]));
 
-    let live = getp(&env, "${PROJECTNAME}_TEST_LIVE") == Value::str("TRUE");
+    let live = getp(&env, "${ENVVAR.live}") == Value::str("TRUE");
 
     if live {
         // live_client_options() FIRST, so the generated entries below win:

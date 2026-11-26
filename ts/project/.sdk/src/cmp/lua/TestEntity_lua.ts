@@ -25,8 +25,7 @@ import {
   buildIdNames,
   getMatchEntries,
   isAuthActive,
-  entityDataIdField, entityRecordIdField, envName, envToken, luaKey,
-  serverVarEnv,
+  entityDataIdField, entityRecordIdField, luaKey,
   invalidRequest,
   liveFlowNeeds, liveStrict, liveStrictNote,
   liveRouteExamples, liveStepExamples, flowLoadRoute, flowLoadReadsRecord,
@@ -138,15 +137,16 @@ const TestEntity = cmp(function TestEntity(props: any) {
     return
   }
 
-  const PROJUPPER = envName(model)
+  const ENVVAR = fact(model.main[KIT], 'env')
+  const PROJUPPER = ENVVAR.prefix
 
   const authActive = isAuthActive(model)
   const authSecret = authActive && fact(model.main[KIT], 'auth').secret
   const apikeyEnvEntry = authActive
-    ? `\n    ["${PROJUPPER}_APIKEY"] = "",${authSecret ? `\n    ["${PROJUPPER}_SECRET"] = "",` : ''}`
+    ? `\n    ["${ENVVAR.apikey}"] = "",${authSecret ? `\n    ["${ENVVAR.secret}"] = "",` : ''}`
     : ''
   const apikeyLiveField = authActive
-    ? `\n        apikey = env["${PROJUPPER}_APIKEY"],${authSecret ? `\n        secret = env["${PROJUPPER}_SECRET"],` : ''}`
+    ? `\n        apikey = env["${ENVVAR.apikey}"],${authSecret ? `\n        secret = env["${ENVVAR.secret}"],` : ''}`
     : ''
 
   // A templated server URL (OpenAPI server variables) makes a LIVE client
@@ -155,11 +155,11 @@ const TestEntity = cmp(function TestEntity(props: any) {
   // takes them from the environment the same way it takes the apikey.
   const svars = fact(model.main[KIT], 'server')
   const serverEnvEntry = svars
-    .map((v: any) => `\n    ["${serverVarEnv(PROJUPPER, v.name)}"] = ${formatLuaValue(v.dflt)},`).join('')
+    .map((v: any) => `\n    ["${ENVVAR.server[v.name]}"] = ${formatLuaValue(v.dflt)},`).join('')
   const serverLiveField = 0 === svars.length ? '' : `
         server = {${svars
       .map((v: any) => `
-          ["${v.name}"] = env["${serverVarEnv(PROJUPPER, v.name)}"],`).join('')}
+          ["${v.name}"] = env["${ENVVAR.server[v.name]}"],`).join('')}
         },`
 
   const idnames = buildIdNames(entity, basicflow)
@@ -174,7 +174,7 @@ const TestEntity = cmp(function TestEntity(props: any) {
   const genCtx: GenCtx = { model, entity, flow: basicflow, PROJUPPER }
 
   const strict = liveStrict(model, target.name)
-  const entidEnv = PROJUPPER + '_TEST_' + envToken(entity.name) + '_ENTID'
+  const entidEnv = ENVVAR.entid[entity.name]
 
   File({ name: entity.name + '_entity_test.' + target.ext }, () => {
 
@@ -359,17 +359,17 @@ ${fixtureIdentity(entity)}
 
     Content(`  -- Whether *_ENTID supplied the idmap, read before env_override consumes
   -- it: without it, the ids a live flow binds are the fixture's synthetic ones.
-  local entid_env_raw = os.getenv("${PROJUPPER}_TEST_${envToken(entity.name)}_ENTID")
+  local entid_env_raw = os.getenv("${ENVVAR.entid[entity.name]}")
   local idmap_overridden = entid_env_raw ~= nil and entid_env_raw:match("^%s*{") ~= nil
 
   local env = runner.env_override({
-    ["${PROJUPPER}_TEST_${envToken(entity.name)}_ENTID"] = idmap,
-    ["${PROJUPPER}_TEST_LIVE"] = "FALSE",
+    ["${ENVVAR.entid[entity.name]}"] = idmap,
+    ["${ENVVAR.live}"] = "FALSE",
     ["${PROJUPPER}_TEST_EXPLAIN"] = "FALSE",${apikeyEnvEntry}${serverEnvEntry}
   })
 
   local idmap_resolved = helpers.to_map(
-    env["${PROJUPPER}_TEST_${envToken(entity.name)}_ENTID"])
+    env["${ENVVAR.entid[entity.name]}"])
   if idmap_resolved == nil then
     idmap_resolved = helpers.to_map(idmap)
   end
@@ -384,7 +384,7 @@ ${fixtureIdentity(entity)}
     }
 
     Content(`
-  if env["${PROJUPPER}_TEST_LIVE"] == "TRUE" then
+  if env["${ENVVAR.live}"] == "TRUE" then
     local merged_opts = vs.merge({
       -- FIRST, so the generated fields below win: sdk-test-control.json's
       -- test.client.options adds to the live client, it does not redirect it.
@@ -396,7 +396,7 @@ ${fixtureIdentity(entity)}
     client = sdk.new(helpers.to_map(merged_opts))
   end
 
-  local live = env["${PROJUPPER}_TEST_LIVE"] == "TRUE"
+  local live = env["${ENVVAR.live}"] == "TRUE"
   return {
     client = client,
     data = entity_data,

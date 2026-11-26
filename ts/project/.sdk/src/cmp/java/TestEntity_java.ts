@@ -19,8 +19,7 @@ import {
   buildIdNames,
   getMatchEntries,
   isAuthActive,
-  serverVarEnv,
-  envName, envToken, entityRecordIdField,
+  entityRecordIdField,
   liveFlowNeeds, liveStrict, liveStrictNote,
   liveGates, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
   liveRouteExamples, liveStepExamples,
@@ -137,9 +136,9 @@ const TestEntity = cmp(function TestEntity(props: any) {
     return
   }
 
-  const PROJUPPER = envName(model)
-  const ENTUPPER = envToken(entity.name)
-  const entidEnvVar = `${PROJUPPER}_TEST_${ENTUPPER}_ENTID`
+  const ENVVAR = fact(model.main[KIT], 'env')
+  const PROJUPPER = ENVVAR.prefix
+  const entidEnvVar = ENVVAR.entid[entity.name]
 
   const SDK = model.const.Name + 'SDK'
   const accessor = javaVarName(entity.name)
@@ -154,11 +153,11 @@ const TestEntity = cmp(function TestEntity(props: any) {
   // environment, the same way the apikey is.
   const svars = fact(model.main[KIT], 'server')
   const serverEnvEntry = svars
-    .map((v: any) => `    envm.put("${serverVarEnv(PROJUPPER, v.name)}", ${JSON.stringify(v.dflt)});\n`).join('')
+    .map((v: any) => `    envm.put("${ENVVAR.server[v.name]}", ${JSON.stringify(v.dflt)});\n`).join('')
   const serverLiveField = 0 === svars.length ? '' :
     `      Map<String, Object> serveropt = new LinkedHashMap<>();\n` +
     svars.map((v: any) =>
-      `      serveropt.put("${v.name}", env.get("${serverVarEnv(PROJUPPER, v.name)}"));\n`).join('') +
+      `      serveropt.put("${v.name}", env.get("${ENVVAR.server[v.name]}"));\n`).join('') +
     `      liveOpts.put("server", serveropt);\n`
 
   const idnames = buildIdNames(entity, basicflow)
@@ -386,9 +385,9 @@ ${fixtureIdentity(entity)}
 
     Map<String, Object> envm = new LinkedHashMap<>();
     envm.put("${entidEnvVar}", idmap);
-    envm.put("${PROJUPPER}_TEST_LIVE", "FALSE");
+    envm.put("${ENVVAR.live}", "FALSE");
     envm.put("${PROJUPPER}_TEST_EXPLAIN", "FALSE");
-${authActive ? `    envm.put("${PROJUPPER}_APIKEY", "");\n` : ''}${authSecret ? `    envm.put("${PROJUPPER}_SECRET", "");\n` : ''}${serverEnvEntry}    Map<String, Object> env = RunnerSupport.envOverride(envm);
+${authActive ? `    envm.put("${ENVVAR.apikey}", "");\n` : ''}${authSecret ? `    envm.put("${ENVVAR.secret}", "");\n` : ''}${serverEnvEntry}    Map<String, Object> env = RunnerSupport.envOverride(envm);
 
     Map<String, Object> idmapResolved = Helpers.toMapAny(env.get("${entidEnvVar}"));
     if (idmapResolved == null) {
@@ -406,13 +405,13 @@ ${authActive ? `    envm.put("${PROJUPPER}_APIKEY", "");\n` : ''}${authSecret ? 
     }
 
     Content(`
-    boolean live = "TRUE".equals(env.get("${PROJUPPER}_TEST_LIVE"));
+    boolean live = "TRUE".equals(env.get("${ENVVAR.live}"));
     if (live) {
       // sdk-test-control.json's test.client.options seeds the live
       // client; the generated fields below overwrite anything they name.
       Map<String, Object> liveOpts =
           new LinkedHashMap<>(RunnerSupport.liveClientOptions());
-${authActive ? `      liveOpts.put("apikey", env.get("${PROJUPPER}_APIKEY"));\n` : ''}${authSecret ? `      liveOpts.put("secret", env.get("${PROJUPPER}_SECRET"));\n` : ''}${serverLiveField}      // An empty map, not a null one: merge answers null when its last
+${authActive ? `      liveOpts.put("apikey", env.get("${ENVVAR.apikey}"));\n` : ''}${authSecret ? `      liveOpts.put("secret", env.get("${ENVVAR.secret}"));\n` : ''}${serverLiveField}      // An empty map, not a null one: merge answers null when its last
       // entry is null, and basicSetup is normally called with no extras -
       // so a bare null silently discarded the apikey and server values
       // above.
