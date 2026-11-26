@@ -766,13 +766,15 @@ fn buy(st: *State, ctx: *Context) E![]const u8 {
     var res: Value = undefined;
     if (sysfetch == .function) {
         // The caller's transport, when there is one - the same seam the SDK
-        // itself uses for every request.
+        // itself uses for every request. Never followed: a redirect would
+        // carry the refresh token on.
         res = h.call_vfn(sysfetch, h.ja(&.{
             h.vstr(url),
             h.jo(&.{
                 .{ "method", h.vstr(x.method) },
                 .{ "headers", h.jo(&.{.{ "content-type", h.vstr("application/json") }}) },
                 .{ "body", h.vstr(body) },
+                .{ "redirect", h.vstr("manual") },
             }),
         }));
         if (h.get_str(res, "__err__")) |message| return ctx.fail(ERRCODE, message);

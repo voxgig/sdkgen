@@ -388,10 +388,12 @@ static const char* secrets_buy(SecretsFeature* f, Context* ctx) {
   sek_json_set(f->pool, body, x->request, sek_json_str(f->pool, f->refresh));
   char* bodytext = sek_json_stringify(f->pool, body);
 
-  voxgig_value* fetchdef = cmap(3,
+  // Never followed: a redirect would carry the refresh token on.
+  voxgig_value* fetchdef = cmap(4,
     "method", v_str(x->method),
     "headers", cmap(1, "content-type", v_str("application/json")),
-    "body", v_str(bodytext));
+    "body", v_str(bodytext),
+    "redirect", v_str("manual"));
 
   // Deliberately NOT the SDK transport. The transport is what this feature
   // wraps, and sending the token request back through it would recurse on

@@ -18,6 +18,7 @@ struct Call {
     url: String,
     auth: Option<String>,
     body: Option<String>,
+    redirect: Option<String>,
 }
 
 /// A `system.fetch` that records every call it is handed, so "sent" is a
@@ -91,6 +92,7 @@ impl Wire {
                 url: url.clone(),
                 auth: authof(&fetchdef),
                 body: get_str(&fetchdef, "body"),
+                redirect: get_str(&fetchdef, "redirect"),
             });
 
             if w.istoken(&url) {
@@ -1127,6 +1129,11 @@ fn the_refresh_token_buys_an_access_token_and_the_request_carries_it() {
         Value::str(REFRESH),
         "the refresh token is sent in the request field"
     );
+    assert_eq!(
+        wire.token()[0].redirect.as_deref(),
+        Some("manual"),
+        "the exchange must ask system.fetch to follow no redirect"
+    );
     assert_eq!(wire.api().len(), 1);
     credential_is(call_auth(&wire.api(), 0), "ACCESS01");
 }
@@ -1459,6 +1466,162 @@ fn the_exchange_has_a_raw_transport_when_no_system_fetch_is_given() {
         "expected the exchange's own refusal from the raw transport, got: {}",
         err
     );
+}
+
+type Seen = std::sync::Arc<std::sync::Mutex<Vec<String>>>;
+
+// A listener that records each request, answering it with `answer`; it stops,
+// closing the socket, once `stop` is set and one more connection wakes it.
+fn listener(
+    answer: std::sync::Arc<dyn Fn(&str) -> Option<String> + Send + Sync>,
+    seen: Seen,
+    stop: std::sync::Arc<std::sync::atomic::AtomicBool>,
+) -> (u16, std::thread::JoinHandle<()>) {
+    use std::io::{BufRead, BufReader, Read, Write};
+    let server = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let port = server.local_addr().unwrap().port();
+    let handle = std::thread::spawn(move || {
+        for stream in server.incoming() {
+            if stop.load(std::sync::atomic::Ordering::SeqCst) {
+                break;
+            }
+            let mut stream = match stream {
+                Ok(stream) => stream,
+                Err(_) => continue,
+            };
+            let mut reader = BufReader::new(stream.try_clone().unwrap());
+            let mut line = String::new();
+            reader.read_line(&mut line).unwrap_or(0);
+            let mut words = line.split(' ');
+            let method = words.next().unwrap_or("").trim().to_string();
+            let path = words.next().unwrap_or("").to_string();
+            let mut size = 0;
+            loop {
+                let mut header = String::new();
+                if 0 == reader.read_line(&mut header).unwrap_or(0) || header.trim().is_empty() {
+                    break;
+                }
+                if let Some((name, value)) = header.split_once(':') {
+                    if name.trim().eq_ignore_ascii_case("content-length") {
+                        size = value.trim().parse::<usize>().unwrap_or(0);
+                    }
+                }
+            }
+            let mut body = vec![0u8; size];
+            let _ = reader.read_exact(&mut body);
+            let reply = match answer(&path) {
+                Some(head) => format!("HTTP/1.1 {}\r\nContent-Length: 0\r\nConnection: close\r\n\r\n", head),
+                None => {
+                    seen.lock().unwrap().push(format!(
+                        "{} {} {}",
+                        method,
+                        path,
+                        String::from_utf8_lossy(&body)
+                    ));
+                    let json = "{\"access_token\":\"ELSEWHERE01\"}";
+                    format!(
+                        "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\
+                         Content-Length: {}\r\nConnection: close\r\n\r\n{}",
+                        json.len(),
+                        json
+                    )
+                }
+            };
+            let _ = stream.write_all(reply.as_bytes());
+        }
+    });
+    (port, handle)
+}
+
+#[test]
+fn a_redirect_answering_the_exchange_is_a_failure_and_nothing_follows_it() {
+    use std::sync::atomic::{AtomicBool, Ordering};
+    use std::sync::{Arc, Mutex};
+
+    let stop = Arc::new(AtomicBool::new(false));
+    let case: Arc<Mutex<(i64, String)>> = Arc::new(Mutex::new((307, String::new())));
+    let elsewhere = Seen::default();
+    let followed = Seen::default();
+
+    let (otherport, otherthread) =
+        listener(Arc::new(|_path: &str| None), elsewhere.clone(), stop.clone());
+    let answering = case.clone();
+    let (originport, originthread) = listener(
+        Arc::new(move |path: &str| {
+            if "/api/auth/token" != path {
+                return None;
+            }
+            let (status, location) = answering.lock().unwrap().clone();
+            Some(format!("{} Moved\r\nLocation: {}", status, location))
+        }),
+        followed.clone(),
+        stop.clone(),
+    );
+
+    let base = format!("http://127.0.0.1:{}/api", originport);
+    let away = format!("http://127.0.0.1:{}/api/auth/token", otherport);
+    let cases: Vec<(i64, String)> = vec![
+        (307, away.clone()),
+        (308, away.clone()),
+        (302, away.clone()),
+        (307, "/api/moved/token".to_string()),
+    ];
+
+    let mut refused = 0;
+    let mut allowed: Vec<String> = Vec::new();
+
+    for (status, location) in cases.iter() {
+        *case.lock().unwrap() = (*status, location.clone());
+
+        let client = ProjectNameSDK::new(jo(vec![
+            ("base", Value::str(base.clone())),
+            ("allow", jo(vec![("op", Value::str("direct,graphql"))])),
+            (
+                "feature",
+                jo(vec![(
+                    "secrets",
+                    jo(vec![
+                        ("active", Value::Bool(true)),
+                        ("name", Value::str("refresh_token")),
+                        exchange(vec![("refresh", Value::str(REFRESH))]),
+                    ]),
+                )]),
+            ),
+        ]));
+
+        let message = match client.direct(jo(vec![("path", Value::str("/thing"))])) {
+            Ok(res) => get_str(&res, "err").unwrap_or_else(|| format!("{:?}", res)),
+            Err(err) => err.msg,
+        };
+
+        if message.contains(&format!(
+            "token exchange failed: {} from {}/auth/token",
+            status, base
+        )) {
+            refused += 1;
+        } else {
+            allowed.push(format!("{} to {}: {}", status, location, message));
+        }
+    }
+
+    stop.store(true, Ordering::SeqCst);
+    let _ = std::net::TcpStream::connect(("127.0.0.1", otherport));
+    let _ = std::net::TcpStream::connect(("127.0.0.1", originport));
+    otherthread.join().unwrap();
+    originthread.join().unwrap();
+
+    let elsewhere = elsewhere.lock().unwrap().clone();
+    let followed = followed.lock().unwrap().clone();
+    println!(
+        "secrets: exchange refused {} redirect(s), {} followed",
+        refused,
+        elsewhere.len() + followed.len()
+    );
+
+    assert!(elsewhere.is_empty(), "the exchange reached another origin: {:?}", elsewhere);
+    assert!(followed.is_empty(), "a request followed a refused exchange: {:?}", followed);
+    assert!(allowed.is_empty(), "a redirect was not a failed exchange: {:?}", allowed);
+    assert_eq!(refused, cases.len());
 }
 
 
