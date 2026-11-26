@@ -1659,11 +1659,10 @@
                            :spec (ucall ctx :clean spec)
                            :status (to-int (oget result :status)))]
         (oset! (oget ctx :ctrl) :err sdk-err)
-        ;; Fire PreUnexpected so observability features (metrics, telemetry,
-        ;; audit, debug) close/record error paths that never reach PreDone
-        ;; (e.g. a PrePoint rbac short-circuit). Fires after ctrl.err is set so
-        ;; hooks can read the error; features guard against double-recording
-        ;; when PreDone already fired.
+        ;; Fire PreUnexpected so features hooked on it close/record error paths
+        ;; that never reach PreDone (e.g. a PrePoint short-circuit). Fires
+        ;; after ctrl.err is set so hooks can read the error; features guard
+        ;; against double-recording when PreDone already fired.
         (when (oget ctx :utility)
           (oset! ctx :unexpected-fired true)
           (ucall ctx :feature-hook "PreUnexpected"))

@@ -278,11 +278,11 @@ voxgig_value* make_options_util(Context* ctx) {
           voxgig_list_push(voxgig_as_list(feature_order), v_str("test"));
         }
         // Station special case, mirroring test's: its transport wrap must
-        // sit immediately outside the base transport (inside retry/cache/
-        // netsim), so map-form activation hoists it to just after test -
-        // or first, when no test entry exists. Without this the sorted
-        // default would init station last and wrap OUTSIDE the recording
-        // features, turning its wire-truth events into fiction.
+        // sit immediately outside the base transport (inside every other
+        // transport wrap), so map-form activation hoists it to just after
+        // test - or first, when no test entry exists. Without this the
+        // sorted default would init station last and wrap OUTSIDE the
+        // recording features, turning its wire-truth events into fiction.
         for (size_t i = 0; i < fn; i++) {
           if (strcmp(names[i], "station") == 0) {
             voxgig_list_push(voxgig_as_list(feature_order), v_str("station"));

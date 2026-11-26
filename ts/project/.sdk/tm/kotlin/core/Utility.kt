@@ -2,8 +2,8 @@ package KOTLINPACKAGE.core
 
 import KOTLINPACKAGE.utility.Register
 
-// The transport fetch function: replaceable per-instance so features (retry,
-// cache, netsim, proxy, test) can wrap it.
+// The transport fetch function: replaceable per-instance so a transport
+// feature can replace or wrap it.
 typealias FetcherFn = (Context, String, MutableMap<String, Any?>) -> Any?
 
 /**

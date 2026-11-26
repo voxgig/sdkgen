@@ -222,11 +222,11 @@ def make_options_util(ctx):
         else:
             featureorder = names
         # Station special case, mirroring test's: its transport wrap must
-        # sit immediately outside the base transport (inside retry/cache/
-        # netsim), so map-form activation hoists it to just after test -
-        # or first, when no test entry exists. Without this the sorted
-        # default would init station last and wrap OUTSIDE the recording
-        # features, turning its wire-truth events into fiction.
+        # sit immediately outside the base transport (inside every other
+        # transport wrap), so map-form activation hoists it to just after
+        # test - or first, when no test entry exists. Without this the
+        # sorted default would init station last and wrap OUTSIDE the
+        # recording features, turning its wire-truth events into fiction.
         if "station" in featureorder:
             featureorder = [n for n in featureorder if n != "station"]
             at = featureorder.index("test") + 1 if "test" in featureorder else 0

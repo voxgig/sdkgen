@@ -69,11 +69,10 @@ local function make_error_util(ctx, err)
 
   ctx.ctrl.err = sdk_err
 
-  -- Fire PreUnexpected so observability features (metrics, audit,
-  -- telemetry, debug) record error paths that never reach PreDone (e.g. a
-  -- PrePoint short-circuit). Fires after ctx.ctrl.err is set so hooks can
-  -- read the error; features guard against double-recording when PreDone
-  -- already fired.
+  -- Fire PreUnexpected so features hooked on it record error paths that
+  -- never reach PreDone (e.g. a PrePoint short-circuit). Fires after
+  -- ctx.ctrl.err is set so hooks can read the error; features guard
+  -- against double-recording when PreDone already fired.
   if ctx.utility ~= nil and type(ctx.utility.feature_hook) == "function" then
     ctx.unexpected_fired = true
     ctx.utility.feature_hook(ctx, "PreUnexpected")

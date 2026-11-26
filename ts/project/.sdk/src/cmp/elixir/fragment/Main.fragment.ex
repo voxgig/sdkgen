@@ -44,8 +44,8 @@ defmodule ProjectName do
 
     # Add features in the resolved order (make_options records an explicit
     # array order, else defaults to test-first). Ordering matters: the `test`
-    # feature installs the base mock transport and the transport features
-    # (retry/cache/netsim/proxy/ratelimit) wrap whatever is current, so `test`
+    # feature installs the base mock transport and the features whose model
+    # declares `transport: 'wrap'` wrap whatever is current, so `test`
     # must be added before them to sit at the base of the wrapper chain.
     feature_opts = H.or_(H.to_map(S.getprop(opts, "feature")), S.jm([]))
     feature_order = S.getpath(opts, "__derived__.featureorder")
@@ -291,8 +291,8 @@ defmodule ProjectName do
   # as a top-level `errors` array, so status alone would report a failed
   # query as ok.
   #
-  # NOTE: like direct, this bypasses the feature pipeline — no retry,
-  # ratelimit or paging features apply.
+  # NOTE: like direct, this bypasses the feature pipeline: no feature
+  # hook runs on this path.
   def graphql(client, query, variables \\ nil, ctrl \\ nil) do
     if not op_allowed?(client, "graphql") do
       op_denied(client, "graphql")

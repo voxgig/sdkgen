@@ -43,8 +43,8 @@
     (core/oset! rootctx :options validated)
     ;; Add features in the resolved order (make-options records an explicit
     ;; array order, else defaults to test-first). Ordering matters: the `test`
-    ;; feature installs the base mock transport and the transport features
-    ;; (retry/cache/netsim/proxy/ratelimit) wrap whatever is current, so
+    ;; feature installs the base mock transport and the features whose model
+    ;; declares `transport: 'wrap'` wrap whatever is current, so
     ;; `test` must be added before them to sit at the base of the chain.
     (let [feature-opts (let [f (core/to-map (vs/getprop validated "feature"))] (or f (vs/jm)))
           feature-order (let [o (vs/getpath validated "__derived__.featureorder")]
@@ -178,8 +178,8 @@
 ;; a top-level `errors` array, so status alone would report a failed query as
 ;; ok.
 ;;
-;; NOTE: like direct, this bypasses the feature pipeline — no retry, ratelimit
-;; or paging features apply.
+;; NOTE: like direct, this bypasses the feature pipeline: no feature hook runs
+;; on this path.
 (defn graphql
   ([client query] (graphql client query nil nil))
   ([client query variables] (graphql client query variables nil))

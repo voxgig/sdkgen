@@ -151,3 +151,56 @@ describe('ruby error attributes', () => {
       'these to attr_accessor in tm/rb/core/error.rb:\n  ' + missing.join('\n  '))
   })
 })
+
+
+// The scaffold's own source text: every fragment and template file but the
+// vendored ones, whose comments are upstream's.
+function ownSources(): { rel: string, text: string }[] {
+  const vendored = new Set<string>(Object.values(
+    JSON.parse(Fs.readFileSync(Path.join(__dirname, '..', 'test', 'vendored.json'), 'utf8')).library)
+    .flatMap((lib: any) => Object.keys(lib.file || {})))
+  const out: { rel: string, text: string }[] = []
+  const walk = (rel: string) => {
+    for (const entry of Fs.readdirSync(Path.join(SCAFFOLD, rel), { withFileTypes: true })) {
+      const child = rel + '/' + entry.name
+      if (entry.isDirectory()) walk(child)
+      else if (!vendored.has(child)) {
+        const buf = Fs.readFileSync(Path.join(SCAFFOLD, child))
+        if (!buf.includes(0)) out.push({ rel: child, text: buf.toString('utf8') })
+      }
+    }
+  }
+  walk('tm')
+  for (const lang of Fs.readdirSync(Path.join(SCAFFOLD, 'src', 'cmp'))) {
+    if (Fs.existsSync(Path.join(SCAFFOLD, 'src', 'cmp', lang, 'fragment'))) {
+      walk('src/cmp/' + lang + '/fragment')
+    }
+  }
+  return out
+}
+
+
+// A comment wrapped over several lines, read as one line.
+function unwrapped(text: string): string {
+  return text.replace(/\s*\n\s*(?:\/\/+|#+|--|;;+|\*+|\(\*)?\s*/g, ' ')
+}
+
+
+describe('generated source comments state no model fact', () => {
+  const sources = ownSources()
+
+  test('scanned the scaffold', () => {
+    ok(100 < sources.length, 'found only ' + sources.length + ' scaffold files')
+  })
+
+  // Which features wrap the transport is the model's `transport: 'wrap'`.
+  test('no comment lists the transport-wrapping features', () => {
+    const W = 'retry|cache|netsim|proxy|ratelimit|timeout|cost|secrets'
+    const list = new RegExp('\\b(?:' + W + ')(?:\\s*[/,]\\s*(?:' + W + ')\\b){3,}', 'i')
+    const found = sources
+      .map(({ rel, text }) => [rel, list.exec(unwrapped(text))] as const)
+      .filter(([, m]) => null != m)
+      .map(([rel, m]) => rel + ': ' + m![0])
+    deepStrictEqual(found, [], 'name the rule, not the features:\n  ' + found.join('\n  '))
+  })
+})

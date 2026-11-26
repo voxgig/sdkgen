@@ -29,12 +29,11 @@
 // WHY RESOLUTION HAPPENS AT THE TRANSPORT, not in the PreSpec hook.
 // `Direct()` and `Graphql()` both funnel through RawRequest, and the
 // fragment says it plainly: "like Direct, this bypasses the feature
-// pipeline - no retry, ratelimit or paging features apply". NO feature
-// hooks run there. The transport delegate is the one seam every wire path
-// crosses, so resolving there is what gives the raw paths the same
-// credential - and the same fail-closed refusal - as the entity pipeline.
-// The header is rewritten AFTER PrepareAuth built it, so the transport is
-// exactly early enough.
+// pipeline: no feature hook runs on this path". The transport delegate is
+// the one seam every wire path crosses, so resolving there is what gives
+// the raw paths the same credential - and the same fail-closed refusal -
+// as the entity pipeline. The header is rewritten AFTER PrepareAuth built
+// it, so the transport is exactly early enough.
 //
 // ONE VISIBLE CONSEQUENCE, worth knowing before it surprises someone:
 // ProjectNameSDK.Prepare() returns the fetchdef WITHOUT crossing the

@@ -2,8 +2,8 @@
 // core/utility_type.go + tm/go/utility, and rust core/utility_type.rs +
 // utility/*.rs). Go carries the utilities as swappable function pointers;
 // here they are free functions, and the two members that genuinely vary per
-// client stay swappable: the transport (`fetcher`, wrapped by
-// retry/cache/netsim/proxy) and the `custom` map of caller-supplied
+// client stay swappable: the transport (`fetcher`, which transport-wrapping
+// features wrap) and the `custom` map of caller-supplied
 // callables.
 
 const std = @import("std");
@@ -585,10 +585,10 @@ pub fn make_error_util(ctx: *Context) E!Value {
 
     c.err = sdk_err;
 
-    // Fire PreUnexpected so observability features (metrics, telemetry, audit,
-    // debug) close/record error paths that never reach PreDone (e.g. a PrePoint
-    // rbac short-circuit). Fires after ctrl.err is set so hooks can read the
-    // error; features guard against double-recording when PreDone already fired.
+    // Fire PreUnexpected so features hooked on it close/record error paths that
+    // never reach PreDone (e.g. a PrePoint short-circuit). Fires after ctrl.err
+    // is set so hooks can read the error; features guard against
+    // double-recording when PreDone already fired.
     feature_hook_util(ctx, "PreUnexpected");
 
     if (c.throw != null and c.throw.? == false) {

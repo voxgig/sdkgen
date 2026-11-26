@@ -48,8 +48,8 @@ ProjectNameSDK* projectname_sdk_new(voxgig_value* options) {
 
   // Add features in the resolved order (make_options puts an explicit list
   // order first, else defaults to test-first). Ordering matters: the `test`
-  // feature installs the base mock transport and the transport features
-  // (retry/cache/netsim/proxy/ratelimit) wrap whatever is current, so `test`
+  // feature installs the base mock transport and the features whose model
+  // declares `transport: 'wrap'` wrap whatever is current, so `test`
   // must be added before them to sit at the base of the transport chain.
   voxgig_value* feature_opts = to_map(getp(opts, "feature"));
   voxgig_value* feature_order = getpath2(opts, "__derived__", "featureorder");
@@ -297,8 +297,8 @@ voxgig_value* sdk_direct(ProjectNameSDK* sdk, voxgig_value* fetchargs, PNError**
 // a top-level `errors` array, so status alone would report a failed query as
 // ok.
 //
-// NOTE: like sdk_direct, this bypasses the feature pipeline — no retry,
-// ratelimit or paging features apply.
+// NOTE: like sdk_direct, this bypasses the feature pipeline: no feature
+// hook runs on this path.
 voxgig_value* sdk_graphql(ProjectNameSDK* sdk, const char* query,
                           voxgig_value* variables, voxgig_value* ctrl,
                           PNError** err) {

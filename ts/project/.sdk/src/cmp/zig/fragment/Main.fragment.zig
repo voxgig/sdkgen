@@ -90,9 +90,9 @@ pub const ProjectNameSDK = struct {
         // Add features in the resolved order (make_options puts an explicit
         // list order first, else defaults to test-first). Ordering matters:
         // the `test` feature installs the base mock transport and the
-        // transport features (retry/cache/netsim/proxy/ratelimit) wrap
-        // whatever is current, so `test` must be added before them to sit at
-        // the base of the transport wrapper chain.
+        // features whose model declares `transport: 'wrap'` wrap whatever is
+        // current, so `test` must be added before them to sit at the base of
+        // the transport wrapper chain.
         const feature_opts = h.to_map(h.getp(opts, "feature"));
         const feature_order = h.getpath(&.{ "__derived__", "featureorder" }, opts);
         if (feature_opts == .object and feature_order == .array) {
@@ -356,8 +356,8 @@ pub const ProjectNameSDK = struct {
     // 200 as a top-level `errors` array, so status alone would report a
     // failed query as ok.
     //
-    // NOTE: like direct, this bypasses the feature pipeline — no retry,
-    // ratelimit or paging features apply.
+    // NOTE: like direct, this bypasses the feature pipeline: no feature
+    // hook runs on this path.
     pub fn graphql(
         self: *ProjectNameSDK, query: []const u8, variables: Value, ctrl: Value,
     ) Value {

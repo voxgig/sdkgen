@@ -163,11 +163,11 @@ func makeOptionsUtil(_ ctx: Context) -> VMap {
     }
 
     // Station special case, mirroring test's: its transport wrap must
-    // sit immediately outside the base transport (inside retry/cache/
-    // netsim), so map-form activation hoists it to just after test -
-    // or first, when no test entry exists. Without this the sorted
-    // default would init station last and wrap OUTSIDE the recording
-    // features, turning its wire-truth events into fiction.
+    // sit immediately outside the base transport (inside every other
+    // transport wrap), so map-form activation hoists it to just after
+    // test - or first, when no test entry exists. Without this the
+    // sorted default would init station last and wrap OUTSIDE the
+    // recording features, turning its wire-truth events into fiction.
     if let si = featureorder.firstIndex(where: { $0.asString == "station" }) {
       featureorder.remove(at: si)
       let ti = featureorder.firstIndex(where: { $0.asString == "test" })

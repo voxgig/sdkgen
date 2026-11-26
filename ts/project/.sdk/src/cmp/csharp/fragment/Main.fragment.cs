@@ -52,8 +52,8 @@ public class ProjectNameSDK
 
         // Add features in the resolved order (MakeOptions puts an explicit
         // list order first, else defaults to test-first). Ordering matters:
-        // the `test` feature installs the base mock transport and the transport
-        // features (retry/cache/netsim/proxy/ratelimit) wrap whatever is
+        // the `test` feature installs the base mock transport and the features
+        // whose model declares `transport: 'wrap'` wrap whatever is
         // current, so `test` must be added before them to sit at the base of
         // the chain.
         var featureOpts = global::ProjectNameSdk.Helpers.ToMapAny(global::Voxgig.Struct.StructUtils.GetProp(_options, "feature"))
@@ -359,8 +359,8 @@ public class ProjectNameSDK
     // HTTP 200 as a top-level `errors` array, so status alone would report a
     // failed query as ok.
     //
-    // NOTE: like Direct, this bypasses the feature pipeline — no retry,
-    // ratelimit or paging features apply.
+    // NOTE: like Direct, this bypasses the feature pipeline: no feature
+    // hook runs on this path.
     public Dictionary<string, object?> Graphql(string query,
         Dictionary<string, object?>? variables = null,
         Dictionary<string, object?>? ctrl = null)
