@@ -1,4 +1,4 @@
-import { flowSteps, opReachable, validateSeeds } from '@voxgig/sdkgen'
+import { flowSteps, opReachable, opRequestShape, validateSeeds } from '@voxgig/sdkgen'
 
 import {
   flatten,
@@ -238,7 +238,7 @@ ${hasList ? `
             $this->assertCount(3, $got);
         }
     }
-${failureTests(model, entity, accessor)}${validateListTest(model, entity, accessor)}` : ''}${validateTest(model, entity, accessor)}
+${failureTests(model, entity, accessor)}${validateListTest(model, entity, accessor)}` : ''}${validateTest(model, entity, accessor)}${validateBareListTest(model, entity, accessor)}
     public function test_basic_flow(): void
     {
         $setup = ${entity.name}_basic_setup(null);
@@ -963,6 +963,31 @@ function validateTest(model: Model, entity: ModelEntity, accessor: string): stri
 `
 }
 
+
+// A list with no arguments sends an empty match, which php writes as [] and
+// struct reads as a list: validate must still check it as a map.
+function validateBareListTest(model: Model, entity: ModelEntity, accessor: string): string {
+  const list: any = entity.op && entity.op.list
+  if (null == list || false === list.active) {
+    return ''
+  }
+  const { items } = opRequestShape(entity, 'list')
+  if (items.some((it: any) => !it.optional) || !opReachable(list, [])) {
+    return ''
+  }
+  const Name = model.const.Name
+  return `
+    public function test_validate_bare_list(): void
+    {
+        $cfg = ${Name}Config::shared_config();
+        if (!isset($cfg["feature"]["validate"])) {
+            $this->markTestSkipped('feature not present in this SDK: validate');
+        }
+        $client = ${Name}SDK::test(null, ["feature" => ["validate" => ["active" => true]]]);
+        $this->assertIsArray($client->${accessor}(null)->list(null, null));
+    }
+`
+}
 
 // A list response is checked record by record, not entity by entity.
 function validateListTest(model: Model, entity: ModelEntity, accessor: string): string {

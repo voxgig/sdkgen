@@ -45,6 +45,11 @@ final class TransformResponse {
     data.put("resmatch", result.resmatch);
 
     Object resdata = Struct.transform(data, resform);
+    // A reference that resolves to nothing gives struct's UNDEF, which is
+    // not null: an update would take it for data.
+    if (resdata == Struct.UNDEF) {
+      resdata = null;
+    }
 
     result.resdata = resdata;
     return resdata;

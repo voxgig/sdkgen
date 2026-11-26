@@ -1039,4 +1039,20 @@ class PrimaryUtilityTest extends TestCase
             return $result;
         });
     }
+
+    // A 204 has no body: struct's no-value sentinel is truthy, so held as
+    // resdata an update would take it for data and replace the entity's.
+    public function test_transform_response_no_value(): void
+    {
+        $client = self::client();
+        $utility = $client->get_utility();
+        $ctx = ProjectNameOmni::ctx_from_map([
+            'result' => ['ok' => true, 'status' => 204, 'body' => null],
+            'spec' => ['step' => ''],
+            'point' => ['transform' => ['res' => '`body.data`']],
+        ], $client, $utility);
+
+        $this->assertNull(($utility->transform_response)($ctx));
+        $this->assertNull($ctx->result->resdata);
+    }
 }
