@@ -1,7 +1,7 @@
 
 main: kit: target: go: {
 
-  title: Golang
+  title: Go
   ext: go
   comment: line: "//"
   module: name: '$$name$$'

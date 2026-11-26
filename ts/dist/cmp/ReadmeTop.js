@@ -50,21 +50,54 @@ function exampleLang(model, sdkTargets) {
     const langs = sdkTargets.map((t) => (0, packageMeta_1.originName)(model, t.name));
     return opExample_1.EXAMPLE_LANGS.find((lang) => langs.includes(lang));
 }
+// What the constructor needs, as name and value pairs: the credential where
+// the SDK places one, and each server variable the URL has no default for.
+function clientNeeds(model) {
+    const auth = (0, facts_1.fact)(model.main[types_1.KIT], 'auth');
+    const svars = (0, facts_1.fact)(model.main[types_1.KIT], 'server').filter((v) => v.required);
+    return [
+        ...(auth.apikey ? [['apikey', '...']] : []),
+        ...(auth.secret ? [['secret', '...']] : []),
+        ...(0 === svars.length ? [] :
+            [['server', svars.map((v) => [v.name, '...'])]]),
+    ];
+}
+// A map literal of those needs in an example language, or '' for none.
+function clientArgs(lang, model) {
+    const needs = clientNeeds(model);
+    if (0 === needs.length) {
+        return '';
+    }
+    const js = 'ts' === lang || 'js' === lang;
+    const str = (v) => js ? "'" + v + "'" : JSON.stringify(v);
+    const map = (pairs, open, close, key, sep) => open + pairs.map(([k, v]) => key(k) + sep +
+        ('string' === typeof v ? str(v) : map(v, open, close, key, sep))).join(', ') + close;
+    switch (lang) {
+        case 'ts':
+        case 'js': return map(needs, '{ ', ' }', naming_1.jsKey, ': ');
+        case 'py': return map(needs, '{', '}', str, ': ');
+        case 'go': return map(needs, 'map[string]any{', '}', str, ': ');
+        case 'php': return map(needs, '[', ']', str, ' => ');
+        case 'rb': return map(needs, '{', '}', str, ' => ');
+        case 'lua': return map(needs, '{', '}', (k) => '[' + str(k) + ']', ' = ');
+        default: return '';
+    }
+}
 // A client and one call in a language other than ts, whose example
 // ReadmeTop builds itself.
-function entityExample(lang, Name, call) {
+function entityExample(lang, Name, call, args) {
     switch (lang) {
-        case 'js': return `const client = new ${Name}SDK()` +
+        case 'js': return `const client = new ${Name}SDK(${args})` +
             (call ? `\nconst ${call.resultVar} = await ${call.expr}` : '');
-        case 'py': return `client = ${Name}SDK()` +
+        case 'py': return `client = ${Name}SDK(${args})` +
             (call ? `\n${call.resultVar} = ${call.expr}` : '');
-        case 'go': return `client := sdk.New${Name}SDK(nil)` +
+        case 'go': return `client, err := sdk.New${Name}SDK(${'' === args ? 'nil' : args})` +
             (call ? `\n${call.resultVar}, err := ${call.expr}` : '');
-        case 'php': return `$client = new ${Name}SDK();` +
+        case 'php': return `$client = new ${Name}SDK(${args});` +
             (call ? `\n$${call.resultVar} = ${call.expr};` : '');
-        case 'rb': return `client = ${Name}SDK.new` +
+        case 'rb': return `client = ${Name}SDK.new${'' === args ? '' : '(' + args + ')'}` +
             (call ? `\n${call.resultVar} = ${call.expr}` : '');
-        case 'lua': return `local client = sdk.new()` +
+        case 'lua': return `local client = sdk.new(${args})` +
             (call ? `\nlocal ${call.resultVar}, err = ${call.expr}` : '');
         default: return '';
     }
@@ -214,25 +247,19 @@ const ReadmeTopEntityModel = (0, component_1.cmp)(function ReadmeTopEntityModel(
             const body = bodyLines.length ? `\n${bodyLines.join('\n')}\n` : '';
             exCall = `const ${exLower} = await client.${ex}().${primaryOp}({${body}})`;
         }
-        const CANON_OPS = ['list', 'load', 'create', 'update', 'patch', 'remove'];
-        const opSet = new Set();
-        activeEntities.forEach((e) => Object.keys(e.op || {})
-            .forEach((o) => { if (e.op[o] && e.op[o].active !== false)
-            opSet.add(o); }));
-        const opNames = CANON_OPS.filter((o) => opSet.has(o)).concat([...opSet].filter((o) => !CANON_OPS.includes(o)));
-        const opList = (opNames.length ? opNames : ['list', 'load']).map((o) => '`' + o + '`').join(', ');
+        const opList = (0, opShape_1.introOps)(model).map((o) => '`' + o + '`').join(', ');
         // In the SDK's own language: ts when it has one, else the first the
         // example helpers can write, else no example at all.
         const lang = exampleLang(model, sdkTargets);
         let snippet = '';
         if ('ts' === lang) {
-            snippet = `const client = new ${model.Name}SDK()${exCall ? '\n' + exCall : ''}`;
+            snippet = `const client = new ${model.Name}SDK(${clientArgs('ts', model)})${exCall ? '\n' + exCall : ''}`;
         }
         else if (null != lang) {
             const call = ['list', 'load', 'create', 'update', 'patch'].includes(String(primaryOp))
                 ? (0, opExample_1.primaryOpCall)(lang, ex, (0, naming_1.exampleVarName)(ex.toLowerCase(), lang), primaryOp, exIdField, exEnt)
                 : null;
-            snippet = entityExample(lang, model.Name, call);
+            snippet = entityExample(lang, model.Name, call, clientArgs(lang, model));
         }
         const exBlock = '' === snippet ? '.' :
             `:\n\n\`\`\`${EXAMPLE_FENCE[lang]}\n${snippet}\n\`\`\``;
@@ -240,8 +267,8 @@ const ReadmeTopEntityModel = (0, component_1.cmp)(function ReadmeTopEntityModel(
 
 This SDK exposes the API as ${surface} that you
 call directly, instead of assembling URL paths and query strings.${seeEntities} Entities are
-**Capitalised** to mark them as the primary surface, each with the operations they
-support (${opList})${exBlock}
+**Capitalised** to mark them as the primary surface${'' === opList ? '' : `, each with the operations they
+support (${opList})`}${exBlock}
 
 Thinking in entities keeps the mental model small — for people and AI agents alike —
 rather than reasoning about raw HTTP routes and query parameters.
@@ -372,30 +399,32 @@ const ReadmeTopMcp = (0, component_1.cmp)(function ReadmeTopMcp(props) {
     if (hasMcp) {
         const mcp = mcpTargets[0].name;
         const mcpOps = (0, mcpTools_1.mcpTools)(model, mcp).map((tool) => tool.op);
-        const mcpWrite = true === mcpTargets[0].tool?.write;
+        // The write tools the toggle would add, which the model may have none of.
+        const writable = (0, mcpTools_1.mcpTools)(model, mcp, true).map((tool) => tool.op)
+            .filter((op) => mcpTools_1.MCP_WRITE_OPS.includes(op));
         const toggle = `\`main: kit: target: '${mcp}': tool: write: true\``;
-        const opText = mcpOps.length < 2 ? mcpOps.join('') :
-            mcpOps.slice(0, -1).join(', ') + ' and ' + mcpOps[mcpOps.length - 1];
+        const phrase = (ops) => ops.length < 2 ? ops.join('') :
+            ops.slice(0, -1).join(', ') + ' and ' + ops[ops.length - 1];
         // What the server reads and writes is what it registers, not the flag.
-        const reads = mcpOps.some((op) => mcpTools_1.MCP_WRITE_OPS.includes(op)) ? '' : mcpWrite ?
+        const reads = mcpOps.some((op) => mcpTools_1.MCP_WRITE_OPS.includes(op)) ? '' : 0 === writable.length ?
             ' It only reads, as no entity has a create, update, patch or remove a plain call runs.' :
-            ` It only reads: create, update, patch and remove become tools when the SDK's model sets
+            ` It only reads: ${phrase(writable)} ${1 < writable.length ? 'become tools' : 'becomes a tool'} when the SDK's model sets
 ${toggle}.`;
         (0, jostraca_1.Content)(0 === mcpOps.length ? `## Use it from an AI agent (MCP)
 
 The generated MCP server has no tools for this SDK: no entity has a list or
-load a plain call runs${mcpWrite ? ', or a create, update, patch or remove' :
-            `, and create, update, patch and remove are off until the SDK's model sets
+load a plain call runs${0 === writable.length ? ', or a create, update, patch or remove' :
+            `, and ${phrase(writable)} ${1 < writable.length ? 'are' : 'is'} off until the SDK's model sets
 ${toggle}`}.
 
 ` : `## Use it from an AI agent (MCP)
 
-The generated MCP server exposes this SDK's ${opText} operations as
+The generated MCP server exposes this SDK's ${phrase(mcpOps)} operations as
 [MCP](https://modelcontextprotocol.io) tools that Claude, Cursor or Cline
 can call directly.${reads} Build and register it:
 
 \`\`\`bash
-cd ${mcp} && go build -o ${model.name}-mcp .
+cd ${mcp} && make build          # -> dist/<os>-<arch>/${model.name}-mcp
 \`\`\`
 
 Then add it to your agent's MCP config (Claude Desktop, Cursor, etc.):
@@ -414,7 +443,7 @@ Then add it to your agent's MCP config (Claude Desktop, Cursor, etc.):
     }
 });
 const ReadmeTopEntities = (0, component_1.cmp)(function ReadmeTopEntities(props) {
-    const { activeEntities } = props.s;
+    const { model, activeEntities } = props.s;
     if (activeEntities.length > 0) {
         (0, jostraca_1.Content)(`## Entities
 
@@ -424,21 +453,16 @@ The API exposes ${activeEntities.length === 1 ? 'one entity' : activeEntities.le
 | --- | --- | --- |
 `);
         activeEntities.map((ent) => {
-            const ops = ent.op || {};
-            const opNames = Object.keys(ops).filter((o) => ops[o]?.active !== false);
+            const opNames = (0, opShape_1.entityOps)(ent);
             const entdesc = (0, facts_1.fact)(ent, 'desc').cell ||
                 `The ${ent.Name} entity${opNames.length ? ' (' + opNames.join(', ') + ')' : ''}.`;
             const path = (0, opShape_1.entityPath)(ent);
             (0, jostraca_1.Content)(`| **${ent.Name}** | ${entdesc} | \`${path}\` |
 `);
         });
-        const opUnion = new Set();
-        activeEntities.forEach((e) => Object.keys(e.op || {})
-            .forEach((o) => { if (e.op[o]?.active !== false)
-            opUnion.add(o); }));
-        const opAvail = ['load', 'list', 'create', 'update', 'patch', 'remove'].filter((o) => opUnion.has(o));
-        const opBold = (opAvail.length ? opAvail : ['load', 'list']).map((o) => '**' + o + '**').join(', ');
-        (0, jostraca_1.Content)(`
+        const opBold = (0, opShape_1.introOps)(model).map((o) => '**' + o + '**').join(', ');
+        (0, jostraca_1.Content)('' === opBold ? `
+` : `
 The operations available across these entities are ${opBold} — see each entity's
 own list above for exactly which it supports.
 
@@ -495,7 +519,7 @@ When the entity interface does not cover an endpoint, use \`direct\`:
     });
 });
 const ReadmeTopAdvanced = (0, component_1.cmp)(function ReadmeTopAdvanced(props) {
-    const { feature } = props.s;
+    const { model, sdkTargets } = props.s;
     (0, jostraca_1.Content)(`## Advanced
 
 > Everyday use only needs the sections above. This explains the internals
@@ -510,16 +534,21 @@ A feature hook fires before each stage (e.g. \`${FeatureHook_1.PIPELINE_STAGES[0
 forking the SDK.
 
 `);
-    const active = (0, jostraca_1.each)(feature).filter((feat) => feat.active);
-    if (0 < active.length) {
+    // The features some SDK target documents.
+    const documented = new Map();
+    for (const tgt of sdkTargets) {
+        for (const f of (0, FeatureDocs_1.featureDocs)(model, tgt))
+            documented.set(f.name, f);
+    }
+    const features = [...documented.values()].sort((a, b) => a.name.localeCompare(b.name));
+    if (0 < features.length) {
         (0, jostraca_1.Content)(`### Features
 
 | Feature | Purpose |
 | --- | --- |
 `);
-        for (const feat of active) {
-            const purpose = (0, facts_1.fact)(feat, 'title').cell || feat.Name || feat.name;
-            (0, jostraca_1.Content)(`| **${feat.Name || feat.name}Feature** | ${purpose} |
+        for (const f of features) {
+            (0, jostraca_1.Content)(`| **${f.Name}Feature** | ${f.titleCell || f.Name} |
 `);
         }
         (0, jostraca_1.Content)(`
@@ -734,7 +763,6 @@ const ReadmeTop = (0, component_1.cmp)(function ReadmeTop(props) {
         apiSummary,
         websiteLine,
         metaSourceLine,
-        feature,
         activeEntities,
         hasCli,
         hasMcp,

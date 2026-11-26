@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, safeVarName, exampleVarName, luaKey, targetFeatures, opNeedsAction, bodyNote, listMatchArg, matchExampleItems, litString, requestExampleItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, safeVarName, exampleVarName, luaKey, entityOps, bodyNote, listMatchArg, matchExampleItems, litString, requestExampleItems, entityClassName, entityCollection, featureDocs, fact, clientOptions, requiredItems } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -63,8 +63,6 @@ const ReadmeRef = cmp(function ReadmeRef(props: any) {
   const { model } = props.ctx$
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
-  const feature = targetFeatures(model, target)
-
   const publishedEntities = each(entity).filter((e: any) => e.active !== false)
 
 
@@ -81,6 +79,10 @@ Complete API reference for the ${model.Name} ${target.title} SDK.
 
 `)
 
+    const OPTION_KIND: Record<string, string> = { string: 'string', map: 'table', list: 'table' }
+    const optionRows = clientOptions(model)
+      .map((o: any) => '| `options.' + o.name + '` | `' + OPTION_KIND[o.kind] + '` | ' + o.desc + ' |\n').join('')
+
     Content(`\`\`\`lua
 local sdk = require("${model.name}_sdk")
 local client = sdk.new(options)
@@ -93,13 +95,7 @@ Create a new SDK client instance.
 | Name | Type | Description |
 | --- | --- | --- |
 | \`options\` | \`table\` | SDK configuration options. |
-${isAuthActive(model) ? '| \`options.apikey\` | \`string\` | API key for authentication. |\n' : ''}| \`options.base\` | \`string\` | Base URL for API requests. |
-| \`options.prefix\` | \`string\` | URL prefix appended after base. |
-| \`options.suffix\` | \`string\` | URL suffix appended after path. |
-| \`options.headers\` | \`table\` | Custom headers for all requests. |
-| \`options.feature\` | \`table\` | Feature configuration. |
-| \`options.system\` | \`table\` | System overrides (e.g. custom fetch). |
-
+${optionRows}
 `)
 
 
@@ -171,7 +167,7 @@ same parameters as \`direct()\`.
 
 
     publishedEntities.map((ent: any) => {
-      const opnames = Object.keys(ent.op || {})
+      const opnames = entityOps(ent)
       const fields = Object.values(ent.fields || {})
       // Model-driven id key: null when this entity has no id-like field, in
       // which case load/remove match on no argument and update omits the id.
@@ -183,12 +179,12 @@ same parameters as \`direct()\`.
       Content(`
 ---
 
-## ${ent.Name}Entity
+## ${entityClassName(ent, entityCollection(model))}
 
 `)
 
-      if (ent.short) {
-        Content(`${ent.short}
+      if (fact(ent, 'desc').inline) {
+        Content(`${fact(ent, 'desc').inline}
 
 `)
       }
@@ -208,8 +204,8 @@ local ${eVar} = client:${ent.Name}(nil)
 `)
         each(fields, (field: any) => {
           const req = field.r ? 'Yes' : 'No'
-          const desc = field.sh || ''
-          Content(`| \`${field.n}\` | \`${canonToType(field.t, target.name)}\` | ${req} | ${desc} |
+          const desc = fact(model.main[KIT], 'field')[ent.name]?.[field.n]?.desc.cell ?? ''
+          Content(`| \`${field.n}\` | \`${canonToType(field.t, 'lua').replace(/\|/g, '\\|')}\` | ${req} | ${desc} |
 `)
         })
 
@@ -222,7 +218,7 @@ local ${eVar} = client:${ent.Name}(nil)
           // Only emit columns for operations this entity actually exposes —
           // never advertise a create/update/remove column the entity lacks.
           const opcols = ['load', 'list', 'create', 'update', 'patch', 'remove']
-            .filter((op: string) => opnames.includes(op) && ent.op[op]?.active !== false)
+            .filter((op: string) => opnames.includes(op))
           Content(`### Field Usage by Operation
 
 | Field | ${opcols.join(' | ')} |
@@ -254,16 +250,15 @@ local ${eVar} = client:${ent.Name}(nil)
         opnames.map((opname: string) => {
           const info = OP_SIGNATURES[opname]
           if (!info) return
+          const needs = requiredItems(ent, opname).map((it: any) => it.name)
+          const desc = info.desc.replace(' The data must include the entity `id`.',
+            null != idF && needs.includes(idF) ? ' The data must include the entity `' + idF + '`.' : '')
 
           Content(`#### \`${info.sig}\`
 
-${info.desc}
+${desc}
 
 `)
-
-          if (opNeedsAction(ent.op[opname])) {
-            return
-          }
 
           if ('load' === opname || 'remove' === opname) {
             // The id key plus every REQUIRED match key (parent path params
@@ -302,7 +297,7 @@ local results, err = client:${ent.Name}():list(${listMatchArg('lua', ent)})
 local result, err = client:${ent.Name}():create({
 `)
             createItems.map((it: any) => {
-              Content(`  ${luaKey(it.name)} = --[[ ${canonToType(it.type, target.name)} ]],
+              Content(`  ${luaKey(it.name)} = --[[ ${canonToType(it.type, 'lua')} ]],
 `)
             })
             Content(`})
@@ -320,6 +315,7 @@ local result, err = client:${ent.Name}():create({
             const updateLines = updateItems.map((it: any) =>
               `  ${luaKey(it.name)} = ${luaLit(it.type,
                 it.name === idF ? ent.name + '_id' : it.name)},\n`).join('')
+
             Content(`\`\`\`lua
 local result, err = client:${ent.Name}():${opname}({
 ${updateLines}  -- ${'patch' === opname ? 'Only the fields to change' : 'Fields to update'}
@@ -359,7 +355,7 @@ Set the entity match criteria.
 
 #### \`make() -> Entity\`
 
-Create a new \`${ent.Name}Entity\` instance with the same client and
+Create a new \`${entityClassName(ent, entityCollection(model))}\` instance with the same client and
 options.
 
 #### \`get_name() -> string\`
@@ -370,7 +366,7 @@ Return the entity name.
     })
 
 
-    const activeFeatures = each(feature).filter((f: any) => f.active)
+    const activeFeatures = featureDocs(model, target)
     if (activeFeatures.length > 0) {
       Content(`
 ---
@@ -382,7 +378,7 @@ Return the entity name.
 `)
 
       activeFeatures.map((f: any) => {
-        Content(`| \`${f.name}\` | ${f.version || '0.0.1'} | ${f.title || ''} |
+        Content(`| \`${f.name}\` | ${f.version} | ${f.titleCell} |
 `)
       })
 

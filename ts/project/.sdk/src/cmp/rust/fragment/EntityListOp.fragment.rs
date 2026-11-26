@@ -25,7 +25,7 @@ fn list(self: &Rc<Self>, reqmatch: Value, ctrl: Value) -> Result<Vec<Rc<Self>>, 
     // `list` resolves to one ENTITY per record. makeResult cannot build them
     // here — it works in `Value`, which is a closed data union with no slot
     // for an entity — so the op does, mirroring what the dynamic targets get
-    // from makeResult. See AGENTS.md "Entity operations return ENTITIES".
+    // from makeResult.
     let mut items: Vec<Rc<Self>> = Vec::new();
     if let Value::List(list) = &out {
         for entry in list.borrow().iter() {

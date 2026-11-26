@@ -1,6 +1,6 @@
 // Voxgig Struct corpus driver — C++ port.
 //
-// Drives the shared struct corpus (../.sdk/test/test.json, root key
+// Drives the shared struct corpus (SDKREL/.sdk/test/test.json, root key
 // "struct") against the vendored struct utility THROUGH the VENDORED omni
 // runner (test/omni_resolver.hpp over test/vendor/omni) — the engine half
 // of the retired test/struct_runner.hpp. Mirrors
@@ -64,7 +64,7 @@ const std::map<std::string, std::string>& category_to_file() {
 // One client + one corpus runner for the whole binary.
 res::Run& structRun() {
   static res::Run run =
-      res::makeRunner("../.sdk/test/test.json", sdk::ProjectNameSDK::testSDK())
+      res::makeRunner("SDKREL/.sdk/test/test.json", sdk::ProjectNameSDK::testSDK())
           .runner("struct", Value::undef());
   return run;
 }

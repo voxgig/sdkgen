@@ -2,159 +2,6 @@
   "suspended": [],
   "pins": [
     {
-      "relation": "fence",
-      "chain": "Readme > ReadmeEntity",
-      "cause": "ts",
-      "reason": "N11: the js copies fence their entity blocks as ts; WP37 fences them as js in the copy wave.",
-      "line": "```ts",
-      "variations": [
-        "auth-basic",
-        "auth-basic-query",
-        "auth-off",
-        "baseline",
-        "entities-lone",
-        "entity-zqa",
-        "entity-zqb",
-        "entity-zqc",
-        "entity-zqd",
-        "entity-zqe",
-        "entity-zqf",
-        "entity-zqg",
-        "feature-audit",
-        "feature-cache",
-        "feature-clienttrack",
-        "feature-cost",
-        "feature-debug",
-        "feature-idempotency",
-        "feature-log",
-        "feature-metrics",
-        "feature-netsim",
-        "feature-paging",
-        "feature-proxy",
-        "feature-ratelimit",
-        "feature-rbac",
-        "feature-retry",
-        "feature-secrets",
-        "feature-streaming",
-        "feature-telemetry",
-        "feature-timeout",
-        "feature-validate",
-        "features-empty",
-        "features-lone",
-        "phase-agentguide-off-ts",
-        "phase-build-off",
-        "phase-readme-off-ts",
-        "phase-top-off",
-        "server-defaulted",
-        "server-plain",
-        "server-required",
-        "target-c",
-        "target-clojure",
-        "target-cpp",
-        "target-csharp",
-        "target-elixir",
-        "target-go",
-        "target-go-cli",
-        "target-go-mcp",
-        "target-java",
-        "target-kotlin",
-        "target-lua",
-        "target-ocaml",
-        "target-perl",
-        "target-php",
-        "target-py",
-        "target-py-data",
-        "target-rb",
-        "target-rust",
-        "target-scala",
-        "target-swift",
-        "target-ts",
-        "target-zig"
-      ]
-    },
-    {
-      "relation": "fence",
-      "chain": "Readme > ReadmeRef",
-      "cause": "ts",
-      "reason": "N11: the js copies fence their reference blocks as ts; WP37 fences them as js in the copy wave.",
-      "line": "```ts",
-      "variations": [
-        "auth-basic",
-        "auth-basic-query",
-        "auth-off",
-        "baseline",
-        "entities-empty",
-        "entities-lone",
-        "entity-zqa",
-        "entity-zqb",
-        "entity-zqc",
-        "entity-zqd",
-        "entity-zqe",
-        "entity-zqf",
-        "entity-zqg",
-        "feature-audit",
-        "feature-cache",
-        "feature-clienttrack",
-        "feature-cost",
-        "feature-debug",
-        "feature-idempotency",
-        "feature-log",
-        "feature-metrics",
-        "feature-netsim",
-        "feature-paging",
-        "feature-proxy",
-        "feature-ratelimit",
-        "feature-rbac",
-        "feature-retry",
-        "feature-secrets",
-        "feature-streaming",
-        "feature-telemetry",
-        "feature-timeout",
-        "feature-validate",
-        "features-empty",
-        "features-lone",
-        "phase-agentguide-off-ts",
-        "phase-build-off",
-        "phase-readme-off-ts",
-        "phase-top-off",
-        "server-defaulted",
-        "server-plain",
-        "server-required",
-        "target-c",
-        "target-clojure",
-        "target-cpp",
-        "target-csharp",
-        "target-elixir",
-        "target-go",
-        "target-go-cli",
-        "target-go-mcp",
-        "target-java",
-        "target-kotlin",
-        "target-lua",
-        "target-ocaml",
-        "target-perl",
-        "target-php",
-        "target-py",
-        "target-py-data",
-        "target-rb",
-        "target-rust",
-        "target-scala",
-        "target-swift",
-        "target-ts",
-        "target-zig"
-      ]
-    },
-    {
-      "relation": "link",
-      "chain": "Readme > ReadmeHowto",
-      "cause": "cd ts",
-      "reason": "Known stale, S41: `cd ts` assumes the target has its own directory; WP32.",
-      "line": "cd ts && npm test",
-      "variations": [
-        "root-ts"
-      ]
-    },
-    {
       "relation": "off",
       "chain": "AgentGuideTop > AgentGuideTopCustomise",
       "cause": "target",
@@ -195,10 +42,30 @@
       ]
     },
     {
+      "relation": "off",
+      "chain": "Readme > ReadmeFeatures > ReadmeFeatureOptions",
+      "cause": "feature",
+      "reason": "Generic word: `cache` here is the secrets feature's own option, which keeps a resolved credential, not the cache feature.",
+      "line": "| `cache` | `true` |",
+      "variations": [
+        "feature-cache"
+      ]
+    },
+    {
+      "relation": "off",
+      "chain": "Readme > ReadmeRef > ReadmeRefFeatures > ReadmeRefFeatureOptions",
+      "cause": "feature",
+      "reason": "Generic word: `cache` here is the secrets feature's own option, which keeps a resolved credential, not the cache feature.",
+      "line": "| `cache` | `true` |",
+      "variations": [
+        "feature-cache"
+      ]
+    },
+    {
       "relation": "parity",
       "chain": "ReadmeHowto@clojure",
       "cause": "auth",
-      "reason": "Found by the guard: clojure's how-to builds the client with no credential, where every other how-to reads the API key; to be catalogued.",
+      "reason": "clojure has no live test suite, so its how-to has no live-test environment to name the credential's variables in; its examples build their clients from an explicit base URL.",
       "line": "",
       "variations": [
         "baseline"
@@ -206,9 +73,9 @@
     },
     {
       "relation": "parity",
-      "chain": "ReadmeModel@clojure",
+      "chain": "ReadmeHowto@clojure",
       "cause": "servers",
-      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "reason": "clojure's how-to has no live-test environment to name a server variable in, and its tests build no live client.",
       "line": "",
       "variations": [
         "baseline"
@@ -216,9 +83,9 @@
     },
     {
       "relation": "parity",
-      "chain": "ReadmeModel@cpp",
-      "cause": "servers",
-      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "chain": "ReadmeHowto@c",
+      "cause": "auth",
+      "reason": "c has no live test suite, so its how-to has no live-test environment to name the credential's variables in; its examples build their clients in test mode or from an explicit base URL.",
       "line": "",
       "variations": [
         "baseline"
@@ -226,9 +93,9 @@
     },
     {
       "relation": "parity",
-      "chain": "ReadmeModel@csharp",
+      "chain": "ReadmeHowto@c",
       "cause": "servers",
-      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "reason": "c has no live test suite, so its how-to has no live-test environment to name a server variable in; its examples build their clients in test mode or from an explicit base URL.",
       "line": "",
       "variations": [
         "baseline"
@@ -236,9 +103,9 @@
     },
     {
       "relation": "parity",
-      "chain": "ReadmeModel@c",
-      "cause": "servers",
-      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "chain": "ReadmeHowto@elixir",
+      "cause": "auth",
+      "reason": "elixir has no live test suite, so its how-to has no live-test environment to name the credential's variables in; its examples build their clients in test mode or from an explicit base URL.",
       "line": "",
       "variations": [
         "baseline"
@@ -246,9 +113,9 @@
     },
     {
       "relation": "parity",
-      "chain": "ReadmeModel@elixir",
+      "chain": "ReadmeHowto@elixir",
       "cause": "servers",
-      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "reason": "elixir has no live test suite, so its how-to has no live-test environment to name a server variable in; its examples build their clients in test mode or from an explicit base URL.",
       "line": "",
       "variations": [
         "baseline"
@@ -256,9 +123,9 @@
     },
     {
       "relation": "parity",
-      "chain": "ReadmeModel@go",
-      "cause": "servers",
-      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "chain": "ReadmeHowto@ocaml",
+      "cause": "auth",
+      "reason": "ocaml has no live test suite, so its how-to has no live-test environment to name the credential's variables in; its examples build their clients in test mode or from an explicit base URL.",
       "line": "",
       "variations": [
         "baseline"
@@ -266,9 +133,9 @@
     },
     {
       "relation": "parity",
-      "chain": "ReadmeModel@java",
+      "chain": "ReadmeHowto@ocaml",
       "cause": "servers",
-      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "reason": "ocaml has no live test suite, so its how-to has no live-test environment to name a server variable in; its examples build their clients in test mode or from an explicit base URL.",
       "line": "",
       "variations": [
         "baseline"
@@ -276,9 +143,9 @@
     },
     {
       "relation": "parity",
-      "chain": "ReadmeModel@js",
-      "cause": "servers",
-      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "chain": "ReadmeHowto@scala",
+      "cause": "auth",
+      "reason": "scala has no live test suite, so its how-to has no live-test environment to name the credential's variables in; its examples build their clients in test mode or from an explicit base URL.",
       "line": "",
       "variations": [
         "baseline"
@@ -286,9 +153,9 @@
     },
     {
       "relation": "parity",
-      "chain": "ReadmeModel@kotlin",
+      "chain": "ReadmeHowto@scala",
       "cause": "servers",
-      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "reason": "scala has no live test suite, so its how-to has no live-test environment to name a server variable in; its examples build their clients in test mode or from an explicit base URL.",
       "line": "",
       "variations": [
         "baseline"
@@ -296,9 +163,9 @@
     },
     {
       "relation": "parity",
-      "chain": "ReadmeModel@lua",
-      "cause": "servers",
-      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "chain": "ReadmeHowto@swift",
+      "cause": "auth",
+      "reason": "swift has no live test suite, so its how-to has no live-test environment to name the credential's variables in; its examples build their clients in test mode or from an explicit base URL.",
       "line": "",
       "variations": [
         "baseline"
@@ -306,9 +173,9 @@
     },
     {
       "relation": "parity",
-      "chain": "ReadmeModel@ocaml",
+      "chain": "ReadmeHowto@swift",
       "cause": "servers",
-      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "reason": "swift has no live test suite, so its how-to has no live-test environment to name a server variable in; its examples build their clients in test mode or from an explicit base URL.",
       "line": "",
       "variations": [
         "baseline"
@@ -316,9 +183,9 @@
     },
     {
       "relation": "parity",
-      "chain": "ReadmeModel@perl",
-      "cause": "servers",
-      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "chain": "ReadmeHowto@zig",
+      "cause": "auth",
+      "reason": "zig has no live test suite, so its how-to has no live-test environment to name the credential's variables in; its examples build their clients in test mode or from an explicit base URL.",
       "line": "",
       "variations": [
         "baseline"
@@ -326,232 +193,42 @@
     },
     {
       "relation": "parity",
-      "chain": "ReadmeModel@php",
+      "chain": "ReadmeHowto@zig",
       "cause": "servers",
-      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
+      "reason": "zig has no live test suite, so its how-to has no live-test environment to name a server variable in; its examples build their clients in test mode or from an explicit base URL.",
       "line": "",
       "variations": [
         "baseline"
       ]
     },
     {
-      "relation": "parity",
-      "chain": "ReadmeModel@py",
-      "cause": "servers",
-      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
-      "line": "",
+      "relation": "reaction",
+      "chain": "AgentGuide > AgentGuideFeatureTable",
+      "cause": "empty",
+      "reason": "Per-target fact: the Template column shows only where a feature has a template of its own; clojure and ocaml have one for secrets alone, so without secrets their tables drop the column while their siblings keep it.",
+      "line": "| Feature | Template | Active hooks |",
       "variations": [
-        "baseline"
+        "features-empty"
       ]
     },
     {
-      "relation": "parity",
-      "chain": "ReadmeModel@rb",
-      "cause": "servers",
-      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
-      "line": "",
+      "relation": "reaction",
+      "chain": "AgentGuide > AgentGuideFeatureTable",
+      "cause": "feature",
+      "reason": "Per-target fact: the Template column shows only where a feature has a template of its own; clojure and ocaml have one for secrets alone, so without secrets their tables drop the column while their siblings keep it.",
+      "line": "| Feature | Template | Active hooks |",
       "variations": [
-        "baseline"
+        "feature-secrets"
       ]
     },
     {
-      "relation": "parity",
-      "chain": "ReadmeModel@rust",
-      "cause": "servers",
-      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
-      "line": "",
+      "relation": "reaction",
+      "chain": "AgentGuide > AgentGuideFeatureTable",
+      "cause": "lone",
+      "reason": "Per-target fact: the Template column shows only where a feature has a template of its own; clojure and ocaml have one for secrets alone, so without secrets their tables drop the column while their siblings keep it.",
+      "line": "| Feature | Template | Active hooks |",
       "variations": [
-        "baseline"
-      ]
-    },
-    {
-      "relation": "parity",
-      "chain": "ReadmeModel@scala",
-      "cause": "servers",
-      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
-      "line": "",
-      "variations": [
-        "baseline"
-      ]
-    },
-    {
-      "relation": "parity",
-      "chain": "ReadmeModel@swift",
-      "cause": "servers",
-      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
-      "line": "",
-      "variations": [
-        "baseline"
-      ]
-    },
-    {
-      "relation": "parity",
-      "chain": "ReadmeModel@zig",
-      "cause": "servers",
-      "reason": "Known stale, D23: only the ts client section documents the server option; WP29.",
-      "line": "",
-      "variations": [
-        "baseline"
-      ]
-    },
-    {
-      "relation": "parity",
-      "chain": "ReadmeQuick@clojure",
-      "cause": "servers",
-      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
-      "line": "",
-      "variations": [
-        "baseline"
-      ]
-    },
-    {
-      "relation": "parity",
-      "chain": "ReadmeQuick@cpp",
-      "cause": "servers",
-      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
-      "line": "",
-      "variations": [
-        "baseline"
-      ]
-    },
-    {
-      "relation": "parity",
-      "chain": "ReadmeQuick@csharp",
-      "cause": "servers",
-      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
-      "line": "",
-      "variations": [
-        "baseline"
-      ]
-    },
-    {
-      "relation": "parity",
-      "chain": "ReadmeQuick@c",
-      "cause": "servers",
-      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
-      "line": "",
-      "variations": [
-        "baseline"
-      ]
-    },
-    {
-      "relation": "parity",
-      "chain": "ReadmeQuick@elixir",
-      "cause": "servers",
-      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
-      "line": "",
-      "variations": [
-        "baseline"
-      ]
-    },
-    {
-      "relation": "parity",
-      "chain": "ReadmeQuick@js",
-      "cause": "servers",
-      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
-      "line": "",
-      "variations": [
-        "baseline"
-      ]
-    },
-    {
-      "relation": "parity",
-      "chain": "ReadmeQuick@kotlin",
-      "cause": "servers",
-      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
-      "line": "",
-      "variations": [
-        "baseline"
-      ]
-    },
-    {
-      "relation": "parity",
-      "chain": "ReadmeQuick@lua",
-      "cause": "servers",
-      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
-      "line": "",
-      "variations": [
-        "baseline"
-      ]
-    },
-    {
-      "relation": "parity",
-      "chain": "ReadmeQuick@ocaml",
-      "cause": "servers",
-      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
-      "line": "",
-      "variations": [
-        "baseline"
-      ]
-    },
-    {
-      "relation": "parity",
-      "chain": "ReadmeQuick@perl",
-      "cause": "servers",
-      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
-      "line": "",
-      "variations": [
-        "baseline"
-      ]
-    },
-    {
-      "relation": "parity",
-      "chain": "ReadmeQuick@php",
-      "cause": "servers",
-      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
-      "line": "",
-      "variations": [
-        "baseline"
-      ]
-    },
-    {
-      "relation": "parity",
-      "chain": "ReadmeQuick@rb",
-      "cause": "servers",
-      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
-      "line": "",
-      "variations": [
-        "baseline"
-      ]
-    },
-    {
-      "relation": "parity",
-      "chain": "ReadmeQuick@rust",
-      "cause": "servers",
-      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
-      "line": "",
-      "variations": [
-        "baseline"
-      ]
-    },
-    {
-      "relation": "parity",
-      "chain": "ReadmeQuick@scala",
-      "cause": "servers",
-      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
-      "line": "",
-      "variations": [
-        "baseline"
-      ]
-    },
-    {
-      "relation": "parity",
-      "chain": "ReadmeQuick@swift",
-      "cause": "servers",
-      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
-      "line": "",
-      "variations": [
-        "baseline"
-      ]
-    },
-    {
-      "relation": "parity",
-      "chain": "ReadmeQuick@zig",
-      "cause": "servers",
-      "reason": "Known stale, S49: the quick start omits the required server option; WP29.",
-      "line": "",
-      "variations": [
-        "baseline"
+        "features-lone"
       ]
     }
   ]

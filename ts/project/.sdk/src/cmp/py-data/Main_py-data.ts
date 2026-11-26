@@ -2,12 +2,14 @@
 import {
   cmp, each,
   File, Content, Copy, Folder,
-  entityCollection, entityOps, entityIdField, canonToDtype,
-  collectDeps, pkgDescription, tomlString, keywords, repoInfo, envName, apiName,
-  packageName, registryState, serverVariables,
-  SdkGenError,
+  entityCollection, entityOps, entityIdField, canonToDtype, matchArg, dataArg, idLiteral,
+  collectDeps, pkgDescription, tomlString, keywords, repoInfo, apiName,
+  packageName, registryState, consumedTarget, fact, targetFeatures,
   packageVersion,
+  TargetLicense,
 } from '@voxgig/sdkgen'
+
+import type { Consumed } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -24,28 +26,25 @@ const Main = cmp(function Main(props: any) {
   const { target, ctx$ } = props
   const { model, log } = ctx$
 
-  const targets = model.main[KIT].target || {}
-  if (null == targets.py) {
-    throw new SdkGenError(
-      'py-data requires the `py` target in the same SDK: it imports the ' +
-      'Python SDK that `py` generates. Add it with:\n' +
-      '  npm run add-target py\n' +
-      'then regenerate.')
-  }
+  const sdk = consumedTarget(model, target, ctx$.stdrep.SDKREL)
 
+  const kit = model.main[KIT]
   const name = model.const.Name
   const lower = String(name).toLowerCase()
-  const ENV = envName(model)
-  const sdkModule = `${lower}_sdk`
+  const ENV = fact(kit, 'env').prefix
+  const sdkModule = fact(kit, 'package').py
   const sdkClass = `${name}SDK`
   const dataModule = `${lower}_data`
 
-  // Multi-tenant APIs (a server URL carrying an unresolved {variable}, e.g.
-  // https://{instance}.example.com/api) have no single host, so base_url
-  // becomes REQUIRED rather than optional. Guessing a host produces confusing
-  // 404s, so `data()` refuses instead.
-  const svars = serverVariables(model)
-  const needsBase = svars.some((v: any) => v.required)
+  // What the SDK needs from the caller: a key, a secret beside it for HTTP
+  // Basic, and, where the server URL has a variable with no default, a base
+  // URL, since guessing a host produces confusing 404s.
+  const keyed = fact(kit, 'auth').apikey
+  const secret = fact(kit, 'auth').secret
+  const needsBase = (fact(kit, 'server') as any[]).some((v: any) => v.required)
+  // With the SDK's paging feature, data() switches it on and an accessor
+  // fetches every page; without it there is one page to fetch.
+  const paging = null != targetFeatures(model, sdk.name).paging
 
   const ents = each(entityCollection(model))
     .filter((e: any) => e && null != e.name && false !== e.active)
@@ -53,6 +52,8 @@ const Main = cmp(function Main(props: any) {
   const frameEnts = ents.filter((e: any) => entityOps(e).includes(FRAME_OP))
   const seriesEnts = ents.filter((e: any) =>
     entityOps(e).includes(SERIES_OP) && null != entityIdField(e))
+
+  const write = writeCall(ents)
 
   log.info({
     point: 'py-data-entities', target: target.name,
@@ -62,7 +63,7 @@ const Main = cmp(function Main(props: any) {
   Copy({
     from: 'tm/' + target.name,
     exclude: [/src\//, /pkg\//],
-    replace: { ...ctx$.stdrep },
+    replace: { ...ctx$.stdrep, CONSUMEDREL: sdk.path },
   })
 
   Folder({ name: dataModule }, () => {
@@ -70,17 +71,58 @@ const Main = cmp(function Main(props: any) {
       from: 'tm/' + target.name + '/pkg',
       replace: { ...ctx$.stdrep },
     })
-    DataClient({ model, name, lower, ENV, sdkModule, sdkClass, dataModule, needsBase })
-    EntityFrames({ model, frameEnts, seriesEnts, lower, dataModule })
+    DataClient({ model, name, lower, ENV, sdkModule, sdkClass, dataModule, needsBase, keyed, secret, write, paging })
+    EntityFrames({ model, frameEnts, seriesEnts, lower, dataModule, paging })
   })
 
   Gitignore({})
-  Package({ target, model, lower, dataModule })
-  EntityFramesTest({ frameEnts, seriesEnts, lower, sdkModule, sdkClass, dataModule })
-  Readme({ target, model, name, lower, ENV, dataModule, frameEnts, seriesEnts, needsBase, svars })
-  AgentGuide({ model, name, lower, ENV, dataModule, frameEnts, seriesEnts, needsBase })
-  Quickstart({ target, model, name, lower, ENV, dataModule, frameEnts, needsBase })
+  TargetLicense({ target })
+  Package({ target, model, lower, dataModule, sdk })
+  EntityFramesTest({ frameEnts, seriesEnts, lower, sdkModule, sdkClass, dataModule, keyed, secret, needsBase,
+    paging })
+  Readme({ target, model, name, lower, ENV, dataModule, frameEnts, seriesEnts, needsBase, keyed, secret, sdk, write,
+    paging })
+  AgentGuide({ model, name, lower, ENV, dataModule, frameEnts, seriesEnts, needsBase, keyed, secret, sdk, write,
+    paging })
+  Quickstart({ target, model, name, lower, ENV, dataModule, frameEnts, needsBase, keyed, secret, sdk, write, paging })
 })
+
+
+// The pip arguments that install this package and the Python SDK it wraps
+// before either is on PyPI: from this repository, where it holds both.
+function gitInstall(model: any, target: any, sdk: Consumed): [string, string] {
+  const { repoUrl } = repoInfo(model)
+  const sub = (dir: string) => '.' === dir ? '' : '#subdirectory=' + dir
+  const own = 'external' === fact(target, 'place') ? '.' : fact(target, 'dir')
+  return [
+    '' === sdk.dir ? `"${packageName(model, sdk.name)}"` : `"git+${repoUrl}${sub(sdk.dir)}"`,
+    `"git+${repoUrl}${sub(own)}"`,
+  ]
+}
+
+
+// A write the API has, on the first entity with one, as a call on the wrapped
+// client; null when it has none.
+function writeCall(ents: any[]): string | null {
+  for (const ent of ents) {
+    const op = ['create', 'update', 'remove'].find((name) => entityOps(ent).includes(name))
+    if (null != op) {
+      const idF = entityIdField(ent)
+      return `ad.sdk.${ent.Name}().${op}(${'remove' === op ?
+        matchArg('py', ent, op, idF, idLiteral(ent, op, idF)) : dataArg('py', ent, op, idF)})`
+    }
+  }
+  return null
+}
+
+
+// The Python SDK as a document names it, and where it is.
+function pySdk(sdk: Consumed, link: boolean): string {
+  return '' !== sdk.dir ? (link ? `the sibling [Python SDK](${sdk.path}) in this repo` :
+    `the sibling Python SDK at \`${sdk.path}\``) :
+    sdk.away ? 'the Python SDK in ' + ('' === sdk.url ? 'its own repository' :
+      `[its own repository](${sdk.url})`) : `the Python SDK at \`${sdk.path}\``
+}
 
 
 const Gitignore = cmp(function Gitignore(_props: any) {
@@ -96,13 +138,12 @@ const Gitignore = cmp(function Gitignore(_props: any) {
 
 
 const Package = cmp(function Package(props: any) {
-  const { target, model, lower, dataModule } = props
+  const { target, model, lower, dataModule, sdk } = props
   const ctx$ = props.ctx$
 
   const distName = packageName(model, target.name)
-  // The `py` SDK this package WRAPS — a different target, so it keeps its
-  // own name and does not follow this target's alias.
-  const sdkDist = packageName(model, 'py')
+  // The Python SDK this package WRAPS, under its own installed name.
+  const sdkDist = packageName(model, sdk.name)
   const { repoUrl, issuesUrl } = repoInfo(model)
   const kw = keywords(model).concat(['pandas', 'dataframe', 'notebook', 'colab'])
     .map((k) => `"${k}"`).join(', ')
@@ -156,14 +197,38 @@ include = ["${dataModule}*"]
 // The DataClient module: `data()` plus the wrapper that owns credential
 // discovery and exposes the raw SDK as an escape hatch.
 const DataClient = cmp(function DataClient(props: any) {
-  const { name, ENV, sdkModule, sdkClass, dataModule, needsBase } = props
+  const { name, ENV, sdkModule, sdkClass, dataModule, needsBase, keyed, secret, write, paging } = props
 
   const baseCheck = needsBase
     ? `
-        if not base_url:
-            raise ValueError(auth.missing_base_message("${ENV}"))
+    if not base_url:
+        raise ValueError(auth.missing_base_message("${ENV}"))
 `
     : ''
+
+  // What data() finds for itself, and where it looks.
+  const args = [...(keyed ? ['token'] : []), ...(secret ? ['secret'] : []), 'base_url']
+  const found = [...(keyed ? [ENV + '_APIKEY'] : []), ...(secret ? [ENV + '_SECRET'] : []),
+    ...(needsBase ? [ENV + '_BASE'] : [])]
+  const discovery = 0 === found.length ? '' : `
+    Discovery order (first hit wins):
+      1. the ${args.map((arg) => '\`' + arg + '\`').join(' / ')} arguments
+      2. Colab secrets  — ${found.join(' / ')}
+      3. environment    — ${found.join(' / ')}
+`
+  const params = args.map((arg) => `    ${arg}: str | None = None,\n`).join('')
+  const resolve = keyed ? `    token, base_url, _source = auth.resolve("${ENV}", token, base_url)
+
+    if not token:
+        raise ValueError(auth.missing_token_message("${ENV}"))
+` : `    base_url = auth.resolve("${ENV}", None, base_url)[1]
+`
+  const resolveSecret = secret ? `
+    secret = auth.resolve("${ENV}", secret, None, token_key="${ENV}_SECRET")[0]
+    if not secret:
+        raise ValueError(auth.missing_token_message("${ENV}", "${ENV}_SECRET", "secret"))
+` : ''
+  const credentials = [...(keyed ? ['"apikey": token'] : []), ...(secret ? ['"secret": secret'] : [])]
 
   File({ name: '__init__.py' }, () => Content(`# ${name} Data — notebook-friendly access to the ${name} API.
 #
@@ -198,12 +263,12 @@ class ${name}Data(EntityFrames):
     # ---- escape hatches ---------------------------------------------------
 
     def frame(self, result: Any, **kwargs) -> pd.DataFrame:
-        """Shape ANY op result into a DataFrame.
+        """Shape ANY op result into a DataFrame.${null == write ? '' : `
 
         For endpoints without a generated accessor:
 
-            rows = ad.sdk.SomeEntity().list()
-            df = ad.frame(rows)
+            result = ${write}
+            df = ad.frame(result)`}
         """
         return records_df(result, **kwargs)
 
@@ -227,30 +292,26 @@ class ${name}Data(EntityFrames):
 
 
 def data(
-    token: str | None = None,
-    base_url: str | None = None,
-    **options,
+${params}    **options,
 ) -> ${name}Data:
-    """Build a ${name}Data client, finding credentials automatically.
-
-    Discovery order (first hit wins):
-      1. the \`token\` / \`base_url\` arguments
-      2. Colab secrets  — ${ENV}_APIKEY / ${ENV}_BASE
-      3. environment    — ${ENV}_APIKEY / ${ENV}_BASE
-
+    """Build a ${name}Data client${keyed ? ', finding credentials automatically' : ''}.
+${discovery}
     Extra keyword arguments are passed straight through to the SDK client, so
-    anything the SDK accepts (feature options, headers, timeouts) works here.
+    anything the SDK accepts (feature options, headers, timeouts) works here.${paging ? `
+    The SDK's paging feature is switched on, so accessors fetch every page,
+    unless \`feature\` sets it.` : ''}
     """
-    token, base_url, _source = auth.resolve("${ENV}", token, base_url)
-
-    if not token:
-        raise ValueError(auth.missing_token_message("${ENV}"))
-${baseCheck}
-    opts: dict = {"apikey": token}
+${resolve}${resolveSecret}${baseCheck}
+    opts: dict = {${credentials.join(', ')}}
     if base_url:
         opts["base"] = base_url
     opts.update(options)
-
+${paging ? `    feature = opts.get("feature")
+    if feature is None or isinstance(feature, dict):
+        feature = dict(feature or {})
+        feature.setdefault("paging", {"active": True})
+        opts["feature"] = feature
+` : ''}
     return ${name}Data(${sdkClass}(opts), base_url)
 `))
 })
@@ -259,7 +320,7 @@ ${baseCheck}
 // The generated per-entity surface. One DataFrame accessor per entity with a
 // `list` op; one Series accessor per entity with a keyed `load`.
 const EntityFrames = cmp(function EntityFrames(props: any) {
-  const { frameEnts, seriesEnts, lower } = props
+  const { frameEnts, seriesEnts, lower, paging } = props
 
   const accessorNames = frameEnts.map((e: any) => pluralAccessor(e))
     .concat(seriesEnts.map((e: any) => singularAccessor(e)))
@@ -287,7 +348,7 @@ class EntityFrames:
 `)
 
     for (const ent of frameEnts) {
-      Content(frameAccessor(ent))
+      Content(frameAccessor(ent, paging))
     }
     for (const ent of seriesEnts) {
       Content(seriesAccessor(ent))
@@ -398,7 +459,7 @@ function fieldDoc(fields: any[], indent: string): string {
 }
 
 
-function frameAccessor(ent: any): string {
+function frameAccessor(ent: any, paging: boolean): string {
   const acc = pluralAccessor(ent)
   const entMethod = ent.Name
   const fields = entFields(ent)
@@ -421,7 +482,7 @@ function frameAccessor(ent: any): string {
 
 ${fieldDoc(fields, '        ')}
 
-        Every page is fetched by default. Pass limit= for a slice.
+        ${paging ? 'Every page is fetched by default.' : 'One page is fetched: the SDK has no paging feature.'} Pass limit= for a slice.
         Keyword arguments not named above are passed to the API as filters.
         """
         ent = self.sdk.${entMethod}()
@@ -481,7 +542,11 @@ ${fieldDoc(fields, '        ')}
 // ---------------------------------------------------------------------------
 
 const EntityFramesTest = cmp(function EntityFramesTest(props: any) {
-  const { frameEnts, seriesEnts, sdkClass, sdkModule, dataModule } = props
+  const { frameEnts, seriesEnts, sdkClass, sdkModule, dataModule, keyed, secret, needsBase, paging } = props
+
+  // What data() needs to build a client without looking anywhere.
+  const given = [...(keyed ? ['token="k"'] : []), ...(secret ? ['secret="s"'] : []),
+    ...(needsBase ? ['base_url="https://example.test"'] : []), '**options'].join(', ')
 
   const accessors = frameEnts.map((e: any) => pluralAccessor(e))
   const singles = seriesEnts.map((e: any) => singularAccessor(e))
@@ -564,6 +629,29 @@ class TestFramesAgainstTestMode:
         ad = self._client()
         df = getattr(ad, TEST_ACCESSOR)(limit=1, quiet=True)
         assert len(df) <= 1
+
+
+# data() switches the SDK's paging feature on when the SDK has one, so that an
+# accessor drains every page, and leaves one the caller sets alone.
+PAGING = ${paging ? 'True' : 'False'}
+
+
+class TestPagingOption:
+
+    def _options(self, monkeypatch, **options):
+        import ${dataModule}
+        seen = []
+        monkeypatch.setattr(${dataModule}, "${sdkClass}", lambda opts: seen.append(opts) or object())
+        ${dataModule}.data(${given})
+        return seen[0]
+
+    def test_paging_is_on_exactly_when_the_sdk_has_it(self, monkeypatch):
+        feature = self._options(monkeypatch).get("feature") or {}
+        assert feature.get("paging") == ({"active": True} if PAGING else None)
+
+    def test_a_paging_option_given_is_kept(self, monkeypatch):
+        opts = self._options(monkeypatch, feature={"paging": {"active": False}})
+        assert opts["feature"]["paging"] == {"active": False}
 `))
 })
 
@@ -573,18 +661,20 @@ class TestFramesAgainstTestMode:
 // ---------------------------------------------------------------------------
 
 const Readme = cmp(function Readme(props: any) {
-  const { target, model, name, ENV, dataModule, frameEnts, seriesEnts, needsBase } = props
+  const { target, model, name, ENV, dataModule, frameEnts, seriesEnts, needsBase, keyed, secret, sdk, write, paging } =
+    props
   const ctx$ = props.ctx$
 
   const distName = packageName(model, target.name)
-  const sdkDist = packageName(model, 'py')
+  const sdkDist = packageName(model, sdk.name)
   const pending = 'active' !== registryState(model, target.name)
-  const { repoUrl, releasesUrl } = repoInfo(model)
+  const { releasesUrl } = repoInfo(model)
+  const [sdkPip, ownPip] = gitInstall(model, target, sdk)
 
   const install = pending
     ? `# Not yet on PyPI — install both packages from this repo:
-!pip install "git+${repoUrl}#subdirectory=py" \\
-             "git+${repoUrl}#subdirectory=${target.name}"`
+!pip install ${sdkPip} \\
+             ${ownPip}`
     : `!pip install ${distName}`
 
   const first = frameEnts[0]
@@ -602,6 +692,44 @@ const Readme = cmp(function Readme(props: any) {
     return `| \`${singularAccessor(e)}(${idf})\` | \`${e.name}\` | Series | ${fs.length} |`
   })).join('\n')
 
+  // Where data() finds what the SDK needs: the arguments, then Colab secrets,
+  // then the environment.
+  const keys = [...(keyed ? [ENV + '_APIKEY'] : []), ...(secret ? [ENV + '_SECRET'] : [])]
+  const named = (names: string[]) => names.map((key) => '\`' + key + '\`')
+    .reduce((list: string, key: string, i: number, all: string[]) =>
+      0 === i ? key : list + (i === all.length - 1 ? ' and ' : ', ') + key, '')
+  const args = [...(keyed ? ['token='] : []), ...(secret ? ['secret='] : []), 'base_url=']
+  const credentials = 0 === keys.length ? '' : `## Credentials
+
+\`data()\` looks in three places, in order, and stops at the first hit:
+
+1. the ${args.map((arg) => '\`' + arg + '\`').join(' / ')} arguments
+2. **Colab secrets** — ${named([...keys, ...(needsBase ? [ENV + '_BASE'] : [])])}
+3. **environment variables** — the same names
+
+In Colab, open the key panel in the left sidebar, add ${named(keys)}, and
+switch on notebook access for ${1 < keys.length ? 'them' : 'it'}. Elsewhere:
+
+\`\`\`python
+import os
+${keys.map((key) => `os.environ["${key}"] = "your-api-${key === ENV + '_SECRET' ? 'secret' : 'key'}"`).join('\n')}
+\`\`\`
+`
+  const tenant = !needsBase ? '' : `${0 === keys.length ? `## Base URL
+
+\`data()\` takes the base URL from its \`base_url=\` argument, then the Colab
+secret \`${ENV}_BASE\`, then the environment variable of that name.
+` : ''}
+**${name} is multi-tenant** — there is no single API host, so the base URL for
+your instance is required:
+
+\`\`\`python
+ad = data(base_url="https://your-instance.example.com")
+\`\`\`
+`
+  const found = 0 < keys.length ? ' Credentials are found automatically (see below).' :
+    needsBase ? ' The base URL is found automatically (see below).' : ''
+
   const columnSections = frameEnts.concat(
     seriesEnts.filter((s: any) => !frameEnts.includes(s))
   ).map((e: any) => {
@@ -617,7 +745,7 @@ const Readme = cmp(function Readme(props: any) {
   File({ name: 'README.md' }, () => Content(`# ${name} Data
 
 ${apiName(model)} as **pandas DataFrames**, for data analysts working in
-notebooks. Built on the sibling [Python SDK](../py) in this repo.
+notebooks. Built on ${pySdk(sdk, true)}.
 
 ${ctx$.stdrep ? '' : ''}\`\`\`python
 ${install}
@@ -625,12 +753,12 @@ ${install}
 from ${dataModule} import data
 
 ad = data(${baseArg})${firstAcc ? `
-df = ad.${firstAcc}()          # every page, flattened, typed -> DataFrame
+df = ad.${firstAcc}()          # ${paging ? 'every page' : 'one page'}, flattened, typed -> DataFrame
 df.groupby("${firstCol}").size()` : ''}
 \`\`\`
 
-No client to construct, no pagination loop to write, no \`json_normalize\`
-boilerplate. Credentials are found automatically (see below).
+${paging ? 'No client to construct, no pagination loop to write, no \`json_normalize\`\nboilerplate.' :
+    'No client to construct and no \`json_normalize\` boilerplate.'}${found}
 
 ## Install
 
@@ -639,8 +767,8 @@ ${pending
 from the repo — in a notebook, prefix with \`!\`:
 
 \`\`\`sh
-pip install "git+${repoUrl}#subdirectory=py" \\
-            "git+${repoUrl}#subdirectory=${target.name}"
+pip install ${sdkPip} \\
+            ${ownPip}
 \`\`\`
 
 Released versions are tagged at ${releasesUrl}.`
@@ -650,30 +778,7 @@ pip install ${distName}
 
 It depends on \`${sdkDist}\` and \`pandas\`, both installed automatically.`}
 
-## Credentials
-
-\`data()\` looks in three places, in order, and stops at the first hit:
-
-1. the \`token=\` / \`base_url=\` arguments
-2. **Colab secrets** — \`${ENV}_APIKEY\`${needsBase ? ` and \`${ENV}_BASE\`` : ''}
-3. **environment variables** — the same names
-
-In Colab, open the key panel in the left sidebar, add \`${ENV}_APIKEY\`, and
-switch on notebook access for it. Elsewhere:
-
-\`\`\`python
-import os
-os.environ["${ENV}_APIKEY"] = "your-api-key"
-\`\`\`
-${needsBase ? `
-**${name} is multi-tenant** — there is no single API host, so the base URL for
-your instance is required:
-
-\`\`\`python
-ad = data(base_url="https://your-instance.example.com")
-\`\`\`
-` : ''}
-## Accessors
+${credentials}${tenant}${'' === credentials + tenant ? '' : '\n'}## Accessors
 
 | Call | Entity | Returns | Columns |
 |---|---|---|---|
@@ -697,11 +802,13 @@ ${columnSections || '_No entities with declared fields._'}
 
 ## How it works
 
-- **Every page, eagerly.** Analysts want the whole table, not an iterator. The
+${paging ? `- **Every page, eagerly.** Analysts want the whole table, not an iterator. The
   SDK's paging feature already normalises \`Link: rel="next"\`, \`X-Next-Page\`
-  and body-level \`cursor\`/\`hasMore\` signals; this package just drives them to
-  exhaustion. \`limit=\` stops early; \`max_pages\` is a backstop against a
-  server that never stops offering more.
+  and body-level \`cursor\`/\`hasMore\` signals; \`data()\` switches it on unless
+  its \`feature\` option sets it, and this package drives them to exhaustion.
+  \`limit=\` stops early; \`max_pages\` is a backstop against a server that
+  never stops offering more.` : `- **One page.** Each accessor fetches one page: the SDK has no paging feature.
+  \`limit=\` takes a slice of it.`}
 - **Nullable dtypes.** Columns use pandas' nullable types (\`Int64\`, not
   \`int64\`). Optional fields are omitted freely by APIs, and NumPy's \`int64\`
   cannot hold a null — it would silently upcast to \`float64\` partway through a
@@ -717,17 +824,20 @@ ${columnSections || '_No entities with declared fields._'}
 
 ## What this package does not do
 
-- **Writes.** Create, update and delete are not exposed. Use \`ad.sdk\` for
+${null == write ? `- **Writes.** The API has no create, update or remove operations.
+- **Endpoints without a list or load op.** Use \`ad.sdk\` and shape the result
+  with \`ad.frame(result)\`.
+` : `- **Writes.** Create, update and delete are not exposed. Use \`ad.sdk\` for
   those — a generated bulk-write path against a live API is a liability, not a
   convenience.
 - **Endpoints without a list or load op.** Use \`ad.sdk\` and shape the result
   with \`ad.frame(result)\`.
 
 \`\`\`python
-result = ad.sdk.SomeEntity().create({"name": "x"})   # full SDK, unchanged
-df = ad.frame(result)                                # shape anything
+${[[`result = ${write}`, 'full SDK, unchanged'], ['df = ad.frame(result)', 'shape anything']]
+    .map(([line, note], _i, all) => line.padEnd(Math.max(...all.map(([l]) => l.length)) + 3) + '# ' + note).join('\n')}
 \`\`\`
-
+`}
 ## Generated code
 
 This package is generated from the API model by
@@ -741,7 +851,12 @@ affiliated with or endorsed by the upstream API provider.
 
 
 const AgentGuide = cmp(function AgentGuide(props: any) {
-  const { name, ENV, dataModule, frameEnts, seriesEnts, needsBase } = props
+  const { name, ENV, dataModule, frameEnts, seriesEnts, needsBase, keyed, secret, sdk, write, paging } = props
+
+  const credentials = keyed ? `Credentials resolve from, in order: the \`token=\` argument, the Colab secret
+\`${ENV}_APIKEY\`, then the environment variable \`${ENV}_APIKEY\`.${secret ? `
+The secret resolves the same way, from \`secret=\` and \`${ENV}_SECRET\`.` : ''}` : ''
+  const tenant = needsBase ? `This API is multi-tenant: \`base_url\` (or \`${ENV}_BASE\`) is REQUIRED.` : ''
 
   const accessorLines = frameEnts.map((e: any) => {
     const fs = entFields(e)
@@ -756,8 +871,8 @@ const AgentGuide = cmp(function AgentGuide(props: any) {
   const guide = `# ${name} Data — agent guide
 
 Notebook-oriented pandas access to the ${name} API. If you are writing an
-analysis cell, use THIS package; if you are writing an application, use the
-sibling SDK at \`../py\` instead.
+analysis cell, use THIS package; if you are writing an application, use
+${pySdk(sdk, false)} instead.
 
 ## Getting a client
 
@@ -766,11 +881,10 @@ from ${dataModule} import data
 ad = data(${needsBase ? 'base_url="https://<instance>.example.com"' : ''})
 \`\`\`
 
-Credentials resolve from, in order: the \`token=\` argument, the Colab secret
-\`${ENV}_APIKEY\`, then the environment variable \`${ENV}_APIKEY\`.${needsBase ? `
-This API is multi-tenant: \`base_url\` (or \`${ENV}_BASE\`) is REQUIRED.` : ''}
+${[credentials, tenant].filter((text) => '' !== text).join('\n')}${'' === credentials + tenant ?
+    'Do not construct the SDK client directly — \`data()\` already does.' : `
 Do not construct the SDK client directly and do not read env vars yourself —
-\`data()\` already does both.
+\`data()\` already does both.`}
 
 ## Accessors
 
@@ -778,8 +892,10 @@ ${accessorLines || '_This API exposes no list or load operations._'}
 
 ## Semantics you must not get wrong
 
-- Accessors fetch **every page** by default. For a preview, pass \`limit=N\` —
-  do not write a pagination loop, and do not call the accessor repeatedly.
+${paging ? `- Accessors fetch **every page** by default. For a preview, pass \`limit=N\` —
+  do not write a pagination loop, and do not call the accessor repeatedly.` :
+    `- Accessors fetch **one page**: the SDK has no paging feature. For a preview,
+  pass \`limit=N\`.`}
 - Filters go in as **keyword arguments**: \`ad.things(status="open")\`. There is
   no \`match=\` parameter.
 - Columns use **nullable pandas dtypes** (\`Int64\`, \`boolean\`, \`string\`).
@@ -792,14 +908,16 @@ ${accessorLines || '_This API exposes no list or load operations._'}
 
 ## When there is no accessor
 
-Writes and non-entity endpoints are deliberately absent. Use the wrapped
+${null == write ? `Non-entity endpoints are deliberately absent, and the API has no writes. Use
+the wrapped client, \`ad.sdk\`, and shape what it returns with \`ad.frame(result)\`.
+` : `Writes and non-entity endpoints are deliberately absent. Use the wrapped
 client and shape the result:
 
 \`\`\`python
-result = ad.sdk.SomeEntity().create({"name": "x"})
+result = ${write}
 df = ad.frame(result)
 \`\`\`
-
+`}
 ## Generated
 
 Generated by @voxgig/sdkgen from the API model. Do not edit files here — they
@@ -815,15 +933,15 @@ are overwritten. Change the model and regenerate.
 // A runnable Colab notebook. .ipynb is just JSON; keeping outputs empty means
 // the file is diffable and CI can execute it as a smoke test.
 const Quickstart = cmp(function Quickstart(props: any) {
-  const { target, model, name, ENV, dataModule, frameEnts, needsBase } = props
+  const { target, model, name, ENV, dataModule, frameEnts, needsBase, keyed, secret, sdk, write, paging } = props
 
-  const { repoUrl } = repoInfo(model)
   const pending = 'active' !== registryState(model, target.name)
   const distName = packageName(model, target.name)
+  const [sdkPip, ownPip] = gitInstall(model, target, sdk)
 
   const installCode = pending
-    ? [`!pip install -q "git+${repoUrl}#subdirectory=py" \\`,
-    `                "git+${repoUrl}#subdirectory=${target.name}"`]
+    ? [`!pip install -q ${sdkPip} \\`,
+    `                ${ownPip}`]
     : [`!pip install -q ${distName}`]
 
   const first = frameEnts[0]
@@ -832,6 +950,7 @@ const Quickstart = cmp(function Quickstart(props: any) {
   const firstCol = first ? exampleGroupField(fields) : 'id'
 
   const cells: any[] = []
+  let step = 0
 
   cells.push(md([
     `# ${name} Data — quickstart`,
@@ -841,25 +960,36 @@ const Quickstart = cmp(function Quickstart(props: any) {
     `Generated by [@voxgig/sdkgen](https://github.com/voxgig/sdkgen). MIT.`,
   ]))
 
-  cells.push(md(['## 1. Install']))
+  cells.push(md([`## ${++step}. Install`]))
   cells.push(code(installCode))
 
-  cells.push(md([
-    '## 2. Credentials',
-    '',
-    `In Colab, add a secret named \`${ENV}_APIKEY\` in the key panel (left`,
-    'sidebar) and enable notebook access for it. Outside Colab, set the same',
-    'name as an environment variable — the cell below covers both.',
-  ]))
-  cells.push(code([
-    `import os`,
-    ``,
-    `# Colab: prefer the secrets panel. This is the non-Colab fallback.`,
-    `if not os.environ.get("${ENV}_APIKEY"):`,
-    `    os.environ["${ENV}_APIKEY"] = "your-api-key"  # <- replace`,
-  ]))
+  if (keyed) {
+    const keys = [ENV + '_APIKEY', ...(secret ? [ENV + '_SECRET'] : [])]
+    cells.push(md([
+      `## ${++step}. Credentials`,
+      '',
+      ...(secret ? [
+        `In Colab, add secrets named \`${keys[0]}\` and \`${keys[1]}\` in the key panel`,
+        '(left sidebar) and enable notebook access for them. Outside Colab, set the',
+        'same names as environment variables — the cell below covers both.',
+      ] : [
+        `In Colab, add a secret named \`${keys[0]}\` in the key panel (left`,
+        'sidebar) and enable notebook access for it. Outside Colab, set the same',
+        'name as an environment variable — the cell below covers both.',
+      ]),
+    ]))
+    cells.push(code([
+      `import os`,
+      ``,
+      `# Colab: prefer the secrets panel. This is the non-Colab fallback.`,
+      ...keys.flatMap((key) => [
+        `if not os.environ.get("${key}"):`,
+        `    os.environ["${key}"] = "your-api-${key === keys[1] ? 'secret' : 'key'}"  # <- replace`,
+      ]),
+    ]))
+  }
 
-  cells.push(md(['## 3. Connect']))
+  cells.push(md([`## ${++step}. Connect`]))
   cells.push(code([
     `from ${dataModule} import data`,
     ``,
@@ -871,33 +1001,38 @@ const Quickstart = cmp(function Quickstart(props: any) {
 
   if (firstAcc) {
     cells.push(md([
-      `## 4. Load a table`,
+      `## ${++step}. Load a table`,
       '',
-      'Every page is fetched. `limit=` takes a slice while you explore.',
+      (paging ? 'Every page is fetched.' : 'One page is fetched: the SDK has no paging feature.') +
+        ' `limit=` takes a slice while you explore.',
     ]))
     cells.push(code([
       `df = ad.${firstAcc}(limit=100)`,
       `df.head()`,
     ]))
 
-    cells.push(md(['## 5. Inspect the schema']))
+    cells.push(md([`## ${++step}. Inspect the schema`]))
     cells.push(code([`df.dtypes`]))
 
-    cells.push(md(['## 6. Analyse']))
+    cells.push(md([`## ${++step}. Analyse`]))
     cells.push(code([
       `df.groupby("${firstCol}").size().sort_values(ascending=False).head(10)`,
     ]))
   }
 
   cells.push(md([
-    `## ${firstAcc ? '7' : '4'}. Anything else`,
+    `## ${++step}. Anything else`,
     '',
-    'Writes and non-entity endpoints are not wrapped. Use the SDK directly',
-    'and shape the result:',
+    ...(null == write ? [
+      'Non-entity endpoints are not wrapped. Use the SDK directly and shape the',
+      'result; these are the entities that are:',
+    ] : [
+      'Writes and non-entity endpoints are not wrapped. Use the SDK directly',
+      'and shape the result:',
+    ]),
   ]))
   cells.push(code([
-    `# rows = ad.sdk.SomeEntity().list()`,
-    `# ad.frame(rows)`,
+    ...(null == write ? [] : [`# result = ${write}`, `# ad.frame(result)`]),
     `ad.entities()`,
   ]))
 

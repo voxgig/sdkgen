@@ -6,6 +6,8 @@ import json
 
 from projectname_sdk.utility.voxgig_struct import voxgig_struct as vs
 
+_ENV_LOCAL = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "SDKREL", ".env.local")
+
 
 class ProjectNameTestRunner:
     _env = {}
@@ -13,7 +15,7 @@ class ProjectNameTestRunner:
     @staticmethod
     def load_env_local():
         try:
-            with open("../../.env.local", "r", encoding="utf-8") as f:
+            with open(_ENV_LOCAL, "r", encoding="utf-8") as f:
                 content = f.read()
         except (FileNotFoundError, IOError):
             return
@@ -142,9 +144,9 @@ class ProjectNameTestRunner:
     def entity_data(v):
         """Extract the data map from an op result.
 
-        Every entity operation resolves to the ENTITY (see AGENTS.md), so a
-        flow test that wants the record takes this hop. A plain dict passes
-        through unchanged.
+        Every entity operation resolves to the ENTITY, so a flow test that
+        wants the record takes this hop. A plain dict passes through
+        unchanged.
         """
         if hasattr(v, "data_get") and callable(v.data_get):
             return v.data_get()

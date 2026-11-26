@@ -1,5 +1,7 @@
 
-import { cmp, Content, isPublished, repoInfo } from '@voxgig/sdkgen'
+import * as Path from 'node:path'
+
+import { cmp, Content, isPublished, repoInfo, readerDir, packageName, registryNote, fact } from '@voxgig/sdkgen'
 
 
 const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
@@ -13,33 +15,33 @@ const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
 
 \`\`\`clojure
 ;; deps.edn
-{:deps {org.clojars.${origin}/${repo} {:mvn/version "X.Y.Z"}}}
+{:deps {${packageName(model, target.name)} {:mvn/version "X.Y.Z"}}}
 \`\`\`
 
 `)
     return
   }
 
-  // Publish pending: not yet on Clojars. Depend on the library directly from
-  // the release tag, or from a local checkout via :local/root.
-  Content(`This package is not yet published to Clojars. Depend on it directly from the
-${hostName} release tag (\`${target.name}/vX.Y.Z\`, see [Tags](${tagsUrl})),
+  // Not on Clojars: depend on the library directly from the release tag, or
+  // from a local checkout via :local/root.
+  const tag = fact(target, 'tag')
+  Content(`${registryNote(model, target.name)}${'' === tag ? ' Depend on it from' : ` Depend on it directly from the
+${hostName} release tag (\`${tag}X.Y.Z\`, see [Tags](${tagsUrl})),
 using a \`tools.deps\` git dependency:
 
 \`\`\`clojure
 ;; deps.edn
 {:deps {${model.const.Name.toLowerCase()}/sdk
         {:git/url "${repoUrl}"
-         :git/tag "${target.name}/vX.Y.Z"
-         :git/sha "..."
-         :deps/root "${target.name}"}}}
+         :git/tag "${tag}X.Y.Z"
+         :git/sha "..."${'.' === readerDir(target) ? '' : '\n         :deps/root "' + readerDir(target) + '"'}}}}
 \`\`\`
 
-Or from a local source checkout:
+Or from`} a local source checkout:
 
 \`\`\`clojure
 ;; deps.edn
-{:deps {${model.const.Name.toLowerCase()}/sdk {:local/root "../${target.name}"}}}
+{:deps {${model.const.Name.toLowerCase()}/sdk {:local/root "${Path.posix.join('..', repo, readerDir(target))}"}}}
 \`\`\`
 
 `)

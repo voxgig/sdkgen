@@ -88,10 +88,12 @@ function applyFacts(model: any): any {
   kit.fact.env.entid = Object.fromEntries(Object.keys(entity).map((name) =>
     [name, out.entity[name].fact.entid]))
   kit.fact.ops = entityOps(kit.entity)
+  kit.fact.sharedOps = sharedOps(kit.entity, kit.fact.ops)
   kit.fact.package = projectPackages(model)
   kit.fact.option = optionRows(kit.optspec)
   releaseTags(model)
   texts.forEach((t, i) => place(t.at, t.path, out.escape['t' + i]))
+  kit.fact.field = mapOr(kit.fact.field)
   titleFacts(kit.target)
   kit.fact.external = externalTargets(model)
   place(kit, ['definitionKind'], definitionKind(model))
@@ -101,7 +103,8 @@ function applyFacts(model: any): any {
 
 // The active targets placed in another repository, read here because the model
 // the project's Root receives, which its documents read, leaves them out.
-function externalTargets(model: any): { name: string, title: string, surface: string, url: string }[] {
+function externalTargets(model: any):
+  { name: string, title: string, surface: string, dir: string, url: string }[] {
   const target = mapOr(model.main[KIT].target)
   return model.main[KIT].fact.active
     .filter((name: string) => 'external' === target[name].fact?.place)
@@ -109,6 +112,7 @@ function externalTargets(model: any): { name: string, title: string, surface: st
       name,
       title: target[name].fact.title,
       surface: target[name].fact.surface,
+      dir: target[name].fact.dir,
       url: '' === String(target[name].output?.repo ?? '') ? '' : repoInfo(model, name).repoUrl,
     }))
 }
@@ -170,6 +174,13 @@ function entityOps(entity: any): Record<string, string[]> {
     .filter(([, ent]) => isMap(ent))
     .map(([name, ent]: [string, any]) => [name, CANON_OP_ORDER.filter((op: string) =>
       isMap(ent.op?.[op]) && false !== ent.op[op].active)]))
+}
+
+
+// Every active entity has the same operations: one interface describes all.
+function sharedOps(entity: any, ops: Record<string, string[]>): boolean {
+  const active = Object.keys(ops).filter((name: string) => false !== entity[name].active)
+  return 0 < active.length && active.every((name: string) => ops[name].join() === ops[active[0]].join())
 }
 
 
@@ -263,7 +274,9 @@ function linkConsumers(target: any, derived: any): void {
 
   const names = Object.keys(target).sort().filter((name: string) => isMap(target[name]?.fact))
   for (const name of names) {
-    target[name].fact.consumes = consumed(target, name, derived[name]?.derive?.wraps)
+    const wraps = derived[name]?.derive?.wraps
+    target[name].fact.wraps = 'string' === typeof wraps ? wraps : ''
+    target[name].fact.consumes = consumed(target, name, wraps)
   }
   for (const name of names) {
     target[name].fact.consumers = names.filter((other: string) =>

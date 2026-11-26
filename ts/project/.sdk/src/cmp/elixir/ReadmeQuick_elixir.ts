@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, opRequestShape, entityIdField, entityDataIdField, entityOps, elixirAccessor, entityCollection, exampleVarName, matchExampleItems, requiredItems, requestExampleItems, sendsId } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, opRequestShape, entityIdField, entityDataIdField, entityOps, elixirAccessor, entityCollection, exampleVarName, matchExampleItems, requiredItems, requestExampleItems, sendsId, fact, seriesList } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -12,6 +12,7 @@ import { elixirLit, elixirListArgs, elixirString } from './utility_elixir'
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   const { ctx$: { model } } = props
+  let step = 0
 
   const Name = model.const.Name
   const entity = getModelPath(model, `main.${KIT}.entity`)
@@ -29,11 +30,20 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   ) as any
 
   const authActive = isAuthActive(model)
-  const ctor = authActive
-    ? `${Name}.new(H.deep(%{"apikey" => System.get_env("${envName(model)}_APIKEY")}))`
-    : `${Name}.new()`
+  // The constructor refuses a templated URL it has no value for, so the quick
+  // start passes each variable the URL uses with no default.
+  const svars = fact(model.main[KIT], 'server').filter((v: any) => v.required)
+  const ctorFields = [
+    ...(authActive ? [`"apikey" => System.get_env("${envName(model)}_APIKEY")`] : []),
+    ...(fact(model.main[KIT], 'auth').secret ? [`"secret" => System.get_env("${envName(model)}_SECRET")`] : []),
+    ...(0 === svars.length ? [] : [`"server" => %{` +
+      svars.map((v: any) => `"${v.name}" => "<${v.name}>"`).join(', ') + `}`]),
+  ]
+  const ctor = 0 === ctorFields.length
+    ? `${Name}.new()`
+    : `${Name}.new(H.deep(%{${ctorFields.join(', ')}}))`
 
-  Content(`### 1. Create a client
+  Content(`### ${++step}. Create a client
 
 \`\`\`elixir
 alias ${Name}.Helpers, as: H
@@ -53,7 +63,7 @@ sdk = ${ctor}
     const dataIdF = entityDataIdField(exampleEntity)
 
     if (opnames.includes('list')) {
-      Content(`### 2. List ${eName.toLowerCase()} records
+      Content(`### ${++step}. List ${eName.toLowerCase()} records
 
 \`list/2\` returns a \`Voxgig.Struct\` list of entities, one per record, and
 raises on error; \`Voxgig.Struct.getelem/2\` reads an item, and \`data_get/1\`
@@ -91,7 +101,7 @@ end
         `${elixirString(it.name)} => ${elixirLit(it.type,
           it.name === neIdF ? 'example_id' : 'example_' + it.name)}`)
 
-      Content(`### 3. Load ${neArticle} ${neName.toLowerCase()}
+      Content(`### ${++step}. Load ${neArticle} ${neName.toLowerCase()}
 
 ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
 \`load/2\` returns the entity and raises on error; \`data_get/1\` reads its
@@ -119,7 +129,7 @@ end
             it.name === idF ? 'example_id' : 'example_' + it.name)}`).join(', ')}})`
         : 'H.deep(%{})'
 
-      Content(`### 3. Load ${article} ${eName.toLowerCase()}
+      Content(`### ${++step}. Load ${article} ${eName.toLowerCase()}
 
 \`load/2\` returns the entity and raises on error; \`data_get/1\` reads its
 record.
@@ -161,7 +171,8 @@ end
 
     if (opnames.includes('create') || opnames.includes('update') || opnames.includes('patch') ||
       opnames.includes('remove')) {
-      Content(`### 4. Create, update, and remove
+      Content(`### ${++step}. ${seriesList(['create', 'update', 'patch', 'remove']
+        .filter((o: string) => opnames.includes(o))).replace(/^./, (c: string) => c.toUpperCase())}
 
 \`\`\`elixir
 ${eVar} = ${Name}.${eCall}(sdk)

@@ -1,9 +1,16 @@
 
-import { cmp, File, Content } from '@voxgig/sdkgen'
+import { cmp, File, Content, fact } from '@voxgig/sdkgen'
 
 
 const ReadmeExamplesTest = cmp(function ReadmeExamplesTest(props: any) {
-  const { ctx$: { model } } = props
+  const { target, ctx$: { model } } = props
+  // The root README where the run writes one beside this target, and the
+  // target's own documents where it writes them.
+  const link = fact(target, 'link').readme
+  const own = fact(target, 'phase').readme
+  if ('' === link && !own) {
+    return
+  }
 
   const Name = model.const.Name
 
@@ -45,12 +52,12 @@ final class ReadmeExamplesTest: XCTestCase {
       .deletingLastPathComponent()   // the test target dir
       .deletingLastPathComponent()   // Tests
       .deletingLastPathComponent()   // swift (module dir)
-    let project = here.deletingLastPathComponent()  // project (holds root README)
-    return [
-      Doc(label: "root README", path: project.appendingPathComponent("README.md").path),
-      Doc(label: "swift README.md", path: here.appendingPathComponent("README.md").path),
+${'' === link ? '' : `    let project = here.deletingLastPathComponent()  // project (holds root README)
+`}    return [
+${'' === link ? '' : `      Doc(label: "root README", path: project.appendingPathComponent("README.md").path),
+`}${own ? `      Doc(label: "swift README.md", path: here.appendingPathComponent("README.md").path),
       Doc(label: "swift REFERENCE.md", path: here.appendingPathComponent("REFERENCE.md").path),
-    ]
+` : ''}    ]
   }
 
   // Extract every swift fenced block. Split on the triple-backtick fence:

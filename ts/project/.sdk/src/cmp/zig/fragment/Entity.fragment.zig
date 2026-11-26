@@ -20,7 +20,6 @@ const Entity = types.Entity;
 
 // Every operation resolves to the ENTITY, not the raw data — `list` to a
 // slice of them, one per record; the record is reached through `data()`.
-// See AGENTS.md "Entity operations return ENTITIES".
 //
 // `Value` cannot carry an entity (it is a closed data union) and the shared
 // `OpResult` cannot name a per-entity type, so each entity declares its own
@@ -43,7 +42,7 @@ pub const EntyClass = struct {
     data: Value,
     mtch: Value,
     entctx: ?*Context = null,
-    // Set once a successful `remove` resolves on this instance.
+    // Set when a remove marks this instance deleted.
     deleted: bool = false,
 
     pub fn new(client: *sdk.ProjectNameSDK, entopts_in: Value) *EntyClass {
@@ -94,7 +93,7 @@ pub const EntyClass = struct {
     }
 
     // Runs the pipeline and hands back THIS entity: run_op has just absorbed
-    // the result into it. See AGENTS.md "Entity operations return ENTITIES".
+    // the result into it.
     fn run_op_ent(self: *EntyClass, ctx: *Context, post_done: *const fn (*EntyClass, *Context) void) EntResult {
         return switch (self.run_op(ctx, post_done)) {
             .err => |e| EntResult{ .err = e },
@@ -102,9 +101,9 @@ pub const EntyClass = struct {
         };
     }
 
-    // `remove` resolves to the entity, marked. The instance KEEPS the data it
-    // held — a caller can still read what was deleted — but it is no longer a
-    // live record.
+    // A remove resolves to the entity, marked deleted. The instance KEEPS the
+    // data it held — a caller can still read what was deleted — but it is no
+    // longer a live record.
     pub fn mark_deleted(self: *EntyClass) void {
         self.deleted = true;
     }
@@ -167,14 +166,14 @@ pub const EntyClass = struct {
 
     /// Streaming operation. Runs `action` through the full pipeline and
     /// returns the result items, so the `streaming` feature's incremental
-    /// output is reachable from a generated entity (a normal op call
-    /// materialises the whole result). This runtime is synchronous and zig
-    /// has no built-in lazy iterators, so the items are a materialised slice
-    /// the caller walks; a failed operation is `.err`, as an operation's is.
-    /// `callopts` parameterises the call: inbound yields the streaming
-    /// feature's items when active, else the materialised items; outbound
-    /// attaches an iterable `body` to the request (reqdata `body$`); `ctrl`
-    /// threads pipeline control.
+    /// output, when that feature is active, is reachable from a generated
+    /// entity (a normal op call materialises the whole result). This runtime
+    /// is synchronous and zig has no built-in lazy iterators, so the items
+    /// are a materialised slice the caller walks; a failed operation is
+    /// `.err`, as an operation's is. `callopts` parameterises the call:
+    /// inbound yields the streaming feature's items when active, else the
+    /// materialised items; outbound attaches an iterable `body` to the
+    /// request (reqdata `body$`); `ctrl` threads pipeline control.
     pub fn stream(self: *EntyClass, action: []const u8, args: Value, callopts: Value) StreamResult {
         const utility = self.utility;
 
@@ -217,9 +216,9 @@ pub const EntyClass = struct {
             ctx.reqdata = reqdata;
         }
 
-        // Run the same pipeline as run_op, firing the feature hooks (the
-        // streaming feature attaches result.stream on PreResult). A failed
-        // step leaves through make_error, as an operation's does.
+        // Run the same pipeline as run_op, firing the feature hooks (an
+        // active streaming feature attaches result.stream on PreResult). A
+        // failed step leaves through make_error, as an operation's does.
         utility.feature_hook(ctx, "PrePoint");
         const point = utility.make_point(ctx) catch return streamItems(self.opError(ctx));
         ctx.out_set("point", OutVal{ .val = point });

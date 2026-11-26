@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, phpEntityAccessor, listMatchArg, matchExampleItems, requiredItems, litString, requestExampleItems, sendsId } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, phpEntityAccessor, listMatchArg, matchExampleItems, requiredItems, litString, requestExampleItems, sendsId, fact, seriesList } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -10,6 +10,7 @@ import {
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   const { target, ctx$: { model } } = props
+  let step = 0
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
 
@@ -23,11 +24,20 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
       !it.optional && it.name !== entityIdField(e))
   ) as any
 
-  const ctor = isAuthActive(model)
-    ? `new ${model.const.Name}SDK([\n    "apikey" => getenv("${envName(model)}_APIKEY"),\n])`
-    : `new ${model.const.Name}SDK()`
+  // The constructor refuses a templated URL it has no value for, so the quick
+  // start passes each variable the URL uses with no default.
+  const svars = fact(model.main[KIT], 'server').filter((v: any) => v.required)
+  const ctorFields = [
+    ...(isAuthActive(model) ? [`"apikey" => getenv("${envName(model)}_APIKEY"),`] : []),
+    ...(fact(model.main[KIT], 'auth').secret ? [`"secret" => getenv("${envName(model)}_SECRET"),`] : []),
+    ...(0 === svars.length ? [] : [`"server" => [` +
+      svars.map((v: any) => `\n        "${v.name}" => "<${v.name}>",`).join('') + `\n    ],`]),
+  ]
+  const ctor = 0 === ctorFields.length
+    ? `new ${model.const.Name}SDK()`
+    : `new ${model.const.Name}SDK([${ctorFields.map((f: string) => '\n    ' + f).join('')}\n])`
 
-  Content(`### 1. Create a client
+  Content(`### ${++step}. Create a client
 
 \`\`\`php
 <?php
@@ -75,7 +85,7 @@ $client = ${ctor};
     const itemPrint = [idCol, dispCol].filter(Boolean).join(' . " " . ') || 'json_encode($item)'
 
     if (opnames.includes('list')) {
-      Content(`### 2. List ${eName.toLowerCase()} records
+      Content(`### ${++step}. List ${eName.toLowerCase()} records
 
 \`\`\`php
 try {
@@ -112,7 +122,7 @@ try {
         `${litString('php', it.name)} => ${phpLit(it.type,
           it.name === neIdF ? 'example_id' : 'example_' + it.name)}`)
 
-      Content(`### 3. Load ${neArticle} ${neName.toLowerCase()}
+      Content(`### ${++step}. Load ${neArticle} ${neName.toLowerCase()}
 
 ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
 
@@ -138,7 +148,7 @@ try {
             it.name === idF ? 'example_id' : 'example_' + it.name)}`).join(', ')}]`
         : ''
 
-      Content(`### 3. Load ${article} ${eName.toLowerCase()}
+      Content(`### ${++step}. Load ${article} ${eName.toLowerCase()}
 
 \`\`\`php
 try {
@@ -175,7 +185,8 @@ try {
 
     if (opnames.includes('create') || opnames.includes('update') || opnames.includes('patch') ||
       opnames.includes('remove')) {
-      Content(`### 4. Create, update, and remove
+      Content(`### ${++step}. ${seriesList(['create', 'update', 'patch', 'remove']
+        .filter((o: string) => opnames.includes(o))).replace(/^./, (c: string) => c.toUpperCase())}
 
 \`\`\`php
 `)

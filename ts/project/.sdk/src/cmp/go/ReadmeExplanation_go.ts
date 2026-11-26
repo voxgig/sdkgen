@@ -12,7 +12,9 @@ const ReadmeExplanation = cmp(function ReadmeExplanation(props: any) {
 
 The Go SDK uses \`map[string]any\` throughout rather than typed structs.
 This mirrors the dynamic nature of the API and keeps the SDK
-flexible \u2014 no code generation is needed when the API schema changes.
+flexible: code that works with the maps needs no regeneration when the
+API schema changes. The typed models in \`entity/types.go\` follow the
+schema only when the SDK is regenerated.
 
 An operation returns the entity, and its \`Data()\` returns the record. Use
 \`core.ToMapAny()\` to safely cast that record, or data nested in it, to
@@ -25,7 +27,7 @@ ${gomodule}/
 \u251c\u2500\u2500 ${model.name}.go        # Root package \u2014 type aliases and constructors
 \u251c\u2500\u2500 core/               # SDK core \u2014 client, types, pipeline
 \u251c\u2500\u2500 entity/             # Entity implementations
-\u251c\u2500\u2500 feature/            # Built-in features (Base, Test, Log)
+\u251c\u2500\u2500 feature/            # Feature implementations
 \u251c\u2500\u2500 utility/            # Utility functions and struct library
 \u2514\u2500\u2500 test/               # Test suites
 \`\`\`

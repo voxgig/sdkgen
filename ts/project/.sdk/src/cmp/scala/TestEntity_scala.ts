@@ -66,10 +66,9 @@ const TestEntity = cmp(function TestEntity(props: any) {
     idmapObj[n] = String(n).toUpperCase()
   }
   const allSteps = Object.values(flowSteps(basicflow)) as any[]
-  const updateStep = allSteps.find((s: any) => s.o === 'update')
-  const updateData = updateStep?.d
-    ? Object.entries(updateStep.d).filter(([k]: any) => k !== 'id' && !k.endsWith('$'))
-    : []
+  const updateData = Object.entries(Object.assign({}, ...allSteps
+    .filter((s: any) => 'update' === s.o || 'patch' === s.o).map((s: any) => s.d || {})))
+    .filter(([k]: any) => k !== 'id' && !k.endsWith('$'))
   for (const [k, v] of updateData as any[]) {
     if (null == idmapObj[k] && null != idmapObj[v as string]) {
       idmapObj[k] = idmapObj[v as string]
@@ -104,7 +103,7 @@ ${failureTests(SDK, entity, accessor)}
 ${failureScopes(SDK, entity, accessor)}
     rep.scope("${ENTLOWER}.basic") {
       val entityData = Helpers.toMapAny(SdkTestSupport.readJson(
-          "../.sdk/test/entity/${ENTLOWER}/${EntityName}TestData.json"))
+          "${ctx$.stdrep.SDKREL}/.sdk/test/entity/${ENTLOWER}/${EntityName}TestData.json"))
 ${fixtureIdentity(entity)}      val options = new LinkedHashMap[String, Object]()
       options.put("entity", entityData.get("existing"))
       val client = ${SDK}.testSDK(options, null)
@@ -127,7 +126,7 @@ ${fixtureIdentity(entity)}      val options = new LinkedHashMap[String, Object](
     // DATA id field — an entity that carries no id has no `.get("id")` to read.
     const flowHasCreate = allSteps.some((s: any) => s.o === 'create')
     const needsPreambleData = !flowHasCreate && (null != entityDataIdField(entity) ?
-      allSteps.some((s: any) => ['load', 'update', 'remove'].includes(s.o)) :
+      allSteps.some((s: any) => ['load', 'update', 'patch', 'remove'].includes(s.o)) :
       allSteps.some((s: any) => flowLoadReadsRecord(entity, s)))
     if (needsPreambleData) {
       const preambleData = scalaVarName(entity.name + '_ref01_data')
@@ -162,7 +161,7 @@ const generateCreate: OpGen = (ctx, step, index) => {
 
   const priorSteps = Object.values(flowSteps(flow)).slice(0, Number(index)) as any[]
   const needsEnt = !priorSteps.some((s: any) =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
 
   Content(`      // CREATE
 `)
@@ -200,7 +199,7 @@ const generateList: OpGen = (ctx, step, index) => {
 
   const priorSteps = Object.values(flowSteps(flow)).slice(0, Number(index)) as any[]
   const needsEnt = !priorSteps.some((s: any) =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
 
   Content(`      // LIST
 `)
@@ -268,11 +267,11 @@ const generateUpdate: OpGen = (ctx, step, index) => {
 
   const priorSteps = Object.values(flowSteps(flow)).slice(0, Number(index)) as any[]
   const needsEnt = !priorSteps.some((s: any) =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
 
   const hasDataId = null != entityDataIdField(entity)
 
-  Content(`      // UPDATE
+  Content(`      // ${step.o.toUpperCase()}
 `)
   if (needsEnt) {
     Content(`      val ${entvar} = client.${accessor}(null)
@@ -308,16 +307,16 @@ const generateUpdate: OpGen = (ctx, step, index) => {
     }
   }
 
-  Content(`      val ${resdatavar}Result = ${entvar}.update(${datavar}Up, null)
+  Content(`      val ${resdatavar}Result = ${entvar}.${step.o}(${datavar}Up, null)
       val ${resdatavar} = Helpers.toMapAny(${resdatavar}Result match { case e: SdkEntity => e.data(); case o => o })
-      rep.check("${ENTLOWER}.update.map", ${resdatavar} != null, "expected update result to be a map")
+      rep.check("${ENTLOWER}.${step.o}.map", ${resdatavar} != null, "expected ${step.o} result to be a map")
 `)
   if (hasDataId) {
-    Content(`      rep.eq("${ENTLOWER}.update.id", ${datavar}Up.get("id"), ${resdatavar}.get(${rid(entity)}))
+    Content(`      rep.eq("${ENTLOWER}.${step.o}.id", ${datavar}Up.get("id"), ${resdatavar}.get(${rid(entity)}))
 `)
   }
   if (hasMark) {
-    Content(`      rep.eq("${ENTLOWER}.update.mark", ${markdefvar}Value, ${resdatavar}.get(${markdefvar}Name))
+    Content(`      rep.eq("${ENTLOWER}.${step.o}.mark", ${markdefvar}Value, ${resdatavar}.get(${markdefvar}Name))
 `)
   }
 }
@@ -333,7 +332,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
 
   const priorSteps = Object.values(flowSteps(flow)).slice(0, Number(index)) as any[]
   const hasEntVar = priorSteps.some((s: any) =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
 
   const flowHasCreate = Object.values(flowSteps(flow)).some((s: any) => (s as any).o === 'create')
   const preambleRef = entity.name + '_ref01'
@@ -393,7 +392,7 @@ const generateRemove: OpGen = (ctx, step, index) => {
 
   const priorSteps = Object.values(flowSteps(flow)).slice(0, Number(index)) as any[]
   const needsEnt = !priorSteps.some((s: any) =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
 
   Content(`      // REMOVE
 `)
@@ -477,6 +476,7 @@ const GENERATE_OP: Record<string, OpGen> = {
   create: generateCreate,
   list: generateList,
   update: generateUpdate,
+  patch: generateUpdate,
   load: generateLoad,
   remove: generateRemove,
 }

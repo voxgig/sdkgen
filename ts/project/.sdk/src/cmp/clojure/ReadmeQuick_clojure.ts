@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems, sendsId } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems, sendsId, fact, seriesList } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -11,6 +11,7 @@ import { cljListMatch, cljString } from './utility_clojure'
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   const { target, ctx$: { model } } = props
+  let step = 0
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
 
@@ -27,9 +28,18 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   ) as any
 
   const authActive = isAuthActive(model)
-  const ctor = authActive
-    ? `(api/make-sdk (vs/jm "apikey" (System/getenv "${envName(model)}_APIKEY")))`
-    : `(api/make-sdk nil)`
+  // The constructor refuses a templated URL it has no value for, so the quick
+  // start passes each variable the URL uses with no default.
+  const svars = fact(model.main[KIT], 'server').filter((v: any) => v.required)
+  const ctorFields = [
+    ...(authActive ? [`"apikey" (System/getenv "${envName(model)}_APIKEY")`] : []),
+    ...(fact(model.main[KIT], 'auth').secret ? [`"secret" (System/getenv "${envName(model)}_SECRET")`] : []),
+    ...(0 === svars.length ? [] : [`"server" (vs/jm ` +
+      svars.map((v: any) => `"${v.name}" "<${v.name}>"`).join(' ') + `)`]),
+  ]
+  const ctor = 0 === ctorFields.length
+    ? `(api/make-sdk nil)`
+    : `(api/make-sdk (vs/jm ${ctorFields.join(' ')}))`
 
   // A type-correct Clojure literal for a param.
   const cljLit = (type: any, placeholder: string = 'example'): string => {
@@ -53,7 +63,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   }
   requireLines.push(`         '[voxgig.struct :as vs])`)
 
-  Content(`### 1. Create a client
+  Content(`### ${++step}. Create a client
 
 \`\`\`clojure
 ${requireLines.join('\n')}
@@ -73,7 +83,7 @@ ${requireLines.join('\n')}
     const dataIdF = entityDataIdField(exampleEntity)
 
     if (opnames.includes('list')) {
-      Content(`### 2. List ${eLow} records
+      Content(`### ${++step}. List ${eLow} records
 
 \`list\` returns a vector of entities, one per record, and raises on error.
 Read each record with \`((:data-get ${eLow}))\`.
@@ -106,7 +116,7 @@ Read each record with \`((:data-get ${eLow}))\`.
         `${cljString(it.name)} ${cljLit(it.type,
           it.name === neIdF ? 'example_id' : 'example_' + it.name)}`)
 
-      Content(`### 3. Load ${neArticle} ${neLow}
+      Content(`### ${++step}. Load ${neArticle} ${neLow}
 
 ${nestedEntity.Name} is nested under ${parentName}, so provide the
 \`${parentParam}\`. \`load\` returns the entity and raises on error;
@@ -132,7 +142,7 @@ ${nestedEntity.Name} is nested under ${parentName}, so provide the
             it.name === idF ? 'example_id' : 'example_' + it.name)}`).join(' ')})`
         : 'nil'
 
-      Content(`### 3. Load ${article} ${eLow}
+      Content(`### ${++step}. Load ${article} ${eLow}
 
 \`load\` returns the entity and raises on error; \`((:data-get ${eLow}))\` reads
 its record.
@@ -171,7 +181,8 @@ its record.
 
     if (opnames.includes('create') || opnames.includes('update') || opnames.includes('patch') ||
       opnames.includes('remove')) {
-      Content(`### 4. Create, update, and remove
+      Content(`### ${++step}. ${seriesList(['create', 'update', 'patch', 'remove']
+        .filter((o: string) => opnames.includes(o))).replace(/^./, (c: string) => c.toUpperCase())}
 
 \`\`\`clojure
 `)

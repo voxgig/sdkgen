@@ -8,7 +8,10 @@ import {
   requiredItems,
   javaMapOf,
   javaMapItems,
+  fact,
 } from '@voxgig/sdkgen'
+
+import { KIT } from '@voxgig/apidef'
 
 import {
   clone,
@@ -21,29 +24,11 @@ function projectPath(suffix?: string): string {
 }
 
 
-// The Java package root for the generated SDK, mirroring how the go target
-// derives GOMODULE: org segment from model.origin, name segment from the
-// model name (e.g. origin voxgig-sdk + name solardemo -> voxgig.solardemosdk).
-// Each runtime piece lives under it: <pkg>.core, <pkg>.utility,
-// <pkg>.utility.struct, <pkg>.feature, <pkg>.entity, <pkg>.sdktest.
+// The Java package root, the project's JVM package fact. Each runtime piece
+// lives under it: <pkg>.core, <pkg>.utility, <pkg>.utility.struct,
+// <pkg>.feature, <pkg>.entity, <pkg>.sdktest.
 function javaPackage(model: any): string {
-  const org = String(model.origin || 'voxgig-sdk')
-    .replace(/-sdk$/, '')
-    .replace(/[^a-zA-Z0-9]/g, '')
-    .toLowerCase()
-  const name = String(model.name)
-    .replace(/[^a-zA-Z0-9]/g, '')
-    .toLowerCase()
-  return org + '.' + name + 'sdk'
-}
-
-
-function mavenGroupId(model: any): string {
-  const org = String(model.origin || 'voxgig-sdk')
-    .replace(/-sdk$/, '')
-    .replace(/[^a-zA-Z0-9]/g, '')
-    .toLowerCase()
-  return 'com.' + org
+  return fact(model.main[KIT], 'package').jvm
 }
 
 
@@ -142,6 +127,5 @@ export {
   javaPackage,
   javaVarName,
   jsonAppendLines,
-  mavenGroupId,
   projectPath,
 }

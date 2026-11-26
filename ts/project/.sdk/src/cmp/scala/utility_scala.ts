@@ -8,7 +8,10 @@ import {
   requiredItems,
   javaMapOf,
   javaMapItems,
+  fact,
 } from '@voxgig/sdkgen'
+
+import { KIT } from '@voxgig/apidef'
 
 import {
   clone,
@@ -22,24 +25,7 @@ function projectPath(suffix?: string): string {
 
 
 function scalaPackage(model: any): string {
-  const org = String(model.origin || 'voxgig-sdk')
-    .replace(/-sdk$/, '')
-    .replace(/[^a-zA-Z0-9]/g, '')
-    .toLowerCase()
-  const name = String(model.name)
-    .replace(/[^a-zA-Z0-9]/g, '')
-    .toLowerCase()
-  return org + '.' + name + 'sdk'
-}
-
-
-// Maven-style coordinates (used by Package_scala for the publish metadata).
-function mavenGroupId(model: any): string {
-  const org = String(model.origin || 'voxgig-sdk')
-    .replace(/-sdk$/, '')
-    .replace(/[^a-zA-Z0-9]/g, '')
-    .toLowerCase()
-  return 'com.' + org
+  return fact(model.main[KIT], 'package').jvm
 }
 
 
@@ -138,7 +124,6 @@ export {
   scalaLit,
   scalaListMatch,
   cleanModel,
-  mavenGroupId,
   jsonAppendLines,
   projectPath,
   scalaPackage,

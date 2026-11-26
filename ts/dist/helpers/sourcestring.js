@@ -3,6 +3,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DOLLAR = void 0;
 exports.sourceString = sourceString;
+exports.templateSafe = templateSafe;
 // How each language writes `$` inside an escape-processing string literal, so
 // that vendor text a copy prints never shows jostraca's template pass a `$$`.
 // C's hex escape runs on through every hex digit after it, so C and C++ take
@@ -39,5 +40,10 @@ function sourceString(lang, text) {
         throw new Error(`sdkgen: no string escape for the language '${lang}'`);
     }
     return String(text).replace(/\$/g, dollar);
+}
+// Formatted source with only its `$$` runs escaped, which is all the template
+// pass reads; each such run lies inside a string literal of `lang`.
+function templateSafe(lang, text) {
+    return String(text).replace(/\${2,}/g, (run) => sourceString(lang, run));
 }
 //# sourceMappingURL=sourcestring.js.map

@@ -1,6 +1,6 @@
 package KOTLINPACKAGE.sdktest
 
-// Drives the shared struct corpus (../.sdk/test/test.json, root key
+// Drives the shared struct corpus (SDKREL/.sdk/test/test.json, root key
 // "struct") against the vendored Kotlin struct utility THROUGH the vendored
 // omni runner (OmniResolver over test/vendor/omni) - the engine half of the
 // retired StructRunner. Mirrors tm/java/test/StructCorpusTest.java and the
@@ -28,7 +28,7 @@ import KOTLINPACKAGE.utility.struct.Struct
 class StructCorpusTest {
 
   companion object {
-    const val TEST_JSON_FILE = "../.sdk/test/test.json"
+    const val TEST_JSON_FILE = "SDKREL/.sdk/test/test.json"
 
     private var RUN: OmniResolver.Run? = null
 

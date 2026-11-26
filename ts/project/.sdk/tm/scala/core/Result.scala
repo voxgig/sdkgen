@@ -16,8 +16,8 @@ class Result(resmap: JMap[String, Object]) {
   var resdata: Object = null
   var resmatch: JMap[String, Object] = null
 
-  // Feature extensions: pagination signals (paging feature) and the
-  // incremental item iterator (streaming feature).
+  // Feature extensions, set only while their feature is active: pagination
+  // signals (paging) and the incremental item iterator (streaming).
   var paging: JMap[String, Object] = null
   var streaming: Boolean = false
   var stream: Supplier[JIterator[Object]] = null

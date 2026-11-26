@@ -121,3 +121,26 @@ describe('secret redaction coverage is honest', () => {
     })
   }
 })
+
+
+// Where a credential goes, and whether one goes at all, is the auth fact's to
+// say. A component that reads the model or a helper for it states the rule a
+// second time, and the documents and the code can then disagree.
+describe('PrepareAuth and TestClean read the auth fact', () => {
+
+  const AUTH_RULE = /config\.auth|\b(isAuthActive|isAuthSuppressed|isHttpBasicAuth|resolveAuth\w+)\s*\(/
+
+  for (const target of sdkTargets()) {
+    for (const cmp of ['PrepareAuth', 'TestClean']) {
+      test(target + ': ' + cmp + ' reads the auth fact and states no rule of its own', () => {
+        const file = Path.join(CMP, target, cmp + '_' + target + '.ts')
+        // The text it generates, between backticks, may name the setting.
+        const code = Fs.readFileSync(file, 'utf8').split(/(?<!\\)`/)
+          .filter((_part: string, i: number) => 0 === i % 2).join('`')
+        ok(code.includes("fact(model.main[KIT], 'auth')"), file + ' does not read the auth fact')
+        ok(!AUTH_RULE.test(code), file + ' reads auth from the model or a helper: ' +
+          String(code.match(AUTH_RULE)?.[0]))
+      })
+    }
+  }
+})

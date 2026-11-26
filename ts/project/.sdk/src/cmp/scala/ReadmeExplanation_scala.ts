@@ -1,5 +1,5 @@
 
-import { cmp, Content } from '@voxgig/sdkgen'
+import { cmp, Content, collectDeps } from '@voxgig/sdkgen'
 
 import { scalaPackage } from './utility_scala'
 
@@ -27,14 +27,14 @@ scala/
 ├── project.scala               -- scala-cli project config (Scala 3, no deps)
 ├── core/                        -- Main SDK client, config, entity base, error type
 ├── entity/                      -- Entity implementations
-├── feature/                     -- Built-in features (Base, Test, Log, ...)
+├── feature/                     -- Feature implementations
 ├── utility/                     -- Utility functions and the vendored struct library
 └── sdktest/                     -- Generated per-entity tests (scala-cli mains)
 \`\`\`
 
 The main client class (\`${model.const.Name}SDK\`, package \`${pkg}.core\`)
 exposes the entity accessors. Reference entity or utility types directly only
-when needed. The SDK is a dependency-free scala-cli project: JSON parsing is
+when needed. The SDK is a ${0 === collectDeps(model, target.name, target.deps).length ? 'dependency-free ' : ''}scala-cli project: JSON parsing is
 the vendored \`utility/Json.java\`, HTTP transport is the JDK
 \`java.net.http.HttpClient\`, and the struct library is inlined under
 \`utility/struct\`.

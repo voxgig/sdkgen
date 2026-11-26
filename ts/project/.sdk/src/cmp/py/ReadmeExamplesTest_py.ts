@@ -1,5 +1,5 @@
 
-import { cmp, each, File, Content } from '@voxgig/sdkgen'
+import { cmp, each, File, Content, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -10,6 +10,13 @@ import {
 
 const ReadmeExamplesTest = cmp(function ReadmeExamplesTest(props: any) {
   const { target, ctx$: { model } } = props
+  // The root README where the run writes one beside this target, and the
+  // target's own documents where it writes them.
+  const link = fact(target, 'link').readme
+  const own = fact(target, 'phase').readme
+  if ('' === link && !own) {
+    return
+  }
 
   const Name = model.const.Name
   const sdkModule = Name.toLowerCase() + '_sdk'
@@ -93,7 +100,7 @@ import pytest
 
 _TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 _PY_ROOT = os.path.dirname(_TEST_DIR)                       # the py/ package root
-_README = os.path.abspath(os.path.join(_PY_ROOT, "..", "README.md"))  # repo root
+_README = ${'' === link ? 'None' : `os.path.abspath(os.path.join(_PY_ROOT, ${link.split('/').map((seg: string) => JSON.stringify(seg)).join(', ')}))`}  # repo root
 _REFERENCE = os.path.join(_PY_ROOT, "REFERENCE.md")        # per-language reference
 _LOCAL_README = os.path.join(_PY_ROOT, "README.md")        # per-language README
 
@@ -118,14 +125,14 @@ _ID_FIELDS = ${idFieldsLiteral}
 
 # The three documents held to the gate, tagged by human label.
 _DOCS = (
-    ("root README", _README),
-    ("py README.md", _LOCAL_README),
+${'' === link ? '' : `    ("root README", _README),
+`}${own ? `    ("py README.md", _LOCAL_README),
     ("py REFERENCE.md", _REFERENCE),
-)
+` : ''})
 
 
 def _read_doc(path, label):
-    if not os.path.exists(path):
+    if path is None or not os.path.exists(path):
         pytest.skip(label + " not found: " + path)
     with open(path, "r", encoding="utf-8") as fh:
         return fh.read()
@@ -164,11 +171,11 @@ def _local_readme_blocks():
 # Presence + COMPILE (syntax) gate
 # ----------------------------------------------------------------------------
 
-def test_readme_has_python_blocks():
+${'' === link ? '' : `def test_readme_has_python_blocks():
     assert len(_python_blocks()) > 0, "expected at least one python block in the root README"
 
 
-def test_reference_has_python_blocks():
+`}def test_reference_has_python_blocks():
     assert len(_reference_blocks()) > 0, "expected at least one python block in py/REFERENCE.md"
 
 
@@ -191,11 +198,11 @@ def _assert_blocks_compile(blocks, label):
             )
 
 
-def test_readme_python_blocks_compile():
+${'' === link ? '' : `def test_readme_python_blocks_compile():
     _assert_blocks_compile(_python_blocks(), "root README")
 
 
-def test_reference_python_blocks_compile():
+`}def test_reference_python_blocks_compile():
     _assert_blocks_compile(_reference_blocks(), "py REFERENCE.md")
 
 
@@ -215,7 +222,7 @@ def _mypy_available():
         return False
 
 
-def test_readme_python_blocks_typecheck():
+${'' === link ? '' : `def test_readme_python_blocks_typecheck():
     # Type gate: concatenate the blocks and run mypy over them. Only fails on
     # errors mypy attributes to our snippet file; environmental import noise is
     # inconclusive (skipped). When mypy is unavailable the execute gate below
@@ -271,7 +278,7 @@ def test_readme_python_blocks_typecheck():
             )
 
 
-# ----------------------------------------------------------------------------
+`}# ----------------------------------------------------------------------------
 # Classification: runnable / illustration / compiled-nonrunnable
 # ----------------------------------------------------------------------------
 
@@ -680,14 +687,14 @@ def _completeness_gate(label, blocks):
     }
 
 
-def test_readme_completeness_gate():
+${'' === link ? '' : `def test_readme_completeness_gate():
     stats = _completeness_gate("root README", _python_blocks())
     assert stats["executed"] > 0, (
         "expected at least one runnable python block in the root README to execute"
     )
 
 
-def test_local_readme_completeness_gate():
+`}def test_local_readme_completeness_gate():
     stats = _completeness_gate("py README.md", _local_readme_blocks())
     assert stats["executed"] > 0, (
         "expected at least one runnable python block in py/README.md to execute"

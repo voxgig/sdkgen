@@ -41,8 +41,8 @@ abstract class SdkClient(options0: JMap[String, Object]) {
 
     // Add features in the resolved order (makeOptions puts an explicit list
     // order first, else defaults to test-first). Ordering matters: the `test`
-    // feature installs the base mock transport and the transport features
-    // (retry/cache/netsim/proxy/ratelimit) wrap whatever is current, so `test`
+    // feature installs the base mock transport and the features whose model
+    // declares `transport: 'wrap'` wrap whatever is current, so `test`
     // must be added before them to sit at the base of the chain.
     var featureOpts = Helpers.toMapAny(Struct.getprop(this.options, "feature"))
     if (featureOpts == null) featureOpts = new LinkedHashMap[String, Object]()
@@ -188,8 +188,8 @@ abstract class SdkClient(options0: JMap[String, Object]) {
   // as a top-level `errors` array, so status alone would report a failed
   // query as ok.
   //
-  // NOTE: like direct, this bypasses the feature pipeline — no retry,
-  // ratelimit or paging features apply.
+  // NOTE: like direct, this bypasses the feature pipeline: no feature
+  // hook runs on this path.
   def graphql(
     query: String,
     variables: JMap[String, Object] = null,

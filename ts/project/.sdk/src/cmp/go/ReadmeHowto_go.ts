@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, goModule, requiredItems, litPair, matchExampleItems, requestExampleItems } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, canonScalarKey, entityIdField, pickExampleEntity, goModule, requiredItems, litPair, matchExampleItems, requestExampleItems, envLocalAt, cdTarget, fact, directRoute } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -27,6 +27,8 @@ function cap(s: string): string {
 
 const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   const { target, ctx$: { model } } = props
+  const dx = directRoute(model)
+  const ENVVAR = fact(model.main[KIT], 'env')
 
   const gomodule = goModule(model, target.name)
 
@@ -85,8 +87,18 @@ if err != nil {
 fmt.Println(result)`
 
   const apikeyEnvLine = isAuthActive(model)
-    ? `\n${envName(model)}_APIKEY=<your-key>`
+    ? `\n${ENVVAR.apikey}=<your-key>${fact(model.main[KIT], 'auth').secret ? `\n${ENVVAR.secret}=<your-secret>` : ''}`
     : ''
+  const serverEnvLine = fact(model.main[KIT], 'server').filter((v: any) => v.required)
+    .map((v: any) => `\n${ENVVAR.server[v.name]}=<${v.name}>`).join('')
+  const defaulted = fact(model.main[KIT], 'server').filter((v: any) => !v.required)
+  const liveEnvNote = (0 === defaulted.length ? '' :
+    defaulted.map((v: any) => '`' + ENVVAR.server[v.name] + '`').join(', ') +
+    (1 === defaulted.length ? ', when set, replaces its server variable\'s default.\n'
+      : ', when set, replace their server variables\' defaults.\n')) +
+    'Each entity\'s tests also read `' + ENVVAR.prefix + '_TEST_<ENTITY>_ENTID`, with the\n' +
+    'entity\'s name in capitals: a JSON object of the ids of existing records, for\n' +
+    'the tests that do not create their own.\n\n'
 
   Content(`### Make a direct HTTP request
 
@@ -94,9 +106,9 @@ For endpoints not covered by entity methods:
 
 \`\`\`go
 result, err := client.Direct(map[string]any{
-    "path":   "/api/resource/{id}",
-    "method": "GET",
-    "params": map[string]any{"id": "example"},
+    "path":   "${dx.path}",
+    "method": "${dx.method}",
+    "params": map[string]any{"${dx.param}": "example"},
 })
 if err != nil {
     panic(err)
@@ -112,9 +124,9 @@ if result["ok"] == true {
 
 \`\`\`go
 fetchdef, err := client.Prepare(map[string]any{
-    "path":   "/api/resource/{id}",
-    "method": "DELETE",
-    "params": map[string]any{"id": "example"},
+    "path":   "${dx.path}",
+    "method": "${dx.method}",
+    "params": map[string]any{"${dx.param}": "example"},
 })
 if err != nil {
     panic(err)
@@ -151,26 +163,29 @@ mockFetch := func(url string, init map[string]any) (map[string]any, error) {
     }, nil
 }
 
-client := sdk.New${model.const.Name}SDK(map[string]any{
+client, err := sdk.New${model.const.Name}SDK(map[string]any{
     "base": "http://localhost:8080",
     "system": map[string]any{
         "fetch": (func(string, map[string]any) (map[string]any, error))(mockFetch),
     },
 })
+if err != nil {
+    panic(err)
+}
 \`\`\`
 
 ### Run live tests
 
-Create a \`.env.local\` file at the project root:
+Create a \`.env.local\` file ${envLocalAt(props.ctx$, target)}:
 
 \`\`\`
-${envName(model)}_TEST_LIVE=TRUE${apikeyEnvLine}
+${ENVVAR.live}=TRUE${apikeyEnvLine}${serverEnvLine}
 \`\`\`
 
-Then run:
+${liveEnvNote}Then run:
 
 \`\`\`bash
-cd go && go test ./test/...
+${cdTarget(target)}go test ./test/...
 \`\`\`
 
 `)

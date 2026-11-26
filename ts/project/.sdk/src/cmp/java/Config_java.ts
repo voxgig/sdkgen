@@ -5,17 +5,12 @@ import {
   cmp,
   configDefinition,
   each,
-  isAuthActive,
-  isHttpBasicAuth,
-  resolveAuthIn,
-  resolveAuthName,
-  resolveAuthPrefix,
   targetFeatures,
+  templateSafe,
 } from '@voxgig/sdkgen'
 
 
 import {
-  serverVariables,
 } from '@voxgig/sdkgen'
 
 
@@ -49,15 +44,6 @@ const Config = cmp(async function Config(props: any) {
   const feature = targetFeatures(model, target)
 
   const headers = getModelPath(model, `main.${KIT}.config.headers`) || {}
-
-  const authActive = isAuthActive(model)
-  const authPrefix = resolveAuthPrefix(model)
-  const authBasic = isHttpBasicAuth(model)
-  const authIn = resolveAuthIn(model)
-  const authName = resolveAuthName(model)
-
-  let baseUrl = ''
-  try { baseUrl = getModelPath(model, `main.${KIT}.info.servers.0.url`) } catch (_e) { }
 
   const { def: configDef } = configDefinition(model, target.name)
 
@@ -118,26 +104,16 @@ const Config = cmp(async function Config(props: any) {
   })
 
   const options: Record<string, any> = {
-    base: baseUrl,
+    base: configDef.options.base,
   }
 
-  // Templated server URL: emit the spec's server-variable defaults so the
-  // runtime can substitute {name} placeholders in base (see MakeOptions).
-  // Without this block the placeholder reaches the wire verbatim — java
-  // shipped `http://host/api/{account_id}/element` as a real URL, which is
-  // worse than the construction error every other target raises.
-  const svars = serverVariables(model)
-  if (0 < svars.length) {
-    options.server = svars.reduce(
-      (a: any, v: any) => (a[v.name] = v.dflt, a), {} as Record<string, string>)
+  // The defaults MakeOptions substitutes for a templated base URL's {name}s.
+  if (null != configDef.options.server) {
+    options.server = configDef.options.server
   }
 
-  if (authActive) {
-    const auth: Record<string, any> = { prefix: authPrefix }
-    if (authBasic) { auth.basic = true }
-    if ('header' !== authIn) { auth.in = authIn }
-    if ('Authorization' !== authName) { auth.name = authName }
-    options.auth = auth
+  if (null != configDef.options.auth) {
+    options.auth = configDef.options.auth
   }
   options.headers = headers
   options.entity = optionsEntity
@@ -213,7 +189,7 @@ ${featurePluginsBlock}  private static String configJson() {
     StringBuilder b = new StringBuilder();
 `)
 
-    Content(jsonAppendLines(config, 'b'))
+    Content(templateSafe('java', jsonAppendLines(config, 'b')))
 
     Content(`    return b.toString();
   }

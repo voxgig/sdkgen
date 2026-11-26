@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, entityIdField, opNeedsAction, matchExampleItems, requestExampleItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, entityIdField, entityOps, matchExampleItems, requestExampleItems, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -56,9 +56,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 `)
 
   publishedEntities.map((entity: any) => {
-    const opnames = Object.keys(entity.op || {})
-    // An op that needs an action has no plain call to show.
-    const callable = opnames.filter((o: string) => !opNeedsAction(entity.op[o]))
+    const opnames = entityOps(entity)
     const fields = Object.values(entity.fields || {})
     const idF = entityIdField(entity)
     // Sanitise the local variable name — a camelCased Swift keyword gets a
@@ -71,8 +69,8 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 
 `)
 
-    if (entity.short) {
-      Content(`${entity.short}
+    if (fact(entity, 'desc').inline) {
+      Content(`${fact(entity, 'desc').inline}
 
 `)
     }
@@ -107,8 +105,8 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 `)
 
       each(fields, (field: any) => {
-        const desc = field.sh || ''
-        Content(`| \`${field.n}\` | \`${canonToType(field.t, target.name)}\` | ${desc} |
+        const desc = fact(model.main[KIT], 'field')[entity.name]?.[field.n]?.desc.cell ?? ''
+        Content(`| \`${field.n}\` | \`${canonToType(field.t, 'swift').replace(/\|/g, '\\|')}\` | ${desc} |
 `)
       })
 
@@ -116,7 +114,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 `)
     }
 
-    if (callable.includes('load')) {
+    if (opnames.includes('load')) {
       // The id key plus every REQUIRED match key (parent path params like
       // page_id) — the same shape the runtime resolves path params from, so
       // the example always works.
@@ -137,7 +135,7 @@ let ${eVar} = try client.${accessor}().load(${loadArg}, nil)
 `)
     }
 
-    if (callable.includes('list')) {
+    if (opnames.includes('list')) {
       Content(`#### Example: List
 
 \`\`\`swift
@@ -147,7 +145,7 @@ let ${eVar}List = try client.${accessor}().list(${swiftListMatch(entity)}, nil)
 `)
     }
 
-    if (callable.includes('create')) {
+    if (opnames.includes('create')) {
       // Members come from the SAME shape the runtime validates
       // (opRequestShape): every required member must appear — including a
       // required id and parent keys like page_id — with a real literal.
@@ -160,7 +158,7 @@ let ${eVar} = try client.${accessor}().create(VMap([
 `)
       createItems.map((it: any, i: number) => {
         const comma = i < createItems.length - 1 ? ',' : ''
-        Content(`    (${swiftString(it.name)}, ${swiftLit(it.type, 'example_' + it.name)})${comma}  // ${canonToType(it.type, target.name)}
+        Content(`    (${swiftString(it.name)}, ${swiftLit(it.type, 'example_' + it.name)})${comma}  // ${canonToType(it.type, 'swift')}
 `)
       })
       Content(`]), nil)

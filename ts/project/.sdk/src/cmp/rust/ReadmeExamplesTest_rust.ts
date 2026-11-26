@@ -1,8 +1,15 @@
-import { cmp, Content, File } from '@voxgig/sdkgen'
+import { cmp, Content, File, fact } from '@voxgig/sdkgen'
 
 
 const ReadmeExamplesTest = cmp(function ReadmeExamplesTest(props: any) {
-  const { ctx$: { model } } = props
+  const { target, ctx$: { model } } = props
+  // The root README where the run writes one beside this target, and the
+  // target's own documents where it writes them.
+  const link = fact(target, 'link').readme
+  const own = fact(target, 'phase').readme
+  if ('' === link && !own) {
+    return
+  }
 
   File({ name: 'readme_examples_test.rs' }, () => {
     Content(`// Structural gate over every \`\`\`rust block in the ${model.const.Name} SDK
@@ -75,11 +82,11 @@ fn is_balanced(block: &str) -> bool {
 #[test]
 fn readme_rust_snippets_wellformed() {
     let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let docs: [(&str, PathBuf); 3] = [
-        ("root README", manifest.join("..").join("README.md")),
-        ("rust/README", manifest.join("README.md")),
+    let docs: [(&str, PathBuf); ${('' === link ? 0 : 1) + (own ? 2 : 0)}] = [
+${'' === link ? '' : `        ("root README", manifest${link.split('/').map((seg: string) => '.join(' + JSON.stringify(seg) + ')').join('')}),
+`}${own ? `        ("rust/README", manifest.join("README.md")),
         ("rust/REFERENCE", manifest.join("REFERENCE.md")),
-    ];
+` : ''}    ];
 
     let mut total_blocks = 0usize;
     for (label, path) in docs.iter() {

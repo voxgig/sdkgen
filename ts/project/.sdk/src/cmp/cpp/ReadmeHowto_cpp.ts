@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, requiredItems, matchExampleItems, requestExampleItems } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, canonScalarKey, entityIdField, pickExampleEntity, requiredItems, matchExampleItems, requestExampleItems, envLocalAt, cdTarget, fact, directRoute } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -23,6 +23,8 @@ function cppLit(type: any): string {
 
 const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   const { target, ctx$: { model } } = props
+  const dx = directRoute(model)
+  const ENVVAR = fact(model.main[KIT], 'env')
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
   // Pick an entity with a real op (prefer a read op) — never fabricate a
@@ -71,8 +73,18 @@ std::cout << Struct::jsonify(${eVar}->data()) << std::endl;`
 std::cout << Struct::jsonify(result) << std::endl;`
 
   const apikeyEnvLine = isAuthActive(model)
-    ? `\n${envName(model)}_APIKEY=<your-key>`
+    ? `\n${ENVVAR.apikey}=<your-key>${fact(model.main[KIT], 'auth').secret ? `\n${ENVVAR.secret}=<your-secret>` : ''}`
     : ''
+  const serverEnvLine = fact(model.main[KIT], 'server').filter((v: any) => v.required)
+    .map((v: any) => `\n${ENVVAR.server[v.name]}=<${v.name}>`).join('')
+  const defaulted = fact(model.main[KIT], 'server').filter((v: any) => !v.required)
+  const liveEnvNote = (0 === defaulted.length ? '' :
+    defaulted.map((v: any) => '`' + ENVVAR.server[v.name] + '`').join(', ') +
+    (1 === defaulted.length ? ', when set, replaces its server variable\'s default.\n'
+      : ', when set, replace their server variables\' defaults.\n')) +
+    'Each entity\'s tests also read `' + ENVVAR.prefix + '_TEST_<ENTITY>_ENTID`, with the\n' +
+    'entity\'s name in capitals: a JSON object of the ids of existing records, for\n' +
+    'the tests that do not create their own.\n\n'
 
   Content(`### Make a direct HTTP request
 
@@ -80,9 +92,9 @@ For endpoints not covered by entity methods:
 
 \`\`\`cpp
 Value result = client->direct(vmap({
-    {"path", Value("/api/resource/{id}")},
-    {"method", Value("GET")},
-    {"params", vmap({{"id", Value("example")}})},
+    {"path", Value("${dx.path}")},
+    {"method", Value("${dx.method}")},
+    {"params", vmap({{"${dx.param}", Value("example")}})},
 }));
 
 if (getp(result, "ok") == Value(true)) {
@@ -104,9 +116,9 @@ if (getp(result, "ok") == Value(true)) {
 \`\`\`cpp
 // prepare() returns the fetch definition and throws on error.
 Value fetchdef = client->prepare(vmap({
-    {"path", Value("/api/resource/{id}")},
-    {"method", Value("DELETE")},
-    {"params", vmap({{"id", Value("example")}})},
+    {"path", Value("${dx.path}")},
+    {"method", Value("${dx.method}")},
+    {"params", vmap({{"${dx.param}", Value("example")}})},
 }));
 
 std::cout << Struct::stringify(getp(fetchdef, "url")) << std::endl;
@@ -130,16 +142,21 @@ You can seed the mock store by passing test options — see the generated
 
 ### Run live tests
 
-Create a \`.env.local\` file at the project root:
+Create a \`.env.local\` file ${envLocalAt(props.ctx$, target)}:
 
 \`\`\`
-${envName(model)}_TEST_LIVE=TRUE${apikeyEnvLine}
+${ENVVAR.live}=TRUE${apikeyEnvLine}${serverEnvLine}
 \`\`\`
+
+${liveEnvNote}The SDK has no HTTP transport of its own: a client sends nothing until it
+is given a \`system.fetch\`. The entity tests build their live client from
+these variables without one, so a live run fails at its first request with
+\`fetch_no_transport\`.
 
 Then build and run the test suite:
 
 \`\`\`bash
-cd ${target.name} && make test
+${cdTarget(target)}make test
 \`\`\`
 
 `)

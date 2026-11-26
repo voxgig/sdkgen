@@ -8,7 +8,8 @@ import {
   inactiveFeatureExcludes,
   pluginExcludes,
   targetFeatures,
-  TEST_CONTROL_EXCLUDE
+  TEST_CONTROL_EXCLUDE,
+  TargetLicense,
 } from '@voxgig/sdkgen'
 
 
@@ -50,6 +51,7 @@ const Main = cmp(async function Main(props: any) {
   Package({ target })
 
   Gitignore({})
+  TargetLicense({ target })
 
   Copy({
     from: 'tm/' + target.name,
@@ -96,14 +98,6 @@ const Main = cmp(async function Main(props: any) {
             ({ indent }: any) => !secrets ? '' :
               `${indent}if getattr(self, "_secrets", None) is not None:\n` +
               `${indent}    self._secrets.resolve()\n\n`,
-
-          '#BuildFeatures': ({ indent }: any) => {
-            each(feature, (feat: any) => {
-              const fname = feat.name.charAt(0).toUpperCase() + feat.name.slice(1)
-              Content({ indent }, `  # feature: ${feat.name}
-`)
-            })
-          },
 
           '#Feature-Hook': ({ name, indent }: any) => Content({ indent }, `
 self._utility.feature_hook(self._rootctx, "${name}")

@@ -23,7 +23,7 @@ from projectname_sdk.utility.voxgig_struct.voxgig_struct import (
 
 
 STRUCT_TEST_JSON = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), '../../.sdk/test/test.json')
+    os.path.dirname(os.path.abspath(__file__)), '../SDKREL/.sdk/test/test.json')
 
 # The struct corpus drives the LIVE SDK's struct utilities, as ts does.
 runner = makeRunner(STRUCT_TEST_JSON, ProjectNameSDK.test(None, None))

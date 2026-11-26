@@ -13,7 +13,7 @@ import (
 	voxgigstruct "github.com/voxgig/struct"
 )
 
-const STRUCT_TEST_JSON = "../../.sdk/test/test.json"
+const STRUCT_TEST_JSON = "../SDKREL/.sdk/test/test.json"
 
 // NOTE: tests are in order of increasing dependence.
 func TestStructUtility(t *testing.T) {

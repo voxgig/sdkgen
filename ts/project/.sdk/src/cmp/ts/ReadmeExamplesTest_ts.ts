@@ -1,5 +1,5 @@
 
-import { cmp, Content, File } from '@voxgig/sdkgen'
+import { cmp, Content, File, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -8,7 +8,14 @@ import {
 
 
 const ReadmeExamplesTest = cmp(function ReadmeExamplesTest(props: any) {
-  const { ctx$: { model } } = props
+  const { target, ctx$: { model } } = props
+  // The root README where the run writes one beside this target, and the
+  // target's own documents where it writes them.
+  const link = fact(target, 'link').readme
+  const own = fact(target, 'phase').readme
+  if ('' === link && !own) {
+    return
+  }
   const Name = model.const.Name
 
   // Seed a fixture for every active entity so list()/load() resolve
@@ -84,10 +91,11 @@ const CLIENT_CALL = new RegExp(CLIENT.source + '\\\\s*\\\\.')
 
 // The three docs this gate covers, resolved relative to dist-test/.
 const DOCS: Array<{ label: string; key: string; path: string }> = [
-  { label: 'root README.md', key: 'root_readme', path: Path.join(__dirname, '..', '..', 'README.md') },
-  { label: 'ts/README.md', key: 'lang_readme', path: Path.join(__dirname, '..', 'README.md') },
+${'' === link ? '' : `  { label: 'root README.md', key: 'root_readme', path: Path.join(__dirname, '..', ${link.split('/')
+    .map((seg: string) => "'" + seg + "'").join(', ')}) },
+`}${own ? `  { label: 'ts/README.md', key: 'lang_readme', path: Path.join(__dirname, '..', 'README.md') },
   { label: 'ts/REFERENCE.md', key: 'reference', path: Path.join(__dirname, '..', 'REFERENCE.md') },
-]
+` : ''}]
 
 
 // Pull out the body of every \`\`\`ts fenced code block.
@@ -306,14 +314,34 @@ function typeCheckBlocks(blocks: string[], key: string): {
 }
 
 
+// Replace each call \`head\` matches up to its opening parenthesis with \`to\`,
+// reading the arguments to the parenthesis that balances that one.
+function replaceCalls(code: string, head: RegExp, to: string): string {
+  let out = ''
+  let at = 0
+  let m: RegExpExecArray | null
+  while (null != (m = head.exec(code))) {
+    let depth = 0
+    let end = m.index + m[0].length - 1
+    for (; end < code.length; end++) {
+      if ('(' === code[end]) depth++
+      else if (')' === code[end] && 0 === --depth) break
+    }
+    if (end === code.length) break
+    out += code.slice(at, m.index) + to
+    at = head.lastIndex = end + 1
+  }
+  return out + code.slice(at)
+}
+
+
 // Turn a documented snippet into an offline-runnable one: strip imports,
 // rewrite real client construction (\`new <Sdk>SDK(...)\` and any
 // \`<Sdk>SDK.test(...)\`) to a seeded test-mode client, and give snippets
 // that reference \`client\` without constructing one a shared seeded client.
 function rewriteForRun(code: string): string {
   let out = stripImports(code)
-  out = out.replace(/new\\s+${Name}SDK\\s*\\([^)]*\\)/g, () => SEEDED_CTOR)
-  out = out.replace(/${Name}SDK\\.test\\s*\\([^)]*\\)/g, () => SEEDED_CTOR)
+  out = replaceCalls(out, /(?:new\\s+${Name}SDK|${Name}SDK\\.test)\\s*\\(/g, SEEDED_CTOR)
   if (CLIENT.test(out) && !/\\b(?:const|let|var)\\s+client\\b/.test(out)) {
     out = 'const client = ' + SEEDED_CTOR + '\\n' + out
   }

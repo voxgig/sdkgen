@@ -43,6 +43,7 @@ is replaced:
 | `'BASE'` | The resolved template base path | `target add` |
 | `FEATURE_Name` / `FEATURE_VERSION` | The feature's name / version | `feature add` |
 | `GOMODULE` | The Go module path | generation (go target) |
+| `CONSUMEDREL` | The path from a consumer target to the target it builds on | generation (py-data target) |
 
 `ProjectName` alone appears ~800 times across the templates — it is the
 workhorse substitution.

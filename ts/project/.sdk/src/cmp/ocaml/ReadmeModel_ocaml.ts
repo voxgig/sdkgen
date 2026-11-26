@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, fact, clientOptions, entityOps, entityPath, introOps } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -17,9 +17,7 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
 
   // Model-driven op rows for the shared entity interface: emit a row only for
   // operations at least one active entity actually exposes.
-  const opUnion = new Set<string>()
-  entityList.forEach((e: any) => Object.keys(e.op || {})
-    .forEach((o: string) => { if (e.op[o] && e.op[o].active !== false) opUnion.add(o) }))
+  const opUnion = new Set<string>(introOps(model))
   const opRowDefs: Record<string, string> = {
     load: '| `e_load` | `value -> value -> entity_obj` | Load a single entity by match criteria. Resolves to the entity. Raises on error. |',
     list: '| `e_list` | `value -> value -> entity_obj list` | List entities matching the criteria. Resolves to one entity per record. Raises on error. |',
@@ -29,11 +27,15 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
     remove: '| `e_remove` | `value -> value -> entity_obj` | Remove an entity. Resolves to the entity, marked deleted. Raises on error. |',
   }
   const opRows = ['load', 'list', 'create', 'update', 'patch', 'remove']
-    .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o]).join('\n')
+    .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o] + '\n').join('')
+  const listResult = opUnion.has('list') ? ' \u2014 `e_list` to\none entity per record \u2014' : ','
+  const removeResult = opUnion.has('remove') ?
+    '\n`e_remove` resolves to the entity marked deleted (`e_deleted`); it keeps the\ndata it held.' : ''
 
-  const apikeyOptionRow = isAuthActive(model)
-    ? '| `apikey` | `string` | API key for authentication. |\n'
-    : ''
+  // A closed value union holds no feature instance, so there is no `extend`.
+  const OPTION_KIND: Record<string, string> = { string: 'string', map: 'map', list: '' }
+  const optionRows = clientOptions(model).filter((o: any) => 'extend' !== o.name)
+    .map((o: any) => '| `' + o.name + '` | `' + OPTION_KIND[o.kind] + '` | ' + o.desc + ' |\n').join('')
 
   Content(`### Sdk_client
 
@@ -50,13 +52,7 @@ for defaults.
 
 | Option | Type | Description |
 | --- | --- | --- |
-${apikeyOptionRow}| \`base\` | \`string\` | Base URL of the API server. |
-| \`prefix\` | \`string\` | URL path prefix prepended to all requests. |
-| \`suffix\` | \`string\` | URL path suffix appended to all requests. |
-| \`feature\` | \`map\` | Feature activation flags. |
-| \`extend\` | \`list\` | Additional feature instances to load. |
-| \`system\` | \`map\` | System overrides (e.g. custom \`fetch\` function). |
-
+${optionRows}
 ### Sdk_client.test
 
 \`\`\`ocaml
@@ -90,8 +86,7 @@ All entities are \`entity_obj\` records sharing the same fields.
 
 | Field | Signature | Description |
 | --- | --- | --- |
-${opRows}
-| \`e_data_get\` | \`unit -> value\` | Get entity data. |
+${opRows}| \`e_data_get\` | \`unit -> value\` | Get entity data. |
 | \`e_data_set\` | \`value -> unit\` | Set entity data. |
 | \`e_match_get\` | \`unit -> value\` | Get entity match criteria. |
 | \`e_match_set\` | \`value -> unit\` | Set entity match criteria. |
@@ -100,11 +95,8 @@ ${opRows}
 
 ### Result shape
 
-Entity operations resolve to the ENTITY, not the raw record \u2014 \`e_list\` to
-one entity per record \u2014 and raise \`Sdk_error.E\` on error. The record is
-reached through \`e_data_get\`, which returns the entity's data container.
-\`e_remove\` resolves to the entity marked deleted (\`e_deleted\`); it keeps the
-data it held. Wrap calls in \`try\`/\`with\` to handle failures.
+Entity operations resolve to the ENTITY, not the raw record${listResult} and raise \`Sdk_error.E\` on error. The record is
+reached through \`e_data_get\`, which returns the entity's data container.${removeResult} Wrap calls in \`try\`/\`with\` to handle failures.
 
 The \`direct\` escape hatch never raises — it returns a result \`value\` map
 you branch on via \`getp result "ok"\`:
@@ -121,34 +113,33 @@ On error, \`ok\` is \`Bool false\` and \`err\` carries the error value.
 `)
 
   // Entities summary
-  Content(`### Entities
+  if (0 < entityList.length) {
+    Content(`### Entities
 
 `)
+  }
   each(entityList, (ent: any) => {
     const fields = Object.values(ent.fields || {})
-    const opnames = Object.keys(ent.op || {})
-    const ops = ent.op || {}
-    const points = each(ops).map((op: any) =>
-      op.points ? each(op.points) : []
-    ).flat()
-    const path = points.length > 0 ? (points[0] as any).o || '' : ''
+    const opnames = entityOps(ent)
+    const path = entityPath(ent)
 
     Content(`#### ${ent.Name}
 
-| Field | Description |
+${0 === fields.length ? '' : `| Field | Description |
 | --- | --- |
-`)
+`}`)
     each(fields, (field: any) => {
-      Content(`| \`${field.n}\` | ${field.sh || ''} |
+      Content(`| \`${field.n}\` | ${fact(model.main[KIT], 'field')[ent.name]?.[field.n]?.desc.cell ?? ''} |
 `)
     })
 
+    // Each operation is the entity record's e_<op> field.
     Content(`
-Operations: ${opnames.map((n: string) => n.charAt(0).toUpperCase() + n.slice(1)).join(', ')}.
+${0 === opnames.length ? '' : `Operations: ${opnames.map((n: string) => 'e_' + n).join(', ')}.
 
-API path: \`${path}\`
+`}${'' === path ? '' : `API path: \`${path}\`
 
-`)
+`}`)
   })
 
 })

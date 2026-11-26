@@ -69,7 +69,7 @@ end
 describe("pipeline", function()
 
   describe("feature order", function()
-    -- Feature #2: options.feature accepts an ordered LIST (developer add-order)
+    -- options.feature accepts an ordered LIST (developer add-order)
     -- or a map (defaults test-first); make_options records the resolved order
     -- in __derived__.featureorder.
 

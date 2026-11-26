@@ -8,6 +8,8 @@ import {
   File, Content, Copy, Folder, Fragment,
   inactiveFeatureExcludes,
   pluginExcludes,
+  TargetLicense,
+  TargetVersion,
 } from '@voxgig/sdkgen'
 
 
@@ -52,6 +54,8 @@ const Main = cmp(async function Main(props: any) {
   Package({ target })
 
   Gitignore({})
+  TargetLicense({ target })
+  TargetVersion({ target })
 
   Copy({
     from: 'tm/' + target.name,

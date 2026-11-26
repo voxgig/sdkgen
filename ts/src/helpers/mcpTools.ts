@@ -20,9 +20,11 @@ const MCP_WRITE_OPS = ['create', 'update', 'patch', 'remove']
 
 // The tools the go-mcp server registers, each for the entities a plain call of
 // its operation runs on, in name order. A tool no entity can serve is left
-// out. The write tools need the target's `tool.write`.
-function mcpTools(model: SdkModel, target: string = mcpTarget(model)): McpTool[] {
-  const write = true === model.main?.[KIT]?.target?.[target]?.tool?.write
+// out. The write tools need the target's `tool.write`, unless `write` decides.
+function mcpTools(
+  model: SdkModel, target: string = mcpTarget(model),
+  write: boolean = true === model.main?.[KIT]?.target?.[target]?.tool?.write,
+): McpTool[] {
   const slug = String(model.name ?? '').toLowerCase()
   const entities: ModelEntity[] = each(getModelPath(model, `main.${KIT}.entity`) || {})
     .filter((ent: ModelEntity) => null != ent && false !== ent.active)

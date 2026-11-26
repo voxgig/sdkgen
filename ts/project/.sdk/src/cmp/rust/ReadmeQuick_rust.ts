@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems, sendsId } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems, sendsId, fact, seriesList } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -12,6 +12,7 @@ import { crateIdent, rustVarName, rustMethodName, rustListMatch } from './utilit
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   const { target, ctx$: { model } } = props
+  let step = 0
 
   const rustcrate = crateIdent(model)
   const entity = getModelPath(model, `main.${KIT}.entity`)
@@ -30,9 +31,19 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   ) as any
 
   const authActive = isAuthActive(model)
-  const ctor = authActive
-    ? `${model.const.Name}SDK::new(jo(vec![\n    ("apikey", Value::str(std::env::var("${envName(model)}_APIKEY").unwrap_or_default())),\n]))`
-    : `${model.const.Name}SDK::new(Value::Noval)`
+  // The constructor refuses a templated URL it has no value for, so the quick
+  // start passes each variable the URL uses with no default.
+  const svars = fact(model.main[KIT], 'server').filter((v: any) => v.required)
+  const ctorFields = [
+    ...(authActive ? [`("apikey", Value::str(std::env::var("${envName(model)}_APIKEY").unwrap_or_default())),`] : []),
+    ...(fact(model.main[KIT], 'auth').secret ? [`("secret", Value::str(std::env::var("${envName(model)}_SECRET").unwrap_or_default())),`] : []),
+    ...(0 === svars.length ? [] : [`("server", jo(vec![` +
+      svars.map((v: any) => `("${v.name}", Value::str("<${v.name}>"))`).join(', ') + `])),`]),
+  ]
+  const ctor = (0 === ctorFields.length
+    ? `${model.const.Name}SDK::new(Value::Noval)`
+    : `${model.const.Name}SDK::new(jo(vec![${ctorFields.map((f: string) => '\n    ' + f).join('')}\n]))`) +
+    '.expect("valid client options")'
 
   // A type-correct rust expression constructing a voxgig struct Value.
   const rustLit = (type: any, placeholder: string = 'example'): string => {
@@ -45,7 +56,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
     return `Value::str(${JSON.stringify(placeholder)})`
   }
 
-  Content(`### 1. Create a client
+  Content(`### ${++step}. Create a client
 
 \`\`\`rust
 use ${rustcrate}::{getp, jo, ${model.const.Name}EntityBase, ${model.const.Name}SDK, Entity, Value};
@@ -67,7 +78,7 @@ let client = ${ctor};
     const dataIdF = entityDataIdField(exampleEntity)
 
     if (opnames.includes('list')) {
-      Content(`### 2. List ${eName.toLowerCase()} records
+      Content(`### ${++step}. List ${eName.toLowerCase()} records
 
 \`list()\` returns one entity per record, and \`Err\` on failure — match on
 the \`Result\`. \`data(None)\` reads an entity's record.
@@ -103,7 +114,7 @@ match client.${method}(Value::Noval).list(${rustListMatch(exampleEntity)}, Value
         `(${JSON.stringify(it.name)}, ${rustLit(it.type,
           it.name === neIdF ? 'example_id' : 'example_' + it.name)})`)
 
-      Content(`### 3. Load ${neArticle} ${neName.toLowerCase()}
+      Content(`### ${++step}. Load ${neArticle} ${neName.toLowerCase()}
 
 ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
 \`load()\` returns the entity, and \`Err\` on failure; \`data(None)\` reads its
@@ -128,7 +139,7 @@ match client.${neMethod}(Value::Noval).load(jo(vec![${neMatch.join(', ')}]), Val
             it.name === idF ? 'example_id' : 'example_' + it.name)})`).join(', ')}])`
         : 'Value::Noval'
 
-      Content(`### 3. Load ${article} ${eName.toLowerCase()}
+      Content(`### ${++step}. Load ${article} ${eName.toLowerCase()}
 
 \`load()\` returns the entity, and \`Err\` on failure; \`data(None)\` reads its
 record.
@@ -170,7 +181,8 @@ match client.${method}(Value::Noval).load(${loadArg}, Value::Noval) {
 
     if (opnames.includes('create') || opnames.includes('update') || opnames.includes('patch') ||
       opnames.includes('remove')) {
-      Content(`### 4. Create, update, and remove
+      Content(`### ${++step}. ${seriesList(['create', 'update', 'patch', 'remove']
+        .filter((o: string) => opnames.includes(o))).replace(/^./, (c: string) => c.toUpperCase())}
 
 \`\`\`rust
 `)

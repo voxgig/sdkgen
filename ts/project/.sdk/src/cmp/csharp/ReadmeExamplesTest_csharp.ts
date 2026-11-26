@@ -1,9 +1,17 @@
 
-import { cmp, File, Content } from '@voxgig/sdkgen'
+import { cmp, File, Content, fact } from '@voxgig/sdkgen'
 
 
 const ReadmeExamplesTest = cmp(function ReadmeExamplesTest(props: any) {
   const { target, ctx$: { model } } = props
+  // The root README where the run writes one beside this target, and the
+  // target's own documents where it writes them.
+  const link = fact(target, 'link').readme
+  const own = fact(target, 'phase').readme
+  if ('' === link && !own) {
+    return
+  }
+  const first = '' === link ? 0 : 1
 
   const Name = model.const.Name
 
@@ -46,11 +54,11 @@ public class ReadmeExamplesTest
         var root = CsharpRoot();
         return new[]
         {
-            ("root README", System.IO.Path.GetFullPath(
-                System.IO.Path.Combine(root, "..", "README.md"))),
-            ("csharp README.md", System.IO.Path.Combine(root, "README.md")),
+${'' === link ? '' : `            ("root README", System.IO.Path.GetFullPath(
+                System.IO.Path.Combine(root, ${link.split('/').map((seg: string) => JSON.stringify(seg)).join(', ')}))),
+`}${own ? `            ("csharp README.md", System.IO.Path.Combine(root, "README.md")),
             ("csharp REFERENCE.md", System.IO.Path.Combine(root, "REFERENCE.md")),
-        };
+` : ''}        };
     }
 
     // Extract every csharp fenced block. Split on the triple-backtick fence:
@@ -106,7 +114,7 @@ public class ReadmeExamplesTest
         return stack.Count == 0;
     }
 
-    [Fact]
+${'' === link ? '' : `    [Fact]
     public void RootReadmeHasCsharpBlocks()
     {
         var doc = Docs()[0];
@@ -115,10 +123,10 @@ public class ReadmeExamplesTest
             "expected at least one csharp block in " + doc.label);
     }
 
-    [Fact]
+`}${own ? `    [Fact]
     public void LocalReadmeHasCsharpBlocks()
     {
-        var doc = Docs()[1];
+        var doc = Docs()[${first}];
         var blocks = CsharpBlocks(ReadDoc(doc.path, doc.label));
         Assert.True(blocks.Count > 0,
             "expected at least one csharp block in " + doc.label);
@@ -127,13 +135,13 @@ public class ReadmeExamplesTest
     [Fact]
     public void ReferenceHasCsharpBlocks()
     {
-        var doc = Docs()[2];
+        var doc = Docs()[${first + 1}];
         var blocks = CsharpBlocks(ReadDoc(doc.path, doc.label));
         Assert.True(blocks.Count > 0,
             "expected at least one csharp block in " + doc.label);
     }
 
-    [Fact]
+` : ''}    [Fact]
     public void AllCsharpBlocksAreStructurallyBalanced()
     {
         var failures = new List<string>();

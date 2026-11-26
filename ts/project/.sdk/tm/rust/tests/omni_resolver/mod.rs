@@ -346,7 +346,7 @@ fn utf8width(lead: u8) -> usize {
 /// the SDK's own `rust/` directory, and the corpus sits beside it.
 pub fn spec_path() -> String {
     let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    path.push("..");
+    path.push("SDKREL");
     path.push(".sdk");
     path.push("test");
     path.push("test.json");

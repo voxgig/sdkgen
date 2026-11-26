@@ -6,11 +6,9 @@ import {
   configDefinition,
   configReprSetting,
   each,
-  isAuthActive,
   isConfigData,
-  resolveAuthIn,
-  resolveAuthName,
   targetFeatures,
+  templateSafe,
 } from '@voxgig/sdkgen'
 
 
@@ -37,31 +35,11 @@ const Config = cmp(async function Config(props: any) {
 
   const model: Model = ctx$.model
 
-  // Gated by the applicability tags, so this target never imports or
-  // registers a feature it has no source for. One rule, one place:
-  // helpers/applicability.
+  // Gated by helpers/applicability, so no feature without source is named.
   const feature = targetFeatures(model, target)
 
-  const { def: configDef, json: baseJson } = configDefinition(model, target.name)
-
-  const authIn = resolveAuthIn(model)
-  const authName = resolveAuthName(model)
-  let configJson = baseJson
-
-  if (isAuthActive(model) && null != configDef.options && null != configDef.options.auth) {
-    let changed = false
-    if ('header' !== authIn) {
-      configDef.options.auth.in = authIn
-      changed = true
-    }
-    if ('Authorization' !== authName) {
-      configDef.options.auth.name = authName
-      changed = true
-    }
-    if (changed) {
-      configJson = JSON.stringify(configDef)
-    }
-  }
+  const { def: configDef, json } = configDefinition(model, target.name)
+  const configJson = templateSafe('json', json)
 
   const asData = isConfigData(configJson, configReprSetting(model))
 
@@ -188,7 +166,7 @@ public static class SdkConfig
     else {
       Content(`    public static Dictionary<string, object?> MakeConfig()
     {
-        return ${formatCsMap(configDef, 2)};
+        return ${templateSafe('csharp', formatCsMap(configDef, 2))};
     }
 `)
     }

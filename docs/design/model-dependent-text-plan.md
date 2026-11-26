@@ -1,8 +1,11 @@
 # Plan: correcting the generated text, and the defects found beside it
 
 Status: **plan** (2026-11-12), **revised 2026-11-21** (section 0). It
-carries out the design in `docs/design/model-dependent-text.md`. The fact pass
-of section 0 is released in 4.45.0; nothing else here is implemented.
+carries out the design in `docs/design/model-dependent-text.md`. Released in
+sdkgen: the fact pass of section 0 in 4.45.0, R1 in 4.46.0 and R2 in 4.47.0.
+R3 is built for 4.48.0; section 8 records where it departs from section 4
+and what it leaves. This plan does not track the other repositories'
+releases in section 5.
 Every issue it names has its own entry in
 `docs/design/model-dependent-text-issues.md`: what is wrong, where, what was
 seen at head, the fix, and the check that holds it.
@@ -1096,11 +1099,14 @@ are unused: review folded those packages into WP28 and WP26a.
   `ts/ReadmeExampleTest_ts.ts` (N12; must precede WP29).
   `ts/src/utility.ts:48-52`: `isAuthSuppressed` returns `!isAuthActive(model)`
   (G04), and the twelve `PrepareAuth_<lang>.ts` copies with a local predicate
-  import it (V17, D22). The 20 `Config_<lang>.ts` render auth and server
-  blocks from `configDefinition`'s separate credential field added in WP19
-  (V18). The 30 `ReadmeEntity_<lang>.ts` and `ReadmeRef_<lang>.ts` pass their
-  own language to `canonToType`, and `Schema_<lang>` headers name the language
-  title (N04). `ts/project/.sdk/src/cmp/ts/Entity_ts.ts:55` and
+  import it (V17, D22). Because the default model declares `info.auth: false`,
+  the 20 primary-corpus runners skip `auth-basic`, visibly, when the SDK
+  places no credential, and the compile lanes that assert a sent key declare
+  `config.auth.active: true` (DQ11). The 20 `Config_<lang>.ts` render auth and
+  server blocks from `configDefinition`'s separate credential field added in
+  WP19 (V18). The 30 `ReadmeEntity_<lang>.ts` and `ReadmeRef_<lang>.ts` pass
+  their own language to `canonToType`, and `Schema_<lang>` headers name the
+  language title (N04). `ts/project/.sdk/src/cmp/ts/Entity_ts.ts:55` and
   `js/Entity_js.ts:38` name each entity file with the target's `ext` rather
   than its key, so an aliased ts or js target stops writing `<Class>.<alias>`
   files (A04). `npm run golden`.
@@ -1467,19 +1473,21 @@ are unused: review folded those packages into WP28 and WP26a.
 - **Goal.** Make the constructor's behaviour on a missing required server
   variable a stated contract (DQ17).
 - **Resolves.** M15.
-- **Changes.** Recommended: the go, rust, zig and c READMEs' constructor
-  sections state that the constructor panics (or aborts in c), beside WP29.
-  Otherwise `ts/project/.sdk/tm/go/utility/make_options.go:171-173`,
+- **Changes.** As answered (DQ17, not the recommendation):
+  `ts/project/.sdk/tm/go/utility/make_options.go:171-173`,
   `tm/rust/utility/make_options.rs:144-149`, `tm/zig/core/utility.zig:835-840`
   and `tm/c/utility/make_options.c:124-128` return an error through the
   constructor, a breaking change for generated go and rust SDKs announced as
-  such. `npm run golden`.
+  such. Every generated caller handles it: the README examples, the generated
+  tests, and the go-cli and go-mcp consumers that wrap go. The four READMEs'
+  constructor sections say what the error names. `npm run golden`.
 - **Tests.** `ts/test/generatedcompile.test.ts` `SERVER_LANES` extended to go,
   rust and zig.
 - **Output change.** Docs, or code if changed.
 - **Depends on.** WP29; decision DQ17.
 - **Release.** R3 (sdkgen minor 4.48.0), in sdkgen.
-- **Size.** 4 components or 4 templates, the golden.
+- **Size.** 4 templates, the four constructors and their generated callers,
+  the golden.
 
 ### WP41. Language pack: documents to parity with the wave
 
@@ -1549,8 +1557,8 @@ are unused: review folded those packages into WP28 and WP26a.
 | R-AD1 | apidef | minor (npm) and go/v minor, one dispatch | WP06 | nothing | Followed by a goldens refresh in apidef-validate. |
 | R-CS1 | create-sdkgen | its next release | WP44a | nothing | Owned by other work: needs that release to accept WP44a. The pin moves are R-CS2. |
 | F | sdkgen | minor 4.45.0 | the fact pass | nothing | Released 2026-11-20: the rules, `applyFacts`, `fact`, and the first two facts. |
-| R1 | sdkgen | minor 4.46.0 | WP01, WP02, WP03, WP07, WP08, WP09, WP10, WP11, WP12, WP16, WP17, WP18 | nothing | Neutral only; adds the root plan, phase and escaped-text facts. |
-| R2 | sdkgen | minor 4.47.0 | WP13, WP14, WP15, WP19, WP20, WP21, WP22, WP23, WP25 | R1 | Facts and neutral corrections; no copy changes. A package whose decision is open at the cut is left out and rides a later neutral minor. |
+| R1 | sdkgen | minor 4.46.0 | WP01, WP02, WP03, WP07, WP08, WP09, WP10, WP11, WP12, WP16, WP17, WP18 | nothing | Neutral only; adds the root plan, phase and escaped-text facts. Released 2026-11-25. |
+| R2 | sdkgen | minor 4.47.0 | WP13, WP14, WP15, WP19, WP20, WP21, WP22, WP23, WP25 | R1 | Facts and neutral corrections; no copy changes. A package whose decision is open at the cut is left out and rides a later neutral minor. Released 2026-11-25. |
 | R-DG2 | docgen | minor | WP05b, WP26a | R2, R-DG1, R-AD1 | Raises docgen's sdkgen floor to R2; a project updates sdkgen before docgen. |
 | R-IP2 | sdkgen-infrapack | patch | WP27 | R2, R-IP1 | Needs DQ20 answered and the word in SURFACES. |
 | R-DG3 | docgen | patch | WP26b | R2, R-DG2 | Needs DQ3 and DQ21. |
@@ -1619,11 +1627,12 @@ are independent. After R-AD1, apidef-validate's goldens are refreshed
   other way: The rule lives only in the agent guide's "Where do I make this
   change?" row. Affects WP13.
 - **DQ6. Scope beyond markdown: consumer run-time strings and source comments?
-  (D6)** Recommendation: Include the consumer run-time strings (WP36); one
-  comment pass with no gate (WP38). If answered the other way: Without
-  run-time strings, WP36 keeps only document changes and G08, G09, G10, U81
-  and U82 are not fixed; without comments, WP38 is dropped and its six issues
-  are not fixed. Affects WP36, WP38.
+  (D6)** Answered (2026-11-26): as recommended, both. Recommendation: Include
+  the consumer run-time strings (WP36); one comment pass with no gate (WP38).
+  If answered the other way: Without run-time strings, WP36 keeps only
+  document changes and G08, G09, G10, U81 and U82 are not fixed; without
+  comments, WP38 is dropped and its six issues are not fixed. Affects WP36,
+  WP38.
 - **DQ7. Should generate and doctor fail a target without the `test` feature,
   or with `phase.entity` off?** Answered (2026-11-24): as recommended.
   Recommendation: Yes, a named error with `target add <t>` as the repair. If
@@ -1644,18 +1653,24 @@ are independent. After R-AD1, apidef-validate's goldens are refreshed
   spec in every language, a larger wave plus a parity test. Affects WP19,
   WP29, WP41.
 - **DQ10. Six targets (c, elixir, ocaml, scala, swift, zig) document live
-  tests they lack: delete the sections, or implement the harnesses?**
-  Recommendation: Delete the sections now; harnesses are separate work. If
-  answered the other way: Six live harnesses become new packages after the
-  wave. Affects WP30.
+  tests they lack: delete the sections, or implement the harnesses?** Answered
+  (2026-11-26): as recommended. Recommendation: Delete the sections now;
+  harnesses are separate work. If answered the other way: Six live harnesses
+  become new packages after the wave. Affects WP30.
 - **DQ11. Does `info.auth: false` with no `config.auth` mean no credential
-  code?** Recommendation: Yes: `isAuthSuppressed` returns `!isAuthActive`. If
-  answered the other way: Generated code keeps placing a passed apikey;
-  documents switch to that rule, and G04 becomes a documentation change.
-  Affects WP28.
+  code?** Answered (2026-11-26): as recommended. Landing it found two
+  consumers the question did not name: the 20 primary-corpus runners assert
+  that a credential is placed, and about 14 compile lanes generate the default
+  `info.auth: false` model and assert a sent key. So the runners skip
+  `auth-basic`, visibly, when the SDK places no credential, and those lanes
+  declare `config.auth.active: true` (WP28). Recommendation: Yes:
+  `isAuthSuppressed` returns `!isAuthActive`. If answered the other way:
+  Generated code keeps placing a passed apikey; documents switch to that rule,
+  and G04 becomes a documentation change. Affects WP28.
 - **DQ12. Is the generated `patch` method flow-tested in every language?**
-  Recommendation: Yes, in the wave. If answered the other way: State it in the
-  generated agent guide and warn once per run; no copy change. Affects WP39.
+  Answered (2026-11-26): as recommended. Recommendation: Yes, in the wave. If
+  answered the other way: State it in the generated agent guide and warn once
+  per run; no copy change. Affects WP39.
 - **DQ13. `output.repo`: implement or delete?** Answered (2026-11-24): as
   recommended. Recommendation: Implement in `repoInfo(model, target)`. If
   answered the other way: Delete the slot and its documentation row; package
@@ -1670,14 +1685,17 @@ are independent. After R-AD1, apidef-validate's goldens are refreshed
   false. If answered the other way: U68 is not fixed: the disclosure is always
   written. Affects WP25.
 - **DQ16. Should `feature add secrets` install it active, like every other
-  feature?** Recommendation: Yes: `active: true` in `secrets.aontu`, in the
-  wave. If answered the other way: Document inactive-on-add in
-  `docs/reference/features.md` and print it from `feature add`. Affects WP34.
+  feature?** Answered (2026-11-26): as recommended. Recommendation: Yes:
+  `active: true` in `secrets.aontu`, in the wave. If answered the other way:
+  Document inactive-on-add in `docs/reference/features.md` and print it from
+  `feature add`. Affects WP34.
 - **DQ17. A missing required server variable in go, rust, zig and c: return an
-  error or document the panic?** Recommendation: Document the panic; no API
-  break. If answered the other way: The constructors return an error, a
-  breaking change for generated go and rust SDKs, announced as such. Affects
-  WP40.
+  error or document the panic?** Answered (2026-11-26): the other way. The
+  constructors return an error, a breaking change for generated go and rust
+  SDKs (and for zig or c wherever a signature changes) that the release notes
+  announce. Recommendation: Document the panic; no API break. If answered the
+  other way: The constructors return an error, a breaking change for generated
+  go and rust SDKs, announced as such. Affects WP40.
 - **DQ18. How is `$$` in vendor text protected in generated source?** Answered
   (2026-11-24): as recommended. Recommendation: A per-language string escaper
   in a new sdkgen helper file (the design note excludes jostraca changes). If
@@ -1698,9 +1716,10 @@ are independent. After R-AD1, apidef-validate's goldens are refreshed
   stays undeclared and is named by its title as an unknown surface; WP27 is
   dropped. Affects WP13, WP27.
 - **DQ21. Are feature descriptions definitions of the feature, with docgen
-  filtering by applicability?** Recommendation: Yes; the 20 feature model
-  files are not reworded. If answered the other way: Reword the 20 feature
-  descriptions in the wave (WP34). Affects WP26b.
+  filtering by applicability?** Answered (2026-11-26): as recommended.
+  Recommendation: Yes; the 20 feature model files are not reworded. If
+  answered the other way: Reword the 20 feature descriptions in the wave
+  (WP34). Affects WP26b.
 - **DQ22. One rule for the path from a target back to `.sdk`, computed for
   every pass?** Answered (2026-11-24): as recommended. Recommendation: Yes,
   from `targetPlace` and `output.sdkrel`, `..` in tree. If answered the other
@@ -1712,10 +1731,10 @@ are independent. After R-AD1, apidef-validate's goldens are refreshed
   message naming the pin move. If answered the other way: Only the upgrade
   how-to of WP12 records it. Affects no package.
 - **DQ24. Should py-data's `data()` activate the paging feature when the
-  wrapped py target declares it?** Recommendation: Yes, unless the caller set
-  it; the text says one page when the SDK has no paging. If answered the other
-  way: Text only: py-data documents one page unless the caller activates
-  paging. Affects WP36.
+  wrapped py target declares it?** Answered (2026-11-26): as recommended.
+  Recommendation: Yes, unless the caller set it; the text says one page when
+  the SDK has no paging. If answered the other way: Text only: py-data
+  documents one page unless the caller activates paging. Affects WP36.
 - **DQ25. Do the root documents in the tree list the targets the model places
   out of tree? (V28)** Answered (2026-11-25): yes. The root README and
   AGENTS.md name each active out-of-tree target by title, linked to its
@@ -1844,6 +1863,188 @@ Risks:
 - R3 changes outputs the language pack already reads (`isAuthSuppressed`,
   `introOps`); the pack's head lane runs against each candidate, and R-LP2
   lists the expected pack output change.
+
+## 8. R3 as built
+
+R3 was built by nine workers, in three rounds and a fix at integration, on
+one integration branch, and lands as one pull request: each catalogue item,
+or a small group of them, is its own commit, and each commit body names its
+package and items. Section 4
+holds as written except where this section says otherwise.
+
+**Decisions.** Every decision R3 depends on was answered before the pull
+request (section 6). Three commits were written before theirs and say
+"provisional" in their bodies: "Install the secrets feature active, as every
+other bundled feature" (DQ16), "py-data turns the SDK's paging on, and says
+one page where there is none" (DQ24) and "The go-cli and go-mcp binaries say
+and read only what the model has" (DQ6). Each decision was then answered as
+recommended, so the three stand as written.
+
+**WP28.** DQ11 reaches past the credential code to the twenty primary-corpus
+runners: each skips its prepareAuth section, visibly and with one reason
+("this SDK's config declares no auth, so it places no credential"), where the
+generated Config declares no auth. The decision is read from the config,
+never from a probe, so a regression that drops auth still fails;
+`ts/test/primaryauth.test.ts` holds it. The credential lanes model an API
+that takes a key, and a public API runs its corpus step.
+
+**WP29.** `requiredOptions` is the two facts `main.kit.fact.auth` and
+`main.kit.fact.server` (section 0), and the option rows come from the
+exported `clientOptions(model)` (`ts/src/helpers/clientOptions.ts`). D26 as
+DQ9 answered: the twenty `ReadmeOptions_<lang>.ts` copies are gone, and the
+neutral `ReadmeOptions` stays exported and writes nothing. The next
+`target add` removes a project's copy that the copy record shows untouched,
+and logs `target-component-retired`; doctor reports a changed or unrecorded
+copy as stale.
+
+**WP30.** As planned, through `main.kit.fact.env` (no `liveTestEnv` or
+`envVar`): the six how-tos DQ10 names now say the suite runs offline and has
+no live tests. kotlin's live clients take `test.client.options` through
+`RunnerSupport.liveClientOptions()`, as java's do, with an empty credential
+placeholder where they wrote `NONE`. cpp's live entity tests build their
+client from the environment through `live_client_options()`; a live cpp run
+then stops at `fetch_no_transport`, because cpp has no built-in transport,
+and its how-to says so. The thirteen live how-tos name every variable the
+tests read, defaulted server variables and `<NAME>_TEST_<ENTITY>_ENTID`
+included, and the generate suite holds each README to exactly that set. The
+six live-less targets carry an `auth` parity pin with the reason; cpp's
+`servers` pin matched nothing and is gone.
+
+**WP31.** Departures:
+
+- X7 reads a new fact, `main.kit.fact.sharedOps`: true when every active
+  entity has the same operations. c, go and ocaml keep their sentence, which
+  describes one shared vtable, interface or record type and holds whatever
+  the operations.
+- A05: each copy spells its operations beside the interface table that
+  already spells them (go and csharp capitalise, ocaml writes `e_<op>`, each
+  commented), not through one neutral helper.
+- S28: the tutorial lead-in follows the first active entity, which every
+  copy's steps use, not `pickExampleEntity`, so the lead-in and the steps
+  describe one entity.
+- U49: the exported `directRoute` takes a route no generated method reaches,
+  else an entity's own, and only one with exactly one placeholder, so every
+  language's example keeps its shape; a model with no such route keeps
+  `/api/resource/{id}`.
+- Tests: the guard gains two relations, `table` (a header with no row under
+  it) and `numbering` (a skipped number among sibling headings). The `off`
+  relation for operations is not added: the guard's operation variations
+  carry no operation words, so it would flag only generic mentions;
+  `ts/test/opprose.test.ts` holds the same facts under those model shapes,
+  and holds every name on an "Operations:" line to a method of the entity.
+- `seriesList` is exported for the numbered lists.
+
+**WP32, and the G21 class.** The defect WP32 fixed in ts's quick-start test
+was in every all-blocks README example test, eighteen targets in all, which
+read the root README by a fixed relative path. Each now reads it only where
+the link fact says the run writes one beside the target, and its own README
+and REFERENCE only where its readme phase writes them. Found in R3; not in
+the catalogue.
+
+**WP39.** DQ12 answered yes. The fourteen `TestEntity_<lang>` components
+that write flow tests write a patch step where the flow has one; c, clojure,
+elixir, ocaml, swift and zig write no flow test for any operation. apidef
+writes no patch step, so the generation fixture declares one shaped as
+apidef shapes an update step: until apidef, or a project's own model, writes
+one, a generated SDK's flow tests do not call `patch`.
+
+**WP40.** DQ17 answered the other way from the recommendation: each
+constructor returns an error coded `server_var_required` that names the
+variable and quotes the base URL. Go returns `(client, error)` from
+`New<Name>SDK` and `New()`, and still accepts a `makeOptions` override with
+the old one-result signature; go-cli prints the refusal and exits 1. Rust
+returns `Result<Rc<SDK>, Error>`, and its primary tests build their live
+clients over an explicit base, which ends the panic at
+`make_options.rs:144`. Zig returns `NewResult`, a tagged union shaped like
+`OpResult`. C's `<name>_sdk_new` takes a `PNError**` and returns `NULL`,
+and its server-variable test no longer forks, so it runs on every
+platform. The test-mode constructors keep one result. `SERVER_LANES` covers
+go, rust and zig as well.
+
+**WP38 follow-ups.** Generated comments no longer cite labels from lists
+that do not ship ("item-5 convention", "Feature #4", and the same class:
+"PR #2", "gotcha #N" and others, 38 files). The fifteen `EntityTypes_<lang>`
+that gave a reason for `only_active: false` now give the current one: a
+project keeps a Root from before create-sdkgen 0.31.1, which generates code
+for inactive entities, until it re-scaffolds.
+
+**Found at integration.** The go-mcp lane compared its tool list exactly and
+did not expect the patch tool the fixture's planet gained in WP39. The secrets
+feature suites asserted the credential an SDK sends, which an SDK of an API
+that declares no auth stopped sending under DQ11: generated for such an API
+they passed at main, and on the R3 branch go's failed one test and ts's
+fifteen, while scala's, which runs in every scala SDK, failed in every
+public-API one. Each of the twenty suites now skips, visibly and with the
+corpus runners' reason, where the generated config declares no auth;
+`ts/test/secretsauth.test.ts` holds the gate, and the secrets lanes of js, go,
+rb, perl, zig, c, cpp and ocaml run under a model without auth and require the
+skip line. CI then found three that the container that built R3 could not see.
+csharp's flow test named the update step's pattern variable `ue`, which C#
+scopes to the enclosing block, so the patch step, which shares the update
+step's generator, declared it twice (CS0128), and every csharp lane that
+generates planet failed to build; each pattern variable now takes its step's
+own result name. scala's patch-flow lane gave data to planet alone and wrote
+no root files, while scala's one test main runs every entity's test and the
+README check; the lane now writes every entity's data and scala's root files.
+Both were then reproduced and checked there, with dotnet and scala-cli
+installed for the purpose. And on the Windows push runner alone, six tests R3
+added failed: three looked a generated file up in memfs under `Path.join`,
+which is not how memfs keys it there, and three generated into memfs after
+moving into the system temporary directory, which a Windows runner keeps on
+another drive than the stage. They now key files as the alias tests'
+`generated()` does, and work in a directory under the stage; the Windows
+runner has since passed them. Merging main's token-exchange and byte-response work (#524)
+brought tests that R3 had to adapt: the redirect test it added to the go,
+csharp, rust and zig secrets suites, which gate one test at a time, now opens
+with their gate, and the five clients it added to the go, rust, zig and c
+tests are built as WP40's constructors require. The nightly then showed two
+lanes reading output their tool does not print there: csharp's corpus step, on
+dotnet's detailed logger, looked for the minimal logger's summary, and zig's
+no-auth lane missed a summary the runners colour; both now read what the tool
+prints.
+The macOS push runner found the last: the c secrets suite defines
+`_POSIX_C_SOURCE`, which on Darwin hides `INADDR_LOOPBACK`, the address the
+redirect case from #524 listens on. No lane compiled that suite on macOS
+before R3's no-auth lane, and the transport test, which no lane compiles
+there, carried the same flaw. Both now define `_DARWIN_C_SOURCE` beside it on
+Apple, as `utility/http.c` does, checked here against a stand-in for
+Darwin's header guard.
+
+**Left for later.**
+
+- The language pack (R-LP2): its dart and haskell intros call `introOps`,
+  which no longer falls back to `list` and `load`; its `TestClean` and lean
+  `Test` call `isAuthSuppressed`, which now follows `isAuthActive`;
+  `ReadmeOptions_lean.ts` is dead, and its option tables are written by hand.
+  Its head lane runs against the R3 candidate first.
+- docgen: `sdk-setup.json` could take its option rows from `clientOptions`.
+- `edition add` does not retire a component its source stopped shipping, as
+  `target add` now does; doctor already calls a recorded one stale.
+- apidef writes no patch flow step (WP39 above).
+- Swift still stops the process on a missing server variable: its
+  `makeOptions` throws and the constructor calls `fatalError`. DQ17 named
+  go, rust, zig and c.
+- The secrets feature does not follow DQ11 yet. It decides whether to place
+  a credential from `options.auth`, which the option spec always fills, so
+  where a project carries it over an API that declares no auth, go's
+  transport wrapper still sends the resolved key and ts still exchanges a
+  token. The suites' skip reason holds for PrepareAuth, and holds for the
+  feature only once it reads the config as PrepareAuth does.
+- Under HTTP Basic the secrets feature writes `Basic <raw token>` over the
+  composite PrepareAuth wrote, dropping the secret, as at main; the go
+  suite's credential check accepts that form.
+- Out of tree with no `output.repo`, the go module path, clone URLs and the
+  rockspec `url` still name the SDK repository; and a consumer generated
+  into another repository with `output.repo` requires the Go SDK under that
+  repository's module path, because `ExternalTarget` overrides `kit.repo`
+  (beside [voxgig/sdkgen#392](https://github.com/voxgig/sdkgen/issues/392)).
+- A go target at the project root is tagged `go/v…`, where a Go root module
+  needs a bare `v…`; SwiftPM resolves only plain semver tags, so a prefixed
+  swift tag cannot be required by version.
+- The perl and swift manifests ignore a declared `publish.registry.package`;
+  the ocaml opam `depends` list does not follow the collected dependencies.
+- Regenerating the reference SDKs and the fleet before the dispatch
+  (authorisation 7) is not part of the pull request.
 
 ## Appendix A. Issue index
 

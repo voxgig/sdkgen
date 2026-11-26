@@ -884,11 +884,11 @@ defmodule ProjectName.Utility do
             end
 
           # Station special case, mirroring test's: its transport wrap must
-          # sit immediately outside the base transport (inside retry/cache/
-          # netsim), so map-form activation hoists it to just after test -
-          # or first, when no test entry exists. Without this the sorted
-          # default would init station last and wrap OUTSIDE the recording
-          # features, turning its wire-truth events into fiction.
+          # sit immediately outside the base transport (inside every other
+          # transport wrap), so map-form activation hoists it to just after
+          # test - or first, when no test entry exists. Without this the
+          # sorted default would init station last and wrap OUTSIDE the
+          # recording features, turning its wire-truth events into fiction.
           if Enum.member?(names, "station") do
             rest = Enum.reject(names, &(&1 == "station"))
 
@@ -1528,10 +1528,10 @@ defmodule ProjectName.Utility do
 
     S.setprop(ctrl, "err", sdk_err)
 
-    # Fire PreUnexpected so observability features (metrics, telemetry, audit,
-    # debug) close/record error paths that never reach PreDone (e.g. a PrePoint
-    # rbac short-circuit). Fires after ctrl.err is set so hooks can read the
-    # error; features guard against double-recording when PreDone already fired.
+    # Fire PreUnexpected so features hooked on it close/record error paths that
+    # never reach PreDone (e.g. a PrePoint short-circuit). Fires after ctrl.err
+    # is set so hooks can read the error; features guard against
+    # double-recording when PreDone already fired.
     if S.getprop(ctx, "utility") != nil do
       S.setprop(ctx, "unexpected_fired", true)
       feature_hook(ctx, "PreUnexpected")

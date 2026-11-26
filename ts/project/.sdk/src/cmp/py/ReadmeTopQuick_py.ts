@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, opRequestShape, safeVarName, exampleVarName, serverVariables, listMatchArg, matchExampleItems, litString, entityOps } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, opRequestShape, safeVarName, exampleVarName, listMatchArg, matchExampleItems, litString, entityOps, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -32,7 +32,7 @@ const ReadmeTopQuick = cmp(function ReadmeTopQuick(props: any) {
 
   const authActive = isAuthActive(model)
 
-  const svars = serverVariables(model)
+  const svars = fact(model.main[KIT], 'server').filter((v: any) => v.required)
   const pyServerField = 0 === svars.length ? '' :
     `\n    "server": {` +
     svars.map((v: any) => `\n        "${v.name}": "<${v.name}>",`).join('') +
@@ -40,7 +40,7 @@ const ReadmeTopQuick = cmp(function ReadmeTopQuick(props: any) {
 
   const apikeyImport = authActive ? `import os\n` : ''
   const ctor = authActive
-    ? `${model.const.Name}SDK({\n    "apikey": os.environ.get("${envName(model)}_APIKEY"),${pyServerField}\n})`
+    ? `${model.const.Name}SDK({\n    "apikey": os.environ.get("${envName(model)}_APIKEY"),${fact(model.main[KIT], 'auth').secret ? `\n    "secret": os.environ.get("${envName(model)}_SECRET"),` : ''}${pyServerField}\n})`
     : ('' === pyServerField
       ? `${model.const.Name}SDK()`
       : `${model.const.Name}SDK({${pyServerField}\n})`)

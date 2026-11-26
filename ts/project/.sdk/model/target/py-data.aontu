@@ -6,6 +6,8 @@ main: kit: target: 'py-data': {
   comment: line: "#"
   module: name: '$$name$$'
   base: 'BASE'
+  surface: 'data'
+  consumes: 'py'
   srcfeature: false
 
   phase: {

@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, opRequestShape, matchExampleItems, entityOps } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, opRequestShape, matchExampleItems, entityOps, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -38,15 +38,28 @@ const ReadmeTopQuick = cmp(function ReadmeTopQuick(props: any) {
   const exampleEntity = Object.values(entity).find((e: any) => e.active !== false) as any
 
   const authActive = isAuthActive(model)
-  const ctor = authActive
-    ? `${ident}_sdk_new(cmap(1,\n    "apikey", v_str(getenv("${envName(model)}_APIKEY"))))`
-    : `${ident}_sdk_new(NULL)`
+  const svars = fact(model.main[KIT], 'server').filter((v: any) => v.required)
+  const ctorFields = [
+    ...(authActive ? [`"apikey", v_str(getenv("${envName(model)}_APIKEY"))`] : []),
+    ...(fact(model.main[KIT], 'auth').secret ? [`"secret", v_str(getenv("${envName(model)}_SECRET"))`] : []),
+    ...(0 === svars.length ? [] : [`"server", cmap(${svars.length}, ` +
+      svars.map((v: any) => `"${v.name}", v_str("<${v.name}>")`).join(', ') + `)`]),
+  ]
+  const ctor = 0 === ctorFields.length
+    ? `${ident}_sdk_new(NULL, &err)`
+    : `${ident}_sdk_new(cmap(${ctorFields.length},${ctorFields.map((f: string) => '\n    ' + f).join(',')}), &err)`
 
   Content(`\`\`\`c
-${authActive ? '#include <stdlib.h>\n' : ''}#include "core/api.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include "core/api.h"
 
-${model.const.Name}SDK* client = ${ctor};
 PNError* err = NULL;
+${model.const.Name}SDK* client = ${ctor};
+if (NULL == client) {
+    fprintf(stderr, "%s\\n", err->msg);
+    exit(1);
+}
 
 `)
 

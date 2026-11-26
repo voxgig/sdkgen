@@ -48,16 +48,16 @@ async function runLiveEntity(setup, entity, flow, accessor, facts = {}, settle =
                 if (!points.length)
                     throw new live_runner_1.LiveBlocked('No modelled operation point');
                 const record = created.get(ref);
-                // A failed create must not turn a later update/remove into a write
-                // against an arbitrary record found by a list operation.
-                if ((op === 'update' || op === 'remove') && hasCreate && !record) {
+                // A failed create must not turn a later update, patch or remove into a
+                // write against an arbitrary record found by a list operation.
+                if (['update', 'patch', 'remove'].includes(op) && hasCreate && !record) {
                     throw new live_runner_1.LiveBlocked('Create did not provide a usable resource');
                 }
                 if (op === 'remove' && !record)
                     throw new live_runner_1.LiveBlocked('No resource created by this run');
                 if (op === 'remove' && !entity.id)
                     throw new live_runner_1.LiveBlocked('No modelled resource identity for cleanup');
-                if (record && ['update', 'remove'].includes(op) && entity.id &&
+                if (record && ['update', 'patch', 'remove'].includes(op) && entity.id &&
                     null == (record[idField] ?? record.id)) {
                     throw new live_runner_1.LiveBlocked('Created resource has no usable identity');
                 }
@@ -69,7 +69,7 @@ async function runLiveEntity(setup, entity, flow, accessor, facts = {}, settle =
                         input[name] = value;
                 }
                 const loaded = record || (op === 'load' ? listed[0] : undefined);
-                if (loaded && ['load', 'update', 'remove'].includes(op)) {
+                if (loaded && ['load', 'update', 'patch', 'remove'].includes(op)) {
                     const id = loaded[idField] ?? loaded.id;
                     if (undefined !== id)
                         input.id = id;
@@ -140,7 +140,7 @@ async function runLiveEntity(setup, entity, flow, accessor, facts = {}, settle =
                         input.$action = resolved.$action;
                 }
                 let intendedMark;
-                if (op === 'update') {
+                if (['update', 'patch'].includes(op)) {
                     for (const spec of step.s || []) {
                         if (spec.apply === 'TextFieldMark' && step.i?.textfield) {
                             const mark = { name: step.i.textfield, value: spec.def.mark + '_' + setup.now };
@@ -186,11 +186,11 @@ async function runLiveEntity(setup, entity, flow, accessor, facts = {}, settle =
                     context.publish(data);
                     if (op === 'create' && entity.id)
                         (0, strict_1.default)(null != (data[idField] ?? data.id), 'Missing created identity');
-                    if (['load', 'update'].includes(op) && input.id != null && repeatsId) {
+                    if (['load', 'update', 'patch'].includes(op) && input.id != null && repeatsId) {
                         strict_1.default.equal(String(data[idField] ?? data.id), String(input.id), 'Response identity mismatch');
                     }
                     const mark = marks.get(ref);
-                    if (mark && ['update', 'load'].includes(op)) {
+                    if (mark && ['update', 'patch', 'load'].includes(op)) {
                         strict_1.default.equal(data[mark.name], mark.value, 'Updated field mismatch');
                     }
                 }

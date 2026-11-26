@@ -17,14 +17,14 @@ import XCTest
 @testable import ProjectNameSdk
 
 enum SdkRunner {
-  // The shared SDK test spec lives at <project>/.sdk/test/test.json, i.e. up
-  // three dirs from this file (swift/Tests/ProjectNameSDKTests -> project).
+  // The shared SDK test spec lives at <project>/.sdk/test/test.json, reached
+  // from this package's directory (swift/Tests/ProjectNameSDKTests -> swift).
   static func testJsonPath(_ file: String = #filePath) -> String {
     let dir = URL(fileURLWithPath: file)
       .deletingLastPathComponent()  // ProjectNameSDKTests
       .deletingLastPathComponent()  // Tests
       .deletingLastPathComponent()  // swift
-      .deletingLastPathComponent()  // project (holds .sdk)
+      .appendingPathComponent("SDKREL")  // project (holds .sdk)
     return dir.appendingPathComponent(".sdk").appendingPathComponent("test")
       .appendingPathComponent("test.json").path
   }

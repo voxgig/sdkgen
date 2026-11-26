@@ -13,7 +13,7 @@ declare(strict_types=1);
 //
 // 1. SPEC PATH. omni expects a usable path; a relative one is absolutized
 //    against THIS file's directory (test/), so the existing
-//    '../../.sdk/test/test.json' constant works from any working directory.
+//    '../SDKREL/.sdk/test/test.json' constant works from any working directory.
 //
 // 2. CONTEXTS STAY MAPS ACROSS THE RUNNER - WITH REFERENCE SLOTS. omni
 //    sets `entry.ctx` to the contextified args[0], and `match: {ctx: ...}`

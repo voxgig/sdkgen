@@ -417,8 +417,8 @@
 (defn feature-get-version [f] (:version (deref f)))
 
 ;; feature_add: position via _options (__before__/__after__/__replace__),
-;; first match wins, else append. (gotcha #4 — ordering carrier is the
-;; feature's :_options map.)
+;; first match wins, else append. The ordering carrier is the feature's
+;; :_options map.
 (defn feature-add [ctx f]
   (let [feats (client-features (oget ctx :client))
         fopts (or (:_options (deref f)) (vs/jm))
@@ -1675,11 +1675,10 @@
                            :spec (ucall ctx :clean spec)
                            :status (to-int (oget result :status)))]
         (oset! (oget ctx :ctrl) :err sdk-err)
-        ;; Fire PreUnexpected so observability features (metrics, telemetry,
-        ;; audit, debug) close/record error paths that never reach PreDone
-        ;; (e.g. a PrePoint rbac short-circuit). Fires after ctrl.err is set so
-        ;; hooks can read the error; features guard against double-recording
-        ;; when PreDone already fired.
+        ;; Fire PreUnexpected so features hooked on it close/record error paths
+        ;; that never reach PreDone (e.g. a PrePoint short-circuit). Fires
+        ;; after ctrl.err is set so hooks can read the error; features guard
+        ;; against double-recording when PreDone already fired.
         (when (oget ctx :utility)
           (oset! ctx :unexpected-fired true)
           (ucall ctx :feature-hook "PreUnexpected"))

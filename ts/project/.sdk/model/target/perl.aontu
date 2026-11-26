@@ -36,6 +36,7 @@ main: kit: feature: &: target: perl: deps: &: {
 
 
 main: kit: target: perl: publish: {
+  recipe: false
   registry: {
     name: 'cpan'
     url: 'https://www.cpan.org'

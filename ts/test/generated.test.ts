@@ -13,7 +13,7 @@ import {
 } from '../dist/sdkgen.js'
 
 import {
-  KIT, STAGE, SCAFFOLD, makeModel, makeRoot, layeredFs, makeLog, namedEntity,
+  KIT, STAGE, SCAFFOLD, makeModel, makeRoot, layeredFs, makeLog, namedEntity, offFeature,
 } from './generateharness'
 
 
@@ -476,9 +476,9 @@ describe('generation prunes what the model no longer produces', () => {
     const vault = on + '\nmain: kit: feature: secrets: plugin: vault: active: true'
     const grouped = (rel: string) => /hashicorp|boru/i.test(rel)
     const secret = (rel: string) => /secrets/i.test(rel)
-    const afresh = (extra?: string) => {
+    const afresh = (extra?: string, declared = features) => {
       const fresh = memfs({})
-      return generated(fresh.vol, fresh.fs, { features, extra })
+      return generated(fresh.vol, fresh.fs, { features: declared, extra })
     }
     const { fs, vol } = memfs({})
 
@@ -493,9 +493,10 @@ describe('generation prunes what the model no longer produces', () => {
     deepStrictEqual(ungrouped, await afresh(on),
       'regenerating in place left a different file set from generating afresh')
 
-    const off = await generated(vol, fs, { features })
+    const declared = ['test', 'log']
+    const off = await generated(vol, fs, { features: declared, extra: offFeature('secrets') })
     deepStrictEqual(off.filter(secret), [], 'a feature switched off left its source')
-    deepStrictEqual(off, await afresh(),
+    deepStrictEqual(off, await afresh(offFeature('secrets'), declared),
       'regenerating in place left a different file set from generating afresh')
   })
 

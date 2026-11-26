@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems, sendsId } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems, sendsId, fact, seriesList } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -12,6 +12,7 @@ import { kotlinVarName, kotlinPackage, kotlinListMatch, kotlinString } from './u
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   const { target, ctx$: { model } } = props
+  let step = 0
 
   const SDK = model.const.Name + 'SDK'
 
@@ -45,32 +46,29 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
     return kotlinString(placeholder)
   }
 
-  if (authActive) {
-    Content(`### 1. Create a client
+  // The constructor refuses a templated URL it has no value for, so the quick
+  // start passes each variable the URL uses with no default.
+  const svars = fact(model.main[KIT], 'server').filter((v: any) => v.required)
+  const ctorFields = [
+    ...(authActive ? [`"apikey" to System.getenv("${envName(model)}_APIKEY"),`] : []),
+    ...(fact(model.main[KIT], 'auth').secret ? [`"secret" to System.getenv("${envName(model)}_SECRET"),`] : []),
+    ...(0 === svars.length ? [] : [`"server" to mutableMapOf<String, Any?>(` +
+      svars.map((v: any) => `"${v.name}" to "<${v.name}>"`).join(', ') + `),`]),
+  ]
+  const ctor = 0 === ctorFields.length
+    ? `${SDK}()`
+    : `${SDK}(mutableMapOf<String, Any?>(${ctorFields.map((f: string) => '\n    ' + f).join('')}\n))`
+
+  Content(`### ${++step}. Create a client
 
 \`\`\`kotlin
 import ${kotlinPackage(model)}.core.${SDK}
 import ${kotlinPackage(model)}.core.SdkEntity
 
-val client = ${SDK}(mutableMapOf<String, Any?>(
-    "apikey" to System.getenv("${envName(model)}_APIKEY"),
-))
+val client = ${ctor}
 \`\`\`
 
 `)
-  }
-  else {
-    Content(`### 1. Create a client
-
-\`\`\`kotlin
-import ${kotlinPackage(model)}.core.${SDK}
-import ${kotlinPackage(model)}.core.SdkEntity
-
-val client = ${SDK}()
-\`\`\`
-
-`)
-  }
 
   if (exampleEntity) {
     const eName = nom(exampleEntity, 'Name')
@@ -85,7 +83,7 @@ val client = ${SDK}()
     const idF = entityIdField(exampleEntity)
 
     if (opnames.includes('list')) {
-      Content(`### 2. List ${eName.toLowerCase()} records
+      Content(`### ${++step}. List ${eName.toLowerCase()} records
 
 \`list(null, null)\` returns a list of entities, one per record (as \`Any?\`),
 and raises on error; an entity's \`data()\` reads its record.
@@ -124,7 +122,7 @@ catch (err: RuntimeException) {
         `${kotlinString(it.name)} to ${kotlinLit(it.type,
           it.name === neIdF ? 'example_id' : 'example_' + it.name)}`)
 
-      Content(`### 3. Load ${neArticle} ${neName.toLowerCase()}
+      Content(`### ${++step}. Load ${neArticle} ${neName.toLowerCase()}
 
 ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
 \`load()\` returns the ENTITY — call data() for the record — and raises on error.
@@ -152,7 +150,7 @@ catch (err: RuntimeException) {
             it.name === idF ? 'example_id' : 'example_' + it.name)}`).join(', ')})`
         : 'null'
 
-      Content(`### 3. Load ${article} ${eName.toLowerCase()}
+      Content(`### ${++step}. Load ${article} ${eName.toLowerCase()}
 
 \`load()\` returns the ENTITY — call data() for the record — and raises on error.
 
@@ -190,7 +188,8 @@ catch (err: RuntimeException) {
 
     if (opnames.includes('create') || opnames.includes('update') || opnames.includes('patch') ||
       opnames.includes('remove')) {
-      Content(`### 4. Create, update, and remove
+      Content(`### ${++step}. ${seriesList(['create', 'update', 'patch', 'remove']
+        .filter((o: string) => opnames.includes(o))).replace(/^./, (c: string) => c.toUpperCase())}
 
 \`\`\`kotlin
 `)

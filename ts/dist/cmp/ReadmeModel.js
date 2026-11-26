@@ -5,6 +5,7 @@ const jostraca_1 = require("jostraca");
 const component_1 = require("../helpers/component");
 const types_1 = require("../types");
 const facts_1 = require("../helpers/facts");
+const opShape_1 = require("../helpers/opShape");
 const optional_1 = require("../helpers/optional");
 const ReadmeModel = (0, component_1.cmp)(function ReadmeModel(props) {
     const { target, ctx$ } = props;
@@ -30,6 +31,14 @@ const ReadmeModel = (0, component_1.cmp)(function ReadmeModel(props) {
     }
 });
 exports.ReadmeModel = ReadmeModel;
+const GENERIC_OP_ROWS = {
+    load: '| `load(reqmatch?, ctrl?)` | Load a single entity by match criteria. |',
+    list: '| `list(reqmatch?, ctrl?)` | List entities matching the criteria. |',
+    create: '| `create(reqdata?, ctrl?)` | Create a new entity. |',
+    update: '| `update(reqdata?, ctrl?)` | Update an existing entity. |',
+    patch: '| `patch(reqdata?, ctrl?)` | Change part of an existing entity. |',
+    remove: '| `remove(reqmatch?, ctrl?)` | Remove an entity. |',
+};
 const ReadmeModelGeneric = (0, component_1.cmp)(function ReadmeModelGeneric(props) {
     const { target, model, entityList, authActive } = props;
     const apikeyRow = authActive
@@ -54,7 +63,7 @@ ${apikeyRow}| \`base\` | \`string\` | Base URL of the API server. |
 `);
     (0, jostraca_1.each)(entityList, (ent) => {
         const article = /^[aeiou]/i.test(ent.Name) ? 'an' : 'a';
-        (0, jostraca_1.Content)(`| \`${ent.Name}(data?)\` | \`${ent.Name}Entity\` | Create ${article} ${ent.Name} entity instance. |
+        (0, jostraca_1.Content)(`| \`${ent.Name}(data?)\` | \`${(0, opShape_1.entityClassName)(ent, (0, opShape_1.entityCollection)(model))}\` | Create ${article} ${ent.Name} entity instance. |
 `);
     });
     (0, jostraca_1.Content)(`| \`options()\` | \`object\` | Deep copy of current SDK options. |
@@ -71,17 +80,12 @@ ${apikeyRow}| \`base\` | \`string\` | Base URL of the API server. |
 
 ### Entity interface
 
-All entities share the same interface.
+${(0, facts_1.fact)(model.main[types_1.KIT], 'sharedOps') ? 'All entities share the same interface.' :
+        'Each entity has only the operations its model declares; see its section below.'}
 
 | Method | Description |
 | --- | --- |
-| \`load(reqmatch?, ctrl?)\` | Load a single entity by match criteria. |
-| \`list(reqmatch?, ctrl?)\` | List entities matching the criteria. |
-| \`create(reqdata?, ctrl?)\` | Create a new entity. |
-| \`update(reqdata?, ctrl?)\` | Update an existing entity. |
-| \`patch(reqdata?, ctrl?)\` | Change part of an existing entity. |
-| \`remove(reqmatch?, ctrl?)\` | Remove an entity. |
-| \`data(data?)\` | Get or set entity data. |
+${(0, opShape_1.introOps)(model).map((op) => GENERIC_OP_ROWS[op] + '\n').join('')}| \`data(data?)\` | Get or set entity data. |
 | \`match(match?)\` | Get or set entity match criteria. |
 | \`make()\` | Create a new instance with the same options. |
 | \`client()\` | Return the parent SDK client. |

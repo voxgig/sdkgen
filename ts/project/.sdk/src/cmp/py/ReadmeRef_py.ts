@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, safeVarName, exampleVarName, targetFeatures, opNeedsAction, bodyNote, listMatchArg, entityClassName, entityCollection, matchExampleItems, litString, requestExampleItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, safeVarName, exampleVarName, entityOps, bodyNote, listMatchArg, entityClassName, entityCollection, matchExampleItems, litString, requestExampleItems, featureDocs, fact, clientOptions, requiredItems } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -22,6 +22,8 @@ function pyLit(type: any, placeholder: string = 'example'): string {
 }
 
 
+const LIST_ALL = ' The match is optional — call `list()` with no argument to list all records.'
+
 const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string }> = {
   load: {
     sig: 'load(reqmatch, ctrl=None) -> EntyClass',
@@ -31,7 +33,7 @@ const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string
   list: {
     sig: 'list(reqmatch=None, ctrl=None) -> list[EntyClass]',
     returns: 'a list of entities, one per record',
-    desc: 'List entities matching the given criteria. The match is optional — call `list()` with no argument to list all records. Returns a list of entities, one per record, and raises on error.',
+    desc: 'List entities matching the given criteria.' + LIST_ALL + ' Returns a list of entities, one per record, and raises on error.',
   },
   create: {
     sig: 'create(reqdata, ctrl=None) -> EntyClass',
@@ -56,13 +58,12 @@ const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string
 }
 
 
+
 const ReadmeRef = cmp(function ReadmeRef(props: any) {
   const { target } = props
   const { model } = props.ctx$
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
-  const feature = targetFeatures(model, target)
-
   const publishedEntities = each(entity).filter((e: any) => e.active !== false)
 
 
@@ -79,6 +80,10 @@ Complete API reference for the ${model.Name} ${target.title} SDK.
 
 `)
 
+    const OPTION_KIND: Record<string, string> = { string: 'str', map: 'dict', list: 'list' }
+    const optionRows = clientOptions(model)
+      .map((o: any) => '| `options["' + o.name + '"]` | `' + OPTION_KIND[o.kind] + '` | ' + o.desc + ' |\n').join('')
+
     Content(`\`\`\`python
 from ${model.const.Name.toLowerCase()}_sdk import ${model.const.Name}SDK
 
@@ -92,13 +97,7 @@ Create a new SDK client instance.
 | Name | Type | Description |
 | --- | --- | --- |
 | \`options\` | \`dict\` | SDK configuration options. |
-${isAuthActive(model) ? '| \`options["apikey"]\` | \`str\` | API key for authentication. |\n' : ''}| \`options["base"]\` | \`str\` | Base URL for API requests. |
-| \`options["prefix"]\` | \`str\` | URL prefix appended after base. |
-| \`options["suffix"]\` | \`str\` | URL suffix appended after path. |
-| \`options["headers"]\` | \`dict\` | Custom headers for all requests. |
-| \`options["feature"]\` | \`dict\` | Feature configuration. |
-| \`options["system"]\` | \`dict\` | System overrides (e.g. custom fetch). |
-
+${optionRows}
 `)
 
 
@@ -127,7 +126,7 @@ client = ${model.const.Name}SDK.test()
     publishedEntities.map((ent: any) => {
       Content(`#### \`${ent.Name}(data=None)\`
 
-Create a new \`${ent.Name}Entity\` instance. Pass \`None\` for no initial data.
+Create a new \`${entityClassName(ent, entityCollection(model))}\` instance. Pass \`None\` for no initial data.
 
 `)
     })
@@ -166,7 +165,7 @@ Prepare a fetch definition without sending. Returns the \`fetchdef\` and raises 
 
 
     publishedEntities.map((ent: any) => {
-      const opnames = Object.keys(ent.op || {})
+      const opnames = entityOps(ent)
       const fields = Object.values(ent.fields || {})
       // Model-driven id key: null when this entity has no id-like field, in
       // which case load/remove match on no argument and update omits the id.
@@ -178,12 +177,12 @@ Prepare a fetch definition without sending. Returns the \`fetchdef\` and raises 
       Content(`
 ---
 
-## ${ent.Name}Entity
+## ${entityClassName(ent, entityCollection(model))}
 
 `)
 
-      if (ent.short) {
-        Content(`${ent.short}
+      if (fact(ent, 'desc').inline) {
+        Content(`${fact(ent, 'desc').inline}
 
 `)
       }
@@ -203,8 +202,8 @@ ${eVar} = client.${ent.Name}()
 `)
         each(fields, (field: any) => {
           const req = field.r ? 'Yes' : 'No'
-          const desc = field.sh || ''
-          Content(`| \`${field.n}\` | \`${canonToType(field.t, target.name)}\` | ${req} | ${desc} |
+          const desc = fact(model.main[KIT], 'field')[ent.name]?.[field.n]?.desc.cell ?? ''
+          Content(`| \`${field.n}\` | \`${canonToType(field.t, 'py').replace(/\|/g, '\\|')}\` | ${req} | ${desc} |
 `)
         })
 
@@ -217,7 +216,7 @@ ${eVar} = client.${ent.Name}()
           // Only emit columns for operations this entity actually exposes —
           // never advertise a create/update/remove column the entity lacks.
           const opcols = ['load', 'list', 'create', 'update', 'patch', 'remove']
-            .filter((op: string) => opnames.includes(op) && ent.op[op]?.active !== false)
+            .filter((op: string) => opnames.includes(op))
           Content(`### Field Usage by Operation
 
 | Field | ${opcols.join(' | ')} |
@@ -249,16 +248,16 @@ ${eVar} = client.${ent.Name}()
         opnames.map((opname: string) => {
           const info = OP_SIGNATURES[opname]
           if (!info) return
+          const needs = requiredItems(ent, opname).map((it: any) => it.name)
+          const desc = info.desc.replace(' The data must include the entity `id`.',
+            null != idF && needs.includes(idF) ? ' The data must include the entity `' + idF + '`.' : '')
+            .replace(LIST_ALL, 0 === needs.length ? LIST_ALL : ' The match must include ' + needs.map((n: string) => '`' + n + '`').join(', ') + '.')
 
           Content(`#### \`${info.sig.replace('EntyClass', entityClassName(ent, entityCollection(model)))}\`
 
-${info.desc}
+${desc}
 
 `)
-
-          if (opNeedsAction(ent.op[opname])) {
-            return
-          }
 
           // Show example. Entity ops return the ENTITY and raise on
           // error; direct() is the only method that returns a result dict.
@@ -301,7 +300,7 @@ for ${eVar} in results:
 result = client.${ent.Name}().create({
 `)
             createItems.map((it: any) => {
-              Content(`    ${litString('py', it.name)}: ${pyLit(it.type, 'example_' + it.name)},  # ${canonToType(it.type, target.name)}
+              Content(`    ${litString('py', it.name)}: ${pyLit(it.type, 'example_' + it.name)},  # ${canonToType(it.type, 'py')}
 `)
             })
             Content(`})
@@ -319,6 +318,7 @@ result = client.${ent.Name}().create({
             const updateLines = updateItems.map((it: any) =>
               `    ${litString('py', it.name)}: ${pyLit(it.type,
                 it.name === idF ? ent.name + '_id' : it.name)},\n`).join('')
+
             Content(`\`\`\`python
 result = client.${ent.Name}().${opname}({
 ${updateLines}    # ${'patch' === opname ? 'Only the fields to change' : 'Fields to update'}
@@ -359,7 +359,7 @@ Set the entity match criteria.
 
 #### \`make() -> Entity\`
 
-Create a new \`${ent.Name}Entity\` instance with the same options.
+Create a new \`${entityClassName(ent, entityCollection(model))}\` instance with the same options.
 
 #### \`get_name() -> str\`
 
@@ -369,7 +369,7 @@ Return the entity name.
     })
 
 
-    const activeFeatures = each(feature).filter((f: any) => f.active)
+    const activeFeatures = featureDocs(model, target)
     if (activeFeatures.length > 0) {
       Content(`
 ---
@@ -381,7 +381,7 @@ Return the entity name.
 `)
 
       activeFeatures.map((f: any) => {
-        Content(`| \`${f.name}\` | ${f.version || '0.0.1'} | ${f.title || ''} |
+        Content(`| \`${f.name}\` | ${f.version} | ${f.titleCell} |
 `)
       })
 

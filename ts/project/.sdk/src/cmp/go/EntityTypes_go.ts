@@ -6,7 +6,10 @@ import {
   File, Content, Folder, goModule
 } from '@voxgig/sdkgen'
 
-import { canonToType, opTypeName, opRequestShape, warnEntityTypeCollisions , deriveEntityNames } from '@voxgig/sdkgen'
+import {
+  canonToType, opTypeName, opRequestShape, warnEntityTypeCollisions, deriveEntityNames,
+  entityClassName, entityCollection,
+} from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -113,12 +116,12 @@ const EntityTypes = cmp(function EntityTypes(props: any) {
   // never substituted for it — the module path has to be interpolated.
   const gomodule = goModule(model, target.name)
 
-  // only_active:false — getModelPath DROPS active:false entries by default,
-  // but the consumer scaffold (create-sdkgen Root.ts) iterates the RAW entity
-  // collection, so inactive entities still get generated entity code that
-  // references these typed names. The typed model must cover them too.
+  // only_active:false — a Root scaffolded before create-sdkgen filtered on
+  // `active` still generates entity code for inactive entities, and a project
+  // keeps its Root until it re-scaffolds; that code needs these typed names.
   const entity = getModelPath(model, `main.${KIT}.entity`, { only_active: false, required: false })
   const entityList = deriveEntityNames(entity)
+  const entityColl = entityCollection(model)
 
   warnEntityTypeCollisions(entity, log, LANG)
 
@@ -160,6 +163,8 @@ type ${Name} struct {
 
 `)
 
+        // An inactive entity has types, but no entity class to carry a Typed method.
+        const owner = false === ent.active ? null : entityClassName(ent, entityColl)
         const ops = ent.op || {}
         ;['load', 'list', 'create', 'update', 'patch', 'remove'].forEach((opname: string) => {
           if (null == ops[opname]) {
@@ -168,8 +173,9 @@ type ${Name} struct {
 
           const typeName = opTypeName(Name, opname)
           const { items } = opRequestShape(ent, opname)
+          const payloadOf = null == owner ? 'the ' + opname + ' operation' : owner + '.' + cap(opname) + 'Typed'
 
-          Content(`// ${typeName} is the typed request payload for ${Name}.${cap(opname)}Typed.
+          Content(`// ${typeName} is the typed request payload for ${payloadOf}.
 type ${typeName} struct {
 `)
           const taggableItems = items.filter(
@@ -201,7 +207,7 @@ func asMap(v any) map[string]any {
 
 // entityData unwraps an entity to its data map.
 //
-// Operations resolve to the ENTITY, not the raw data (see AGENTS.md), and an
+// Operations resolve to the ENTITY, not the raw data, and an
 // entity's fields are UNEXPORTED — marshalling one directly yields \`{}\`, so
 // every typed accessor would silently hand back a zero-valued struct. The
 // typed boundary therefore takes the data hop first.

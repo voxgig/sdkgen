@@ -31,6 +31,7 @@
   (:require [clojure.string :as str]
             [sdk.core :as core]
             [sdk.client :as client]
+            [sdk.config :as config]
             [sdk.feature.secrets :as secrets]
             [sdk.testutil :as t]
             [voxgig.sekreto :as sekreto]
@@ -242,7 +243,7 @@
 
 ;; ---------------------------------------------------------------------------
 
-(defn run [rec]
+(defn- run-checks [rec]
   (letfn [(chk [name thunk] (t/run-check rec name thunk))]
 
     ;; ---- INACTIVE COSTS NOTHING ----
@@ -661,3 +662,12 @@
                         (str "nothing may reach the wire without a credential: " (wire stub)))
                (t/is-true (str/includes? (core/err-msg (vs/getprop res "err")) "no refresh token")
                           "the missing-refresh-token message")))))))
+
+
+;; Read from the config, never from a probe: an SDK whose config declares no
+;; auth places no credential, and these tests assert on the one it places.
+(defn run [rec]
+  (if (vs/ismap (vs/getprop (vs/getprop (config/make-config) "options") "auth"))
+    (run-checks rec)
+    (do (println "SKIP secrets: this SDK's config declares no auth, so it places no credential")
+        :skipped)))

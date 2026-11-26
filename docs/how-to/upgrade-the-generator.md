@@ -65,6 +65,54 @@ npm install --save-dev --save-prefix=~ @voxgig/sdkgen@latest
 
 Then take the safe path.
 
+## Constructors in Go, Rust, Zig and C return an error
+
+From 4.48.0, a Go, Rust, Zig or C client reports a missing value for a
+required server variable as an error from its constructor, where it used to
+stop the process. The error's code is `server_var_required`, and its message
+names the variable and quotes the base URL. The constructors change shape:
+
+| Target | Constructor | Refusal |
+|---|---|---|
+| Go | `New<Name>SDK(options)` and `New()` return `(*<Name>SDK, error)` | a non-nil `error` |
+| Rust | `<Name>SDK::new(options)` and `new()` return `Result<Rc<<Name>SDK>, <Name>Error>` | `Err` |
+| Zig | `<Name>SDK.new(options)`, `new_with` and `new()` return `NewResult` | `.err`, where `.ok` holds the client |
+| C | `<name>_sdk_new(options, &err)` takes a `PNError**` as well | `NULL`, with `*err` set |
+
+A call written for the old shape no longer compiles against the regenerated
+SDK, so the compiler finds each one: in the application, and in any
+component or template the project keeps in `.sdk` that builds a client.
+Handle the error where the client is made, as the regenerated README's quick
+start does. The test-mode constructors, `TestSDK` in Go and `test_sdk`
+elsewhere, keep their single result, because test mode fills every server
+variable and so cannot refuse.
+
+## An API that declares no authentication receives no key
+
+From 4.48.0, the SDK of an API whose spec declares no authentication places
+no credential, unless the project switches auth on. Earlier releases
+documented no authentication for such an API and still sent an API key the
+caller passed. A caller that relies on that key reaching the API now sends
+none, except through the secrets feature, which still sends the key it
+resolves. Where the API takes a key its spec does not declare, switch auth
+on in the project's model, as
+[`isAuthActive`](../reference/api.md#isauthactivemodel--boolean) describes,
+and regenerate.
+
+## An empty operation list in a README introduction
+
+From 4.48.0, `introOps` returns no operation for an API none of whose active
+entities has one, where it returned `list` and `load` before. A README
+introduction copied from an earlier release prints what it returns in
+parentheses, so for such an API it prints an empty list, `()`, until the
+copy moves on. The safe path moves the copies with the package. Where the
+package moved alone, after a bare `npm install` for example, re-add each
+target:
+
+```bash
+npx voxgig-sdkgen target add <t>
+```
+
 ## Copies newer than the package
 
 `doctor` reports copies as **ahead** when the copy record dates them from a

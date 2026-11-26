@@ -32,6 +32,7 @@ main: kit: feature: &: target: kotlin: deps: &: {
 
 
 main: kit: target: kotlin: publish: {
+  recipe: false
   registry: {
     name: 'maven-central'
     url: 'https://central.sonatype.com'

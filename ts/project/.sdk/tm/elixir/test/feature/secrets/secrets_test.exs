@@ -36,6 +36,16 @@ defmodule ProjectName.SecretsTest do
   alias Voxgig.Struct, as: S
   alias ProjectName.Feature.Secrets
 
+  # Read from the config, never from a probe: an SDK whose config declares no
+  # auth places no credential, and these tests assert on the one it places.
+  # Decided as this file compiles, which `mix test` does after the SDK, so
+  # ExUnit can skip every test and say so.
+  if nil == S.getprop(S.getprop(ProjectName.Config.shared_config(), "options"), "auth") do
+    reason = "this SDK's config declares no auth, so it places no credential"
+    IO.puts("SKIP secrets: " <> reason)
+    @moduletag skip: reason
+  end
+
   @envprefix "PROJECTENV_TEST_SECRETS_"
   @base "http://raw.test/api"
 

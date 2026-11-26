@@ -107,8 +107,13 @@ implementation in `ts/project/.sdk/src/cmp/<lang>/`:
 
 `Main`, `Entity`, `Feature`, `Test`, `Readme`, `ReadmeTop`,
 `ReadmeInstall`, `ReadmeQuick`, `ReadmeIntro`, `ReadmeModel`,
-`ReadmeOptions`, `ReadmeEntity`, `ReadmeHowto`, `ReadmeExplanation`,
-`ReadmeRef`, and `FeatureHook`.
+`ReadmeEntity`, `ReadmeHowto`, `ReadmeExplanation`, `ReadmeRef`, and
+`FeatureHook`.
+
+`ReadmeOptions` is still exported and writes nothing. The client options
+table is in the section `ReadmeModel` writes, and in `REFERENCE.md`, both
+from `clientOptions`. No bundled target ships a `ReadmeOptions_<lang>`
+component, and generation loads none that a package ships.
 
 #### `ReadmeIntro`
 
@@ -119,6 +124,14 @@ targets. A project that declares `main: kit: target: 'go-mcp': active: false`
 is not promised an MCP server, and a project with one target gets no note. A
 per-language file that exports a whole `ReadmeIntro` instead writes the
 introduction itself, unframed.
+
+#### `TargetLicense` and `TargetVersion`
+
+A port's own `LICENSE` and `VERSION` files, which a per-language `Main` writes
+into the target's directory on every `generate`. The licence is the project's
+MIT text, with the year and the publisher the root `LICENSE` names; the
+version file holds the target's `publish.version`. A template copied at
+`target add` would keep the year and the version of the day it was copied.
 
 #### `FeatureHook`
 
@@ -164,10 +177,21 @@ when it says so explicitly; otherwise the spec-derived signal governs:
 2. `main.kit.info.auth === false` (apidef: the spec declares no
    authentication)
 
-Templates use it to gate API-key code, docs, and examples for public
-APIs that need no authentication. An API whose spec omits its security
-schemes (GitHub's official OpenAPI does) still gets a credential when the
-project sets `config: auth: { active: true, prefix: 'Bearer' }`.
+The generated credential code, documents, and examples all follow it, so
+the SDK of a public API places no credential and documents none. An API
+whose spec omits its security schemes (GitHub's official OpenAPI does) gets
+a credential only when the project sets
+`config: auth: { active: true, prefix: 'Bearer' }`.
+
+### `clientOptions(model) → ClientOption[]`
+
+The rows of a client options table, as `{ name, kind, desc }`, where `kind`
+is `string`, `map` or `list`. The server variables come first where the
+server URL is a template, marked required when one has no default. The API
+key and the Basic secret follow where the generated `PrepareAuth` places
+them, then each option a caller sets that `main.kit.optspec` declares, and
+`feature`. Each language's model and reference sections print these rows in
+their own spelling.
 
 ### `guardModel(model, log?) → model`
 
@@ -189,6 +213,42 @@ holds `text`, with every `$` written as that language's escape. A component
 prints text from the spec in generated source through it, so the template
 pass never reads a `$$` in the text as a model path. It throws for a language
 it does not know.
+
+### `templateSafe(lang, text) → string`
+
+Source already formatted for the language `lang` (or `json`), with the `$` of
+each `$$` run written as that language's escape and every other character as
+it was. A component passes formatted data that holds text from the spec
+through it, so the template pass reads no model path in that text, and a lone
+`$`, such as a type sentinel, is unchanged. Each `$$` in the source must lie
+inside a string literal.
+
+### `envLocalAt(ctx$, target) → string`
+
+Where `.env.local` goes, as a target's own README states it: every generated
+live test reads the file from the project directory. It answers
+`at the project root`, unless the target is generated in another repository:
+then it names the SDK project that generates the target, with the path back
+to it from the target's directory. A `ReadmeHowto_<lang>` component ends its
+"Create a `.env.local` file" sentence with it.
+
+### `registryNote(model, targetName) → string`
+
+The sentence a target's install section states its registry with, read from
+the target's registry state: published to the registry, not yet published to
+it, not published to it, or not published to any package registry. A
+`ReadmeInstall_<lang>` component writes it where the section turns to a
+release tag or a source checkout.
+
+### `readerDir(target) → string` and `cdTarget(target) → string`
+
+A target's directory as its own documents name it. For a target generated
+in a folder of the repository, `readerDir` answers that folder, so a command
+the README gives from the repository root enters it, and `cdTarget` answers
+`cd <folder> && `. A target generated at the project root or in another
+repository is the directory its README sits in: `readerDir` answers `.` and
+`cdTarget` answers an empty string. The per-language `ReadmeHowto` and
+`ReadmeInstall` components build every `cd` line and checkout path with them.
 
 ### `collectDeps(model, targetName, targetDeps) → DepEntry[]`
 
@@ -238,6 +298,47 @@ the MCP server, read from the active targets. It returns an empty string when
 the project generates nothing else. A per-language component that writes its
 whole introduction itself can call it for the same note.
 
+### `seriesList(items) → string`
+
+The items as a series: `a`, `a and b`, `a, b, and c`. Each language's quick
+start heads its step over the entity's writes with it, naming only the
+operations the entity has.
+
+### `directRoute(model) → DirectRoute`
+
+The route a `direct()` or `prepare()` example calls, as `{ path, method,
+param }`: a route with one path parameter that no generated method reaches,
+else an active entity's own, else the placeholder `/api/resource/{id}` when
+the model has neither. Each language's how-to, quick reference, and error
+section call it, so every example names a route the API has.
+
+### `featureDocs(model, target?) → FeatureDoc[]`
+
+The features a target's documents describe: every active feature of the
+model that applies to the target, leaving out `base`, sorted by name.
+Without a target, every active feature. Each entry carries the feature's
+name, its class name, its version, its title (inline, and escaped for a
+table cell), its transport role, whether it is on by default, its active
+hooks, and its option rows. The shared README and REFERENCE feature
+sections read it, and a per-language component that lists features calls it
+so that it lists the same ones.
+
+### `consumedTarget(model, target, sdkrel) → Consumed`
+
+The installed target that a consumer such as `go-cli` builds on, which the
+consumer's model names with `consumes`, and where that target is. `sdkrel` is
+the path from the consumer's folder back to the project, which `Main` gives a
+component as `ctx$.stdrep.SDKREL`. It throws an `SdkGenError` that names
+`voxgig-sdkgen target add` when the model has no target of that origin, and one
+that names the switch when the model has one but switches it off.
+
+- `name`: the target's installed name, the origin or an alias of it.
+- `path`: the path from the consumer's folder to the target's.
+- `dir`: the target's folder in the repository the two share, `''` when they
+  share none.
+- `away`: whether the target is generated into a repository of its own, and
+  `url`, that repository's address when the model names one.
+
 ### Typing helpers
 
 The typed-model subsystem (full picture:
@@ -270,8 +371,8 @@ The typed-model subsystem (full picture:
   six the bundled targets generate, in canonical order, leaving out an op
   whose every route is an action;
   **`introOps(model)`** — the op names of those six a README introduction
-  lists, across every active entity, in canonical order, or `list` and `load`
-  when there are none;
+  lists, across every active entity, in canonical order, and none when no
+  active entity has one;
   **`entityPrimaryOp(ent)`** — the representative op for a single example;
   **`pickExampleEntity(entityColl)`** — the entity a README example should
   use, preferring one whose example call reaches a route.

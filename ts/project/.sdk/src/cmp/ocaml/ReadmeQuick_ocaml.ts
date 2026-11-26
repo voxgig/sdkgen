@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems, sendsId } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems, sendsId, fact, seriesList } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -12,6 +12,7 @@ import { ocamlVarName, ocamlListMatch, ocamlString } from './utility_ocaml'
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   const { target, ctx$: { model } } = props
+  let step = 0
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
 
@@ -28,11 +29,20 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   ) as any
 
   const authActive = isAuthActive(model)
-  const ctor = authActive
-    ? `Sdk_client.make (jo [("apikey", Str (Sys.getenv "${envName(model)}_APIKEY"))])`
-    : `Sdk_client.make0 ()`
+  // The constructor refuses a templated URL it has no value for, so the quick
+  // start passes each variable the URL uses with no default.
+  const svars = fact(model.main[KIT], 'server').filter((v: any) => v.required)
+  const ctorFields = [
+    ...(authActive ? [`("apikey", Str (Sys.getenv "${envName(model)}_APIKEY"))`] : []),
+    ...(fact(model.main[KIT], 'auth').secret ? [`("secret", Str (Sys.getenv "${envName(model)}_SECRET"))`] : []),
+    ...(0 === svars.length ? [] : [`("server", jo [` +
+      svars.map((v: any) => `("${v.name}", Str "<${v.name}>")`).join('; ') + `])`]),
+  ]
+  const ctor = 0 === ctorFields.length
+    ? `Sdk_client.make0 ()`
+    : `Sdk_client.make (jo [${ctorFields.join('; ')}])`
 
-  Content(`### 1. Create a client
+  Content(`### ${++step}. Create a client
 
 \`\`\`ocaml
 open Voxgig_struct
@@ -66,7 +76,7 @@ let client = ${ctor}
     }
 
     if (opnames.includes('list')) {
-      Content(`### 2. List ${fn} records
+      Content(`### ${++step}. List ${fn} records
 
 \`e_list\` resolves to one ENTITY per record and raises on error. Read a
 record with \`e_data_get\`.
@@ -99,7 +109,7 @@ record with \`e_data_get\`.
         `("${ocamlString(it.name)}", ${ocamlLit(it.type,
           it.name === neIdF ? 'example_id' : 'example_' + it.name)})`)
 
-      Content(`### 3. Load ${neArticle} ${neFn}
+      Content(`### ${++step}. Load ${neArticle} ${neFn}
 
 ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
 \`e_load\` resolves to the ENTITY and raises on error; \`e_data_get\` gives the
@@ -124,7 +134,7 @@ record.
             it.name === idF ? 'example_id' : 'example_' + it.name)})`).join('; ')}]`
         : 'Noval'
 
-      Content(`### 3. Load ${article} ${fn}
+      Content(`### ${++step}. Load ${article} ${fn}
 
 \`e_load\` resolves to the ENTITY and raises on error; \`e_data_get\` gives the
 record.
@@ -163,7 +173,8 @@ record.
 
     if (opnames.includes('create') || opnames.includes('update') || opnames.includes('patch') ||
       opnames.includes('remove')) {
-      Content(`### 4. Create, update, and remove
+      Content(`### ${++step}. ${seriesList(['create', 'update', 'patch', 'remove']
+        .filter((o: string) => opnames.includes(o))).replace(/^./, (c: string) => c.toUpperCase())}
 
 \`\`\`ocaml
 `)

@@ -6,7 +6,6 @@ declare const OPTIONAL_COMPONENTS: {
     ReadmeInstall: (t: string) => string;
     ReadmeQuick: (t: string) => string;
     ReadmeHowto: (t: string) => string;
-    ReadmeOptions: (t: string) => string;
     ReadmeEntity: (t: string) => string;
     ReadmeExplanation: (t: string) => string;
     ReadmeRef: (t: string) => string;

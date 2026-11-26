@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, safeVarName, exampleVarName, requiredItems, litPair, matchExampleItems, requestExampleItems } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, canonScalarKey, entityIdField, pickExampleEntity, exampleVarName, requiredItems, litPair, matchExampleItems, requestExampleItems, envLocalAt, cdTarget, fact, directRoute } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -21,6 +21,8 @@ function pyLit(type: any): string {
 
 const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   const { target, ctx$: { model } } = props
+  const dx = directRoute(model)
+  const ENVVAR = fact(model.main[KIT], 'env')
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
   // Pick an entity with a real op (prefer a read op) — never fabricate a
@@ -51,15 +53,25 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   // The op-driven test-mode line, shown only when the SDK has an entity op.
   // A direct()-only SDK (no ops anywhere) shows a direct() call instead.
   const testModeExample = primaryOp
-    ? `# Entity ops return the entity, and list one per record; they raise on error.
+    ? `# Entity ops return the entity${'list' === primaryOp ? ', and list one per record' : ''}; they raise on error.
 ${eVar} = client.${eName}().${primaryOp}(${testArg})
 # data_get() on an entity reads its mock response record`
     : `result = client.direct({"path": "/api/resource", "method": "GET"})
 print(result)`
 
   const apikeyEnvLine = isAuthActive(model)
-    ? `\n${envName(model)}_APIKEY=<your-key>`
+    ? `\n${ENVVAR.apikey}=<your-key>${fact(model.main[KIT], 'auth').secret ? `\n${ENVVAR.secret}=<your-secret>` : ''}`
     : ''
+  const serverEnvLine = fact(model.main[KIT], 'server').filter((v: any) => v.required)
+    .map((v: any) => `\n${ENVVAR.server[v.name]}=<${v.name}>`).join('')
+  const defaulted = fact(model.main[KIT], 'server').filter((v: any) => !v.required)
+  const liveEnvNote = (0 === defaulted.length ? '' :
+    defaulted.map((v: any) => '`' + ENVVAR.server[v.name] + '`').join(', ') +
+    (1 === defaulted.length ? ', when set, replaces its server variable\'s default.\n'
+      : ', when set, replace their server variables\' defaults.\n')) +
+    'Each entity\'s tests also read `' + ENVVAR.prefix + '_TEST_<ENTITY>_ENTID`, with the\n' +
+    'entity\'s name in capitals: a JSON object of the ids of existing records, for\n' +
+    'the tests that do not create their own.\n\n'
 
   Content(`### Make a direct HTTP request
 
@@ -67,9 +79,9 @@ For endpoints not covered by entity methods:
 
 \`\`\`python
 result = client.direct({
-    "path": "/api/resource/{id}",
-    "method": "GET",
-    "params": {"id": "example"},
+    "path": "${dx.path}",
+    "method": "${dx.method}",
+    "params": {"${dx.param}": "example"},
 })
 
 if result["ok"]:
@@ -87,9 +99,9 @@ else:
 \`\`\`python
 # prepare() returns the fetch definition and raises on error.
 fetchdef = client.prepare({
-    "path": "/api/resource/{id}",
-    "method": "DELETE",
-    "params": {"id": "example"},
+    "path": "${dx.path}",
+    "method": "${dx.method}",
+    "params": {"${dx.param}": "example"},
 })
 
 print(fetchdef["url"])
@@ -130,16 +142,16 @@ client = ${model.const.Name}SDK({
 
 ### Run live tests
 
-Create a \`.env.local\` file at the project root:
+Create a \`.env.local\` file ${envLocalAt(props.ctx$, target)}:
 
 \`\`\`
-${envName(model)}_TEST_LIVE=TRUE${apikeyEnvLine}
+${ENVVAR.live}=TRUE${apikeyEnvLine}${serverEnvLine}
 \`\`\`
 
-Then run:
+${liveEnvNote}Then run:
 
 \`\`\`bash
-cd py && pytest test/
+${cdTarget(target)}pytest test/
 \`\`\`
 
 `)

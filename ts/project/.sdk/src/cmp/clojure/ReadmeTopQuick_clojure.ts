@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, opRequestShape, matchExampleItems, entityOps } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, opRequestShape, matchExampleItems, entityOps, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -31,9 +31,16 @@ const ReadmeTopQuick = cmp(function ReadmeTopQuick(props: any) {
   const exampleEntity = Object.values(entity).find((e: any) => e.active !== false) as any
 
   const authActive = isAuthActive(model)
-  const ctor = authActive
-    ? `(api/make-sdk (vs/jm "apikey" (System/getenv "${envName(model)}_APIKEY")))`
-    : `(api/make-sdk nil)`
+  const svars = fact(model.main[KIT], 'server').filter((v: any) => v.required)
+  const ctorFields = [
+    ...(authActive ? [`"apikey" (System/getenv "${envName(model)}_APIKEY")`] : []),
+    ...(fact(model.main[KIT], 'auth').secret ? [`"secret" (System/getenv "${envName(model)}_SECRET")`] : []),
+    ...(0 === svars.length ? [] : [`"server" (vs/jm ` +
+      svars.map((v: any) => `"${v.name}" "<${v.name}>"`).join(' ') + `)`]),
+  ]
+  const ctor = 0 === ctorFields.length
+    ? `(api/make-sdk nil)`
+    : `(api/make-sdk (vs/jm ${ctorFields.join(' ')}))`
 
   if (exampleEntity) {
     const eName = nom(exampleEntity, 'Name')

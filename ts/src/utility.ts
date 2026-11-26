@@ -45,10 +45,9 @@ function resolveAuthPrefix(model: any): string {
 }
 
 
+// No credential code where the documents say auth is off.
 function isAuthSuppressed(model: any): boolean {
-  const auth = getModelPath(model, `main.${KIT}.config.auth`,
-    { only_active: false, required: false })
-  return null != auth && false === auth.active
+  return !isAuthActive(model)
 }
 
 
@@ -335,8 +334,10 @@ function configDefinition(model: any, targetname?: string): { def: any, json: st
 
   const authActive = isAuthActive(model)
   const authPrefix = resolveAuthPrefix(model)
+  const authIn = resolveAuthIn(model)
+  const authName = resolveAuthName(model)
   // PrepareAuth composes Basic only in the header; elsewhere nothing reads the flag.
-  const authBasic = isHttpBasicAuth(model) && 'header' === resolveAuthIn(model)
+  const authBasic = isHttpBasicAuth(model) && 'header' === authIn
 
   let baseUrl = ''
   try { baseUrl = getModelPath(model, `main.${KIT}.info.servers.0.url`) } catch (_e) { }
@@ -385,8 +386,14 @@ function configDefinition(model: any, targetname?: string): { def: any, json: st
   if (0 < svars.length) {
     options.server = svars.reduce((a: any, v: any) => (a[v.name] = v.dflt, a), {})
   }
+  // The placement only where it is not the default, as every Config literal writes it.
   if (authActive) {
-    options.auth = authBasic ? { prefix: authPrefix, basic: true } : { prefix: authPrefix }
+    options.auth = {
+      prefix: authPrefix,
+      ...(authBasic ? { basic: true } : {}),
+      ...('header' === authIn ? {} : { in: authIn }),
+      ...('Authorization' === authName ? {} : { name: authName }),
+    }
   }
   options.headers = headers
   options.entity = entityStubs

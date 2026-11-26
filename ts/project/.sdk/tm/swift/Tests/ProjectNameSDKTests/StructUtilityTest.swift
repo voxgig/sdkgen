@@ -1,4 +1,4 @@
-// Drives the shared struct corpus (../../../.sdk/test/test.json, root key
+// Drives the shared struct corpus (../../SDKREL/.sdk/test/test.json, root key
 // "struct") against the vendored struct utility THROUGH the vendored omni
 // runner (OmniResolver over Tests/vendor/omni) - the engine half of the
 // hand-written runner this file used to carry. Mirrors

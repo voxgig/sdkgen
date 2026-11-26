@@ -3,6 +3,7 @@
 (ns sdk.test.primary
   (:require [sdk.core :as core]
             [sdk.client :as client]
+            [sdk.config :as config]
             [sdk.testutil :as t]
             [sdk.test.omni :as omni]
             [voxgig.struct :as vs]
@@ -17,7 +18,7 @@
 ;; from the MIRRORED parity tier to FULL — a mirrored suite cannot notice a
 ;; corpus case that changed, or one that was added.
 
-(def ^:private CORPUS "../.sdk/test/test.json")
+(def ^:private CORPUS "SDKREL/.sdk/test/test.json")
 
 (defn- lower-headers [m]
   ;; Header names arrive in any case and the contract is lowercase; the SDK
@@ -225,7 +226,11 @@
         (runset "makeRequest" sdk       (fn [c _ _2] (first ((u :make-request) c))))
         (runset "makeResponse" sdk      (fn [c _ _2] (first ((u :make-response) c))))
         (runset "makeSpec" spec-sdk     (fn [c _ _2] (first ((u :make-spec) c))))
-        (runset "prepareAuth" auth-sdk  (fn [c _ _2] (first ((u :prepare-auth) c))))
+        ;; Read from the config, never from a probe: a probe that finds no
+        ;; credential is the regression this section exists to catch.
+        (if (vs/ismap (vs/getprop (vs/getprop (config/make-config) "options") "auth"))
+          (runset "prepareAuth" auth-sdk  (fn [c _ _2] (first ((u :prepare-auth) c))))
+          (println "PRIMARY-SKIP prepareAuth - this SDK's config declares no auth, so it places no credential"))
         (runset "prepareBody" sdk       (fn [c _ _2] ((u :prepare-body) c)))
         (runset "prepareHeaders" sdk    (fn [c _ _2] ((u :prepare-headers) c)))
         (runset "prepareMethod" sdk     (fn [c _ _2] ((u :prepare-method) c)))

@@ -9,7 +9,7 @@ import { Aontu } from 'aontu'
 import { Jostraca, Project, Folder, File, names } from 'jostraca'
 import { memfs } from 'memfs'
 
-import { ReadmeErrors, ReadmeExplanation, ReadmeTop, SdkGen, cmp } from '../dist/sdkgen.js'
+import { ReadmeErrors, ReadmeExplanation, ReadmeTop, SdkGen, applyFacts, cmp } from '../dist/sdkgen.js'
 
 import { makeProject, targetRef, target_add, SCAFFOLD, ROOT } from './actionharness'
 import { STAGE, SCAFFOLD as SDK_SCAFFOLD, makeModel, makeRoot, layeredFs, makeLog, aliasModel, stageAlias } from './generateharness'
@@ -315,7 +315,7 @@ describe('aliased target documents', () => {
   const quiet: any = { info() {}, debug() {}, warn() {}, error() {}, trace() {}, fatal() {} }
   quiet.child = () => quiet
 
-  const model = () => ({
+  const model = () => applyFacts({
     name: 'demo',
     const: { name: 'demo', Name: 'Demo' },
     main: { kit: {
@@ -327,7 +327,9 @@ describe('aliased target documents', () => {
           op: { load: { active: true, points: [{ params: [{ n: 'id', t: '$STRING' }] }] } },
         },
       },
-      feature: { test: { active: true, name: 'test', title: 'Test mode (offline)' } },
+      feature: {
+        test: { active: true, name: 'test', title: 'Test mode (offline)', config: { options: { active: false } } },
+      },
     } },
   })
 
@@ -381,6 +383,32 @@ async function generated(targets: string[], extra = '', root = makeRoot()): Prom
 }
 
 
+// Under the stage, not the system temporary directory, which a Windows
+// runner keeps on another drive than the stage the generation writes to.
+function aliasWork(): string {
+  return Fs.mkdtempSync(Path.join(STAGE, 'alias-'))
+}
+
+
+// What `<origin>~<alias>` alone generates. Components read their templates
+// relative to the working directory, so the alias's are copied into one.
+async function generatedAlias(origin: string, alias: string): Promise<Record<string, string>> {
+  const staged = stageAlias(origin, alias)
+  const work = aliasWork()
+  const cwd = process.cwd()
+  try {
+    Fs.cpSync(Path.join(SDK_SCAFFOLD, 'tm', origin), Path.join(work, 'tm', alias), { recursive: true })
+    process.chdir(work)
+    return await generated([], staged.model)
+  }
+  finally {
+    process.chdir(cwd)
+    staged.remove()
+    Fs.rmSync(work, { recursive: true, force: true })
+  }
+}
+
+
 // An alias is classed by its origin: the documents name the alias where they
 // named the origin, and say nothing else differently.
 describe('aliased targets in the generated documents', () => {
@@ -409,12 +437,40 @@ describe('aliased targets in the generated documents', () => {
         strictEqual(mapped[file], base[file], file + ' differs once the aliases are mapped back')
       }
       ok(out['README.md'].includes('## Use it from an AI agent (MCP)'), 'no MCP section for go-mcq')
-      ok(out['README.md'].includes('cd go-mcq && go build'), 'the MCP section builds another directory')
+      ok(out['README.md'].includes('cd go-mcq && make build'), 'the MCP section builds another directory')
     }
     finally {
       staged.forEach((s) => s.remove())
     }
   })
+
+  // The add writes the origin's templates to `tm/<alias>`, which a generate
+  // reads from its working directory.
+  test('go~fz enters its own folder, never the origin\'s', async () => {
+    const staged = stageAlias('go', 'fz')
+    const tmp = aliasWork()
+    Fs.cpSync(Path.join(SDK_SCAFFOLD, 'tm', 'go'), Path.join(tmp, 'tm', 'fz'), { recursive: true })
+    const back = process.cwd()
+    try {
+      process.chdir(tmp)
+      const out = await generated([], staged.model)
+      const files = Object.keys(out).filter((file: string) => file.startsWith('fz/'))
+      ok(0 < files.length, 'nothing generated for fz')
+      ok(out['fz/README.md'].includes('cd fz && go test'), 'the how-to does not enter fz/')
+      ok(out['fz/Makefile'].includes('\nTAG := fz/v$(VERSION)\n'), 'the Makefile tags another folder')
+      ok(out['Makefile'].includes('$(MAKE) -C fz publish'), 'the root Makefile deploys fz elsewhere')
+      const origin = files.flatMap((file: string) => out[file].split('\n')
+        .filter((line: string) => /\bcd go\b|\.\.\/[\w.-]+\/go\b|\bgo\/v[$\dX]/.test(line))
+        .map((line: string) => file + ': ' + line))
+      deepStrictEqual(origin, [], 'these name the origin\'s folder')
+    }
+    finally {
+      process.chdir(back)
+      staged.remove()
+      Fs.rmSync(tmp, { recursive: true, force: true })
+    }
+  })
+
 
   test('go~go2 sorts where go sorts in the root README packages table', async () => {
     const rows = async (targets: string[], extra = '') => {
@@ -426,5 +482,26 @@ describe('aliased targets in the generated documents', () => {
     strictEqual(base.length, 4, 'the packages table does not list the four targets:\n' + base.join('\n'))
     deepStrictEqual((await rows(['ts', 'py', 'rb'], aliasModel('go', 'go2')))
       .map((row: string) => row.split('/go2').join('/go')), base)
+  })
+
+  test('ts~ts2 and js~js2 name their files as ts and js do', async () => {
+    for (const [origin, alias] of [['ts', 'ts2'], ['js', 'js2']]) {
+      const own = Object.keys(await generated([origin])).filter((file) => file.startsWith(origin + '/'))
+      const aliased = Object.keys(await generatedAlias(origin, alias))
+        .filter((file) => file.startsWith(alias + '/'))
+      ok(aliased.some((file) => new RegExp('^' + alias + '/src/entity/[A-Za-z]+\\.' + origin + '$').test(file)),
+        alias + ' writes no entity file named as a ' + origin + ' file')
+      deepStrictEqual(aliased.map((file) => origin + file.slice(alias.length)).sort(), own.sort())
+    }
+  })
+
+  test('go~go2 types its fields as go does', async () => {
+    const go = await generated(['go'])
+    const go2 = await generatedAlias('go', 'go2')
+    const typed = (text: string) => text.split('\n').filter((line) => /^\| `[^`]+` \| `[^`]+` \|/.test(line))
+    for (const doc of ['README.md', 'REFERENCE.md']) {
+      ok(typed(go['go/' + doc]).some((row) => row.includes('`string`')), 'go ' + doc + ' types no field')
+      deepStrictEqual(typed(go2['go2/' + doc]), typed(go['go/' + doc]), doc)
+    }
   })
 })

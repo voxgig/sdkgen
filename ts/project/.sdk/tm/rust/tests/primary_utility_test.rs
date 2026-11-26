@@ -114,7 +114,7 @@ fn primary_utility_exists() {
     assert!(matches!(utility.prepare_headers(&ctx), Value::Map(_)));
     assert!(matches!(utility.prepare_query(&ctx), Value::Map(_)));
     assert!(matches!(utility.prepare_params(&ctx), Value::Map(_)));
-    assert!(matches!(utility.make_options(&ctx), Value::Map(_)));
+    assert!(matches!(utility.make_options(&ctx), Ok(Value::Map(_))));
     let _ = utility.clean(&ctx, &Value::str("x"));
 }
 
@@ -304,7 +304,7 @@ fn primary_feature_init_inactive() {
 fn primary_fetcher_live() {
     let calls: Rc<RefCell<Vec<Value>>> = Rc::new(RefCell::new(Vec::new()));
     let c = calls.clone();
-    let live_client = ProjectNameSDK::new(jo(vec![(
+    let live_client = ProjectNameSDK::new(jo(vec![("base", Value::str("http://localhost:8080")), (
         "system",
         jo(vec![(
             "fetch",
@@ -316,7 +316,7 @@ fn primary_fetcher_live() {
                 ])
             }),
         )]),
-    )]));
+    )])).unwrap();
     let live_utility = live_client.get_utility();
     let ctx = live_utility.make_context(
         CtxSpec {
@@ -344,10 +344,10 @@ fn primary_fetcher_live() {
 fn primary_fetcher_blocked_test_mode() {
     // A live SDK then set mode to test (not using test_sdk, which installs
     // the test feature's mock transport).
-    let blocked_client = ProjectNameSDK::new(jo(vec![(
-        "system",
-        jo(vec![("fetch", vfn(|_args| Value::empty_map()))]),
-    )]));
+    let blocked_client = ProjectNameSDK::new(jo(vec![
+        ("base", Value::str("http://localhost:8080")),
+        ("system", jo(vec![("fetch", vfn(|_args| Value::empty_map()))])),
+    ])).unwrap();
     *blocked_client.mode.borrow_mut() = "test".to_string();
 
     let blocked_utility = blocked_client.get_utility();
@@ -412,7 +412,7 @@ fn primary_fetcher_redirect() {
         }
     });
 
-    let live_client = ProjectNameSDK::new(jo(vec![("base", Value::str(&base))]));
+    let live_client = ProjectNameSDK::new(jo(vec![("base", Value::str(&base))])).unwrap();
     let live_utility = live_client.get_utility();
     let ctx = live_utility.make_context(
         CtxSpec {
@@ -547,7 +547,7 @@ fn redirect_fetch(
         ("base", Value::str(base)),
         ("apikey", Value::str(REDIRECT_SECRET)),
         ("clean", jo(vec![("active", Value::Bool(clean))])),
-    ]));
+    ])).unwrap();
     let utility = client.get_utility();
     let ctx = utility.make_context(
         CtxSpec {
@@ -684,9 +684,10 @@ fn primary_clean_secret() {
     let encoded = RUSTCRATE::utility::clean::base64_encode(REDIRECT_SECRET.as_bytes());
     for clean in [true, false] {
         let client = ProjectNameSDK::new(jo(vec![
+            ("base", Value::str("http://localhost:8080")),
             ("apikey", Value::str(REDIRECT_SECRET)),
             ("clean", jo(vec![("active", Value::Bool(clean))])),
-        ]));
+        ])).unwrap();
         let utility = client.get_utility();
         let ctx = client.get_root_ctx();
         assert!(utility.clean_secret(&ctx, "X-Api-Key", "anything"));
@@ -700,7 +701,7 @@ fn primary_clean_secret() {
 #[test]
 fn primary_fetcher_getonly_guard() {
     let _env = GETONLY_ENV.lock().unwrap_or_else(|held| held.into_inner());
-    let live_client = ProjectNameSDK::new(jo(vec![("base", Value::str("http://127.0.0.1:9"))]));
+    let live_client = ProjectNameSDK::new(jo(vec![("base", Value::str("http://127.0.0.1:9"))])).unwrap();
     let live_utility = live_client.get_utility();
     let ctx = live_utility.make_context(
         CtxSpec {
@@ -844,7 +845,7 @@ fn primary_make_options_basic() {
         );
         *ctx.client.borrow_mut() = Some(client.clone());
         *ctx.utility.borrow_mut() = Some(utility.clone());
-        Ok(utility.make_options(&ctx))
+        utility.make_options(&ctx)
     });
 }
 
@@ -1177,8 +1178,14 @@ fn auth_retarget(node: &Json, cred: &AuthCred) -> Json {
     }
 }
 
+// Read from the config, never from a probe: a probe that finds no credential
+// is the regression this section exists to catch.
 #[test]
 fn primary_prepare_auth_basic() {
+    if !matches!(getp(&getp(&RUSTCRATE::make_config(), "options"), "auth"), Value::Map(_)) {
+        println!("SKIP prepareAuth: this SDK's config declares no auth, so it places no credential");
+        return;
+    }
     let mut run = primary_run();
     let cred = auth_credential().expect("prepare_auth placed no credential in headers or query");
     if let Json::Map(sections) = &mut run.spec {
@@ -1406,7 +1413,10 @@ fn primary_transform_response_basic() {
 // keep new_sdk / to_map referenced (parity helpers).
 #[test]
 fn primary_new_sdk_smoke() {
-    let client = new_sdk();
-    assert_eq!(*client.mode.borrow(), "live");
+    // A templated base URL with no default refuses a client with no options.
+    match new_sdk() {
+        Ok(client) => assert_eq!(*client.mode.borrow(), "live"),
+        Err(err) => assert_eq!(err.code, "server_var_required"),
+    }
     let _ = to_map(&Value::Noval);
 }

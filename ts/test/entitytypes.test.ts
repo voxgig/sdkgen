@@ -69,8 +69,10 @@ function makeLog() {
 
 // Fixture model. Field/param `type` values use the exact sentinel forms
 // apidef stores (backtick-quoted, unions as ['`$ONE`', [members]]).
+// Passed through the fact pass, whose JVM package the java, kotlin and scala
+// emitters read.
 function makeModel() {
-  return {
+  return sdkgen.applyFacts({
     name: 'demo',
     origin: 'voxgig-sdk',
     const: { Name: 'Demo', name: 'demo' },
@@ -115,7 +117,7 @@ function makeModel() {
         },
       },
     },
-  }
+  })
 }
 
 
@@ -318,6 +320,26 @@ describe('EntityTypes emitters — fixture model output', () => {
     ok(out.includes('type Sun struct {'), 'Sun struct')
     ok(out.includes('type Moon struct {'), 'inactive Moon present')
     ok(out.includes('type Pluto struct {'), 'fieldless Pluto present')
+  })
+
+  // An inactive entity has no entity class, so no Typed method to name.
+  test('go: a request type names the Typed method only an active entity has', async () => {
+    const { files } = await render('go', { name: 'go', ext: 'go' })
+    const out = findFile(files, /types\.go$/)
+    ok(out.includes('// SunLoadMatch is the typed request payload for SunEntity.LoadTyped.\n'),
+      'active Sun names its entity class method')
+    ok(out.includes('// MoonLoadMatch is the typed request payload for the load operation.\n'),
+      'inactive Moon names the operation')
+    ok(!/Moon\w*\.\w+Typed/.test(out), 'no Typed method named on Moon')
+  })
+
+  test('c: a request type names an entity operation only an active entity has', async () => {
+    const { files } = await render('c', { name: 'c', ext: 'h' })
+    const out = findFile(files, /types\.h$/)
+    ok(out.includes('// SunLoadMatch is the typed request payload for Sun.load.\n'), 'active Sun')
+    ok(out.includes('// MoonLoadMatch is the typed request payload for the load operation.\n'),
+      'inactive Moon names the operation')
+    ok(!out.includes('Moon.load'), 'no operation named on Moon')
   })
 
   for (const [lang, target, re] of [

@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, entityIdField, opNeedsAction, matchExampleItems, requestExampleItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, entityIdField, entityOps, matchExampleItems, requestExampleItems, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -54,9 +54,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 `)
 
   publishedEntities.map((entity: any) => {
-    const opnames = Object.keys(entity.op || {})
-    // An op that needs an action has no plain call to show.
-    const callable = opnames.filter((o: string) => !opNeedsAction(entity.op[o]))
+    const opnames = entityOps(entity)
     const fields = Object.values(entity.fields || {})
     const idF = entityIdField(entity)
     const eVar = rustVarName(entity.name)
@@ -67,8 +65,8 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 
 `)
 
-    if (entity.short) {
-      Content(`${entity.short}
+    if (fact(entity, 'desc').inline) {
+      Content(`${fact(entity, 'desc').inline}
 
 `)
     }
@@ -103,8 +101,8 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 `)
 
       each(fields, (field: any) => {
-        const desc = field.sh || ''
-        Content(`| \`${field.n}\` | \`${canonToType(field.t, target.name)}\` | ${desc} |
+        const desc = fact(model.main[KIT], 'field')[entity.name]?.[field.n]?.desc.cell ?? ''
+        Content(`| \`${field.n}\` | \`${canonToType(field.t, 'rust').replace(/\|/g, '\\|')}\` | ${desc} |
 `)
       })
 
@@ -112,7 +110,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 `)
     }
 
-    if (callable.includes('load')) {
+    if (opnames.includes('load')) {
       const loadItems = matchExampleItems(entity, 'load', idF)
         .sort((a: any, b: any) =>
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
@@ -131,7 +129,7 @@ println!("{:?}", ${eVar}.data(None));
 `)
     }
 
-    if (callable.includes('list')) {
+    if (opnames.includes('list')) {
       Content(`#### Example: List
 
 \`\`\`rust
@@ -144,7 +142,7 @@ for ${eVar} in &${eVar}s {
 `)
     }
 
-    if (callable.includes('create')) {
+    if (opnames.includes('create')) {
       const createItems = requestExampleItems(entity, 'create')
         .filter((it: any) => !it.optional)
       Content(`#### Example: Create
@@ -153,7 +151,7 @@ for ${eVar} in &${eVar}s {
 let ${eVar} = client.${method}(Value::Noval).create(jo(vec![
 `)
       createItems.map((it: any) => {
-        Content(`    (${JSON.stringify(it.name)}, ${rustLit(it.type, 'example_' + it.name)}),  // ${canonToType(it.type, target.name)}
+        Content(`    (${JSON.stringify(it.name)}, ${rustLit(it.type, 'example_' + it.name)}),  // ${canonToType(it.type, 'rust')}
 `)
       })
       Content(`]), Value::Noval).unwrap();

@@ -9,17 +9,16 @@ build:
 clean:
 	cargo clean
 
-# --- Release: tag-only for now (crates.io publish pending) -----------------
-# The crates.io registry entry is declared in the model with
-# state: 'pending' — a real deploy publishes the git tag rust/vX.Y.Z only;
-# `cargo publish` starts when the registry state flips to 'active'. Run
+# --- Release: the git tag (no crates.io upload) ----------------------------
+# `make publish` pushes the release tag: this template has no `cargo publish`
+# step, so a deploy publishes the tag only, whatever the registry state. Run
 # headless under the boru key vault, which injects the GitHub token so
 # nothing lands on disk or argv:
 #   boru vault exec --for=github=<alias> -- make publish
 # boru `--dry-run` injects a filler token we detect to rehearse (no tag/push).
 # set -e + tag-last: a failed push never leaves a tag behind.
 VERSION := $(shell cat VERSION)
-TAG := rust/v$(VERSION)
+TAG := RELEASETAG
 BORU_DRY_RUN_FILLER := BORU-DRY-RUN-FILLER-NOT-A-REAL-SECRET
 publish:
 	@if git rev-parse -q --verify "refs/tags/$(TAG)" >/dev/null; then \
@@ -30,6 +29,7 @@ publish:
 	  echo "[dry-run] boru filler token detected: would tag $(TAG); nothing pushed."; \
 	  exit 0; \
 	fi; \
+	if [ -z "$(TAG)" ]; then echo "No release tag: the model cuts none for this package."; exit 0; fi; \
 	git tag -a "$(TAG)" -m "rust v$(VERSION)"; \
 	url=$$(git remote get-url origin | sed -E 's#^git@github.com:#https://github.com/#'); \
 	if [ -n "$$token" ] && printf '%s' "$$url" | grep -q '^https://github.com/'; then \

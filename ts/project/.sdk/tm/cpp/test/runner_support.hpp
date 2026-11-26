@@ -1,6 +1,6 @@
 // ProjectName SDK — shared test runner SUPPORT (mirrors java
 // test/RunnerSupport.java): env overrides, sdk-test-control.json skips, the
-// ../.sdk/test/test.json loader, and Context construction from a test-entry
+// SDKREL/.sdk/test/test.json loader, and Context construction from a test-entry
 // ctx map.
 //
 // SUPPORT ONLY. The runset/match ENGINE that used to live here (and the
@@ -9,11 +9,12 @@
 // calls make_ctx_from_map/fixctx below. The file KEEPS ITS NAME because the
 // generated entity suites (<entity>_direct_test.cpp, <entity>_entity_test.cpp)
 // include it for read_file, load_env_local, env_override,
-// is_control_skipped, entity_list_to_data and now_ms.
+// is_control_skipped, live_client_options, entity_list_to_data and now_ms.
 
 #ifndef SDK_TEST_RUNNER_SUPPORT_HPP
 #define SDK_TEST_RUNNER_SUPPORT_HPP
 
+#include <algorithm>
 #include <cctype>
 #include <chrono>
 #include <cstdlib>
@@ -49,7 +50,7 @@ inline bool& env_local_loaded() { static bool b = false; return b; }
 inline void load_env_local() {
   if (env_local_loaded()) return;
   env_local_loaded() = true;
-  std::string data = read_file("../.env.local");
+  std::string data = read_file("SDKREL/.env.local");
   std::istringstream iss(data);
   std::string line;
   while (std::getline(iss, line)) {
@@ -109,7 +110,7 @@ inline Value env_override(Value m) {
 inline Value& cached_spec() { static Value v = Value::undef(); return v; }
 inline Value load_test_spec() {
   if (cached_spec().is_undef()) {
-    std::string data = read_file("../.sdk/test/test.json");
+    std::string data = read_file("SDKREL/.sdk/test/test.json");
     cached_spec() = vs::parse_json(data);
   }
   return cached_spec();
@@ -151,6 +152,26 @@ inline std::pair<bool, std::string> is_control_skipped(const std::string& kind,
     }
   }
   return {false, ""};
+}
+
+// The extra options every live client is built with, from
+// sdk-test-control.json `test.client.options`. A reserved name is dropped:
+// merged under fields the model does not ask for, a `base` would redirect
+// the whole suite, credential included.
+inline Value live_client_options() {
+  static const std::vector<std::string> reserved = {
+      "base", "prefix", "suffix", "server", "apikey", "secret"};
+  Value out = vmap();
+  Value test = Helpers::toMapAny(getp(load_test_control(), "test"));
+  Value client = test.is_map() ? Helpers::toMapAny(getp(test, "client")) : Value::undef();
+  Value opts = client.is_map() ? Helpers::toMapAny(getp(client, "options")) : Value::undef();
+  if (!opts.is_map()) return out;
+  for (const auto& k : Struct::keysof(opts)) {
+    if (std::find(reserved.begin(), reserved.end(), k) == reserved.end()) {
+      map_put(out, k, getp(opts, k));
+    }
+  }
+  return out;
 }
 
 inline Value get_spec(const Value& spec, std::initializer_list<std::string> keys) {

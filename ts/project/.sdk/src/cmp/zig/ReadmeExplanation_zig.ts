@@ -26,7 +26,7 @@ ${target.name}/
 ├── build.zig                    -- Build + test wiring
 ├── core/                        -- Pipeline types, config, client (sdk.zig)
 ├── entity/                      -- Per-entity clients (one file each)
-├── feature/                     -- Built-in features (base, test, log)
+├── feature/                     -- Feature implementations
 ├── utility/                     -- Utilities + the vendored voxgig struct port
 └── test/                        -- Test suites
 \`\`\`

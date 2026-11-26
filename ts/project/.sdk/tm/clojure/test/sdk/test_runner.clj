@@ -68,27 +68,28 @@
                     (rec suite false
                          (str "the " fname " feature suite failed to load: "
                               (or (.getMessage e) (str e))))
-                    ::failed))]
-      (cond
-        (= ::failed runfn) nil
+                    ::failed))
+          outcome (cond
+                    (= ::failed runfn) nil
 
-        (nil? runfn)
-        (rec suite false (str "no " ns-sym "/run in the " fname " feature suite"))
+                    (nil? runfn)
+                    (rec suite false (str "no " ns-sym "/run in the " fname " feature suite"))
 
-        :else
-        (try
-          (runfn counting)
-          (catch Throwable e
-            (rec suite false
-                 (str "the " fname " feature suite threw outside a check: "
-                      (or (.getMessage e) (str e)))))))
+                    :else
+                    (try
+                      (runfn counting)
+                      (catch Throwable e
+                        (rec suite false
+                             (str "the " fname " feature suite threw outside a check: "
+                                  (or (.getMessage e) (str e)))))))]
       (println (str "feature." fname ": ran " @ran " check(s)"))
-      (when (zero? @ran)
+      ;; A suite that returns :skipped has printed why it ran nothing.
+      (when (and (zero? @ran) (not= :skipped outcome))
         (rec suite false (str "the " fname " feature suite ran no checks"))))))
 
 (defn- find-corpus-file []
   (first (filter (fn [p] (.exists (java.io.File. ^String p)))
-                 ["../.sdk/test/test.json" ".sdk/test/test.json" "../../.sdk/test/test.json" "test/test.json"])))
+                 ["SDKREL/.sdk/test/test.json" ".sdk/test/test.json" "../SDKREL/.sdk/test/test.json" "test/test.json"])))
 
 ;; The agent pool keeps the JVM alive for a minute after the last task, so a
 ;; run that passes exits as one that fails does.

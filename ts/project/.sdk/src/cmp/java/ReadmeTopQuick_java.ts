@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, entityIdField, opRequestShape , serverVariables, javaMapOf, matchExampleItems, javaMapItems, entityOps } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, entityIdField, opRequestShape , javaMapOf, matchExampleItems, javaMapItems, entityOps, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -25,7 +25,7 @@ const ReadmeTopQuick = cmp(function ReadmeTopQuick(props: any) {
   // - the SDK throws rather than request a URL with a literal
   // {account_id} in it - so a quickstart that omits them is a quickstart
   // that fails on its first line.
-  const svars = serverVariables(model)
+  const svars = fact(model.main[KIT], 'server').filter((v: any) => v.required)
   const javaServerLines = 0 === svars.length ? '' :
     'Map<String, Object> server = new java.util.LinkedHashMap<>();\n' +
     svars.map((v: any) =>
@@ -50,7 +50,7 @@ ${imports.map((i: string) => 'import ' + i + ';').join('\n')}
   if (authActive) {
     Content(`Map<String, Object> options = new java.util.LinkedHashMap<>();
 options.put("apikey", System.getenv("${envName(model)}_APIKEY"));
-${javaServerLines}${SDK} client = new ${SDK}(options);
+${fact(model.main[KIT], 'auth').secret ? `options.put("secret", System.getenv("${envName(model)}_SECRET"));\n` : ''}${javaServerLines}${SDK} client = new ${SDK}(options);
 
 `)
   }

@@ -1,15 +1,12 @@
 
-import { cmp, Content, isPublished, repoInfo, packageVersion, sdkName } from '@voxgig/sdkgen'
-
-import { mavenGroupId } from './utility_java'
+import { cmp, Content, isPublished, repoInfo, packageVersion, cdTarget, packageName, registryNote, fact } from '@voxgig/sdkgen'
 
 
 const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
   const { target, ctx$ } = props
   const { model } = ctx$
 
-  const groupId = mavenGroupId(model)
-  const artifactId = sdkName(model.name)
+  const [groupId, artifactId] = packageName(model, target.name).split(':')
 
   if (isPublished(model, target.name)) {
     Content(`Add the dependency to your \`pom.xml\`:
@@ -25,7 +22,7 @@ const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
 Or build and install from a source checkout:
 
 \`\`\`bash
-cd java && mvn install
+${cdTarget(target)}mvn install
 \`\`\`
 
 `)
@@ -35,12 +32,13 @@ cd java && mvn install
   // Publish pending: not yet on Maven Central. Install from the git release
   // tag or from a local source checkout built with Maven.
   const { hostName, tagsUrl } = repoInfo(model)
-  Content(`This package is not yet published to Maven Central. Install it from the ${hostName}
-release tag (\`${target.name}/vX.Y.Z\`, see [Tags](${tagsUrl})) or
-from a source checkout — build the library with Maven:
+  const tag = fact(target, 'tag')
+  Content(`${registryNote(model, target.name)} Install it from ${'' === tag ? '' : `the ${hostName}
+release tag (\`${tag}X.Y.Z\`, see [Tags](${tagsUrl})) or
+from `}a source checkout — build the library with Maven:
 
 \`\`\`bash
-cd java && mvn install
+${cdTarget(target)}mvn install
 \`\`\`
 
 `)

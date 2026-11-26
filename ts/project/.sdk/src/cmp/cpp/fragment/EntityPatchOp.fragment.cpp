@@ -20,7 +20,6 @@
 
     // The operation resolves to THIS entity: runOp has just absorbed the
     // result into it, and the caller reaches the record through data().
-    // See AGENTS.md "Entity operations return ENTITIES".
 
     return this->self();
   }

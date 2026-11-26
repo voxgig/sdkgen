@@ -322,8 +322,8 @@ files in `ts/project/.sdk/model/target/`:
 | `base` | string | — | **Provenance.** The `.sdk` folder this copy came from, always `/`-normalised. Project-relative when the source is inside the project (`node_modules/@acme/sdkgen-iot/.sdk`); a source outside it records what the ref resolved to — `../acme-sdkgen-iot/.sdk` for a relative ref, an absolute path for an absolute one, which is then specific to the machine that ran the add. Ships as the literal `'BASE'`; `add` replaces that one line with the preceding block. |
 | `origname` | string | `''` | **Provenance.** The name in the SOURCE, when it differs — i.e. this was installed as `<origname>~<name>`. What makes an alias checkable. |
 | `package` | string | `''` | **Provenance.** The sdkgen package that supplied it, when the source declares a manifest. What `package update` and `package list` act on. |
-| `surface` | string | `''` | What the target is: `sdk`, `cli`, `mcp`, `data` or `seneca-provider`. `''` leaves the answer to the target's origin for the bundled `go-cli`, `go-mcp` and `py-data`, makes a target that generates entities an SDK, and otherwise leaves it unknown, so the documents name the target by its title. A word this release does not know reads as unknown and fails nothing; `package check` warns about it, and notes the release that first reads a known word when `engines.sdkgen` admits older ones, which ignore the slot. |
-| `consumes` | string | `''` | The origin of the target this one builds on, such as `go` for `go-cli`. When two installed targets come from that origin, name one by its installed name. |
+| `surface` | string | `''` | What the target is: `sdk`, `cli`, `mcp`, `data` or `seneca-provider`. The bundled `go-cli`, `go-mcp` and `py-data` declare theirs, so a project overlay that declares another word fails to compile. `''` leaves the answer to the origin for a copy or an alias of one of those three made before they declared it, makes a target that generates entities an SDK, and otherwise leaves it unknown, so the documents name the target by its title. A word this release does not know reads as unknown and fails nothing; `package check` warns about it, and notes the release that first reads a known word when `engines.sdkgen` admits older ones, which ignore the slot. |
+| `consumes` | string | `''` | The origin of the target this one builds on, such as `go` for `go-cli`. Generation stops when the model has no active target from that origin. When two installed targets come from it, name one by its installed name in this target's own model file. |
 | `srcfeature` | boolean | `true` | Whether per-feature source is copied into `src/feature/`. |
 | `phase.<name>.active` | boolean | `true` | Switch a standard generation phase off (see below). |
 | `feature.trim` | boolean | `true` | Whether `target add` trims feature source to the model's selection. `false` keeps the complete set (see below). |
@@ -335,8 +335,9 @@ files in `ts/project/.sdk/model/target/`:
 | `output.adopt` | boolean | `false` | Allow a destination that already holds content this generator did not write. Generation refuses one otherwise — it overwrites, and the path is taken verbatim from the model. |
 | `output.sdkrel` | string | `''` | The path from the destination BACK to the SDK project, which the target's docs, scripts and live tests name. `''` derives it by inverting `path`; declare it when the destination is more than one level away. |
 | `publish.version` | string | `'0.0.1'` | The port's own release version — what the generated manifest declares and what its Makefile tags. Per TARGET: ports publish to different registries on different clocks. |
-| `publish.tag.active` | boolean | `true` | Cut a git release tag `<prefix>/vX.Y.Z`. With `false`, the publish workflow has no tag job and the root Makefile's tag recipe has nothing to push; a port deployed through its own Makefile still tags `<target>/vX.Y.Z` there. |
-| `publish.tag.prefix` | string | `''` | `''` uses the target name, except for the npm package the repository publishes alone or the npm package of the ts SDK, which is tagged `vX.Y.Z`. The publish workflow and the root Makefile's tag recipe read it; a port deployed through its own Makefile still tags `<target>/vX.Y.Z`. |
+| `publish.recipe` | boolean | `true` | The port's own Makefile has a `publish` rule that releases it on its registry. A deploy with the registry active runs that rule; with `false` it pushes the git tag only and says why. A target model whose Makefile has no such rule declares `false`; a project does not. |
+| `publish.tag.active` | boolean | `true` | Cut a git release tag `<prefix>/vX.Y.Z`. With `false`, the publish workflow has no tag job, neither the root Makefile's tag recipe nor the port's own Makefile has a tag to push, and the port's install section offers no tag. |
+| `publish.tag.prefix` | string | `''` | `''` uses the target name, except for the npm package the repository publishes alone or the npm package of the ts SDK, which is tagged `vX.Y.Z`. The publish workflow, the root Makefile's tag recipe, the port's own Makefile and its install section all name the tag it gives. |
 | `publish.registry.state` | string | `'pending'` | `pending` (declared + git-tag-published, not yet uploaded) / `active` / `inactive`. Omit `registry` entirely for tag-only ports (the go family). |
 | `publish.registry.name` / `.url` | string | `''` | Registry identity (`npm`, `pypi`, …). |
 | `publish.registry.package` | string | `''` | Published package name. `''` derives one that ends in `-sdk`, whatever the origin: `@<origin>/<name>-sdk` on npm (`-js` after it for the `js` target), `<origin>-<name>-sdk` on PyPI, RubyGems and LuaRocks, and `<origin>/<name>-sdk` on Packagist. A name that already ends in `-sdk` gets no second one. Of the consumer targets, only `go-cli`, `go-mcp` and `py-data` derive one: any other names its package here, or gets no row in the root README's Packages table and no publish workflow. |
@@ -707,7 +708,8 @@ The spec's metadata. The README components read their wording through
 `title`, `summary`, `website`, `tagline`, `about_md`, `homepage`,
 `docs_url`, `meta_source` and `entity_desc` (a map of
 `entity → description`). `info.auth` set to `false` marks the API as
-needing no authentication.
+needing no authentication, and its SDK carries no credential code unless
+`config.auth.active` is `true`.
 
 ## `main.kit.config` (from apidef)
 

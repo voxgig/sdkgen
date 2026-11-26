@@ -9,7 +9,7 @@ const BY_ID = ['load', 'update', 'patch', 'remove'];
 // Ops after which the entity instance holds a record for later steps to read.
 const STORES = ['create', 'load', 'update', 'patch'];
 // Ops a generated flow test can call; every TestEntity emits these alone.
-const GENERATED = ['create', 'list', 'load', 'update', 'remove'];
+const GENERATED = ['create', 'list', 'load', 'update', 'patch', 'remove'];
 // A generated flow test calls each step's op with its own match and data,
 // the record's id where the op acts on one, and what the entity instance
 // holds. A step whose op is absent, or whose call reaches no route, is

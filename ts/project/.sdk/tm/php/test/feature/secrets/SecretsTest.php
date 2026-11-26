@@ -132,6 +132,15 @@ class ProjectNameSecretsTest extends TestCase
     /** @var array<int,string> */
     private array $touched = [];
 
+    // Read from the config, never from a probe: an SDK whose config declares no
+    // auth places no credential, and these tests assert on the one it places.
+    protected function setUp(): void
+    {
+        if (!array_key_exists('auth', ProjectNameConfig::shared_config()['options'] ?? [])) {
+            $this->markTestSkipped("this SDK's config declares no auth, so it places no credential");
+        }
+    }
+
     protected function tearDown(): void
     {
         foreach ($this->touched as $name) {

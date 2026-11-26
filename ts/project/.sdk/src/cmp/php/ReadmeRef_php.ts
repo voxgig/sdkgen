@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, phpEntityAccessor, targetFeatures, opNeedsAction, bodyNote, listMatchArg, matchExampleItems, litString, requestExampleItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, phpEntityAccessor, entityOps, bodyNote, listMatchArg, matchExampleItems, litString, requestExampleItems, entityClassName, entityCollection, featureDocs, fact, clientOptions, requiredItems } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -22,6 +22,8 @@ function phpLit(type: any, placeholder: string = 'example'): string {
 }
 
 
+const LIST_ALL = ' (call with no argument to list all).'
+
 const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string }> = {
   load: {
     sig: 'load(array $reqmatch, ?array $ctrl = null): mixed',
@@ -31,7 +33,7 @@ const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string
   list: {
     sig: 'list(?array $reqmatch = null, ?array $ctrl = null): mixed',
     returns: 'array — the entities, one per record; throws on error',
-    desc: 'List entities matching the given criteria (call with no argument to list all). Returns an array of entities, one per record, and throws on error.',
+    desc: 'List entities matching the given criteria' + LIST_ALL + ' Returns an array of entities, one per record, and throws on error.',
   },
   create: {
     sig: 'create(array $reqdata, ?array $ctrl = null): mixed',
@@ -56,13 +58,15 @@ const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string
 }
 
 
+
 const ReadmeRef = cmp(function ReadmeRef(props: any) {
   const { target } = props
   const { model } = props.ctx$
 
-  const entity = getModelPath(model, `main.${KIT}.entity`)
-  const feature = targetFeatures(model, target)
+  // PHP class names ignore case, so Entity_php folds case when it names one.
+  const className = (ent: any): string => entityClassName(ent, entityCollection(model), true)
 
+  const entity = getModelPath(model, `main.${KIT}.entity`)
   const publishedEntities = each(entity).filter((e: any) => e.active !== false)
 
 
@@ -79,6 +83,10 @@ Complete API reference for the ${model.Name} ${target.title} SDK.
 
 `)
 
+    const OPTION_KIND: Record<string, string> = { string: 'string', map: 'array', list: 'array' }
+    const optionRows = clientOptions(model)
+      .map((o: any) => '| `$options["' + o.name + '"]` | `' + OPTION_KIND[o.kind] + '` | ' + o.desc + ' |\n').join('')
+
     Content(`\`\`\`php
 require_once __DIR__ . '/${model.const.Name.toLowerCase()}_sdk.php';
 
@@ -92,13 +100,7 @@ Create a new SDK client instance.
 | Name | Type | Description |
 | --- | --- | --- |
 | \`$options\` | \`array\` | SDK configuration options. |
-${isAuthActive(model) ? '| \`$options["apikey"]\` | \`string\` | API key for authentication. |\n' : ''}| \`$options["base"]\` | \`string\` | Base URL for API requests. |
-| \`$options["prefix"]\` | \`string\` | URL prefix appended after base. |
-| \`$options["suffix"]\` | \`string\` | URL suffix appended after path. |
-| \`$options["headers"]\` | \`array\` | Custom headers for all requests. |
-| \`$options["feature"]\` | \`array\` | Feature configuration. |
-| \`$options["system"]\` | \`array\` | System overrides (e.g. custom fetch). |
-
+${optionRows}
 `)
 
 
@@ -128,7 +130,7 @@ $client = ${model.const.Name}SDK::test();
     publishedEntities.map((ent: any) => {
       Content(`#### \`${ent.Name}($data = null)\`
 
-Create a new \`${ent.Name}Entity\` instance. Pass \`null\` for no initial data.
+Create a new \`${className(ent)}\` instance. Pass \`null\` for no initial data.
 
 `)
     })
@@ -173,7 +175,7 @@ Prepare a fetch definition without sending the request. Returns the
 
     // Entity reference sections
     publishedEntities.map((ent: any) => {
-      const opnames = Object.keys(ent.op || {})
+      const opnames = entityOps(ent)
       const fields = Object.values(ent.fields || {})
       // Model-driven id key: null when this entity has no id-like field, in
       // which case load/remove match on no argument and update omits the id.
@@ -182,12 +184,12 @@ Prepare a fetch definition without sending the request. Returns the
       Content(`
 ---
 
-## ${ent.Name}Entity
+## ${className(ent)}
 
 `)
 
-      if (ent.short) {
-        Content(`${ent.short}
+      if (fact(ent, 'desc').inline) {
+        Content(`${fact(ent, 'desc').inline}
 
 `)
       }
@@ -207,8 +209,8 @@ $${ent.name} = $client->${phpEntityAccessor(ent.Name)}();
 `)
         each(fields, (field: any) => {
           const req = field.r ? 'Yes' : 'No'
-          const desc = field.sh || ''
-          Content(`| \`${field.n}\` | \`${canonToType(field.t, target.name)}\` | ${req} | ${desc} |
+          const desc = fact(model.main[KIT], 'field')[ent.name]?.[field.n]?.desc.cell ?? ''
+          Content(`| \`${field.n}\` | \`${canonToType(field.t, 'php').replace(/\|/g, '\\|')}\` | ${req} | ${desc} |
 `)
         })
 
@@ -221,7 +223,7 @@ $${ent.name} = $client->${phpEntityAccessor(ent.Name)}();
           // Only emit columns for operations this entity actually exposes —
           // never advertise a create/update/remove column the entity lacks.
           const opcols = ['load', 'list', 'create', 'update', 'patch', 'remove']
-            .filter((op: string) => opnames.includes(op) && ent.op[op]?.active !== false)
+            .filter((op: string) => opnames.includes(op))
           Content(`### Field Usage by Operation
 
 | Field | ${opcols.join(' | ')} |
@@ -254,16 +256,16 @@ $${ent.name} = $client->${phpEntityAccessor(ent.Name)}();
         opnames.map((opname: string) => {
           const info = OP_SIGNATURES[opname]
           if (!info) return
+          const needs = requiredItems(ent, opname).map((it: any) => it.name)
+          const desc = info.desc.replace(' The data must include the entity `id`.',
+            null != idF && needs.includes(idF) ? ' The data must include the entity `' + idF + '`.' : '')
+            .replace(LIST_ALL, 0 === needs.length ? LIST_ALL : '.' + ' The match must include ' + needs.map((n: string) => '`' + n + '`').join(', ') + '.')
 
           Content(`#### \`${info.sig}\`
 
-${info.desc}
+${desc}
 
 `)
-
-          if (opNeedsAction(ent.op[opname])) {
-            return
-          }
 
           if ('load' === opname || 'remove' === opname) {
             // The id key plus every REQUIRED match key (parent path params
@@ -300,7 +302,7 @@ $results = $client->${phpEntityAccessor(ent.Name)}()->list(${listMatchArg('php',
 $result = $client->${phpEntityAccessor(ent.Name)}()->create([
 `)
             createItems.map((it: any) => {
-              Content(`  ${litString('php', it.name)} => null, // ${canonToType(it.type, target.name)}
+              Content(`  ${litString('php', it.name)} => null, // ${canonToType(it.type, 'php')}
 `)
             })
             Content(`]);
@@ -318,6 +320,7 @@ $result = $client->${phpEntityAccessor(ent.Name)}()->create([
             const updateLines = updateItems.map((it: any) =>
               `  ${litString('php', it.name)} => ${phpLit(it.type,
                 it.name === idF ? ent.name + '_id' : it.name)},\n`).join('')
+
             Content(`\`\`\`php
 $result = $client->${phpEntityAccessor(ent.Name)}()->${opname}([
 ${updateLines}  // ${'patch' === opname ? 'Only the fields to change' : 'Fields to update'}
@@ -357,9 +360,9 @@ Get the entity match criteria.
 
 Set the entity match criteria.
 
-#### \`make(): ${ent.Name}Entity\`
+#### \`make(): ${className(ent)}\`
 
-Create a new \`${ent.Name}Entity\` instance with the same client and
+Create a new \`${className(ent)}\` instance with the same client and
 options.
 
 #### \`get_name(): string\`
@@ -371,7 +374,7 @@ Return the entity name.
 
 
     // Features section
-    const activeFeatures = each(feature).filter((f: any) => f.active)
+    const activeFeatures = featureDocs(model, target)
     if (activeFeatures.length > 0) {
       Content(`
 ---
@@ -383,7 +386,7 @@ Return the entity name.
 `)
 
       activeFeatures.map((f: any) => {
-        Content(`| \`${f.name}\` | ${f.version || '0.0.1'} | ${f.title || ''} |
+        Content(`| \`${f.name}\` | ${f.version} | ${f.titleCell} |
 `)
       })
 

@@ -88,9 +88,9 @@ open class ProjectNameEntityBase: Entity {
     throw unsupportedOp("remove", name)
   }
 
-  // Every operation resolves to the entity; `remove` additionally marks
-  // it. The instance KEEPS the data it held — a caller can still read
-  // what was deleted — but it is no longer a live record. See AGENTS.md.
+  // Every operation resolves to the entity; a remove additionally marks
+  // it deleted. The instance KEEPS the data it held — a caller can still
+  // read what was deleted — but it is no longer a live record.
   private var deletedFlag: Bool = false
 
   public func markDeleted() {
@@ -159,9 +159,9 @@ open class ProjectNameEntityBase: Entity {
     // instance, and the caller reaches the record through data(). Two
     // structural exceptions: `list` resolves to the ARRAY of entity
     // instances makeResult built, and a failed op with throwing disabled
-    // hands back the error payload unchanged. `remove` additionally marks
+    // hands back the error payload unchanged. A remove additionally marks
     // the entity deleted; it KEEPS its data, so a caller can still read
-    // what was removed. See AGENTS.md "Entity operations return ENTITIES".
+    // what was removed.
     let opname = ctx.op?.name
 
     if let result = ctx.result, result.ok, "list" != opname {
@@ -176,8 +176,9 @@ open class ProjectNameEntityBase: Entity {
 
   // Streaming operations. Runs `action` through the full pipeline and returns
   // an AsyncStream over result items, so the `streaming` feature's incremental
-  // output is reachable from a generated entity (a normal op call materialises
-  // the whole result). `callopts` parameterises the call:
+  // output, when that feature is active, is reachable from a generated entity
+  // (a normal op call materialises the whole result). `callopts` parameterises
+  // the call:
   //   - inbound (download): iterate the yielded items/chunks (from the
   //     streaming feature when active, else the materialised items);
   //   - outbound (upload): pass a streamable payload as callopts["body"] - it

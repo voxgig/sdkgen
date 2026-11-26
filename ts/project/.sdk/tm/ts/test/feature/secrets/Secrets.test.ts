@@ -5,8 +5,16 @@ import Http from 'node:http'
 
 import { SDK } from '../../utility/index'
 
+import { config } from '../../..'
+
 
 const ENVPREFIX = 'PROJECTENV_TEST_SECRETS_'
+
+
+// Read from the config, never from a probe: an SDK whose config declares no
+// auth places no credential, and these tests assert on the one it places.
+const NOAUTH = null == (config as any).options?.auth ?
+  "this SDK's config declares no auth, so it places no credential" : false
 
 
 // The header the credential travels in: the DEFAULT client's auth.name,
@@ -51,7 +59,7 @@ function envchain(extra?: any): any {
 }
 
 
-describe('secrets', () => {
+describe('secrets', { skip: NOAUTH }, () => {
 
   beforeEach(() => {
     delete process.env[ENVPREFIX + 'APIKEY']
@@ -360,7 +368,7 @@ describe('secrets', () => {
 })
 
 
-describe('secrets exchange', () => {
+describe('secrets exchange', { skip: NOAUTH }, () => {
 
   const BASE = 'http://exchange.test/api'
   const REFRESH = 'REFRESH01'

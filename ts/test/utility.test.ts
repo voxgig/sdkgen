@@ -193,10 +193,16 @@ describe('utility', () => {
     })
 
     for (const where of ['query', 'cookie']) {
-      test('Basic in the ' + where + ' carries no flag', () => {
-        deepStrictEqual(configDefinition(modelIn(where)).def.options.auth, { prefix: 'Basic' })
+      test('Basic in the ' + where + ' carries no flag, and its placement', () => {
+        deepStrictEqual(configDefinition(modelIn(where)).def.options.auth, { prefix: 'Basic', in: where })
       })
     }
+
+    test('a renamed credential carries its name', () => {
+      const model: any = modelIn('header')
+      model.main.kit.config.auth = { active: true, prefix: '', in: 'HEADER', name: 'X-Api-Key' }
+      deepStrictEqual(configDefinition(model).def.options.auth, { prefix: '', name: 'X-Api-Key' })
+    })
   })
 
 

@@ -1,9 +1,17 @@
 
-import { cmp, Content, File } from '@voxgig/sdkgen'
+import { cmp, Content, File, fact } from '@voxgig/sdkgen'
 
 
 const ReadmeExamplesTest = cmp(function ReadmeExamplesTest(props: any) {
+  const { target } = props
   const { model } = props.ctx$
+  // The root README where the run writes one beside this target, and the
+  // target's own documents where it writes them.
+  const link = fact(target, 'link').readme
+  const own = fact(target, 'phase').readme
+  if ('' === link && !own) {
+    return
+  }
 
   File({ name: 'readme_examples_test.c' }, () => {
     Content(`// Structural gate over every \`\`\`c block in the ${model.const.Name} SDK docs
@@ -129,10 +137,10 @@ static int check_doc(const char* label, const char* path) {
 
 int main(void) {
   int total = 0;
-  total += check_doc("root README", "../README.md");
-  total += check_doc("c/README", "README.md");
+${'' === link ? '' : `  total += check_doc("root README", "${link}");
+`}${own ? `  total += check_doc("c/README", "README.md");
   total += check_doc("c/REFERENCE", "REFERENCE.md");
-
+` : ''}
   // Missing docs are tolerated (a run may generate a subset of phases), so a
   // zero total is not a failure — the per-block checks above carry the gate.
   printf("readme_examples: scanned %d c block(s)\\n", total);

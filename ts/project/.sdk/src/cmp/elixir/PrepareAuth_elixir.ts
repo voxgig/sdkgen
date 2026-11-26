@@ -4,16 +4,14 @@ import {
   File,
   Folder,
   cmp,
-  isHttpBasicAuth,
-  resolveAuthIn,
-  resolveAuthName,
-  resolveAuthPrefix,
+  fact,
 } from '@voxgig/sdkgen'
+
+import { elixirApp } from './app_elixir'
 
 
 import {
   KIT,
-  getModelPath,
 } from '@voxgig/apidef'
 
 
@@ -25,19 +23,20 @@ import {
 const PrepareAuth = cmp(async function PrepareAuth(props: any) {
   const { target } = props
   const { model } = props.ctx$
+  const authFact = fact(model.main[KIT], 'auth')
 
-  Folder({ name: model.const.name }, () => {
+  Folder({ name: elixirApp(model, target) }, () => {
     File({ name: 'prepare_auth.' + target.ext }, () => {
       Content(render({
         Name: model.const.Name,
-        active: authSwitchedOn(model),
-        where: resolveAuthIn(model),
-        name: resolveAuthName(model),
-        basic: isHttpBasicAuth(model),
+        active: !authFact.suppressed,
+        where: authFact.in,
+        name: authFact.name,
+        basic: authFact.basic,
         // Read so the resolution is visible at generation time even though
         // the emitted code takes the prefix from options at runtime (the
         // secrets feature rewrites it there).
-        prefix: resolveAuthPrefix(model),
+        prefix: authFact.prefix,
       }))
     })
   })
@@ -295,13 +294,6 @@ function indent(block: string, n: number): string {
     .map((line) => '' === line ? line : pad + line)
     .join('\n')
     .replace(/\n$/, '')
-}
-
-
-function authSwitchedOn(model: any): boolean {
-  const auth = getModelPath(model, `main.${KIT}.config.auth`,
-    { only_active: false, required: false })
-  return !(null != auth && false === auth.active)
 }
 
 

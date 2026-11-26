@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, fact, clientOptions, entityOps, entityPath, introOps } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -15,9 +15,8 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
 
   // Model-driven op rows: emit a row only for operations at least one active
   // entity actually exposes — never document an operation no entity has.
-  const opUnion = new Set<string>()
-  entityList.forEach((e: any) => Object.keys(e.op || {})
-    .forEach((o: string) => { if (e.op[o] && e.op[o].active !== false) opUnion.add(o) }))
+  const opUnion = new Set<string>(introOps(model))
+  const sameOps = fact(model.main[KIT], 'sharedOps')
   const opRowDefs: Record<string, string> = {
     load: '| `load` | `($reqmatch, $ctrl) -> entity` | Load a single entity by match criteria, and return it. Dies on error. |',
     list: '| `list` | `($reqmatch, $ctrl) -> arrayref` | List entities matching the criteria, one per record. Dies on error. |',
@@ -27,11 +26,12 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
     remove: '| `remove` | `($reqmatch, $ctrl) -> entity` | Remove an entity, and return it marked as deleted. Dies on error. |',
   }
   const opRows = ['load', 'list', 'create', 'update', 'patch', 'remove']
-    .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o]).join('\n')
+    .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o] + '\n').join('')
+  const listResult = opUnion.has('list') ? ', and `list` an `arrayref` of\nentities, one per record' : ''
 
-  const apikeyOptionRow = isAuthActive(model)
-    ? '| `apikey` | `string` | API key for authentication. |\n'
-    : ''
+  const OPTION_KIND: Record<string, string> = { string: 'string', map: 'hashref', list: 'arrayref' }
+  const optionRows = clientOptions(model)
+    .map((o: any) => '| `' + o.name + '` | `' + OPTION_KIND[o.kind] + '` | ' + o.desc + ' |\n').join('')
 
   Content(`### ${model.const.Name}SDK
 
@@ -46,13 +46,7 @@ Creates a new SDK client.
 
 | Option | Type | Description |
 | --- | --- | --- |
-${apikeyOptionRow}| \`base\` | \`string\` | Base URL of the API server. |
-| \`prefix\` | \`string\` | URL path prefix prepended to all requests. |
-| \`suffix\` | \`string\` | URL path suffix appended to all requests. |
-| \`feature\` | \`hashref\` | Feature activation flags. |
-| \`extend\` | \`arrayref\` | Additional feature instances to load. |
-| \`system\` | \`hashref\` | System overrides (e.g. custom \`fetch\` coderef). |
-
+${optionRows}
 ### test
 
 \`\`\`perl
@@ -80,12 +74,10 @@ Creates a test-mode client with mock transport. Both arguments may be \`undef\`.
   Content(`
 ### Entity interface
 
-All entities share the same interface.
-
-| Method | Signature | Description |
+${0 === entityList.length ? '' : (sameOps ? 'All entities share the same interface.' :
+  'Each entity has only the operations its model declares; see its section below.') + '\n\n'}| Method | Signature | Description |
 | --- | --- | --- |
-${opRows}
-| \`data_get\` | \`() -> hashref\` | Get entity data. |
+${opRows}| \`data_get\` | \`() -> hashref\` | Get entity data. |
 | \`data_set\` | \`($data)\` | Set entity data. |
 | \`match_get\` | \`() -> hashref\` | Get entity match criteria. |
 | \`match_set\` | \`($match)\` | Set entity match criteria. |
@@ -94,8 +86,7 @@ ${opRows}
 
 ### Result shape
 
-Entity operations return the entity, and \`list\` an \`arrayref\` of
-entities, one per record; \`data_get\` reads an entity's record (a
+Entity operations return the entity${listResult}; \`data_get\` reads an entity's record (a
 \`hashref\`). They die on error, so wrap calls in \`eval { ... }\` and
 inspect \`$@\` to handle failures.
 
@@ -114,34 +105,32 @@ On error, \`ok\` is false and \`err\` contains the error value.
 `)
 
   // Entities summary
-  Content(`### Entities
+  if (0 < entityList.length) {
+    Content(`### Entities
 
 `)
+  }
   each(entityList, (ent: any) => {
     const fields = Object.values(ent.fields || {})
-    const opnames = Object.keys(ent.op || {})
-    const ops = ent.op || {}
-    const points = each(ops).map((op: any) =>
-      op.points ? each(op.points) : []
-    ).flat()
-    const path = points.length > 0 ? (points[0] as any).o || '' : ''
+    const opnames = entityOps(ent)
+    const path = entityPath(ent)
 
     Content(`#### ${ent.Name}
 
-| Field | Description |
+${0 === fields.length ? '' : `| Field | Description |
 | --- | --- |
-`)
+`}`)
     each(fields, (field: any) => {
-      Content(`| \`${field.n}\` | ${field.sh || ''} |
+      Content(`| \`${field.n}\` | ${fact(model.main[KIT], 'field')[ent.name]?.[field.n]?.desc.cell ?? ''} |
 `)
     })
 
     Content(`
-Operations: ${opnames.map((n: string) => n.charAt(0).toUpperCase() + n.slice(1)).join(', ')}.
+${0 === opnames.length ? '' : `Operations: ${opnames.join(', ')}.
 
-API path: \`${path}\`
+`}${'' === path ? '' : `API path: \`${path}\`
 
-`)
+`}`)
   })
 
 })

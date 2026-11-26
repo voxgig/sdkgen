@@ -65,7 +65,7 @@ function liveFlowNeeds(entity: any, flow: any): LiveFlowNeeds {
   let unrouted = false
   for (const step of steps) {
     if ('create' === step.o) bindings(step.m).forEach(([, k]) => keys.add(k))
-    if ('update' === step.o) bindings(step.d).forEach(([, k]) => keys.add(k))
+    if (['update', 'patch'].includes(step.o)) bindings(step.d).forEach(([, k]) => keys.add(k))
     if ('list' === step.o) {
       const args = liveStepArgs(entity, step, flow)
       fill(args || [])
@@ -87,7 +87,7 @@ function liveFlowNeeds(entity: any, flow: any): LiveFlowNeeds {
     return needs
   }
 
-  if (steps.some((step) => 'update' === step.o)) {
+  if (steps.some((step) => ['update', 'patch'].includes(step.o))) {
     needs.blocked = 'the flow updates a ' + entity.name + ' record it did not create'
   }
   else if (steps.some((step) => 'load' === step.o)) {
@@ -478,7 +478,7 @@ function livePlan(entity: any, flow: any, getOnly: boolean): { plan: LiveGetOnly
   const create = steps.find((step) => 'create' === step.o && reasons.has(step))
   const sources = steps.filter((step) => ['create', 'list'].includes(step.o) && reasons.has(step))
   for (const step of null == create ? [] : left()) {
-    if (['update', 'remove'].includes(step.o)) {
+    if (['update', 'patch', 'remove'].includes(step.o)) {
       reasons.set(step, after([create], 'acts on the record ' + id(create) + ' makes'))
     }
     else if (null != entity?.id && 'list' === step.o &&

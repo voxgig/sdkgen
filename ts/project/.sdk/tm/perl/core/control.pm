@@ -14,7 +14,7 @@ sub new {
     explain   => $opts->{explain},
     # Per-call audit actor (used by the audit feature).
     actor     => $opts->{actor},
-    # Per-call paging override (used by the paging feature).
+    # Per-call paging override (read by the paging feature when it is active).
     paging    => $opts->{paging},
   }, $class;
 }

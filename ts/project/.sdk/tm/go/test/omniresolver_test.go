@@ -15,7 +15,7 @@ import (
 
 // The shared corpus, compiled by the project build. Relative to this
 // package directory, which is where `go test` runs.
-const TEST_JSON_FILE = "../../.sdk/test/test.json"
+const TEST_JSON_FILE = "../SDKREL/.sdk/test/test.json"
 
 // The sentinels, under the names the corpus tests already use.
 var (

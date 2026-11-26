@@ -1,5 +1,5 @@
 
-import { test, describe } from 'node:test'
+import { test, describe, before, after } from 'node:test'
 import { strictEqual, deepStrictEqual, ok } from 'node:assert'
 
 import { readFileSync, readdirSync } from 'node:fs'
@@ -17,7 +17,9 @@ import {
   entityCollection,
   guardModel,
 } from '../dist/sdkgen.js'
-import { FOLD_ENTITY, makeModel as makeGenModel } from './generateharness'
+import {
+  FOLD_ENTITY, STAGE, SCAFFOLD, makeModel as makeGenModel, makeRoot, makeLog, layeredFs, namedEntity,
+} from './generateharness'
 
 const { KIT } = require('../dist/types.js')
 
@@ -191,5 +193,51 @@ describe('guardModel', () => {
     const { fs } = memfs({})
     await SdkGen({ fs, folder: '/top', root: '' }).generate({ model: plain(model), root })
     deepStrictEqual(seen, expected)
+  })
+})
+
+
+// `planet_entity` declares the type PlanetEntity, so planet's class takes the
+// next name, PlanetEntityClient, and every document names that class.
+describe('documents name the class a renamed entity takes', () => {
+
+  let cwd = ''
+  before(() => {
+    cwd = process.cwd()
+    process.chdir(SCAFFOLD)
+  })
+  after(() => {
+    if ('' !== cwd) process.chdir(cwd)
+  })
+
+  // The targets whose documents name an entity's class.
+  const REFERENCE = ['cpp', 'go', 'js', 'lua', 'php', 'py', 'rb', 'rust', 'ts', 'zig']
+  const README = REFERENCE.filter((t: string) => 'go' !== t)
+
+  test('README and REFERENCE name PlanetEntityClient', async () => {
+    for (const target of REFERENCE) {
+      const { fs, vol } = memfs({})
+      const sdkgen = SdkGen({ fs: layeredFs(fs), folder: STAGE, root: '', pino: makeLog() })
+      await sdkgen.generate({
+        model: makeGenModel([target], undefined, namedEntity('planet_entity')), root: makeRoot(),
+      })
+      const out: Record<string, string> = {}
+      for (const [path, text] of Object.entries(vol.toJSON() as Record<string, string>)) {
+        out[Path.relative(STAGE, path).split(Path.sep).join('/')] = text
+      }
+
+      ok(Object.entries(out).some(([p, text]: [string, string]) =>
+        p.startsWith(target + '/') && !p.endsWith('.md') && text.includes('PlanetEntityClient')),
+        target + ': the generated source declares no PlanetEntityClient')
+
+      const reference = out[target + '/REFERENCE.md']
+      ok(/^## PlanetEntityClient$/m.test(reference), target + ': REFERENCE has no PlanetEntityClient section')
+      ok(!/^## PlanetEntity$/m.test(reference), target + ': REFERENCE names planet\'s class PlanetEntity')
+
+      if (README.includes(target)) {
+        ok(out[target + '/README.md'].includes('PlanetEntityClient'),
+          target + ': README does not name PlanetEntityClient')
+      }
+    }
   })
 })

@@ -70,6 +70,15 @@ describe('feature-model', () => {
     }
   })
 
+  // `feature add` installs, and `target add` copies, only a feature the
+  // model declares active; compiled without the base schema, `active` is the
+  // model file's own line.
+  test('every bundled feature model declares itself active', () => {
+    const { model } = compileFeatureModel()
+    const feature = model.main.kit.feature
+    deepStrictEqual(Object.keys(feature).filter((name: string) => true !== feature[name].active), [])
+  })
+
   test('Config generator comma-separates the feature maps', () => {
     const cfg = readFileSync(
       Path.resolve(SDK, 'src', 'cmp', 'ts', 'Config_ts.ts'), 'utf8')

@@ -411,9 +411,9 @@ public:
   virtual Value data(const Value& arg = Value::undef()) = 0;
   virtual Value match(const Value& arg = Value::undef()) = 0;
 
-  // `remove` resolves to the entity, marked. The instance KEEPS the data it
-  // held - a caller can still read what was deleted - but it is no longer a
-  // live record.
+  // A remove resolves to the entity, marked deleted. The instance KEEPS the
+  // data it held - a caller can still read what was deleted - but it is no
+  // longer a live record.
   virtual void markDeleted() = 0;
   virtual bool deleted() = 0;
 };
@@ -693,7 +693,6 @@ using SdkEntityPtr = std::shared_ptr<SdkEntity>;
 
 // Every operation resolves to the ENTITY, not the raw data - `list` to a
 // vector of them, one per record. The record is reached through `data()`.
-// See AGENTS.md "Entity operations return ENTITIES".
 //
 // `Value` cannot carry an entity: it is a closed data union, and adding a
 // variant to a general-purpose struct library to hold SDK objects would be
@@ -739,13 +738,13 @@ public:
   Value match(const Value& arg = Value::undef()) override;
 
   // stream runs `action` through the full pipeline and returns the result
-  // items, so the streaming feature's incremental output is reachable from a
-  // generated entity (a normal op call materialises the whole result). This
-  // runtime is synchronous, so the returned vector is a materialised cursor
-  // the caller iterates. `callopts` parameterises the call: inbound yields the
-  // streaming feature's items when active, else the materialised items;
-  // outbound attaches an iterable `body` to the request (reqdata `body$`);
-  // `ctrl` threads pipeline control.
+  // items, so the streaming feature's incremental output, when that feature is
+  // active, is reachable from a generated entity (a normal op call
+  // materialises the whole result). This runtime is synchronous, so the
+  // returned vector is a materialised cursor the caller iterates. `callopts`
+  // parameterises the call: inbound yields the streaming feature's items when
+  // active, else the materialised items; outbound attaches an iterable `body`
+  // to the request (reqdata `body$`); `ctrl` threads pipeline control.
   std::vector<Value> stream(const std::string& action,
                             const Value& args = Value::undef(),
                             const Value& callopts = Value::undef());
@@ -950,8 +949,8 @@ inline SdkClient::SdkClient(const Value& options_) {
 
   // Add features in the resolved order (makeOptions puts an explicit list
   // order first, else defaults to test-first). Ordering matters: the `test`
-  // feature installs the base mock transport and the transport features
-  // (retry/cache/netsim/proxy/ratelimit) wrap whatever is current, so `test`
+  // feature installs the base mock transport and the features whose model
+  // declares `transport: 'wrap'` wrap whatever is current, so `test`
   // must be added before them to sit at the base of the transport chain.
   Value featureOpts = Helpers::toMapAny(getp(options, "feature"));
   Value featureOrder = Struct::getpath(options, {"__derived__", "featureorder"});
@@ -1106,8 +1105,8 @@ inline Value SdkClient::direct(const Value& fetchargs_) {
 // a top-level `errors` array, so status alone would report a failed query as
 // ok.
 //
-// NOTE: like direct, this bypasses the feature pipeline — no retry, ratelimit
-// or paging features apply.
+// NOTE: like direct, this bypasses the feature pipeline: no feature hook runs
+// on this path.
 inline Value SdkClient::graphql(const std::string& query, const Value& variables,
                                 const Value& ctrl) {
   if (!opAllowed("graphql")) return opDenied("graphql");

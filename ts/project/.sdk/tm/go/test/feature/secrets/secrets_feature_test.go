@@ -22,6 +22,16 @@ import (
 
 const envprefix = "PROJECTENV_TEST_SECRETS_"
 
+// skipWithoutAuth reads the config, never a probe: an SDK whose config
+// declares no auth places no credential, and these tests assert on the one
+// it places.
+func skipWithoutAuth(t *testing.T) {
+	t.Helper()
+	if options, _ := sdk.MakeConfig()["options"].(map[string]any); nil == options["auth"] {
+		t.Skip("this SDK's config declares no auth, so it places no credential")
+	}
+}
+
 // credheader is the header the credential travels in: the DEFAULT
 // client's auth.name, lower-cased as prepare_auth sends it. Read from a
 // default client because a test's `auth: nil` leaves no name to read.
@@ -163,7 +173,11 @@ func secretsClient(w *wire, sdkopts map[string]any) *sdk.ProjectNameSDK {
 		if extend {
 			opts["extend"] = []any{feat.NewSecretsFeature()}
 		}
-		return sdk.NewProjectNameSDK(opts)
+		client, err := sdk.NewProjectNameSDK(opts)
+		if err != nil {
+			panic(err)
+		}
+		return client
 	})
 }
 
@@ -327,6 +341,7 @@ func driveEntityOp(t *testing.T, client *sdk.ProjectNameSDK, w *wire) {
 // The feature-inactive baseline: bit-identical behaviour.
 
 func TestSecretsInactive(t *testing.T) {
+	skipWithoutAuth(t)
 
 	t.Run("apikey option behaves exactly as before", func(t *testing.T) {
 		client := sdk.TestSDK(nil, map[string]any{"apikey": "OPTKEY01"})
@@ -360,6 +375,7 @@ func TestSecretsInactive(t *testing.T) {
 // Active: the provider chain, driven through real entity operations.
 
 func TestSecretsChain(t *testing.T) {
+	skipWithoutAuth(t)
 
 	t.Run("apikey option still wins over the chain", func(t *testing.T) {
 		os.Setenv(envprefix+"APIKEY", "ENVKEY01")
@@ -539,6 +555,7 @@ func TestSecretsChain(t *testing.T) {
 }
 
 func TestSecretsCachedMissIsReasked(t *testing.T) {
+	skipWithoutAuth(t)
 	var mu sync.Mutex
 	calls := 0
 
@@ -582,6 +599,7 @@ func TestSecretsCachedMissIsReasked(t *testing.T) {
 // The other half of the same rule: a HIT is still cached by default, so the
 // fix above must not turn every request into a chain walk.
 func TestSecretsCachedHitIsKept(t *testing.T) {
+	skipWithoutAuth(t)
 	var mu sync.Mutex
 	calls := 0
 
@@ -628,6 +646,7 @@ func (p *customProvider) Describe() string { return "custom:test" }
 // The access-token exchange.
 
 func TestSecretsExchange(t *testing.T) {
+	skipWithoutAuth(t)
 
 	t.Run("the refresh token buys an access token, and a spent one is rebought once", func(t *testing.T) {
 		os.Setenv(envprefix+"REFRESH_TOKEN", "REFRESH01")
@@ -731,6 +750,7 @@ func TestSecretsExchange(t *testing.T) {
 // JSON-hostile characters must arrive as that literal value. End to end
 // over real HTTP (httptest), token purchase and API call alike.
 func TestSecretsExchangeRawFetch(t *testing.T) {
+	skipWithoutAuth(t)
 	tricky := "re\"fresh\\to\nken"
 
 	var mu sync.Mutex
@@ -770,7 +790,11 @@ func TestSecretsExchangeRawFetch(t *testing.T) {
 		if extend {
 			opts["extend"] = []any{feat.NewSecretsFeature()}
 		}
-		return sdk.NewProjectNameSDK(opts)
+		client, err := sdk.NewProjectNameSDK(opts)
+		if err != nil {
+			panic(err)
+		}
+		return client
 	})
 
 	driveEntityOpUntil(t, client, "reached the httptest server", func() bool {
@@ -790,6 +814,8 @@ func TestSecretsExchangeRawFetch(t *testing.T) {
 
 // Real listeners and the raw fallback transport: a stub follows nothing.
 func TestSecretsExchangeRedirectRefused(t *testing.T) {
+	skipWithoutAuth(t)
+
 	t.Run("a redirect answering the exchange is a failure, and nothing follows it", func(t *testing.T) {
 		entity, opname := routableOp(t)
 
@@ -854,7 +880,11 @@ func TestSecretsExchangeRedirectRefused(t *testing.T) {
 				if extend {
 					opts["extend"] = []any{feat.NewSecretsFeature()}
 				}
-				return sdk.NewProjectNameSDK(opts)
+				client, err := sdk.NewProjectNameSDK(opts)
+				if err != nil {
+					panic(err)
+				}
+				return client
 			})
 
 			message := fmt.Sprint(callNamedOp(client, entity, opname))
@@ -903,6 +933,7 @@ func callNamedOp(client *sdk.ProjectNameSDK, entity string, opname string) any {
 // MISS (a revoked secret) must RETRACT the credential the feature wrote -
 // prepareAuth must stop transmitting it.
 func TestSecretsUncachedMissRetracts(t *testing.T) {
+	skipWithoutAuth(t)
 	var mu sync.Mutex
 	have := true
 
@@ -946,6 +977,7 @@ func TestSecretsUncachedMissRetracts(t *testing.T) {
 // This is the pin that Direct gets the chain credential (and the same
 // fail-closed refusal) without any entity pipeline involved.
 func TestSecretsDirectPath(t *testing.T) {
+	skipWithoutAuth(t)
 	os.Setenv(envprefix+"APIKEY", "DIRECTKEY01")
 	defer os.Unsetenv(envprefix + "APIKEY")
 
@@ -992,6 +1024,7 @@ func TestSecretsDirectPath(t *testing.T) {
 }
 
 func TestSecretsMalformedProviderEntry(t *testing.T) {
+	skipWithoutAuth(t)
 	// A kind NAME where a provider or spec belongs.
 	malformed := []any{"hashicorp"}
 	const notaprovider = "not a provider or a provider spec"
@@ -1101,6 +1134,7 @@ func TestSecretsMalformedProviderEntry(t *testing.T) {
 // SUCCEEDS reopens it and every waiting operation goes out with the FRESH
 // credential - never the stale pre-failure header, and never nothing.
 func TestSecretsGateRecovery(t *testing.T) {
+	skipWithoutAuth(t)
 	entity, opname := routableOp(t)
 
 	var mu sync.Mutex

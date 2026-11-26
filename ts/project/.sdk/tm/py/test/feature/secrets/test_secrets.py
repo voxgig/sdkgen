@@ -29,12 +29,22 @@ import http.server
 import threading
 import unittest
 
+import pytest
+
 from projectname_sdk import ProjectNameSDK
+from projectname_sdk.config import shared_config
 from projectname_sdk.features import _has_feature
 from projectname_sdk.feature.secrets_feature import ProjectNameSecretsFeature
 
 
 ENVPREFIX = "PROJECTENV_TEST_SECRETS_"
+
+
+# Read from the config, never from a probe: an SDK whose config declares no
+# auth places no credential, and these tests assert on the one it places.
+pytestmark = pytest.mark.skipif(
+    "auth" not in shared_config().get("options", {}),
+    reason="this SDK's config declares no auth, so it places no credential")
 
 
 def cred_header():

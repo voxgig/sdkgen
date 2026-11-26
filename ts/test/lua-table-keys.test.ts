@@ -52,6 +52,7 @@ describe('lua table key guard', () => {
       'ReadmeHowto_lua.ts',
       'ReadmeQuick_lua.ts',
       'ReadmeRef_lua.ts',
+      'ReadmeTopHowto_lua.ts',
       'ReadmeTopQuick_lua.ts',
       'ReadmeTopTest_lua.ts',
       'TestEntity_lua.ts',

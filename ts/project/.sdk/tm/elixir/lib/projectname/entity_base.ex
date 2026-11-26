@@ -43,7 +43,6 @@ defmodule ProjectName.EntityBase do
   # reached through data_get/1. `run_op` returns the terminal result value, so
   # the op hands that value back only when the pipeline FAILED (the error
   # shape is utility-configurable); on success it hands back the entity.
-  # See AGENTS.md "Entity operations return ENTITIES".
   def op_return(ent, ctx, out) do
     result = S.getprop(ctx, "result")
 
@@ -54,9 +53,9 @@ defmodule ProjectName.EntityBase do
     end
   end
 
-  # `remove` resolves to the entity, marked. The instance KEEPS the data it
-  # held — a caller can still read what was deleted — but it is no longer a
-  # live record.
+  # A remove resolves to the entity, marked deleted. The instance KEEPS the
+  # data it held — a caller can still read what was deleted — but it is no
+  # longer a live record.
   def mark_deleted(ent) do
     S.setprop(ent, "_deleted", true)
     ent
@@ -103,13 +102,12 @@ defmodule ProjectName.EntityBase do
   end
 
   # Streaming operation. Runs `action` (an op name, e.g. "list") through the
-  # full pipeline and returns a lazy Elixir Stream of result items, so the
-  # `streaming` feature's incremental output is reachable (a normal op call
-  # materialises the whole result). When the streaming feature is active the
-  # result carries a `stream` closure and this yields from it (honouring
-  # chunkSize); otherwise it falls back to the materialised items, so stream
-  # always yields. An entity is yielded as its record, the struct map its
-  # data_get/1 returns.
+  # full pipeline and returns a lazy Elixir Stream of result items, so
+  # incremental output is reachable (a normal op call materialises the whole
+  # result). When the streaming feature is active the result carries a
+  # `stream` closure and this yields from it (honouring chunkSize); otherwise
+  # it falls back to the materialised items, so stream always yields. An
+  # entity is yielded as its record, the struct map its data_get/1 returns.
   # `callopts` parameterises the call:
   #   - ctrl:   per-call pipeline control (threaded onto the op ctx);
   #   - body:   an enumerable/list payload for outbound (upload) streaming,

@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, entityIdField, safeVarName, exampleVarName, luaKey, opNeedsAction, listMatchArg, matchExampleItems, litString, requestExampleItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, entityIdField, safeVarName, exampleVarName, luaKey, entityOps, listMatchArg, matchExampleItems, litString, requestExampleItems, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -52,9 +52,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 `)
 
   publishedEntities.map((entity: any) => {
-    const opnames = Object.keys(entity.op || {})
-    // An op that needs an action has no plain call to show.
-    const callable = opnames.filter((o: string) => !opNeedsAction(entity.op[o]))
+    const opnames = entityOps(entity)
     const fields = Object.values(entity.fields || {})
     const idF = entityIdField(entity)
     // Sanitise the local variable name — an entity whose lowercased name is a
@@ -66,8 +64,8 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 
 `)
 
-    if (entity.short) {
-      Content(`${entity.short}
+    if (fact(entity, 'desc').inline) {
+      Content(`${fact(entity, 'desc').inline}
 
 `)
     }
@@ -102,8 +100,8 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 `)
 
       each(fields, (field: any) => {
-        const desc = field.sh || ''
-        Content(`| \`${field.n}\` | \`${canonToType(field.t, target.name)}\` | ${desc} |
+        const desc = fact(model.main[KIT], 'field')[entity.name]?.[field.n]?.desc.cell ?? ''
+        Content(`| \`${field.n}\` | \`${canonToType(field.t, 'lua').replace(/\|/g, '\\|')}\` | ${desc} |
 `)
       })
 
@@ -111,7 +109,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 `)
     }
 
-    if (callable.includes('load')) {
+    if (opnames.includes('load')) {
       const loadItems = matchExampleItems(entity, 'load', idF)
         .sort((a: any, b: any) =>
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
@@ -129,7 +127,7 @@ local ${eVar}, err = client:${entity.Name}():load(${loadArg})
 `)
     }
 
-    if (callable.includes('list')) {
+    if (opnames.includes('list')) {
       Content(`#### Example: List
 
 \`\`\`lua
@@ -139,7 +137,7 @@ local ${eVar}s, err = client:${entity.Name}():list(${listMatchArg('lua', entity)
 `)
     }
 
-    if (callable.includes('create')) {
+    if (opnames.includes('create')) {
       // Members come from the SAME shape the runtime validates
       // (opRequestShape): every required member must appear — including a
       // required id and parent keys like page_id — with a real, executable
@@ -153,7 +151,7 @@ local ${eVar}s, err = client:${entity.Name}():list(${listMatchArg('lua', entity)
 local ${eVar}, err = client:${entity.Name}():create({
 `)
       createItems.map((it: any) => {
-        Content(`  ${luaKey(it.name)} = ${luaLit(it.type, 'example_' + it.name)}, -- ${canonToType(it.type, target.name)}
+        Content(`  ${luaKey(it.name)} = ${luaLit(it.type, 'example_' + it.name)}, -- ${canonToType(it.type, 'lua')}
 `)
       })
       Content(`})

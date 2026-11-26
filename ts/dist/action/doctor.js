@@ -33,6 +33,9 @@ const IGNORED_RE = /(~|-jostraca-off)$/;
 function ignoredEntry(name) {
     return IGNORED_RE.test(name) || (0, junk_1.isJunk)(name);
 }
+// Components every scaffold once shipped and none ships now. Nothing loads a
+// copy, so it is stale whoever wrote it, an add from before the copy record too.
+const RETIRED_RE = /^ReadmeOptions_[^/]+\.ts$/;
 // Extensions jostraca copies byte-for-byte. Comparing them as text would
 // report spurious differences, so they are compared by raw bytes.
 const BINARY_RE = /\.(png|jpg|jpeg|gif|ico|pdf|zip|gz|woff2?|ttf|eot|wasm)$/i;
@@ -478,6 +481,7 @@ function compareTrees(actx, report, found, trees, opts) {
     const model = actx.model;
     const root = actx.folder;
     const excludes = opts?.excludes ?? [];
+    const copied = (0, copies_1.readCopies)(fs, root).files;
     for (const tree of trees) {
         // Findings are reported at project-relative paths, the way a maintainer
         // would type them.
@@ -527,10 +531,11 @@ function compareTrees(actx, report, found, trees, opts) {
             }
             // A component the scaffold has NEVER shipped is the project's own —
             // the supported way to add a per-target component. Anything else under
-            // a tree `target add` owns is stale output.
+            // a tree `target add` owns, an add's own copy included, is stale output.
             const known = fs.existsSync(node_path_1.default.join(tree.scaffold, rel)) ||
                 landed.has(rel);
-            if ('forked' === tree.kind && !known) {
+            if ('forked' === tree.kind && !known && null == copied[label + rel] &&
+                !RETIRED_RE.test(rel)) {
                 report.additive.push(label + rel);
             }
             else {

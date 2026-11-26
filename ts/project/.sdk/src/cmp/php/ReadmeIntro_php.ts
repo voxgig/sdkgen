@@ -19,7 +19,7 @@ const ReadmeIntroBody = cmp(function ReadmeIntroBody(props: any) {
   const opList = introOps(model).join('`/`')
 
   const semantic = eName
-    ? `The SDK exposes the API as capitalised, semantic **Entities** — for example \`$client->${phpEntityAccessor(eName)}()\` — with named operations (\`${opList}\`) instead of raw URL paths and query strings. Working with resources and verbs keeps call sites self-describing and reduces cognitive load.
+    ? `The SDK exposes the API as capitalised, semantic **Entities** — for example \`$client->${phpEntityAccessor(eName)}()\` —${'' === opList ? '' : ` with named operations (\`${opList}\`)`} instead of raw URL paths and query strings. Working with resources and verbs keeps call sites self-describing and reduces cognitive load.
 
 `
     : ''

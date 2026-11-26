@@ -1,5 +1,5 @@
 
-import { cmp, each, File, Content } from '@voxgig/sdkgen'
+import { cmp, each, File, Content, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -10,6 +10,13 @@ import {
 
 const ReadmeExamplesTest = cmp(function ReadmeExamplesTest(props: any) {
   const { target, ctx$: { model } } = props
+  // The root README where the run writes one beside this target, and the
+  // target's own documents where it writes them.
+  const link = fact(target, 'link').readme
+  const own = fact(target, 'phase').readme
+  if ('' === link && !own) {
+    return
+  }
 
   const Name = model.const.Name
   const sdkClass = Name + 'SDK'
@@ -70,10 +77,10 @@ my $LIB = File::Spec->catdir($PKG_ROOT, 'lib');
 
 # The three documentation sources this gate covers.
 my %DOCS = (
-  'root README'    => File::Spec->catfile($PKG_ROOT, '..', 'README.md'),
-  'perl README'    => File::Spec->catfile($PKG_ROOT, 'README.md'),
+${'' === link ? '' : `  'root README'    => File::Spec->catfile($PKG_ROOT, ${link.split('/').map((seg: string) => "'" + seg + "'").join(', ')}),
+`}${own ? `  'perl README'    => File::Spec->catfile($PKG_ROOT, 'README.md'),
   'perl REFERENCE' => File::Spec->catfile($PKG_ROOT, 'REFERENCE.md'),
-);
+` : ''});
 
 my $SDK_CLASS = '${sdkClass}';
 
@@ -220,17 +227,16 @@ sub fixtures_literal {
 
 
 # Rewrite a runnable block into an executable offline test-mode program: the
-# SDK lib is put on \@INC by absolute path; any real ->new/->test constructor
-# becomes ${sdkClass}->test(<fixtures>); a block that only uses \$client gets
-# such a constructor prepended. The constructor arg match is deliberately
-# shallow (no nested parens) - runnable op blocks never build a client inline
-# with a paren-bearing argument.
+# SDK lib is put on \@INC by absolute path; any real ->new/->test constructor,
+# its argument list matched to the parenthesis that balances it, becomes
+# ${sdkClass}->test(<fixtures>); a block that only uses \$client gets such a
+# constructor prepended.
 sub to_runner {
   my ($block) = @_;
   my $fixtures = fixtures_literal($block);
   my $body;
   if ($block =~ /\\Q$SDK_CLASS\\E->(?:new|test)\\b/) {
-    ($body = $block) =~ s/\\Q$SDK_CLASS\\E->(?:new|test)(?:\\s*\\([^()]*\\))?/$SDK_CLASS->test($fixtures)/g;
+    ($body = $block) =~ s/\\Q$SDK_CLASS\\E->(?:new|test)(?:\\s*(?<args>\\((?:[^()]++|(?&args))*\\)))?/$SDK_CLASS->test($fixtures)/g;
   }
   else {
     $body = "my \\\$client = $SDK_CLASS->test($fixtures);\\n" . $block;

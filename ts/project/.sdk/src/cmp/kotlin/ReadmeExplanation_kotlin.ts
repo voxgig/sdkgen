@@ -28,7 +28,7 @@ kotlin/
 ├── settings.gradle.kts         -- Gradle project settings
 ├── core/                       -- Main SDK client, config, entity base, error type
 ├── entity/                     -- Entity implementations
-├── feature/                    -- Built-in features (Base, Test, Log, ...)
+├── feature/                    -- Feature implementations
 ├── utility/                    -- Utility functions and the vendored struct library
 └── test/                       -- JUnit test suites
 \`\`\`

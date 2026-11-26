@@ -1,4 +1,4 @@
-import { flowSteps, opReachable, invalidRequest, flowLoadRoute, flowLoadReadsRecord } from '@voxgig/sdkgen'
+import { flowSteps, opReachable, invalidRequest, flowLoadRoute, flowLoadReadsRecord, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -19,8 +19,7 @@ import {
   buildIdNames,
   getMatchEntries,
   isAuthActive,
-  serverVarEnv,
-  serverVariables, envName, envToken, entityRecordIdField,
+  entityRecordIdField,
   liveFlowNeeds, liveStrict, liveStrictNote,
   liveGates, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
   liveRouteExamples, liveStepExamples,
@@ -137,37 +136,37 @@ const TestEntity = cmp(function TestEntity(props: any) {
     return
   }
 
-  const PROJUPPER = envName(model)
-  const ENTUPPER = envToken(entity.name)
-  const entidEnvVar = `${PROJUPPER}_TEST_${ENTUPPER}_ENTID`
+  const ENVVAR = fact(model.main[KIT], 'env')
+  const PROJUPPER = ENVVAR.prefix
+  const entidEnvVar = ENVVAR.entid[entity.name]
 
   const SDK = model.const.Name + 'SDK'
   const accessor = javaVarName(entity.name)
 
   const authActive = isAuthActive(model)
+  const authSecret = authActive && fact(model.main[KIT], 'auth').secret
 
 
   // A templated server URL (OpenAPI server variables) makes a LIVE client
   // impossible to construct without values: MakeOptions throws rather than
   // request a URL with a literal `{account_id}` in it. Taken from the
   // environment, the same way the apikey is.
-  const svars = serverVariables(model)
+  const svars = fact(model.main[KIT], 'server')
   const serverEnvEntry = svars
-    .map((v: any) => `    envm.put("${serverVarEnv(PROJUPPER, v.name)}", ${JSON.stringify(v.dflt)});\n`).join('')
+    .map((v: any) => `    envm.put("${ENVVAR.server[v.name]}", ${JSON.stringify(v.dflt)});\n`).join('')
   const serverLiveField = 0 === svars.length ? '' :
     `      Map<String, Object> serveropt = new LinkedHashMap<>();\n` +
     svars.map((v: any) =>
-      `      serveropt.put("${v.name}", env.get("${serverVarEnv(PROJUPPER, v.name)}"));\n`).join('') +
+      `      serveropt.put("${v.name}", env.get("${ENVVAR.server[v.name]}"));\n`).join('') +
     `      liveOpts.put("server", serveropt);\n`
 
   const idnames = buildIdNames(entity, basicflow)
 
   // Get all update data entries for alias generation
   const allSteps = Object.values(flowSteps(basicflow)) as any[]
-  const updateStep = allSteps.find((s: any) => s.o === 'update')
-  const updateData = updateStep?.d
-    ? Object.entries(updateStep.d).filter(([k]: any) => k !== 'id' && !k.endsWith('$'))
-    : []
+  const updateData = Object.entries(Object.assign({}, ...allSteps
+    .filter((s: any) => 'update' === s.o || 'patch' === s.o).map((s: any) => s.d || {})))
+    .filter(([k]: any) => k !== 'id' && !k.endsWith('$'))
   const aliases = updateData.map(([k, v]: any) => [k, v])
 
   const genCtx: GenCtx = { model, entity, javapackage, flow: basicflow, PROJUPPER, accessor }
@@ -351,7 +350,7 @@ ${liveExcludedLines(plan).map((line) => '      System.out.println(' + javaLit(li
     Map<String, Object> entityData;
     try {
       String entityDataSource = Files.readString(Path.of(
-          "..", ".sdk", "test", "entity", "${entity.name}", "${entity.Name}TestData.json"));
+          "${ctx$.stdrep.SDKREL}", ".sdk", "test", "entity", "${entity.name}", "${entity.Name}TestData.json"));
       entityData = Helpers.toMapAny(Json.parse(entityDataSource));
     }
     catch (Exception e) {
@@ -386,9 +385,9 @@ ${fixtureIdentity(entity)}
 
     Map<String, Object> envm = new LinkedHashMap<>();
     envm.put("${entidEnvVar}", idmap);
-    envm.put("${PROJUPPER}_TEST_LIVE", "FALSE");
+    envm.put("${ENVVAR.live}", "FALSE");
     envm.put("${PROJUPPER}_TEST_EXPLAIN", "FALSE");
-${authActive ? `    envm.put("${PROJUPPER}_APIKEY", "");\n` : ''}${serverEnvEntry}    Map<String, Object> env = RunnerSupport.envOverride(envm);
+${authActive ? `    envm.put("${ENVVAR.apikey}", "");\n` : ''}${authSecret ? `    envm.put("${ENVVAR.secret}", "");\n` : ''}${serverEnvEntry}    Map<String, Object> env = RunnerSupport.envOverride(envm);
 
     Map<String, Object> idmapResolved = Helpers.toMapAny(env.get("${entidEnvVar}"));
     if (idmapResolved == null) {
@@ -406,13 +405,13 @@ ${authActive ? `    envm.put("${PROJUPPER}_APIKEY", "");\n` : ''}${serverEnvEntr
     }
 
     Content(`
-    boolean live = "TRUE".equals(env.get("${PROJUPPER}_TEST_LIVE"));
+    boolean live = "TRUE".equals(env.get("${ENVVAR.live}"));
     if (live) {
       // sdk-test-control.json's test.client.options seeds the live
       // client; the generated fields below overwrite anything they name.
       Map<String, Object> liveOpts =
           new LinkedHashMap<>(RunnerSupport.liveClientOptions());
-${authActive ? `      liveOpts.put("apikey", env.get("${PROJUPPER}_APIKEY"));\n` : ''}${serverLiveField}      // An empty map, not a null one: merge answers null when its last
+${authActive ? `      liveOpts.put("apikey", env.get("${ENVVAR.apikey}"));\n` : ''}${authSecret ? `      liveOpts.put("secret", env.get("${ENVVAR.secret}"));\n` : ''}${serverLiveField}      // An empty map, not a null one: merge answers null when its last
       // entry is null, and basicSetup is normally called with no extras -
       // so a bare null silently discarded the apikey and server values
       // above.
@@ -447,7 +446,7 @@ const generateCreate: OpGen = (ctx, step, index) => {
 
   const priorSteps = Object.values(flowSteps(flow)).slice(0, Number(index)) as any[]
   const needsEnt = !priorSteps.some((s: any) =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
 
   const hasDatvar = priorSteps.some((s: any) => {
     if ('create' === s.o) {
@@ -499,7 +498,7 @@ const generateList: OpGen = (ctx, step, index) => {
 
   const priorSteps = Object.values(flowSteps(flow)).slice(0, Number(index)) as any[]
   const needsEnt = !priorSteps.some((s: any) =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
 
   Content(`    // LIST
 `)
@@ -578,11 +577,11 @@ const generateUpdate: OpGen = (ctx, step, index) => {
 
   const priorSteps = Object.values(flowSteps(flow)).slice(0, Number(index)) as any[]
   const needsEnt = !priorSteps.some((s: any) =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
 
   const hasEntIdU = null != entity.id
 
-  Content(`    // UPDATE
+  Content(`    // ${step.o.toUpperCase()}
 `)
   if (needsEnt) {
     Content(`    SdkEntity ${entvar} = client.${accessor}(null);
@@ -620,13 +619,13 @@ const generateUpdate: OpGen = (ctx, step, index) => {
   }
 
   Content(`
-    Object ${resdatavar}Result = ${entvar}.update(${datavar}Up, null);
+    Object ${resdatavar}Result = ${entvar}.${step.o}(${datavar}Up, null);
     Map<String, Object> ${resdatavar} = Helpers.toMapAny(${resdatavar}Result instanceof SdkEntity ? ((SdkEntity) ${resdatavar}Result).data() : ${resdatavar}Result);
-    assertNotNull(${resdatavar}, "expected update result to be a map");
+    assertNotNull(${resdatavar}, "expected ${step.o} result to be a map");
 `)
   if (hasEntIdU) {
     Content(sameId(liveRepeatsId(entity), `${resdatavar}.get(${rid(entity)})`, `${datavar}Up.get("id")`,
-      'expected update result id to match'))
+      'expected ' + step.o + ' result id to match'))
   }
 
   // Assert TextFieldMark
@@ -652,7 +651,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
 
   const priorSteps = Object.values(flowSteps(flow)).slice(0, Number(index)) as any[]
   const hasEntVar = priorSteps.some((s: any) =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
 
   // Check if srcdatavar was declared by a prior create step or preamble
   const flowHasCreate = Object.values(flowSteps(flow)).some((s: any) => (s as any).o === 'create')
@@ -709,7 +708,7 @@ const generateRemove: OpGen = (ctx, step, index) => {
 
   const priorSteps = Object.values(flowSteps(flow)).slice(0, Number(index)) as any[]
   const needsEnt = !priorSteps.some((s: any) =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
 
   Content(`    // REMOVE
 `)
@@ -846,6 +845,7 @@ const GENERATE_OP: Record<string, OpGen> = {
   create: generateCreate,
   list: generateList,
   update: generateUpdate,
+  patch: generateUpdate,
   load: generateLoad,
   remove: generateRemove,
 }

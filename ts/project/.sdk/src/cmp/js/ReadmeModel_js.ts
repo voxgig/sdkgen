@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, entityClassName, entityCollection, fact, clientOptions, entityOps, entityPath, introOps } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -17,9 +17,8 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   // load/list/create/update/patch/remove row only for operations at least one active
   // entity actually exposes (a read-only entity has just list+load) — never
   // document an operation no entity has.
-  const opUnion = new Set<string>()
-  entityList.forEach((e: any) => Object.keys(e.op || {})
-    .forEach((o: string) => { if (e.op[o] && e.op[o].active !== false) opUnion.add(o) }))
+  const opUnion = new Set<string>(introOps(model))
+  const sameOps = fact(model.main[KIT], 'sharedOps')
   const opRowDefs: Record<string, string> = {
     load: '| `load` | `load(reqmatch?, ctrl?): Promise<Entity>` | Load a single entity by match criteria, and return it. |',
     list: '| `list` | `list(reqmatch?, ctrl?): Promise<Entity[]>` | List entities matching the criteria, one per record. |',
@@ -29,7 +28,7 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
     remove: '| `remove` | `remove(reqmatch?, ctrl?): Promise<Entity>` | Remove an entity, and return it marked as deleted. |',
   }
   const opRows = ['load', 'list', 'create', 'update', 'patch', 'remove']
-    .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o]).join('\n')
+    .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o] + '\n').join('')
 
   // Model-driven return-value bullets: describe only the operations that
   // actually exist (single-object ops among load/create/update, plus
@@ -51,9 +50,9 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   }
   const returnBullets = retBullets.join('\n')
 
-  const apikeyOptionRow = isAuthActive(model)
-    ? '| `apikey` | `string` | API key for authentication. |\n'
-    : ''
+  const OPTION_KIND: Record<string, string> = { string: 'string', map: 'object', list: 'Feature[]' }
+  const optionRows = clientOptions(model)
+    .map((o: any) => '| `' + o.name + '` | `' + OPTION_KIND[o.kind] + '` | ' + o.desc + ' |\n').join('')
 
   Content(`### ${model.const.Name}SDK
 
@@ -65,12 +64,7 @@ new ${model.const.Name}SDK(options?)
 
 | Option | Type | Description |
 | --- | --- | --- |
-${apikeyOptionRow}| \`base\` | \`string\` | Base URL of the API server. |
-| \`prefix\` | \`string\` | URL path prefix prepended to all requests. |
-| \`suffix\` | \`string\` | URL path suffix appended to all requests. |
-| \`feature\` | \`object\` | Feature activation flags (e.g. \`{ test: { active: true } }\`). |
-| \`extend\` | \`Feature[]\` | Additional feature instances to load. |
-
+${optionRows}
 #### Methods
 
 | Method | Returns | Description |
@@ -83,7 +77,7 @@ ${apikeyOptionRow}| \`base\` | \`string\` | Base URL of the API server. |
 
   each(entityList, (ent: any) => {
     const article = /^[aeiou]/i.test(ent.Name) ? 'an' : 'a'
-    Content(`| \`${ent.Name}(data?)\` | \`${ent.Name}Entity\` | Create ${article} ${ent.Name} entity instance. |
+    Content(`| \`${ent.Name}(data?)\` | \`${entityClassName(ent, entityCollection(model))}\` | Create ${article} ${ent.Name} entity instance. |
 `)
   })
 
@@ -97,14 +91,12 @@ ${apikeyOptionRow}| \`base\` | \`string\` | Base URL of the API server. |
 
 ### Entity interface
 
-All entities share the same interface.
-
-#### Methods
+${0 === entityList.length ? '' : (sameOps ? 'All entities share the same interface.' :
+  'Each entity has only the operations its model declares; see its section below.') + '\n\n'}#### Methods
 
 | Method | Signature | Description |
 | --- | --- | --- |
-${opRows}
-| \`data\` | \`data(data?: Partial<Entity>): Entity\` | Get or set entity data. |
+${opRows}| \`data\` | \`data(data?: Partial<Entity>): Entity\` | Get or set entity data. |
 | \`match\` | \`match(match?: Partial<Entity>): Partial<Entity>\` | Get or set entity match criteria. |
 | \`make\` | \`make(): Entity\` | Create a new instance with the same options. |
 | \`client\` | \`client(): ${model.const.Name}SDK\` | Return the parent SDK client. |
@@ -113,9 +105,9 @@ ${opRows}
 #### Return values
 
 Entity operations resolve to the entity itself — there is no result
-envelope, and an entity's \`data()\` reads its record:
+envelope, and an entity's \`data()\` reads its record${'' === returnBullets ? '.' : `:
 
-${returnBullets}
+${returnBullets}`}
 
 On a failed request these methods **throw**, so wrap calls in
 \`try\`/\`catch\` to handle errors. Only \`direct()\` returns the result
@@ -149,35 +141,29 @@ The \`prepare()\` method returns:
 }
 \`\`\`
 
-### Entities
-
-`)
+${0 < entityList.length ? '### Entities\n\n' : ''}`)
 
   each(entityList, (ent: any) => {
     const fields = Object.values(ent.fields || {})
-    const opnames = Object.keys(ent.op || {})
-    const ops = ent.op || {}
-    const points = each(ops).map((op: any) =>
-      op.points ? each(op.points) : []
-    ).flat()
-    const path = points.length > 0 ? (points[0] as any).o || '' : ''
+    const opnames = entityOps(ent)
+    const path = entityPath(ent)
 
     Content(`#### ${ent.Name}
 
-| Field | Description |
+${0 === fields.length ? '' : `| Field | Description |
 | --- | --- |
-`)
+`}`)
     each(fields, (field: any) => {
-      Content(`| \`${field.n}\` | ${field.sh || ''} |
+      Content(`| \`${field.n}\` | ${fact(model.main[KIT], 'field')[ent.name]?.[field.n]?.desc.cell ?? ''} |
 `)
     })
 
     Content(`
-Operations: ${opnames.join(', ')}.
+${0 === opnames.length ? '' : `Operations: ${opnames.join(', ')}.
 
-API path: \`${path}\`
+`}${'' === path ? '' : `API path: \`${path}\`
 
-`)
+`}`)
   })
 
 })

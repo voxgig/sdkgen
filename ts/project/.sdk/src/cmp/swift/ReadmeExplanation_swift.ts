@@ -1,7 +1,7 @@
 
 import { swiftTargetDir, swiftTestDir } from './utility_swift'
 
-import { cmp, Content } from '@voxgig/sdkgen'
+import { cmp, Content, collectDeps } from '@voxgig/sdkgen'
 
 
 const ReadmeExplanation = cmp(function ReadmeExplanation(props: any) {
@@ -29,7 +29,7 @@ swift/
 ├── Sources/${swiftTargetDir(model)}/
 │   ├── core/                         -- Main client, config, entity base, error type
 │   ├── entity/                       -- Generated entity clients
-│   ├── feature/                      -- Built-in features (Base, Test, Log, ...)
+│   ├── feature/                      -- Feature implementations
 │   ├── utility/                      -- Utility functions
 │   └── Struct/                       -- Vendored Voxgig Struct port
 └── Tests/${swiftTestDir(model)}/    -- Test suites (XCTest)
@@ -37,7 +37,7 @@ swift/
 
 The main client class (\`${SDK}\`, under \`Sources/${swiftTargetDir(model)}/core\`)
 exposes the entity accessors. Reference entity or utility types directly only
-when needed. The SDK is dependency-free: JSON parsing is the vendored
+when needed. ${0 === collectDeps(model, target.name, target.deps).length ? 'The SDK is dependency-free: JSON' : 'JSON'} parsing is the vendored
 \`Struct/JSON.swift\`, HTTP transport is Foundation's \`URLSession\`, and the
 struct library is inlined under \`Struct/\`.
 

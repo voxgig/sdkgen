@@ -36,7 +36,7 @@ use Voxgig\Struct\ListRef;
 
 class StructUtilityTest extends TestCase
 {
-    private const TEST_JSON_FILE = '../../.sdk/test/test.json';
+    private const TEST_JSON_FILE = '../SDKREL/.sdk/test/test.json';
 
     private static ?array $run = null;
 

@@ -20,7 +20,7 @@ func makeOptionsUtil(_ ctx: Context) -> VMap {
   // type, so honouring them means one `as?` arm per member with the signature
   // written exactly. `fetcher` is the documented seam and the one the corpus
   // needs; the rest stay in `custom` until a swift toolchain can compile the
-  // arms rather than have them written blind. See AGENTS.md.
+  // arms rather than have them written blind.
   if let customUtils = gp(options, "utility").asMap {
     if let utility = ctx.utility {
       for (k, v) in customUtils.entries {
@@ -163,11 +163,11 @@ func makeOptionsUtil(_ ctx: Context) -> VMap {
     }
 
     // Station special case, mirroring test's: its transport wrap must
-    // sit immediately outside the base transport (inside retry/cache/
-    // netsim), so map-form activation hoists it to just after test -
-    // or first, when no test entry exists. Without this the sorted
-    // default would init station last and wrap OUTSIDE the recording
-    // features, turning its wire-truth events into fiction.
+    // sit immediately outside the base transport (inside every other
+    // transport wrap), so map-form activation hoists it to just after
+    // test - or first, when no test entry exists. Without this the
+    // sorted default would init station last and wrap OUTSIDE the
+    // recording features, turning its wire-truth events into fiction.
     if let si = featureorder.firstIndex(where: { $0.asString == "station" }) {
       featureorder.remove(at: si)
       let ti = featureorder.firstIndex(where: { $0.asString == "test" })

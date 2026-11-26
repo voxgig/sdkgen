@@ -86,11 +86,10 @@ const EntityTypes = cmp(function EntityTypes(props: any) {
   const scalapackage = props.scalapackage || scalaPackage(model)
 
   const entity = getModelPath(model, `main.${KIT}.entity`, { only_active: false, required: false })
-  // Emit for EVERY entity that gets generated entity code: the consumer
-  // scaffold (create-sdkgen Root.ts) iterates entities WITHOUT an active
-  // filter, so inactive entities still get class files referencing these
-  // typed names. Filter on `name` (always present), NOT `active` — parity
-  // with the go emitter's fix.
+  // Every entity, active or not: a Root scaffolded before create-sdkgen
+  // filtered on `active` still generates class files for inactive entities,
+  // and a project keeps its Root until it re-scaffolds. Filter on `name`
+  // (always present), not `active`.
   const entityList = deriveEntityNames(entity)
   // Derive the PascalCase Name up-front — it is set LAZILY by names(), so an
   // entity not yet named (e.g. a fieldless placeholder) would otherwise read

@@ -28,6 +28,7 @@ main: kit: feature: &: target: scala: deps: &: {
 
 
 main: kit: target: scala: publish: {
+  recipe: false
   registry: {
     name: 'maven-central'
     url: 'https://central.sonatype.com'

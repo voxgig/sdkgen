@@ -191,6 +191,21 @@ public class SecretsFeatureTest
             ? name.ToLowerInvariant() : "authorization";
     }
 
+    // Read from the config, never from a probe: an SDK whose config declares no
+    // auth places no credential, and these tests assert on the one it places.
+    // xunit 2 has no runtime skip, so the skip is a printed reason.
+    private static bool SkippedWithoutAuth(
+        [System.Runtime.CompilerServices.CallerMemberName] string test = "")
+    {
+        if (SdkConfig.SharedConfig()["options"] is Dictionary<string, object?> options &&
+            options.ContainsKey("auth"))
+        {
+            return false;
+        }
+        Console.WriteLine("SKIP " + test + ": this SDK's config declares no auth, so it places no credential");
+        return true;
+    }
+
     // The credential header carries the SPEC's credential prefix, which a
     // TEMPLATE cannot know: an OpenAPI `http`/`bearer` scheme gives
     // `Bearer <token>`, an apiKey scheme the raw token. So assert on the
@@ -404,6 +419,8 @@ public class SecretsFeatureTest
     [Fact]
     public void InactiveApikeyOptionBehavesExactlyAsBefore()
     {
+        if (SkippedWithoutAuth()) return;
+
         var client = ProjectNameSDK.TestSDK(null,
             new Dictionary<string, object?> { ["apikey"] = "OPTKEY01" });
 
@@ -419,6 +436,8 @@ public class SecretsFeatureTest
     [Fact]
     public void InactiveNoApikeyMeansNoCredentialHeader()
     {
+        if (SkippedWithoutAuth()) return;
+
         var client = ProjectNameSDK.TestSDK(null, null);
 
         var fetchdef = client.Prepare(new Dictionary<string, object?> { ["path"] = "/" });
@@ -434,6 +453,8 @@ public class SecretsFeatureTest
     [Fact]
     public void ApikeyOptionStillWinsOverTheChain()
     {
+        if (SkippedWithoutAuth()) return;
+
         Environment.SetEnvironmentVariable(EnvPrefix + "APIKEY", "ENVKEY01");
         try
         {
@@ -462,6 +483,8 @@ public class SecretsFeatureTest
     [Fact]
     public void AnOmittedApikeyDefersToTheChainAtTheTransportSeam()
     {
+        if (SkippedWithoutAuth()) return;
+
         Environment.SetEnvironmentVariable(EnvPrefix + "APIKEY", "ENVKEY02");
         try
         {
@@ -496,6 +519,8 @@ public class SecretsFeatureTest
     [Fact]
     public void CustomProviderObjectsAreAcceptedVerbatim()
     {
+        if (SkippedWithoutAuth()) return;
+
         var probe = new ProbeProvider { Fn = _ => "CUSTOM01" };
 
         var w = new Wire();
@@ -513,6 +538,8 @@ public class SecretsFeatureTest
     [Fact]
     public void AMissEverywhereLeavesTheHeaderOff()
     {
+        if (SkippedWithoutAuth()) return;
+
         Environment.SetEnvironmentVariable(EnvPrefix + "APIKEY", null);
 
         var w = new Wire();
@@ -534,6 +561,8 @@ public class SecretsFeatureTest
     [Fact]
     public void AProviderErrorFailsTheEntityOpAndNothingReachesTheWire()
     {
+        if (SkippedWithoutAuth()) return;
+
         var broken = new ProbeProvider
         {
             Fn = _ => throw new SekretoError("vault unreachable"),
@@ -575,6 +604,8 @@ public class SecretsFeatureTest
     [Fact]
     public void AProviderRecoversAfterATransientFailure()
     {
+        if (SkippedWithoutAuth()) return;
+
         var calls = 0;
         var flaky = new ProbeProvider
         {
@@ -611,6 +642,8 @@ public class SecretsFeatureTest
     [Fact]
     public void AuthNullSuppressesTheCredentialChainOrNoChain()
     {
+        if (SkippedWithoutAuth()) return;
+
         Environment.SetEnvironmentVariable(EnvPrefix + "APIKEY", "ENVKEY03");
         try
         {
@@ -645,6 +678,8 @@ public class SecretsFeatureTest
     [Fact]
     public void UncachedMissRetractsTheCredential()
     {
+        if (SkippedWithoutAuth()) return;
+
         var have = true;
         var revocable = new ProbeProvider { Fn = _ => have ? "REVOCABLE01" : null };
 
@@ -679,6 +714,8 @@ public class SecretsFeatureTest
     [Fact]
     public void CachedMissIsReasked()
     {
+        if (SkippedWithoutAuth()) return;
+
         var present = false;
         var calls = 0;
         var late = new ProbeProvider
@@ -719,6 +756,8 @@ public class SecretsFeatureTest
     [Fact]
     public void CachedHitIsKept()
     {
+        if (SkippedWithoutAuth()) return;
+
         var calls = 0;
         var counting = new ProbeProvider
         {
@@ -746,6 +785,8 @@ public class SecretsFeatureTest
     [Fact]
     public void CacheFalseAsksTheChainOnEveryResolve()
     {
+        if (SkippedWithoutAuth()) return;
+
         var calls = 0;
         var counting = new ProbeProvider
         {
@@ -773,6 +814,8 @@ public class SecretsFeatureTest
     [Fact]
     public void SecretNameIsConfigurable()
     {
+        if (SkippedWithoutAuth()) return;
+
         Environment.SetEnvironmentVariable(EnvPrefix + "API_TOKEN", "TOKKEY01");
         try
         {
@@ -798,6 +841,8 @@ public class SecretsFeatureTest
     [Fact]
     public void SekretoIsLiveForArbitrarySecretsAndRedaction()
     {
+        if (SkippedWithoutAuth()) return;
+
         var w = new Wire();
         var client = SecretsClient(w, new Dictionary<string, object?>
         {
@@ -852,6 +897,8 @@ public class SecretsFeatureTest
     [Fact]
     public void ASelectedPluginKindIsInTheSdkVocabulary()
     {
+        if (SkippedWithoutAuth()) return;
+
         // Every Definition the generated tree carries, discovered rather
         // than listed: this file ships to projects with any subset of the
         // plugin groups, and upstream is free to add a kind.
@@ -951,6 +998,8 @@ public class SecretsFeatureTest
     [Fact]
     public void DirectCarriesTheChainCredential()
     {
+        if (SkippedWithoutAuth()) return;
+
         Environment.SetEnvironmentVariable(EnvPrefix + "APIKEY", "DIRECTKEY01");
         try
         {
@@ -976,6 +1025,8 @@ public class SecretsFeatureTest
     [Fact]
     public void AProviderErrorFailsDirectRatherThanSending()
     {
+        if (SkippedWithoutAuth()) return;
+
         var w = new Wire();
         var broken = SecretsClient(w, new Dictionary<string, object?>
         {
@@ -1019,6 +1070,8 @@ public class SecretsFeatureTest
     [Fact]
     public void AProviderErrorFailsGraphqlRatherThanSending()
     {
+        if (SkippedWithoutAuth()) return;
+
         var w = new Wire();
         var broken = SecretsClient(w, new Dictionary<string, object?>
         {
@@ -1105,6 +1158,8 @@ public class SecretsFeatureTest
     [Fact]
     public void AConstructionFailureFailsTheEntityOpAndNothingReachesTheWire()
     {
+        if (SkippedWithoutAuth()) return;
+
         // THE RULE.
         var w = new Wire();
         var client = SecretsClient(w, new Dictionary<string, object?>
@@ -1153,6 +1208,8 @@ public class SecretsFeatureTest
     [Fact]
     public void AConstructionFailureFailsDirectRatherThanSending()
     {
+        if (SkippedWithoutAuth()) return;
+
         // THE RULE. Direct runs no feature hook at all, so the ONLY thing
         // that can refuse it is the transport wrapper - the one a
         // build-first Init never installs on a construction failure.
@@ -1193,6 +1250,8 @@ public class SecretsFeatureTest
     [Fact]
     public void AConstructionFailureFailsGraphqlRatherThanSending()
     {
+        if (SkippedWithoutAuth()) return;
+
         // THE RULE.
         var w = new Wire();
         var client = SecretsClient(w, new Dictionary<string, object?>
@@ -1241,6 +1300,8 @@ public class SecretsFeatureTest
     [Fact]
     public void AnInvalidSecretNameFailsDirectRatherThanSending()
     {
+        if (SkippedWithoutAuth()) return;
+
         // THE RULE.
         var w = new Wire();
         var client = SecretsClient(w, new Dictionary<string, object?>
@@ -1314,6 +1375,8 @@ public class SecretsFeatureTest
     [Fact]
     public void TheRefreshTokenBuysAnAccessTokenAndASpentOneIsReboughtOnce()
     {
+        if (SkippedWithoutAuth()) return;
+
         Environment.SetEnvironmentVariable(EnvPrefix + "REFRESH_TOKEN", "REFRESH01");
         try
         {
@@ -1348,6 +1411,8 @@ public class SecretsFeatureTest
     [Fact]
     public void AnExplicitExchangeRefreshWinsOverTheChain()
     {
+        if (SkippedWithoutAuth()) return;
+
         Environment.SetEnvironmentVariable(EnvPrefix + "REFRESH_TOKEN", "FROMCHAIN");
         try
         {
@@ -1372,6 +1437,8 @@ public class SecretsFeatureTest
     [Fact]
     public void OnePurchaseServesManyRequests()
     {
+        if (SkippedWithoutAuth()) return;
+
         Environment.SetEnvironmentVariable(EnvPrefix + "REFRESH_TOKEN", "REFRESH01");
         try
         {
@@ -1398,6 +1465,8 @@ public class SecretsFeatureTest
     [Fact]
     public void ConcurrentFirstRequestsShareOnePurchase()
     {
+        if (SkippedWithoutAuth()) return;
+
         Environment.SetEnvironmentVariable(EnvPrefix + "REFRESH_TOKEN", "REFRESH01");
         try
         {
@@ -1435,6 +1504,8 @@ public class SecretsFeatureTest
     [Fact]
     public void AStatusOutsideExchangeStatusesIsNotAnExpiry()
     {
+        if (SkippedWithoutAuth()) return;
+
         Environment.SetEnvironmentVariable(EnvPrefix + "REFRESH_TOKEN", "REFRESH01");
         try
         {
@@ -1458,6 +1529,8 @@ public class SecretsFeatureTest
     [Fact]
     public void ExchangeStatusesAndFieldNamesAreConfigurable()
     {
+        if (SkippedWithoutAuth()) return;
+
         Environment.SetEnvironmentVariable(EnvPrefix + "REFRESH_TOKEN", "REFRESH01");
         try
         {
@@ -1495,6 +1568,8 @@ public class SecretsFeatureTest
     [Fact]
     public void AnExplicitApikeyIsSpentBeforeAnythingIsBought()
     {
+        if (SkippedWithoutAuth()) return;
+
         Environment.SetEnvironmentVariable(EnvPrefix + "REFRESH_TOKEN", "REFRESH01");
         try
         {
@@ -1519,6 +1594,8 @@ public class SecretsFeatureTest
     [Fact]
     public void NoRefreshTokenAnywhereIsAnErrorNotAnUnauthenticatedCall()
     {
+        if (SkippedWithoutAuth()) return;
+
         Environment.SetEnvironmentVariable(EnvPrefix + "REFRESH_TOKEN", null);
 
         var w = new Wire();
@@ -1539,6 +1616,8 @@ public class SecretsFeatureTest
     [Fact]
     public void ExchangeAuthNullSuppressesTheCredentialRefusalOrNot()
     {
+        if (SkippedWithoutAuth()) return;
+
         Environment.SetEnvironmentVariable(EnvPrefix + "REFRESH_TOKEN", "REFRESH01");
         try
         {
@@ -1581,6 +1660,8 @@ public class SecretsFeatureTest
     [Fact]
     public void TestModeBuysNothingAndNeedsNoTokenEndpoint()
     {
+        if (SkippedWithoutAuth()) return;
+
         Environment.SetEnvironmentVariable(EnvPrefix + "REFRESH_TOKEN", "REFRESH01");
         try
         {
@@ -1630,6 +1711,8 @@ public class SecretsFeatureTest
     [Fact]
     public void ExchangeOverARealSocketWithNoSystemFetch()
     {
+        if (SkippedWithoutAuth()) return;
+
         const string tricky = "re\"fresh\\to\nken";
 
         var listener = new HttpListener();
@@ -1820,6 +1903,8 @@ public class SecretsFeatureTest
     [Fact]
     public void ARedirectAnsweringTheExchangeIsAFailureAndNothingFollowsIt()
     {
+        if (SkippedWithoutAuth()) return;
+
         var elsewhere = new List<string>();
         var followed = new List<string>();
         (int Status, string Location) answer = (307, "");
@@ -1932,6 +2017,8 @@ public class SecretsFeatureTest
     [Fact]
     public void TheGateRecoversUnderConcurrency()
     {
+        if (SkippedWithoutAuth()) return;
+
         var mode = "fail";
         var release = new ManualResetEventSlim(false);
 

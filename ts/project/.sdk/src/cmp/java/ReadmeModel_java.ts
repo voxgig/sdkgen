@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, fact, clientOptions, entityOps, entityPath, introOps } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -20,9 +20,8 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   // Model-driven op rows for the shared entity interface: emit a
   // load/list/create/update/remove row only for operations at least one active
   // entity actually exposes — never document an operation no entity has.
-  const opUnion = new Set<string>()
-  entityList.forEach((e: any) => Object.keys(e.op || {})
-    .forEach((o: string) => { if (e.op[o] && e.op[o].active !== false) opUnion.add(o) }))
+  const opUnion = new Set<string>(introOps(model))
+  const sameOps = fact(model.main[KIT], 'sharedOps')
   const opRowDefs: Record<string, string> = {
     load: '| `load` | `(reqmatch, ctrl) -> Object` | Load a single entity by match criteria, and return it. Raises on error. |',
     list: '| `list` | `(reqmatch, ctrl) -> Object` | List entities matching the criteria, one per record. Raises on error. |',
@@ -32,11 +31,12 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
     remove: '| `remove` | `(reqmatch, ctrl) -> Object` | Remove an entity, and return it marked as deleted. Raises on error. |',
   }
   const opRows = ['load', 'list', 'create', 'update', 'patch', 'remove']
-    .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o]).join('\n')
+    .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o] + '\n').join('')
+  const listResult = opUnion.has('list') ? ', and `list` a list of entities, one per\nrecord, as `Object`' : ''
 
-  const apikeyOptionRow = isAuthActive(model)
-    ? '| `apikey` | `String` | API key for authentication. |\n'
-    : ''
+  const OPTION_KIND: Record<string, string> = { string: 'String', map: 'Map', list: 'List' }
+  const optionRows = clientOptions(model)
+    .map((o: any) => '| `' + o.name + '` | `' + OPTION_KIND[o.kind] + '` | ' + o.desc + ' |\n').join('')
 
   Content(`### ${SDK}
 
@@ -48,13 +48,7 @@ Creates a new SDK client. \`options\` is a \`Map<String, Object>\`.
 
 | Option | Type | Description |
 | --- | --- | --- |
-${apikeyOptionRow}| \`base\` | \`String\` | Base URL of the API server. |
-| \`prefix\` | \`String\` | URL path prefix prepended to all requests. |
-| \`suffix\` | \`String\` | URL path suffix appended to all requests. |
-| \`feature\` | \`Map\` | Feature activation flags. |
-| \`extend\` | \`List\` | Additional Feature instances to load. |
-| \`system\` | \`Map\` | System overrides (e.g. custom \`fetch\` function). |
-
+${optionRows}
 ### testSDK
 
 \`\`\`java
@@ -82,20 +76,17 @@ Creates a test-mode client with mock transport. Both arguments may be \`null\`.
   Content(`
 ### Entity interface
 
-All entities share the same interface.
-
-| Method | Signature | Description |
+${0 === entityList.length ? '' : (sameOps ? 'All entities share the same interface.' :
+  'Each entity has only the operations its model declares; see its section below.') + '\n\n'}| Method | Signature | Description |
 | --- | --- | --- |
-${opRows}
-| \`data\` | \`(newdata...) -> Object\` | Get or set entity data. |
+${opRows}| \`data\` | \`(newdata...) -> Object\` | Get or set entity data. |
 | \`match\` | \`(newmatch...) -> Object\` | Get or set entity match criteria. |
 | \`make\` | \`() -> Entity\` | Create a new instance with the same options. |
 | \`getName\` | \`() -> String\` | Return the entity name. |
 
 ### Result shape
 
-Entity operations return the entity, and \`list\` a list of entities, one per
-record, as \`Object\`; an entity is an \`SdkEntity\`, whose \`data()\` reads its
+Entity operations return the entity${listResult}; an entity is an \`SdkEntity\`, whose \`data()\` reads its
 record. They raise on error, so wrap calls in \`try\`/\`catch\` to handle
 failures.
 
@@ -114,34 +105,32 @@ On error, \`ok\` is \`false\` and \`err\` contains the error value.
 `)
 
   // Entities summary
-  Content(`### Entities
+  if (0 < entityList.length) {
+    Content(`### Entities
 
 `)
+  }
   each(entityList, (ent: any) => {
     const fields = Object.values(ent.fields || {})
-    const opnames = Object.keys(ent.op || {})
-    const ops = ent.op || {}
-    const points = each(ops).map((op: any) =>
-      op.points ? each(op.points) : []
-    ).flat()
-    const path = points.length > 0 ? (points[0] as any).o || '' : ''
+    const opnames = entityOps(ent)
+    const path = entityPath(ent)
 
     Content(`#### ${ent.Name}
 
-| Field | Description |
+${0 === fields.length ? '' : `| Field | Description |
 | --- | --- |
-`)
+`}`)
     each(fields, (field: any) => {
-      Content(`| \`${field.n}\` | ${field.sh || ''} |
+      Content(`| \`${field.n}\` | ${fact(model.main[KIT], 'field')[ent.name]?.[field.n]?.desc.cell ?? ''} |
 `)
     })
 
     Content(`
-Operations: ${opnames.join(', ')}.
+${0 === opnames.length ? '' : `Operations: ${opnames.join(', ')}.
 
-API path: \`${path}\`
+`}${'' === path ? '' : `API path: \`${path}\`
 
-`)
+`}`)
   })
 
 })

@@ -87,16 +87,34 @@ describe('facts', () => {
     throws(() => fact({ name: 'raw' }, 'on'), /did not pass through applyFacts/)
   })
 
-  test('surface: the legacy rows are exactly the bundled targets that generate nothing', () => {
+  // An older copy or an alias of a bundled consumer, made before the slots,
+  // falls back to the legacy table, which must say what the files say.
+  test('surface: the bundled targets that generate nothing declare the legacy table\'s rows', () => {
     const target = makeModel(TARGETS).main[KIT].target
     const phases = ['entity', 'feature', 'readme', 'agentguide', 'test']
     const consumers = TARGETS.filter((t) =>
       phases.every((p) => false === target[t].phase?.[p]?.active))
-    deepStrictEqual(TARGETS.filter((t) => 'legacy' === fact(target[t], 'surfaceFrom')), consumers)
-    deepStrictEqual(Object.fromEntries(consumers.map((t) => [t, fact(target[t], 'surface')])),
-      { 'go-cli': 'cli', 'go-mcp': 'mcp', 'py-data': 'data' })
+    deepStrictEqual(TARGETS.filter((t) => 'slot' === fact(target[t], 'surfaceFrom')), consumers)
+    deepStrictEqual(Object.fromEntries(consumers.map((t) =>
+      [t, [fact(target[t], 'surface'), fact(target[t], 'consumes')]])),
+    { 'go-cli': ['cli', 'go'], 'go-mcp': ['mcp', 'go'], 'py-data': ['data', 'py'] })
+
+    for (const t of consumers) {
+      const wraps = target[t].consumes
+      const legacy = applyFacts({ main: { [KIT]: { target: {
+        [t]: { name: t }, [wraps]: { name: wraps },
+      } } } }).main[KIT].target[t]
+      deepStrictEqual([fact(legacy, 'surfaceFrom'), fact(legacy, 'surface'), fact(legacy, 'consumes')],
+        ['legacy', target[t].surface, wraps], t + ': the legacy table disagrees with its model file')
+    }
+
     ok(TARGETS.filter((t) => !consumers.includes(t))
       .every((t) => 'sdk' === fact(target[t], 'surface')), 'every other bundled target is an SDK')
+  })
+
+  test('surface: a project overlay cannot reclassify a bundled consumer', () => {
+    throws(() => makeModel(['go', 'go-cli'], undefined, "main: kit: target: 'go-cli': surface: 'mcp'"),
+      /main\.kit\.target\.go-cli\.surface/)
   })
 
   test('surface: an alias and an older four-flag copy are classed by their origin', () => {
@@ -129,6 +147,7 @@ describe('facts', () => {
       go2: { name: 'go2', origname: 'go' }, 'go-cli': { ...cli },
     } } } }).main[KIT].target
     deepStrictEqual([fact(one['go-cli'], 'consumes'), fact(one.go2, 'consumers')], ['go2', ['go-cli']])
+    deepStrictEqual([fact(one['go-cli'], 'wraps'), fact(one.go2, 'wraps')], ['go', ''])
 
     throws(() => applyFacts({ main: { [KIT]: { target: {
       go2: { name: 'go2', origname: 'go' }, go3: { name: 'go3', origname: 'go' }, 'go-cli': { ...cli },
@@ -237,6 +256,19 @@ describe('escaped text', () => {
     for (const name of Object.keys(kit.feature.netsim.config.options)) {
       ok(null != fact(kit.feature.netsim, 'option')[name].value, name)
     }
+  })
+
+  test('a field description escapes beside the kit, keyed by entity and field', () => {
+    const kit = applyFacts({ main: { [KIT]: { entity: { moon: { name: 'moon', fields: {
+      size: { n: 'size', sh: 'In km | miles, $$name$$\nor [see](guide.md)' },
+      mass: { n: 'mass' },
+    } } } } } }).main[KIT]
+    const field = fact(kit, 'field')
+    deepStrictEqual(Object.keys(field.moon), ['size'])
+    strictEqual(field.moon.size.desc.cell, 'In km \\| miles, $&#36;name$&#36;<br>or see')
+    strictEqual(field.moon.size.desc.inline, 'In km | miles, $&#36;name$&#36; or see')
+    strictEqual(kit.entity.moon.fields.size.fact, undefined, 'the field itself carries no fact')
+    deepStrictEqual(fact(applyFacts({ main: { [KIT]: {} } }).main[KIT], 'field'), {})
   })
 
   test('a feature option escapes its default and its type', () => {
@@ -388,8 +420,8 @@ describe('target, entity and project facts', () => {
       'main: kit: target: go: output: root: true',
     ].join('\n')).main[KIT]
     deepStrictEqual(fact(kit, 'external'), [
-      { name: 'go-cli', title: 'Go CLI', surface: 'cli', url: 'https://github.com/acme/demo-cli' },
-      { name: 'py', title: 'Python', surface: 'sdk', url: '' },
+      { name: 'go-cli', title: 'Go CLI', surface: 'cli', dir: '../acme-cli', url: 'https://github.com/acme/demo-cli' },
+      { name: 'py', title: 'Python', surface: 'sdk', dir: '../acme-py', url: '' },
     ])
 
     const hosted = makeModel(['ts'], undefined, [
@@ -417,8 +449,20 @@ describe('target, entity and project facts', () => {
       'main: kit: entity: planet: op: update: active: false',
       'main: kit: entity: bare: { name: "bare" }',
     ].join('\n')).main[KIT], 'ops')
-    deepStrictEqual(ops.planet, ['list', 'load', 'create', 'remove'])
+    deepStrictEqual(ops.planet, ['list', 'load', 'create', 'patch', 'remove'])
     deepStrictEqual(ops.bare, [])
+  })
+
+  test('sharedOps: every active entity has the same operations', () => {
+    const shared = (extra: string) => fact(makeModel(['ts'], undefined, extra).main[KIT], 'sharedOps')
+    const entities = Object.keys(makeModel([]).main[KIT].entity)
+    const only = (...keep: string[]) => entities.filter((e: string) => !keep.includes(e))
+      .map((e: string) => `main: kit: entity: ${e}: active: false`).join('\n')
+    strictEqual(shared(''), false)
+    strictEqual(shared(only('planet')), true)
+    strictEqual(shared(only('history', 'record', 'utility')), true)
+    strictEqual(shared(only('history', 'ambient')), false)
+    strictEqual(shared(only()), false)
   })
 
   test('package: the JVM and Python package names of the project', () => {

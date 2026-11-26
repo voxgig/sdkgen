@@ -127,8 +127,6 @@ import (
 	"os"
 	"strings"
 	"testing"
-
-	sdk "GOMODULE"
 )
 
 func allowProbeOutcome(err any) string {
@@ -158,9 +156,9 @@ func allowProbeCall(name string, res map[string]any, err error) {
 
 func TestAllowProbe(t *testing.T) {
 	base := os.Getenv("ALLOW_BASE")
-	a := sdk.NewDemoSDK(map[string]any{"base": base,
+	a := newClient(map[string]any{"base": base,
 		"allow": map[string]any{"method": "PUT,\n get", "op": "direct,load"}})
-	b := sdk.NewDemoSDK(map[string]any{"base": base,
+	b := newClient(map[string]any{"base": base,
 		"allow": map[string]any{"op": "indirect,reload"}})
 
 	for _, method := range []string{"get", "POST", "PU"} {
@@ -830,11 +828,11 @@ fn allow_probe() {
     let a = DemoSDK::new(jo(vec![
         ("base", Value::str(base.clone())),
         ("allow", jo(vec![("method", Value::str("PUT,\n get")), ("op", Value::str("direct,load"))])),
-    ]));
+    ])).unwrap();
     let b = DemoSDK::new(jo(vec![
         ("base", Value::str(base)),
         ("allow", jo(vec![("op", Value::str("indirect,reload"))])),
-    ]));
+    ])).unwrap();
 
     for method in ["get", "POST", "PU"] {
         let name = format!("prepare {}", method);
@@ -906,7 +904,7 @@ static void report(const char* name, const char* result) {
 static DemoSDK* client(voxgig_value* allow) {
   voxgig_value* opts = cmap(2, "base", v_str(getenv("ALLOW_BASE")), "allow", allow);
   if (getenv("ALLOW_SEAM")) setp(opts, "system", cmap(1, "fetch", vfn(stub, NULL)));
-  return demo_sdk_new(opts);
+  return demo_sdk_new(opts, NULL);
 }
 
 static void load(const char* name, DemoSDK* sdk) {
@@ -1065,8 +1063,8 @@ fn opts(allow: Value) Value {
 }
 
 test "allow probe" {
-    const a = sdk.SDK.new(opts(h.jo(&.{ .{ "method", h.vstr("PUT,\n get") }, .{ "op", h.vstr("direct,load") } })));
-    const b = sdk.SDK.new(opts(h.jo(&.{.{ "op", h.vstr("indirect,reload") }})));
+    const a = sdk.SDK.new(opts(h.jo(&.{ .{ "method", h.vstr("PUT,\n get") }, .{ "op", h.vstr("direct,load") } }))).ok;
+    const b = sdk.SDK.new(opts(h.jo(&.{.{ "op", h.vstr("indirect,reload") }}))).ok;
 
     for ([_][]const u8{ "get", "POST", "PU" }) |method| {
         const name = std.fmt.allocPrint(h.A(), "prepare {s}", .{method}) catch unreachable;

@@ -1,12 +1,13 @@
 use std::rc::Rc;
 
 use crate::core::context::Context;
+use crate::core::error::ProjectNameError;
 use crate::core::helpers::{get_str, getp, getpath, ja, jo, setp, to_map};
 use crate::utility::clean;
 use crate::utility::voxgigstruct as vs;
 use crate::utility::voxgigstruct::Value;
 
-pub fn make_options_util(ctx: &Rc<Context>) -> Value {
+pub fn make_options_util(ctx: &Rc<Context>) -> Result<Value, ProjectNameError> {
     let options = match ctx.options.borrow().clone() {
         Value::Map(m) => Value::Map(m),
         _ => Value::empty_map(),
@@ -141,12 +142,15 @@ pub fn make_options_util(ctx: &Rc<Context>) -> Value {
                     if testmode {
                         resolved.push_str(&format!("test-{}", name));
                     } else {
-                        panic!(
-                            "{}: the server variable '{}' is required: the API base \
-                             URL is '{}' - pass server: {{ \"{}\": \"...\" }} in the \
-                             SDK options",
-                            sdkname, name, base, name
-                        );
+                        return Err(ProjectNameError::new(
+                            "server_var_required",
+                            &format!(
+                                "{}: the server variable '{}' is required: the API base \
+                                 URL is '{}' - pass server: {{ \"{}\": \"...\" }} in the \
+                                 SDK options",
+                                sdkname, name, base, name
+                            ),
+                        ));
                     }
                 } else {
                     resolved.push_str(&val);
@@ -205,7 +209,7 @@ pub fn make_options_util(ctx: &Rc<Context>) -> Value {
     // Again over the merged result: the config's own defaults can carry one.
     clean::clean_add_sensitive_opts(&opts, &without(&opts, &["clean", "__derived__"]));
 
-    opts
+    Ok(opts)
 }
 
 // A copy of the clean block, or an empty one: merge lets a missing value

@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, fact, clientOptions, entityOps, entityPath, introOps } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -16,9 +16,8 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   // Model-driven op rows for the shared entity interface: emit a row only for
   // operations at least one active entity actually exposes — never document an
   // operation no entity has.
-  const opUnion = new Set<string>()
-  entityList.forEach((e: any) => Object.keys(e.op || {})
-    .forEach((o: string) => { if (e.op[o] && e.op[o].active !== false) opUnion.add(o) }))
+  const opUnion = new Set<string>(introOps(model))
+  const sameOps = fact(model.main[KIT], 'sharedOps')
   const opRowDefs: Record<string, string> = {
     load: '| `load` | `(ent reqmatch ctrl) -> entity` | Load a single entity by match criteria, and return it. Raises on error. |',
     list: '| `list` | `(ent reqmatch ctrl) -> vector` | List entities matching the criteria, one per record. Raises on error. |',
@@ -28,11 +27,12 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
     remove: '| `remove` | `(ent reqmatch ctrl) -> entity` | Remove an entity, and return it marked as deleted. Raises on error. |',
   }
   const opRows = ['load', 'list', 'create', 'update', 'patch', 'remove']
-    .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o]).join('\n')
+    .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o] + '\n').join('')
+  const listResult = opUnion.has('list') ? ', and `list` to a `vector` of\nentities, one per record' : ''
 
-  const apikeyOptionRow = isAuthActive(model)
-    ? '| `apikey` | `string` | API key for authentication. |\n'
-    : ''
+  const OPTION_KIND: Record<string, string> = { string: 'string', map: 'map', list: 'vector' }
+  const optionRows = clientOptions(model)
+    .map((o: any) => '| `' + o.name + '` | `' + OPTION_KIND[o.kind] + '` | ' + o.desc + ' |\n').join('')
 
   Content(`### make-sdk
 
@@ -47,13 +47,7 @@ Creates a new SDK client. \`options\` is a \`voxgig.struct\` map (or \`nil\`).
 
 | Option | Type | Description |
 | --- | --- | --- |
-${apikeyOptionRow}| \`base\` | \`string\` | Base URL of the API server. |
-| \`prefix\` | \`string\` | URL path prefix prepended to all requests. |
-| \`suffix\` | \`string\` | URL path suffix appended to all requests. |
-| \`feature\` | \`map\` | Feature activation flags. |
-| \`extend\` | \`vector\` | Additional feature atoms to load. |
-| \`system\` | \`map\` | System overrides (e.g. custom \`fetch\` fn). |
-
+${optionRows}
 ### test-sdk
 
 \`\`\`clojure
@@ -81,14 +75,14 @@ Creates a test-mode client with mock transport. Both arguments may be \`nil\`.
   Content(`
 ### Entity interface
 
-All entities share the same interface. Operations are functions in the
+${0 === entityList.length ? '' : (sameOps ? 'All entities share the same interface.' :
+  'Each entity has only the operations its model declares; see its section below.') + ' '}Operations are functions in the
 entity namespace (\`sdk.entity.<name>\`); state accessors are stored on the
 entity map and are called via keyword lookup.
 
 | Member | Signature | Description |
 | --- | --- | --- |
-${opRows}
-| \`:data-get\` | \`() -> map\` | Get entity data. |
+${opRows}| \`:data-get\` | \`() -> map\` | Get entity data. |
 | \`:data-set\` | \`(data)\` | Set entity data. |
 | \`:match-get\` | \`() -> map\` | Get entity match criteria. |
 | \`:match-set\` | \`(match)\` | Set entity match criteria. |
@@ -100,8 +94,7 @@ State accessors are called by looking up the fn and applying it, e.g.
 
 ### Result shape
 
-Entity operations resolve to the entity, and \`list\` to a \`vector\` of
-entities, one per record. Read an entity's record with
+Entity operations resolve to the entity${listResult}. Read an entity's record with
 \`((:data-get ent))\`. They raise (via \`ex-info\`) on error, so wrap calls
 in \`try\`/\`catch\` to handle failures.
 
@@ -120,34 +113,32 @@ On error, \`ok\` is \`false\` and \`err\` contains the error value.
 `)
 
   // Entities summary
-  Content(`### Entities
+  if (0 < entityList.length) {
+    Content(`### Entities
 
 `)
+  }
   each(entityList, (ent: any) => {
     const fields = Object.values(ent.fields || {})
-    const opnames = Object.keys(ent.op || {})
-    const ops = ent.op || {}
-    const points = each(ops).map((op: any) =>
-      op.points ? each(op.points) : []
-    ).flat()
-    const path = points.length > 0 ? (points[0] as any).o || '' : ''
+    const opnames = entityOps(ent)
+    const path = entityPath(ent)
 
     Content(`#### ${ent.Name}
 
-| Field | Description |
+${0 === fields.length ? '' : `| Field | Description |
 | --- | --- |
-`)
+`}`)
     each(fields, (field: any) => {
-      Content(`| \`${field.n}\` | ${field.sh || ''} |
+      Content(`| \`${field.n}\` | ${fact(model.main[KIT], 'field')[ent.name]?.[field.n]?.desc.cell ?? ''} |
 `)
     })
 
     Content(`
-Operations: ${opnames.map((n: string) => n.charAt(0).toUpperCase() + n.slice(1)).join(', ')}.
+${0 === opnames.length ? '' : `Operations: ${opnames.join(', ')}.
 
-API path: \`${path}\`
+`}${'' === path ? '' : `API path: \`${path}\`
 
-`)
+`}`)
   })
 
 })

@@ -1,4 +1,4 @@
-import { flowSteps, opReachable } from '@voxgig/sdkgen'
+import { flowSteps, opReachable, fact } from '@voxgig/sdkgen'
 
 import {
   flatten,
@@ -25,9 +25,7 @@ import {
   buildIdNames,
   getMatchEntries,
   isAuthActive,
-  serverVarEnv,
-  serverVariables,
-  entityDataIdField, entityRecordIdField, envName, envToken,
+  entityDataIdField, entityRecordIdField,
   invalidRequest,
   liveFlowNeeds, liveStrict, liveStrictNote,
   liveRouteExamples, liveStepExamples, flowLoadRoute, flowLoadReadsRecord,
@@ -73,14 +71,16 @@ const TestEntity = cmp(function TestEntity(props: any) {
     return
   }
 
-  const PROJUPPER = envName(model)
+  const ENVVAR = fact(model.main[KIT], 'env')
+  const PROJUPPER = ENVVAR.prefix
 
   const authActive = isAuthActive(model)
+  const authSecret = authActive && fact(model.main[KIT], 'auth').secret
   const apikeyEnvEntry = authActive
-    ? `\n\t\t"${PROJUPPER}_APIKEY":         "",`
+    ? `\n\t\t"${ENVVAR.apikey}":         "",${authSecret ? `\n\t\t"${ENVVAR.secret}":         "",` : ''}`
     : ''
   const apikeyLiveField = authActive
-    ? `\n\t\t\t\t"apikey": env["${PROJUPPER}_APIKEY"],`
+    ? `\n\t\t\t\t"apikey": env["${ENVVAR.apikey}"],${authSecret ? `\n\t\t\t\t"secret": env["${ENVVAR.secret}"],` : ''}`
     : ''
 
 
@@ -88,13 +88,13 @@ const TestEntity = cmp(function TestEntity(props: any) {
   // impossible to construct without values: makeOptions refuses rather than
   // request a URL with a literal `{account_id}` in it. Taken from the
   // environment, the same way the apikey is.
-  const svars = serverVariables(model)
+  const svars = fact(model.main[KIT], 'server')
   const serverEnvEntry = svars
-    .map((v: any) => `\n\t\t"${serverVarEnv(PROJUPPER, v.name)}": ${JSON.stringify(v.dflt)},`).join('')
+    .map((v: any) => `\n\t\t"${ENVVAR.server[v.name]}": ${JSON.stringify(v.dflt)},`).join('')
   const serverLiveField = 0 === svars.length ? '' :
     `\n\t\t\t\t"server": map[string]any{` +
     svars.map((v: any) =>
-      `\n\t\t\t\t\t"${v.name}": env["${serverVarEnv(PROJUPPER, v.name)}"],`).join('') +
+      `\n\t\t\t\t\t"${v.name}": env["${ENVVAR.server[v.name]}"],`).join('') +
     `\n\t\t\t\t},`
 
   const idnames = buildIdNames(entity, basicflow)
@@ -102,10 +102,9 @@ const TestEntity = cmp(function TestEntity(props: any) {
 
   // Get all update data entries for alias generation
   const allSteps = Object.values(flowSteps(basicflow)) as any[]
-  const updateStep = allSteps.find((s: any) => s.o === 'update')
-  const updateData = updateStep?.d
-    ? Object.entries(updateStep.d).filter(([k]: any) => k !== 'id' && !k.endsWith('$'))
-    : []
+  const updateData = Object.entries(Object.assign({}, ...allSteps
+    .filter((s: any) => 'update' === s.o || 'patch' === s.o).map((s: any) => s.d || {})))
+    .filter(([k]: any) => k !== 'id' && !k.endsWith('$'))
   const aliases = updateData.map(([k, v]: any) => [k, v])
 
   const genCtx: GenCtx = { model, entity, gomodule, flow: basicflow, PROJUPPER }
@@ -116,7 +115,7 @@ const TestEntity = cmp(function TestEntity(props: any) {
   // fmt is only used by the TextFieldMark Update branch — omit the import
   // when no step needs it, otherwise Go's strict unused-import check fails.
   const needsFmt = allSteps.some((s: any) =>
-    s.o === 'update' &&
+    ('update' === s.o || 'patch' === s.o) &&
     s.i.textfield &&
     Array.isArray(s.s) &&
     s.s.some((sp: any) => sp.apply === 'TextFieldMark'))
@@ -153,7 +152,7 @@ func Test${entity.Name}Entity(t *testing.T) {
 		}
 	})
 ${hasList ? `
-	// Feature #4: the entity Stream(action, ...) method runs the op pipeline and
+	// The entity Stream(action, ...) method runs the op pipeline and
 	// returns a channel over result items. With the streaming feature active it
 	// yields the feature's incremental output; otherwise it falls back to the
 	// materialised list so Stream always yields.
@@ -230,7 +229,7 @@ ${failureTests(model, entity)}` : ''}${validateTest(model, entity)}
     const flowBody = (flow: any) => {
       const steps = flowSteps(flow) as any[]
       Content(liveFlowGate(entity, liveFlowNeeds(entity, flow), liveIdentity(entity, flow), strict,
-        strictConst, PROJUPPER + '_TEST_' + envToken(entity.name) + '_ENTID', steps.length > 0))
+        strictConst, ENVVAR.entid[entity.name], steps.length > 0))
 
       // Check if the flow has a create step; if not, bootstrap entity data
       const flowHasCreate = steps.some((s: any) => s.o === 'create')
@@ -302,7 +301,7 @@ ${liveExcludedLines(plan).map((line) => '\t\t\tt.Log(' + JSON.stringify(line) + 
 	_, filename, _, _ := runtime.Caller(0)
 	dir := filepath.Dir(filename)
 
-	entityDataFile := filepath.Join(dir, "..", "..", ".sdk", "test", "entity", "${entity.name}", "${entity.Name}TestData.json")
+	entityDataFile := filepath.Join(dir, "..", "${ctx$.stdrep.SDKREL}", ".sdk", "test", "entity", "${entity.name}", "${entity.Name}TestData.json")
 
 	entityDataSource, err := os.ReadFile(entityDataFile)
 	if err != nil {
@@ -335,16 +334,16 @@ ${fixtureIdentity(entity)}
     Content(`
 	// Whether *_ENTID supplied the idmap, read before envOverride consumes it:
 	// without it, the ids a live flow binds are the fixture's synthetic ones.
-	entidEnvRaw := os.Getenv("${PROJUPPER}_TEST_${envToken(entity.name)}_ENTID")
+	entidEnvRaw := os.Getenv("${ENVVAR.entid[entity.name]}")
 	idmapOverridden := entidEnvRaw != "" && strings.HasPrefix(strings.TrimSpace(entidEnvRaw), "{")
 
 	env := envOverride(map[string]any{
-		"${PROJUPPER}_TEST_${envToken(entity.name)}_ENTID": idmap,
-		"${PROJUPPER}_TEST_LIVE":      "FALSE",
+		"${ENVVAR.entid[entity.name]}": idmap,
+		"${ENVVAR.live}":      "FALSE",
 		"${PROJUPPER}_TEST_EXPLAIN":   "FALSE",${apikeyEnvEntry}${serverEnvEntry}
 	})
 
-	idmapResolved := core.ToMapAny(env["${PROJUPPER}_TEST_${envToken(entity.name)}_ENTID"])
+	idmapResolved := core.ToMapAny(env["${ENVVAR.entid[entity.name]}"])
 	if idmapResolved == nil {
 		idmapResolved = core.ToMapAny(idmap)
 	}
@@ -360,7 +359,7 @@ ${fixtureIdentity(entity)}
     }
 
     Content(`
-	if env["${PROJUPPER}_TEST_LIVE"] == "TRUE" {
+	if env["${ENVVAR.live}"] == "TRUE" {
 		// An empty map, not a nil one: Merge returns nil when its last entry
 		// is nil, and BasicSetup is normally called with no extras - so a
 		// bare nil silently discarded the apikey and server values below.
@@ -378,10 +377,10 @@ ${fixtureIdentity(entity)}
 			},
 			extraOpts,
 		})
-		client = sdk.New${model.const.Name}SDK(core.ToMapAny(mergedOpts))
+		client = newClient(core.ToMapAny(mergedOpts))
 	}
 
-	live := env["${PROJUPPER}_TEST_LIVE"] == "TRUE"
+	live := env["${ENVVAR.live}"] == "TRUE"
 	return &entityTestSetup{
 		client:        client,
 		data:          entityData,
@@ -492,7 +491,7 @@ const generateCreate: OpGen = (ctx, step, index) => {
 
   const priorSteps = Object.values(flowSteps(flow)).slice(0, Number(index)) as any[]
   const needsEnt = !priorSteps.some((s: any) =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
 
   const hasDatvar = priorSteps.some((s: any) => {
     if ('create' === s.o) {
@@ -557,7 +556,7 @@ const generateList: OpGen = (ctx, step, index) => {
 
   const priorSteps = Object.values(flowSteps(flow)).slice(0, Number(index)) as any[]
   const needsEnt = !priorSteps.some((s: any) =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
 
   Content(`		// LIST
 `)
@@ -650,11 +649,11 @@ const generateUpdate: OpGen = (ctx, step, index) => {
 
   const priorSteps = Object.values(flowSteps(flow)).slice(0, Number(index)) as any[]
   const needsEnt = !priorSteps.some((s: any) =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
 
   const hasEntIdU = null != entity.id
 
-  Content(`		// UPDATE
+  Content(`		// ${step.o.toUpperCase()}
 `)
   if (needsEnt) {
     Content(`		${entvar} := client.${entity.Name}(nil)
@@ -695,18 +694,18 @@ const generateUpdate: OpGen = (ctx, step, index) => {
   }
 
   Content(`
-		${resdatavar}Result, err := ${entvar}.Update(${datavar}Up, nil)
+		${resdatavar}Result, err := ${entvar}.${step.o[0].toUpperCase() + step.o.slice(1)}(${datavar}Up, nil)
 		if err != nil {
-			t.Fatalf("update failed: %v", err)
+			t.Fatalf("${step.o} failed: %v", err)
 		}
 		${resdatavar} := core.ToMapAny(entityData(${resdatavar}Result))
 		if ${resdatavar} == nil {
-			t.Fatal("expected update result to be a map")
+			t.Fatal("expected ${step.o} result to be a map")
 		}
 `)
   if (hasEntIdU) {
     Content(`		if ${liveDeclared(liveRepeatsId(entity))}!liveSameId(${resdatavar}[${rid(entity)}], ${datavar}Up["id"]) {
-			t.Fatal("expected update result id to match")
+			t.Fatal("expected ${step.o} result id to match")
 		}
 `)
   }
@@ -735,7 +734,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
 
   const priorSteps = Object.values(flowSteps(flow)).slice(0, Number(index)) as any[]
   const hasEntVar = priorSteps.some((s: any) =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
 
   // Check if srcdatavar was declared by a prior create step or preamble
   const flowHasCreate = Object.values(flowSteps(flow)).some((s: any) => (s as any).o === 'create')
@@ -815,7 +814,7 @@ const generateRemove: OpGen = (ctx, step, index) => {
 
   const priorSteps = Object.values(flowSteps(flow)).slice(0, Number(index)) as any[]
   const needsEnt = !priorSteps.some((s: any) =>
-    ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
+    ['create', 'list', 'load', 'update', 'patch', 'remove'].includes(s.o))
 
   // Use `:=` when this is the first op step (so `err` gets declared);
   // otherwise reuse the `err` from a prior op step.
@@ -952,6 +951,7 @@ const GENERATE_OP: Record<string, OpGen> = {
   create: generateCreate,
   list: generateList,
   update: generateUpdate,
+  patch: generateUpdate,
   load: generateLoad,
   remove: generateRemove,
 }

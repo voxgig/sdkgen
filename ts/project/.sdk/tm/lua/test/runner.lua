@@ -5,9 +5,11 @@ local vs = require("utility.struct.struct")
 
 local runner = {}
 
+local _runner_dir = debug.getinfo(1, "S").source:match("^@(.+/)") or "./"
+
 
 function runner.load_env_local()
-  local f = io.open("../../.env.local", "r")
+  local f = io.open(_runner_dir .. "../SDKREL/.env.local", "r")
   if f == nil then
     return
   end

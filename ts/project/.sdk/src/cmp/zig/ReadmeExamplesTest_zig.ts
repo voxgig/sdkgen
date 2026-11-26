@@ -1,9 +1,10 @@
 
-import { cmp, Content } from '@voxgig/sdkgen'
+import { cmp, Content, directRoute } from '@voxgig/sdkgen'
 
 
 const ReadmeExamplesTest = cmp(function ReadmeExamplesTest(props: any) {
   const { ctx$: { model } } = props
+  const dx = directRoute(model)
 
   Content(`
 // Documented quick-start surface (README.md / REFERENCE.md). Exercises the
@@ -16,18 +17,18 @@ test "readme_quickstart_surface" {
     // \`client.direct(...)\` — the documented escape hatch. It always returns a
     // result map carrying an \`ok\` flag (never an error union).
     const result = client.direct(h.jo(&.{
-        .{ "path", h.vstr("/api/resource/{id}") },
-        .{ "method", h.vstr("GET") },
-        .{ "params", h.jo(&.{.{ "id", h.vstr("example") }}) },
+        .{ "path", h.vstr("${dx.path}") },
+        .{ "method", h.vstr("${dx.method}") },
+        .{ "params", h.jo(&.{.{ "${dx.param}", h.vstr("example") }}) },
     }));
     try std.testing.expect(result == .object);
     try std.testing.expect(h.get_bool(result, "ok") != null);
 
     // \`client.prepare(...)\` — build a request without sending it.
     const fetchdef = client.prepare(h.jo(&.{
-        .{ "path", h.vstr("/api/resource/{id}") },
-        .{ "method", h.vstr("GET") },
-        .{ "params", h.jo(&.{.{ "id", h.vstr("example") }}) },
+        .{ "path", h.vstr("${dx.path}") },
+        .{ "method", h.vstr("${dx.method}") },
+        .{ "params", h.jo(&.{.{ "${dx.param}", h.vstr("example") }}) },
     })) catch h.vnull();
     _ = fetchdef;
 }

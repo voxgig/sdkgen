@@ -9,8 +9,10 @@ const ReadmeExplanation = cmp(function ReadmeExplanation(props: any) {
 
 The Ruby SDK uses plain Ruby hashes throughout rather than typed
 objects. This mirrors the dynamic nature of the API and keeps the
-SDK flexible — no code generation is needed when the API schema
-changes.
+SDK flexible: code that works with the hashes needs no regeneration
+when the API schema changes. The typed models in
+\`${model.const.Name}_types.rb\` follow the schema only when the SDK is
+regenerated.
 
 Use \`Helpers.to_map()\` to safely validate that a value is a hash.
 
@@ -24,7 +26,7 @@ rb/
 ├── features.rb                -- Feature factory
 ├── core/                      -- Core types and context
 ├── entity/                    -- Entity implementations
-├── feature/                   -- Built-in features (Base, Test, Log)
+├── feature/                   -- Feature implementations
 ├── utility/                   -- Utility functions and struct library
 └── test/                      -- Test suites
 \`\`\`

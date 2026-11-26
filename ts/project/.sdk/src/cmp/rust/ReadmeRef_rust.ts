@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField , targetFeatures, opNeedsAction, bodyNote, matchExampleItems, requestExampleItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, entityOps, bodyNote, matchExampleItems, requestExampleItems, entityClassName, entityCollection, featureDocs, fact, clientOptions, requiredItems } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -24,14 +24,15 @@ function rustLit(type: any, placeholder: string = 'example'): string {
 }
 
 
+
+const LIST_ALL = ' The match is optional — pass `Value::Noval` to list all records.'
+
 const ReadmeRef = cmp(function ReadmeRef(props: any) {
   const { target } = props
   const { model } = props.ctx$
 
   const rustcrate = crateIdent(model)
   const entity = getModelPath(model, `main.${KIT}.entity`)
-  const feature = targetFeatures(model, target)
-
   const publishedEntities = each(entity).filter((e: any) => e.active !== false)
 
   const errType = `${model.const.Name}Error`
@@ -42,7 +43,7 @@ const ReadmeRef = cmp(function ReadmeRef(props: any) {
     },
     list: {
       sig: `list(reqmatch: Value, ctrl: Value) -> Result<Vec<Rc<Self>>, ${errType}>`,
-      desc: 'List entities matching the given criteria. The match is optional — pass `Value::Noval` to list all records. `Ok` is a `Vec` of entities, one per record.',
+      desc: 'List entities matching the given criteria.' + LIST_ALL + ' `Ok` is a `Vec` of entities, one per record.',
     },
     create: {
       sig: `create(reqdata: Value, ctrl: Value) -> Result<Rc<Self>, ${errType}>`,
@@ -76,26 +77,32 @@ Complete API reference for the ${model.Name} ${target.title} SDK.
 
 `)
 
+    // A closed value union holds no feature instance, so there is no `extend`.
+    const OPTION_KIND: Record<string, string> = { string: 'string', map: 'map', list: '' }
+    const optionRows = clientOptions(model).filter((o: any) => 'extend' !== o.name)
+      .map((o: any) => '| `' + o.name + '` | `' + OPTION_KIND[o.kind] + '` | ' + o.desc + ' |\n').join('')
+    const required = fact(model.main[KIT], 'server').filter((v: any) => v.required)
+      .map((v: any) => '`' + v.name + '`')
+    const refusal = 0 === required.length ? '' : `
+Construction refuses \`options\` without a \`server\` value for ${required.join(' or ')}:
+\`new\` returns an \`Err\` holding a \`${model.const.Name}Error\` whose \`code\` is
+\`server_var_required\` and whose message names the variable.
+`
+
     Content(`\`\`\`rust
 use ${rustcrate}::{jo, ${model.const.Name}EntityBase, ${model.const.Name}SDK, Entity, Value};
 
-let client = ${model.const.Name}SDK::new(options);
+let client = ${model.const.Name}SDK::new(options).expect("valid client options");
 \`\`\`
 
 Create a new SDK client instance. \`options\` is a \`Value\` map
 (\`Value::Noval\` for none).
-
+${refusal}
 **Parameters:**
 
 | Key | Value type | Description |
 | --- | --- | --- |
-${isAuthActive(model) ? '| `apikey` | `string` | API key for authentication. |\n' : ''}| \`base\` | \`string\` | Base URL for API requests. |
-| \`prefix\` | \`string\` | URL prefix appended after base. |
-| \`suffix\` | \`string\` | URL suffix appended after path. |
-| \`headers\` | \`map\` | Custom headers for all requests. |
-| \`feature\` | \`map\` | Feature configuration. |
-| \`system\` | \`map\` | System overrides. |
-
+${optionRows}
 `)
 
 
@@ -126,9 +133,9 @@ let client = test_sdk(Value::Noval, Value::Noval);
 
     // Entity factory methods
     publishedEntities.map((ent: any) => {
-      Content(`#### \`${rustMethodName(ent.name)}(entopts: Value) -> Rc<${ent.Name}Entity>\`
+      Content(`#### \`${rustMethodName(ent.name)}(entopts: Value) -> Rc<${entityClassName(ent, entityCollection(model))}>\`
 
-Create a new \`${ent.Name}Entity\` instance. Pass \`Value::Noval\` for no
+Create a new \`${entityClassName(ent, entityCollection(model))}\` instance. Pass \`Value::Noval\` for no
 initial options.
 
 `)
@@ -170,7 +177,7 @@ Prepare a fetch definition without sending. Returns the fetchdef on \`Ok\`.
 
     // Entity reference sections
     publishedEntities.map((ent: any) => {
-      const opnames = Object.keys(ent.op || {})
+      const opnames = entityOps(ent)
       const fields = Object.values(ent.fields || {})
       const idF = entityIdField(ent)
       const eVar = rustVarName(ent.name)
@@ -179,12 +186,12 @@ Prepare a fetch definition without sending. Returns the fetchdef on \`Ok\`.
       Content(`
 ---
 
-## ${ent.Name}Entity
+## ${entityClassName(ent, entityCollection(model))}
 
 `)
 
-      if (ent.short) {
-        Content(`${ent.short}
+      if (fact(ent, 'desc').inline) {
+        Content(`${fact(ent, 'desc').inline}
 
 `)
       }
@@ -205,8 +212,8 @@ let ${eVar} = client.${method}(Value::Noval);
 `)
         each(fields, (field: any) => {
           const req = field.r ? 'Yes' : 'No'
-          const desc = field.sh || ''
-          Content(`| \`${field.n}\` | \`${canonToType(field.t, target.name)}\` | ${req} | ${desc} |
+          const desc = fact(model.main[KIT], 'field')[ent.name]?.[field.n]?.desc.cell ?? ''
+          Content(`| \`${field.n}\` | \`${canonToType(field.t, 'rust').replace(/\|/g, '\\|')}\` | ${req} | ${desc} |
 `)
         })
 
@@ -217,7 +224,7 @@ let ${eVar} = client.${method}(Value::Noval);
         const hasFieldOps = fields.some((f: any) => f.op && Object.keys(f.op).length > 0)
         if (hasFieldOps) {
           const opcols = ['load', 'list', 'create', 'update', 'patch', 'remove']
-            .filter((op: string) => opnames.includes(op) && ent.op[op]?.active !== false)
+            .filter((op: string) => opnames.includes(op))
           Content(`### Field Usage by Operation
 
 | Field | ${opcols.join(' | ')} |
@@ -250,16 +257,16 @@ let ${eVar} = client.${method}(Value::Noval);
         opnames.map((opname: string) => {
           const info = OP_SIGNATURES[opname]
           if (!info) return
+          const needs = requiredItems(ent, opname).map((it: any) => it.name)
+          const desc = info.desc.replace(' The data must include the entity id.',
+            null != idF && needs.includes(idF) ? ' The data must include the entity `' + idF + '`.' : '')
+            .replace(LIST_ALL, 0 === needs.length ? LIST_ALL : ' The match must include ' + needs.map((n: string) => '`' + n + '`').join(', ') + '.')
 
           Content(`#### \`${info.sig}\`
 
-${info.desc}
+${desc}
 
 `)
-
-          if (opNeedsAction(ent.op[opname])) {
-            return
-          }
 
           if ('load' === opname || 'remove' === opname) {
             const matchItems = matchExampleItems(ent, opname, idF)
@@ -294,7 +301,7 @@ for ${eVar} in &results {
 let result = client.${method}(Value::Noval).create(jo(vec![
 `)
             createItems.map((it: any) => {
-              Content(`    (${JSON.stringify(it.name)}, ${rustLit(it.type, 'example_' + it.name)}),  // ${canonToType(it.type, target.name)}
+              Content(`    (${JSON.stringify(it.name)}, ${rustLit(it.type, 'example_' + it.name)}),  // ${canonToType(it.type, 'rust')}
 `)
             })
             Content(`]), Value::Noval).unwrap();
@@ -310,6 +317,7 @@ let result = client.${method}(Value::Noval).create(jo(vec![
             const updateLines = updateItems.map((it: any) =>
               `    (${JSON.stringify(it.name)}, ${rustLit(it.type,
                 it.name === idF ? ent.name + '_id' : it.name)}),\n`).join('')
+
             Content(`\`\`\`rust
 let result = client.${method}(Value::Noval).${opname}(jo(vec![
 ${updateLines}    // ${'patch' === opname ? 'Only the fields to change' : 'Fields to update'}
@@ -342,7 +350,7 @@ Get the entity match criteria. Pass \`Some(&map)\` to set it.
 
 #### \`make() -> Rc<dyn Entity>\`
 
-Create a new \`${ent.Name}Entity\` instance with the same options.
+Create a new \`${entityClassName(ent, entityCollection(model))}\` instance with the same options.
 
 #### \`get_name() -> String\`
 
@@ -353,7 +361,7 @@ Return the entity name.
 
 
     // Features section
-    const activeFeatures = each(feature).filter((f: any) => f.active)
+    const activeFeatures = featureDocs(model, target)
     if (activeFeatures.length > 0) {
       Content(`
 ---
@@ -365,7 +373,7 @@ Return the entity name.
 `)
 
       activeFeatures.map((f: any) => {
-        Content(`| \`${f.name}\` | ${f.version || '0.0.1'} | ${f.title || ''} |
+        Content(`| \`${f.name}\` | ${f.version} | ${f.titleCell} |
 `)
       })
 
@@ -384,7 +392,8 @@ let client = ${model.const.Name}SDK::new(jo(vec![
 `)
       })
       Content(`    ])),
-]));
+]))
+.expect("valid client options");
 \`\`\`
 
 `)

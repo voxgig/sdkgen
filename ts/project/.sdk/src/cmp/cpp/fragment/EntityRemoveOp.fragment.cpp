@@ -19,7 +19,6 @@
 
     // The operation resolves to THIS entity: runOp has just absorbed the
     // result into it, and the caller reaches the record through data().
-    // See AGENTS.md "Entity operations return ENTITIES".
 
     // A removed entity keeps its data but is no longer a live record.
     this->markDeleted();

@@ -19,6 +19,13 @@ const Feature = types.Feature;
 const OpResult = types.OpResult;
 const Spec = spec_mod.Spec;
 
+// A client, or the error that refused its options: an error union carries no
+// payload, so the error travels here, as an operation's does in OpResult.
+pub const NewResult = union(enum) {
+    ok: *ProjectNameSDK,
+    err: *errmod.ProjectNameError,
+};
+
 pub const ProjectNameSDK = struct {
     mode: []const u8 = "live",
     options: Value = .{ .null = {} },
@@ -39,7 +46,7 @@ pub const ProjectNameSDK = struct {
     features: std.ArrayList(Feature),
     rootctx: ?*Context = null,
 
-    pub fn new(options: Value) *ProjectNameSDK {
+    pub fn new(options: Value) NewResult {
         return new_with(options, &.{});
     }
 
@@ -55,7 +62,7 @@ pub const ProjectNameSDK = struct {
     // purchases) by probing the config first; here the seam itself keeps the
     // set to one feature per name, so a suite can always hand in the feature
     // it needs and hold in any generated tree.
-    pub fn new_with(options: Value, extend: []const Feature) *ProjectNameSDK {
+    pub fn new_with(options: Value, extend: []const Feature) NewResult {
         const sdk = h.A().create(ProjectNameSDK) catch unreachable;
         sdk.* = .{
             .mode = "live",
@@ -77,7 +84,7 @@ pub const ProjectNameSDK = struct {
             .shared = h.omap(),
         }, null);
 
-        const opts = sdk.sdkUtility.make_options(rootctx);
+        const opts = sdk.sdkUtility.make_options(rootctx) catch return .{ .err = rootctx.take_err().? };
         sdk.options = opts;
 
         if (h.veq(h.getpath(&.{ "feature", "test", "active" }, opts), h.vbool(true))) {
@@ -90,9 +97,9 @@ pub const ProjectNameSDK = struct {
         // Add features in the resolved order (make_options puts an explicit
         // list order first, else defaults to test-first). Ordering matters:
         // the `test` feature installs the base mock transport and the
-        // transport features (retry/cache/netsim/proxy/ratelimit) wrap
-        // whatever is current, so `test` must be added before them to sit at
-        // the base of the transport wrapper chain.
+        // features whose model declares `transport: 'wrap'` wrap whatever is
+        // current, so `test` must be added before them to sit at the base of
+        // the transport wrapper chain.
         const feature_opts = h.to_map(h.getp(opts, "feature"));
         const feature_order = h.getpath(&.{ "__derived__", "featureorder" }, opts);
         if (feature_opts == .object and feature_order == .array) {
@@ -124,7 +131,7 @@ pub const ProjectNameSDK = struct {
 
         sdk.sdkUtility.feature_hook(rootctx, "PostConstruct");
 
-        return sdk;
+        return .{ .ok = sdk };
     }
 
     pub fn options_map(self: *ProjectNameSDK) Value {
@@ -356,8 +363,8 @@ pub const ProjectNameSDK = struct {
     // 200 as a top-level `errors` array, so status alone would report a
     // failed query as ok.
     //
-    // NOTE: like direct, this bypasses the feature pipeline — no retry,
-    // ratelimit or paging features apply.
+    // NOTE: like direct, this bypasses the feature pipeline: no feature
+    // hook runs on this path.
     pub fn graphql(
         self: *ProjectNameSDK, query: []const u8, variables: Value, ctrl: Value,
     ) Value {
@@ -420,11 +427,15 @@ pub fn test_sdk(testopts_in: Value, sdkopts_in: Value) *ProjectNameSDK {
     };
     h.setp(testopts, "active", h.vbool(true));
 
-    // set_path mutates `sdkopts` in place; keep the ROOT (gotcha #8 — do not
-    // rebind to the return of setpath).
+    // set_path mutates `sdkopts` in place; keep the ROOT (do not rebind to
+    // the return of setpath).
     h.setpath(sdkopts, &.{ "feature", "test" }, testopts);
 
-    const sdk = ProjectNameSDK.new(sdkopts);
+    // Test mode fills every server variable, so construction cannot refuse.
+    const sdk = switch (ProjectNameSDK.new(sdkopts)) {
+        .ok => |client| client,
+        .err => |e| std.debug.panic("{s}", .{e.msg}),
+    };
     sdk.mode = "test";
 
     return sdk;

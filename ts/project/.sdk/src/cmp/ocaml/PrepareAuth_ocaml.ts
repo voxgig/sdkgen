@@ -3,16 +3,12 @@ import {
   Content,
   File,
   cmp,
-  isHttpBasicAuth,
-  resolveAuthIn,
-  resolveAuthName,
-  resolveAuthPrefix,
+  fact,
 } from '@voxgig/sdkgen'
 
 
 import {
   KIT,
-  getModelPath,
 } from '@voxgig/apidef'
 
 
@@ -24,16 +20,17 @@ import {
 const PrepareAuth = cmp(async function PrepareAuth(props: any) {
   const { target } = props
   const { model } = props.ctx$
+  const authFact = fact(model.main[KIT], 'auth')
 
-  const where = resolveAuthIn(model)
+  const where = authFact.in
 
-  const resolved = resolveAuthName(model)
+  const resolved = authFact.name
   const name = 'header' === where ? resolved.toLowerCase() : resolved
 
-  const prefix = resolveAuthPrefix(model)
+  const prefix = authFact.prefix
 
-  const basic = isHttpBasicAuth(model)
-  const active = authSwitchedOn(model)
+  const basic = authFact.basic
+  const active = !authFact.suppressed
 
   File({ name: 'sdk_prepare_auth.' + target.ext }, () => {
     Content(render({
@@ -41,13 +38,6 @@ const PrepareAuth = cmp(async function PrepareAuth(props: any) {
     }))
   })
 })
-
-
-function authSwitchedOn(model: any): boolean {
-  const auth = getModelPath(model, `main.${KIT}.config.auth`,
-    { only_active: false, required: false })
-  return !(null != auth && false === auth.active)
-}
 
 
 type AuthSpec = {
@@ -78,7 +68,7 @@ open Sdk_helpers
 (* THE PLACEMENT THIS SDK WAS GENERATED FOR, DECLARED rather than left
  * implicit in the code below.
  *
- *   cred_active  false only for main.kit.config.auth.active: false
+ *   cred_active  false when this SDK is configured with authentication off
  *   cred_where   header | query | cookie
  *   cred_name    the key used - ALREADY LOWER-CASED for a header, because
  *                every header key the runtime writes is; verbatim for a
@@ -95,14 +85,13 @@ let cred_where = "${ocamlString(spec.where)}"
 let cred_name = "${ocamlString(spec.name)}"
 `
 
-  // AUTH SWITCHED OFF BY THE PROJECT (see authSwitchedOn for why only an
-  // EXPLICIT switch counts). The SDK gets a prepare_auth that is honest
+  // AUTH SUPPRESSED, as the auth fact says. The SDK gets a prepare_auth that is honest
   // about it rather than one that deletes a header nobody set. Nothing is
   // read from options, so no constant is emitted either.
   if (!spec.active) {
     return head + `
-(* This SDK is configured with authentication off
- * (main.kit.config.auth.active: false), so there is no credential to place.
+(* This SDK is configured with authentication off, so there is no credential
+ * to place.
  * The function stays in the pipeline because make_spec calls it
  * unconditionally. *)
 let prepare_auth_util (ctx : ctx) : (spec option * sdk_error option) =
@@ -286,8 +275,6 @@ const BASIC = `       if (match getpath_s options "auth.basic" with Bool b -> b 
        end
        else
 `
-
-
 
 
 export {

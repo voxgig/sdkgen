@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, entityIdField, pickExampleEntity, requiredItems, javaMapOf, matchExampleItems, javaMapItems, requestExampleItems } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, entityIdField, pickExampleEntity, requiredItems, javaMapOf, matchExampleItems, javaMapItems, requestExampleItems, envLocalAt, cdTarget, fact, directRoute } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -11,6 +11,8 @@ import { javaVarName, javaLit } from './utility_java'
 
 const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   const { target, ctx$: { model } } = props
+  const dx = directRoute(model)
+  const ENVVAR = fact(model.main[KIT], 'env')
 
   const SDK = model.const.Name + 'SDK'
 
@@ -64,8 +66,18 @@ System.out.println(${eVar}.data());`
 System.out.println(result);`
 
   const apikeyEnvLine = isAuthActive(model)
-    ? `\n${envName(model)}_APIKEY=<your-key>`
+    ? `\n${ENVVAR.apikey}=<your-key>${fact(model.main[KIT], 'auth').secret ? `\n${ENVVAR.secret}=<your-secret>` : ''}`
     : ''
+  const serverEnvLine = fact(model.main[KIT], 'server').filter((v: any) => v.required)
+    .map((v: any) => `\n${ENVVAR.server[v.name]}=<${v.name}>`).join('')
+  const defaulted = fact(model.main[KIT], 'server').filter((v: any) => !v.required)
+  const liveEnvNote = (0 === defaulted.length ? '' :
+    defaulted.map((v: any) => '`' + ENVVAR.server[v.name] + '`').join(', ') +
+    (1 === defaulted.length ? ', when set, replaces its server variable\'s default.\n'
+      : ', when set, replace their server variables\' defaults.\n')) +
+    'Each entity\'s tests also read `' + ENVVAR.prefix + '_TEST_<ENTITY>_ENTID`, with the\n' +
+    'entity\'s name in capitals: a JSON object of the ids of existing records, for\n' +
+    'the tests that do not create their own.\n\n'
 
   Content(`### Make a direct HTTP request
 
@@ -73,9 +85,9 @@ For endpoints not covered by entity methods:
 
 \`\`\`java
 Map<String, Object> result = client.direct(Map.of(
-    "path", "/api/resource/{id}",
-    "method", "GET",
-    "params", Map.of("id", "example")));
+    "path", "${dx.path}",
+    "method", "${dx.method}",
+    "params", Map.of("${dx.param}", "example")));
 
 if (Boolean.TRUE.equals(result.get("ok"))) {
     System.out.println(result.get("status"));  // 200
@@ -94,9 +106,9 @@ else {
 \`\`\`java
 // prepare() returns the fetch definition and raises on error.
 Map<String, Object> fetchdef = client.prepare(Map.of(
-    "path", "/api/resource/{id}",
-    "method", "DELETE",
-    "params", Map.of("id", "example")));
+    "path", "${dx.path}",
+    "method", "${dx.method}",
+    "params", Map.of("${dx.param}", "example")));
 
 System.out.println(fetchdef.get("url"));
 System.out.println(fetchdef.get("method"));
@@ -137,16 +149,16 @@ ${SDK} client = new ${SDK}(options);
 
 ### Run live tests
 
-Create a \`.env.local\` file at the project root:
+Create a \`.env.local\` file ${envLocalAt(props.ctx$, target)}:
 
 \`\`\`
-${envName(model)}_TEST_LIVE=TRUE${apikeyEnvLine}
+${ENVVAR.live}=TRUE${apikeyEnvLine}${serverEnvLine}
 \`\`\`
 
-Then run:
+${liveEnvNote}Then run:
 
 \`\`\`bash
-cd java && mvn test
+${cdTarget(target)}mvn test
 \`\`\`
 
 `)

@@ -154,8 +154,8 @@ pub fn getpath(path: []const []const u8, store: Value) Value {
 }
 
 // Path write on a Value store. The store's *MapRef nodes are mutated in
-// place, so the caller keeps using the ROOT (never rebinds to the return —
-// gotcha #8). We discard the return here for exactly that reason.
+// place, so the caller keeps using the ROOT and never rebinds to the
+// return. We discard the return here for exactly that reason.
 pub fn setpath(store: Value, path: []const []const u8, val: Value) void {
     const pl = Value.makeList(A()) catch unreachable;
     for (path) |seg| pl.array.append(vstr(seg)) catch {};

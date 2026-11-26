@@ -95,10 +95,10 @@ Each of these fills one section, so generation warns when a target lacks
 it, naming the section left empty and the file to write:
 
 `ReadmeIntro_<lang>`, `ReadmeInstall_<lang>`, `ReadmeQuick_<lang>`,
-`ReadmeOptions_<lang>`, `ReadmeEntity_<lang>`, `ReadmeHowto_<lang>`,
-`ReadmeExplanation_<lang>`, `ReadmeRef_<lang>` (which writes
-`REFERENCE.md`), and for the top-level README: `ReadmeTopQuick_<lang>`,
-`ReadmeTopTest_<lang>`, `ReadmeTopHowto_<lang>`.
+`ReadmeEntity_<lang>`, `ReadmeHowto_<lang>`, `ReadmeExplanation_<lang>`,
+`ReadmeRef_<lang>` (which writes `REFERENCE.md`), and for the top-level
+README: `ReadmeTopQuick_<lang>`, `ReadmeTopTest_<lang>`,
+`ReadmeTopHowto_<lang>`.
 
 These replace or extend a shared default, so a target without them gets
 the default and no warning: `ReadmeModel_<lang>` and

@@ -7,7 +7,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-ProjectNameSDK* projectname_sdk_new(voxgig_value* options) {
+ProjectNameSDK* projectname_sdk_new(voxgig_value* options, PNError** err) {
+  if (err) *err = NULL;
   ProjectNameSDK* sdk = (ProjectNameSDK*)calloc(1, sizeof(ProjectNameSDK));
   sdk->mode = strdup("live");
   sdk->options = voxgig_new_undef();
@@ -30,7 +31,12 @@ ProjectNameSDK* projectname_sdk_new(voxgig_value* options) {
   cs.shared = voxgig_new_map();
   Context* rootctx = make_context_util(cs, NULL);
 
-  voxgig_value* opts = make_options_util(rootctx);
+  voxgig_value* opts = make_options_util(rootctx, err);
+  if (NULL == opts) {
+    free(sdk->mode);
+    free(sdk);
+    return NULL;
+  }
   sdk->options = v_share(opts);
 
   voxgig_value* testactive;
@@ -48,8 +54,8 @@ ProjectNameSDK* projectname_sdk_new(voxgig_value* options) {
 
   // Add features in the resolved order (make_options puts an explicit list
   // order first, else defaults to test-first). Ordering matters: the `test`
-  // feature installs the base mock transport and the transport features
-  // (retry/cache/netsim/proxy/ratelimit) wrap whatever is current, so `test`
+  // feature installs the base mock transport and the features whose model
+  // declares `transport: 'wrap'` wrap whatever is current, so `test`
   // must be added before them to sit at the base of the transport chain.
   voxgig_value* feature_opts = to_map(getp(opts, "feature"));
   voxgig_value* feature_order = getpath2(opts, "__derived__", "featureorder");
@@ -297,8 +303,8 @@ voxgig_value* sdk_direct(ProjectNameSDK* sdk, voxgig_value* fetchargs, PNError**
 // a top-level `errors` array, so status alone would report a failed query as
 // ok.
 //
-// NOTE: like sdk_direct, this bypasses the feature pipeline — no retry,
-// ratelimit or paging features apply.
+// NOTE: like sdk_direct, this bypasses the feature pipeline: no feature
+// hook runs on this path.
 voxgig_value* sdk_graphql(ProjectNameSDK* sdk, const char* query,
                           voxgig_value* variables, voxgig_value* ctrl,
                           PNError** err) {
@@ -352,7 +358,13 @@ ProjectNameSDK* test_sdk(voxgig_value* testopts, voxgig_value* sdkopts) {
   voxgig_value* path = clist(2, v_str("feature"), v_str("test"));
   voxgig_setpath(sdkopts, path, testopts, NULL);
 
-  ProjectNameSDK* sdk = projectname_sdk_new(sdkopts);
+  // Test mode fills every server variable, so construction cannot refuse.
+  PNError* err = NULL;
+  ProjectNameSDK* sdk = projectname_sdk_new(sdkopts, &err);
+  if (NULL == sdk) {
+    fprintf(stderr, "%s\n", NULL != err ? err->msg : "test_sdk: construction refused");
+    abort();
+  }
   free(sdk->mode);
   sdk->mode = strdup("test");
   return sdk;

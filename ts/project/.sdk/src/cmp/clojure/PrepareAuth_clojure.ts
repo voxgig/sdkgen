@@ -2,32 +2,29 @@ import {
   Content,
   File,
   cmp,
-  isHttpBasicAuth,
-  resolveAuthIn,
-  resolveAuthName,
-  resolveAuthPrefix,
+  fact,
 } from '@voxgig/sdkgen'
 
 
 import {
   KIT,
   Model,
-  getModelPath,
 } from '@voxgig/apidef'
 
 
 const PrepareAuth = cmp(async function PrepareAuth(props: any) {
   const { target } = props
   const model: Model = props.ctx$.model
+  const authFact = fact(model.main[KIT], 'auth')
 
   File({ name: 'prepare_auth.' + target.ext }, () => {
     Content(render({
       Name: model.const.Name,
-      active: authSwitchedOn(model),
-      where: resolveAuthIn(model),
-      name: resolveAuthName(model),
-      basic: isHttpBasicAuth(model),
-      prefix: resolveAuthPrefix(model),
+      active: !authFact.suppressed,
+      where: authFact.in,
+      name: authFact.name,
+      basic: authFact.basic,
+      prefix: authFact.prefix,
     }))
   })
 })
@@ -214,14 +211,13 @@ ${authName('COOKIE-AUTH', false)}
 }
 
 
-// NO AUTH AT ALL — the PROJECT switched it off (see authSwitchedOn for why
-// only an explicit switch counts). The SDK gets a u-prepare-auth that is
+// NO AUTH AT ALL — the auth fact says it is suppressed. The SDK gets a u-prepare-auth that is
 // honest about it rather than one that deletes a header nobody set. The
 // function stays because core.clj's u-make-spec calls it unconditionally and
 // base-utility-map binds it unconditionally.
 function renderInactive(spec: AuthSpec, head: string): string {
-  return head + `;; This SDK is configured with authentication off
-;; (main.kit.config.auth.active: false), so there is no credential to place.
+  return head + `;; This SDK is configured with authentication off, so there is no credential
+;; to place.
 ;; HEADER-AUTH remains part of sdk.core's public surface because
 ;; feature/secrets reads core/HEADER-AUTH.
 (def HEADER-AUTH ${cljstr(headerAuthConst(spec))})
@@ -245,13 +241,6 @@ function authName(declared: string, header: boolean): string {
   (let [given (vs/getpath options "auth.name")]
     (if (and (string? given) (not= "" given)) ${header ? '(.toLowerCase ^String given java.util.Locale/ROOT)' : 'given'} ${declared})))
 `
-}
-
-
-function authSwitchedOn(model: any): boolean {
-  const auth = getModelPath(model, `main.${KIT}.config.auth`,
-    { only_active: false, required: false })
-  return !(null != auth && false === auth.active)
 }
 
 

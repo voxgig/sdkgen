@@ -52,10 +52,10 @@ voxgig_value* make_error_util(Context* ctx, PNError* err, PNError** out) {
 
   c->err = sdk_err;
 
-  // Fire PreUnexpected so observability features (metrics, telemetry, audit,
-  // debug) close/record error paths that never reach PreDone (e.g. a PrePoint
-  // rbac short-circuit). Fires after c->err is set so hooks can read the error;
-  // features guard against double-recording when PreDone already fired.
+  // Fire PreUnexpected so features hooked on it close/record error paths that
+  // never reach PreDone (e.g. a PrePoint short-circuit). Fires after c->err is
+  // set so hooks can read the error; features guard against double-recording
+  // when PreDone already fired.
   feature_hook_util(ctx, "PreUnexpected");
 
   if (c->has_throw && c->throw_v == false) {

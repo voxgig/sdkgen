@@ -87,8 +87,8 @@ test/%.out: test/%.cpp $(SDK_HDRS) $(FEATURE_ARCHIVE)
 clean:
 	rm -f test/*.out test/*/*/*.out $(FEATURE_OBJS) libsdkfeature.a
 
-# --- Release: tag cpp/vX.Y.Z (header-only; no registry) --------------------
+# --- Release: the git tag (header-only; no registry) -----------------------
 VERSION := $(shell cat VERSION 2>/dev/null || echo 0.0.1)
-TAG := cpp/v$(VERSION)
+TAG := RELEASETAG
 publish:
-	@echo "Header-only C++ SDK; publishing is the git tag $(TAG)."
+	@echo "Header-only C++ SDK; $(if $(TAG),publishing is the git tag $(TAG),the model cuts no release tag)."

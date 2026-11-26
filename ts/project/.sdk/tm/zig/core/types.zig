@@ -73,8 +73,8 @@ pub const Entity = struct {
 };
 
 // Transport: (ctx, url, fetchdef) -> transport-shaped response map, or an
-// error via ctx.pending_err. A closure struct so retry/cache/netsim/proxy
-// can wrap it in their init while capturing the inner transport + options.
+// error via ctx.pending_err. A closure struct so a transport-wrapping
+// feature can wrap it in its init, capturing the inner transport + options.
 pub const Fetcher = struct {
     ctx: *anyopaque,
     call: *const fn (ctx: *anyopaque, opctx: *Context, url: []const u8, fetchdef: Value) err.E!Value,

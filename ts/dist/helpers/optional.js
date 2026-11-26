@@ -15,7 +15,6 @@ const OPTIONAL_COMPONENTS = {
     ReadmeInstall: (t) => t + "/README.md's install section is empty",
     ReadmeQuick: (t) => t + "/README.md's tutorial is empty",
     ReadmeHowto: (t) => t + "/README.md's how-to section is empty",
-    ReadmeOptions: (t) => t + '/README.md has no options section',
     ReadmeEntity: (t) => t + '/README.md has no entities section',
     ReadmeExplanation: (t) => t + "/README.md's advanced section has nothing specific to " + t,
     ReadmeRef: (t) => t + '/REFERENCE.md is not written, though ' + t + '/README.md links to it',

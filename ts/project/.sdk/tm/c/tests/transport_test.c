@@ -4,6 +4,9 @@
 #if !defined(_WIN32) && !defined(_POSIX_C_SOURCE)
 #define _POSIX_C_SOURCE 200809L
 #endif
+#if defined(__APPLE__) && !defined(_DARWIN_C_SOURCE)
+#define _DARWIN_C_SOURCE
+#endif
 
 #include "ctest.h"
 
@@ -343,7 +346,7 @@ int main(void) {
   char url[256];
   snprintf(base, sizeof(base), "http://127.0.0.1:%d", port);
   ProjectNameSDK* sdk = projectname_sdk_new(cmap(2, "base", v_str(base),
-    "allow", cmap(1, "op", v_str("direct"))));
+    "allow", cmap(1, "op", v_str("direct"))), NULL);
   PNError* err = NULL;
 
   // A GET with a query, and what the transport put on the wire.
@@ -525,7 +528,7 @@ int main(void) {
   for (int cleanon = 1; 0 <= cleanon; cleanon--) {
     const char* with = cleanon ? "" : ", with clean switched off";
     ProjectNameSDK* keyed = projectname_sdk_new(cmap(3, "base", v_str(base),
-      "apikey", v_str(REDIRECT_SECRET), "clean", cmap(1, "active", v_bool(1 == cleanon))));
+      "apikey", v_str(REDIRECT_SECRET), "clean", cmap(1, "active", v_bool(1 == cleanon))), NULL);
     snprintf(url, sizeof(url), "%s/out", base);
     res = fetch_on(keyed, url, cmap(2, "method", v_str("GET"), "headers", credential_headers()),
       &err);
@@ -548,7 +551,7 @@ int main(void) {
   }
 
   ProjectNameSDK* keyed = projectname_sdk_new(cmap(2, "base", v_str(base),
-    "apikey", v_str(REDIRECT_SECRET)));
+    "apikey", v_str(REDIRECT_SECRET)), NULL);
   snprintf(url, sizeof(url), "%s/in", base);
   res = fetch_on(keyed, url, cmap(2, "method", v_str("GET"), "headers", credential_headers()), &err);
   CHECK(NULL == err && 200 == to_int(getp(res, "status")), "a hop on the same origin is followed");

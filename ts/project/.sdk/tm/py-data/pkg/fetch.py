@@ -4,13 +4,13 @@
 # ergonomics: correct for a service processing a stream, wrong for someone
 # who typed `df = ad.things()` and wants to run a groupby on the next line.
 #
-# This module owns NO pagination knowledge. The sibling SDK's `paging`
-# feature already normalises every server dialect it understands — a
-# `Link: rel="next"` header, X-Page / X-Next-Page / X-Total-Count, or body
-# `next` / `cursor` / `nextCursor` / `hasMore` — onto `result.paging`, and
-# records the last one on the client. All we do is drive it to exhaustion by
-# feeding the cursor/page back in through the per-call `ctrl.paging` hook,
-# which exists for exactly this purpose.
+# This module owns NO pagination knowledge. Where the sibling SDK has its
+# `paging` feature, that feature already normalises every server dialect it
+# understands — a `Link: rel="next"` header, X-Page / X-Next-Page /
+# X-Total-Count, or body `next` / `cursor` / `nextCursor` / `hasMore` — onto
+# `result.paging`, and records the last one on the client. All we do is
+# drive it to exhaustion by feeding the cursor/page back in through the
+# per-call `ctrl.paging` hook, which exists for exactly this purpose.
 
 from __future__ import annotations
 
@@ -145,7 +145,7 @@ def drain(
 
 
 def _last_paging(client: Any) -> dict | None:
-    """The paging state the SDK's paging feature recorded on the client."""
+    """What the SDK's paging feature recorded on the client, if anything."""
     state = getattr(client, "_paging", None)
     if not isinstance(state, dict):
         return None

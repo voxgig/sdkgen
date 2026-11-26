@@ -132,4 +132,48 @@ for (const [twin, runLiveEntity] of TWINS) {
     await assert.rejects(quietly(() => runLiveEntity(other.setup, year, loadFlow('year'), 'Year', {},
       { strict: true })), /Response identity mismatch/)
   })
+
+
+  // A patch acts on the record its create made, as an update does, and never
+  // on the record its route's example names.
+  test(twin + ': a live patch writes only to the record its create made, and checks its mark', async () => {
+    const planet = {
+      name: 'planet', id: { field: 'id', name: 'id' }, fields: { id: { n: 'id' }, title: { n: 'title' } },
+      op: {
+        create: { points: [{ m: 'POST', o: '/planet' }] },
+        patch: { points: [{ m: 'PATCH', o: '/planet/{id}', g: { params: [{ k: 'param', n: 'id', r: true, ex: 'p01' }] } }] },
+      },
+    }
+    const flow = { step: [
+      { o: 'create', i: { ref: 'planet_ref01' } },
+      { o: 'patch', i: { ref: 'planet_ref01', textfield: 'title' },
+        s: [{ apply: 'TextFieldMark', def: { mark: 'Mark01' } }] },
+    ] }
+    const calls: any[] = []
+    let context: any
+    const client = (created: (input: any) => any, patched: (input: any) => any) => ({
+      Planet: () => ({
+        create: async (input: any) => { context.attempted(); calls.push(['create', input]); return created(input) },
+        patch: async (input: any) => { context.attempted(); calls.push(['patch', input]); return patched(input) },
+      }),
+    })
+    const setup = (c: any) => ({ client: c, transport: { enter: (ctx: any) => { context = ctx } },
+      idmap: {}, data: { new: { planet: { planet_ref01: { title: 'first' } } } }, now: 1 })
+    const item = (record: any) => ({ data: () => record })
+
+    await quietly(() => runLiveEntity(setup(client((input) => item({ ...input, id: 'p9' }), (input) => item(input))),
+      planet, flow, 'Planet', {}, { strict: true }))
+    assert.deepEqual(calls[1], ['patch', { id: 'p9', title: 'Mark01_1' }])
+
+    calls.length = 0
+    await assert.rejects(quietly(() => runLiveEntity(setup(client((input) => item({ ...input, id: 'p9' }),
+      (input) => item({ ...input, title: 'other' }))), planet, flow, 'Planet', {}, { strict: true })),
+    /"id":"planet\.patch\.1","state":"failed"/)
+
+    calls.length = 0
+    await assert.rejects(quietly(() => runLiveEntity(setup(client(() => { throw new Error('refused') },
+      (input) => item(input))), planet, flow, 'Planet', {}, { strict: true })),
+    /"id":"planet\.patch\.1","state":"blocked","attempted":false[^}]*"reason":"Create did not provide a usable resource"/)
+    assert.deepEqual(calls.map(([op]) => op), ['create'])
+  })
 }

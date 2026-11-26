@@ -66,8 +66,8 @@ class ProjectNameSDK implements \JsonSerializable
 
         // Add features in the resolved order (make_options puts an explicit
         // list order first, else defaults to test-first). Ordering matters: the
-        // `test` feature installs the base mock transport and the transport
-        // features (retry/cache/netsim/proxy/ratelimit) wrap whatever is
+        // `test` feature installs the base mock transport and the features
+        // whose model declares `transport: 'wrap'` wrap whatever is
         // current, so `test` must be added before them to sit at the base.
         $feature_opts = ProjectNameHelpers::to_map(Struct::getprop($this->options, "feature"));
         if ($feature_opts) {
@@ -346,8 +346,8 @@ class ProjectNameSDK implements \JsonSerializable
     // HTTP 200 as a top-level `errors` array, so status alone would report
     // a failed query as ok.
     //
-    // NOTE: like direct, this bypasses the feature pipeline — no retry,
-    // ratelimit or paging features apply.
+    // NOTE: like direct, this bypasses the feature pipeline: no feature
+    // hook runs on this path.
     public function graphql(string $query, ?array $variables = null, ?array $ctrl = null): mixed
     {
         if (!$this->op_allowed("graphql")) {

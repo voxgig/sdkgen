@@ -33,7 +33,6 @@ fn update(self: &Rc<Self>, reqdata: Value, ctrl: Value) -> Result<Rc<Self>, Proj
 
     // The operation resolves to THIS entity: `run_op` has just absorbed the
     // result into it, and the caller reaches the record through `.data(None)`.
-    // See AGENTS.md "Entity operations return ENTITIES".
 
     Ok(self.clone())
 }

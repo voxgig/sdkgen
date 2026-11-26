@@ -4,26 +4,24 @@ import {
   File,
   Folder,
   cmp,
-  isHttpBasicAuth,
-  resolveAuthIn,
-  resolveAuthName,
+  fact,
 } from '@voxgig/sdkgen'
 
 
 import {
   KIT,
-  getModelPath,
 } from '@voxgig/apidef'
 
 
 const PrepareAuth = cmp(async function PrepareAuth(props: any) {
   const { target } = props
   const { model } = props.ctx$
+  const authFact = fact(model.main[KIT], 'auth')
 
-  const active = !authSwitchedOff(model)
-  const where = resolveAuthIn(model)
-  const name = resolveAuthName(model)
-  const basic = isHttpBasicAuth(model)
+  const active = !authFact.suppressed
+  const where = authFact.in
+  const name = authFact.name
+  const basic = authFact.basic
 
   Folder({ name: 'utility' }, () => {
     File({ name: 'PrepareAuth.' + target.ext }, () => {
@@ -37,13 +35,6 @@ const PrepareAuth = cmp(async function PrepareAuth(props: any) {
     })
   })
 })
-
-
-function authSwitchedOff(model: any): boolean {
-  const auth = getModelPath(model, `main.${KIT}.config.auth`,
-    { only_active: false, required: false })
-  return null != auth && false === auth.active
-}
 
 
 function render(spec: {
@@ -83,11 +74,9 @@ public static partial class SdkUtility
 
 
 function renderHeader(Name: string, cred: string, basic: boolean): string {
-  // HTTP Basic is header-only by definition: the scheme is
-  // `Authorization: Basic base64(user:pass)`. It cannot be expressed as a
-  // query parameter or a cookie, so the branch is emitted only here, and
-  // only when the model says this API actually uses it - a bearer SDK
-  // carries none of it.
+  // HTTP Basic is header-only by definition (`Authorization: Basic
+  // base64(user:pass)`), so the branch is emitted only here, and only when
+  // the model says this API uses it.
   const basicConst = basic ? `
     private const string OptionSecret = "secret";` : ''
 

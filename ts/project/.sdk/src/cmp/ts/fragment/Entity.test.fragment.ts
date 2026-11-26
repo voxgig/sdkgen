@@ -25,7 +25,7 @@ import {
 } from '../../utility'
 
 
-loadEnvLocal(__dirname + '/../../../.env.local')
+loadEnvLocal(__dirname + '/../../../SDKREL/.env.local')
 
 
 describe('EntityNameEntity', async () => {

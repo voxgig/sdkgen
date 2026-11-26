@@ -11,15 +11,10 @@ import {
   configDefinition,
   configReprSetting,
   each,
-  isAuthActive,
   isConfigData,
-  isHttpBasicAuth,
   rawStringLiteral,
-  resolveAuthIn,
-  resolveAuthName,
-  resolveAuthPrefix,
-  serverVariables,
   targetFeatures,
+  templateSafe,
 } from '@voxgig/sdkgen'
 
 
@@ -92,36 +87,31 @@ const Config = cmp(async function Config(props: any) {
 
   const headers = getModelPath(model, `main.${KIT}.config.headers`) || {}
 
-  const authActive = isAuthActive(model)
-  const authPrefix = resolveAuthPrefix(model)
-  const authBasic = isHttpBasicAuth(model)
-  const authIn = resolveAuthIn(model)
-  const authName = resolveAuthName(model)
+  const { def: configDef, json } = configDefinition(model, target.name)
+  const configJson = templateSafe('json', json)
+  const asData = isConfigData(configJson, configReprSetting(model))
 
-  let baseUrl = ''
-  try { baseUrl = getModelPath(model, `main.${KIT}.info.servers.0.url`) } catch (_e) { }
+  const auth = configDef.options.auth
+  const server = configDef.options.server
+  const baseUrl = configDef.options.base
 
   // Templated server URL: emit the spec's server-variable defaults so the
   // runtime can substitute {name} placeholders in base (see make_options).
   // `#` is escaped so a default can never open a Ruby interpolation.
-  const svars = serverVariables(model)
   const rbs = (s: string) => JSON.stringify(s).replace(/#/g, '\\#')
-  const serverBlock = 0 === svars.length ? '' :
+  const serverBlock = null == server ? '' :
     '        "server" => {\n' +
-    svars.map((v: any) => `          ${rbs(v.name)} => ${rbs(v.dflt)},\n`).join('') +
+    Object.entries(server).map(([name, dflt]: [string, any]) => `          ${rbs(name)} => ${rbs(dflt)},\n`).join('') +
     '        },\n'
 
-  const authBlock = authActive
+  const authBlock = null != auth
     ? `        "auth" => {
-          "prefix" => "${authPrefix}",${authBasic ? `
-          "basic" => true,` : ''}${'header' === authIn ? '' : `
-          "in" => "${authIn}",`}${'Authorization' === authName ? '' : `
-          "name" => "${authName}",`}
+          "prefix" => "${auth.prefix}",${auth.basic ? `
+          "basic" => true,` : ''}${null == auth.in ? '' : `
+          "in" => "${auth.in}",`}${null == auth.name ? '' : `
+          "name" => "${auth.name}",`}
         },\n`
     : ''
-
-  const { def: configDef, json: configJson } = configDefinition(model, target.name)
-  const asData = isConfigData(configJson, configReprSetting(model))
 
   const { requires, defs, declared } = rbPlugins(model, feature)
 
@@ -214,8 +204,8 @@ ${serverBlock}${authBlock}        "headers" => ${formatRubyHash(headers, 4)},
 
     Content(`        },
       },
-      "entity" => ${formatRubyHash(
-configDef.entity, 3)},
+      "entity" => ${templateSafe('rb', formatRubyHash(
+configDef.entity, 3))},
     }
   end
 `)

@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, requiredItems, matchExampleItems, requestExampleItems } from '@voxgig/sdkgen'
+import { cmp, Content, canonScalarKey, entityIdField, pickExampleEntity, requiredItems, matchExampleItems, requestExampleItems, cdTarget, directRoute } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -24,6 +24,7 @@ function zigLit(type: any): string {
 
 const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   const { target, ctx$: { model } } = props
+  const dx = directRoute(model)
 
   const entity = getModelPath(model, `main.${KIT}.entity`)
   // Pick an entity with a real op (prefer a read op). primaryOp is null only
@@ -77,19 +78,15 @@ switch (client.${method}(h.vnull()).${primaryOp}(${testArg}, h.vnull())) {
 }));
 std.debug.print("{s}\\n", .{h.stringify(result)});`
 
-  const apikeyEnvLine = isAuthActive(model)
-    ? `\n${envName(model)}_APIKEY=<your-key>`
-    : ''
-
   Content(`### Make a direct HTTP request
 
 For endpoints not covered by entity methods:
 
 \`\`\`zig
 const result = client.direct(h.jo(&.{
-    .{ "path", h.vstr("/api/resource/{id}") },
-    .{ "method", h.vstr("GET") },
-    .{ "params", h.jo(&.{.{ "id", h.vstr("example") }}) },
+    .{ "path", h.vstr("${dx.path}") },
+    .{ "method", h.vstr("${dx.method}") },
+    .{ "params", h.jo(&.{.{ "${dx.param}", h.vstr("example") }}) },
 }));
 
 if (h.get_bool(result, "ok") orelse false) {
@@ -107,9 +104,9 @@ if (h.get_bool(result, "ok") orelse false) {
 \`\`\`zig
 // prepare() returns the fetch definition (an error union — use \`catch\`/\`try\`).
 const fetchdef = client.prepare(h.jo(&.{
-    .{ "path", h.vstr("/api/resource/{id}") },
-    .{ "method", h.vstr("DELETE") },
-    .{ "params", h.jo(&.{.{ "id", h.vstr("example") }}) },
+    .{ "path", h.vstr("${dx.path}") },
+    .{ "method", h.vstr("${dx.method}") },
+    .{ "params", h.jo(&.{.{ "${dx.param}", h.vstr("example") }}) },
 })) catch unreachable;
 
 std.debug.print("{s}\\n", .{h.get_str(fetchdef, "url") orelse ""});
@@ -132,23 +129,21 @@ ${testModeExample}
 Override the base URL to reach a local or staging server:
 
 \`\`\`zig
-const client = sdk.${model.const.Name}SDK.new(h.jo(&.{
+const client = switch (sdk.${model.const.Name}SDK.new(h.jo(&.{
     .{ "base", h.vstr("http://localhost:8080") },
-}));
+}))) {
+    .ok => |c| c,
+    .err => |e| std.debug.panic("{s}", .{e.msg}),
+};
 \`\`\`
 
-### Run live tests
+### Run the test suite
 
-Create a \`.env.local\` file at the project root:
-
-\`\`\`
-${envName(model)}_TEST_LIVE=TRUE${apikeyEnvLine}
-\`\`\`
-
-Then run:
+The generated suite runs offline, against the mock transport. This SDK
+has no live tests.
 
 \`\`\`bash
-cd ${target.name} && zig build test
+${cdTarget(target)}zig build test
 \`\`\`
 
 `)

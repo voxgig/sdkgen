@@ -1,4 +1,4 @@
-import { cmp, Content, File } from '@voxgig/sdkgen'
+import { cmp, Content, File, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -7,7 +7,14 @@ import {
 
 
 const ReadmeExamplesTest = cmp(function ReadmeExamplesTest(props: any) {
-  const { ctx$: { model } } = props
+  const { target, ctx$: { model } } = props
+  // The root README where the run writes one beside this target, and the
+  // target's own documents where it writes them.
+  const link = fact(target, 'link').readme
+  const own = fact(target, 'phase').readme
+  if ('' === link && !own) {
+    return
+  }
 
   // Every active entity, keyed by its model name, is seeded with a `test01`
   // fixture whose id is `test01` — so a load({ id = "test01" }) in a doc
@@ -171,10 +178,10 @@ end
 -- All three docs are checked identically. relpath is resolved against this
 -- test file's directory (<repo>/lua/test).
 local DOCS = {
-  { label = "root README",   relpath = "../../README.md" },
-  { label = "lua/README",    relpath = "../README.md" },
+${'' === link ? '' : `  { label = "root README",   relpath = "../${link}" },
+`}${own ? `  { label = "lua/README",    relpath = "../README.md" },
   { label = "lua/REFERENCE", relpath = "../REFERENCE.md" },
-}
+` : ''}}
 
 for _, doc in ipairs(DOCS) do
   describe("lua doc examples (" .. doc.label .. ")", function()

@@ -664,7 +664,7 @@ object SdkTestMain {
     // target compiles. TODO: regenerate per real entity (make this a component).
   }
 
-  // ---- feature order (PR #2) -----------------------------------------------
+  // ---- feature order -------------------------------------------------------
 
   private def testFeatureOrder(): Unit = {
     val client = ProjectNameSDK.testSDK()
@@ -713,7 +713,7 @@ object SdkTestMain {
       order(resolve(om("retry" -> om("active" -> B(true)), "cache" -> om("active" -> B(true))))))
   }
 
-  // ---- entity stream() through the mock transport (PR #4) ------------------
+  // ---- entity stream() through the mock transport --------------------------
 
   private def testEntityStream(): Unit = {
     // PARITY GAP: hardcoded `planet` streaming demo — same non-model-driven
