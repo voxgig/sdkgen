@@ -1,4 +1,6 @@
 # ProjectName SDK utility: result_body
+require_relative 'media'
+
 module ProjectNameUtilities
   ResultBody = ->(ctx) {
     response = ctx.response
@@ -20,11 +22,13 @@ module ProjectNameUtilities
   # response described; otherwise the code tells a wrong content type from
   # malformed JSON.
   UnreadableBody = ->(ctx, status, headers, text, sent, failed) {
-    ctype = BodyHeader.call(headers, "content-type")
-    agent = ctx.utility.clean.call(ctx, BodyHeader.call(sent, "user-agent")).to_s
+    ctype = ProjectNameUtilities.header_value(headers, "content-type")
+    agent = ctx.utility.clean.call(ctx, ProjectNameUtilities.header_value(sent, "user-agent")).to_s
     agent = "transport default" if agent.empty?
     detail = "HTTP #{status}, content-type #{ctype.empty? ? 'none' : ctype}, user-agent #{agent}"
-    detail += ", body: " + BodyPreview.call(ctx, text) if !text.nil? && BodyQuotable.call(ctx, ctype)
+    # Only text is quoted: bytes are a file's, by the model or by their type.
+    quoted = !text.nil? && !ProjectNameUtilities.binary_response?(ctx.point, ctype)
+    detail += ", body: " + BodyPreview.call(ctx, text) if quoted
 
     if failed
       return "#{failed} (#{detail})" if failed.is_a?(String)
@@ -39,23 +43,6 @@ module ProjectNameUtilities
     else
       ctx.make_error("response_content_type", "response: expected JSON, got #{ctype} (#{detail})")
     end
-  }
-
-  BodyHeader = ->(headers, name) {
-    return "" unless headers.is_a?(Hash)
-    pair = headers.find { |key, _| key.to_s.downcase == name }
-    pair ? pair[1].to_s : ""
-  }
-
-  TEXT_MEDIA = /json|xml|html|javascript|ecmascript|yaml|urlencoded|graphql/.freeze
-
-  # Only text is quoted: bytes are a file's, by the model or by their type.
-  # Text is no declared type, text/*, or a structured text format.
-  BodyQuotable = ->(ctx, ctype) {
-    response = ctx.point.is_a?(Hash) ? ctx.point["response"] : nil
-    return false if response.is_a?(Hash) && true == response["binary"]
-    media = ctype.to_s.split(";").first.to_s.strip.downcase
-    media.empty? || media.start_with?("text/") || TEXT_MEDIA.match?(media)
   }
 
   # Cleaned whole: a secret the bound would split could leave its prefix.

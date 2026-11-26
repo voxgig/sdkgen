@@ -84,7 +84,8 @@
                 (swap! calls conj {:url url
                                    :auth (when (some? auth) (str auth))
                                    :method (vs/getprop fetchdef "method")
-                                   :body (vs/getprop fetchdef "body")})
+                                   :body (vs/getprop fetchdef "body")
+                                   :redirect (vs/getprop fetchdef "redirect")})
                 (if reply
                   (reply n url fetchdef)
                   [(response 200 (vs/jm "ok" true "n" n)) nil])))))))
@@ -175,6 +176,28 @@
 ;; TEMPLATE cannot know: an OpenAPI `http`/`bearer` scheme gives
 ;; `Bearer <token>`, an apiKey scheme the raw token. So assert on the
 ;; CREDENTIAL and let the prefix be whatever this SDK's API declares.
+(defn- listener
+  "A server on 127.0.0.1 that records each request in `seen` and answers it
+  as `answer` says, [status location body]."
+  ^com.sun.net.httpserver.HttpServer [^java.util.List seen answer]
+  (let [server (com.sun.net.httpserver.HttpServer/create (java.net.InetSocketAddress. "127.0.0.1" 0) 0)]
+    (.createContext server "/"
+                    (reify com.sun.net.httpserver.HttpHandler
+                      (handle [_ ex]
+                        (let [path (.getRawPath (.getRequestURI ex))
+                              sent (String. (.readAllBytes (.getRequestBody ex)) "UTF-8")
+                              [code to text] (answer path)
+                              body (.getBytes ^String text "UTF-8")
+                              size (alength ^bytes body)]
+                          (.add seen {:method (.getRequestMethod ex) :path path :body sent})
+                          (when to (.set (.getResponseHeaders ex) "Location" to))
+                          (.set (.getResponseHeaders ex) "Content-Type" "application/json")
+                          (.sendResponseHeaders ex (int code) (long (if (pos? size) size -1)))
+                          (.write (.getResponseBody ex) body)
+                          (.close ex)))))
+    (.start server)
+    server))
+
 (defn- credential-is [got token msg]
   (let [s (str (or got ""))]
     (t/is-true (or (= s token) (str/ends-with? s (str " " token)))
@@ -549,6 +572,7 @@
                (let [buy (call-at stub 0)]
                  (t/is-eq (:url buy) tokenurl "token endpoint URL")
                  (t/is-eq (:method buy) "POST" "token endpoint method")
+                 (t/is-eq (:redirect buy) "manual" "the exchange must follow no redirect")
                  (t/is-eq (vs/getprop (core/json-parse (str (:body buy))) "refresh_token")
                           "REFRESH01" "marshalled refresh token"))
 
@@ -576,6 +600,55 @@
                ;; first purchase.
                (t/is-eq (sent stub) 1 (str "one API call, no purchase: " (wire stub)))
                (t/is-nil (:auth (call-at stub 0)) "no credential header"))))
+
+      ;; Real listeners and core's own raw HTTP: a stub follows nothing.
+      (chk "secrets-exchange-a-redirect-is-a-failure-and-nothing-follows-it"
+           (fn []
+             (let [elsewhere (java.util.Collections/synchronizedList (java.util.ArrayList.))
+                   seen (java.util.Collections/synchronizedList (java.util.ArrayList.))
+                   answer (atom [307 ""])
+                   other (listener elsewhere (fn [_] [200 nil "{\"access_token\":\"ELSEWHERE01\"}"]))
+                   origin (listener seen (fn [path]
+                                           (if (= path "/api/auth/token")
+                                             (conj @answer "")
+                                             [200 nil "{\"access_token\":\"MOVED01\"}"])))
+                   base (str "http://127.0.0.1:" (.getPort (.getAddress origin)) "/api")
+                   away (str "http://127.0.0.1:" (.getPort (.getAddress other)) "/api/auth/token")]
+               (try
+                 (let [results
+                       (doall
+                        (for [[status location] [[307 away] [308 away] [302 away] [307 "/api/moved/token"]]]
+                          (do
+                            (.clear elsewhere)
+                            (.clear seen)
+                            (reset! answer [status location])
+                            (let [sdk (client/make-sdk
+                                       (vs/jm "base" base
+                                              "allow" (vs/jm "op" ALLOWOP)
+                                              "feature" (vs/jm "secrets"
+                                                               (sekopts "name" "refresh_token"
+                                                                        "exchange" (vs/jm "active" true
+                                                                                          "refresh" "REFRESH01")))))
+                                  res (client/direct sdk (vs/jm "path" "/thing"))
+                                  err (vs/getprop res "err")
+                                  message (if (some? err) (str (core/err-msg err)) (brief res))
+                                  followed (concat (vec elsewhere)
+                                                   (remove #(= "/api/auth/token" (:path %)) (vec seen)))]
+                              {:label (str status " to " location)
+                               :refused (str/includes? message (str "token exchange failed: " status
+                                                                    " from " base "/auth/token"))
+                               :message message
+                               :followed (vec followed)}))))
+                       refused (count (filter :refused results))
+                       followed (reduce + (map (comp count :followed) results))]
+                   (println (str "secrets: exchange refused " refused " redirect(s), " followed " followed"))
+                   (doseq [r results]
+                     (t/is-eq (:followed r) [] (str (:label r) ": followed"))
+                     (t/is-true (:refused r) (str (:label r) ": not a failed exchange: " (:message r))))
+                   (t/is-eq refused 4 "refused"))
+                 (finally
+                   (.stop origin 0)
+                   (.stop other 0))))))
 
       (chk "secrets-exchange-with-no-refresh-token-fails-closed"
            (fn []

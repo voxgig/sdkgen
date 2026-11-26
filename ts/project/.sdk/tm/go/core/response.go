@@ -71,8 +71,8 @@ var spaceRun = regexp.MustCompile(`\s+`)
 // own error, with the response described; otherwise the code tells a wrong
 // content type from malformed JSON.
 func UnreadableBody(ctx *Context, status int, headers any, text any, sent any, failed error) error {
-	ctype := headerValue(headers, "content-type")
-	agent, _ := ctx.Utility.Clean(ctx, headerValue(sent, "user-agent")).(string)
+	ctype := HeaderValue(headers, "content-type")
+	agent, _ := ctx.Utility.Clean(ctx, HeaderValue(sent, "user-agent")).(string)
 	if agent == "" {
 		agent = "transport default"
 	}
@@ -81,7 +81,8 @@ func UnreadableBody(ctx *Context, status int, headers any, text any, sent any, f
 		shown = "none"
 	}
 	detail := fmt.Sprintf("HTTP %d, content-type %s, user-agent %s", status, shown, agent)
-	if text != nil && quotable(ctx, ctype) {
+	// Only text is quoted: bytes are a file's.
+	if text != nil && !IsBinaryResponse(ctx.Point, ctype) {
 		detail += ", body: " + bodyPreview(ctx, text)
 	}
 
@@ -102,17 +103,17 @@ func UnreadableBody(ctx *Context, status int, headers any, text any, sent any, f
 
 var textMedia = regexp.MustCompile(`json|xml|html|javascript|ecmascript|yaml|urlencoded|graphql`)
 
-// Only text is quoted: bytes are a file's, by the model or by their type.
+// A response whose body is bytes: by the model, or by the type it declares.
 // Text is no declared type, text/*, or a structured text format.
-func quotable(ctx *Context, ctype string) bool {
-	if response, ok := ctx.Point["response"].(map[string]any); ok && true == response["binary"] {
-		return false
+func IsBinaryResponse(point map[string]any, ctype string) bool {
+	if response, ok := point["response"].(map[string]any); ok && true == response["binary"] {
+		return true
 	}
 	media := strings.ToLower(strings.TrimSpace(strings.SplitN(ctype, ";", 2)[0]))
-	return media == "" || strings.HasPrefix(media, "text/") || textMedia.MatchString(media)
+	return media != "" && !strings.HasPrefix(media, "text/") && !textMedia.MatchString(media)
 }
 
-func headerValue(headers any, name string) string {
+func HeaderValue(headers any, name string) string {
 	hm, ok := headers.(map[string]any)
 	if !ok {
 		return ""

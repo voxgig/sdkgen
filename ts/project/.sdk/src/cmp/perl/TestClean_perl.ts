@@ -96,6 +96,9 @@ push @FORMS, MIME::Base64::encode_base64("$CANARY{apikey}:$CANARY{secret}", '');
 # The marker a body of bytes carries.
 my $CONTENT = 'CANARY-CONTENT-b7n3v9x1c5';
 
+# The marker a response of bytes carries.
+my $RESPONSE = 'CANARY-RESPONSE-k2m8q4w6z0';
+
 my $CONTENT_FILE = File::Temp->new;
 print {$CONTENT_FILE} $CONTENT;
 $CONTENT_FILE->flush;
@@ -134,13 +137,14 @@ sub leaks {
 # The forms bytes travel in once copied: a string prints as its text, and a
 # dump of one shows its byte values, hex or base64.
 sub content_leaks {
-  my ($text) = @_;
+  my ($text, $marker) = @_;
+  $marker = $CONTENT unless defined $marker;
   (my $flat = $text) =~ s/\\s+//g;
   my @found;
-  push @found, 'text' if index($text, $CONTENT) >= 0;
-  push @found, 'byte values' if index($flat, join(',', unpack('C*', $CONTENT))) >= 0;
-  push @found, 'hex' if index(lc $flat, unpack('H*', $CONTENT)) >= 0;
-  push @found, 'base64' if index($flat, MIME::Base64::encode_base64($CONTENT, '')) >= 0;
+  push @found, 'text' if index($text, $marker) >= 0;
+  push @found, 'byte values' if index($flat, join(',', unpack('C*', $marker))) >= 0;
+  push @found, 'hex' if index(lc $flat, unpack('H*', $marker)) >= 0;
+  push @found, 'base64' if index($flat, MIME::Base64::encode_base64($marker, '')) >= 0;
   return @found;
 }
 
@@ -202,6 +206,20 @@ sub response {
     'headers' => \\%h,
     'json' => sub { $data },
     'body' => Voxgig::Struct::stringify($data),
+  };
+}
+
+# The marker under the type the response declares, as the default transport
+# hands on a body it could not parse.
+sub unread_response {
+  my ($status, $type) = @_;
+  return {
+    'status' => $status,
+    'statusText' => ($status < 400 ? 'OK' : 'ERR'),
+    'headers' => { 'content-type' => $type },
+    'json' => sub { undef },
+    'body' => "$RESPONSE",
+    'unreadable' => 1,
   };
 }
 
@@ -681,13 +699,23 @@ SKIP: {
     'a registered value used as a property name is masked, collisions kept');
   push @sinks, forms('named', $named);
 
-  # An exception object of another class is the caller's own: it leaves an
-  # operation, a stream and direct() as the object it is.
-  my $own = ${Name}CleanOwnError->new('refused');
+  # An exception object of another class, its message quoting the key,
+  # leaves an operation and a stream as the SDK's error with that message
+  # cleaned; the object is its cause. direct() hands back a fetcher's own.
+  my $own = ${Name}CleanOwnError->new("hook saw $CANARY{apikey}");
   my $same = sub { return (ref $_[0] && Scalar::Util::refaddr($_[0]) == Scalar::Util::refaddr($own)) ? 1 : 0 };
-  my $operr = drive(make_sdk($SCENARIOS[0], \\@sinks, undef, [ ${Name}CleanDieFeature->new($own) ]),
-    $target, {}, \\@sinks);
-  ok($same->($operr), "a hook's own exception object leaves the operation as it is");
+  my $wraps = sub {
+    my ($err) = @_;
+    return (Scalar::Util::blessed($err) && $err->isa('${Name}Error') && $same->($err->cause)) ? 1 : 0;
+  };
+  my %ownerr;
+  for my $variant (@VARIANTS) {
+    my ($vname, $make_ctrl) = @$variant;
+    $ownerr{$vname} = drive(make_sdk($SCENARIOS[0], \\@sinks, undef, [ ${Name}CleanDieFeature->new($own) ]),
+      $target, $make_ctrl->(), \\@sinks);
+  }
+  ok($wraps->($ownerr{throw}), "a hook's own exception object leaves the operation as the SDK's error, its cause");
+  ok($wraps->($ownerr{explain}), "explained, a hook's own exception object leaves as the SDK's error, its cause");
   my $pullerr;
   eval {
     my ($acc, $op) = ($target->{accessor}, $target->{op});
@@ -696,9 +724,12 @@ SKIP: {
     1 while defined $next->();
     1;
   } or $pullerr = $@;
-  ok($same->($pullerr), "a stream's own exception object leaves the stream as it is");
-  my $raw = make_sdk([ 'own', sub { return (undef, $own) } ], \\@sinks)->direct({ 'path' => 'raw' });
-  ok(!$raw->{ok} && $same->($raw->{err}), "a fetcher's own error object comes back from direct() as it is");
+  push @sinks, forms('stream:own', $pullerr) if defined $pullerr;
+  ok($wraps->($pullerr), "a stream's own exception object leaves the stream as the SDK's error, its cause");
+  my $fetched = ${Name}CleanOwnError->new('refused');
+  my $raw = make_sdk([ 'own', sub { return (undef, $fetched) } ], \\@sinks)->direct({ 'path' => 'raw' });
+  ok(!$raw->{ok} && ref $raw->{err} && Scalar::Util::refaddr($raw->{err}) == Scalar::Util::refaddr($fetched),
+    "a fetcher's own error object comes back from direct() as it is");
 
   # The live spec, cleaned on its own as it is when it sits in a record:
   # what comes back is dumped whole, as a hook's logger would print it.
@@ -938,6 +969,56 @@ SKIP: {
     my @leaked = grep { content_leaks($_->{text}) } @sinks;
     ok(scalar(@leaked) > 0, "$cname: with clean off, the bytes show: the sweep is not blind");
   }
+}
+
+# No response of bytes leaves the SDK in any form.
+SKIP: {
+  skip 'no operation of this SDK completes against a plain 200; nothing to sweep', 1
+    unless defined $target;
+
+  my @sinks;
+  my %errors;
+
+  for my $status (200, 404, 500) {
+    for my $variant (@VARIANTS) {
+      my ($vname, $make_ctrl) = @$variant;
+      my $scenario = [ 'bytes', sub { return (unread_response($status, 'audio/wav'), undef) } ];
+      my $sdk = make_sdk($scenario, \\@sinks);
+      my $err = drive($sdk, $target, $make_ctrl->(), \\@sinks);
+      $errors{"$status/$vname"} = $err if defined $err;
+      push @sinks, forms('sdk', $sdk);
+    }
+  }
+
+  my @leaked = grep { @{ $_->{found} } }
+    map { { 'name' => $_->{name}, 'found' => [ content_leaks($_->{text}, $RESPONSE) ] } } @sinks;
+
+  note(sprintf('clean: response swept %d surface(s), %d leak(s)', scalar(@sinks), scalar(@leaked)));
+
+  my %named;
+  is(scalar(@leaked), 0, 'no response of bytes leaves the SDK in any form')
+    or diag('a response of bytes leaked through: ' . join('; ', grep { !$named{$_}++ }
+      map { "$_->{name} [" . join(', ', @{ $_->{found} }) . ']' } @leaked));
+
+  # The failure still names what it could not read.
+  my $failed = $errors{'200/throw'};
+  ok(Scalar::Util::blessed($failed) && $failed->isa('${Name}Error'),
+    'a response of bytes fails the operation');
+  is(eval { $failed->{code} }, 'response_content_type', 'the failure is a wrong content type');
+  like(eval { $failed->{msg} } // '', qr{audio/wav}, 'the failure names the type');
+}
+
+# The sweep can see a response: clean switched off shows the bytes.
+SKIP: {
+  skip 'no operation of this SDK completes against a plain 200; nothing to sweep', 1
+    unless defined $target;
+
+  my @sinks;
+  my $scenario = [ 'bytes', sub { return (unread_response(200, 'audio/wav'), undef) } ];
+  my $err = drive(make_sdk($scenario, \\@sinks, { 'active' => 0 }), $target, {}, \\@sinks);
+  ok(defined $err, 'clean off: a response of bytes still fails the operation');
+  my @leaked = grep { content_leaks($_->{text}, $RESPONSE) } @sinks;
+  ok(scalar(@leaked) > 0, 'with clean off, the response shows: the sweep is not blind');
 }
 
 done_testing();

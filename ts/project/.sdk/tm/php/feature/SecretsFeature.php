@@ -565,6 +565,8 @@ class ProjectNameSecretsFeature extends ProjectNameBaseFeature
             'method' => $x['method'],
             'headers' => ['content-type' => 'application/json'],
             'body' => $body,
+            // Never followed: a redirect would carry the refresh token on.
+            'redirect' => 'manual',
         ]);
 
         if (null !== $err) {

@@ -77,6 +77,7 @@ import ${kotlinpackage}.core.Config
 import ${kotlinpackage}.core.Context
 import ${kotlinpackage}.core.Helpers
 import ${kotlinpackage}.core.${SDK}
+import ${kotlinpackage}.core.Response
 import ${kotlinpackage}.core.Result
 import ${kotlinpackage}.core.SdkEntity
 import ${kotlinpackage}.core.SdkError
@@ -124,6 +125,10 @@ class CleanTest {
   private val content = "CANARY-CONTENT-b7n3v9x1c5"
   private val contentBytes = content.toByteArray(StandardCharsets.UTF_8)
 
+  // The marker a response of bytes carries, as the default transport hands
+  // on a body it read into text.
+  private val answered = "CANARY-RESPONSE-k2m8q4w6z0"
+
   // Every value this SDK accepts as a raw body.
   private val carriers = linkedMapOf<String, () -> Any>(
     "ByteArray" to { contentBytes.copyOf() },
@@ -148,19 +153,20 @@ class CleanTest {
 
   // The forms bytes travel in once copied: text, a list of byte values, hex,
   // base64 with or without its padding.
-  private fun contentLeaks(text: String): List<String> {
+  private fun contentLeaks(text: String, marker: String = content): List<String> {
+    val bytes = marker.toByteArray(StandardCharsets.UTF_8)
     val flat = text.replace(Regex("\\\\s+"), "")
     val found = mutableListOf<String>()
-    if (text.contains(content)) {
+    if (text.contains(marker)) {
       found.add("text")
     }
-    if (flat.contains(contentBytes.joinToString(","))) {
+    if (flat.contains(bytes.joinToString(","))) {
       found.add("byte values")
     }
-    if (flat.lowercase().contains(contentBytes.joinToString("") { "%02x".format(it) })) {
+    if (flat.lowercase().contains(bytes.joinToString("") { "%02x".format(it) })) {
       found.add("hex")
     }
-    if (flat.contains(b64(content).replace("=", ""))) {
+    if (flat.contains(b64(marker).replace("=", ""))) {
       found.add("base64")
     }
     return found
@@ -175,6 +181,8 @@ class CleanTest {
       "headers" to v.headers, "query" to v.query, "body" to plain(v.body))
     is Result -> linkedMapOf<String, Any?>(
       "status" to v.status, "headers" to v.headers, "body" to v.body, "resdata" to v.resdata)
+    is Response -> linkedMapOf<String, Any?>(
+      "status" to v.status, "headers" to v.headers, "body" to plain(v.body))
     is SdkEntity -> v.data()
     is ByteArray -> v.map { it.toInt() }
     is Map<*, *> -> v.mapValues { plain(it.value) }
@@ -303,6 +311,18 @@ class CleanTest {
       out
     },
   )
+
+  // A response of bytes under the type it declares, as the default transport
+  // hands on a body it read into text and could not parse.
+  private fun bytesScenario(status: Int, type: String) = Scenario("bytes") { _, _ ->
+    linkedMapOf<String, Any?>(
+      "status" to status,
+      "statusText" to (if (status < 400) "OK" else "ERR"),
+      "headers" to linkedMapOf<String, Any?>("content-type" to type),
+      "json" to Supplier<Any?> { null },
+      "body" to answered,
+      "unreadable" to true)
+  }
 
   // Offline, as every generated suite is: the test OPTION resolves a required
   // server variable to test-<name>, and installs no transport.
@@ -838,6 +858,58 @@ class CleanTest {
       assertTrue(leaked.isNotEmpty(),
         carrier + ": with clean off, nothing showed the bytes: the sweep is blind")
     }
+  }
+
+  @Test
+  fun noResponseOfBytesLeavesTheSdkInAnyForm() {
+    val target = usableOrSkip()
+
+    val sinks = mutableListOf<Sink>()
+    val errors = linkedMapOf<String, Throwable>()
+
+    for (status in listOf(200, 404, 500)) {
+      for (variant in listOf("throw", "explain", "nothrow")) {
+        val sdk = makeSdk(bytesScenario(status, "audio/wav"), sinks, null)
+        val ctrl: MutableMap<String, Any?>? = when (variant) {
+          "throw" -> null
+          "explain" -> linkedMapOf<String, Any?>("explain" to linkedMapOf<String, Any?>())
+          else -> linkedMapOf<String, Any?>("throw" to false, "explain" to linkedMapOf<String, Any?>())
+        }
+        val err = drive(sdk, target, ctrl, sinks)
+        if (err != null) {
+          errors[status.toString() + "/" + variant] = err
+        }
+        sinks.addAll(surfaces("sdk", sdk))
+      }
+    }
+
+    val leaked = sinks
+      .map { Pair(it.name, contentLeaks(it.text, answered)) }
+      .filter { it.second.isNotEmpty() }
+
+    println("clean: response swept " + sinks.size + " surface(s), " + leaked.size + " leak(s)")
+
+    assertEquals(0, leaked.size, "a response of bytes leaked through: " +
+      leaked.joinToString("; ") { it.first + " [" + it.second.joinToString(", ") + "]" })
+
+    // The failure still names what it could not read.
+    val failed = errors["200/throw"] as? SdkError
+    assertNotNull(failed, "a response of bytes must fail the operation")
+    assertEquals("response_content_type", failed!!.code)
+    assertTrue((failed.message ?: "").contains("audio/wav"),
+      "the error does not name the type: " + failed.message)
+  }
+
+  @Test
+  fun theSweepCanSeeAResponseCleanSwitchedOffShowsTheBytes() {
+    val target = usableOrSkip()
+
+    val sinks = mutableListOf<Sink>()
+    val sdk = makeSdk(bytesScenario(200, "audio/wav"), sinks, mapOf("active" to false))
+    val err = drive(sdk, target, null, sinks)
+    assertNotNull(err, "a response of bytes must fail the operation")
+    val leaked = sinks.filter { contentLeaks(it.text, answered).isNotEmpty() }
+    assertTrue(leaked.isNotEmpty(), "with clean off, nothing showed the response: the sweep is blind")
   }
 
   // An entity block, of per-entity settings or seeded records keyed by

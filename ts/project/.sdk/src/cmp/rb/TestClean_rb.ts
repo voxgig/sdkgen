@@ -88,6 +88,9 @@ class ${Name}CleanTest < Minitest::Test
   # The marker a body of bytes carries.
   CONTENT = "CANARY-CONTENT-b7n3v9x1c5"
 
+  # The marker a response of bytes carries.
+  RESPONSE = "CANARY-RESPONSE-k2m8q4w6z0"
+
   module Sweep
     module_function
 
@@ -104,13 +107,13 @@ class ${Name}CleanTest < Minitest::Test
 
     # The forms bytes travel in once copied: a String prints as its text, and
     # a dump of one shows its byte values, hex or base64.
-    def content_leaks(text)
+    def content_leaks(text, marker = CONTENT)
       flat = text.b.delete(" \\t\\r\\n")
       found = []
-      found << "text" if text.b.include?(CONTENT)
-      found << "byte values" if flat.include?(CONTENT.bytes.join(","))
-      found << "hex" if flat.downcase.include?(CONTENT.unpack1("H*"))
-      found << "base64" if flat.include?([CONTENT].pack("m0"))
+      found << "text" if text.b.include?(marker)
+      found << "byte values" if flat.include?(marker.bytes.join(","))
+      found << "hex" if flat.downcase.include?(marker.unpack1("H*"))
+      found << "base64" if flat.include?([marker].pack("m0"))
       found
     end
 
@@ -145,6 +148,19 @@ class ${Name}CleanTest < Minitest::Test
         "headers" => h,
         "json" => -> { data },
         "body" => JSON.generate(data),
+      }
+    end
+
+    # A response of bytes under the type it declares, as the default
+    # transport hands on a body it could not parse.
+    def bytes_response(status, type)
+      {
+        "status" => status,
+        "statusText" => status < 400 ? "OK" : "ERR",
+        "headers" => { "content-type" => type },
+        "json" => -> { nil },
+        "body" => RESPONSE.b,
+        "unreadable" => true,
       }
     end
   end
@@ -732,6 +748,55 @@ class ${Name}CleanTest < Minitest::Test
         assert !leaked.empty?, "#{carrier}: with clean off, nothing showed the bytes: the sweep is blind"
       end
     end
+  end
+
+  def test_no_response_of_bytes_leaves_the_sdk_in_any_form
+    target = usable_op
+    skip "no operation of this SDK completes against a plain 200; nothing to sweep" if target.nil?
+
+    sinks = []
+    errors = {}
+
+    [200, 404, 500].each do |status|
+      VARIANTS.each do |vname, make_ctrl|
+        scenario = ["bytes", ->(_url, _fd) { [Sweep.bytes_response(status, "audio/wav"), nil] }]
+        sdk = make_sdk(scenario, sinks)
+        err = drive(sdk, target, make_ctrl.call, sinks)
+        errors["#{status}/#{vname}"] = err unless err.nil?
+        sinks.concat(Sweep.forms("sdk", sdk))
+      end
+    end
+
+    leaked = sinks
+      .map { |s| [s["name"], Sweep.content_leaks(s["text"], RESPONSE)] }
+      .reject { |_, found| found.empty? }
+
+    puts "clean: response swept #{sinks.length} surface(s), #{leaked.length} leak(s)"
+
+    assert_equal 0, leaked.length, "a response of bytes leaked through: " +
+      leaked.map { |name, found| "#{name} [#{found.join(', ')}]" }.uniq.join("; ")
+
+    # The failure still names what it could not read.
+    failed = errors["200/throw"]
+    refute_nil failed, "a response of bytes must fail the operation"
+    assert_equal "response_content_type", failed.code
+    assert failed.message.to_s.include?("audio/wav"), "the error does not name the type: #{failed.message}"
+  end
+
+  # With clean off the live response prints as an opaque object, so the
+  # control is the same body under a text type, which clean leaves alone.
+  def test_the_sweep_can_see_a_response_a_text_one_shows_its_body
+    target = usable_op
+    skip "no operation of this SDK completes against a plain 200; nothing to sweep" if target.nil?
+
+    sinks = []
+    scenario = ["text", ->(_url, _fd) { [Sweep.bytes_response(200, "text/plain"), nil] }]
+    err = drive(make_sdk(scenario, sinks), target, {}, sinks)
+    refute_nil err, "a body that is not JSON must fail the operation"
+    leaked = sinks.select do |s|
+      s["name"].start_with?("ctx@PreResponse") && !Sweep.content_leaks(s["text"], RESPONSE).empty?
+    end
+    assert !leaked.empty?, "nothing showed the body of a text response: the sweep is blind"
   end
 end
 `

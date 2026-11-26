@@ -715,6 +715,7 @@ fn buy_once(state: &Rc<RefCell<SecretsState>>) -> Result<String, ProjectNameErro
             jo(vec![("content-type", Value::str("application/json"))]),
         ),
         ("body", Value::str(body)),
+        ("redirect", Value::str("manual")),
     ]);
 
     let sys_fetch = getpath(&["system", "fetch"], &options);
@@ -762,10 +763,12 @@ fn buy_once(state: &Rc<RefCell<SecretsState>>) -> Result<String, ProjectNameErro
     Ok(token)
 }
 
-// One agent for every exchange: ureq pools keep-alive connections per agent.
+// One pooled agent for every exchange; a followed redirect would carry the token.
 fn exchange_agent() -> ureq::Agent {
     static AGENT: std::sync::OnceLock<ureq::Agent> = std::sync::OnceLock::new();
-    AGENT.get_or_init(|| ureq::AgentBuilder::new().build()).clone()
+    AGENT
+        .get_or_init(|| ureq::AgentBuilder::new().redirects(0).build())
+        .clone()
 }
 
 fn raw_exchange_fetch(fullurl: &str, fetchdef: &Value) -> Result<Value, ProjectNameError> {

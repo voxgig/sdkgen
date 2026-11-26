@@ -87,7 +87,10 @@ defmodule ProjectName.SecretsTest do
       [{:calls, cs}] = :ets.lookup(t, :calls)
 
       :ets.insert(t,
-        {:calls, cs ++ [%{url: url, auth: auth, body: S.getprop(fetchdef, "body")}]})
+        {:calls,
+         cs ++
+           [%{url: url, auth: auth, body: S.getprop(fetchdef, "body"),
+              redirect: S.getprop(fetchdef, "redirect")}]})
 
       if String.ends_with?(url, "/" <> path) do
         [{:issued, i}] = :ets.lookup(t, :issued)
@@ -848,6 +851,8 @@ defmodule ProjectName.SecretsTest do
       assert S.getprop(ProjectName.Json.parse(hd(token(r)).body), "refresh_token") == @refresh,
              "the refresh token is sent in the request field"
 
+      assert hd(token(r)).redirect == "manual", "the exchange must follow no redirect"
+
       assert length(api(r)) == 1
       auth_is(hd(api(r)), "ACCESS01")
     end
@@ -1020,6 +1025,65 @@ defmodule ProjectName.SecretsTest do
       assert length(api(r)) == 1, "no retry after a failed purchase"
     end
 
+    # Real listeners and the feature's own transport: a stub follows nothing.
+    test "a redirect answering the exchange is a failure, and nothing follows it" do
+      other =
+        listener(:other, fn _path -> {200, nil, ~s({"access_token":"ELSEWHERE01"})} end)
+
+      away = "http://127.0.0.1:#{elem(other, 1)}/api/auth/token"
+      answers = [{307, away}, {308, away}, {302, away}, {307, "/api/moved/token"}]
+
+      try do
+        results =
+          Enum.map(answers, fn {status, location} ->
+            origin =
+              listener(:origin, fn
+                "/api/auth/token" -> {status, location, ""}
+                _ -> {200, nil, ~s({"access_token":"MOVED01"})}
+              end)
+
+            base = "http://127.0.0.1:#{elem(origin, 1)}/api"
+
+            client =
+              ProjectName.new(S.jm([
+                "base", base,
+                "allow", S.jm(["op", "direct,graphql,list,load"]),
+                "feature",
+                secrets([
+                  {"name", "refresh_token"},
+                  {"exchange", S.jm(["active", true, "refresh", @refresh])}
+                ])
+              ]))
+
+            res = ProjectName.direct(client, S.jm(["path", "/thing"]))
+            :gen_tcp.close(elem(origin, 0))
+
+            seen = received([])
+            elsewhere = Enum.filter(seen, &(elem(&1, 0) == :other))
+
+            followed =
+              Enum.filter(seen, &(elem(&1, 0) == :origin and elem(&1, 2) != "/api/auth/token"))
+
+            message = err_message(res)
+            want = "token exchange failed: #{status} from #{base}/auth/token"
+            {status, location, String.contains?(message, want), message, elsewhere ++ followed}
+          end)
+
+        refused = Enum.count(results, &elem(&1, 2))
+        leaked = Enum.flat_map(results, &elem(&1, 4))
+        IO.puts("\nsecrets: exchange refused #{refused} redirect(s), #{length(leaked)} followed")
+
+        for {status, location, ok, message, sent} <- results do
+          assert sent == [], "#{status} to #{location}: followed by #{inspect(sent)}"
+          assert ok, "#{status} to #{location}: not a failed exchange: #{message}"
+        end
+
+        assert refused == length(answers)
+      after
+        :gen_tcp.close(elem(other, 0))
+      end
+    end
+
     test "auth nil suppresses the credential and buys nothing" do
       System.put_env(@envprefix <> "REFRESH_TOKEN", @refresh)
 
@@ -1069,6 +1133,78 @@ defmodule ProjectName.SecretsTest do
 
       # A deterministic placeholder, so offline suites need no configuration.
       assert Secrets.credential(client) == "test-access_token"
+    end
+  end
+
+  # ---- listeners -----------------------------------------------------------
+
+  # A listener on 127.0.0.1 that answers by `route` and sends the test
+  # {:req, tag, method, path, body} for each request. {socket, port}.
+  defp listener(tag, route) do
+    {:ok, listen} =
+      :gen_tcp.listen(0, [:binary, active: false, reuseaddr: true, ip: {127, 0, 0, 1}])
+
+    {:ok, port} = :inet.port(listen)
+    parent = self()
+    spawn(fn -> listener_loop(listen, tag, route, parent) end)
+    {listen, port}
+  end
+
+  defp listener_loop(listen, tag, route, parent) do
+    with {:ok, sock} <- :gen_tcp.accept(listen) do
+      [head | rest] = String.split(listener_read(sock, ""), "\r\n\r\n", parts: 2)
+      [request | lines] = String.split(head, "\r\n")
+      [method, path | _] = String.split(request, " ") ++ ["", ""]
+
+      length =
+        Enum.find_value(lines, "0", fn line ->
+          case String.split(line, ":", parts: 2) do
+            [name, value] -> if String.downcase(name) == "content-length", do: String.trim(value)
+            _ -> nil
+          end
+        end)
+
+      body = listener_body(Enum.join(rest), sock, String.to_integer(length))
+      send(parent, {:req, tag, method, path, body})
+
+      {status, location, answer} = route.(path)
+      moved = if location == nil, do: "", else: "Location: #{location}\r\n"
+
+      :gen_tcp.send(sock, "HTTP/1.1 #{status} X\r\n#{moved}Content-Type: application/json\r\n" <>
+        "Content-Length: #{byte_size(answer)}\r\nConnection: close\r\n\r\n#{answer}")
+      :gen_tcp.close(sock)
+      listener_loop(listen, tag, route, parent)
+    end
+  end
+
+  defp listener_read(sock, acc) do
+    if String.contains?(acc, "\r\n\r\n") do
+      acc
+    else
+      case :gen_tcp.recv(sock, 0, 5000) do
+        {:ok, data} -> listener_read(sock, acc <> data)
+        _ -> acc
+      end
+    end
+  end
+
+  defp listener_body(got, sock, length) do
+    if byte_size(got) >= length do
+      got
+    else
+      case :gen_tcp.recv(sock, 0, 5000) do
+        {:ok, data} -> listener_body(got <> data, sock, length)
+        _ -> got
+      end
+    end
+  end
+
+  # Every request the listeners reported, as {tag, method, path, body}.
+  defp received(acc) do
+    receive do
+      {:req, tag, method, path, body} -> received(acc ++ [{tag, method, path, body}])
+    after
+      200 -> acc
     end
   end
 

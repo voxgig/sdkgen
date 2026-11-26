@@ -128,25 +128,28 @@ let leaks (text : string) : string list = List.filter (fun f -> substr_contains 
 (* The marker a body of bytes carries. *)
 let content = "CANARY-CONTENT-b7n3v9x1c5"
 
+(* The marker a response of bytes carries, as a transport hands it on. *)
+let response_marker = "CANARY-RESPONSE-k2m8q4w6z0"
+
 (* Every value this SDK accepts as a raw body: a Str holding the bytes. *)
 let carriers : (string * (unit -> value)) list = [ ("Str", (fun () -> Str content)) ]
 
 (* The forms bytes travel in once copied: text, a list of byte values, hex,
  * base64. *)
-let content_leaks (text : string) : string list =
+let content_leaks ?(marker = content) (text : string) : string list =
   let flat = Buffer.create (String.length text) in
   String.iter (fun c -> match c with
       | ' ' | '\\t' | '\\n' | '\\r' -> ()
       | c -> Buffer.add_char flat c) text;
   let flat = Buffer.contents flat in
-  let codes = List.map Char.code (List.of_seq (String.to_seq content)) in
+  let codes = List.map Char.code (List.of_seq (String.to_seq marker)) in
   let values = String.concat "," (List.map string_of_int codes) in
   let hex = String.concat "" (List.map (Printf.sprintf "%02x") codes) in
   List.filter_map (fun (form, found) -> if found then Some form else None) [
-    ("text", substr_contains text content);
+    ("text", substr_contains text marker);
     ("byte values", substr_contains flat values);
     ("hex", substr_contains (String.lowercase_ascii flat) hex);
-    ("base64", substr_contains flat (base64_encode content)) ]
+    ("base64", substr_contains flat (base64_encode marker)) ]
 
 let ends_with_s (s : string) (suf : string) : bool =
   let ls = String.length s and lf = String.length suf in
@@ -193,6 +196,13 @@ let response ?(headers = []) (status : int) (data : value) : value =
   List.iter (fun (k, v) -> setp h k (Str v)) headers;
   jo [("status", vint_of status); ("statusText", Str (if status < 400 then "OK" else "ERR"));
       ("headers", h); ("body", Str (jsonify data)); ("json", json_thunk data)]
+
+(* A response of bytes under the type it declares, as a transport hands on
+ * a body it could not read as JSON. *)
+let bytes_response (status : int) (ctype : string) : value =
+  jo [("status", vint_of status); ("statusText", Str (if status < 400 then "OK" else "ERR"));
+      ("headers", jo [("content-type", Str ctype)]); ("body", Str response_marker);
+      ("json", json_thunk Noval); ("unreadable", Bool true)]
 
 type scenario = { s_name : string; s_respond : string -> value -> value }
 
@@ -678,6 +688,45 @@ let () =
           check (cname ^ ": with clean off, nothing showed the bytes: the sweep is blind")
             (List.exists (fun (_, t) -> content_leaks t <> []) !sinks))
         carriers)
+
+let () =
+  test "clean.no_response_of_bytes_leaves_the_sdk" (fun () ->
+      match usable_op () with
+      | None -> Printf.printf "SKIP clean.no_response_of_bytes_leaves_the_sdk: %s\\n%!" no_target
+      | Some target ->
+      let sinks : sinks = ref [] in
+      let errors = ref [] in
+      List.iter (fun status ->
+          List.iter (fun (vname, mkctrl) ->
+              let sc = { s_name = "bytes"; s_respond = (fun _ _ -> bytes_response status "audio/wav") } in
+              let sdk = make_sdk sc sinks [] in
+              (match drive sdk target (mkctrl ()) sinks with
+               | Some e -> errors := (string_of_int status ^ "/" ^ vname, e) :: !errors
+               | None -> ());
+              value_forms sinks "sdk" (client_to_value sdk)) variants) [200; 404; 500];
+      let found (text : string) = content_leaks ~marker:response_marker text in
+      let leaked = List.filter (fun (_, text) -> found text <> []) !sinks in
+      Printf.printf "clean: response swept %d surface(s), %d leak(s)\\n%!" (List.length !sinks) (List.length leaked);
+      if leaked <> [] then
+        failwith ("a response of bytes leaked through: "
+                  ^ String.concat "; " (List.map (fun (n, t) -> n ^ " [" ^ String.concat ", " (found t) ^ "]") leaked));
+      (* The failure still names what it could not read. *)
+      let failed = List.assoc_opt "200/throw" !errors in
+      check ("a response of bytes fails with its own code: " ^ code_of failed)
+        (code_of failed = "response_content_type");
+      check ("the error does not name the type: " ^ msg_of failed) (substr_contains (msg_of failed) "audio/wav"))
+
+let () =
+  test "clean.the_sweep_can_see_a_response" (fun () ->
+      match usable_op () with
+      | None -> Printf.printf "SKIP clean.the_sweep_can_see_a_response: %s\\n%!" no_target
+      | Some target ->
+      let sinks : sinks = ref [] in
+      let sc = { s_name = "bytes"; s_respond = (fun _ _ -> bytes_response 200 "audio/wav") } in
+      let err = drive (make_sdk sc sinks [("active", Bool false)]) target (empty_map ()) sinks in
+      check "a response of bytes must fail the operation" (err <> None);
+      check "with clean off, nothing showed the response: the sweep is blind"
+        (List.exists (fun (_, t) -> content_leaks ~marker:response_marker t <> []) !sinks))
 `
 }
 

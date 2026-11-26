@@ -133,6 +133,10 @@ static const std::string MASK = "[redacted]";
 // The marker a body of bytes carries.
 static const std::string CONTENT = "CANARY-CONTENT-b7n3v9x1c5";
 
+// The marker a response of bytes carries, read into text and marked
+// unreadable, as a transport answering through the fetch seam hands it on.
+static const std::string RESPONSE = "CANARY-RESPONSE-k2m8q4w6z0";
+
 
 struct Sink {
   std::string name;
@@ -164,7 +168,8 @@ static std::vector<std::string> leaks(const std::string& text) {
 
 // The forms bytes travel in once copied: the text, and with the whitespace
 // of a pretty print dropped, a list of byte values, hex, base64.
-static std::vector<std::string> contentLeaks(const std::string& text) {
+static std::vector<std::string> contentLeaks(const std::string& text,
+                                             const std::string& marker = CONTENT) {
   static const char* DIGITS[2] = {"0123456789abcdef", "0123456789ABCDEF"};
   std::string flat;
   for (char c : text) {
@@ -172,7 +177,7 @@ static std::vector<std::string> contentLeaks(const std::string& text) {
   }
   std::string values;
   std::string hex[2];
-  for (unsigned char c : CONTENT) {
+  for (unsigned char c : marker) {
     values += (values.empty() ? "" : ",") + std::to_string(static_cast<int>(c));
     for (int i = 0; i < 2; i++) {
       hex[i].push_back(DIGITS[i][c >> 4]);
@@ -180,12 +185,12 @@ static std::vector<std::string> contentLeaks(const std::string& text) {
     }
   }
   std::vector<std::string> found;
-  if (std::string::npos != text.find(CONTENT)) found.push_back("text");
+  if (std::string::npos != text.find(marker)) found.push_back("text");
   if (std::string::npos != flat.find(values)) found.push_back("byte values");
   if (std::string::npos != flat.find(hex[0]) || std::string::npos != flat.find(hex[1])) {
     found.push_back("hex");
   }
-  if (std::string::npos != flat.find(util::cleanBase64(CONTENT))) found.push_back("base64");
+  if (std::string::npos != flat.find(util::cleanBase64(marker))) found.push_back("base64");
   return found;
 }
 
@@ -335,6 +340,19 @@ static Value response(int status, const Value& data, const Value& headers) {
   map_put(out, "body", Value(vs::jsonify(data, 0)));
   map_put(out, "json", json_thunk(data));
   map_put(out, "headers", h);
+  return out;
+}
+
+
+// A response of bytes under the type it declares.
+static Value bytesResponse(int status, const std::string& type) {
+  Value out = vmap();
+  map_put(out, "status", Value(status));
+  map_put(out, "statusText", Value(status < 400 ? "OK" : "ERR"));
+  map_put(out, "body", Value(RESPONSE));
+  map_put(out, "json", json_thunk(Value::undef()));
+  map_put(out, "unreadable", Value(true));
+  map_put(out, "headers", vmap({{"content-type", Value(type)}}));
   return out;
 }
 
@@ -981,6 +999,82 @@ static void the_sweep_can_see_a_body() {
 }
 
 
+static void no_response_of_bytes_leaves_the_sdk() {
+  std::vector<Candidate> cands = candidates();
+  Target target = usableOp(cands);
+  if (0 > target.index) {
+    std::cout << NOTHING_TO_SWEEP << std::endl;
+    return;
+  }
+  const Candidate& cand = cands[target.index];
+
+  std::vector<Sink> sinks;
+  std::map<std::string, SdkErrorPtr> errors;
+
+  for (int status : {200, 404, 500}) {
+    Scenario scenario{"bytes", [status](const std::string&, const Value&) {
+      return bytesResponse(status, "audio/wav");
+    }};
+    for (const Variant& variant : variants()) {
+      auto sdk = makeSdk(scenario, &sinks, Value::undef());
+      SdkErrorPtr err = drive(*sdk, cand, target, variant.ctrl(), sinks);
+      if (err) errors[std::to_string(status) + "/" + variant.name] = err;
+      sinks.push_back({"sdk:string", sdk->to_string()});
+    }
+  }
+
+  std::string leaked;
+  int leakcount = 0;
+  for (const Sink& s : sinks) {
+    std::vector<std::string> found = contentLeaks(s.text, RESPONSE);
+    if (found.empty()) continue;
+    leakcount++;
+    if (!leaked.empty()) leaked += "; ";
+    leaked += s.name + " [";
+    for (size_t i = 0; i < found.size(); i++) leaked += (0 < i ? ", " : "") + found[i];
+    leaked += "]";
+  }
+
+  std::cout << "clean: response swept " << sinks.size() << " surface(s), " << leakcount
+            << " leak(s)" << std::endl;
+
+  ASSERT_EQ(leakcount, 0, "a response of bytes leaked through: " + leaked);
+
+  // The failure still names what it could not read.
+  auto failed = errors.find("200/throw");
+  ASSERT_TRUE(errors.end() != failed, "a response of bytes must fail the operation");
+  if (errors.end() != failed) {
+    ASSERT_TRUE("response_content_type" == failed->second->code, "code: " + failed->second->code);
+    ASSERT_TRUE(std::string::npos != failed->second->msg.find("audio/wav"),
+                "the error does not name the type: " + failed->second->msg);
+  }
+}
+
+
+static void the_sweep_can_see_a_response() {
+  std::vector<Candidate> cands = candidates();
+  Target target = usableOp(cands);
+  if (0 > target.index) {
+    std::cout << NOTHING_TO_SWEEP << std::endl;
+    return;
+  }
+
+  std::vector<Sink> sinks;
+  Scenario scenario{"bytes", [](const std::string&, const Value&) {
+    return bytesResponse(200, "audio/wav");
+  }};
+  auto sdk = makeSdk(scenario, &sinks, vmap({{"active", Value(false)}}));
+  SdkErrorPtr err = drive(*sdk, cands[target.index], target, vmap(), sinks);
+  ASSERT_TRUE((bool)err, "a response of bytes must fail the operation");
+
+  int leaked = 0;
+  for (const Sink& s : sinks) {
+    if (!contentLeaks(s.text, RESPONSE).empty()) leaked++;
+  }
+  ASSERT_TRUE(0 < leaked, "with clean off, nothing showed the response: the sweep is blind");
+}
+
+
 int main() {
   T_RUN(no_credential_leaves_the_sdk);
   T_RUN(the_sweep_can_see_a_leak);
@@ -989,6 +1083,8 @@ int main() {
   T_RUN(a_feature_name_is_read_as_a_name);
   T_RUN(no_body_of_bytes_leaves_the_sdk);
   T_RUN(the_sweep_can_see_a_body);
+  T_RUN(no_response_of_bytes_leaves_the_sdk);
+  T_RUN(the_sweep_can_see_a_response);
   return sdktest::summary("clean_test");
 }
 `

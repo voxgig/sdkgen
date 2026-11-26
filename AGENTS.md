@@ -919,11 +919,31 @@ emitted broken source reached the fleet unchallenged.
   see a string holding the bytes, which is the one carrier in lua, c, cpp,
   zig, ocaml and elixir, so a port with the first rule alone protects
   nothing there. A raw body the model does not mark binary is text and stays
-  data. `clean.active: false` switches this off with the rest; there is no
+  data. A third rule covers the RESPONSE: where it is bytes, by the model's
+  `point.response.binary` or by a declared media type that is not text, the
+  body on the context's response is described whatever carries it, with its
+  type and no size. That predicate is the one the unreadable-body error
+  uses (`isBinaryResponse` in ts), and it must stay ONE predicate. Most
+  transports read a body into text, so no other rule sees it there.
+  `clean.active: false` switches all of this off with the rest; there is no
   switch of its own. The sweep's content canary needs an operation that
   sends a binary body: an SDK without one skips it, and the clean lanes add
   one (`CLEAN_BINARY`) and require the
-  `clean: content swept N surface(s), 0 leak(s)` line.
+  `clean: content swept N surface(s), 0 leak(s)` line. The response canary
+  needs none: the sweep answers an ordinary operation with bytes, and the
+  lanes require `clean: response swept N surface(s), 0 leak(s)`.
+- **A request a feature makes itself is outside the transport's redirect
+  rule.** The `secrets` token exchange cannot go through `utility.fetcher`:
+  the feature wraps it, and the test mock would answer. So it sends its own
+  request, and where its client followed a redirect, a 307 carried the
+  refresh token to another origin in five targets and a 302 let another
+  origin choose the access token in ten. It now follows none: the fetch
+  definition says `redirect: manual`, a client of the feature's own is told
+  to follow nothing, and a 3xx is a failed exchange. `ts/test/redirect.test.ts`
+  lists every target's exchange; each shipped secrets suite answers it with
+  redirects against two listeners and prints `secrets: exchange refused N
+  redirect(s), M followed`, which the secrets lanes require. A new request
+  of a feature's own needs the same answer.
 - **The HTTP status is on the error, not just in `err.result`.** `err.status`
   (-1 when there was no response) plus a `notFound` predicate, so a consumer
   never couples itself to the internal shape of `result`.

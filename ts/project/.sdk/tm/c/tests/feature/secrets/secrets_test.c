@@ -38,6 +38,10 @@
 // chains and `custom` providers here. The rule under test - the chain
 // answers when the option does not - is identical either way.
 
+#if !defined(_WIN32) && !defined(_POSIX_C_SOURCE)
+#define _POSIX_C_SOURCE 200809L
+#endif
+
 #include "feature_harness.h" /* test_sdk + Fetcher helpers + ctest.h */
 
 #include "secrets.h"
@@ -46,6 +50,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#if !defined(_WIN32)
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <signal.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
+#endif
 
 static int CASES = 0;
 #define RUN(fn)                                                                 \
@@ -610,6 +624,7 @@ static void t_exchange_buys_and_carries(void) {
   CHECK(NULL != strstr(call_body(r, 0), "\"refresh_token\":\"REFRESH01\""), "exchange: the purchase carries the refresh token, marshalled");
   CHECK(credential_is(call_auth(r, 1, NULL), "ACCESS01"), "exchange: the request carries the bought access token");
   CHECK(NULL != strstr(get_str(call_fetchdef(r, 0), "method"), "POST"), "exchange: the purchase is a POST");
+  CHECK_STR_EQ(get_str(call_fetchdef(r, 0), "redirect"), "manual", "exchange: the purchase follows no redirect");
 }
 
 static void t_exchange_explicit_refresh_wins(void) {
@@ -773,6 +788,179 @@ static void t_exchange_test_mode_buys_nothing(void) {
   CHECK_INT_EQ(fh_track_int(feats[0].f, "buys"), 1, "test mode: counted as a (fake) purchase");
 }
 
+#if !defined(_WIN32)
+
+static int redirect_listener(int* port) {
+  struct sockaddr_in addr;
+  socklen_t len = sizeof(addr);
+  int fd = socket(AF_INET, SOCK_STREAM, 0);
+  memset(&addr, 0, sizeof(addr));
+  addr.sin_family = AF_INET;
+  addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+  if (0 != bind(fd, (struct sockaddr*)&addr, sizeof(addr)) || 0 != listen(fd, 16)) return -1;
+  getsockname(fd, (struct sockaddr*)&addr, &len);
+  *port = ntohs(addr.sin_port);
+  return fd;
+}
+
+static void redirect_say(int c, const char* text) {
+  size_t n = strlen(text);
+  while (0 < n) {
+    ssize_t w = write(c, text, n);
+    if (w <= 0) return;
+    text += w;
+    n -= (size_t)w;
+  }
+}
+
+// A forked listener. The token path of the origin answers `moved`; every
+// other request is written to `log` as one line and answered with a token.
+static pid_t redirect_serve(int fd, int log, const char* moved) {
+  fflush(NULL);
+  pid_t pid = fork();
+  if (0 != pid) return pid;
+  signal(SIGPIPE, SIG_IGN);
+  for (;;) {
+    int c = accept(fd, NULL, NULL);
+    if (c < 0) continue;
+    char buf[8192];
+    size_t n = 0;
+    char* end = NULL;
+    while (NULL == end && n < sizeof(buf) - 1) {
+      ssize_t got = read(c, buf + n, sizeof(buf) - 1 - n);
+      if (got <= 0) break;
+      n += (size_t)got;
+      buf[n] = '\0';
+      end = strstr(buf, "\r\n\r\n");
+    }
+    if (NULL != end) {
+      *end = '\0';
+      char method[16] = "";
+      char target[512] = "";
+      sscanf(buf, "%15s %511s", method, target);
+      for (char* at = buf; '\0' != *at; at++) {
+        if ('A' <= *at && *at <= 'Z') *at = (char)(*at - 'A' + 'a');
+      }
+      const char* cl = strstr(buf, "\r\ncontent-length:");
+      size_t want = NULL == cl ? 0 : (size_t)strtoul(cl + 17, NULL, 10);
+      char* body = end + 4;
+      while ((size_t)(buf + n - body) < want && n < sizeof(buf) - 1) {
+        ssize_t got = read(c, buf + n, sizeof(buf) - 1 - n);
+        if (got <= 0) break;
+        n += (size_t)got;
+      }
+      if ((size_t)(buf + n - body) < want) want = (size_t)(buf + n - body);
+      body[want] = '\0';
+      if (NULL != moved && 0 == strcmp(target, "/api/auth/token")) {
+        redirect_say(c, moved);
+      } else {
+        char line[1024];
+        snprintf(line, sizeof(line), "%s %s %s\n", method, target, body);
+        redirect_say(log, line);
+        redirect_say(c, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n"
+          "Content-Length: 30\r\nConnection: close\r\n\r\n{\"access_token\":\"ELSEWHERE01\"}");
+      }
+    }
+    shutdown(c, SHUT_WR);
+    close(c);
+  }
+}
+
+static int redirect_lines(int log, char* into, size_t size) {
+  size_t n = 0;
+  ssize_t got;
+  while (n < size - 1 && 0 < (got = read(log, into + n, size - 1 - n))) n += (size_t)got;
+  into[n] = '\0';
+  int lines = 0;
+  for (size_t i = 0; i < n; i++) lines += '\n' == into[i];
+  return lines;
+}
+
+// Real listeners and the SDK's own exchange transport: a stub follows nothing.
+static void t_exchange_redirect_refused(void) {
+  struct { int status; int away; } cases[] = { {307, 1}, {308, 1}, {302, 1}, {307, 0} };
+  char labels[4][1024];
+  int clean[4];
+  int refused = 0;
+  int followed = 0;
+  int ncases = (int)(sizeof(cases) / sizeof(cases[0]));
+
+  for (int i = 0; i < ncases; i++) {
+    int port = 0;
+    int otherport = 0;
+    int fd = redirect_listener(&port);
+    int otherfd = redirect_listener(&otherport);
+    int elsewhere[2];
+    int beyond[2];
+    CHECK(0 <= fd && 0 <= otherfd && 0 == pipe(elsewhere) && 0 == pipe(beyond),
+          "redirect: loopback listeners");
+
+    char moved[256];
+    char location[128];
+    if (cases[i].away) {
+      snprintf(location, sizeof(location), "http://127.0.0.1:%d/api/auth/token", otherport);
+    } else {
+      snprintf(location, sizeof(location), "/api/moved/token");
+    }
+    snprintf(moved, sizeof(moved), "HTTP/1.1 %d Moved\r\nLocation: %s\r\n"
+      "Content-Length: 0\r\nConnection: close\r\n\r\n", cases[i].status, location);
+
+    pid_t origin = redirect_serve(fd, beyond[1], moved);
+    pid_t other = redirect_serve(otherfd, elsewhere[1], NULL);
+    close(fd);
+    close(otherfd);
+    close(beyond[1]);
+    close(elsewhere[1]);
+
+    char base[64];
+    snprintf(base, sizeof(base), "http://127.0.0.1:%d/api", port);
+    ProjectNameSDK* sdk = projectname_sdk_new(cmap(2,
+      "base", v_str(base),
+      "feature", cmap(1, "secrets", cmap(3,
+        "active", v_bool(true),
+        "name", v_str("refresh_token"),
+        "exchange", cmap(2, "active", v_bool(true), "refresh", v_str("REFRESH01"))))));
+    voxgig_value* res = direct(sdk);
+
+    kill(origin, SIGTERM);
+    kill(other, SIGTERM);
+    waitpid(origin, NULL, 0);
+    waitpid(other, NULL, 0);
+
+    char away[256];
+    char again[256];
+    int reached = redirect_lines(elsewhere[0], away, sizeof(away));
+    int after = redirect_lines(beyond[0], again, sizeof(again));
+    close(elsewhere[0]);
+    close(beyond[0]);
+    followed += reached + after;
+
+    char want[160];
+    snprintf(want, sizeof(want), "token exchange failed: %d from %s/auth/token",
+             cases[i].status, base);
+    int failed = !res_ok(res) && NULL != strstr(res_err(res), want);
+    refused += failed;
+
+    snprintf(labels[i], sizeof(labels[i]),
+             "redirect %d to %s: other origin got [%s], origin got [%s], ended: %s",
+             cases[i].status, location, away, again, res_err(res));
+    clean[i] = failed && 0 == reached && 0 == after;
+  }
+
+  printf("secrets: exchange refused %d redirect(s), %d followed\n", refused, followed);
+  for (int i = 0; i < ncases; i++) CHECK(clean[i], labels[i]);
+  CHECK_INT_EQ(refused, ncases, "redirect: every case is a failed exchange");
+  CHECK_INT_EQ(followed, 0, "redirect: nothing followed a refused exchange");
+}
+
+#else
+
+static void t_exchange_redirect_refused(void) {
+  printf("secrets: redirect skipped, this platform has no POSIX sockets\n");
+}
+
+#endif
+
 int main(void) {
   // Read from the config, never from a probe: an SDK whose config declares no
   // auth places no credential, and these tests assert on the one it places.
@@ -816,6 +1004,7 @@ int main(void) {
   RUN(t_exchange_auth_null_suppresses);
   RUN(t_exchange_off_leaves_feature_as_before);
   RUN(t_exchange_test_mode_buys_nothing);
+  RUN(t_exchange_redirect_refused);
 
   // The generator's runtime lane reads this line: a suite that RAN fewer
   // cases than it declares was trimmed, not passed.

@@ -688,7 +688,9 @@ let () =
       check "POSTed to base + exchange.path"
         ((match getp tc "url" with Str u -> u | _ -> "") = "http://secrets.test/api/auth/token");
       check "the body is JSON-marshalled with the refresh token"
-        (getp (body_of tc) "refresh_token" = Str "R1"));
+        (getp (body_of tc) "refresh_token" = Str "R1");
+      check "the exchange follows no redirect"
+        (getp (getp tc "fetchdef") "redirect" = Str "manual"));
 
   test "exchange.body_is_marshalled_not_concatenated" (fun () ->
       let (r, fetch) = recorder () in
@@ -770,6 +772,144 @@ let () =
       check ("a named refusal: " ^ msg)
         (contains msg "secrets: the token exchange has no HTTP transport"
          || contains msg "sekreto: cannot reach"));
+
+  (* Real listeners and the bundled transport: a stub follows nothing. The
+   * listeners are a forked child, which reports each request on a pipe. *)
+  test "exchange.a_redirect_answering_the_exchange_is_a_failure_and_nothing_follows_it" (fun () ->
+      let index_of (hay : string) (needle : string) : int option =
+        let lh = String.length hay and ln = String.length needle in
+        let rec go i = if i + ln > lh then None
+          else if String.sub hay i ln = needle then Some i else go (i + 1) in
+        go 0 in
+      let read_request (c : Unix.file_descr) : string * string * string =
+        let buf = Buffer.create 512 and chunk = Bytes.create 4096 in
+        let more () =
+          let n = Unix.read c chunk 0 4096 in
+          Buffer.add_subbytes buf chunk 0 n;
+          n > 0 in
+        let rec head () = match index_of (Buffer.contents buf) "\r\n\r\n" with
+          | Some i -> i
+          | None -> if more () then head () else Buffer.length buf in
+        let i = head () in
+        let lines = List.map String.trim
+            (String.split_on_char '\n' (String.sub (Buffer.contents buf) 0 i)) in
+        let (meth, path) = match String.split_on_char ' ' (List.hd lines) with
+          | m :: p :: _ -> (m, p) | _ -> ("", "") in
+        let length = List.fold_left (fun acc l -> match String.index_opt l ':' with
+            | Some k when String.lowercase_ascii (String.sub l 0 k) = "content-length" ->
+              int_of_string (String.trim (String.sub l (k + 1) (String.length l - k - 1)))
+            | _ -> acc) 0 lines in
+        let rec rest () = if Buffer.length buf - (i + 4) < length && more () then rest () in
+        rest ();
+        let all = Buffer.contents buf in
+        let start = min (i + 4) (String.length all) in
+        (meth, path, String.sub all start (min length (String.length all - start))) in
+      let bind () =
+        let s = Unix.socket Unix.PF_INET Unix.SOCK_STREAM 0 in
+        Unix.setsockopt s Unix.SO_REUSEADDR true;
+        Unix.bind s (Unix.ADDR_INET (Unix.inet_addr_loopback, 0));
+        Unix.listen s 8;
+        (s, match Unix.getsockname s with Unix.ADDR_INET (_, p) -> p | _ -> 0) in
+      let serve origin other wr status location =
+        let rec loop () =
+          match Unix.select [origin; other] [] [] 20. with
+          | ([], _, _) -> ()
+          | (s :: _, _, _) ->
+            let (c, _) = Unix.accept s in
+            let where = if s = origin then "origin" else "other" in
+            let (meth, path, body) = read_request c in
+            if path = "/stop" then Unix.close c
+            else begin
+              let line = String.concat "\t" [where; meth; path; body] ^ "\n" in
+              ignore (Unix.write_substring wr line 0 (String.length line));
+              let (code, moved, answer) =
+                if where = "origin" && path = "/api/auth/token" then
+                  (status, "Location: " ^ location ^ "\r\n", "")
+                else if where = "origin" then (200, "", "{\"access_token\":\"MOVED01\"}")
+                else (200, "", "{\"access_token\":\"ELSEWHERE01\"}") in
+              let resp = Printf.sprintf
+                  "HTTP/1.1 %d X\r\n%sContent-Type: application/json\r\nContent-Length: %d\r\nConnection: close\r\n\r\n%s"
+                  code moved (String.length answer) answer in
+              ignore (Unix.write_substring c resp 0 (String.length resp));
+              Unix.close c;
+              loop ()
+            end in
+        loop () in
+      let run_case (status, location) =
+        let (origin, oport) = bind () in
+        let (other, xport) = bind () in
+        let location = if "" = location
+          then "http://127.0.0.1:" ^ string_of_int xport ^ "/api/auth/token" else location in
+        let (rd, wr) = Unix.pipe () in
+        match Unix.fork () with
+        | 0 ->
+          Unix.close rd;
+          (try serve origin other wr status location with _ -> ());
+          Unix._exit 0
+        | pid ->
+          Unix.close wr;
+          Unix.close origin;
+          Unix.close other;
+          let base = "http://127.0.0.1:" ^ string_of_int oport ^ "/api" in
+          let client = Sdk_client.make (jo [
+              ("base", Str base);
+              ("feature", jo [("secrets", jo [("active", Bool true); ("name", Str "refresh_token");
+                                              xchg [("refresh", Str "REFRESH01")]])])]) in
+          let message = res_err (direct client) in
+          let stop = Unix.socket Unix.PF_INET Unix.SOCK_STREAM 0 in
+          (try
+             Unix.connect stop (Unix.ADDR_INET (Unix.inet_addr_loopback, oport));
+             ignore (Unix.write_substring stop "GET /stop HTTP/1.0\r\n\r\n" 0 22)
+           with _ -> ());
+          let seen = Buffer.create 256 and chunk = Bytes.create 4096 in
+          let rec drain () =
+            let n = Unix.read rd chunk 0 4096 in
+            if n > 0 then (Buffer.add_subbytes seen chunk 0 n; drain ()) in
+          drain ();
+          Unix.close rd;
+          Unix.close stop;
+          ignore (Unix.waitpid [] pid);
+          let followed = List.filter (fun line ->
+              match String.split_on_char '\t' line with
+              | where :: _ :: path :: _ -> where = "other" || path <> "/api/auth/token"
+              | _ -> false) (String.split_on_char '\n' (Buffer.contents seen)) in
+          let want = "token exchange failed: " ^ string_of_int status ^ " from " ^ base ^ "/auth/token" in
+          (string_of_int status ^ " to " ^ location, contains message want, message, followed) in
+      (* Built without an HTTP client, the exchange rides system.fetch alone. *)
+      let stub_case (status, location) =
+        let (r, fetch) = recorder () in
+        let location = if "" = location then "http://elsewhere.test/api/auth/token" else location in
+        r.reply <- Some (fun _ _ _ ->
+            jo [("status", vint_of status); ("statusText", Str "X");
+                ("headers", jo [("location", Str location)]); ("body", Str "");
+                ("json", json_thunk Noval)]);
+        let base = "http://secrets.test/api" in
+        let client = live ~base fetch [("name", Str "refresh_token"); xchg [("refresh", Str "REFRESH01")]] in
+        let message = res_err (direct client) in
+        let want = "token exchange failed: " ^ string_of_int status ^ " from " ^ base ^ "/auth/token" in
+        let calls = !(r.calls) in
+        let first_ok = match calls with
+          | c :: _ -> getp c "url" = Str (base ^ "/auth/token")
+                      && getp (getp c "fetchdef") "redirect" = Str "manual"
+          | [] -> false in
+        let followed = match calls with
+          | _ :: more -> List.map (fun c -> stringify (getp c "url")) more
+          | [] -> [] in
+        (string_of_int status ^ " to " ^ location, first_ok && contains message want, message, followed) in
+      let cases = [(307, ""); (308, ""); (302, ""); (307, "/api/moved/token")] in
+      let results = List.map run_case cases in
+      let results =
+        if List.exists (fun (_, _, m, _) -> contains m "has no HTTP transport") results then begin
+          print_endline "secrets: no HTTP client compiled; the redirect cases ride system.fetch";
+          List.map stub_case cases
+        end else results in
+      let refused = List.length (List.filter (fun (_, r, _, _) -> r) results) in
+      let followed = List.fold_left (fun n (_, _, _, f) -> n + List.length f) 0 results in
+      Printf.printf "secrets: exchange refused %d redirect(s), %d followed\n" refused followed;
+      List.iter (fun (label, r, message, f) ->
+          check (label ^ ": followed by " ^ String.concat "; " f) ([] = f);
+          check (label ^ ": not a failed exchange: " ^ message) r) results;
+      check_int "redirects refused" refused 4);
 
   test "exchange.test_mode_buys_nothing" (fun () ->
       (* A non-live client: the credential becomes the deterministic

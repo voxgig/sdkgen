@@ -74,6 +74,7 @@ class SecretsTest {
     val auth: String,
     val hasAuth: Boolean,
     val body: String,
+    val redirect: Any? = null,
   )
 
   class Wire {
@@ -115,7 +116,7 @@ class SecretsTest {
           }
         }
         val body = fetchdef["body"]
-        recorded.add(Call(url, auth, hasAuth, if (body is String) body else ""))
+        recorded.add(Call(url, auth, hasAuth, if (body is String) body else "", fetchdef["redirect"]))
 
         if (url.endsWith("/$tokenpath")) {
           if (issued >= tokenok) {
@@ -1003,6 +1004,8 @@ class SecretsTest {
     assertEquals(1, w.token().size, "expected exactly one token purchase")
     assertEquals("REFRESH01", bodyField(w.token()[0].body, "refresh_token"),
       "the refresh token is sent in the request field")
+    assertEquals("manual", w.token()[0].redirect,
+      "the exchange must ask its transport to follow no redirect")
     assertEquals(1, w.api().size)
     credentialIs(w.api()[0].auth, "ACCESS01")
   }
@@ -1235,5 +1238,98 @@ class SecretsTest {
     assertEquals(0, w.calls().size, "test mode must not do IO: " + w.wire())
     // A deterministic placeholder, so offline suites need no configuration.
     assertEquals("test-access_token", secretsFeatureOf(client)!!.credential())
+  }
+
+  // Real listeners and the SDK's raw HTTP path: a stub follows nothing.
+  @Test
+  fun aRedirectAnsweringTheExchangeIsAFailureAndNothingFollowsIt() {
+    val elsewhere = java.util.Collections.synchronizedList(mutableListOf<String>())
+    val followed = java.util.Collections.synchronizedList(mutableListOf<String>())
+    var answer: Pair<Int, String> = 307 to ""
+
+    val other = com.sun.net.httpserver.HttpServer.create(
+      java.net.InetSocketAddress("127.0.0.1", 0), 0)
+    other.createContext("/") { ex ->
+      val body = String(ex.requestBody.readAllBytes(), Charsets.UTF_8)
+      elsewhere.add(ex.requestMethod + " " + ex.requestURI.rawPath + " " + body)
+      val out = "{\"access_token\":\"ELSEWHERE01\"}".toByteArray()
+      ex.responseHeaders.set("Content-Type", "application/json")
+      ex.sendResponseHeaders(200, out.size.toLong())
+      ex.responseBody.write(out)
+      ex.close()
+    }
+    val origin = com.sun.net.httpserver.HttpServer.create(
+      java.net.InetSocketAddress("127.0.0.1", 0), 0)
+    origin.createContext("/") { ex ->
+      ex.requestBody.readAllBytes()
+      val path = ex.requestURI.rawPath
+      if ("/api/auth/token" == path) {
+        ex.responseHeaders.set("Location", answer.second)
+        ex.sendResponseHeaders(answer.first, -1)
+        ex.close()
+      } else {
+        followed.add(ex.requestMethod + " " + path)
+        val out = "{\"access_token\":\"MOVED01\"}".toByteArray()
+        ex.responseHeaders.set("Content-Type", "application/json")
+        ex.sendResponseHeaders(200, out.size.toLong())
+        ex.responseBody.write(out)
+        ex.close()
+      }
+    }
+    other.start()
+    origin.start()
+
+    val base = "http://127.0.0.1:" + origin.address.port + "/api"
+    val away = "http://127.0.0.1:" + other.address.port + "/api/auth/token"
+
+    try {
+      val answers = listOf(307 to away, 308 to away, 302 to away, 307 to "/api/moved/token")
+      val allowed = mutableListOf<String>()
+      var refused = 0
+
+      for (a in answers) {
+        answer = a
+        val client = withSecrets { extend ->
+          val opts = map(
+            "base" to base,
+            "allow" to map("op" to "direct,graphql"),
+            "feature" to map("secrets" to map(
+              "active" to true,
+              "name" to "refresh_token",
+              "exchange" to map("active" to true, "refresh" to "REFRESH01"),
+            )),
+          )
+          if (extend) {
+            opts["extend"] = mutableListOf<Any?>(SecretsFeature())
+          }
+          ProjectNameSDK(opts)
+        }
+
+        val message = try {
+          val res = client.direct(map("path" to "/thing"))
+          val err = res["err"] as? Throwable
+          if (null != err) messageOf(err) else res.toString()
+        } catch (e: RuntimeException) {
+          messageOf(e)
+        }
+
+        if (message.contains("token exchange failed: " + a.first + " from " + base + "/auth/token")) {
+          refused++
+        } else {
+          allowed.add("" + a.first + " to " + a.second + ": " + message)
+        }
+      }
+
+      println("secrets: exchange refused " + refused + " redirect(s), " +
+        (elsewhere.size + followed.size) + " followed")
+
+      assertEquals(listOf<String>(), elsewhere.toList(), "the exchange reached another origin")
+      assertEquals(listOf<String>(), followed.toList(), "a request followed a refused exchange")
+      assertEquals(listOf<String>(), allowed, "a redirect was not a failed exchange")
+      assertEquals(answers.size, refused)
+    } finally {
+      origin.stop(0)
+      other.stop(0)
+    }
   }
 }

@@ -76,6 +76,7 @@ class SecretsFeatureTest < Minitest::Test
           "auth" => headers[CREDHEADER],
           "has" => headers.key?(CREDHEADER),
           "body" => fetchdef["body"],
+          "redirect" => fetchdef["redirect"],
         }
 
         if _istoken(fullurl)
@@ -767,6 +768,8 @@ class SecretsFeatureTest < Minitest::Test
     assert_equal 2, wire.token.length,
       "expected the initial purchase plus one rebuy, got #{wire.token.length}"
     assert_includes wire.token[0]["body"].to_s, "REFRESH01"
+    assert_equal "manual", wire.token[0]["redirect"],
+      "the exchange must ask system.fetch to follow no redirect"
 
     api = wire.api
     assert_equal 2, api.length, "expected the request to be retried exactly once"
@@ -920,6 +923,112 @@ class SecretsFeatureTest < Minitest::Test
     assert_equal tricky, server.refresh,
       "the refresh token must arrive as its literal value (marshalled, not concatenated)"
     assert_credential(server.auth, "RAWTOK01")
+  end
+
+  # Real listeners and the raw fallback: a stub follows nothing.
+  def test_a_redirect_answering_the_exchange_is_a_failure_and_nothing_follows_it
+    elsewhere = []
+    followed = []
+    answer = [307, ""]
+    lock = Mutex.new
+
+    listen = lambda do |&handle|
+      server = TCPServer.new("127.0.0.1", 0)
+      thread = Thread.new do
+        loop do
+          socket = begin
+            server.accept
+          rescue StandardError
+            break
+          end
+          begin
+            line = socket.gets.to_s.split(" ")
+            length = 0
+            while (h = socket.gets) && !h.chomp.empty?
+              k, v = h.split(":", 2)
+              length = v.to_i if "content-length" == k.to_s.downcase.strip
+            end
+            body = 0 < length ? socket.read(length) : ""
+            socket.print(handle.call(line[0].to_s, line[1].to_s, body))
+          ensure
+            socket.close rescue nil
+          end
+        end
+      end
+      [server, thread]
+    end
+
+    ok = lambda do |payload|
+      "HTTP/1.1 200 OK\r\ncontent-type: application/json\r\n" \
+        "content-length: #{payload.bytesize}\r\nconnection: close\r\n\r\n#{payload}"
+    end
+
+    other, otherthread = listen.call do |method, path, body|
+      lock.synchronize { elsewhere << { "method" => method, "path" => path, "body" => body } }
+      ok.call('{"access_token":"ELSEWHERE01"}')
+    end
+    origin, originthread = listen.call do |method, path, _body|
+      if "/api/auth/token" == path
+        status, location = lock.synchronize { answer }
+        "HTTP/1.1 #{status} Redirect\r\nlocation: #{location}\r\n" \
+          "content-length: 0\r\nconnection: close\r\n\r\n"
+      else
+        lock.synchronize { followed << "#{method} #{path}" }
+        ok.call('{"access_token":"MOVED01"}')
+      end
+    end
+
+    base = "http://127.0.0.1:#{origin.addr[1]}/api"
+    away = "http://127.0.0.1:#{other.addr[1]}/api/auth/token"
+
+    begin
+      answers = [[307, away], [308, away], [302, away], [307, "/api/moved/token"]]
+      allowed = []
+      refused = 0
+
+      answers.each do |a|
+        lock.synchronize { answer = a }
+        client = with_secrets do |extend_it|
+          opts = {
+            "base" => base,
+            "allow" => { "op" => "direct" },
+            "feature" => { "secrets" => {
+              "active" => true,
+              "name" => "refresh_token",
+              "exchange" => { "active" => true, "refresh" => "REFRESH01" },
+            } },
+          }
+          opts["extend"] = [ProjectNameSecretsFeature.new] if extend_it
+          ProjectNameSDK.new(opts)
+        end
+
+        message = begin
+          res = client.direct({ "path" => "/probe" })
+          res.is_a?(Hash) && !res["err"].nil? ? res["err"].to_s : res.inspect
+        rescue StandardError => e
+          e.message
+        end
+
+        if message.include?("token exchange failed: #{a[0]} from #{base}/auth/token")
+          refused += 1
+        else
+          allowed << "#{a[0]} to #{a[1]}: #{message}"
+        end
+      end
+
+      puts "secrets: exchange refused #{refused} redirect(s), " \
+        "#{elsewhere.length + followed.length} followed"
+
+      assert_equal [], elsewhere, "the exchange reached another origin"
+      assert_equal [], followed, "a request followed a refused exchange"
+      assert_equal [], allowed, "a redirect was not a failed exchange"
+      assert_equal answers.length, refused
+    ensure
+      origin.close rescue nil
+      other.close rescue nil
+      originthread.join
+      otherthread.join
+    end
   end
 
   # -------------------------------------------------------------------

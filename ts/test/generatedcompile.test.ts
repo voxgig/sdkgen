@@ -1890,6 +1890,7 @@ describe('auth null', () => {
       .filter((l: string) => /^\s*not ok /.test(l))
     ok(probe.ok, 'js secrets suite failed:\n' + failed.join('\n') +
       '\n' + tail(probe.out))
+    exchangeRefused('js', probe.out)
 
     // A suite that skips exits zero too, so with auth on none may.
     ok(!/# SKIP/.test(probe.out), 'js: secrets tests were SKIPPED with auth on:\n' +
@@ -1898,34 +1899,6 @@ describe('auth null', () => {
     ok(null != passed && 10 < Number(passed[1]),
       'js: the secrets suite passed too few tests - it was trimmed, not run:\n' +
       tail(probe.out))
-  })
-
-
-  test('go: the secrets feature runs with the feature active', async (t) => {
-    const go = toolchain('go')
-    if (null == go) return t.skip('no go toolchain here (go)')
-
-    const sdkroot = Path.join(tmp, 'go-secrets')
-    await generateTo('go', sdkroot,
-      SECRETS_MODEL,
-      ['test', 'log', 'secrets'])
-
-    ok(Fs.existsSync(Path.join(sdkroot, 'test', 'feature', 'secrets', 'secrets_feature_test.go')),
-      'go: the gated secrets suite was not generated')
-
-    const probe = run(go, ['test', './test/feature/secrets/', '-v', '-count=1'], sdkroot)
-    if (probe.timedOut) return t.skip('go: ' + probe.out)
-
-    const failed = probe.out.split(/\r?\n/)
-      .filter((l: string) => /--- FAIL: /.test(l))
-    ok(probe.ok, 'go secrets suite failed:\n' + failed.join('\n') +
-      '\n' + tail(probe.out))
-
-    ok(!/--- SKIP: /.test(probe.out), 'go: secrets tests were SKIPPED with auth on:\n' +
-      tail(probe.out))
-    const passed = (probe.out.match(/^--- PASS: TestSecrets\w+ /gm) || []).length
-    ok(5 < passed, 'go: the secrets suite passed only ' + passed +
-      ' tests - it was trimmed, not run:\n' + tail(probe.out))
   })
 
 
@@ -2013,6 +1986,12 @@ describe('auth null', () => {
       ' tests - it was trimmed, not run:\n' + tail(out))
     t.diagnostic('lua: secrets suite ran ' + successes + ' tests, ' + failures +
       ' failures, ' + errors + ' errors (vault group, native helper built)')
+
+    // The redirect case listens through LuaSocket, and is pending without it.
+    if (/^Pending -> [^\n]*\n[^\n]*a redirect answering the exchange/m.test(out)) {
+      return t.skip('lua: the redirect case is pending: no LuaSocket here for its listeners')
+    }
+    exchangeRefused('lua', out)
   })
 
 
@@ -2061,6 +2040,7 @@ describe('auth null', () => {
       .filter((l: string) => /^\s*\d+\) (Failure|Error):/.test(l))
     ok(probe.ok, 'rb secrets suite failed:\n' + failed.join('\n') +
       '\n' + tail(probe.out))
+    exchangeRefused('rb', probe.out)
 
     // A minitest file that defines no test method EXITS ZERO. Without this
     // the lane would go green on a suite `target add` had trimmed to
@@ -2158,6 +2138,14 @@ abort("FAIL: a multi-segment envelope was not synthesised - #{n} of 3 records") 
 
     const failed = out.split('\n').filter((l: string) => /^FAIL \[/.test(l))
     ok(probe.ok, 'c secrets suite failed:\n' + failed.join('\n') + '\n' + tail(out))
+    // The case's listeners are POSIX sockets; elsewhere it says it skipped.
+    if ('win32' === process.platform) {
+      ok(/^secrets: redirect skipped, /m.test(out),
+        'c: the redirect case neither ran nor said it skipped:\n' + tail(out))
+    }
+    else {
+      exchangeRefused('c', out)
+    }
 
     const ran = /^secrets: ran (\d+) case\(s\)$/m.exec(out)
     ok(null != ran, 'c: the suite printed no case count:\n' + tail(out))
@@ -2559,6 +2547,7 @@ int main(void) {
     const failed = lines.filter((l: string) => /^not ok /.test(l))
     ok(probe.ok, 'perl secrets suite failed:\n' + failed.join('\n') +
       '\n' + tail(probe.out))
+    exchangeRefused('perl', probe.out)
 
     const plan = lines
       .map((l: string) => /^1\.\.(\d+)$/.exec(l))
@@ -2622,6 +2611,7 @@ int main(void) {
       .filter((l: string) => /^error: '.*' failed/.test(l))
     ok(probe.ok, 'zig secrets suite failed:\n' + failed.join('\n') +
       '\n' + tail(out))
+    exchangeRefused('zig', out)
 
     const tally = /(\d+)\/(\d+) tests passed( \(([^)]*)\))?/.exec(out)
     ok(null != tally,
@@ -2686,6 +2676,7 @@ int main(void) {
       /^Test Case '.*' failed/.test(l) || /error: /.test(l))
     ok(probe.ok, 'swift secrets suite failed:\n' + failed.join('\n') +
       '\n' + tail(probe.out))
+    exchangeRefused('swift', probe.out)
 
     // POSITIVE evidence the tests RAN. XCTest prints `Executed N tests,
     // with F failures (U unexpected)` per suite and then for the run; the
@@ -2808,10 +2799,11 @@ func TestTypesProbe(t *testing.T) {
     // `dotnet test` builds the library through the project reference, so
     // a broken vendored file fails HERE, naming the file - which is also
     // why the build is not run separately first. `-v quiet` silences the
-    // console logger as well, so the logger asks for failure messages back.
+    // console logger as well; at detailed verbosity it shows a passing
+    // test's output, which the exchange line is.
     const probe = run(dotnet,
       ['test', '--nologo', '-v', 'quiet',
-        '--logger', 'console;verbosity=minimal',
+        '--logger', 'console;verbosity=detailed',
         '--filter', 'FullyQualifiedName~SecretsFeatureTest',
         Path.join('test', testproj[0])],
       sdkroot)
@@ -2823,15 +2815,18 @@ func TestTypesProbe(t *testing.T) {
     ok(probe.ok, 'csharp secrets suite failed:\n' + dotnetFailures(probe.out) +
       '\n' + tail(probe.out))
 
-    const summary = /Passed!\s+-\s+Failed:\s+(\d+),\s+Passed:\s+(\d+),\s+Skipped:\s+(\d+),\s+Total:\s+(\d+)/
-      .exec(probe.out)
-    ok(null != summary, 'csharp: dotnet test printed no Passed! summary:\n' + tail(probe.out))
-    const [, nfailed, npassed, nskipped] = (summary as RegExpExecArray).map(Number)
+    // The detailed summary names a count only when it is not zero.
+    ok(/^Test Run Successful\.\s*$/m.test(probe.out),
+      'csharp: dotnet test printed no summary:\n' + tail(probe.out))
+    const count = (label: string) => Number(
+      (new RegExp('^\\s*' + label + ':\\s+(\\d+)\\s*$', 'm').exec(probe.out) || ['', '0'])[1])
+    const [nfailed, npassed, nskipped] = [count('Failed'), count('Passed'), count('Skipped')]
     strictEqual(nfailed, 0, 'csharp: the secrets suite reported failures:\n' + tail(probe.out))
     strictEqual(nskipped, 0, 'csharp: the secrets suite skipped cases:\n' + tail(probe.out))
     ok(10 < npassed,
       'csharp: the secrets suite ran only ' + npassed +
       ' tests - it was trimmed, not run:\n' + tail(probe.out))
+    exchangeRefused('csharp', probe.out)
   })
 
 
@@ -2878,6 +2873,7 @@ func TestTypesProbe(t *testing.T) {
 
     const failed = out.split('\n').filter((l: string) => /^\s*FAIL \[/.test(l))
     ok(probe.ok, 'cpp secrets suite failed:\n' + failed.join('\n') + '\n' + tail(out))
+    exchangeRefused('cpp', out)
 
     // POSITIVE evidence the tests RAN: the case count the suite prints from
     // its own RUN macro, and testlib's summary. A suite that `target add`
@@ -3222,6 +3218,7 @@ echo get_class($client->ContactsField(null)), ' ',
       .filter((l: string) => /^FAIL /.test(l))
     ok(probe.ok, 'clojure secrets suite failed:\n' + failed.join('\n') +
       '\n' + tail(probe.out))
+    exchangeRefused('clojure', probe.out)
 
     const ran = /^feature\.secrets: ran (\d+) check\(s\)$/m.exec(probe.out)
     ok(null != ran,
@@ -3286,6 +3283,7 @@ echo get_class($client->ContactsField(null)), ' ',
 
     const failed = out.split('\n').filter((l: string) => /^FAIL /.test(l))
     ok(probe.ok, 'ocaml secrets suite failed:\n' + failed.join('\n') + '\n' + tail(out))
+    exchangeRefused('ocaml', out)
 
     const ran = /^feature\.secrets: ran (\d+) check\(s\)$/m.exec(out)
     ok(null != ran,
@@ -3370,6 +3368,21 @@ const UNUSABLE = [
   /Can't locate builtin\.pm/,
   /requires perl 5\.36 or later/,
 ]
+
+
+// The shipped secrets suite answers its token exchange with redirects and
+// says how many it refused. Exit zero is not enough: a case that skipped
+// passes in every one of these frameworks.
+const EXCHANGE_LINE = /secrets: exchange refused (\d+) redirect\(s\), (\d+) followed/
+
+function exchangeRefused(target: string, out: string) {
+  const line = EXCHANGE_LINE.exec(out)
+  ok(null != line, target + ': the secrets suite did not say what its token exchange ' +
+    'did with a redirect:\n' + tail(out))
+  ok(0 < Number(line![1]), target + ': the token exchange refused no redirect')
+  strictEqual(Number(line![2]), 0,
+    target + ': a redirect that answered the token exchange was followed')
+}
 
 
 function tail(out: string, lines = 40): string {
@@ -4603,6 +4616,7 @@ describe('the elixir secrets feature runs from a generated SDK', () => {
       ' tests - it was trimmed, not run:\n' + tail(out))
     strictEqual(counted!.failed, 0,
       'elixir: ' + counted!.failed + ' secrets tests failed:\n' + tail(out))
+    exchangeRefused('elixir', out)
     ok(!/\b[1-9]\d* skipped\b/.test(out),
       'elixir: secrets tests were SKIPPED with auth on:\n' + tail(out))
 
@@ -6458,9 +6472,6 @@ const CLEAN_CONTENT_LINE = /clean: content swept (\d+) surface\(s\), (\d+) leak\
 // The third: the same search, for a response of bytes.
 const CLEAN_RESPONSE_LINE = /clean: response swept (\d+) surface\(s\), (\d+) leak\(s\)/
 
-// The targets whose sweep answers an operation with bytes.
-const CLEAN_RESPONSE_TARGETS = ['ts', 'js']
-
 // An operation that sends a raw body the model marks binary, which no
 // fixture entity has and the content sweep needs: an action point, as
 // apidef models a file route beneath an item.
@@ -6974,15 +6985,11 @@ describe('the canary sweep runs from a generated SDK', () => {
             'the ' + lane.target + ' sweep found a body of bytes that left the SDK')
 
           const answered = ran.out.match(CLEAN_RESPONSE_LINE)
-          if (CLEAN_RESPONSE_TARGETS.includes(lane.target)) {
-            ok(null != answered, 'the ' + lane.target + ' sweep did not report a search ' +
-              'for a response of bytes:\n' + tail(ran.out))
-          }
-          if (null != answered) {
-            ok(0 < Number(answered[1]), 'the ' + lane.target + ' sweep answered with no bytes')
-            strictEqual(Number(answered[2]), 0,
-              'the ' + lane.target + ' sweep found a response of bytes that left the SDK')
-          }
+          ok(null != answered, 'the ' + lane.target + ' sweep did not report a search ' +
+            'for a response of bytes:\n' + tail(ran.out))
+          ok(0 < Number(answered![1]), 'the ' + lane.target + ' sweep answered with no bytes')
+          strictEqual(Number(answered![2]), 0,
+            'the ' + lane.target + ' sweep found a response of bytes that left the SDK')
 
           const noise = null == lane.quiet ? null : ran.out.match(lane.quiet)
           strictEqual(noise?.[0], undefined, 'the ' + lane.target + ' sweep run printed noise')
@@ -8385,6 +8392,149 @@ describe('the feature suite runs from a generated SDK', () => {
       }
       strictEqual(tapRan(ran.out, 'abort'), FEATURE_SUITE_ABORT_TESTS,
         lane.target + ': not every abort test ran in the generated feature suite:\n' + tail(ran.out))
+    })
+  }
+})
+
+
+// The secrets suite of each target that has no secrets lane of its own above.
+type SecretsLane = {
+  target: string,
+  runner: string,
+  command: () => { bin: string, args: string[], env?: NodeJS.ProcessEnv } | null,
+  // Why the redirect case did not run, where the suite itself skipped it.
+  unrun?: (out: string) => string | null,
+}
+
+const SECRETS_LANES: SecretsLane[] = [
+  {
+    target: 'ts',
+    runner: 'test/feature/secrets/Secrets.test.ts',
+    command: () => ({
+      bin: process.execPath,
+      args: ['--test', '--test-reporter=tap',
+        Path.join('dist-test', 'feature', 'secrets', 'Secrets.test.js')],
+      env: nestedTestEnv(),
+    }),
+  },
+  {
+    target: 'go',
+    runner: 'test/feature/secrets/secrets_feature_test.go',
+    command: () => {
+      const go = toolchain('go')
+      return null == go ? null
+        : { bin: go, args: ['test', './test/feature/secrets/', '-v', '-count=1'] }
+    },
+  },
+  {
+    target: 'py',
+    runner: 'test/feature/secrets/test_secrets.py',
+    command: () => pytest(['test/feature/secrets/test_secrets.py', '-q', '-s']),
+  },
+  {
+    target: 'php',
+    runner: 'test/feature/secrets/SecretsTest.php',
+    command: () => phpunitViaComposer(['test/feature/secrets/SecretsTest.php']),
+    // The case's listeners are child `php -S` processes. On windows the
+    // suite's stub starts none, and PHPUnit reports its cases skipped.
+    unrun: (out) => 'win32' === process.platform &&
+      /^OK, but some tests were skipped!/m.test(out)
+      ? 'PHPUnit reported the redirect case skipped: its listeners did not start here'
+      : null,
+  },
+  {
+    target: 'java',
+    runner: 'test/feature/secrets/SecretsFeatureTest.java',
+    command: () => {
+      const mvn = toolchain('mvn')
+      if (null == mvn || null == toolchain('java')) return null
+      return {
+        bin: mvn,
+        args: ['-q', '-B', 'test', '-Dtest=SecretsFeatureTest', '-DfailIfNoSpecifiedTests=false'],
+      }
+    },
+  },
+  {
+    target: 'kotlin',
+    runner: 'test/feature/secrets/SecretsTest.kt',
+    command: () => {
+      const gradle = toolchain('gradle')
+      return null == gradle ? null
+        : { bin: gradle, args: ['--console=plain', 'test', '--tests', '*SecretsTest*'] }
+    },
+  },
+  {
+    target: 'rust',
+    runner: 'tests/feature/secrets/main.rs',
+    // cargo hides a passing test's stdout; the exchange line must reach the lane.
+    command: () => {
+      const cargo = toolchain('cargo')
+      return null == cargo ? null
+        : { bin: cargo, args: ['test', '--test', 'secrets_feature', '--', '--nocapture'] }
+    },
+  },
+  {
+    target: 'scala',
+    runner: 'sdktest/feature/secrets/SecretsTestMain.scala',
+    command: () => {
+      const scalacli = toolchain('scala-cli')
+      return null == scalacli ? null
+        : { bin: scalacli, args: ['run', '.', '--main-class', 'SecretsTestMain'] }
+    },
+  },
+]
+
+
+describe('the secrets suite runs from a generated SDK', () => {
+
+  let tmp = ''
+
+  before(() => {
+    tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-secrets-'))
+  })
+
+  after(() => {
+    if ('' !== tmp) Fs.rmSync(tmp, { recursive: true, force: true })
+  })
+
+  for (const lane of SECRETS_LANES) {
+    test(lane.target + ': the token exchange follows no redirect', async (t) => {
+      const clean = CLEAN_LANES.find((l) => l.target === lane.target)!
+      const cmd = null == clean.command() ? null : lane.command()
+      if (null == cmd) {
+        return t.skip('no usable ' + lane.target + ' toolchain here (' + clean.needs + ')')
+      }
+
+      const sdkroot = Path.join(tmp, lane.target)
+      const files = await generateTo(lane.target, sdkroot, SECRETS_MODEL,
+        ['test', 'log', 'secrets'])
+      ok(null != files[lane.runner], lane.target + ': the secrets suite was not generated: ' +
+        'expected ' + lane.runner)
+
+      const notready = null == clean.prepare ? null : clean.prepare(sdkroot)
+      ok(null == notready, lane.target + ': ' + notready)
+
+      const ran = run(cmd.bin, cmd.args, sdkroot, cmd.env)
+
+      if (ran.unlaunchable) {
+        return t.skip(lane.target + ': the toolchain could not be started here: ' +
+          tail(ran.out, 3))
+      }
+
+      const gap = UNUSABLE.find((re) => re.test(ran.out))
+      if (null != gap && !ran.ok) {
+        return t.skip(lane.target + ': toolchain present but not usable (' +
+          gap.source + '):\n' + tail(ran.out))
+      }
+
+      ok(ran.ok, 'the generated ' + lane.target + ' secrets suite FAILED:\n' +
+        tail(ran.out, 60))
+
+      const unrun = null == lane.unrun ? null : lane.unrun(ran.out)
+      if (null != unrun) {
+        return t.skip(lane.target + ': ' + unrun)
+      }
+      exchangeRefused(lane.target, ran.out)
     })
   }
 })

@@ -186,7 +186,7 @@ Independent of any design here. H1 is documented; the others are not.
 | --- | --- | --- | --- |
 | H1 | A multipart or form body is sent as JSON | **read**; the generated reference states it | Phase 1 |
 | H2 | A failed upload copies its bytes into the thrown error. `makeError` sets `err.spec = clean(ctx, spec)`, and `clean` copies a `Uint8Array` body key by key and a `Buffer` through its `toJSON` | **reproduced, then fixed** (`p0-error-bytes`): `ts/test/cleanbinary.test.ts` against the shipped utilities, and the sweep of a generated SDK, which found the bytes in the error, the explain record, the serialised context and the log output | Phase 0 |
-| H3 | A binary response is handled differently per target: `response_content_type` in `ts` and `js`; a transport error in `py`, which decodes it as UTF-8 first; an empty body and no error in `swift`. `csharp`, `java`, `kotlin`, `scala` and `clojure` decode the bytes to text lossily before judging it | **read**, appendix B | Phase 0 |
+| H3 | A binary response is handled differently per target: `response_content_type` in `ts` and `js`; a transport error in `py`, which decodes it as UTF-8 first; an empty body and no error in `swift`. `csharp`, `java`, `kotlin`, `scala` and `clojure` decode the bytes to text lossily before judging it | **reproduced, then fixed** (`p0-binary-response`), in two parts. The error message quoted the first 160 characters of the body: a `binary` case on every target's probe showed it, and the preview is now written only for text. The response body also stayed on the context, so the serialised context and the log record carried it: the sweep's response canary showed that, and `clean` now describes it. The transports still read the body into text first; the codecs of Phase 1 replace that | Phase 0 |
 | H4 | `stream()` documents an upload body nothing sends | **read** `EntityBase.fragment.ts:134-139`; one writer and no reader in every target | Phase 0 |
 | H5 | `cache` would read a binary download as text | **read** `CacheFeature.ts:91-112` | Phase 0 |
 | H6 | No size bound on a response in the 15 other targets that ship a transport; hard caps of 10 MB in `rust` and 32 MiB in `c` | **read**, appendix B | Phase 1 |
@@ -196,6 +196,7 @@ Independent of any design here. H1 is documented; the others are not.
 | H10 | Basic flows exercise file routes as record routes (O4) | **ran** (the flows); the failure they cause not run | Phase 0 |
 | H11 | The SDK's own redirect loops drop three fixed header names on a hop to another origin (`authorization`, `cookie`, `proxy-authorization`). A credential the model places under another header name is not among them | **reproduced, then fixed** (`p0-redirect-credentials`): on Node's `fetch`, `x-api-key` and `private-token` reached another origin and a 307 sent a `PUT` body on, and each target's own redirect test found the same against a second listener. Fifteen targets now follow in their own loop and `go` and `py` in their client's hook, in every target that ships a transport | Phase 0 |
 | H12 | `rbac` cannot grant a record read without granting every action on `load` | **read** `RbacFeature.ts`, `_required` | Phase 2 |
+| H13 | The `secrets` feature's token exchange makes its own request, outside the transport's redirect rule. Where its HTTP client follows a redirect, the refresh token goes where the token endpoint's answer points | **reproduced, then fixed** (`p0-exchange-redirect`): against two local listeners, a 307 or 308 sent the refresh token to another origin in `ts`, `js`, `go`, `elixir` and `clojure`. A 302 fetched the access token from another origin, which the API was then sent, in those five and in `py`, `csharp`, `kotlin`, `scala` and `rust`. The other ten refused every redirect already, `swift` by reading. The exchange now follows none in any target (R23) | Phase 0 |
 
 ---
 
@@ -477,7 +478,7 @@ relaxing is legitimate, and a test that fails when it regresses.
 | S4 | **Disk and time are bounded.** A declared length must be met exactly. An undeclared one is capped by `maxBytes` | 1 GiB when undeclared (R12) | `shortlength` and unbounded-chunked faults |
 | S5 | **A credential goes to the API's origin and nowhere else.** A hop or URL on another origin carries no `authorization`, `cookie`, `proxy-authorization`, no header or query parameter `prepareAuth` placed, and none a secrets provider supplied (fixes H11) | Always | Second origin records what arrives; the test asserts no canary |
 | S6 | **A capability URL is a secret.** Presigned URLs, session URLs and resume tokens are registered with `clean` when the SDK first sees them (ADR-003, rule 1) | Always | The clean sweep, with a presigned canary |
-| S7 | **An upload never follows a redirect to another origin.** A 307 or 308 would re-send the body there | Refused unless the host is allow-listed | `redirect` fault on a `PUT` |
+| S7 | **An upload never follows a redirect to another origin.** A 307 or 308 would re-send the body there. Where the SDK cannot read where a redirect points, as in a browser, a request with a body refuses every redirect (R21) | Refused unless the host is allow-listed | `redirect` fault on a `PUT` |
 | S8 | **Other origins are policy.** A download may follow an https redirect to another origin, bare of credentials as S5 requires. No hop may downgrade from https; hops are capped; a `hosts` allow-list narrows or widens | As stated (R6) | `redirect` fault matrix |
 | S9 | **File bytes never reach a diagnostic.** In the spec, explain record, error, log, audit and telemetry a body is a placeholder: kind, and size and media type where known. Never the bytes, never a source (fixes H2) | No switch of its own. `clean.active: false`, the one opt-out of all cleaning, turns it off with the rest | The clean sweep gains a content canary: a marker in the file bytes, searched for in every string that leaves |
 | S10 | **A transfer is complete or it failed.** Bytes received must equal the declared length; a 206 must carry the `Content-Range` asked for | Always | `cut`, `shortlength` faults |
@@ -833,6 +834,7 @@ Sizes are relative. Each phase ends at something that can be released.
 - Characterise H2, H3 and H11 with failing tests, then fix them in every
   target: placeholders for byte bodies in `clean`, one error for a
   non-JSON response, the credential set the redirect loops drop.
+- The token exchange follows no redirect (H13).
 - `cache` skips non-JSON bodies (H5). `stream()`'s upload claim is removed
   or made true (H4).
 - apidef A1 and A2.
@@ -890,8 +892,13 @@ ruling of this document that the item answers.
 | Item | Work | Where | From |
 | --- | --- | --- | --- |
 | `p0-error-bytes` | A failed upload's bytes stay out of its error, its explain record and every log, in every target | sdkgen | H2, S9 |
-| `p0-binary-response` | One error, the same in every target, for a response that is not JSON | sdkgen | H3 |
+| `p0-binary-response` | One error, the same in every target, for a response that is not JSON, and a response that is bytes described in every diagnostic | sdkgen | H3, S9 |
 | `p0-redirect-credentials` | No credential the SDK placed follows a redirect to another origin, under whatever name the model gives it | sdkgen | H11, S5 |
+| `p0-browser-upload-redirect` | In a browser, a request with a body refuses every redirect, in `ts` and `js` | sdkgen | R21, S7 |
+| `p0-perl-hook-exception` | perl masks an exception a feature hook throws, as `rb` and `php` do | sdkgen | R22 |
+| `p0-clojure-hop-limit` | `clojure` follows five hops, as the other targets do | sdkgen | H11 |
+| `p0-exchange-redirect` | The secrets feature's token exchange follows no redirect, so its refresh token stays on its origin | sdkgen | H13, S5, R23 |
+| `p0-perl-clean-copy` | perl's `clean` returns a copy of a value cleaned on its own, never the live object | sdkgen | S9 |
 | `p0-feature-claims` | `cache` passes a body that is not JSON by; `stream()` stops documenting an upload nothing sends | sdkgen | H4, H5 |
 | `p0-apidef-verb-noun` | A collection named for a verb keeps its plain create, in both ports | apidef | H9, A1 |
 | `p0-apidef-flow-files` | Basic flows leave file routes out until file steps exist, in both ports | apidef | H10, A2 |
@@ -954,7 +961,10 @@ ruling of this document that the item answers.
 ## 12. Rulings
 
 Every question the plan raised is ruled. R1 to R8 were given on
-2026-11-21, and the rest on 2026-11-23.
+2026-11-21, R9 to R19 on 2026-11-23, and R20 to R22 on 2026-11-25, on
+questions the security work of Phase 0 raised. R23 is not ruled yet: the
+work is built on the answer its row gives, and the row says what the other
+answer is.
 
 | # | Question | Ruling | Gates |
 | --- | --- | --- | --- |
@@ -977,6 +987,10 @@ Every question the plan raised is ruled. R1 to R8 were given on
 | **R17** | Model vocabulary | `bn` on a point and `binary` in the guide, by R9; `session` on an entity, the default, which was not put to the maintainer | apidef A3, A4 |
 | **R18** | A download of an undeclared media type | Refused | Phase 2 |
 | **R19** | Which plugins a scaffolded project turns on | `stream`; and `fs` where the target has a filesystem; both written in the project's own model | Phase 2 |
+| **R20** | Whether `clean.active: false` also switches the description of bytes off | Yes. It is the one opt-out of all cleaning, and there is no switch for bytes alone | S9, ADR-006 |
+| **R21** | A redirect where the SDK cannot follow by hand, as in a browser | A request that carries a body refuses every redirect; one without a body is left to the platform | S7, `p0-browser-upload-redirect` |
+| **R22** | perl: an exception object a feature hook throws | Masked. The caller gets the SDK's error with the cleaned message, and the hook's own object as its cause | `p0-perl-hook-exception` |
+| **R23** | Whether the secrets feature's token exchange follows a redirect | **Proposed, not ruled.** It follows none: a 3xx that answers the exchange is a failed exchange, on another origin or the same one. The other answer is the transport's rule, which follows on the same origin and never sends a body to another | S5, `p0-exchange-redirect` |
 
 Three more rulings came with them:
 

@@ -226,6 +226,7 @@ voxgig_value* secrets_rawfetch(Context* ctx, const char* url,
   curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, method);
   curl_easy_setopt(curl, CURLOPT_HTTPHEADER, hdrs);
   curl_easy_setopt(curl, CURLOPT_TIMEOUT, 30L);
+  curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 0L);
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, secrets_curl_write);
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, &body);
   const char* reqbody = get_str(fetchdef, "body");

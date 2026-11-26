@@ -122,6 +122,10 @@ public class CleanTest
     private const string Content = "CANARY-CONTENT-b7n3v9x1c5";
     private static readonly byte[] ContentBytes = Encoding.ASCII.GetBytes(Content);
 
+    // The marker a response of bytes carries, as a transport that read the
+    // body into text hands it on.
+    private const string Answer = "CANARY-RESPONSE-k2m8q4w6z0";
+
     // Every value this SDK accepts as a raw body.
     private static readonly (string Name, Func<object> Make)[] Carriers =
     {
@@ -161,16 +165,17 @@ public class CleanTest
 
     // The forms bytes travel in once copied: text, a list of byte values
     // however it is separated, hex with or without dashes, base64.
-    private static List<string> ContentLeaks(string text)
+    private static List<string> ContentLeaks(string text, string marker = Content)
     {
+        var bytes = Encoding.ASCII.GetBytes(marker);
         var flat = Regex.Replace(text, @"\\s+", "");
         var numbers = "," + string.Join(",", Regex.Matches(text, @"\\d+").Select(m => m.Value)) + ",";
         var found = new List<string>();
-        if (text.Contains(Content)) found.Add("text");
-        if (numbers.Contains("," + string.Join(",", ContentBytes) + ",")) found.Add("byte values");
-        if (flat.Replace("-", "").Contains(Convert.ToHexString(ContentBytes),
+        if (text.Contains(marker)) found.Add("text");
+        if (numbers.Contains("," + string.Join(",", bytes) + ",")) found.Add("byte values");
+        if (flat.Replace("-", "").Contains(Convert.ToHexString(bytes),
             StringComparison.OrdinalIgnoreCase)) found.Add("hex");
-        if (flat.Contains(Convert.ToBase64String(ContentBytes))) found.Add("base64");
+        if (flat.Contains(Convert.ToBase64String(bytes))) found.Add("base64");
         return found;
     }
 
@@ -182,7 +187,8 @@ public class CleanTest
     };
 
     // The typed pipeline products read through their fields, so the raw spec
-    // is visible when clean is off - the sensitivity check depends on it.
+    // and response are visible when clean is off - the sensitivity checks
+    // depend on it.
     private static string Render(object? val)
     {
         switch (val)
@@ -204,6 +210,11 @@ public class CleanTest
                     ["ok"] = r.Ok, ["status"] = r.Status, ["headers"] = r.Headers,
                     ["body"] = r.Body, ["resdata"] = r.Resdata,
                     ["err"] = null == r.Err ? null : r.Err.ToString(),
+                });
+            case Response rs:
+                return Render(new Dictionary<string, object?>
+                {
+                    ["status"] = rs.Status, ["headers"] = rs.Headers, ["body"] = rs.Body,
                 });
             case IEntity ent:
                 return Render(ent.Data());
@@ -384,6 +395,21 @@ public class CleanTest
             ["json"] = (Func<object?>)(() => data),
             ["body"] = StructUtils.Jsonify(data, 0),
             ["headers"] = h,
+        };
+    }
+
+    // A response of bytes under the type it declares, as the default
+    // transport hands it on: read into text, and marked as not JSON.
+    private static Dictionary<string, object?> BytesResponse(int status, string type)
+    {
+        return new Dictionary<string, object?>
+        {
+            ["status"] = status,
+            ["statusText"] = status < 400 ? "OK" : "ERR",
+            ["json"] = (Func<object?>)(() => null),
+            ["body"] = Answer,
+            ["unreadable"] = true,
+            ["headers"] = new Dictionary<string, object?> { ["content-type"] = type },
         };
     }
 
@@ -1139,6 +1165,68 @@ ${candidateLines}
             Assert.True(0 < leaked.Count,
                 carrier.Name + ": with clean off, nothing showed the bytes: the sweep is blind");
         }
+    }
+
+    [Fact]
+    public void NoResponseOfBytesLeavesTheSdkInAnyForm()
+    {
+        var target = UsableOp();
+        if (null == target)
+        {
+            Report("clean: skipped: " + NoOp);
+            return;
+        }
+
+        var sinks = new List<Sink>();
+        var errors = new Dictionary<string, Exception>();
+
+        foreach (var status in new[] { 200, 404, 500 })
+        {
+            foreach (var variant in Variants)
+            {
+                var scenario = new Scenario("bytes", (_url, _def) => BytesResponse(status, "audio/wav"));
+                var sdk = MakeSdk(scenario, sinks);
+                var err = Drive(sdk, target, variant.Ctrl(), sinks);
+                if (null != err) errors[status + "/" + variant.Name] = err;
+                sinks.AddRange(FormsOf("sdk", sdk));
+            }
+        }
+
+        var leaked = sinks
+            .Select(s => (s.Name, Found: ContentLeaks(s.Text, Answer)))
+            .Where(s => 0 < s.Found.Count)
+            .ToList();
+
+        Report("clean: response swept " + sinks.Count + " surface(s), " + leaked.Count + " leak(s)");
+
+        Assert.True(0 == leaked.Count, "a response of bytes leaked through: " + string.Join("; ",
+            leaked.Select(l => l.Name + " [" + string.Join(", ", l.Found) + "]").Distinct()));
+
+        // The failure still names what it could not read.
+        Assert.True(errors.TryGetValue("200/throw", out var failed),
+            "a response of bytes must fail the operation");
+        Assert.Equal("response_content_type", Assert.IsType<${Name}Error>(failed).Code);
+        Assert.True(failed!.Message.Contains("audio/wav"),
+            "the error does not name the type: " + failed.Message);
+    }
+
+    [Fact]
+    public void TheSweepCanSeeAResponseCleanSwitchedOffShowsTheBytes()
+    {
+        var target = UsableOp();
+        if (null == target)
+        {
+            Report("clean: skipped: " + NoOp);
+            return;
+        }
+
+        var sinks = new List<Sink>();
+        var scenario = new Scenario("bytes", (_url, _def) => BytesResponse(200, "audio/wav"));
+        var sdk = MakeSdk(scenario, sinks, new Dictionary<string, object?> { ["active"] = false });
+        var err = Drive(sdk, target, new Dictionary<string, object?>(), sinks);
+        Assert.True(null != err, "a response of bytes must fail the operation");
+        var leaked = sinks.Where(s => 0 < ContentLeaks(s.Text, Answer).Count).ToList();
+        Assert.True(0 < leaked.Count, "with clean off, nothing showed the response: the sweep is blind");
     }
 
     // A stream that fails whatever is asked of it.

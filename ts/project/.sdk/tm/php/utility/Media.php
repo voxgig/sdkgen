@@ -17,6 +17,35 @@ class ProjectNameMedia
         return 'application/json' === $m || 'text/json' === $m || str_ends_with($m, '+json');
     }
 
+    // Text is no declared type, text/*, or a structured text format.
+    public static function isTextMedia(mixed $type): bool
+    {
+        $media = strtolower(trim(explode(';', is_string($type) ? $type : '', 2)[0]));
+        return '' === $media || str_starts_with($media, 'text/') ||
+            1 === preg_match('/json|xml|html|javascript|ecmascript|yaml|urlencoded|graphql/', $media);
+    }
+
+    // A response whose body is bytes: by the model, or by the type it declares.
+    public static function isBinaryResponse(mixed $point, mixed $type): bool
+    {
+        $res = is_array($point) ? ($point['response'] ?? null) : null;
+        return (is_array($res) && true === ($res['binary'] ?? null)) || !self::isTextMedia($type);
+    }
+
+    // A header's value, from a map in any spelling.
+    public static function headerValue(mixed $headers, string $name): string
+    {
+        if (!is_array($headers)) {
+            return '';
+        }
+        foreach ($headers as $key => $val) {
+            if (strtolower((string)$key) === $name) {
+                return (string)$val;
+            }
+        }
+        return '';
+    }
+
     // The declared JSON type alone, else every declared type in the model's
     // order; null when no success response declares a body.
     public static function acceptOf(mixed $point): ?string

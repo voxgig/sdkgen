@@ -341,6 +341,8 @@ class SecretsFeature extends BaseFeature {
       method: x.method,
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ [x.request]: this._refresh }),
+      // Never followed: a redirect would carry the refresh token on.
+      redirect: 'manual',
     })
 
     const status = null == res ? 0 : res.status

@@ -81,6 +81,9 @@ class CleanTest extends TestCase
     // The marker a body of bytes carries.
     private const CONTENT = 'CANARY-CONTENT-b7n3v9x1c5';
 
+    // The marker a response of bytes carries.
+    private const RESPONSE = 'CANARY-RESPONSE-k2m8q4w6z0';
+
     // Every form a canary can travel in.
     private static function forms(): array
     {
@@ -125,21 +128,21 @@ class CleanTest extends TestCase
     // The forms bytes travel in once copied: a string prints as its text,
     // and a dump of one shows its byte values (which print_r and var_export
     // key by index), hex or base64.
-    private static function content_leaks(string $text): array
+    private static function content_leaks(string $text, string $marker = self::CONTENT): array
     {
         $flat = preg_replace('/\\s+/', '', $text) ?? $text;
         $values = preg_replace(['/\\[\\d+\\]=>/', '/\\b\\d+=>/'], [',', ''], $flat) ?? $flat;
         $found = [];
-        if (str_contains($text, self::CONTENT)) {
+        if (str_contains($text, $marker)) {
             $found[] = 'text';
         }
-        if (str_contains($values, implode(',', unpack('C*', self::CONTENT)))) {
+        if (str_contains($values, implode(',', unpack('C*', $marker)))) {
             $found[] = 'byte values';
         }
-        if (str_contains(strtolower($flat), bin2hex(self::CONTENT))) {
+        if (str_contains(strtolower($flat), bin2hex($marker))) {
             $found[] = 'hex';
         }
-        if (str_contains($flat, base64_encode(self::CONTENT))) {
+        if (str_contains($flat, base64_encode($marker))) {
             $found[] = 'base64';
         }
         return $found;
@@ -193,6 +196,20 @@ class CleanTest extends TestCase
             'headers' => $h,
             'json' => function () use ($data) { return $data; },
             'body' => json_encode($data),
+        ];
+    }
+
+    // The marker under the type the response declares, as the default
+    // transport hands on a body it could not parse.
+    private static function unread_response(int $status, string $type): array
+    {
+        return [
+            'status' => $status,
+            'statusText' => $status < 400 ? 'OK' : 'ERR',
+            'headers' => ['content-type' => $type],
+            'json' => function () { return null; },
+            'body' => self::RESPONSE,
+            'unreadable' => true,
         ];
     }
 
@@ -1139,6 +1156,86 @@ class CleanTest extends TestCase
         } finally {
             unlink($path);
         }
+    }
+
+    public function test_no_response_of_bytes_leaves_the_sdk_in_any_form(): void
+    {
+        $this->with_trace_args(fn () => $this->response_sweep());
+    }
+
+    private function response_sweep(): void
+    {
+        $target = self::usable_op();
+        if (null === $target) {
+            $this->markTestSkipped('no operation of this SDK completes against a plain 200; nothing to sweep');
+        }
+
+        $sinks = new \\ArrayObject();
+        $errors = [];
+
+        foreach ([200, 404, 500] as $status) {
+            foreach (self::VARIANTS as $vname => $ctrl) {
+                $respond = fn (string $_url, array $_fetchdef): array =>
+                    [self::unread_response($status, 'audio/wav'), null];
+                [$sdk, $watcher] = self::make_sdk($respond, $sinks);
+                [$err, $_explain] = self::drive($sdk, $watcher, $target, $ctrl, $sinks);
+                if (null !== $err) {
+                    $errors[$status . '/' . $vname] = $err;
+                }
+                foreach (self::surfaces('sdk', $sdk) as $s) {
+                    $sinks[] = $s;
+                }
+            }
+        }
+
+        $leaked = [];
+        foreach ($sinks as $s) {
+            $found = self::content_leaks($s['text'], self::RESPONSE);
+            if (0 < count($found)) {
+                $leaked[] = $s['name'] . ' [' . implode(', ', $found) . ']';
+            }
+        }
+
+        // The one line the generator's compile lane reads.
+        fwrite(STDERR, sprintf("clean: response swept %d surface(s), %d leak(s)\\n",
+            count($sinks), count($leaked)));
+
+        $this->assertSame(0, count($leaked),
+            'a response of bytes leaked through: ' . implode('; ', array_unique($leaked)));
+
+        // The failure still names what it could not read.
+        $failed = $errors['200/throw'] ?? null;
+        $this->assertInstanceOf(${Name}Error::class, $failed, 'a response of bytes must fail the operation');
+        $this->assertSame('response_content_type', $failed->sdk_code);
+        $this->assertStringContainsString('audio/wav', $failed->getMessage());
+    }
+
+    public function test_the_sweep_can_see_a_response_clean_switched_off_shows_the_bytes(): void
+    {
+        $this->without_trace_args(fn () => $this->response_control());
+    }
+
+    private function response_control(): void
+    {
+        $target = self::usable_op();
+        if (null === $target) {
+            $this->markTestSkipped('no operation of this SDK completes against a plain 200; nothing to sweep');
+        }
+
+        $sinks = new \\ArrayObject();
+        $respond = fn (string $_url, array $_fetchdef): array =>
+            [self::unread_response(200, 'audio/wav'), null];
+        [$sdk, $watcher] = self::make_sdk($respond, $sinks, ['active' => false]);
+        [$err, $_explain] = self::drive($sdk, $watcher, $target, [], $sinks);
+        $this->assertNotNull($err, 'a response of bytes must fail the operation');
+
+        $leaked = 0;
+        foreach ($sinks as $s) {
+            if (0 < count(self::content_leaks($s['text'], self::RESPONSE))) {
+                $leaked++;
+            }
+        }
+        $this->assertGreaterThan(0, $leaked, 'with clean off, nothing showed the response: the sweep is blind');
     }
 }
 `

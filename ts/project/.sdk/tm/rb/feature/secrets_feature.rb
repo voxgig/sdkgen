@@ -453,6 +453,8 @@ class ProjectNameSecretsFeature < ProjectNameBaseFeature
       "method" => x["method"],
       "headers" => { "content-type" => "application/json" },
       "body" => JSON.generate({ x["request"] => @refresh }),
+      # Never followed: a redirect would carry the refresh token on.
+      "redirect" => "manual",
     })
 
     unless err.nil?
@@ -582,6 +584,7 @@ class ProjectNameSecretsFeature < ProjectNameBaseFeature
     body = fetchdef["body"]
     request.body = body if body.is_a?(String)
 
+    # Net::HTTP#request follows no redirect: a 3xx is returned as its status.
     resp = http.request(request)
     raw = resp.body
 

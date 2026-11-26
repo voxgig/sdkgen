@@ -342,33 +342,55 @@ defmodule ProjectName.Utility do
     end
   end
 
-  # The live request body of a point the model marks binary, and its type.
-  # Text shorter than the registry accepts is not told from ordinary text; it
-  # is measured in bytes, which does not walk an upload.
-  defp binary_body(ctx, cfg) do
-    point = if S.ismap(ctx), do: S.getprop(ctx, "point"), else: nil
-    body = S.getprop(point, "body")
-
-    if S.getprop(body, "kind") == "raw" and S.getprop(body, "binary") == true do
-      minlen = numof(S.getprop(cfg, "min"), 4)
-
-      live =
-        [S.getprop(S.getprop(ctx, "spec"), "body"), raw_body(S.getprop(ctx, "reqdata"))]
-        |> Enum.reject(&(is_nil(&1) or (is_binary(&1) and byte_size(&1) < minlen and String.valid?(&1))))
-
-      media = S.getprop(body, "media")
-      if live != [], do: %{live: live, type: if(is_binary(media), do: media, else: nil)}
+  # The live bodies of this call that are bytes, each with its type: the
+  # request body of a point the model marks binary, and a response body that
+  # is bytes, unsized, since text read from it does not say how many bytes it
+  # was. Text shorter than the registry accepts is not told from ordinary
+  # text; it is measured in bytes, which does not walk an upload.
+  defp binary_bodies(ctx, cfg) do
+    ctx = if S.ismap(ctx), do: ctx, else: nil
+    point = S.getprop(ctx, "point")
+    minlen = numof(S.getprop(cfg, "min"), 4)
+    live = fn values ->
+      Enum.reject(values, &(is_nil(&1) or (is_binary(&1) and byte_size(&1) < minlen and String.valid?(&1))))
     end
+
+    body = S.getprop(point, "body")
+    media = S.getprop(body, "media")
+    response = S.getprop(ctx, "response")
+    type = body_header(S.getprop(response, "headers"), "content-type")
+
+    sent =
+      if S.getprop(body, "kind") == "raw" and S.getprop(body, "binary") == true do
+        bodies = [S.getprop(S.getprop(ctx, "spec"), "body"), raw_body(S.getprop(ctx, "reqdata"))]
+        [%{live: live.(bodies), type: if(is_binary(media), do: media, else: nil), sized: true}]
+      else
+        []
+      end
+
+    answered =
+      if response != nil and binary_response?(point, type) do
+        [%{live: live.([S.getprop(response, "body")]), type: if(type == "", do: nil, else: type), sized: false}]
+      else
+        []
+      end
+
+    Enum.reject(sent ++ answered, &(&1.live == []))
   end
 
-  # Bytes are described, never copied (ADR-006): the kind, the size, and the
-  # media type the point declares. A binary is the only carrier here, and it
-  # is bytes only as the body of a point the model marks binary.
-  defp describe_binary(val, bin) do
-    if bin != nil and val in bin.live do
-      desc = S.jm(["binary$", "bytes", "size", byte_size(val)])
-      if bin.type != nil, do: S.setprop(desc, "type", bin.type)
-      desc
+  # Bytes are described, never copied (ADR-006): the kind, the size where it
+  # is known, and the media type. A binary is the only carrier here, and it
+  # is bytes only as a live body.
+  defp describe_binary(val, bins) do
+    case Enum.find(bins, &(val in &1.live)) do
+      nil ->
+        nil
+
+      bin ->
+        desc = S.jm(["binary$", "bytes"])
+        if bin.sized, do: S.setprop(desc, "size", byte_size(val))
+        if bin.type != nil, do: S.setprop(desc, "type", bin.type)
+        desc
     end
   end
 
@@ -479,8 +501,8 @@ defmodule ProjectName.Utility do
     cond do
       S.getprop(cfg, "active") == false -> val
       is_binary(val) -> clean_string(cfg, val)
-      match?(%ProjectName.Error{}, val) -> clean_error(cfg, binary_body(ctx, cfg), val)
-      true -> clean_field(cfg, binary_body(ctx, cfg), val, nil)
+      match?(%ProjectName.Error{}, val) -> clean_error(cfg, binary_bodies(ctx, cfg), val)
+      true -> clean_field(cfg, binary_bodies(ctx, cfg), val, nil)
     end
   end
 
@@ -493,7 +515,7 @@ defmodule ProjectName.Utility do
 
     cond do
       S.getprop(cfg, "active") == false -> e
-      match?(%ProjectName.Error{}, e) -> clean_error(cfg, binary_body(ctx, cfg), e)
+      match?(%ProjectName.Error{}, e) -> clean_error(cfg, binary_bodies(ctx, cfg), e)
       true -> clean_foreign_exception(cfg, e)
     end
   end
@@ -1791,6 +1813,11 @@ defmodule ProjectName.Utility do
     m == "" or String.starts_with?(m, "text/") or String.contains?(m, @text_media)
   end
 
+  # A response whose body is bytes: by the model, or by the type it declares.
+  def binary_response?(point, type) do
+    S.getprop(S.getprop(point, "response"), "binary") == true or not text_media?(type)
+  end
+
   # The declared JSON type alone, else every declared type in the model's
   # order; nil when no success response declares a body.
   def accept_of(point) do
@@ -2347,9 +2374,7 @@ defmodule ProjectName.Utility do
     agent = to_string(clean(ctx, body_header(sent, "user-agent")))
 
     # Only text is quoted: bytes are a file's, by the model or by their type.
-    quoted =
-      text != nil and text_media?(type) and
-        S.getprop(S.getprop(S.getprop(ctx, "point"), "response"), "binary") != true
+    quoted = text != nil and not binary_response?(S.getprop(ctx, "point"), type)
 
     detail =
       "HTTP " <> to_string(status) <> ", content-type " <> if(type == "", do: "none", else: type) <>

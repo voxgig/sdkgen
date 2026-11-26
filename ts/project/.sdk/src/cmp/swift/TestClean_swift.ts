@@ -141,19 +141,24 @@ private func leaks(_ text: String) -> [String] {
 private let canaryContent = "CANARY-CONTENT-b7n3v9x1c5"
 private let canaryContentBytes: [UInt8] = Array(canaryContent.utf8)
 
+// The marker a response of bytes carries, as a transport that read the body
+// into text hands it on.
+private let canaryResponse = "CANARY-RESPONSE-k2m8q4w6z0"
+
 // The forms bytes travel in once copied: text, a list of byte values
 // however it is separated, hex, base64.
-private func contentLeaks(_ text: String) -> [String] {
+private func contentLeaks(_ text: String, _ marker: String = canaryContent) -> [String] {
+  let bytes: [UInt8] = Array(marker.utf8)
   let flat = text.filter { !$0.isWhitespace }
   let runs = text.components(separatedBy: CharacterSet.decimalDigits.inverted).filter { !$0.isEmpty }
   let numbers = "," + runs.joined(separator: ",") + ","
-  let values = canaryContentBytes.map { String($0) }.joined(separator: ",")
-  let hex = canaryContentBytes.map { String(format: "%02x", $0) }.joined()
+  let values = bytes.map { String($0) }.joined(separator: ",")
+  let hex = bytes.map { String(format: "%02x", $0) }.joined()
   var found: [String] = []
-  if text.contains(canaryContent) { found.append("text") }
+  if text.contains(marker) { found.append("text") }
   if numbers.contains("," + values + ",") { found.append("byte values") }
   if flat.lowercased().contains(hex) { found.append("hex") }
-  if flat.contains(Data(canaryContentBytes).base64EncodedString()) { found.append("base64") }
+  if flat.contains(Data(bytes).base64EncodedString()) { found.append("base64") }
   return found
 }
 
@@ -179,8 +184,22 @@ private func response(_ status: Int, _ data: Value, _ headers: [(String, String)
   return .map(m)
 }
 
+// A response of bytes under the type it declares, as the default transport
+// hands it on: decoded into text, and marked as not JSON.
+private func bytesResponse(_ status: Int, _ type: String) -> Value {
+  let m = VMap()
+  m.entries["status"] = .int(Int64(status))
+  m.entries["statusText"] = .string(status < 400 ? "OK" : "ERR")
+  m.entries["json"] = .nat({ () -> Value in .noval } as NativeCall0)
+  m.entries["body"] = .string(canaryResponse)
+  m.entries["unreadable"] = .bool(true)
+  m.entries["headers"] = .map(vm(("content-type", .string(type))))
+  return .map(m)
+}
+
 // The typed pipeline products read through their stored properties, so the
-// raw spec is visible when clean is off - the sensitivity check depends on it.
+// raw spec and response are visible when clean is off - the sensitivity
+// checks depend on it.
 private func render(_ any: Any?, _ depth: Int = 0) -> String {
   guard let any = any, depth < 8 else { return "null" }
   if let v = any as? Value {
@@ -200,8 +219,20 @@ private func render(_ any: Any?, _ depth: Int = 0) -> String {
     m.entries["body"] = sp.body
     return jsonify(.map(m), indent: 0)
   }
+  if let rs = any as? Response {
+    let m = VMap()
+    m.entries["status"] = .int(Int64(rs.status))
+    m.entries["headers"] = rs.headers
+    m.entries["body"] = rs.body
+    return jsonify(.map(m), indent: 0)
+  }
   if let ent = any as? Entity { return jsonify(ent.data(), indent: 0) }
-  if let ctx = any as? Context { return jsonify(.map(ctx.record()), indent: 0) }
+  if let ctx = any as? Context {
+    let rec = ctx.record()
+    return "{" + rec.entries.keys.sorted().map { k in
+      "\\"" + k + "\\":" + render(rec.entries[k], depth + 1)
+    }.joined(separator: ",") + "}"
+  }
   if let e = any as? ${Name}Error { return jsonify(.map(e.record()), indent: 0) }
   var out = ""
   dump(any, to: &out, maxDepth: 8)
@@ -945,6 +976,56 @@ ${candidateLines}
     let record = Value.map(vm(("name", .string("n1"))))
     let json = cleanedAt(vm(("kind", .string("json")), ("media", .string("application/json"))), record)
     XCTAssertEqual(gpath(json, "spec", "body", "name"), .string("n1"))
+  }
+
+  func testNoResponseOfBytesLeavesTheSdkInAnyForm() throws {
+    guard let target = ${Name}CleanTest.usableOp() else {
+      throw XCTSkip("no operation of this SDK completes against a plain 200; nothing to sweep")
+    }
+
+    let box = SinkBox()
+    var errors: [String: Error] = [:]
+
+    for status in [200, 404, 500] {
+      for (vname, makeCtrl) in ${Name}CleanTest.variants {
+        let scenario = Scenario(name: "bytes", respond: { _, _ in bytesResponse(status, "audio/wav") })
+        let sdk = ${Name}CleanTest.makeSdk(scenario, box)
+        let err = ${Name}CleanTest.drive(sdk, target, makeCtrl(), box)
+        if let e = err { errors[String(status) + "/" + vname] = e }
+        box.sinks += ${Name}CleanTest.formsOf("sdk", sdk)
+      }
+    }
+
+    let leaked = box.sinks
+      .map { (name: $0.name, found: contentLeaks($0.text, canaryResponse)) }
+      .filter { !$0.found.isEmpty }
+
+    print("clean: response swept \\(box.sinks.count) surface(s), \\(leaked.count) leak(s)")
+
+    XCTAssertEqual(leaked.count, 0, "a response of bytes leaked through: " +
+      leaked.map { $0.name + " [" + $0.found.joined(separator: ", ") + "]" }.joined(separator: "; "))
+
+    // The failure still names what it could not read.
+    guard let failed = errors["200/throw"] as? ${Name}Error else {
+      XCTFail("a response of bytes must fail the operation")
+      return
+    }
+    XCTAssertEqual(failed.code, "response_content_type")
+    XCTAssertTrue(failed.message.contains("audio/wav"), "the error does not name the type: " + failed.message)
+  }
+
+  func testTheSweepCanSeeAResponseCleanSwitchedOffShowsTheBytes() throws {
+    guard let target = ${Name}CleanTest.usableOp() else {
+      throw XCTSkip("no operation of this SDK completes against a plain 200; nothing to sweep")
+    }
+
+    let box = SinkBox()
+    let scenario = Scenario(name: "bytes", respond: { _, _ in bytesResponse(200, "audio/wav") })
+    let sdk = ${Name}CleanTest.makeSdk(scenario, box, vm(("active", .bool(false))))
+    let err = ${Name}CleanTest.drive(sdk, target, VMap(), box)
+    XCTAssertNotNil(err, "a response of bytes must fail the operation")
+    let leaked = box.sinks.filter { !contentLeaks($0.text, canaryResponse).isEmpty }
+    XCTAssertTrue(!leaked.isEmpty, "with clean off, nothing showed the response: the sweep is blind")
   }
 }
 `

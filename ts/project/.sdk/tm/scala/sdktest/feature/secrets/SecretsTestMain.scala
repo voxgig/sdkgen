@@ -116,6 +116,7 @@ object SecretsTestMain {
           case _ => ""
         })
         call.put("body", fetchdef.get("body") match { case s: String => s; case _ => "" })
+        call.put("redirect", fetchdef.get("redirect"))
         calls.add(call)
 
         if (url.endsWith("/" + tokenpath)) {
@@ -892,6 +893,10 @@ object SecretsTestMain {
     val res = client.direct(jmap("path" -> "/thing"))
 
     eqi("exchange.purchases", 2, w.token().length)
+    if (w.token().nonEmpty) {
+      eqs("exchange.redirect", "manual", String.valueOf(w.token().head.get("redirect")),
+        "the exchange must ask its transport to follow no redirect")
+    }
     eqi("exchange.retried", 2, w.api().length)
     if (2 <= w.api().length) {
       credentialIs("exchange.first", w.authof(w.api()(0)), "ACCESS01")
@@ -1005,6 +1010,100 @@ object SecretsTestMain {
       "an empty chain must refuse rather than send unauthenticated, got " + res)
   }
 
+  // Real listeners and the SDK's raw HTTP path: a stub follows nothing.
+  private def testExchangeRedirectRefused(): Unit = {
+    val elsewhere = java.util.Collections.synchronizedList(new ArrayList[String]())
+    val followed = java.util.Collections.synchronizedList(new ArrayList[String]())
+    @volatile var answer: (Int, String) = (307, "")
+
+    val other = com.sun.net.httpserver.HttpServer.create(
+      new java.net.InetSocketAddress("127.0.0.1", 0), 0)
+    other.createContext("/", (ex: com.sun.net.httpserver.HttpExchange) => {
+      val body = new String(ex.getRequestBody.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8)
+      elsewhere.add(ex.getRequestMethod + " " + ex.getRequestURI.getRawPath + " " + body)
+      val out = "{\"access_token\":\"ELSEWHERE01\"}".getBytes
+      ex.getResponseHeaders.set("Content-Type", "application/json")
+      ex.sendResponseHeaders(200, out.length.toLong)
+      ex.getResponseBody.write(out)
+      ex.close()
+    })
+    val origin = com.sun.net.httpserver.HttpServer.create(
+      new java.net.InetSocketAddress("127.0.0.1", 0), 0)
+    origin.createContext("/", (ex: com.sun.net.httpserver.HttpExchange) => {
+      ex.getRequestBody.readAllBytes()
+      val path = ex.getRequestURI.getRawPath
+      if ("/api/auth/token" == path) {
+        ex.getResponseHeaders.set("Location", answer._2)
+        ex.sendResponseHeaders(answer._1, -1)
+        ex.close()
+      } else {
+        followed.add(ex.getRequestMethod + " " + path)
+        val out = "{\"access_token\":\"MOVED01\"}".getBytes
+        ex.getResponseHeaders.set("Content-Type", "application/json")
+        ex.sendResponseHeaders(200, out.length.toLong)
+        ex.getResponseBody.write(out)
+        ex.close()
+      }
+    })
+    other.start()
+    origin.start()
+
+    val base = "http://127.0.0.1:" + origin.getAddress.getPort + "/api"
+    val away = "http://127.0.0.1:" + other.getAddress.getPort + "/api/auth/token"
+
+    try {
+      val answers = List((307, away), (308, away), (302, away), (307, "/api/moved/token"))
+      val allowed = ListBuffer.empty[String]
+      var refused = 0
+
+      for (a <- answers) {
+        answer = a
+        val client = withSecrets { extend =>
+          val opts = jmap(
+            "base" -> base,
+            "allow" -> jmap("op" -> "direct"),
+            "feature" -> jmap("secrets" -> jmap(
+              "active" -> java.lang.Boolean.TRUE,
+              "name" -> "refresh_token",
+              "exchange" -> jmap("active" -> java.lang.Boolean.TRUE, "refresh" -> "REFRESH01"))))
+          if (extend) opts.put("extend", jlist(new SecretsFeature()))
+          new ProjectNameSDK(opts)
+        }
+
+        val message =
+          try {
+            val res = client.direct(jmap("path" -> "/thing"))
+            res.get("err") match {
+              case err: Throwable => errtext(err)
+              case _ => String.valueOf(res)
+            }
+          }
+          catch { case err: RuntimeException => errtext(err) }
+
+        if (message.contains("token exchange failed: " + a._1 + " from " + base + "/auth/token")) {
+          refused += 1
+        } else {
+          allowed += (a._1.toString + " to " + a._2 + ": " + message)
+        }
+      }
+
+      println("secrets: exchange refused " + refused + " redirect(s), " +
+        (elsewhere.size() + followed.size()) + " followed")
+
+      check("exchange.redirect.elsewhere", elsewhere.isEmpty,
+        "the exchange reached another origin: " + elsewhere)
+      check("exchange.redirect.followed", followed.isEmpty,
+        "a request followed a refused exchange: " + followed)
+      check("exchange.redirect.allowed", allowed.isEmpty,
+        "a redirect was not a failed exchange: " + allowed.mkString("; "))
+      eqi("exchange.redirect.refused", answers.length, refused)
+    }
+    finally {
+      origin.stop(0)
+      other.stop(0)
+    }
+  }
+
   // TEST MODE BUYS NOTHING and needs no token endpoint.
   private def testExchangeTestMode(): Unit = {
     val w = new Wire()
@@ -1052,6 +1151,7 @@ object SecretsTestMain {
       "exchangeExplicitRefreshWins" -> testExchangeExplicitRefreshWins,
       "exchangeAuthNullNotRetried" -> testExchangeAuthNullNotRetried,
       "exchangeNoRefresh" -> testExchangeNoRefresh,
+      "exchangeRedirectRefused" -> testExchangeRedirectRefused,
       "exchangeTestMode" -> testExchangeTestMode,
     )
 

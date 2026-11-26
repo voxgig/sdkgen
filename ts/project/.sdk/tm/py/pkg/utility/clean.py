@@ -7,7 +7,7 @@ import threading
 from urllib.parse import quote
 
 from projectname_sdk.schema import OPTSPEC
-from projectname_sdk.utility.media import RAW_BODY
+from projectname_sdk.utility.media import RAW_BODY, header_value, is_binary_response
 
 
 # Everything that leaves the pipeline passes through clean: the error, the
@@ -200,25 +200,33 @@ def _is_stream(val):
     return not isinstance(val, type) and callable(getattr(val, "read", None))
 
 
-# The live request body of a point the model marks binary, and its type. A
-# string shorter than the registry accepts is not told from ordinary text.
-def _binary_body(ctx, cfg):
-    body = _prop(_prop(ctx, "point"), "body")
-    if _prop(body, "kind") != "raw" or _prop(body, "binary") is not True:
-        return None
-    live = [v for v in (_prop(_prop(ctx, "spec"), "body"),
-                        _prop(_prop(ctx, "reqdata"), RAW_BODY))
-            if v is not None and (not isinstance(v, str) or cfg["min"] <= len(v))]
-    if 0 == len(live):
-        return None
-    media = _prop(body, "media")
-    return {"live": live, "type": media if isinstance(media, str) else None}
+# The request body of a point the model marks binary, and a response body
+# that is bytes, each with its type. A response read as text does not say
+# how many bytes it was, so it is not sized. A string shorter than the
+# registry accepts is not told from ordinary text.
+def _binary_bodies(ctx, cfg):
+    def known(*bodies):
+        return [v for v in bodies
+                if v is not None and (not isinstance(v, str) or cfg["min"] <= len(v))]
+
+    point = _prop(ctx, "point")
+    bodies = []
+    body = _prop(point, "body")
+    if _prop(body, "kind") == "raw" and _prop(body, "binary") is True:
+        media = _prop(body, "media")
+        bodies.append({"live": known(_prop(_prop(ctx, "spec"), "body"),
+                                     _prop(_prop(ctx, "reqdata"), RAW_BODY)),
+                       "type": media if isinstance(media, str) else None, "sized": True})
+    response = _prop(ctx, "response")
+    ctype = header_value(_prop(response, "headers"), "content-type")
+    if response is not None and is_binary_response(point, ctype):
+        bodies.append({"live": known(_prop(response, "body")),
+                       "type": ctype if "" != ctype else None, "sized": False})
+    return [b for b in bodies if 0 < len(b["live"])]
 
 
 # The live body is the same object, or for a string an equal one.
 def _is_live(binary, val):
-    if binary is None:
-        return False
     for live in binary["live"]:
         if val is live or (isinstance(val, str) and isinstance(live, str) and val == live):
             return True
@@ -226,15 +234,17 @@ def _is_live(binary, val):
 
 
 # Bytes are described, never copied (ADR-006): the kind, and the size and
-# media type where they are known. A string is bytes only as the body of a
-# point the model marks binary, and is sent as UTF-8.
-def _describe_binary(val, binary):
-    declared = _is_live(binary, val)
+# media type where they are known. A string is bytes only as a live body,
+# and a request's is sent as UTF-8.
+def _describe_binary(val, bodies):
+    binary = next((b for b in bodies if _is_live(b, val)), None)
     desc = None
 
     if isinstance(val, str):
-        if declared:
-            desc = {_BINARY: "bytes", "size": len(val.encode("utf-8", "surrogatepass"))}
+        if binary is not None:
+            desc = {_BINARY: "bytes"}
+            if binary["sized"]:
+                desc["size"] = len(val.encode("utf-8", "surrogatepass"))
     elif isinstance(val, (bytes, bytearray)):
         desc = {_BINARY: "bytes", "size": len(val)}
     elif isinstance(val, memoryview):
@@ -242,7 +252,7 @@ def _describe_binary(val, binary):
     elif _is_stream(val):
         desc = {_BINARY: "stream"}
 
-    if desc is not None and declared and binary["type"] is not None:
+    if desc is not None and binary is not None and binary["type"] is not None:
         desc["type"] = binary["type"]
     return desc
 
@@ -373,7 +383,7 @@ def clean_util(ctx, val):
     if isinstance(val, str):
         return _clean_string(cfg, val)
 
-    binary = _binary_body(ctx, cfg)
+    binary = _binary_bodies(ctx, cfg)
 
     if isinstance(val, BaseException):
         _clean_exception(cfg, binary, val)

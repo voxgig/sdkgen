@@ -163,6 +163,10 @@ const MASK = "[redacted]";
 // The marker a body of bytes carries.
 const CONTENT = "CANARY-CONTENT-b7n3v9x1c5";
 
+// The marker a response of bytes carries, read into text and marked
+// unreadable, as a transport answering through the fetch seam hands it on.
+const RESPONSE = "CANARY-RESPONSE-k2m8q4w6z0";
+
 fn base64_std(text: []const u8) []const u8 {
     const enc = std.base64.standard.Encoder;
     const buf = h.A().alloc(u8, enc.calcSize(text.len)) catch return "";
@@ -394,7 +398,8 @@ const DenyFeature = struct {
 
 // ---- scenarios: what the transport answers ------------------------------
 
-const Scenario = enum { ok, notfound, server, transport, notjson };
+// The bytes scenarios answer with a body of bytes at their status.
+const Scenario = enum { ok, notfound, server, transport, notjson, bytes200, bytes404, bytes500 };
 
 fn response(status: i64, data: Value, headers: Value) Value {
     const hh = h.omap();
@@ -409,6 +414,18 @@ fn response(status: i64, data: Value, headers: Value) Value {
         .{ "headers", hh },
         .{ "json", h.json_thunk(data) },
         .{ "body", h.vstr(h.jsonify_compact(data)) },
+    });
+}
+
+// A response of bytes under the type it declares.
+fn bytesResponse(status: i64, ctype: []const u8) Value {
+    return h.jo(&.{
+        .{ "status", h.vnum(status) },
+        .{ "statusText", h.vstr(if (status < 400) "OK" else "ERR") },
+        .{ "headers", h.jo(&.{.{ "content-type", h.vstr(ctype) }}) },
+        .{ "json", h.json_thunk(vnull()) },
+        .{ "body", h.vstr(RESPONSE) },
+        .{ "unreadable", h.vbool(true) },
     });
 }
 
@@ -443,6 +460,9 @@ const Transport = struct {
                 .{ "json", h.callable(@ptrCast(&notjson_dummy), notJsonThunk) },
                 .{ "body", h.vstr("<html>") },
             }),
+            .bytes200 => bytesResponse(200, "audio/wav"),
+            .bytes404 => bytesResponse(404, "audio/wav"),
+            .bytes500 => bytesResponse(500, "audio/wav"),
         };
     }
 
@@ -619,23 +639,23 @@ fn leaks(text: []const u8) [][]const u8 {
 
 // The forms bytes travel in once copied: the text, and with the whitespace
 // of a pretty print dropped, a list of byte values, hex, base64.
-fn contentLeaks(text: []const u8) [][]const u8 {
+fn contentLeaks(text: []const u8, marker: []const u8) [][]const u8 {
     var flat: std.ArrayList(u8) = .empty;
     for (text) |c| {
         if (!std.ascii.isWhitespace(c)) flat.append(h.A(), c) catch {};
     }
     var values: std.ArrayList(u8) = .empty;
     var hex: std.ArrayList(u8) = .empty;
-    for (CONTENT, 0..) |c, i| {
+    for (marker, 0..) |c, i| {
         if (0 < i) values.append(h.A(), ',') catch {};
         values.appendSlice(h.A(), fmt("{d}", .{c})) catch {};
         hex.appendSlice(h.A(), fmt("{x:0>2}", .{c})) catch {};
     }
     var found: std.ArrayList([]const u8) = .empty;
-    if (std.mem.indexOf(u8, text, CONTENT) != null) found.append(h.A(), "text") catch {};
+    if (std.mem.indexOf(u8, text, marker) != null) found.append(h.A(), "text") catch {};
     if (std.mem.indexOf(u8, flat.items, values.items) != null) found.append(h.A(), "byte values") catch {};
     if (std.ascii.indexOfIgnoreCase(flat.items, hex.items) != null) found.append(h.A(), "hex") catch {};
-    if (std.mem.indexOf(u8, flat.items, base64_std(CONTENT)) != null) found.append(h.A(), "base64") catch {};
+    if (std.mem.indexOf(u8, flat.items, base64_std(marker)) != null) found.append(h.A(), "base64") catch {};
     return found.toOwnedSlice(h.A()) catch &.{};
 }
 
@@ -931,7 +951,7 @@ test "clean: no body of bytes leaves the SDK in any form" {
 
     var leaked: usize = 0;
     for (sinks.items.items) |s| {
-        const found = contentLeaks(s.text);
+        const found = contentLeaks(s.text, CONTENT);
         if (0 < found.len) {
             leaked += 1;
             std.debug.print("clean: a body of bytes leaked through {s}: {s}\\n", .{ s.name, found[0] });
@@ -971,7 +991,66 @@ test "clean: the sweep can see a body: clean switched off shows the bytes" {
 
     var seen: usize = 0;
     for (sinks.items.items) |s| {
-        if (0 < contentLeaks(s.text).len) seen += 1;
+        if (0 < contentLeaks(s.text, CONTENT).len) seen += 1;
+    }
+    try testing.expect(0 < seen);
+}
+
+test "clean: no response of bytes leaves the SDK in any form" {
+    const target = usableOp() orelse {
+        std.debug.print(NOTHING_TO_SWEEP, .{});
+        return error.SkipZigTest;
+    };
+
+    var sinks = Sinks{};
+    var failed: ?*sdk.h.SdkError = null;
+
+    for ([_]Scenario{ .bytes200, .bytes404, .bytes500 }) |scenario| {
+        for ([_]Variant{ .throw, .explain, .nothrow }) |variant| {
+            const client = makeSdk(scenario, &sinks, true, null);
+            const err = drive(client, target, ctrlFor(variant), &sinks);
+            if (scenario == .bytes200 and variant == .throw) failed = err;
+        }
+    }
+
+    var leaked: usize = 0;
+    for (sinks.items.items) |s| {
+        const found = contentLeaks(s.text, RESPONSE);
+        if (0 < found.len) {
+            leaked += 1;
+            std.debug.print("clean: a response of bytes leaked through {s}: {s}\\n", .{ s.name, found[0] });
+        }
+    }
+
+    std.debug.print("clean: response swept {d} surface(s), {d} leak(s)\\n", .{ sinks.items.items.len, leaked });
+
+    try testing.expect(0 < sinks.items.items.len);
+    try testing.expect(leaked == 0);
+
+    // The failure still names what it could not read.
+    const f = failed orelse {
+        std.debug.print("clean: a response of bytes must fail the operation\\n", .{});
+        try testing.expect(false);
+        return;
+    };
+    try testing.expectEqualStrings("response_content_type", f.code);
+    try testing.expect(std.mem.indexOf(u8, f.msg, "audio/wav") != null);
+}
+
+test "clean: the sweep can see a response: clean switched off shows the bytes" {
+    const target = usableOp() orelse {
+        std.debug.print(NOTHING_TO_SWEEP, .{});
+        return error.SkipZigTest;
+    };
+
+    var sinks = Sinks{};
+    const client = makeSdk(.bytes200, &sinks, false, null);
+    const err = drive(client, target, h.omap(), &sinks);
+    try testing.expect(err != null);
+
+    var seen: usize = 0;
+    for (sinks.items.items) |s| {
+        if (0 < contentLeaks(s.text, RESPONSE).len) seen += 1;
     }
     try testing.expect(0 < seen);
 }

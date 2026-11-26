@@ -1140,24 +1140,43 @@ inline Value SdkClient::graphql(const std::string& query, const Value& variables
   return res;
 }
 
+inline std::string lowerOf(std::string s) {
+  for (auto& c : s) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+  return s;
+}
+
+// A header's value under its name in any case; empty when it has none.
+inline std::string headerValue(const Value& headers, const std::string& name) {
+  if (!headers.is_map()) return "";
+  for (const auto& kv : *headers.as_map()) {
+    if (lowerOf(kv.first) == name) {
+      return kv.second.is_string() ? kv.second.as_string() : Struct::stringify(kv.second);
+    }
+  }
+  return "";
+}
+
+// A response whose body is bytes: by the model, or by the type it declares.
+// Text is no declared type, text/*, or a structured text format.
+inline bool isBinaryResponse(const Value& point, const std::string& declared) {
+  Value binary = getp(getp(point, "response"), "binary");
+  if (binary.is_bool() && binary.as_bool()) return true;
+  std::string media = lowerOf(declared.substr(0, declared.find(';')));
+  media.erase(0, media.find_first_not_of(" \t"));
+  media.erase(media.find_last_not_of(" \t") + 1);
+  if (media.empty() || 0 == media.compare(0, 5, "text/")) return false;
+  for (const char* part : {"json", "xml", "html", "javascript", "ecmascript", "yaml",
+                           "urlencoded", "graphql"}) {
+    if (std::string::npos != media.find(part)) return false;
+  }
+  return true;
+}
+
 // A body that is not JSON. An HTTP failure keeps its own error, with the
 // response described; otherwise the code tells a wrong content type from
 // malformed JSON.
 inline SdkErrorPtr unreadableBody(CtxPtr ctx, int status, const Value& headers, const Value& text,
                                   const Value& sent, SdkErrorPtr failed) {
-  auto lower = [](std::string s) {
-    for (auto& c : s) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-    return s;
-  };
-  auto headerValue = [&lower](const Value& h, const std::string& name) -> std::string {
-    if (!h.is_map()) return "";
-    for (const auto& kv : *h.as_map()) {
-      if (lower(kv.first) == name) {
-        return kv.second.is_string() ? kv.second.as_string() : Struct::stringify(kv.second);
-      }
-    }
-    return "";
-  };
   auto clean = [&ctx](const std::string& s) -> std::string {
     if (!ctx->utility || !ctx->utility->clean) return s;
     Value v = ctx->utility->clean(ctx, Value(s));
@@ -1170,23 +1189,8 @@ inline SdkErrorPtr unreadableBody(CtxPtr ctx, int status, const Value& headers, 
     (type.empty() ? std::string("none") : type) + ", user-agent " +
     (agent.empty() ? std::string("transport default") : agent);
 
-  // Only text is quoted: bytes are a file's, by the model or by their type.
-  // Text is no declared type, text/*, or a structured text format.
-  auto quotable = [&ctx, &lower](const std::string& declared) -> bool {
-    Value binary = getp(getp(ctx->point, "response"), "binary");
-    if (binary.is_bool() && binary.as_bool()) return false;
-    std::string media = lower(declared.substr(0, declared.find(';')));
-    media.erase(0, media.find_first_not_of(" \t"));
-    media.erase(media.find_last_not_of(" \t") + 1);
-    if (media.empty() || 0 == media.compare(0, 5, "text/")) return true;
-    for (const char* part : {"json", "xml", "html", "javascript", "ecmascript", "yaml",
-                             "urlencoded", "graphql"}) {
-      if (std::string::npos != media.find(part)) return true;
-    }
-    return false;
-  };
-
-  if (!is_nullish(text) && quotable(type)) {
+  // Only text is quoted: bytes are a file's.
+  if (!is_nullish(text) && !isBinaryResponse(ctx->point, type)) {
     // Cleaned whole: a secret the bound would split could leave its prefix.
     std::string raw = text.is_string() ? text.as_string() : Struct::stringify(text);
     std::string flat;
@@ -1217,7 +1221,7 @@ inline SdkErrorPtr unreadableBody(CtxPtr ctx, int status, const Value& headers, 
     failed->msg += " (" + detail + ")";
     return failed;
   }
-  if (type.empty() || lower(type).find("json") != std::string::npos) {
+  if (type.empty() || lowerOf(type).find("json") != std::string::npos) {
     return ctx->makeError("response_json_invalid", "response: body is not valid JSON (" + detail + ")");
   }
   return ctx->makeError("response_content_type",

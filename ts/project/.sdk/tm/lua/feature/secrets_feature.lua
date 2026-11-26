@@ -620,6 +620,7 @@ local function raw_exchange_fetch(fullurl, fetchdef)
     source = body and ltn12.source.string(body) or nil,
     sink = ltn12.sink.table(chunks),
     create = create,
+    redirect = false,
   })
 
   if not res then
@@ -679,6 +680,8 @@ function SecretsFeature:_buy_once()
     method = x.method,
     headers = { ["content-type"] = "application/json" },
     body = json.encode({ [x.request] = self._refresh }),
+    -- Never followed: a redirect would carry the refresh token on.
+    redirect = "manual",
   })
 
   if err ~= nil then

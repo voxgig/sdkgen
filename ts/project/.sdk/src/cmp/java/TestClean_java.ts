@@ -135,6 +135,10 @@ public class CleanTest {
   static final String CONTENT = "CANARY-CONTENT-b7n3v9x1c5";
   static final byte[] CONTENT_BYTES = CONTENT.getBytes(StandardCharsets.UTF_8);
 
+  // The marker a response of bytes carries, as the default transport hands
+  // on a body it read into text.
+  static final String RESPONSE = "CANARY-RESPONSE-k2m8q4w6z0";
+
   // Every value this SDK accepts as a raw body.
   static final Map<String, Supplier<Object>> CARRIERS = new LinkedHashMap<>();
 
@@ -192,21 +196,26 @@ public class CleanTest {
     return listed.substring(1, listed.length() - 1);
   }
 
+  static List<String> contentLeaks(String text) {
+    return contentLeaks(text, CONTENT);
+  }
+
   // The forms bytes travel in once copied: text, a list of byte values, hex,
   // base64 with or without its padding.
-  static List<String> contentLeaks(String text) {
+  static List<String> contentLeaks(String text, String marker) {
+    byte[] bytes = marker.getBytes(StandardCharsets.UTF_8);
     String flat = text.replaceAll("\\\\s+", "");
     List<String> found = new ArrayList<>();
-    if (text.contains(CONTENT)) {
+    if (text.contains(marker)) {
       found.add("text");
     }
-    if (flat.contains(byteValues(CONTENT_BYTES))) {
+    if (flat.contains(byteValues(bytes))) {
       found.add("byte values");
     }
-    if (flat.toLowerCase(Locale.ROOT).contains(HexFormat.of().formatHex(CONTENT_BYTES))) {
+    if (flat.toLowerCase(Locale.ROOT).contains(HexFormat.of().formatHex(bytes))) {
       found.add("hex");
     }
-    if (flat.contains(base64(CONTENT).replace("=", ""))) {
+    if (flat.contains(base64(marker).replace("=", ""))) {
       found.add("base64");
     }
     return found;
@@ -471,6 +480,18 @@ public class CleanTest {
       this.name = name;
       this.respond = respond;
     }
+  }
+
+  // A response of bytes under the type it declares, as the default transport
+  // hands on a body it read into text and could not parse.
+  static Scenario bytesScenario(int status, String type) {
+    return new Scenario("bytes", (ctx, url, fetchdef) -> jm(
+        "status", status,
+        "statusText", status < 400 ? "OK" : "ERR",
+        "headers", jm("content-type", type),
+        "json", (Supplier<Object>) () -> null,
+        "body", RESPONSE,
+        "unreadable", true));
   }
 
   static final List<Scenario> SCENARIOS = List.of(
@@ -1153,6 +1174,76 @@ public class CleanTest {
       assertTrue(0 < leaked,
           carrier.getKey() + ": with clean off, nothing showed the bytes: the sweep is blind");
     }
+  }
+
+  @Test
+  public void noResponseOfBytesLeavesTheSdkInAnyForm() {
+    Op op = usableOrSkip();
+
+    List<Sink> sinks = new ArrayList<>();
+    Map<String, Exception> errors = new LinkedHashMap<>();
+
+    Handler handler = capture(sinks);
+    try {
+      for (int status : new int[] {200, 404, 500}) {
+        for (String variant : List.of("throw", "explain", "nothrow")) {
+          Map<String, Object> ctrl = new LinkedHashMap<>();
+          if (!"throw".equals(variant)) {
+            ctrl.put("explain", new LinkedHashMap<String, Object>());
+          }
+          if ("nothrow".equals(variant)) {
+            ctrl.put("throw", false);
+          }
+          ${sdk} sdk = makeSdk(bytesScenario(status, "audio/wav"), sinks, null);
+          Exception err = drive(sdk, op, ctrl, sinks);
+          if (err != null) {
+            errors.put(status + "/" + variant, err);
+          }
+          forms(sinks, "sdk", sdk);
+        }
+      }
+    }
+    finally {
+      release(handler);
+    }
+
+    List<String> leaked = new ArrayList<>();
+    for (Sink s : sinks) {
+      List<String> found = contentLeaks(s.text, RESPONSE);
+      if (!found.isEmpty()) {
+        leaked.add(s.name + " [" + String.join(", ", found) + "]");
+      }
+    }
+
+    System.out.println("clean: response swept " + sinks.size() + " surface(s), "
+        + leaked.size() + " leak(s)");
+
+    assertEquals(0, leaked.size(),
+        "a response of bytes leaked through: " + String.join("; ", leaked));
+
+    // The failure still names what it could not read.
+    Exception failed = errors.get("200/throw");
+    assertTrue(failed instanceof SdkError, "a response of bytes must fail the operation: " + failed);
+    assertEquals("response_content_type", ((SdkError) failed).code);
+    assertTrue(String.valueOf(failed.getMessage()).contains("audio/wav"),
+        "the error does not name the type: " + failed.getMessage());
+  }
+
+  @Test
+  public void theSweepCanSeeAResponseCleanSwitchedOffShowsTheBytes() {
+    Op op = usableOrSkip();
+
+    List<Sink> sinks = new ArrayList<>();
+    ${sdk} sdk = makeSdk(bytesScenario(200, "audio/wav"), sinks, jm("active", false));
+    Exception err = drive(sdk, op, new LinkedHashMap<>(), sinks);
+    assertNotNull(err, "a response of bytes must fail the operation");
+    int leaked = 0;
+    for (Sink s : sinks) {
+      if (!contentLeaks(s.text, RESPONSE).isEmpty()) {
+        leaked++;
+      }
+    }
+    assertTrue(0 < leaked, "with clean off, nothing showed the response: the sweep is blind");
   }
 
   // An entity block, of per-entity settings or seeded records keyed by

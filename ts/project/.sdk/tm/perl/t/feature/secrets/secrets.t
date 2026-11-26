@@ -85,6 +85,7 @@ sub counting_fetch {
       'method' => $fetchdef->{method},
       'body' => $fetchdef->{body},
       'auth' => $headers->{'authorization'},
+      'redirect' => $fetchdef->{redirect},
     };
 
     if ($stub->{istoken}->($url)) {
@@ -758,6 +759,8 @@ sub exchange_sdk {
   is_deeply(Voxgig::Struct::parse_json(token_calls($stub)->[0]{body}),
     { 'refresh_token' => 'REFRESH01' },
     'exchange: the refresh token is sent in the request field');
+  is(token_calls($stub)->[0]{redirect}, 'manual',
+    'exchange: system.fetch is asked to follow no redirect');
   is(scalar @{ api_calls($stub) }, 1, 'exchange: one API call');
   credential_is(api_calls($stub)->[0]{auth}, 'ACCESS01',
     'exchange: the request carries the access token');
@@ -1010,6 +1013,103 @@ sub exchange_sdk {
   # A deterministic placeholder, so offline suites need no configuration.
   is($f->credential, 'test-access_token', 'test mode: a fake access token');
   clear_env();
+}
+
+# Real listeners and the SDK's raw HTTP fetch: a stub follows nothing. One
+# child per case serves both origins, printing each request it records,
+# until it is told to stop. The exchange itself is not recorded.
+sub redirect_exchange {
+  my ($status, $location) = @_;
+  require IO::Socket::INET;
+  require IO::Select;
+  require POSIX;
+  my @listen = (LocalAddr => '127.0.0.1', LocalPort => 0, Listen => 5, ReuseAddr => 1);
+  my $api = IO::Socket::INET->new(@listen);
+  my $other = IO::Socket::INET->new(@listen);
+  my $apiport = $api->sockport;
+  $location =~ s/OTHER/$other->sockport/e;
+  pipe(my $seen_r, my $seen_w) or return;
+  my $pid = fork();
+  return unless defined $pid;
+  if (0 == $pid) {
+    close $seen_r;
+    $seen_w->autoflush(1);
+    my $select = IO::Select->new($api, $other);
+    SERVE: while (my @ready = $select->can_read(20)) {
+      for my $srv (@ready) {
+        my $sock = $srv->accept or next;
+        my ($method, $rpath) = split / /, (<$sock> // '');
+        last SERVE if '/stop' eq ($rpath // '');
+        my ($length, $sent) = (0, '');
+        while (defined(my $line = <$sock>)) {
+          my ($name, $value) = $line =~ /\A([^:]+):\s*(.*?)\r?\n\z/ or last;
+          $length = $value if 'content-length' eq lc $name;
+        }
+        read($sock, $sent, $length) if $length;
+        my $hop = $srv == $api && '/api/auth/token' eq $rpath;
+        print {$seen_w} join("\t", $srv == $api ? 'origin' : 'other', $method, $rpath, $sent), "\n"
+          unless $hop;
+        my $body = $srv == $api ? '{"access_token":"MOVED01"}' : '{"access_token":"ELSEWHERE01"}';
+        $body = '' if $hop;
+        print {$sock} 'HTTP/1.1 ' . ($hop ? $status : 200) . " X\r\n"
+          . ($hop ? "Location: $location\r\n" : '') . "Content-Type: application/json\r\n"
+          . 'Content-Length: ' . length($body) . "\r\nConnection: close\r\n\r\n" . $body;
+        close $sock;
+      }
+    }
+    # Windows forks a thread, where _exit ends the whole test process.
+    $^O eq 'MSWin32' ? exit(0) : POSIX::_exit(0);
+  }
+  close $_ for $seen_w, $api, $other;
+
+  my $base = "http://127.0.0.1:$apiport/api";
+  my $sdk = ProjectNameSDK->new({
+    'base' => $base,
+    'allow' => { 'op' => 'direct,graphql,list,load,create,update,remove' },
+    'feature' => { 'secrets' => {
+      'active' => 1,
+      'name' => 'refresh_token',
+      'exchange' => { 'active' => 1, 'refresh' => 'REFRESH01' },
+    } },
+  });
+  my $res = eval { $sdk->direct({ 'path' => '/thing' }) };
+  my $message = defined $res ? (defined $res->{err} ? "$res->{err}" : 'ok') : "$@";
+
+  my $stop = IO::Socket::INET->new(PeerAddr => '127.0.0.1', PeerPort => $apiport);
+  print {$stop} "GET /stop HTTP/1.0\r\n\r\n" if $stop;
+  my @arrived;
+  while (defined(my $line = <$seen_r>)) {
+    chomp $line;
+    push @arrived, $line;
+  }
+  waitpid($pid, 0);
+  return ($message, \@arrived, $base);
+}
+
+SKIP: {
+  clear_env();
+  my @answers = ([307, 'http://127.0.0.1:OTHER/api/auth/token'],
+    [308, 'http://127.0.0.1:OTHER/api/auth/token'],
+    [302, 'http://127.0.0.1:OTHER/api/auth/token'], [307, '/api/moved/token']);
+  my ($refused, @followed, @allowed) = (0);
+  for my $answer (@answers) {
+    my ($message, $arrived, $base) = redirect_exchange(@$answer);
+    skip('no fork', 3) unless $arrived;
+    push @followed, map { "$answer->[0] to $answer->[1]: $_" } @$arrived;
+    if (0 <= index($message, "token exchange failed: $answer->[0] from $base/auth/token")) {
+      $refused++;
+    }
+    else {
+      push @allowed, "$answer->[0] to $answer->[1]: $message";
+    }
+  }
+
+  print STDERR 'secrets: exchange refused ' . $refused . ' redirect(s), '
+    . scalar(@followed) . " followed\n";
+
+  is_deeply(\@followed, [], 'exchange redirect: nothing followed a refused exchange');
+  is_deeply(\@allowed, [], 'exchange redirect: each redirect is a failed exchange');
+  is($refused, scalar @answers, 'exchange redirect: every case refused');
 }
 
 clear_env();

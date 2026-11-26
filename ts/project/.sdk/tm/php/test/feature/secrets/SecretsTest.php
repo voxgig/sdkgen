@@ -82,6 +82,7 @@ class ProjectNameSecretsWire
             'auth' => $headers[self::credheader()] ?? null,
             'has' => array_key_exists(self::credheader(), $headers),
             'body' => $fetchdef['body'] ?? null,
+            'redirect' => $fetchdef['redirect'] ?? null,
         ];
 
         if ($this->istoken($fullurl)) {
@@ -808,6 +809,8 @@ class ProjectNameSecretsTest extends TestCase
         $this->assertCount(2, $wire->token(),
             'expected the initial purchase plus one rebuy');
         $this->assertStringContainsString('REFRESH01', (string)$wire->token()[0]['body']);
+        $this->assertSame('manual', $wire->token()[0]['redirect'],
+            'the exchange must ask system.fetch to follow no redirect');
 
         $api = $wire->api();
         $this->assertCount(2, $api, 'expected the request to be retried exactly once');
@@ -991,6 +994,95 @@ class ProjectNameSecretsTest extends TestCase
         $this->assertNull($leak, 'the stub outlived stop(): ' . (string)$leak);
     }
 
+    // Real listeners and the SDK's raw HTTP function: a stub follows nothing.
+    // Its own process, for the reason the test above gives.
+    #[\PHPUnit\Framework\Attributes\RunInSeparateProcess]
+    #[\PHPUnit\Framework\Attributes\PreserveGlobalState(false)]
+    public function testARedirectAnsweringTheExchangeIsAFailureAndNothingFollowsIt(): void
+    {
+        $record = <<<'ROUTER'
+<?php
+$path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/';
+$answer = @file_get_contents(__DIR__ . '/answer.txt');
+if (false !== $answer && '/api/auth/token' === $path) {
+    [$status, $location] = explode(' ', $answer, 2);
+    header('location: ' . $location, true, (int)$status);
+    return;
+}
+file_put_contents(__DIR__ . '/seen.txt', json_encode([
+    'method' => $_SERVER['REQUEST_METHOD'] ?? '', 'path' => $path,
+    'body' => (string)file_get_contents('php://input'),
+]) . "\n", FILE_APPEND);
+header('content-type: application/json');
+echo false === $answer ? '{"access_token":"ELSEWHERE01"}' : '{"access_token":"MOVED01"}';
+ROUTER;
+
+        $origin = new ProjectNameSecretsHttpStub($record);
+        $other = new ProjectNameSecretsHttpStub($record);
+        $oport = $origin->start();
+        $aport = $other->start();
+
+        try {
+            if (0 === $oport || 0 === $aport) {
+                $this->markTestSkipped('could not start the local HTTP stubs');
+            }
+            $base = 'http://127.0.0.1:' . $oport . '/api';
+            $away = 'http://127.0.0.1:' . $aport . '/api/auth/token';
+            $answers = [[307, $away], [308, $away], [302, $away], [307, '/api/moved/token']];
+
+            $allowed = [];
+            $refused = 0;
+
+            foreach ($answers as [$status, $location]) {
+                $origin->put('answer.txt', $status . ' ' . $location);
+                $client = $this->withSecrets(function (bool $adopt) use ($base) {
+                    $opts = [
+                        'base' => $base,
+                        'feature' => ['secrets' => [
+                            'active' => true,
+                            'name' => 'refresh_token',
+                            'exchange' => ['active' => true, 'refresh' => 'REFRESH01'],
+                        ]],
+                    ];
+                    if ($adopt) {
+                        $opts['extend'] = [new ProjectNameSecretsFeature()];
+                    }
+                    return new ProjectNameSDK($opts);
+                });
+
+                try {
+                    $res = $client->direct(['path' => '/probe']);
+                    $message = is_array($res) && null !== ($res['err'] ?? null)
+                        ? (string)(($res['err'] instanceof \Throwable) ? $res['err']->getMessage() : $res['err'])
+                        : json_encode($res);
+                } catch (\Throwable $e) {
+                    $message = $e->getMessage();
+                }
+
+                if (str_contains($message,
+                    'token exchange failed: ' . $status . ' from ' . $base . '/auth/token')) {
+                    $refused++;
+                } else {
+                    $allowed[] = $status . ' to ' . $location . ': ' . $message;
+                }
+            }
+
+            $elsewhere = array_values(array_filter(explode("\n", (string)$other->read('seen.txt'))));
+            $followed = array_values(array_filter(explode("\n", (string)$origin->read('seen.txt'))));
+
+            print("\nsecrets: exchange refused " . $refused . ' redirect(s), ' .
+                (count($elsewhere) + count($followed)) . " followed\n");
+
+            $this->assertSame([], $elsewhere, 'the exchange reached another origin');
+            $this->assertSame([], $followed, 'a request followed a refused exchange');
+            $this->assertSame([], $allowed, 'a redirect was not a failed exchange');
+            $this->assertSame(count($answers), $refused);
+        } finally {
+            $origin->stop();
+            $other->stop();
+        }
+    }
+
     // -----------------------------------------------------------------
     // The refusal is NOT retried. The gate lives at the transport, so a
     // provider ERROR must fail the operation once - never spin the chain,
@@ -1035,6 +1127,10 @@ class ProjectNameSecretsHttpStub
     private ?string $refresh = null;
     private ?string $auth = null;
 
+    public function __construct(private ?string $router = null)
+    {
+    }
+
     public function start(): int
     {
         $this->dir = sys_get_temp_dir() . '/secrets-stub-' . bin2hex(random_bytes(6));
@@ -1043,7 +1139,7 @@ class ProjectNameSecretsHttpStub
             return 0;
         }
 
-        $router = <<<'ROUTER'
+        $router = $this->router ?? <<<'ROUTER'
 <?php
 $dir = __DIR__;
 $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/';
@@ -1178,6 +1274,17 @@ ROUTER;
         }
 
         return 'a server is still listening on 127.0.0.1:' . $this->port;
+    }
+
+    // A file beside the router, which a custom router reads or writes.
+    public function put(string $file, string $text): void
+    {
+        file_put_contents($this->dir . '/' . $file, $text);
+    }
+
+    public function read(string $file): ?string
+    {
+        return $this->slurp($file);
     }
 
     public function refresh(): ?string

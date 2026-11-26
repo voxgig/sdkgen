@@ -135,6 +135,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use ${rustcrate}::core::helpers::{getp, getpath, jo, json_thunk, setp, vfn};
+use ${rustcrate}::core::response::Response;
 use ${rustcrate}::core::types::OutVal;
 use ${rustcrate}::utility::clean;
 use ${rustcrate}::utility::voxgigstruct as vs;
@@ -161,6 +162,10 @@ const MASK: &str = "[redacted]";
 
 // The marker a body of bytes carries.
 const CONTENT: &str = "CANARY-CONTENT-b7n3v9x1c5";
+
+// The marker a response of bytes carries, as the default transport hands
+// such a body on: read into text, and marked unreadable.
+const RESPONSE: &str = "CANARY-RESPONSE-k2m8q4w6z0";
 
 // Every value this SDK accepts as a raw body.
 const CARRIERS: [&str; 2] = ["bytes", "string"];
@@ -370,6 +375,18 @@ fn response(status: i64, data: Value, headers: &[(&str, &str)]) -> Value {
     ])
 }
 
+// A response of bytes under the type it declares.
+fn bytes_response(status: i64, ctype: &str) -> Value {
+    jo(vec![
+        ("status", Value::Num(status as f64)),
+        ("statusText", Value::str(if status < 400 { "OK" } else { "ERR" })),
+        ("headers", jo(vec![("content-type", Value::str(ctype))])),
+        ("body", Value::str(RESPONSE)),
+        ("json", json_thunk(Value::Noval)),
+        ("unreadable", Value::Bool(true)),
+    ])
+}
+
 #[derive(Clone, Copy, PartialEq)]
 enum Scenario {
     Ok,
@@ -377,6 +394,7 @@ enum Scenario {
     Server,
     Transport,
     NotJson,
+    Bytes(i64),
 }
 
 const SCENARIOS: [Scenario; 5] = [
@@ -395,6 +413,7 @@ impl Scenario {
             Scenario::Server => "server",
             Scenario::Transport => "transport",
             Scenario::NotJson => "notjson",
+            Scenario::Bytes(_) => "bytes",
         }
     }
 
@@ -418,6 +437,7 @@ impl Scenario {
                 ("body", Value::str("<html>")),
                 ("json", json_thunk(Value::Noval)),
             ]),
+            Scenario::Bytes(status) => bytes_response(*status, "audio/wav"),
         }
     }
 }
@@ -710,12 +730,12 @@ fn numbers(text: &str) -> String {
 
 // The forms bytes travel in once copied: text, a list of byte values (JSON,
 // or Debug's Num(67)), hex, base64.
-fn content_leaks(text: &str) -> Vec<&'static str> {
+fn content_leaks(text: &str, marker: &str) -> Vec<&'static str> {
     let flat: String = text.chars().filter(|c| !c.is_whitespace()).collect();
-    let values: String = CONTENT.bytes().map(|b| format!("{},", b)).collect();
-    let hex: String = CONTENT.bytes().map(|b| format!("{:02x}", b)).collect();
+    let values: String = marker.bytes().map(|b| format!("{},", b)).collect();
+    let hex: String = marker.bytes().map(|b| format!("{:02x}", b)).collect();
     let mut found = Vec::new();
-    if text.contains(CONTENT) {
+    if text.contains(marker) {
         found.push("text");
     }
     if numbers(text).contains(&format!(",{}", values)) {
@@ -724,7 +744,7 @@ fn content_leaks(text: &str) -> Vec<&'static str> {
     if flat.to_lowercase().contains(&hex) {
         found.push("hex");
     }
-    if flat.contains(&b64(CONTENT)) {
+    if flat.contains(&b64(marker)) {
         found.push("base64");
     }
     found
@@ -1111,7 +1131,7 @@ fn clean_no_body_of_bytes_leaves_the_sdk_in_any_form() {
         .borrow()
         .iter()
         .filter_map(|s| {
-            let found = content_leaks(&s.text);
+            let found = content_leaks(&s.text, CONTENT);
             if found.is_empty() {
                 None
             } else {
@@ -1188,9 +1208,96 @@ fn clean_the_sweep_can_see_a_body() {
         );
         let err = drive_with(&sdk, &target, Value::Noval, &sinks, carrier(name));
         assert!(err.is_some(), "{}: the 404 scenario must throw", name);
-        let leaked = sinks.borrow().iter().filter(|s| !content_leaks(&s.text).is_empty()).count();
+        let leaked = sinks.borrow().iter().filter(|s| !content_leaks(&s.text, CONTENT).is_empty()).count();
         assert!(0 < leaked, "{}: with clean off, nothing showed the bytes: the sweep is blind", name);
     }
+}
+
+#[test]
+fn clean_no_response_of_bytes_leaves_the_sdk_in_any_form() {
+    let Some(target) = usable_op() else {
+        println!("{}", NOTHING_TO_SWEEP);
+        return;
+    };
+
+    let sinks: Sinks = Rc::new(RefCell::new(Vec::new()));
+    let mut errors: Vec<(String, ${Name}Error)> = Vec::new();
+
+    for status in [200, 404, 500] {
+        for variant in ["throw", "explain", "nothrow"] {
+            let sdk = make_sdk(Scenario::Bytes(status), &sinks, None, Vec::new());
+            let ctrl = match variant {
+                "explain" => jo(vec![("explain", Value::empty_map())]),
+                "nothrow" => jo(vec![("throw", Value::Bool(false)), ("explain", Value::empty_map())]),
+                _ => Value::Noval,
+            };
+            if let Some(err) = drive(&sdk, &target, ctrl, &sinks) {
+                errors.push((format!("{}/{}", status, variant), err));
+            }
+            push(&sinks, "sdk:debug", format!("{:?}", sdk));
+            push(&sinks, "sdk:display", format!("{}", sdk));
+        }
+    }
+
+    let leaked: Vec<String> = sinks
+        .borrow()
+        .iter()
+        .filter_map(|s| {
+            let found = content_leaks(&s.text, RESPONSE);
+            if found.is_empty() {
+                None
+            } else {
+                Some(format!("{} [{}]", s.name, found.join(", ")))
+            }
+        })
+        .collect();
+
+    println!(
+        "clean: response swept {} surface(s), {} leak(s)",
+        sinks.borrow().len(),
+        leaked.len()
+    );
+
+    assert!(leaked.is_empty(), "a response of bytes leaked through: {}", leaked.join("; "));
+
+    // The failure still names what it could not read.
+    let failed = errors
+        .iter()
+        .find(|(k, _)| k == "200/throw")
+        .map(|(_, e)| e.clone())
+        .expect("a response of bytes must fail the operation");
+    assert_eq!(failed.code, "response_content_type");
+    assert!(failed.msg.contains("audio/wav"), "the error does not name the type: {}", failed.msg);
+}
+
+// No sweep control: no surface of this SDK carries the response body, even
+// with clean off. The rule is held for a hook that cleans one itself.
+#[test]
+fn clean_describes_a_response_of_bytes_a_hook_carries() {
+    let carried = |ctype: &str, active: bool, body: Value| {
+        let sdk = construct(jo(vec![("clean", jo(vec![("active", Value::Bool(active))]))]));
+        let answer = bytes_response(200, ctype);
+        setp(&answer, "body", body.clone());
+        let ctx = sdk.get_utility().make_context(
+            CtxSpec {
+                response: Some(Rc::new(RefCell::new(Response::new(&answer)))),
+                ..Default::default()
+            },
+            Some(&sdk.get_root_ctx()),
+        );
+        getp(&clean::clean_util(&ctx, &jo(vec![("body", body)])), "body")
+    };
+    let desc = jo(vec![("binary$", Value::str("bytes")), ("type", Value::str("audio/wav"))]);
+    assert_eq!(carried("audio/wav", true, Value::str(RESPONSE)), desc);
+    assert_eq!(carried("", true, Value::str(RESPONSE)), Value::str(RESPONSE));
+    assert_eq!(carried("application/json", true, Value::str(RESPONSE)), Value::str(RESPONSE));
+    assert_eq!(carried("audio/wav", false, Value::str(RESPONSE)), Value::str(RESPONSE));
+    let sized = jo(vec![
+        ("binary$", Value::str("bytes")),
+        ("size", Value::Num(RESPONSE.len() as f64)),
+        ("type", Value::str("audio/wav")),
+    ]);
+    assert_eq!(carried("audio/wav", true, bytes_value(RESPONSE.as_bytes())), sized);
 }
 `
 }

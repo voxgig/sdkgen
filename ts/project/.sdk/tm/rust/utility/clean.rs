@@ -4,6 +4,7 @@ use std::rc::Rc;
 use crate::core::context::Context;
 use crate::core::error::ProjectNameError;
 use crate::core::helpers::{getp, getpath, jo, setp};
+use crate::core::response::{header_value, is_binary_response, Response};
 use crate::core::spec::Spec;
 use crate::utility::media::{is_raw_request, RAW_BODY};
 use crate::utility::voxgigstruct as vs;
@@ -30,12 +31,14 @@ struct CleanConfig {
     hint: usize,
 }
 
-// Where the live request body of a point the model marks binary is held,
-// and its type. Handles, so the body is compared in place, never copied.
+// Where the live bodies of this call that are bytes are held, each with its
+// type. Handles, so a body is compared in place, never copied.
 struct BinaryBody {
     spec: Option<Rc<RefCell<Spec>>>,
     reqdata: Value,
     media: Option<String>,
+    response: Option<Rc<RefCell<Response>>>,
+    ctype: Option<String>,
 }
 
 fn normkey(key: &str) -> String {
@@ -275,12 +278,17 @@ fn node_ptr(val: &Value) -> Option<usize> {
     }
 }
 
-// A string or a list shorter than the registry accepts is not told from
-// ordinary data.
+// The request body of a point the model marks binary, and a response body
+// that is bytes. A string or a list shorter than the registry accepts is not
+// told from ordinary data.
 fn binary_body(ctx: &Context) -> Option<BinaryBody> {
     let point = ctx.point.borrow();
     let body = getp(&point, "body");
-    if !is_raw_request(&point) || getp(&body, "binary") != Value::Bool(true) {
+    let sent = is_raw_request(&point) && getp(&body, "binary") == Value::Bool(true);
+    let response = ctx.response.borrow().clone();
+    let ctype = response.as_ref().map(|r| header_value(&r.borrow().headers, "content-type"));
+    let answered = ctype.as_deref().map_or(false, |t| is_binary_response(&point, t));
+    if !sent && !answered {
         return None;
     }
     let min = count(&getp(&config_block(ctx), "min"), 4).max(1);
@@ -289,24 +297,26 @@ fn binary_body(ctx: &Context) -> Option<BinaryBody> {
         Value::List(l) => min <= l.borrow().len(),
         _ => false,
     };
-    let spec = ctx.spec.borrow().clone().filter(|spec| long(&spec.borrow().body));
+    let spec = ctx.spec.borrow().clone().filter(|spec| sent && long(&spec.borrow().body));
     let reqdata = match &*ctx.reqdata.borrow() {
-        Value::Map(data) if data.borrow().get(RAW_BODY).map_or(false, &long) => {
+        Value::Map(data) if sent && data.borrow().get(RAW_BODY).map_or(false, &long) => {
             Value::Map(data.clone())
         }
         _ => Value::Noval,
     };
-    if spec.is_none() && reqdata.is_noval() {
+    let response = response.filter(|r| answered && long(&r.borrow().body));
+    if spec.is_none() && reqdata.is_noval() && response.is_none() {
         return None;
     }
     let media = match getp(&body, "media") {
         Value::Str(s) => Some(s),
         _ => None,
     };
-    Some(BinaryBody { spec, reqdata, media })
+    let ctype = ctype.filter(|t| !t.is_empty());
+    Some(BinaryBody { spec, reqdata, media, response, ctype })
 }
 
-fn is_live_body(bin: &BinaryBody, val: &Value) -> bool {
+fn is_request_body(bin: &BinaryBody, val: &Value) -> bool {
     if let Some(spec) = &bin.spec {
         if spec.borrow().body == *val {
             return true;
@@ -318,9 +328,14 @@ fn is_live_body(bin: &BinaryBody, val: &Value) -> bool {
     }
 }
 
+fn is_response_body(bin: &BinaryBody, val: &Value) -> bool {
+    bin.response.as_ref().map_or(false, |r| r.borrow().body == *val)
+}
+
 // Bytes are described, never copied (ADR-006). The value union has no
-// variant for bytes: a string, or a list of byte values, is bytes only as
-// the body of a point the model marks binary, by identity or equal content.
+// variant for bytes: a string, or a list of byte values, is bytes only as a
+// live body, by identity or equal content. A response read as text does not
+// say how many bytes it was, so it is not sized.
 fn describe_binary(val: &Value, bin: Option<&BinaryBody>) -> Option<Value> {
     let bin = bin?;
     let size = match val {
@@ -328,14 +343,18 @@ fn describe_binary(val: &Value, bin: Option<&BinaryBody>) -> Option<Value> {
         Value::List(l) => l.borrow().len(),
         _ => return None,
     };
-    if !is_live_body(bin, val) {
+    let (media, sized) = if is_request_body(bin, val) {
+        (&bin.media, true)
+    } else if is_response_body(bin, val) {
+        (&bin.ctype, matches!(val, Value::List(_)))
+    } else {
         return None;
+    };
+    let desc = jo(vec![(BINARY, Value::str("bytes"))]);
+    if sized {
+        setp(&desc, "size", Value::Num(size as f64));
     }
-    let desc = jo(vec![
-        (BINARY, Value::str("bytes")),
-        ("size", Value::Num(size as f64)),
-    ]);
-    if let Some(media) = &bin.media {
+    if let Some(media) = media {
         setp(&desc, "type", Value::str(media.clone()));
     }
     Some(desc)

@@ -316,42 +316,54 @@ func cleanAddSensitive(ctx *core.Context, val any) {
 	cleanConfigOf(ctx).addSensitive(val, false, 0, nil)
 }
 
-// The live request body of a point the model marks binary, and its type.
+// A live body of this call that is bytes, and its type. A response read as
+// text does not say how many bytes it was, so it is not sized.
 type cleanBinary struct {
 	live  []any
 	media string
+	sized bool
 }
 
-// A string shorter than the registry accepts is not told from ordinary text.
-func cleanBinaryOf(ctx *core.Context, cfg *cleanConfig) *cleanBinary {
-	if ctx == nil || !isRawRequest(ctx.Point) ||
-		true != vs.GetPath(ctx.Point, []any{"body", "binary"}) {
-		return nil
+// The request body of a point the model marks binary, and a response body
+// that is bytes. A string shorter than the registry accepts is not told from
+// ordinary text.
+func cleanBinaryOf(ctx *core.Context, cfg *cleanConfig) []cleanBinary {
+	bins := []cleanBinary{}
+	if ctx == nil {
+		return bins
 	}
-	bodies := []any{nil, ctx.Reqdata[rawBodyKey]}
-	if ctx.Spec != nil {
-		bodies[0] = ctx.Spec.Body
-	}
-	bin := &cleanBinary{}
-	for _, body := range bodies {
-		text, isText := body.(string)
-		if body != nil && (!isText || cfg.min <= len(text)) {
-			bin.live = append(bin.live, body)
+	add := func(media string, sized bool, bodies ...any) {
+		bin := cleanBinary{media: media, sized: sized}
+		for _, body := range bodies {
+			text, isText := body.(string)
+			if body != nil && (!isText || cfg.min <= len(text)) {
+				bin.live = append(bin.live, body)
+			}
+		}
+		if 0 < len(bin.live) {
+			bins = append(bins, bin)
 		}
 	}
-	if 0 == len(bin.live) {
-		return nil
+	if isRawRequest(ctx.Point) && true == vs.GetPath(ctx.Point, []any{"body", "binary"}) {
+		var sent any
+		if ctx.Spec != nil {
+			sent = ctx.Spec.Body
+		}
+		media, _ := vs.GetPath(ctx.Point, []any{"body", "media"}).(string)
+		add(media, true, sent, ctx.Reqdata[rawBodyKey])
 	}
-	bin.media, _ = vs.GetPath(ctx.Point, []any{"body", "media"}).(string)
-	return bin
+	if response := ctx.Response; response != nil {
+		ctype := core.HeaderValue(response.Headers, "content-type")
+		if core.IsBinaryResponse(ctx.Point, ctype) {
+			add(ctype, false, response.Body)
+		}
+	}
+	return bins
 }
 
 // The live body is the same object, or for a string an equal one. A slice
 // has no ==, so it is the same when it shares its start and its length.
-func (bin *cleanBinary) is(val any) bool {
-	if bin == nil {
-		return false
-	}
+func (bin cleanBinary) is(val any) bool {
 	text, isText := val.(string)
 	for _, live := range bin.live {
 		if isText {
@@ -379,14 +391,14 @@ func (bin *cleanBinary) is(val any) bool {
 }
 
 // One pass over one value: the registry as it stood when the pass began,
-// the ancestors of the node in hand, for cutting cycles, the body of bytes
-// the operation in hand sends, if it sends one, and how many values the
-// pass has described so far.
+// the ancestors of the node in hand, for cutting cycles, the bodies of bytes
+// the operation in hand sends and receives, and how many values the pass
+// has described so far.
 type cleaner struct {
 	cfg       *cleanConfig
 	values    []string
 	seen      []uintptr
-	bin       *cleanBinary
+	bins      []cleanBinary
 	described int
 }
 
@@ -432,15 +444,24 @@ func (c *cleaner) sensitiveKey(key string) bool {
 }
 
 // Bytes are described, never copied (ADR-006): the kind, and the size and
-// media type where they are known. A string is bytes only as the body of a
-// point the model marks binary; a reader is not read, since it reads once.
+// media type where they are known. A string is bytes only as a live body of
+// the call; a reader is not read, since it reads once.
 func (c *cleaner) describe(val any) map[string]any {
-	declared := c.bin.is(val)
+	var bin *cleanBinary
+	for i := range c.bins {
+		if c.bins[i].is(val) {
+			bin = &c.bins[i]
+			break
+		}
+	}
 	var desc map[string]any
 
 	if text, ok := val.(string); ok {
-		if declared {
-			desc = map[string]any{cleanBinaryKey: "bytes", "size": len(text)}
+		if bin != nil {
+			desc = map[string]any{cleanBinaryKey: "bytes"}
+			if bin.sized {
+				desc["size"] = len(text)
+			}
 		}
 	} else {
 		rv := reflect.ValueOf(val)
@@ -465,8 +486,8 @@ func (c *cleaner) describe(val any) map[string]any {
 	if desc == nil {
 		return nil
 	}
-	if declared && "" != c.bin.media {
-		desc["type"] = c.bin.media
+	if bin != nil && "" != bin.media {
+		desc["type"] = bin.media
 	}
 	c.described++
 	return desc
@@ -745,7 +766,7 @@ func cleanUtil(ctx *core.Context, val any) any {
 		return c.cleanString(text)
 	}
 
-	c.bin = cleanBinaryOf(ctx, cfg)
+	c.bins = cleanBinaryOf(ctx, cfg)
 
 	switch v := val.(type) {
 	case *core.ProjectNameError:

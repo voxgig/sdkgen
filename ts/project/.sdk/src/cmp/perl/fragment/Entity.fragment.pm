@@ -344,9 +344,15 @@ sub _unexpected {
     }
   }
   return undef if defined $ctx->{ctrl}{throw_err} && !$ctx->{ctrl}{throw_err};
-  # An exception object of another class is the caller's own, and is thrown
-  # on as it is: clean would hand back a copy of it.
-  return $err if Scalar::Util::blessed($err) && !$err->isa('ProjectNameError');
+  # An exception object of another class leaves as the SDK's error carrying
+  # its message cleaned; the object itself is the cause.
+  if (Scalar::Util::blessed($err) && !$err->isa('ProjectNameError')) {
+    my $msg = "$err";
+    $msg =~ s/\s+\z//;
+    my $sdkerr = ProjectNameError->new('', $clean->($ctx, $msg), $ctx);
+    $sdkerr->cause($err);
+    return $sdkerr;
+  }
   return $clean->($ctx, $err);
 }
 

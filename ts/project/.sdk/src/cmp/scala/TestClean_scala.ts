@@ -58,7 +58,7 @@ import java.util.{ArrayList, Base64, LinkedHashMap, List => JList, Map => JMap}
 import java.util.function.{Consumer, Supplier}
 import java.util.logging.{Handler, Level, LogRecord, Logger}
 
-import ${scalapackage}.core.{Config, Context, Helpers, Result, SdkEntity, SdkError, Spec, ${SDK}}
+import ${scalapackage}.core.{Config, Context, Helpers, Response, Result, SdkEntity, SdkError, Spec, ${SDK}}
 import ${scalapackage}.feature.BaseFeature
 import ${scalapackage}.utility.struct.Struct
 
@@ -88,6 +88,10 @@ object SdkCleanTestMain {
   // The marker a body of bytes carries.
   private val CONTENT = "CANARY-CONTENT-b7n3v9x1c5"
   private val CONTENT_BYTES: Array[Byte] = CONTENT.getBytes(StandardCharsets.UTF_8)
+
+  // The marker a response of bytes carries, as the default transport hands
+  // on a body it read into text.
+  private val RESPONSE = "CANARY-RESPONSE-k2m8q4w6z0"
 
   // Every value this SDK accepts as a raw body.
   private val CARRIERS: List[(String, () => Object)] = List(
@@ -123,14 +127,15 @@ object SdkCleanTestMain {
 
   // The forms bytes travel in once copied: text, a list of byte values, hex,
   // base64 with or without its padding.
-  private def contentLeaks(text: String): List[String] = {
+  private def contentLeaks(text: String, marker: String = CONTENT): List[String] = {
+    val bytes = marker.getBytes(StandardCharsets.UTF_8)
     val flat = text.replaceAll("\\\\s+", "")
-    val hex = CONTENT_BYTES.map(b => String.format("%02x", I(b & 0xff))).mkString
+    val hex = bytes.map(b => String.format("%02x", I(b & 0xff))).mkString
     List(
-      ("text", text.contains(CONTENT)),
-      ("byte values", flat.contains(CONTENT_BYTES.mkString(","))),
+      ("text", text.contains(marker)),
+      ("byte values", flat.contains(bytes.mkString(","))),
       ("hex", flat.toLowerCase.contains(hex)),
-      ("base64", flat.contains(b64(CONTENT).replace("=", ""))),
+      ("base64", flat.contains(b64(marker).replace("=", ""))),
     ).filter(f => f._2).map(f => f._1)
   }
 
@@ -142,6 +147,8 @@ object SdkCleanTestMain {
       "headers" -> s.headers, "query" -> s.query, "body" -> plain(s.body))
     case r: Result => om("status" -> I(r.status), "headers" -> r.headers,
       "body" -> r.body, "resdata" -> r.resdata)
+    case r: Response => om("status" -> I(r.status), "headers" -> r.headers,
+      "body" -> plain(r.body))
     case e: SdkEntity => e.data()
     case b: Array[Byte] =>
       val out = new ArrayList[Object]()
@@ -265,6 +272,16 @@ object SdkCleanTestMain {
         "headers" -> new LinkedHashMap[String, Object](), "json" -> js, "body" -> "<html>")
     }),
   )
+
+  // A response of bytes under the type it declares, as the default transport
+  // hands on a body it read into text and could not parse.
+  private def bytesScenario(status: Int, ctype: String): Scenario =
+    new Scenario("bytes", (_, _) => {
+      val js: Supplier[Object] = () => null
+      om("status" -> I(status), "statusText" -> (if (status < 400) "OK" else "ERR"),
+        "headers" -> om("content-type" -> ctype), "json" -> js, "body" -> RESPONSE,
+        "unreadable" -> B(true))
+    })
 
   // Offline, as every generated suite is: the test OPTION resolves a required
   // server variable to test-<name>, and installs no transport.
@@ -782,6 +799,66 @@ object SdkCleanTestMain {
     }
   }
 
+  private def responseSweep(rep: SdkTestReport): Unit = {
+    val target = usableOp()
+    if (target == null) {
+      println("clean: skipped: " + NO_OP)
+      return
+    }
+
+    val sinks = new ArrayList[Sink]()
+    val errors = new LinkedHashMap[String, Throwable]()
+
+    for (status <- List(200, 404, 500)) {
+      for (variant <- List("throw", "explain", "nothrow")) {
+        val sdk = makeSdk(bytesScenario(status, "audio/wav"), sinks, null)
+        val ctrl: JMap[String, Object] = variant match {
+          case "throw" => null
+          case "explain" => om("explain" -> new LinkedHashMap[String, Object]())
+          case _ => om("throw" -> B(false), "explain" -> new LinkedHashMap[String, Object]())
+        }
+        val err = drive(sdk, target, ctrl, sinks)
+        if (err != null) errors.put(status.toString + "/" + variant, err)
+        collect(sinks, "sdk", sdk)
+      }
+    }
+
+    val all = sinks.toArray(new Array[Sink](0)).toList
+    val leaked = all.map(s => (s.name, contentLeaks(s.text, RESPONSE))).filter(l => l._2.nonEmpty)
+
+    println("clean: response swept " + all.size + " surface(s), " + leaked.size + " leak(s)")
+
+    rep.check("clean.response.no-leak", leaked.isEmpty, "a response of bytes leaked through: " +
+      leaked.map(l => l._1 + " [" + l._2.mkString(", ") + "]").mkString("; "))
+
+    // The failure still names what it could not read.
+    errors.get("200/throw") match {
+      case failed: SdkError =>
+        rep.eq("clean.response.code", "response_content_type", failed.code)
+        rep.check("clean.response.names-type", String.valueOf(failed.getMessage).contains("audio/wav"),
+          "the error does not name the type: " + failed.getMessage)
+      case other =>
+        rep.fail("clean.response.sdkerror", "a response of bytes must fail the operation, got " + other)
+    }
+  }
+
+  private def responseSensitivity(rep: SdkTestReport): Unit = {
+    val target = usableOp()
+    if (target == null) {
+      println("clean: skipped: " + NO_OP)
+      return
+    }
+
+    val sinks = new ArrayList[Sink]()
+    val sdk = makeSdk(bytesScenario(200, "audio/wav"), sinks, om("active" -> B(false)))
+    val err = drive(sdk, target, null, sinks)
+    rep.check("clean.response.off.throws", err != null, "a response of bytes must fail the operation")
+    val leaked =
+      sinks.toArray(new Array[Sink](0)).toList.filter(s => contentLeaks(s.text, RESPONSE).nonEmpty)
+    rep.check("clean.response.off.shows-bytes", leaked.nonEmpty,
+      "with clean off, nothing showed the response: the sweep is blind")
+  }
+
   // A feature's name is not a field name: only the sensitive names inside its
   // settings register. An entity block, of per-entity settings or seeded
   // records keyed by entity name and id, is not read at all, and nor are
@@ -839,6 +916,8 @@ object SdkCleanTestMain {
     rep.scope("clean-the-sweep-can-see-a-leak") { sensitivity(rep) }
     rep.scope("clean-no-body-of-bytes-leaves-the-sdk") { contentSweep(rep) }
     rep.scope("clean-the-sweep-can-see-a-body") { contentSensitivity(rep) }
+    rep.scope("clean-no-response-of-bytes-leaves-the-sdk") { responseSweep(rep) }
+    rep.scope("clean-the-sweep-can-see-a-response") { responseSensitivity(rep) }
     rep.scope("clean-a-feature-name-does-not-make-its-settings-secret") { featureNames(rep) }
     rep.scope("clean-the-config-clean-block-is-honoured") { configBlock(rep) }
     rep.scope("clean-with-no-clean-block-the-schema-defaults-apply") { noBlock(rep) }

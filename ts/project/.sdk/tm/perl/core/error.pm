@@ -18,6 +18,10 @@ use overload
 # weakened so an error never keeps a finished operation alive.
 my %CTX;
 
+# What a hook died with, kept for the caller (`$err->cause`) and, like the
+# context, out of every dump: its message is the raw one.
+my %CAUSE;
+
 sub new {
   my ($class, $code, $msg, $ctx) = @_;
   my $self = bless {
@@ -45,8 +49,17 @@ sub ctx {
   return $CTX{$addr};
 }
 
+sub cause {
+  my $self = shift;
+  my $addr = Scalar::Util::refaddr($self);
+  $CAUSE{$addr} = $_[0] if @_;
+  return $CAUSE{$addr};
+}
+
 sub DESTROY {
-  delete $CTX{ Scalar::Util::refaddr($_[0]) };
+  my $addr = Scalar::Util::refaddr($_[0]);
+  delete $CTX{$addr};
+  delete $CAUSE{$addr};
   return;
 }
 

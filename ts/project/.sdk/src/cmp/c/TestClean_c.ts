@@ -166,6 +166,10 @@ static const char* MASK = "[redacted]";
 // The marker a body of bytes carries.
 static const char* CONTENT = "CANARY-CONTENT-b7n3v9x1c5";
 
+// The marker a response of bytes carries, as the default transport hands
+// such a body on: read into text, and marked unreadable.
+static const char* RESPONSE = "CANARY-RESPONSE-k2m8q4w6z0";
+
 // The sweep's own encoders: a leak of an encoded form must not hide behind
 // the SDK's encoder.
 static char* b64(const char* in) {
@@ -219,22 +223,34 @@ static void build_forms(void) {
   FORMS[NFORMS++] = b64(pair);
 }
 
-// The marker as bytes are copied: a list of byte values, hex, base64.
-static char CONTENT_VALUES[128];
-static char CONTENT_HEX[64];
-static char CONTENT_HEX_UPPER[64];
-static char* CONTENT_B64 = NULL;
+// A marker as bytes are copied: a list of byte values, hex, base64.
+typedef struct {
+  const char* text;
+  char values[128];
+  char hex[64];
+  char hex_upper[64];
+  char* b64;
+} Marker;
+
+static Marker CONTENT_FORMS;
+static Marker RESPONSE_FORMS;
+
+static void build_marker(Marker* m, const char* text) {
+  size_t n = strlen(text);
+  size_t v = 0;
+  m->text = text;
+  for (size_t i = 0; i < n; i++) {
+    unsigned int c = (unsigned char)text[i];
+    v += (size_t)sprintf(m->values + v, i ? ",%u" : "%u", c);
+    sprintf(m->hex + 2 * i, "%02x", c);
+    sprintf(m->hex_upper + 2 * i, "%02X", c);
+  }
+  m->b64 = b64(text);
+}
 
 static void build_content_forms(void) {
-  size_t n = strlen(CONTENT);
-  size_t v = 0;
-  for (size_t i = 0; i < n; i++) {
-    unsigned int c = (unsigned char)CONTENT[i];
-    v += (size_t)sprintf(CONTENT_VALUES + v, i ? ",%u" : "%u", c);
-    sprintf(CONTENT_HEX + 2 * i, "%02x", c);
-    sprintf(CONTENT_HEX_UPPER + 2 * i, "%02X", c);
-  }
-  CONTENT_B64 = b64(CONTENT);
+  build_marker(&CONTENT_FORMS, CONTENT);
+  build_marker(&RESPONSE_FORMS, RESPONSE);
 }
 
 typedef struct {
@@ -364,7 +380,8 @@ static const FeatureVT STREAMOK_VT = {
   streamok_name, capture_active, capture_add_options, capture_init, streamok_hook, NULL,
 };
 
-enum { SC_OK = 0, SC_NOTFOUND, SC_SERVER, SC_TRANSPORT, SC_NOTJSON, SC_COUNT };
+// SC_BYTES plus a status answers with that status and a body of bytes.
+enum { SC_OK = 0, SC_NOTFOUND, SC_SERVER, SC_TRANSPORT, SC_NOTJSON, SC_COUNT, SC_BYTES = 1000 };
 static const char* SC_NAMES[] = { "ok", "notfound", "server", "transport", "notjson" };
 
 static voxgig_value* response(int status, voxgig_value* data, const char* hk, const char* hv) {
@@ -378,7 +395,19 @@ static voxgig_value* response(int status, voxgig_value* data, const char* hk, co
     "json", json_thunk(data));
 }
 
+// A response of bytes under the type it declares.
+static voxgig_value* bytes_response(int status, const char* type) {
+  return cmap(6,
+    "status", v_num((double)status),
+    "statusText", v_str(status < 400 ? "OK" : "ERR"),
+    "headers", cmap(1, "content-type", v_str(type)),
+    "body", v_str(RESPONSE),
+    "json", json_thunk(v_undef()),
+    "unreadable", v_bool(true));
+}
+
 static voxgig_value* respond(int sc, const char* url) {
+  if (SC_BYTES <= sc) return bytes_response(sc - SC_BYTES, "audio/wav");
   switch (sc) {
     case SC_OK:
       return response(200, cmap(2, "id", v_str("i1"), "name", v_str("n1")),
@@ -617,7 +646,7 @@ static bool ends_with(const char* s, const char* suffix) {
 
 // The forms bytes travel in once copied: the text, and with the whitespace
 // of a pretty print dropped, a list of byte values, hex, base64.
-static size_t content_leaks(const char* text, char* found, size_t cap) {
+static size_t content_leaks(const Marker* m, const char* text, char* found, size_t cap) {
   char* flat = (char*)malloc(strlen(text) + 1);
   size_t o = 0;
   for (const char* p = text; *p; p++) {
@@ -626,10 +655,10 @@ static size_t content_leaks(const char* text, char* found, size_t cap) {
   flat[o] = '\\0';
   const char* names[4] = { "text", "byte values", "hex", "base64" };
   bool hit[4] = {
-    NULL != strstr(text, CONTENT),
-    NULL != strstr(flat, CONTENT_VALUES),
-    NULL != strstr(flat, CONTENT_HEX) || NULL != strstr(flat, CONTENT_HEX_UPPER),
-    NULL != strstr(flat, CONTENT_B64),
+    NULL != strstr(text, m->text),
+    NULL != strstr(flat, m->values),
+    NULL != strstr(flat, m->hex) || NULL != strstr(flat, m->hex_upper),
+    NULL != strstr(flat, m->b64),
   };
   free(flat);
   size_t n = 0;
@@ -672,7 +701,7 @@ static void content_sweep(Target* op, const char* media) {
   size_t nleaks = 0;
   char found[64];
   for (size_t i = first; i < NSINKS; i++) {
-    if (content_leaks(SINKS[i].text, found, sizeof(found))) {
+    if (content_leaks(&CONTENT_FORMS, SINKS[i].text, found, sizeof(found))) {
       fprintf(stderr, "a body of bytes leaked through: %s [%s]\\n", SINKS[i].name, found);
       nleaks++;
     }
@@ -703,7 +732,7 @@ static void content_sweep(Target* op, const char* media) {
   CHECK(rawerr != NULL, "the 404 scenario must throw with clean off");
   size_t shown = 0;
   for (size_t i = before; i < NSINKS; i++) {
-    if (content_leaks(SINKS[i].text, found, sizeof(found))) shown++;
+    if (content_leaks(&CONTENT_FORMS, SINKS[i].text, found, sizeof(found))) shown++;
   }
   CHECK(0 < shown, "with clean off, nothing showed the bytes: the sweep is blind");
 }
@@ -717,6 +746,64 @@ static void sweep_content(void) {
   } else {
     printf("SKIP: no operation of this SDK sends a binary body; nothing to sweep\\n");
   }
+}
+
+// What a hook that cleans the response body it holds is handed back.
+static voxgig_value* carried(const char* type, bool active) {
+  ${Name}SDK* sdk = ${ident}_sdk_new(offline(cmap(1, "clean", cmap(1, "active", v_bool(active)))));
+  CtxSpec cs;
+  memset(&cs, 0, sizeof(cs));
+  cs.response = response_new(bytes_response(200, type));
+  Context* ctx = make_context_util(cs, sdk_get_root_ctx(sdk));
+  return getp(clean_util(ctx, cmap(1, "body", v_str(RESPONSE))), "body");
+}
+
+// The third sweep: an operation answered with bytes, every surface searched
+// for the marker.
+static void response_sweep(Target* op) {
+  static const int STATUS[3] = { 200, 404, 500 };
+  size_t first = NSINKS;
+  PNError* failed = NULL;
+
+  for (int s = 0; s < 3; s++) {
+    for (int variant = 0; variant < 3; variant++) {
+      ${Name}SDK* sdk = make_sdk(SC_BYTES + STATUS[s], NULL, NULL);
+      voxgig_value* ctrl = NULL;
+      if (1 == variant) ctrl = cmap(1, "explain", v_map());
+      if (2 == variant) ctrl = cmap(2, "throw", v_bool(false), "explain", v_map());
+      PNError* err = drive(sdk, op, ctrl);
+      if (0 == s && 0 == variant) failed = err;
+    }
+  }
+
+  size_t nleaks = 0;
+  char found[64];
+  for (size_t i = first; i < NSINKS; i++) {
+    if (content_leaks(&RESPONSE_FORMS, SINKS[i].text, found, sizeof(found))) {
+      fprintf(stderr, "a response of bytes leaked through: %s [%s]\\n", SINKS[i].name, found);
+      nleaks++;
+    }
+  }
+
+  printf("clean: response swept %zu surface(s), %zu leak(s)\\n", NSINKS - first, nleaks);
+  CHECK(0 == nleaks, "a response of bytes leaked (see above)");
+
+  // The failure still names what it could not read.
+  CHECK(failed != NULL, "a response of bytes must fail the operation");
+  CHECK_STR_EQ(failed ? failed->code : NULL, "response_content_type",
+               "a response of bytes fails by its content type");
+  CHECK(failed && failed->msg && strstr(failed->msg, "audio/wav"),
+        "the error does not name the type");
+
+  // No sweep control: no surface of this SDK carries the response body, even
+  // with clean off. The rule is held for a hook that cleans one itself.
+  voxgig_value* desc = cmap(2, "binary$", v_str("bytes"), "type", v_str("audio/wav"));
+  CHECK(v_eq(carried("audio/wav", true), desc), "a carried response of bytes is described");
+  CHECK(v_str_eq(carried("", true), RESPONSE), "a carried response with no type stays");
+  CHECK(v_str_eq(carried("application/json", true), RESPONSE),
+        "a carried response that is text stays");
+  CHECK(v_str_eq(carried("audio/wav", false), RESPONSE),
+        "with clean off a carried response of bytes stays");
 }
 
 int main(void) {
@@ -977,6 +1064,9 @@ int main(void) {
 
   // No body of bytes leaves the SDK in any form.
   sweep_content();
+
+  // Nor a response of bytes.
+  response_sweep(op);
 
   TEST_SUMMARY("clean");
 }

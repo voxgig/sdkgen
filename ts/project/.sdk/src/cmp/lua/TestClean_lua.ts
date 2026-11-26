@@ -123,10 +123,8 @@ FORMS[#FORMS + 1] = base64(CANARY.apikey .. ":" .. CANARY.secret)
 -- The marker a body of bytes carries.
 local CONTENT = "CANARY-CONTENT-b7n3v9x1c5"
 
-local CONTENT_BYTES = {}
-for i = 1, #CONTENT do
-  CONTENT_BYTES[i] = tostring(string.byte(CONTENT, i))
-end
+-- The marker a response of bytes carries, as the transport hands it on.
+local RESPONSE = "CANARY-RESPONSE-k2m8q4w6z0"
 
 -- Every value this SDK accepts as a raw body: a string, of bytes or text.
 local CARRIERS = {
@@ -158,23 +156,28 @@ end
 
 -- The forms bytes travel in once copied: text, a list of byte values (also
 -- keyed by index, as a table dump prints one), hex, base64.
-local function content_leaks(text)
+local function content_leaks(text, marker)
+  marker = marker or CONTENT
   local flat = string.gsub(text, "%s+", "")
   local values = string.gsub(string.gsub(flat, '"%d+":', ""), "%d+=", "")
-  local hex = string.gsub(CONTENT, ".", function(c)
+  local bytes = {}
+  for i = 1, #marker do
+    bytes[i] = tostring(string.byte(marker, i))
+  end
+  local hex = string.gsub(marker, ".", function(c)
     return string.format("%02x", string.byte(c))
   end)
   local found = {}
-  if string.find(text, CONTENT, 1, true) ~= nil then
+  if string.find(text, marker, 1, true) ~= nil then
     found[#found + 1] = "text"
   end
-  if string.find(values, table.concat(CONTENT_BYTES, ","), 1, true) ~= nil then
+  if string.find(values, table.concat(bytes, ","), 1, true) ~= nil then
     found[#found + 1] = "byte values"
   end
   if string.find(string.lower(flat), hex, 1, true) ~= nil then
     found[#found + 1] = "hex"
   end
-  if string.find(flat, base64(CONTENT), 1, true) ~= nil then
+  if string.find(flat, base64(marker), 1, true) ~= nil then
     found[#found + 1] = "base64"
   end
   return found
@@ -404,6 +407,20 @@ local function response(status, data, headers)
     headers = h,
     json = function() return data end,
     body = tojson(data),
+  }, nil
+end
+
+
+-- A response of bytes under the type it declares, as the transport hands
+-- on a body it could not read as JSON.
+local function bytes_response(status, ctype)
+  return {
+    status = status,
+    statusText = status < 400 and "OK" or "ERR",
+    headers = { ["content-type"] = ctype },
+    json = function() return nil end,
+    body = RESPONSE,
+    unreadable = true,
   }, nil
 end
 
@@ -986,6 +1003,79 @@ describe("clean", function()
       assert.is_true(0 < seen,
         carrier.name .. ": with clean off, nothing showed the bytes: the sweep is blind")
     end
+  end)
+
+
+  it("no response of bytes leaves the SDK in any form", function()
+    local target = usable_op()
+    if target == nil then
+      pending("no operation of this SDK completes against a plain 200; nothing to sweep")
+      return
+    end
+
+    local sinks = {}
+    local errors = {}
+
+    for _, status in ipairs({ 200, 404, 500 }) do
+      for _, variant in ipairs({
+        { name = "throw", ctrl = function() return {} end },
+        { name = "explain", ctrl = function() return { explain = {} } end },
+        { name = "nothrow", ctrl = function() return { throw = false, explain = {} } end },
+      }) do
+        local scenario = { name = "bytes", respond = function()
+          return bytes_response(status, "audio/wav")
+        end }
+        local client = make_sdk(scenario, sinks)
+        local err = drive(client, target, variant.ctrl(), sinks)
+        if err ~= nil then
+          errors[status .. "/" .. variant.name] = err
+        end
+        append(sinks, surfaces("sdk", client))
+      end
+    end
+
+    local leaked = {}
+    for _, s in ipairs(sinks) do
+      local found = content_leaks(s.text, RESPONSE)
+      if 0 < #found then
+        leaked[#leaked + 1] = s.name .. " [" .. table.concat(found, ", ") .. "]"
+      end
+    end
+
+    print("clean: response swept " .. #sinks .. " surface(s), " .. #leaked .. " leak(s)")
+
+    assert.are.equal(0, #leaked, "a response of bytes leaked through: " .. table.concat(leaked, "; "))
+
+    -- The failure still names what it could not read.
+    local failed = errors["200/throw"]
+    assert.is_not_nil(failed, "a response of bytes must fail the operation")
+    assert.are.equal("response_content_type", failed.code)
+    assert.is_truthy(string.find(tostring(failed.msg), "audio/wav", 1, true),
+      "the error does not name the type: " .. tostring(failed.msg))
+  end)
+
+
+  it("the sweep can see a response: clean switched off shows the bytes", function()
+    local target = usable_op()
+    if target == nil then
+      pending("no operation of this SDK completes against a plain 200; nothing to sweep")
+      return
+    end
+
+    local sinks = {}
+    local scenario = { name = "bytes", respond = function()
+      return bytes_response(200, "audio/wav")
+    end }
+    local err = drive(make_sdk(scenario, sinks, { active = false }), target, {}, sinks)
+    assert.is_not_nil(err, "a response of bytes must fail the operation")
+
+    local seen = 0
+    for _, s in ipairs(sinks) do
+      if 0 < #content_leaks(s.text, RESPONSE) then
+        seen = seen + 1
+      end
+    end
+    assert.is_true(0 < seen, "with clean off, nothing showed the response: the sweep is blind")
   end)
 end)
 `
