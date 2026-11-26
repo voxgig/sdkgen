@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, phpEntityAccessor, entityOps, bodyNote, listMatchArg, matchExampleItems, litString, requestExampleItems, entityClassName, entityCollection, featureDocs, fact, clientOptions } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, phpEntityAccessor, entityOps, bodyNote, listMatchArg, matchExampleItems, litString, requestExampleItems, entityClassName, entityCollection, featureDocs, fact, clientOptions, requiredItems } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -253,10 +253,13 @@ $${ent.name} = $client->${phpEntityAccessor(ent.Name)}();
         opnames.map((opname: string) => {
           const info = OP_SIGNATURES[opname]
           if (!info) return
+          const needs = requiredItems(ent, opname).map((it: any) => it.name)
+          const desc = info.desc.replace(' The data must include the entity `id`.',
+            null != idF && needs.includes(idF) ? ' The data must include the entity `' + idF + '`.' : '')
 
           Content(`#### \`${info.sig}\`
 
-${info.desc}
+${desc}
 
 `)
 

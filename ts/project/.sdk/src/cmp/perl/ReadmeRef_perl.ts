@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonKey, canonScalarKey, File, isAuthActive, entityIdField, entityOps, bodyNote, entityClassName, entityCollection, matchExampleItems, requestExampleItems, featureDocs, fact, clientOptions } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonKey, canonScalarKey, File, isAuthActive, entityIdField, entityOps, bodyNote, entityClassName, entityCollection, matchExampleItems, requestExampleItems, featureDocs, fact, clientOptions, requiredItems } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -256,10 +256,13 @@ my $${eVar} = $client->${ent.Name};
         opnames.map((opname: string) => {
           const info = OP_SIGNATURES[opname]
           if (!info) return
+          const needs = requiredItems(ent, opname).map((it: any) => it.name)
+          const desc = info.desc.replace(' The data must include the entity `id`.',
+            null != idF && needs.includes(idF) ? ' The data must include the entity `' + idF + '`.' : '')
 
           Content(`#### \`${info.sig.replace('EntyClass', entityClassName(ent, entityCollection(model)))}\`
 
-${info.desc}
+${desc}
 
 `)
 

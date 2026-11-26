@@ -8,7 +8,7 @@ import { memfs } from 'memfs'
 import { Jostraca, Project, Folder, File } from 'jostraca'
 
 import { SdkGen, ReadmeModel, entityCollection } from '../dist/sdkgen.js'
-import { STAGE, SCAFFOLD, makeModel, makeRoot, makeLog, layeredFs } from './generateharness'
+import { STAGE, SCAFFOLD, makeModel, makeRoot, makeLog, layeredFs, idlessUpdate } from './generateharness'
 import { emptyTables } from './textguard'
 
 
@@ -77,6 +77,37 @@ main: kit: entity: beacon: {
 main: kit: flow: BasicBeaconFlow: {
   entity: "beacon", kind: "basic", name: "BasicBeaconFlow"
   step: [ { o: "list", i: { ref: "beacon_ref01", srcdatavar: "beacon_ref01_data", suffix: "_dt0" } } ]
+}
+`
+
+
+// Keyed by a slug, which its update's route names.
+const GADGET = `
+main: kit: entity: gadget: {
+  alias: field: {}
+  name: "gadget"
+  id: { field: "slug", name: "slug" }
+  fields: {
+    "slug": { h: 'Slug', n: "slug", r: true, t: "\`$STRING\`" }
+    "title": { h: 'Title', n: "title", r: false, t: "\`$STRING\`" }
+  }
+  op: {
+    load: { name: "load", points: [ {
+      g: { params: [ { k: "param", n: "slug", or: "slug", r: true, t: "\`$STRING\`" } ] }
+      m: "GET", o: "/gadget/{slug}", s: [{ lit: "gadget" }, { var: "slug" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" }
+    } ] }
+    update: { name: "update", points: [ {
+      g: { params: [ { k: "param", n: "slug", or: "slug", r: true, t: "\`$STRING\`" } ] }
+      m: "PUT", o: "/gadget/{slug}", s: [{ lit: "gadget" }, { var: "slug" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" }
+    } ] }
+  }
+}
+
+main: kit: flow: BasicGadgetFlow: {
+  entity: "gadget", kind: "basic", name: "BasicGadgetFlow"
+  step: [ { o: "load", i: { ref: "gadget_ref01", srcdatavar: "gadget_ref01_data", suffix: "_dt0" } } ]
 }
 `
 
@@ -270,5 +301,16 @@ describe('operation-dependent prose', () => {
       strictEqual(lead(update, t), 'creating a client', t)
       deepStrictEqual(writes(update, t), ['Update'], t)
     }
+  })
+
+
+  test('a reference asks for the entity id only where the call needs it, by its name', async () => {
+    const ID = /must include the entity `?id`?/
+    const refs = (docs: Record<string, string>) => TARGETS.filter((t: string) => ID.test(docs[t + '/REFERENCE.md']))
+    deepStrictEqual(refs(await documents()), TARGETS)
+    deepStrictEqual(refs(await documents(idlessUpdate())), [])
+    const slug = await documents(only() + '\n' + GADGET)
+    deepStrictEqual(TARGETS.filter((t: string) => !slug[t + '/REFERENCE.md'].includes('must include the entity `slug`')), [])
+    deepStrictEqual(refs(slug), [])
   })
 })
