@@ -6030,7 +6030,7 @@ const CLEAN_CONTENT_LINE = /clean: content swept (\d+) surface\(s\), (\d+) leak\
 const CLEAN_RESPONSE_LINE = /clean: response swept (\d+) surface\(s\), (\d+) leak\(s\)/
 
 // The targets whose sweep answers an operation with bytes.
-const CLEAN_RESPONSE_TARGETS = ['ts', 'js', 'go', 'py']
+const CLEAN_RESPONSE_TARGETS = ['ts', 'js', 'go', 'py', 'csharp', 'swift']
 
 // An operation that sends a raw body the model marks binary, which no
 // fixture entity has and the content sweep needs: an action point, as

@@ -182,10 +182,12 @@ extension Utility {
     }
   }
 
-  // The live request body of a point the model marks binary, and its type.
+  // A live body of this call that is bytes, and its type. A response read
+  // as text does not say how many bytes it was, so it is not sized.
   struct CleanBinaryBody {
     let live: [Value]
     let media: String?
+    let sized: Bool
   }
 }
 
@@ -336,21 +338,36 @@ private func cleanSensitiveKey(_ cfg: Utility.CleanConfig, _ key: String?) -> Bo
   return cfg.keys.contains { nk.contains($0) }
 }
 
-// A string shorter than the registry accepts is not told from ordinary text.
-private func cleanBinaryBodyOf(
+// The request body of a point the model marks binary, and a response body
+// that is bytes. A string shorter than the registry accepts is not told from
+// ordinary text.
+private func cleanBinaryBodiesOf(
   _ ctx: Context, _ cfg: Utility.CleanConfig
-) -> Utility.CleanBinaryBody? {
+) -> [Utility.CleanBinaryBody] {
+  func known(_ held: [Value]) -> [Value] {
+    held.filter { v in
+      if let text = v.asString, text.count < cfg.min { return false }
+      return !isNil(v)
+    }
+  }
+  var bodies: [Utility.CleanBinaryBody] = []
+
   let body = gp(ctx.point, "body")
-  guard gp(body, "kind").asString == "raw", gp(body, "binary").asBool == true else {
-    return nil
+  if gp(body, "kind").asString == "raw", gp(body, "binary").asBool == true {
+    bodies.append(Utility.CleanBinaryBody(
+      live: known([ctx.spec?.body ?? Value.noval, rawBodyOf(ctx.reqdata)]),
+      media: gp(body, "media").asString, sized: true))
   }
-  var live: [Value] = []
-  for held in [ctx.spec?.body ?? Value.noval, rawBodyOf(ctx.reqdata)] {
-    if let text = held.asString, text.count < cfg.min { continue }
-    if !isNil(held) { live.append(held) }
+
+  if let response = ctx.response {
+    let type = Response.headerValue(response.headers, "content-type")
+    if Response.isBinary(ctx.point, type) {
+      bodies.append(Utility.CleanBinaryBody(
+        live: known([response.body]), media: type.isEmpty ? nil : type, sized: false))
+    }
   }
-  return live.isEmpty
-    ? nil : Utility.CleanBinaryBody(live: live, media: gp(body, "media").asString)
+
+  return bodies.filter { !$0.live.isEmpty }
 }
 
 // The size of a value that is bytes. The array is matched by its exact
@@ -361,26 +378,26 @@ private func cleanByteCount(_ any: Any) -> Int? {
   return nil
 }
 
-private func cleanBytes(_ size: Int, _ media: String?) -> Value {
+private func cleanBytes(_ size: Int?, _ media: String?) -> Value {
   let desc = VMap()
   desc.entries[cleanBinary] = .string("bytes")
-  desc.entries["size"] = .int(Int64(size))
+  if let size = size { desc.entries["size"] = .int(Int64(size)) }
   if let media = media { desc.entries["type"] = .string(media) }
   return .map(desc)
 }
 
 // Bytes are described, never copied (ADR-006): the kind, and the size and
-// media type where they are known. A string is bytes only as the body of a
-// point the model marks binary, and goes as UTF-8.
-private func cleanDescribeBinary(_ val: Value, _ bin: Utility.CleanBinaryBody?) -> Value? {
+// media type where they are known. A string is bytes only as a live body,
+// and is sized as UTF-8.
+private func cleanDescribeBinary(_ val: Value, _ bins: [Utility.CleanBinaryBody]) -> Value? {
+  let bin = bins.first(where: { $0.live.contains(val) })
   switch val {
   case .string(let s):
-    guard let bin = bin, bin.live.contains(val) else { return nil }
-    return cleanBytes(s.utf8.count, bin.media)
+    guard let bin = bin else { return nil }
+    return cleanBytes(bin.sized ? s.utf8.count : nil, bin.media)
   case .native(let ref):
     guard let size = cleanByteCount(ref.value) else { return nil }
-    let declared = bin?.live.contains(val) ?? false
-    return cleanBytes(size, declared ? bin?.media : nil)
+    return cleanBytes(size, bin?.media)
   default:
     return nil
   }
@@ -392,7 +409,7 @@ private func cleanDescribeBinary(_ val: Value, _ bin: Utility.CleanBinaryBody?) 
 // stored properties, the way `dump` would; the context reads through its
 // own record so its client, options and config never enter.
 private func cleanSnapshot(
-  _ cfg: Utility.CleanConfig, _ bin: Utility.CleanBinaryBody?, _ val: Value, _ key: String?,
+  _ cfg: Utility.CleanConfig, _ bin: [Utility.CleanBinaryBody], _ val: Value, _ key: String?,
   _ depth: Int, _ seen: inout [ObjectIdentifier]
 ) -> Value {
   switch val {
@@ -465,7 +482,7 @@ private func cleanName(_ cfg: Utility.CleanConfig, _ out: VMap, _ key: String) -
 }
 
 private func cleanErrorRecord(
-  _ cfg: Utility.CleanConfig, _ bin: Utility.CleanBinaryBody?, _ err: Error, _ depth: Int,
+  _ cfg: Utility.CleanConfig, _ bin: [Utility.CleanBinaryBody], _ err: Error, _ depth: Int,
   _ seen: inout [ObjectIdentifier]
 ) -> Value {
   let out = VMap()
@@ -484,7 +501,7 @@ private func cleanErrorRecord(
 // through their stored properties; anything else (a closure, a foreign
 // object) is dropped, as a function is.
 private func cleanNative(
-  _ cfg: Utility.CleanConfig, _ bin: Utility.CleanBinaryBody?, _ any: Any, _ key: String?,
+  _ cfg: Utility.CleanConfig, _ bin: [Utility.CleanBinaryBody], _ any: Any, _ key: String?,
   _ depth: Int, _ seen: inout [ObjectIdentifier]
 ) -> Value {
   if let v = any as? Value {
@@ -580,7 +597,7 @@ func cleanUtil(_ ctx: Context, _ val: Value) -> Value {
     return .string(cleanString(cfg, s))
   }
 
-  let bin = cleanBinaryBodyOf(ctx, cfg)
+  let bin = cleanBinaryBodiesOf(ctx, cfg)
 
   if let err = val.asNative as? ProjectNameError {
     var seen: [ObjectIdentifier] = []

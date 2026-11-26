@@ -41,11 +41,13 @@ public static partial class SdkUtility
     // A dropped slot (a delegate): omitted from a map, null in a list.
     private static readonly object CleanDrop = new();
 
-    // The live request body of a point the model marks binary, and its type.
+    // A live body of this call that is bytes, and its type. A response read
+    // as text does not say how many bytes it was, so it is not sized.
     private sealed class CleanBinaryBody
     {
         public List<object> Live = new();
         public string? Type;
+        public bool Sized;
     }
 
     private static readonly JsonSerializerOptions CleanJsonOpts = new()
@@ -246,51 +248,54 @@ public static partial class SdkUtility
         return name + "#" + i;
     }
 
-    // A string shorter than the registry accepts is not told from ordinary text.
-    private static CleanBinaryBody? CleanBinaryBodyOf(Context? ctx, CleanConfig cfg)
+    // The request body of a point the model marks binary, and a response body
+    // that is bytes. A string shorter than the registry accepts is not told
+    // from ordinary text.
+    private static List<CleanBinaryBody> CleanBinaryBodiesOf(Context? ctx, CleanConfig cfg)
     {
+        List<object> Known(params object?[] held) => held.OfType<object>()
+            .Where(v => v is not string text || cfg.Min <= text.Length).ToList();
+        var bodies = new List<CleanBinaryBody>();
+
         var body = StructUtils.GetProp(ctx?.Point, "body");
-        if (!"raw".Equals(StructUtils.GetProp(body, "kind")) ||
-            StructUtils.GetProp(body, "binary") is not true)
+        if ("raw".Equals(StructUtils.GetProp(body, "kind")) &&
+            StructUtils.GetProp(body, "binary") is true)
         {
-            return null;
-        }
-        var live = new List<object>();
-        // The same value twice, unless it was a Stream: the spec holds what was read.
-        foreach (var held in new[] { ctx!.Spec?.Body, ctx.Reqdata?.GetValueOrDefault(RawBody) })
-        {
-            if (held != null && (held is not string text || cfg.Min <= text.Length))
+            bodies.Add(new CleanBinaryBody
             {
-                live.Add(held);
-            }
+                // The same value twice, unless it was a Stream: the spec holds what was read.
+                Live = Known(ctx!.Spec?.Body, ctx.Reqdata?.GetValueOrDefault(RawBody)),
+                Type = StructUtils.GetProp(body, "media") as string,
+                Sized = true,
+            });
         }
-        return 0 == live.Count
-            ? null
-            : new CleanBinaryBody { Live = live, Type = StructUtils.GetProp(body, "media") as string };
+
+        var response = ctx?.Response;
+        var type = Response.HeaderValue(response?.Headers, "content-type");
+        if (response != null && Response.IsBinary(ctx!.Point, type))
+        {
+            bodies.Add(new CleanBinaryBody
+            {
+                Live = Known(response.Body), Type = "" == type ? null : type,
+            });
+        }
+
+        return bodies.Where(bin => 0 < bin.Live.Count).ToList();
     }
 
-    // The same object, or an equal string or value type.
-    private static bool CleanIsLive(CleanBinaryBody? bin, object val)
+    // The live body a value is: the same object, or an equal string or value type.
+    private static CleanBinaryBody? CleanLiveBody(List<CleanBinaryBody> bins, object val)
     {
-        if (bin == null)
-        {
-            return false;
-        }
-        foreach (var live in bin.Live)
-        {
-            if (ReferenceEquals(live, val) || (val is string or ValueType) && val.Equals(live))
-            {
-                return true;
-            }
-        }
-        return false;
+        return bins.Find(bin => bin.Live.Exists(live =>
+            ReferenceEquals(live, val) || (val is string or ValueType) && val.Equals(live)));
     }
 
     // Bytes are described, never copied (ADR-006): the kind, and the size and
-    // media type where they are known. A string is bytes only as the body of a
-    // point the model marks binary, and goes as UTF-8. A Stream is not asked
-    // for its length, which it may refuse to give.
-    private static Dictionary<string, object?>? CleanDescribeBinary(object val, CleanBinaryBody? bin)
+    // media type where they are known. A string is bytes only as a live body,
+    // and is sized as UTF-8. A Stream is not asked for its length, which it
+    // may refuse to give.
+    private static Dictionary<string, object?>? CleanDescribeBinary(
+        object val, List<CleanBinaryBody> bins)
     {
         var text = val as string;
         long size = -1;
@@ -312,22 +317,25 @@ public static partial class SdkUtility
             return null;
         }
 
-        var declared = CleanIsLive(bin, val);
+        var bin = CleanLiveBody(bins, val);
         if (text != null)
         {
-            if (!declared)
+            if (bin == null)
             {
                 return null;
             }
-            size = Encoding.UTF8.GetByteCount(text);
+            if (bin.Sized)
+            {
+                size = Encoding.UTF8.GetByteCount(text);
+            }
         }
 
-        var desc = new Dictionary<string, object?> { [CleanBinary] = size < 0 ? "stream" : "bytes" };
+        var desc = new Dictionary<string, object?> { [CleanBinary] = val is Stream ? "stream" : "bytes" };
         if (0 <= size)
         {
             desc["size"] = size;
         }
-        if (declared && bin!.Type != null)
+        if (bin?.Type != null)
         {
             desc["type"] = bin.Type;
         }
@@ -339,7 +347,7 @@ public static partial class SdkUtility
     // product (Spec, Result, a feature record) reads through its public
     // fields, the way a structured logger would; the context reads through
     // its own record so its client, options and config never enter.
-    private static object? CleanSnapshot(CleanConfig cfg, CleanBinaryBody? bin, object? val,
+    private static object? CleanSnapshot(CleanConfig cfg, List<CleanBinaryBody> bin, object? val,
         object? key, int depth, List<object> seen)
     {
         if (val == null || ReferenceEquals(val, StructUtils.NONE))
@@ -478,7 +486,7 @@ public static partial class SdkUtility
             return CleanString(cfg, s);
         }
 
-        var bin = CleanBinaryBodyOf(ctx, cfg);
+        var bin = CleanBinaryBodiesOf(ctx, cfg);
 
         if (val is ProjectNameError err)
         {
