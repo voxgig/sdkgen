@@ -37,11 +37,22 @@ open Sdk_types
 open Sdk_helpers
 open Testutil
 
+(* Read from the config, never from a probe: an SDK whose config declares no
+ * auth places no credential, and these tests assert on the one it places. *)
+let places_credential =
+  match getp (getp (Sdk_config.make_config ()) "options") "auth" with Map _ -> true | _ -> false
+
+let () =
+  if not places_credential then
+    print_endline "SKIP secrets: this SDK's config declares no auth, so it places no credential"
+
 (* Executed-case count, for the line the lane reads. *)
 let ran = ref 0
 let test (name : string) (f : unit -> unit) : unit =
-  incr ran;
-  Testutil.test ("secrets." ^ name) f
+  if places_credential then begin
+    incr ran;
+    Testutil.test ("secrets." ^ name) f
+  end
 
 let envprefix = "PROJECTENV_TEST_SECRETS_"
 

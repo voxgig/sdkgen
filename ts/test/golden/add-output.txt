@@ -230,14 +230,14 @@ tm/clojure/src/sdk/features.clj 8524aa9cec07
 tm/clojure/src/voxgig/struct.clj 007fea2d9426
 tm/clojure/test/sdk/test/concurrency.clj a9bfd623695b
 tm/clojure/test/sdk/test/feature.clj 7d23655e63a8
-tm/clojure/test/sdk/test/feature/secrets.clj ef0134a7fd63
+tm/clojure/test/sdk/test/feature/secrets.clj 1ab8d8d40f59
 tm/clojure/test/sdk/test/netsim.clj 2e797c353a8b
 tm/clojure/test/sdk/test/omni.clj cabff67d9640
 tm/clojure/test/sdk/test/omni_smoke.clj 8a48e55961c6
 tm/clojure/test/sdk/test/pipeline.clj b4deb67e8ced
 tm/clojure/test/sdk/test/primary.clj 692bbd7fb756
 tm/clojure/test/sdk/test/struct_corpus.clj e740f6a9de77
-tm/clojure/test/sdk/test_runner.clj 35405bbd5ea1
+tm/clojure/test/sdk/test_runner.clj b190614c3815
 tm/clojure/test/sdk/testutil.clj 389d40fa6cbc
 tm/clojure/test/vendor/omni/voxgig/omni/json.clj d987ead3e30b
 tm/clojure/test/vendor/omni/voxgig/omni/runner.clj 857c4ae4840b
@@ -1825,7 +1825,7 @@ tm/scala/sdktest/SdkTestMain.scala 80f61892ff7d
 tm/scala/sdktest/SdkTestSupport.scala 9a0a70dcb153
 tm/scala/sdktest/ServerVariableTest.scala 0c041b23fd44
 tm/scala/sdktest/StructCorpus.scala c6453791202c
-tm/scala/sdktest/feature/secrets/SecretsTestMain.scala 46fcc5c8a13b
+tm/scala/sdktest/feature/secrets/SecretsTestMain.scala b36ddb418671
 tm/scala/sdktest/sdk-test-control.json acadc87764f6
 tm/scala/sdktest/vendor/omni/Json.scala 832ecba5fdf8
 tm/scala/sdktest/vendor/omni/Runner.scala 004f6fce4126
@@ -2231,7 +2231,7 @@ tm/zig/src/feature/telemetry/.gitkeep e3b0c44298fc
 tm/zig/src/feature/test/.gitkeep e3b0c44298fc
 tm/zig/src/feature/timeout/.gitkeep e3b0c44298fc
 tm/zig/src/feature/validate/.gitkeep e3b0c44298fc
-tm/zig/test/feature/secrets/secrets_test.zig 153736cadcdd
+tm/zig/test/feature/secrets/secrets_test.zig b64052753900
 tm/zig/test/feature_test.zig dfbcd6a18307
 tm/zig/test/fh.zig 4a248b2bc6b7
 tm/zig/test/gotcha_test.zig d235341e8986

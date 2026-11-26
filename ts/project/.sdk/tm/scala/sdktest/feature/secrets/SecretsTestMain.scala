@@ -1019,6 +1019,14 @@ object SecretsTestMain {
   // =========================================================================
 
   def main(args: Array[String]): Unit = {
+    // Read from the config, never from a probe: an SDK whose config declares
+    // no auth places no credential, and these tests assert on the one it places.
+    if (!SCALAPACKAGE.core.Config.sharedConfig().get("options").asInstanceOf[JMap[String, Object]]
+      .containsKey("auth")) {
+      println("SKIP secrets: this SDK's config declares no auth, so it places no credential")
+      return
+    }
+
     val cases: List[(String, () => Unit)] = List(
       "inactive" -> testInactive,
       "optionWins" -> testOptionWins,

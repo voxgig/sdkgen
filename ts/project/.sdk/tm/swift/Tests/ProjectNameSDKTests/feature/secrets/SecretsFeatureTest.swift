@@ -332,6 +332,15 @@ final class SecretsFeatureTest: XCTestCase {
     return driveEntityOpUntil(client, "reached the transport") { _ in before < w.api().count }
   }
 
+  // Read from the config, never from a probe: an SDK whose config declares no
+  // auth places no credential, and these tests assert on the one it places.
+  override func setUpWithError() throws {
+    try super.setUpWithError()
+    guard nil != gp(SdkConfig.sharedConfig(), "options").asMap?.entries["auth"] else {
+      throw XCTSkip("this SDK's config declares no auth, so it places no credential")
+    }
+  }
+
   // ===================================================================
   // The feature-inactive baseline: bit-identical behaviour.
 
