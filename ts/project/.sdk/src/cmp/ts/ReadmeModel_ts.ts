@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, entityClassName, entityCollection, fact, clientOptions, entityOps, introOps } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, entityClassName, entityCollection, fact, clientOptions, entityOps, entityPath, introOps } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -161,11 +161,7 @@ ${0 < entityList.length ? '### Entities\n\n' : ''}`)
   each(entityList, (ent: any) => {
     const fields = Object.values(ent.fields || {})
     const opnames = entityOps(ent)
-    const ops = ent.op || {}
-    const points = each(ops).map((op: any) =>
-      op.points ? each(op.points) : []
-    ).flat()
-    const path = points.length > 0 ? (points[0] as any).o || '' : ''
+    const path = entityPath(ent)
 
     Content(`#### ${ent.Name}
 
@@ -180,9 +176,9 @@ ${0 < entityList.length ? '### Entities\n\n' : ''}`)
     Content(`
 Operations: ${opnames.join(', ')}.
 
-API path: \`${path}\`
+${'' === path ? '' : `API path: \`${path}\`
 
-`)
+`}`)
   })
 
 })

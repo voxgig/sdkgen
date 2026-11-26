@@ -29,6 +29,39 @@ const opsOff = (entity: string, ...ops: string[]): string =>
   `main: kit: entity: ${entity}: op: { ${ops.map((o: string) => o + ': { active: false }').join(', ')} }`
 
 
+// Its create sorts first and has only an action route, which is not the
+// entity's own path.
+const MISSION = `
+main: kit: entity: mission: {
+  alias: field: {}
+  name: "mission"
+  id: { field: "id", name: "id" }
+  fields: {
+    "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" }
+    "title": { h: 'Title', n: "title", r: false, t: "\`$STRING\`" }
+  }
+  op: {
+    create: { name: "create", points: [ {
+      g: { params: [ { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`" } ] }
+      m: "POST", o: "/mission/{id}/launch", s: [{ lit: "mission" }, { var: "id" }, { lit: "launch" }]
+      q: { "$action": "launch", exist: ["id"] }
+      t: { req: "\`reqdata\`", res: "\`body\`" }
+    } ] }
+    load: { name: "load", points: [ {
+      g: { params: [ { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`" } ] }
+      m: "GET", o: "/mission/{id}", s: [{ lit: "mission" }, { var: "id" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" }
+    } ] }
+  }
+}
+
+main: kit: flow: BasicMissionFlow: {
+  entity: "mission", kind: "basic", name: "BasicMissionFlow"
+  step: [ { o: "load", i: { ref: "mission_ref01", srcdatavar: "mission_ref01_data", suffix: "_dt0" } } ]
+}
+`
+
+
 async function documents(extra = ''): Promise<Record<string, string>> {
   const { fs, vol } = memfs({})
   await SdkGen({ fs: layeredFs(fs), folder: STAGE, root: '', pino: makeLog() })
@@ -124,5 +157,16 @@ describe('operation-dependent prose', () => {
       .map((f: any) => f.doc + ': ' + f.line), [])
     deepStrictEqual(TARGETS.filter((t: string) => /reads its record:\n\n(?!-)/.test(docs[t + '/README.md'])), [])
     deepStrictEqual(TARGETS.filter((t: string) => /^### Entities\n\n(?!#### )/m.test(docs[t + '/README.md'])), [])
+  })
+
+
+  test('an entity\'s API path is its own route, never an action\'s', async () => {
+    const docs = await documents(MISSION)
+    const paths = (target: string): string[] =>
+      [...docs[target + '/README.md'].matchAll(/^API path: `([^`]*)`/gm)].map((m) => m[1])
+    for (const target of TARGETS) {
+      strictEqual(paths(target).includes('/mission/{id}'), true, target + ': ' + paths(target).join(', '))
+      strictEqual(paths(target).includes('/mission/{id}/launch'), false, target)
+    }
   })
 })
