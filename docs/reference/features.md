@@ -1215,7 +1215,10 @@ same request, for five hops at most. Nothing else is followed: a redirect
 to another origin stays a failed exchange, and so does a `301`, `302` or
 `303`, which would turn the request into a `GET` without the token. In a
 browser the option has no effect, since a script cannot read where a
-redirect points.
+redirect points. In `ocaml`, `cpp` and `zig` the client the exchange ships
+with reports no response headers, so the option takes effect there only
+with a `system.fetch` of the caller's own, and without one the exchange
+refuses as it does by default.
 
 Set `name` to the refresh secret when exchanging — `name` is what the chain
 is asked for.

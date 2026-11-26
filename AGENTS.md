@@ -937,11 +937,28 @@ emitted broken source reached the fleet unchallenged.
   refresh token to another origin in five targets and a 302 let another
   origin choose the access token in ten. It now follows none: the fetch
   definition says `redirect: manual`, a client of the feature's own is told
-  to follow nothing, and a 3xx is a failed exchange. `ts/test/redirect.test.ts`
+  to follow nothing, and a 3xx is a failed exchange. One option relaxes it,
+  `exchange.redirect: 'same-origin'`: a 307 or 308 is asked again while it
+  stays on the exchange's own origin, by a loop of the feature's own, five
+  hops at most, each still asking for a manual redirect. A 301, 302 or 303
+  is never followed, since it would drop the token. In ocaml, cpp and zig
+  the bundled exchange client is sekreto's vendored one, which reports no
+  response headers: no Location reaches the feature, so the option takes
+  effect there only through a supplied `system.fetch`, and lifting that is an
+  upstream change and a resync. `ts/test/redirect.test.ts`
   lists every target's exchange; each shipped secrets suite answers it with
   redirects against two listeners and prints `secrets: exchange refused N
-  redirect(s), M followed`, which the secrets lanes require. A new request
-  of a feature's own needs the same answer.
+  redirect(s), M followed` and, with the option on, `secrets: exchange
+  opt-in followed N redirect(s) on its own origin, refused M, E elsewhere`.
+  The secrets lanes require both lines. A new request of a feature's own
+  needs the same answer.
+- **A file is not the cache's to read, and `stream()` sends no body.** The
+  `cache` feature decides from the declared media type before it touches a
+  body: one that declares a type other than JSON is passed on as the
+  transport returned it, the same value, unread and unstored. Each target's
+  `stream()` once attached a caller's `body` to the request under `body$`
+  with a marker, and documented an upload that nothing sent;
+  `ts/test/streamclaim.test.ts` fails on any line that names either again.
 - **The HTTP status is on the error, not just in `err.result`.** `err.status`
   (-1 when there was no response) plus a `notFound` predicate, so a consumer
   never couples itself to the internal shape of `result`.

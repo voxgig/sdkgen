@@ -1010,6 +1010,13 @@ And two with R23, on 2026-11-26:
 - **Still no release.** The fixes of Phase 0 are in `main` and reach SDK
   projects when the maintainer releases.
 
+One point of `p0-exchange-opt-in` stays open. In ocaml, cpp and zig the
+exchange's bundled client is sekreto's vendored one, which reports a status
+and a body and no response headers, so no `Location` reaches the feature.
+The option takes effect there only through a supplied `system.fetch`, and
+without one the exchange refuses as it does by default. Lifting that needs
+response headers from sekreto's client upstream, then a resync.
+
 R5 and R9 were answered in the maintainer's own words. R5's reading was
 then confirmed; R9's reach, everywhere, was put as a second question.
 
