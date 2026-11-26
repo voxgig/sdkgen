@@ -1031,30 +1031,31 @@ describe('secrets exchange', () => {
   })
 
 
-  // Real listeners and the platform fetch: a stub follows nothing.
-  test('a redirect answering the exchange is a failure, and nothing follows it', async () => {
-    const elsewhere = []
-    const followed = []
-    let answer = [307, '']
+  // Two real listeners and the platform fetch: a stub follows nothing. The
+  // origin answers the exchange as `answer` says and records what else it gets.
+  async function withOrigins(run) {
+    const o = { elsewhere: [], followed: [], exchanged: 0, answer: [307, ''] }
 
     const other = Http.createServer((req, res) => {
       let body = ''
       req.on('data', (chunk) => body += chunk)
       req.on('end', () => {
-        elsewhere.push({ method: req.method, url: req.url, body })
+        o.elsewhere.push({ method: req.method, url: req.url, body })
         res.writeHead(200, { 'content-type': 'application/json', connection: 'close' })
         res.end('{"access_token":"ELSEWHERE01"}')
       })
     })
     const origin = Http.createServer((req, res) => {
-      req.resume()
+      let body = ''
+      req.on('data', (chunk) => body += chunk)
       req.on('end', () => {
         if ('/api/auth/token' === req.url) {
-          res.writeHead(answer[0], { location: answer[1], connection: 'close' })
+          o.exchanged++
+          res.writeHead(o.answer[0], { location: o.answer[1], connection: 'close' })
           res.end()
           return
         }
-        followed.push(req.method + ' ' + req.url)
+        o.followed.push((req.method + ' ' + req.url + ' ' + body).trim())
         res.writeHead(200, { 'content-type': 'application/json', connection: 'close' })
         res.end('{"access_token":"MOVED01"}')
       })
@@ -1062,32 +1063,50 @@ describe('secrets exchange', () => {
 
     const listen = (server) => new Promise((resolve) =>
       server.listen(0, '127.0.0.1', () => resolve(server.address().port)))
-    const base = 'http://127.0.0.1:' + (await listen(origin)) + '/api'
-    const away = 'http://127.0.0.1:' + (await listen(other)) + '/api/auth/token'
+    o.origin = 'http://127.0.0.1:' + (await listen(origin))
+    o.base = o.origin + '/api'
+    o.away = 'http://127.0.0.1:' + (await listen(other)) + '/api/auth/token'
 
     try {
-      const answers = [[307, away], [308, away], [302, away], [307, '/api/moved/token']]
+      await run(o)
+    }
+    finally {
+      origin.close()
+      other.close()
+    }
+  }
+
+
+  function redirectSdk(o, exchange) {
+    return new SDK({
+      base: o.base,
+      feature: {
+        secrets: {
+          active: true,
+          name: 'refresh_token',
+          exchange: Object.assign({ active: true, refresh: REFRESH }, exchange || {}),
+        },
+      },
+    })
+  }
+
+
+  test('a redirect answering the exchange is a failure, and nothing follows it', async () => {
+    await withOrigins(async (o) => {
+      const answers =
+        [[307, o.away], [308, o.away], [302, o.away], [307, '/api/moved/token']]
 
       const allowed = []
       let refused = 0
 
-      for (answer of answers) {
-        const sdk = new SDK({
-          base,
-          feature: {
-            secrets: {
-              active: true,
-              name: 'refresh_token',
-              exchange: { active: true, refresh: REFRESH },
-            },
-          },
-        })
+      for (const answer of answers) {
+        o.answer = answer
 
-        const res = await sdk.direct({ path: '/thing' })
+        const res = await redirectSdk(o).direct({ path: '/thing' })
         const message = String(null == res || null == res.err ? res : res.err.message)
 
         if (message.includes(
-          'token exchange failed: ' + answer[0] + ' from ' + base + '/auth/token')) {
+          'token exchange failed: ' + answer[0] + ' from ' + o.base + '/auth/token')) {
           refused++
         }
         else {
@@ -1096,17 +1115,67 @@ describe('secrets exchange', () => {
       }
 
       console.log('secrets: exchange refused ' + refused + ' redirect(s), ' +
-        (elsewhere.length + followed.length) + ' followed')
+        (o.elsewhere.length + o.followed.length) + ' followed')
 
-      assert.deepEqual(elsewhere, [], 'the exchange reached another origin')
-      assert.deepEqual(followed, [], 'a request followed a refused exchange')
+      assert.deepEqual(o.elsewhere, [], 'the exchange reached another origin')
+      assert.deepEqual(o.followed, [], 'a request followed a refused exchange')
       assert.deepEqual(allowed, [], 'a redirect was not a failed exchange')
       assert.equal(refused, answers.length)
-    }
-    finally {
-      origin.close()
-      other.close()
-    }
+    })
+  })
+
+
+  test('with the option, a redirect on the exchange\'s own origin is followed, and no other', async () => {
+    await withOrigins(async (o) => {
+      const moved = 'POST /api/moved/token {"refresh_token":"' + REFRESH + '"}'
+      const cases = [
+        [307, '/api/moved/token', true],
+        [308, o.origin + '/api/moved/token', true],
+        [307, o.away, false],
+        [302, '/api/moved/token', false],
+        [307, '/api/auth/token', false],
+      ]
+
+      const wrong = []
+      let followed = 0
+      let refused = 0
+      let looped = 0
+
+      for (const [status, location, follows] of cases) {
+        o.answer = [status, location]
+        o.followed.length = 0
+        o.exchanged = 0
+
+        const res = await redirectSdk(o, { redirect: 'same-origin' }).direct({ path: '/thing' })
+        const message = String(null == res || null == res.err ? res : res.err.message)
+        const seen = status + ' to ' + location + ': ' + message + ' ' + JSON.stringify(o.followed)
+
+        if (follows) {
+          if (true === res.ok && moved === o.followed[0] && 2 === o.followed.length) followed++
+          else wrong.push(seen)
+        }
+        else if (0 === o.followed.length && message.includes(
+          'token exchange failed: ' + status + ' from ' + o.base + '/auth/token')) {
+          refused++
+        }
+        else {
+          wrong.push(seen)
+        }
+
+        if ('/api/auth/token' === location) looped = o.exchanged
+      }
+
+      console.log('secrets: exchange opt-in followed ' + followed +
+        ' redirect(s) on its own origin, refused ' + refused + ', ' +
+        o.elsewhere.length + ' elsewhere')
+
+      assert.deepEqual(o.elsewhere, [], 'the exchange reached another origin')
+      assert.deepEqual(wrong, [])
+      assert.equal(followed, 2)
+      assert.equal(refused, 3)
+      // A redirect to itself is followed five times and no more.
+      assert.equal(looped, 6)
+    })
   })
 
 })
