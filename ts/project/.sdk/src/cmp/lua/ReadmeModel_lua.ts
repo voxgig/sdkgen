@@ -14,6 +14,7 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   const entityList = each(entity).filter((e: any) => e.active !== false)
 
   const opUnion = new Set<string>(introOps(model))
+  const sameOps = fact(model.main[KIT], 'sharedOps')
   const opRowDefs: Record<string, string> = {
     load: '| `load` | `(reqmatch, ctrl) -> any, err` | Load a single entity by match criteria, and return it. |',
     list: '| `list` | `(reqmatch, ctrl) -> any, err` | List entities matching the criteria, one per record. |',
@@ -91,7 +92,7 @@ Creates a test-mode client with mock transport. Both arguments may be \`nil\`.
   Content(`
 ### Entity interface
 
-All entities share the same interface.
+${sameOps ? 'All entities share the same interface.' : 'Each entity has only the operations its model declares; see its section below.'}
 
 | Method | Signature | Description |
 | --- | --- | --- |

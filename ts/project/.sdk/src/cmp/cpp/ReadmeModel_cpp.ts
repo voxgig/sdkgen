@@ -19,6 +19,7 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   // load/list/create/update/remove row only for operations at least one active
   // entity actually exposes — never document an operation no entity has.
   const opUnion = new Set<string>(introOps(model))
+  const sameOps = fact(model.main[KIT], 'sharedOps')
   const opRowDefs: Record<string, string> = {
     load: '| `load` | `(reqmatch, ctrl) -> SdkEntityPtr` | Load a single entity by match criteria. Throws on error. |',
     list: '| `list` | `(reqmatch, ctrl) -> std::vector<SdkEntityPtr>` | List entities matching the criteria, one per record. Throws on error. |',
@@ -81,7 +82,7 @@ also provided.
   Content(`
 ### Entity interface
 
-All entities share the same interface.
+${sameOps ? 'All entities share the same interface.' : 'Each entity has only the operations its model declares; see its section below.'}
 
 | Method | Signature | Description |
 | --- | --- | --- |

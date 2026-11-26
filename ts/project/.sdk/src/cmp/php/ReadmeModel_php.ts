@@ -21,6 +21,7 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   // entity actually exposes (a read-only entity has just list+load) — never
   // document an operation no entity has.
   const opUnion = new Set<string>(introOps(model))
+  const sameOps = fact(model.main[KIT], 'sharedOps')
   const opRowDefs: Record<string, string> = {
     load: '| `load` | `($reqmatch, $ctrl): mixed` | Load a single entity by match criteria, and return it. |',
     list: '| `list` | `(?array $reqmatch = null, $ctrl): mixed` | List entities matching the criteria (call with no argument to list all), one per record. |',
@@ -76,7 +77,7 @@ Creates a test-mode client with mock transport. Both arguments may be \`null\`.
   Content(`
 ### Entity interface
 
-All entities share the same interface.
+${sameOps ? 'All entities share the same interface.' : 'Each entity has only the operations its model declares; see its section below.'}
 
 | Method | Signature | Description |
 | --- | --- | --- |

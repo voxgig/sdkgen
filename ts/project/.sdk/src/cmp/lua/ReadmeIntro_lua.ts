@@ -1,5 +1,5 @@
 
-import { cmp, Content, introOps } from '@voxgig/sdkgen'
+import { cmp, Content, introOps, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -22,7 +22,7 @@ const ReadmeIntroBody = cmp(function ReadmeIntroBody(props: any) {
 `)
 
   if (exampleEntity) {
-    Content(`It exposes the API as capitalised, semantic **Entities** — e.g. \`client:${nom(exampleEntity, 'Name')}()\` —${'' === opList ? '' : ` each with the same small set of operations (${opList})`} instead of raw URL paths and query strings. You call meaning, not endpoints, which keeps the cognitive load low.
+    Content(`It exposes the API as capitalised, semantic **Entities** — e.g. \`client:${nom(exampleEntity, 'Name')}()\` —${'' === opList ? '' : ` each with ${fact(model.main[KIT], 'sharedOps') ? 'the same small set of operations' : 'operations from one small set'} (${opList})`} instead of raw URL paths and query strings. You call meaning, not endpoints, which keeps the cognitive load low.
 
 `)
   }

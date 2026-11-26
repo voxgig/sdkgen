@@ -18,6 +18,7 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   // load/list/create/update/remove row only for operations at least one active
   // entity actually exposes.
   const opUnion = new Set<string>(introOps(model))
+  const sameOps = fact(model.main[KIT], 'sharedOps')
   const opRowDefs: Record<string, string> = {
     load: '| `load` | `(entity, reqmatch, ctrl \\\\ nil) :: entity` | Load a single entity by match criteria, and return it. Raises on error. |',
     list: '| `list` | `(entity, reqmatch \\\\ nil, ctrl \\\\ nil) :: list()` | List entities matching the criteria, one per record. Raises on error. |',
@@ -73,7 +74,8 @@ Creates a test-mode client with mock transport. Both arguments may be \`nil\`.
   Content(`
 ### Entity interface
 
-Every entity's \`${Name}.Entity.<Name>\` module shares the same interface.
+${sameOps ? `Every entity's \`${Name}.Entity.<Name>\` module shares the same interface.` :
+  'Each entity has only the operations its model declares; see its section below.'}
 
 | Function | Signature | Description |
 | --- | --- | --- |

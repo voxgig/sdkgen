@@ -5,8 +5,9 @@ import Fs from 'node:fs'
 import Path from 'node:path'
 
 import { memfs } from 'memfs'
+import { Jostraca, Project, Folder, File } from 'jostraca'
 
-import { SdkGen } from '../dist/sdkgen.js'
+import { SdkGen, ReadmeModel } from '../dist/sdkgen.js'
 import { STAGE, SCAFFOLD, makeModel, makeRoot, makeLog, layeredFs } from './generateharness'
 
 
@@ -40,6 +41,19 @@ async function documents(extra = ''): Promise<Record<string, string>> {
 }
 
 
+// The neutral reference a target without a ReadmeModel of its own writes.
+async function genericReference(model: any): Promise<string> {
+  const { fs, vol } = memfs({})
+  await Jostraca().generate({ fs: () => fs, folder: '/x', model, log: makeLog() }, () => {
+    Project({ folder: 'p' }, () => Folder({ name: 'd' }, () => File({ name: 'out.md' }, () => {
+      ReadmeModel({ target: { name: 'nocopy', title: 'None' } })
+    })))
+  })
+  const json: any = vol.toJSON()
+  return json[Object.keys(json).find((k: string) => k.endsWith('out.md'))!]
+}
+
+
 function naming(docs: Record<string, string>, re: RegExp): string[] {
   return Object.entries(docs).filter(([, text]) => re.test(text)).map(([path]) => path).sort()
 }
@@ -70,5 +84,33 @@ describe('operation-dependent prose', () => {
     deepStrictEqual(naming(await documents(only('ambient')), LIST), [])
     deepStrictEqual(naming(await documents(only('ambient', 'planet') + '\n' + opsOff('planet', 'list')), LIST), [])
     deepStrictEqual(naming(await documents(opsOff('planet', 'create', 'update', 'patch', 'remove')), REMOVE), [])
+  })
+
+
+  test('a reference says the entities share one interface only where their operations are the same', async () => {
+    const SAME = /share(s)? the same interface/
+    const OWN = /has only the operations its model declares/
+    const mixed = await documents()
+    const same = await documents(only('history', 'record', 'utility'))
+    const readmes = (docs: Record<string, string>, re: RegExp) =>
+      TARGETS.filter((t: string) => re.test(docs[t + '/README.md']))
+    // c, go and ocaml word theirs as one vtable, interface or record type,
+    // which every entity has whatever operations it declares.
+    const typed = ['c', 'go', 'ocaml']
+    deepStrictEqual(readmes(mixed, SAME), [])
+    deepStrictEqual(readmes(mixed, OWN), TARGETS.filter((t: string) => !typed.includes(t)))
+    deepStrictEqual(readmes(same, SAME), TARGETS.filter((t: string) => !typed.includes(t)))
+    deepStrictEqual(readmes(same, OWN), [])
+    strictEqual(mixed['lua/README.md'].includes('each with operations from one small set'), true)
+    strictEqual(same['lua/README.md'].includes('each with the same small set of operations'), true)
+
+    const genericMixed = await genericReference(makeModel([]))
+    strictEqual(OWN.test(genericMixed), true)
+    deepStrictEqual(['load', 'list', 'create', 'update', 'patch', 'remove']
+      .filter((op: string) => genericMixed.includes('| `' + op + '(')), ['load', 'list', 'create', 'update', 'patch', 'remove'])
+    const genericLists = await genericReference(makeModel([], undefined, only('history', 'record', 'utility')))
+    strictEqual(SAME.test(genericLists), true)
+    deepStrictEqual(['load', 'list', 'create', 'update', 'patch', 'remove']
+      .filter((op: string) => genericLists.includes('| `' + op + '(')), ['list'])
   })
 })

@@ -8,7 +8,7 @@ import {
 } from '../types'
 
 import { fact } from '../helpers/facts'
-import { entityClassName, entityCollection } from '../helpers/opShape'
+import { entityClassName, entityCollection, introOps } from '../helpers/opShape'
 import { optionalComponent } from '../helpers/optional'
 
 
@@ -40,6 +40,16 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
     ReadmeModelGeneric({ target, model, entityList, authActive: fact(model.main[KIT], 'auth').apikey })
   }
 })
+
+
+const GENERIC_OP_ROWS: Record<string, string> = {
+  load: '| `load(reqmatch?, ctrl?)` | Load a single entity by match criteria. |',
+  list: '| `list(reqmatch?, ctrl?)` | List entities matching the criteria. |',
+  create: '| `create(reqdata?, ctrl?)` | Create a new entity. |',
+  update: '| `update(reqdata?, ctrl?)` | Update an existing entity. |',
+  patch: '| `patch(reqdata?, ctrl?)` | Change part of an existing entity. |',
+  remove: '| `remove(reqmatch?, ctrl?)` | Remove an entity. |',
+}
 
 
 const ReadmeModelGeneric = cmp(function ReadmeModelGeneric(props: any) {
@@ -86,17 +96,12 @@ ${apikeyRow}| \`base\` | \`string\` | Base URL of the API server. |
 
 ### Entity interface
 
-All entities share the same interface.
+${fact(model.main[KIT], 'sharedOps') ? 'All entities share the same interface.' :
+    'Each entity has only the operations its model declares; see its section below.'}
 
 | Method | Description |
 | --- | --- |
-| \`load(reqmatch?, ctrl?)\` | Load a single entity by match criteria. |
-| \`list(reqmatch?, ctrl?)\` | List entities matching the criteria. |
-| \`create(reqdata?, ctrl?)\` | Create a new entity. |
-| \`update(reqdata?, ctrl?)\` | Update an existing entity. |
-| \`patch(reqdata?, ctrl?)\` | Change part of an existing entity. |
-| \`remove(reqmatch?, ctrl?)\` | Remove an entity. |
-| \`data(data?)\` | Get or set entity data. |
+${introOps(model).map((op: string) => GENERIC_OP_ROWS[op] + '\n').join('')}| \`data(data?)\` | Get or set entity data. |
 | \`match(match?)\` | Get or set entity match criteria. |
 | \`make()\` | Create a new instance with the same options. |
 | \`client()\` | Return the parent SDK client. |

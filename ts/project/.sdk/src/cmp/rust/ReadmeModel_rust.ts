@@ -19,6 +19,7 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   // Model-driven op rows for the shared entity interface: emit a row only for
   // operations at least one active entity actually exposes.
   const opUnion = new Set<string>(introOps(model))
+  const sameOps = fact(model.main[KIT], 'sharedOps')
   const opRowDefs: Record<string, string> = {
     load: '| `load` | `(reqmatch: Value, ctrl: Value) -> Result<Rc<Self>, ' + model.const.Name + 'Error>` | Load a single entity by match criteria. |',
     list: '| `list` | `(reqmatch: Value, ctrl: Value) -> Result<Vec<Rc<Self>>, ' + model.const.Name + 'Error>` | List entities matching the criteria, one per record. |',
@@ -80,7 +81,7 @@ Creates a test-mode client with mock transport. Both arguments may be
   Content(`
 ### Entity interface
 
-All entities share the same interface.
+${sameOps ? 'All entities share the same interface.' : 'Each entity has only the operations its model declares; see its section below.'}
 
 | Method | Signature | Description |
 | --- | --- | --- |

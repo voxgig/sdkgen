@@ -17,6 +17,7 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   // operations at least one active entity actually exposes — never document an
   // operation no entity has.
   const opUnion = new Set<string>(introOps(model))
+  const sameOps = fact(model.main[KIT], 'sharedOps')
   const opRowDefs: Record<string, string> = {
     load: '| `load` | `(ent reqmatch ctrl) -> entity` | Load a single entity by match criteria, and return it. Raises on error. |',
     list: '| `list` | `(ent reqmatch ctrl) -> vector` | List entities matching the criteria, one per record. Raises on error. |',
@@ -74,7 +75,7 @@ Creates a test-mode client with mock transport. Both arguments may be \`nil\`.
   Content(`
 ### Entity interface
 
-All entities share the same interface. Operations are functions in the
+${sameOps ? 'All entities share the same interface.' : 'Each entity has only the operations its model declares; see its section below.'} Operations are functions in the
 entity namespace (\`sdk.entity.<name>\`); state accessors are stored on the
 entity map and are called via keyword lookup.
 
