@@ -1013,7 +1013,7 @@ const Listener = struct {
 
 // Real listeners and the bundled exchange client: a stub follows nothing.
 test "secrets exchange: a redirect answering the exchange is a failure, and nothing follows it" {
-    if (!present()) return error.SkipZigTest;
+    if (!present() or !placesCredential()) return error.SkipZigTest;
     const Case = struct { status: i64, away: bool };
     const cases = [_]Case{
         .{ .status = 307, .away = true },

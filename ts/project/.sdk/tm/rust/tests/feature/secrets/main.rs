@@ -1658,6 +1658,9 @@ fn listener(
 
 #[test]
 fn a_redirect_answering_the_exchange_is_a_failure_and_nothing_follows_it() {
+    if skipped_without_auth() {
+        return;
+    }
     use std::sync::atomic::{AtomicBool, Ordering};
     use std::sync::{Arc, Mutex};
 

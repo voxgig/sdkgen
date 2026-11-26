@@ -814,6 +814,8 @@ func TestSecretsExchangeRawFetch(t *testing.T) {
 
 // Real listeners and the raw fallback transport: a stub follows nothing.
 func TestSecretsExchangeRedirectRefused(t *testing.T) {
+	skipWithoutAuth(t)
+
 	t.Run("a redirect answering the exchange is a failure, and nothing follows it", func(t *testing.T) {
 		entity, opname := routableOp(t)
 

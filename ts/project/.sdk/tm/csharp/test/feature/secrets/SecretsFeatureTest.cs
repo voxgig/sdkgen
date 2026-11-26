@@ -1903,6 +1903,8 @@ public class SecretsFeatureTest
     [Fact]
     public void ARedirectAnsweringTheExchangeIsAFailureAndNothingFollowsIt()
     {
+        if (SkippedWithoutAuth()) return;
+
         var elsewhere = new List<string>();
         var followed = new List<string>();
         (int Status, string Location) answer = (307, "");
