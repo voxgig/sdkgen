@@ -84,6 +84,7 @@ type xchg = {
   xresponse : string;
   xstatuses : int list;
   xretries : int;
+  xsameorigin : bool;
 }
 
 (* The message an exception carries, whichever library raised it: sekreto's
@@ -137,6 +138,59 @@ let trim_slashes_left (s : string) : string =
   let n = String.length s and i = ref 0 in
   while !i < n && s.[!i] = '/' do incr i done;
   String.sub s !i (n - !i)
+
+let redirect_max = 5
+
+(* An absolute http or https url as its scheme, its authority and the rest. *)
+let url_parts (url : string) : (string * string * string) option =
+  let scheme, start =
+    if String.starts_with ~prefix:"https://" (String.lowercase_ascii url) then ("https", 8)
+    else if String.starts_with ~prefix:"http://" (String.lowercase_ascii url) then ("http", 7)
+    else ("", 0) in
+  if 0 = start then None
+  else begin
+    let n = String.length url in
+    let rec stop i = if i >= n || String.contains "/?#" url.[i] then i else stop (i + 1) in
+    let e = stop start in
+    let auth = String.sub url start (e - start) in
+    if "" = auth || String.contains auth '@' then None
+    else Some (scheme, auth, String.sub url e (n - e))
+  end
+
+(* Scheme, host and port, with the scheme's default port. *)
+let url_origin (url : string) : string option =
+  match url_parts url with
+  | None -> None
+  | Some (scheme, auth, _) ->
+    let auth = String.lowercase_ascii auth in
+    let ported = match String.rindex_opt auth ':' with
+      | Some i -> not (String.contains_from auth i ']')
+      | None -> false in
+    Some (scheme ^ "://" ^ auth ^ (if ported then "" else if "https" = scheme then ":443" else ":80"))
+
+let resolve_url (at : string) (location : string) : string option =
+  if None <> url_parts location then Some location
+  else match url_parts at with
+    | None -> None
+    | Some (scheme, auth, rest) ->
+      if String.starts_with ~prefix:"//" location then Some (scheme ^ ":" ^ location)
+      else if String.starts_with ~prefix:"/" location then Some (scheme ^ "://" ^ auth ^ location)
+      else
+        let path = match String.index_opt rest '?' with Some i -> String.sub rest 0 i | None -> rest in
+        let dir = match String.rindex_opt path '/' with
+          | Some i -> String.sub path 0 (i + 1) | None -> "/" in
+        Some (scheme ^ "://" ^ auth ^ dir ^ location)
+
+(* Where a redirect keeping method and body (307 or 308) points, on the
+ * exchange's own origin. Any other would drop the body or leave the origin.
+ * The bundled transport answers no headers: only a supplied fetch is followed. *)
+let moved (url : string) (at : string) (res : value) : string option =
+  match to_int (getp res "status"), getp (getp res "headers") "location" with
+  | (307 | 308), Str location when "" <> location ->
+    (match resolve_url at location with
+     | Some next when None <> url_origin next && url_origin next = url_origin url -> Some next
+     | _ -> None)
+  | _ -> None
 
 (* Build the feature. `plugins` are the plugin DEFINITIONS the model
  * selected for this feature, emitted by Config_ocaml from the catalogue's
@@ -230,7 +284,7 @@ let make ?(plugins : Defs.definition list = [])
         ("method", Str x.xmethod);
         ("headers", jo [("content-type", Str "application/json")]);
         ("body", Str (jsonify (jo [(x.xrequest, Str !refresh)])));
-        (* Never followed: a redirect would carry the refresh token on. *)
+        (* Never followed by the client: a redirect would carry the refresh token on. *)
         ("redirect", Str "manual")] in
       let fetch =
         match getpath_s opts "system.fetch" with
@@ -243,7 +297,13 @@ let make ?(plugins : Defs.definition list = [])
                ^ "HTTP client is not compiled; supply options.system.fetch or activate a "
                ^ "plugin group")
       | Some fetch ->
-        (match fetch url fetchdef with
+        (* By option alone, and only while the exchange stays on its own origin. *)
+        let rec ask at hops =
+          let res = fetch at fetchdef in
+          match if x.xsameorigin && hops < redirect_max then moved url at res else None with
+          | Some next -> ask next (hops + 1)
+          | None -> res in
+        (match ask url 0 with
          | exception e -> Error (exn_message e)
          | res ->
            (match get_str res "__err__" with
@@ -403,6 +463,7 @@ let make ?(plugins : Defs.definition list = [])
                xresponse = opt_str xopts "response" ~default:"access_token";
                xstatuses = (if [] = statuses then [401] else statuses);
                xretries = opt_int xopts "retries" ~default:1;
+              xsameorigin = getp xopts "redirect" = Str "same-origin";
              }
            end else None);
 

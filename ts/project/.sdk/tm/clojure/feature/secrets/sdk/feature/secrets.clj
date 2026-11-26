@@ -63,6 +63,8 @@
 
 (def ^:private ERROR-CODE "secrets_provider")
 
+(def ^:private REDIRECT-MAX 5)
+
 
 ;; ---------------------------------------------------------------------------
 ;; Option reading. Options arrive as vendored struct nodes (LinkedHashMap /
@@ -198,6 +200,25 @@
 ;; The access-token exchange.
 ;; ---------------------------------------------------------------------------
 
+(defn- origin [^java.net.URI u]
+  (let [scheme (str/lower-case (str (.getScheme u)))
+        port (.getPort u)]
+    [scheme (str/lower-case (str (.getHost u)))
+     (if (neg? port) (get {"http" 80 "https" 443} scheme -1) (long port))]))
+
+;; Where a redirect keeping method and body (307 or 308) points, on the
+;; exchange's own origin. Any other would drop the body or leave the origin.
+(defn- moved [url at res]
+  (let [status (core/to-int (vs/getprop res "status"))
+        location (vs/getprop (vs/getprop res "headers") "location")]
+    (when (and (contains? #{307 308} status) (string? location) (seq location))
+      (try
+        (let [next (.resolve (java.net.URI/create at) (java.net.URI/create location))]
+          (when (= (origin next) (origin (java.net.URI/create url)))
+            (str next)))
+        (catch Exception _ nil)))))
+
+
 (defn- buy-once [fa]
   (let [x (st fa :exchange)
         refresh (st fa :refresh)]
@@ -228,11 +249,21 @@
           ;; a configured request-field name) carrying a quote, backslash or
           ;; newline must arrive as that literal value, not as broken JSON.
           body (vs/jsonify (vs/jm (:request x) refresh) (vs/jm "indent" 0))
-          ;; Never followed: a redirect would carry the refresh token on.
-          [res err] (fetch url (vs/jm "method" (:method x)
-                                      "headers" (vs/jm "content-type" "application/json")
-                                      "body" body
-                                      "redirect" "manual"))]
+          ;; Never followed by the client: a redirect would carry the refresh token on.
+          fetchdef (vs/jm "method" (:method x)
+                          "headers" (vs/jm "content-type" "application/json")
+                          "body" body
+                          "redirect" "manual")
+          ;; By option alone, and only while the exchange stays on its own origin.
+          [res err] (loop [at url
+                           answer (fetch url fetchdef)
+                           hops 0]
+                      (let [next (when (and (= "same-origin" (:redirect x)) (< hops REDIRECT-MAX)
+                                            (nil? (second answer)))
+                                   (moved url at (first answer)))]
+                        (if next
+                          (recur next (fetch next fetchdef) (inc hops))
+                          answer)))]
 
       (when (some? err)
         (throw (sekreto/sekretoerror
@@ -468,7 +499,8 @@
                    (if (and (vs/islist s) (pos? (vs/size s)))
                      (mapv (fn [v] (core/to-int v)) (vec s))
                      [401]))
-       :retries (let [r (vs/getprop xopts "retries")] (if (number? r) (long r) 1))})))
+       :retries (let [r (vs/getprop xopts "retries")] (if (number? r) (long r) 1))
+       :redirect (if (= "same-origin" (vs/getprop xopts "redirect")) "same-origin" "refuse")})))
 
 
 (defn- init! [fa ctx options]

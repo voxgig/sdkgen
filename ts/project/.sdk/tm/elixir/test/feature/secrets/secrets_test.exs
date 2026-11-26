@@ -1074,6 +1074,95 @@ defmodule ProjectName.SecretsTest do
       end
     end
 
+    test "with the option, a redirect on the exchange's own origin is followed, and no other" do
+      other =
+        listener(:other, fn _path -> {200, nil, ~s({"access_token":"ELSEWHERE01"})} end)
+
+      {:ok, answer} = Agent.start_link(fn -> {307, ""} end)
+
+      origin =
+        listener(:origin, fn
+          "/api/auth/token" -> Tuple.append(Agent.get(answer, & &1), "")
+          _ -> {200, nil, ~s({"access_token":"MOVED01"})}
+        end)
+
+      at = "http://127.0.0.1:#{elem(origin, 1)}"
+      base = at <> "/api"
+      away = "http://127.0.0.1:#{elem(other, 1)}/api/auth/token"
+      moved = {"POST", "/api/moved/token", ~s({"refresh_token":"#{@refresh}"})}
+
+      cases = [
+        {307, "/api/moved/token", true},
+        {308, at <> "/api/moved/token", true},
+        {307, away, false},
+        {302, "/api/moved/token", false},
+        {307, "/api/auth/token", false}
+      ]
+
+      try do
+        results =
+          Enum.map(cases, fn {status, location, follows} ->
+            Agent.update(answer, fn _ -> {status, location} end)
+
+            client =
+              ProjectName.new(S.jm([
+                "base", base,
+                "allow", S.jm(["op", "direct,graphql,list,load"]),
+                "feature",
+                secrets([
+                  {"name", "refresh_token"},
+                  {"exchange",
+                   S.jm(["active", true, "refresh", @refresh, "redirect", "same-origin"])}
+                ])
+              ]))
+
+            res = ProjectName.direct(client, S.jm(["path", "/thing"]))
+            seen = received([])
+            mine = for {:origin, m, p, b} <- seen, do: {m, p, b}
+            exchanged = Enum.count(mine, &(elem(&1, 1) == "/api/auth/token"))
+            followed = Enum.reject(mine, &(elem(&1, 1) == "/api/auth/token"))
+            elsewhere = Enum.count(seen, &(elem(&1, 0) == :other))
+            message = err_message(res)
+            want = "token exchange failed: #{status} from #{base}/auth/token"
+
+            verdict =
+              cond do
+                follows and S.getprop(res, "ok") == true and length(followed) == 2 and
+                    hd(followed) == moved ->
+                  :followed
+
+                not follows and followed == [] and String.contains?(message, want) ->
+                  :refused
+
+                true ->
+                  {:wrong, status, location, message, followed}
+              end
+
+            {verdict, location, exchanged, elsewhere}
+          end)
+
+        followed = Enum.count(results, &(elem(&1, 0) == :followed))
+        refused = Enum.count(results, &(elem(&1, 0) == :refused))
+        elsewhere = results |> Enum.map(&elem(&1, 3)) |> Enum.sum()
+        wrong = for {{:wrong, _, _, _, _} = w, _, _, _} <- results, do: w
+        {_, _, looped, _} = List.keyfind(results, "/api/auth/token", 1)
+
+        IO.puts("\nsecrets: exchange opt-in followed #{followed} redirect(s) " <>
+          "on its own origin, refused #{refused}, #{elsewhere} elsewhere")
+
+        assert elsewhere == 0, "the exchange reached another origin"
+        assert wrong == []
+        assert followed == 2
+        assert refused == 3
+        # A redirect to itself stops at the hop limit.
+        assert looped == 6
+      after
+        :gen_tcp.close(elem(origin, 0))
+        :gen_tcp.close(elem(other, 0))
+        Agent.stop(answer)
+      end
+    end
+
     test "auth nil suppresses the credential and buys nothing" do
       System.put_env(@envprefix <> "REFRESH_TOKEN", @refresh)
 
