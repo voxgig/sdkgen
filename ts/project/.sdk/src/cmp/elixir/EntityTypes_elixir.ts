@@ -54,11 +54,11 @@ const EntityTypes = cmp(function EntityTypes(props: any) {
   const app = elixirApp(model, props.target)
 
   const entity = getModelPath(model, `main.${KIT}.entity`, { only_active: false, required: false })
-  // Emit for EVERY entity that gets an entity module: the consumer scaffold
-  // (create-sdkgen Root.ts) iterates entities WITHOUT an active filter, and
-  // each generated module carries @specs referencing its Types aliases, so an
-  // alias is required for each or the project won't compile. Filter on `name`
-  // (always present), NOT `active` — parity with the go emitter's fix.
+  // Every entity, active or not: a Root scaffolded before create-sdkgen
+  // filtered on `active` still generates a module for inactive entities, and
+  // a project keeps its Root until it re-scaffolds. Each module's @specs name
+  // its Types aliases, so the project compiles only with an alias for each.
+  // Filter on `name` (always present), not `active`.
   const entityList = deriveEntityNames(entity)
   // Derive the PascalCase Name up-front — it is set LAZILY by names(), so an
   // entity not yet named would otherwise read `Name = undefined` below.

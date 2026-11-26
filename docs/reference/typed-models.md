@@ -82,10 +82,13 @@ the result.
 
 4. **`EntityTypes_<lang>.ts`** (scaffold, `ts/project/.sdk/src/cmp/<lang>/`)
    renders the typed model file per target. Emitters fetch the entity
-   collection with `only_active: false` and filter on `name` only: the
-   consumer scaffold generates entity code for **every** entity (active or
-   not), so the typed model must cover them all or the generated project
-   does not compile. Fields whose names have no legal identifier form in
+   collection with `only_active: false` and filter on `name` only, so the
+   typed model covers **every** entity, active or not. The consumer
+   scaffold's `Root.ts` generates entity code for active entities alone
+   from create-sdkgen 0.31.1, but one scaffolded earlier generates it for
+   every entity, and a project keeps its `Root.ts` until it re-scaffolds:
+   without a type for each inactive entity, such a project does not
+   compile. Fields whose names have no legal identifier form in
    the language are omitted **with a warning**
    (`point: entity-types-skip-field`); ts/js quote such keys instead.
    `ts/test/entitytypes.test.ts` renders each emitter against a fixture
