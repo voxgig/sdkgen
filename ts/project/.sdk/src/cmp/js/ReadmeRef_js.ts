@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField, safeVarName, exampleVarName, jsKey, opNeedsAction, bodyNote, listMatchArg, matchExampleItems, requestExampleItems, entityClassName, entityCollection, featureDocs, fact } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField, safeVarName, exampleVarName, jsKey, opNeedsAction, bodyNote, listMatchArg, matchExampleItems, requestExampleItems, entityClassName, entityCollection, featureDocs, fact, clientOptions } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -65,6 +65,10 @@ Complete API reference for the ${model.Name} ${target.title} SDK.
 
 `)
 
+    const OPTION_KIND: Record<string, string> = { string: 'string', map: 'object', list: 'Feature[]' }
+    const optionRows = clientOptions(model)
+      .map((o: any) => '| `options.' + o.name + '` | `' + OPTION_KIND[o.kind] + '` | ' + o.desc + ' |\n').join('')
+
     Content(`\`\`\`js
 new ${model.Name}SDK(options)
 \`\`\`
@@ -76,13 +80,7 @@ Create a new SDK client instance.
 | Name | Type | Description |
 | --- | --- | --- |
 | \`options\` | \`object\` | SDK configuration options. |
-${isAuthActive(model) ? '| \`options.apikey\` | \`string\` | API key for authentication. |\n' : ''}${fact(model.main[KIT], 'auth').secret ? '| \`options.secret\` | \`string\` | API secret for authentication. |\n' : ''}| \`options.base\` | \`string\` | Base URL for API requests. |
-| \`options.prefix\` | \`string\` | URL prefix appended after base. |
-| \`options.suffix\` | \`string\` | URL suffix appended after path. |
-| \`options.headers\` | \`object\` | Custom headers for all requests. |
-| \`options.feature\` | \`object\` | Feature configuration. |
-| \`options.system\` | \`object\` | System overrides (e.g. custom fetch). |
-
+${optionRows}
 `)
 
 
@@ -343,6 +341,7 @@ const result = await client.${ent.Name}().create({
             const updateLines = updateItems.map((it: any) =>
               `  ${jsKey(it.name)}: ${exampleValue(ent, ent.op && ent.op[opname], it.name,
                 it.name === idF ? ent.name + '_id' : it.name)},\n`).join('')
+
             Content(`\`\`\`js
 const result = await client.${ent.Name}().${opname}({
 ${updateLines}  // ${'patch' === opname ? 'Only the fields to change' : 'Fields to update'}

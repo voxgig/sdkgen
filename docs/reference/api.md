@@ -178,6 +178,16 @@ whose spec omits its security schemes (GitHub's official OpenAPI does) gets
 a credential only when the project sets
 `config: auth: { active: true, prefix: 'Bearer' }`.
 
+### `clientOptions(model) → ClientOption[]`
+
+The rows of a client options table, as `{ name, kind, desc }`, where `kind`
+is `string`, `map` or `list`. The server variables come first where the
+server URL is a template, marked required when one has no default. The API
+key and the Basic secret follow where the generated `PrepareAuth` places
+them, then each option a caller sets that `main.kit.optspec` declares, and
+`feature`. Each language's model and reference sections print these rows in
+their own spelling.
+
 ### `guardModel(model, log?) → model`
 
 Prepare a model before anything reads a fact from it. It renames an entity

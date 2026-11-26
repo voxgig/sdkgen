@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opNeedsAction, bodyNote, matchExampleItems, requestExampleItems, featureDocs, fact } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opNeedsAction, bodyNote, matchExampleItems, requestExampleItems, featureDocs, fact, clientOptions } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -90,6 +90,10 @@ Complete API reference for the ${model.Name} ${target.title} SDK.
 
 `)
 
+    const OPTION_KIND: Record<string, string> = { string: 'string', map: 'map', list: 'vector' }
+    const optionRows = clientOptions(model)
+      .map((o: any) => '| `' + o.name + '` | `' + OPTION_KIND[o.kind] + '` | ' + o.desc + ' |\n').join('')
+
     Content(`\`\`\`clojure
 (require '[sdk.api :as api]
          '[voxgig.struct :as vs])
@@ -103,13 +107,7 @@ Create a new SDK client instance. \`options\` is a \`voxgig.struct\` map.
 
 | Key | Type | Description |
 | --- | --- | --- |
-${isAuthActive(model) ? '| `apikey` | `string` | API key for authentication. |\n' : ''}${fact(model.main[KIT], 'auth').secret ? '| `secret` | `string` | API secret for authentication. |\n' : ''}| \`base\` | \`string\` | Base URL for API requests. |
-| \`prefix\` | \`string\` | URL prefix appended after base. |
-| \`suffix\` | \`string\` | URL suffix appended after path. |
-| \`headers\` | \`map\` | Custom headers for all requests. |
-| \`feature\` | \`map\` | Feature configuration. |
-| \`system\` | \`map\` | System overrides (e.g. custom fetch). |
-
+${optionRows}
 `)
 
 
@@ -321,6 +319,7 @@ ${info.desc}
             const updateLines = updateItems.map((it: any) =>
               `      ${cljString(it.name)} ${cljLit(it.type,
                 it.name === idF ? ent.name + '_id' : it.name)}\n`).join('')
+
             Content(`\`\`\`clojure
 (def result
   (e-${eLow}/${opname} (api/${eLow} client nil)

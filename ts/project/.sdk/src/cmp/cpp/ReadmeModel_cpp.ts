@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, entityClassName, entityCollection, fact } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, entityClassName, entityCollection, fact, clientOptions } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -32,12 +32,10 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   const opRows = ['load', 'list', 'create', 'update', 'patch', 'remove']
     .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o]).join('\n')
 
-  const apikeyOptionRow = isAuthActive(model)
-    ? '| `apikey` | `std::string` | API key for authentication. |\n'
-    : ''
-  const secretOptionRow = fact(model.main[KIT], 'auth').secret
-    ? '| `secret` | `std::string` | API secret for authentication. |\n'
-    : ''
+  // A closed value union holds no feature instance, so there is no `extend`.
+  const OPTION_KIND: Record<string, string> = { string: 'std::string', map: 'Value', list: '' }
+  const optionRows = clientOptions(model).filter((o: any) => 'extend' !== o.name)
+    .map((o: any) => '| `' + o.name + '` | `' + OPTION_KIND[o.kind] + '` | ' + o.desc + ' |\n').join('')
 
   Content(`### ${model.const.Name}SDK
 
@@ -53,12 +51,7 @@ Creates a new SDK client. \`options\` is an \`sdk::Value\` map.
 
 | Option | Type | Description |
 | --- | --- | --- |
-${apikeyOptionRow}${secretOptionRow}| \`base\` | \`std::string\` | Base URL of the API server. |
-| \`prefix\` | \`std::string\` | URL path prefix prepended to all requests. |
-| \`suffix\` | \`std::string\` | URL path suffix appended to all requests. |
-| \`feature\` | \`Value\` | Feature activation flags. |
-| \`system\` | \`Value\` | System overrides. |
-
+${optionRows}
 ### testSDK
 
 \`\`\`cpp

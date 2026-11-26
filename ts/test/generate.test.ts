@@ -12,7 +12,7 @@ import { memfs } from 'memfs'
 import { cmp, each, names, Project, Folder } from 'jostraca'
 import * as sucrase from 'sucrase'
 
-import { SdkGen, mcpTools, alongsideNote, applyFacts, installCommand, packageName, featureDocs, targetFeatures, Main, fact } from '../dist/sdkgen.js'
+import { SdkGen, mcpTools, alongsideNote, applyFacts, installCommand, packageName, featureDocs, targetFeatures, Main, fact, clientOptions } from '../dist/sdkgen.js'
 import { aliasCmpText } from '../dist/action/target.js'
 
 // Fixture, miniature Root and memfs layering — shared with
@@ -7842,6 +7842,34 @@ main: kit: flow: BasicNoteFlow: {
       'the README names the default Authorization header')
   })
 
+
+  // Every row names an option the optspec declares, or `feature`, which the
+  // option spec adds; and every option clientOptions lists has its row, but
+  // `extend` where a closed value union holds no feature instance.
+  test('every options table lists the options the optspec declares that a caller sets', async () => {
+    const targets = allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))
+    const closed = ['rust', 'c', 'cpp', 'zig', 'ocaml']
+    const out = await generate(targets, undefined, BASIC_TEMPLATED)
+    const model = makeModel(targets, undefined, BASIC_TEMPLATED)
+    const declared = [...Object.keys(model.main[KIT].optspec), 'feature']
+    const listed = clientOptions(model).map((o: any) => o.name)
+    deepStrictEqual(listed.filter((name: string) => !declared.includes(name)), [])
+    deepStrictEqual(listed, ['server', 'apikey', 'secret', 'base', 'prefix', 'suffix', 'headers', 'feature',
+      'extend', 'system'])
+    for (const target of targets) {
+      for (const [file, head] of [[target + '/README.md', /\| Option \| [^|]+\| Description \|/],
+        [target + '/REFERENCE.md', /\| (Name|Key) \| [^|]+\| Description \|/]] as [string, RegExp][]) {
+        const text = String(out[file])
+        const at = text.search(head)
+        ok(-1 < at, file + ': no options table')
+        const rows = text.slice(at).split('\n\n')[0].split('\n').slice(2)
+        const names = rows.map((row: string) => /^\| `(?:\$?options(?:\.|\[\"|->\{))?"?([a-z]+)/.exec(row)?.[1])
+          .filter((name: any) => null != name && 'options' !== name)
+        deepStrictEqual(names, listed.filter((name: string) => !closed.includes(target) || 'extend' !== name),
+          file)
+      }
+    }
+  })
 
   // BASIC_TEMPLATED's client needs its key, its secret and `tenant`, not `region`.
   test('the root entities example builds its client with what the constructor needs', async () => {

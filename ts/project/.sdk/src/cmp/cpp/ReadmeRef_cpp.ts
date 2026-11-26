@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opNeedsAction, bodyNote, matchExampleItems, requestExampleItems, entityClassName, entityCollection, featureDocs, fact } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opNeedsAction, bodyNote, matchExampleItems, requestExampleItems, entityClassName, entityCollection, featureDocs, fact, clientOptions } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -79,6 +79,11 @@ Complete API reference for the ${model.Name} ${target.title} SDK.
 
 `)
 
+    // A closed value union holds no feature instance, so there is no `extend`.
+    const OPTION_KIND: Record<string, string> = { string: 'std::string', map: 'Value', list: '' }
+    const optionRows = clientOptions(model).filter((o: any) => 'extend' !== o.name)
+      .map((o: any) => '| `options["' + o.name + '"]` | `' + OPTION_KIND[o.kind] + '` | ' + o.desc + ' |\n').join('')
+
     Content(`\`\`\`cpp
 #include "core/sdk.hpp"
 
@@ -94,13 +99,7 @@ Create a new SDK client instance. \`options\` is an \`sdk::Value\` map.
 | Name | Type | Description |
 | --- | --- | --- |
 | \`options\` | \`Value\` | SDK configuration options (a map). |
-${isAuthActive(model) ? '| `options["apikey"]` | `std::string` | API key for authentication. |\n' : ''}${fact(model.main[KIT], 'auth').secret ? '| `options["secret"]` | `std::string` | API secret for authentication. |\n' : ''}| \`options["base"]\` | \`std::string\` | Base URL for API requests. |
-| \`options["prefix"]\` | \`std::string\` | URL prefix appended after base. |
-| \`options["suffix"]\` | \`std::string\` | URL suffix appended after path. |
-| \`options["headers"]\` | \`Value\` | Custom headers for all requests. |
-| \`options["feature"]\` | \`Value\` | Feature configuration. |
-| \`options["system"]\` | \`Value\` | System overrides. |
-
+${optionRows}
 `)
 
 
@@ -312,6 +311,7 @@ SdkEntityPtr result = client->${acc}()->create(vmap({
             const updateLines = updateItems.map((it: any) =>
               `    {"${cppEscape(it.name)}", ${cppLit(it.type,
                 it.name === idF ? ent.name + '_id' : it.name)}},\n`).join('')
+
             Content(`\`\`\`cpp
 SdkEntityPtr result = client->${acc}()->${opname}(vmap({
 ${updateLines}    // ${'patch' === opname ? 'Only the fields to change' : 'Fields to update'}

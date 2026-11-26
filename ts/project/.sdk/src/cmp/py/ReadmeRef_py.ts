@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, safeVarName, exampleVarName, opNeedsAction, bodyNote, listMatchArg, entityClassName, entityCollection, matchExampleItems, litString, requestExampleItems, featureDocs, fact } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, safeVarName, exampleVarName, opNeedsAction, bodyNote, listMatchArg, entityClassName, entityCollection, matchExampleItems, litString, requestExampleItems, featureDocs, fact, clientOptions } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -77,6 +77,10 @@ Complete API reference for the ${model.Name} ${target.title} SDK.
 
 `)
 
+    const OPTION_KIND: Record<string, string> = { string: 'str', map: 'dict', list: 'list' }
+    const optionRows = clientOptions(model)
+      .map((o: any) => '| `options["' + o.name + '"]` | `' + OPTION_KIND[o.kind] + '` | ' + o.desc + ' |\n').join('')
+
     Content(`\`\`\`python
 from ${model.const.Name.toLowerCase()}_sdk import ${model.const.Name}SDK
 
@@ -90,13 +94,7 @@ Create a new SDK client instance.
 | Name | Type | Description |
 | --- | --- | --- |
 | \`options\` | \`dict\` | SDK configuration options. |
-${isAuthActive(model) ? '| \`options["apikey"]\` | \`str\` | API key for authentication. |\n' : ''}${fact(model.main[KIT], 'auth').secret ? '| \`options["secret"]\` | \`str\` | API secret for authentication. |\n' : ''}| \`options["base"]\` | \`str\` | Base URL for API requests. |
-| \`options["prefix"]\` | \`str\` | URL prefix appended after base. |
-| \`options["suffix"]\` | \`str\` | URL suffix appended after path. |
-| \`options["headers"]\` | \`dict\` | Custom headers for all requests. |
-| \`options["feature"]\` | \`dict\` | Feature configuration. |
-| \`options["system"]\` | \`dict\` | System overrides (e.g. custom fetch). |
-
+${optionRows}
 `)
 
 
@@ -317,6 +315,7 @@ result = client.${ent.Name}().create({
             const updateLines = updateItems.map((it: any) =>
               `    ${litString('py', it.name)}: ${pyLit(it.type,
                 it.name === idF ? ent.name + '_id' : it.name)},\n`).join('')
+
             Content(`\`\`\`python
 result = client.${ent.Name}().${opname}({
 ${updateLines}    # ${'patch' === opname ? 'Only the fields to change' : 'Fields to update'}

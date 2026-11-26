@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opNeedsAction, bodyNote, matchExampleItems, requestExampleItems, featureDocs, fact } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opNeedsAction, bodyNote, matchExampleItems, requestExampleItems, featureDocs, fact, clientOptions } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -80,6 +80,10 @@ Complete API reference for the ${model.Name} ${target.title} SDK.
 
 `)
 
+    const OPTION_KIND: Record<string, string> = { string: 'string', map: 'Dictionary', list: 'List' }
+    const optionRows = clientOptions(model)
+      .map((o: any) => '| `options["' + o.name + '"]` | `' + OPTION_KIND[o.kind] + '` | ' + o.desc + ' |\n').join('')
+
     Content(`\`\`\`csharp
 using ${model.const.Name}Sdk;
 using Voxgig.Struct;
@@ -95,13 +99,7 @@ Create a new SDK client instance. \`options\` is a
 | Name | Type | Description |
 | --- | --- | --- |
 | \`options\` | \`Dictionary\` | SDK configuration options. |
-${isAuthActive(model) ? '| \`options["apikey"]\` | \`string\` | API key for authentication. |\n' : ''}${fact(model.main[KIT], 'auth').secret ? '| \`options["secret"]\` | \`string\` | API secret for authentication. |\n' : ''}| \`options["base"]\` | \`string\` | Base URL for API requests. |
-| \`options["prefix"]\` | \`string\` | URL prefix appended after base. |
-| \`options["suffix"]\` | \`string\` | URL suffix appended after path. |
-| \`options["headers"]\` | \`Dictionary\` | Custom headers for all requests. |
-| \`options["feature"]\` | \`Dictionary\` | Feature configuration. |
-| \`options["system"]\` | \`Dictionary\` | System overrides (e.g. custom fetch). |
-
+${optionRows}
 `)
 
 
@@ -317,6 +315,7 @@ var result = client.${ent.Name}().Create(new Dictionary<string, object?>
             const updateLines = updateItems.map((it: any) =>
               `    [${csStringLiteral(it.name)}] = ${csLit(it.type,
                 it.name === idF ? ent.name + '_id' : it.name)},\n`).join('')
+
             Content(`\`\`\`csharp
 var result = client.${ent.Name}().${'patch' === opname ? 'Patch' : 'Update'}(new Dictionary<string, object?>
 {

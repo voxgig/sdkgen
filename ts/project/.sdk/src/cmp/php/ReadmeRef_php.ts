@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, phpEntityAccessor, opNeedsAction, bodyNote, listMatchArg, matchExampleItems, litString, requestExampleItems, entityClassName, entityCollection, featureDocs, fact } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, phpEntityAccessor, opNeedsAction, bodyNote, listMatchArg, matchExampleItems, litString, requestExampleItems, entityClassName, entityCollection, featureDocs, fact, clientOptions } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -80,6 +80,10 @@ Complete API reference for the ${model.Name} ${target.title} SDK.
 
 `)
 
+    const OPTION_KIND: Record<string, string> = { string: 'string', map: 'array', list: 'array' }
+    const optionRows = clientOptions(model)
+      .map((o: any) => '| `$options["' + o.name + '"]` | `' + OPTION_KIND[o.kind] + '` | ' + o.desc + ' |\n').join('')
+
     Content(`\`\`\`php
 require_once __DIR__ . '/${model.const.Name.toLowerCase()}_sdk.php';
 
@@ -93,13 +97,7 @@ Create a new SDK client instance.
 | Name | Type | Description |
 | --- | --- | --- |
 | \`$options\` | \`array\` | SDK configuration options. |
-${isAuthActive(model) ? '| \`$options["apikey"]\` | \`string\` | API key for authentication. |\n' : ''}${fact(model.main[KIT], 'auth').secret ? '| \`$options["secret"]\` | \`string\` | API secret for authentication. |\n' : ''}| \`$options["base"]\` | \`string\` | Base URL for API requests. |
-| \`$options["prefix"]\` | \`string\` | URL prefix appended after base. |
-| \`$options["suffix"]\` | \`string\` | URL suffix appended after path. |
-| \`$options["headers"]\` | \`array\` | Custom headers for all requests. |
-| \`$options["feature"]\` | \`array\` | Feature configuration. |
-| \`$options["system"]\` | \`array\` | System overrides (e.g. custom fetch). |
-
+${optionRows}
 `)
 
 
@@ -319,6 +317,7 @@ $result = $client->${phpEntityAccessor(ent.Name)}()->create([
             const updateLines = updateItems.map((it: any) =>
               `  ${litString('php', it.name)} => ${phpLit(it.type,
                 it.name === idF ? ent.name + '_id' : it.name)},\n`).join('')
+
             Content(`\`\`\`php
 $result = $client->${phpEntityAccessor(ent.Name)}()->${opname}([
 ${updateLines}  // ${'patch' === opname ? 'Only the fields to change' : 'Fields to update'}

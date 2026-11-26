@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, entityClassName, entityCollection, fact } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, entityClassName, entityCollection, fact, clientOptions } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -51,12 +51,9 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   }
   const returnBullets = retBullets.join('\n')
 
-  const apikeyOptionRow = isAuthActive(model)
-    ? '| `apikey` | `string` | API key for authentication. |\n'
-    : ''
-  const secretOptionRow = fact(model.main[KIT], 'auth').secret
-    ? '| `secret` | `string` | API secret for authentication. |\n'
-    : ''
+  const OPTION_KIND: Record<string, string> = { string: 'string', map: 'object', list: 'Feature[]' }
+  const optionRows = clientOptions(model)
+    .map((o: any) => '| `' + o.name + '` | `' + OPTION_KIND[o.kind] + '` | ' + o.desc + ' |\n').join('')
 
   Content(`### ${model.const.Name}SDK
 
@@ -68,12 +65,7 @@ new ${model.const.Name}SDK(options?)
 
 | Option | Type | Description |
 | --- | --- | --- |
-${apikeyOptionRow}${secretOptionRow}| \`base\` | \`string\` | Base URL of the API server. |
-| \`prefix\` | \`string\` | URL path prefix prepended to all requests. |
-| \`suffix\` | \`string\` | URL path suffix appended to all requests. |
-| \`feature\` | \`object\` | Feature activation flags (e.g. \`{ test: { active: true } }\`). |
-| \`extend\` | \`Feature[]\` | Additional feature instances to load. |
-
+${optionRows}
 #### Methods
 
 | Method | Returns | Description |

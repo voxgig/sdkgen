@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, File, isAuthActive, entityIdField, opNeedsAction, bodyNote, javaMap, javaMapOf, matchExampleItems, javaMapItems, requestExampleItems, featureDocs, fact } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, File, isAuthActive, entityIdField, opNeedsAction, bodyNote, javaMap, javaMapOf, matchExampleItems, javaMapItems, requestExampleItems, featureDocs, fact, clientOptions } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -69,6 +69,10 @@ Complete API reference for the ${model.Name} ${target.title} SDK.
 
 `)
 
+    const OPTION_KIND: Record<string, string> = { string: 'String', map: 'Map', list: 'List' }
+    const optionRows = clientOptions(model)
+      .map((o: any) => '| `options["' + o.name + '"]` | `' + OPTION_KIND[o.kind] + '` | ' + o.desc + ' |\n').join('')
+
     Content(`\`\`\`java
 ${SDK} client = new ${SDK}(options);
 \`\`\`
@@ -80,13 +84,7 @@ Create a new SDK client instance. \`options\` is a \`Map<String, Object>\`.
 | Name | Type | Description |
 | --- | --- | --- |
 | \`options\` | \`Map\` | SDK configuration options. |
-${isAuthActive(model) ? '| \`options["apikey"]\` | \`String\` | API key for authentication. |\n' : ''}${fact(model.main[KIT], 'auth').secret ? '| \`options["secret"]\` | \`String\` | API secret for authentication. |\n' : ''}| \`options["base"]\` | \`String\` | Base URL for API requests. |
-| \`options["prefix"]\` | \`String\` | URL prefix appended after base. |
-| \`options["suffix"]\` | \`String\` | URL suffix appended after path. |
-| \`options["headers"]\` | \`Map\` | Custom headers for all requests. |
-| \`options["feature"]\` | \`Map\` | Feature configuration. |
-| \`options["system"]\` | \`Map\` | System overrides (e.g. custom fetch). |
-
+${optionRows}
 `)
 
 
@@ -306,6 +304,7 @@ Object result = client.${accessor}(null).create(${createMap.open}
               return `    ${updateMap.pair(`${JSON.stringify(it.name)}, ${javaLit(it.type,
                 it.name === idF ? ent.name + '_id' : it.name)}`)}${comma}\n`
             }).join('')
+
             Content(`\`\`\`java
 Object result = client.${accessor}(null).${opname}(${updateMap.open}
 ${updateLines}), null);

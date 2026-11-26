@@ -666,6 +666,7 @@ export type {
 
 export {
   TARGETS,
+  SDK_TARGETS,
   FEATURES,
   TOKEN,
   baseline,

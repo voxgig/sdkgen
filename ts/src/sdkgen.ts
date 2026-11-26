@@ -84,6 +84,7 @@ import { optionSpec, featureOptionSpec, entitySpecMap } from './helpers/optspec'
 import { OP_SUFFIX, opTypeName, opParams, opReachable, opNeedsAction, ownPoint, opActions, entityActions, entityPath, opRequestShape, entityIdField, entityDataIdField, entityRecordIdField, entityOps, introOps, invalidRequest, entityPrimaryOp, pickExampleEntity, entityClassName, entityConstructorName, entityTypeCollisions, warnEntityTypeCollisions, ungeneratedOps, warnUngeneratedOps, deriveEntityNames, entityCollection } from './helpers/opShape'
 import { isReservedName, safeVarName, exampleVarName, phpEntityAccessor, entityCacheField, isRbCoreConstant, isRbSdkConstant, rbSafeTypeName, isSwiftSdkType, swiftSafeTypeName, isPhpReservedType, isPhpSdkClass, phpSafeTypeName, isTsReservedType, isTsSdkType, tsSafeTypeName, isElixirReservedType, elixirSafeTypeName, elixirTypeNames, elixirTypeName, elixirAccessorNames, elixirAccessor, tsTypeName, rbTypeName, phpTypeName, swiftTypeName, jsProp, jsOptProp, jsKey, jsQuote, luaKey, luaString, prefixLeadingDigit } from './helpers/naming'
 import { serverVariables, hasServerVariables, serverVarEnv } from './helpers/serverVars'
+import { clientOptions } from './helpers/clientOptions'
 import { mcpTools, MCP_READ_OPS, MCP_WRITE_OPS } from './helpers/mcpTools'
 import type { McpTool } from './helpers/mcpTools'
 import { consumedTarget } from './helpers/consumer'
@@ -1244,6 +1245,7 @@ export {
   MCP_READ_OPS,
   MCP_WRITE_OPS,
   serverVariables,
+  clientOptions,
   hasServerVariables,
   serverVarEnv,
   liveStrict,
