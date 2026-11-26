@@ -167,14 +167,14 @@ pub const EntyClass = struct {
 
     /// Streaming operation. Runs `action` through the full pipeline and
     /// returns the result items, so the `streaming` feature's incremental
-    /// output is reachable from a generated entity (a normal op call
-    /// materialises the whole result). This runtime is synchronous and zig
-    /// has no built-in lazy iterators, so the items are a materialised slice
-    /// the caller walks; a failed operation is `.err`, as an operation's is.
-    /// `callopts` parameterises the call: inbound yields the streaming
-    /// feature's items when active, else the materialised items; outbound
-    /// attaches an iterable `body` to the request (reqdata `body$`); `ctrl`
-    /// threads pipeline control.
+    /// output, when that feature is active, is reachable from a generated
+    /// entity (a normal op call materialises the whole result). This runtime
+    /// is synchronous and zig has no built-in lazy iterators, so the items
+    /// are a materialised slice the caller walks; a failed operation is
+    /// `.err`, as an operation's is. `callopts` parameterises the call:
+    /// inbound yields the streaming feature's items when active, else the
+    /// materialised items; outbound attaches an iterable `body` to the
+    /// request (reqdata `body$`); `ctrl` threads pipeline control.
     pub fn stream(self: *EntyClass, action: []const u8, args: Value, callopts: Value) StreamResult {
         const utility = self.utility;
 
@@ -217,9 +217,9 @@ pub const EntyClass = struct {
             ctx.reqdata = reqdata;
         }
 
-        // Run the same pipeline as run_op, firing the feature hooks (the
-        // streaming feature attaches result.stream on PreResult). A failed
-        // step leaves through make_error, as an operation's does.
+        // Run the same pipeline as run_op, firing the feature hooks (an
+        // active streaming feature attaches result.stream on PreResult). A
+        // failed step leaves through make_error, as an operation's does.
         utility.feature_hook(ctx, "PrePoint");
         const point = utility.make_point(ctx) catch return streamItems(self.opError(ctx));
         ctx.out_set("point", OutVal{ .val = point });

@@ -134,11 +134,11 @@ static voxgig_value* entyvar_stream_items(voxgig_value* data, PNError** err) {
 }
 
 // Streaming operation. Runs `action` through the full pipeline and returns a
-// List of the result items, so the `streaming` feature's incremental output
-// is reachable from a generated entity (a normal op call materialises the
-// whole result). This runtime is synchronous and C has no lazy iterators, so
-// the returned value is a List cursor the caller walks (voxgig_as_list).
-// `callopts` parameterises the call:
+// List of the result items, so the `streaming` feature's incremental output,
+// when that feature is active, is reachable from a generated entity (a
+// normal op call materialises the whole result). This runtime is synchronous
+// and C has no lazy iterators, so the returned value is a List cursor the
+// caller walks (voxgig_as_list). `callopts` parameterises the call:
 //   - inbound (download): the items/chunks the streaming feature produces when
 //     active, else the materialised items;
 //   - outbound (upload): a `body` in `callopts` is attached to the request

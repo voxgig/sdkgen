@@ -35,7 +35,7 @@ src/cmp/c/TestClean_c.ts dccf1022c40c
 src/cmp/c/TestDirect_c.ts 68234fa433d4
 src/cmp/c/TestEntity_c.ts a5d7718e4449
 src/cmp/c/Test_c.ts f1a8a6c7a0c6
-src/cmp/c/fragment/Entity.fragment.c 0e673ae6c029
+src/cmp/c/fragment/Entity.fragment.c e79de735264e
 src/cmp/c/fragment/EntityCreateOp.fragment.c 8d80bb81d241
 src/cmp/c/fragment/EntityListOp.fragment.c ccad349ef185
 src/cmp/c/fragment/EntityLoadOp.fragment.c 75edd325b5b8
@@ -54,7 +54,7 @@ tm/c/core/operation.c fb16ed309ed9
 tm/c/core/point.c 1539404e1bcc
 tm/c/core/response.c 32b7c08a0583
 tm/c/core/result.c 60bde846d061
-tm/c/core/sdk.h a74329a6524f
+tm/c/core/sdk.h 607855b56bf9
 tm/c/core/spec.c cb3f60193af1
 tm/c/core/utility.c c0abea39df50
 tm/c/feature/base.c bb9766d14bfc
@@ -157,7 +157,7 @@ src/cmp/clojure/TestDirect_clojure.ts ebfe781a958d
 src/cmp/clojure/TestEntity_clojure.ts 9d5860060f5f
 src/cmp/clojure/Test_clojure.ts 56abfa732719
 src/cmp/clojure/featureextra_clojure.ts 9327232c64f7
-src/cmp/clojure/fragment/Entity.fragment.clj 892bd88e9c2b
+src/cmp/clojure/fragment/Entity.fragment.clj e6d01cf0c660
 src/cmp/clojure/fragment/EntityCreateOp.fragment.clj 726d7256199e
 src/cmp/clojure/fragment/EntityListOp.fragment.clj b5b091a61737
 src/cmp/clojure/fragment/EntityLoadOp.fragment.clj f4ddd881801f
@@ -292,7 +292,7 @@ src/cmp/cpp/utility_cpp.ts b34388805840
 tm/cpp/Makefile 80ab5d610748
 tm/cpp/core/sdk.hpp 29180a8846ed
 tm/cpp/core/struct.hpp 0be0006d1389
-tm/cpp/core/types.hpp 946ab4da5362
+tm/cpp/core/types.hpp 653b2c67b314
 tm/cpp/feature/base.hpp 09bbe326cadb
 tm/cpp/feature/options.hpp 74561793d626
 tm/cpp/feature/test.hpp 149ff9adc63a
@@ -359,7 +359,7 @@ src/cmp/csharp/TestDirect_csharp.ts 3899f5e9862c
 src/cmp/csharp/TestEntity_csharp.ts 2b9b553936c6
 src/cmp/csharp/Test_csharp.ts 881ebab279a4
 src/cmp/csharp/fragment/Entity.fragment.cs 2e98f8d7683d
-src/cmp/csharp/fragment/EntityBase.fragment.cs f44eec8acb2a
+src/cmp/csharp/fragment/EntityBase.fragment.cs b4624a85b44b
 src/cmp/csharp/fragment/EntityCreateOp.fragment.cs 872a578961dc
 src/cmp/csharp/fragment/EntityListOp.fragment.cs d016cce5eafa
 src/cmp/csharp/fragment/EntityLoadOp.fragment.cs 3d8bdbd27972
@@ -377,7 +377,7 @@ tm/csharp/core/Helpers.cs c4fc14005a8f
 tm/csharp/core/Operation.cs 518c7424a8a9
 tm/csharp/core/Point.cs aaadff9ae8c5
 tm/csharp/core/Response.cs 3fcb0c526c84
-tm/csharp/core/Result.cs 80713129722e
+tm/csharp/core/Result.cs b8d7e722d394
 tm/csharp/core/Spec.cs c0bd7bec8261
 tm/csharp/core/Types.cs d3790b5cfad6
 tm/csharp/core/Utility.cs 68a4a35657d7
@@ -483,7 +483,7 @@ src/cmp/elixir/utility_elixir.ts bdfc9c5a3a23
 tm/elixir/Makefile 411daea82111
 tm/elixir/lib/projectname/context.ex c08da12e3546
 tm/elixir/lib/projectname/core.ex 2c5a27f9ef03
-tm/elixir/lib/projectname/entity_base.ex fc35f1c786f2
+tm/elixir/lib/projectname/entity_base.ex 7ac1ce5659a1
 tm/elixir/lib/projectname/error.ex aff8c9663bb6
 tm/elixir/lib/projectname/feature.ex 558cb5c8c3af
 tm/elixir/lib/projectname/feature/test.ex 3ed981b7a867
@@ -559,7 +559,7 @@ tm/go/core/error.go e2bc537a8ccc
 tm/go/core/helpers.go 826d484ca9c8
 tm/go/core/operation.go aef48c3c0f8c
 tm/go/core/response.go 03621973126a
-tm/go/core/result.go fe380e071ac1
+tm/go/core/result.go efab0b08935b
 tm/go/core/spec.go fcd32dc862ab
 tm/go/core/target.go 535cbde898dc
 tm/go/core/types.go c6a061ffe42f
@@ -679,7 +679,7 @@ src/cmp/java/TestDirect_java.ts c2f28fbc6d2e
 src/cmp/java/TestEntity_java.ts 2007d76a4dd9
 src/cmp/java/Test_java.ts 941460b7f312
 src/cmp/java/fragment/Entity.fragment.java 4a531d0e0922
-src/cmp/java/fragment/EntityBase.fragment.java f2def323c7fe
+src/cmp/java/fragment/EntityBase.fragment.java 547ab2d3e003
 src/cmp/java/fragment/EntityCreateOp.fragment.java f7b39a1af33e
 src/cmp/java/fragment/EntityListOp.fragment.java fc4e8d49972a
 src/cmp/java/fragment/EntityLoadOp.fragment.java 16b098e88aa9
@@ -700,7 +700,7 @@ tm/java/core/Helpers.java f6c974ac27bb
 tm/java/core/Operation.java 92ea00341c90
 tm/java/core/Point.java 22562b9d89bf
 tm/java/core/Response.java edfbed2b9f88
-tm/java/core/Result.java f2ecf0700e92
+tm/java/core/Result.java effe8a7b2657
 tm/java/core/SdkClient.java 35cdcdc91953
 tm/java/core/SdkEntity.java d4b4e352fdc4
 tm/java/core/Spec.java 047caf212074
@@ -803,7 +803,7 @@ src/cmp/js/fragment/Config.fragment.js 213303866508
 src/cmp/js/fragment/Direct.test.fragment.js 7226783d88c6
 src/cmp/js/fragment/Entity.fragment.js 80e2253ca047
 src/cmp/js/fragment/Entity.test.fragment.js 9397fa98b3f4
-src/cmp/js/fragment/EntityBase.fragment.js 64620f56ed2f
+src/cmp/js/fragment/EntityBase.fragment.js 3ca704b49228
 src/cmp/js/fragment/EntityCreateOp.fragment.js a9274756ef5e
 src/cmp/js/fragment/EntityListOp.fragment.js dc2d796d188d
 src/cmp/js/fragment/EntityLoadOp.fragment.js a93f96b91aa3
@@ -921,7 +921,7 @@ src/cmp/kotlin/TestDirect_kotlin.ts b2f5a64898e4
 src/cmp/kotlin/TestEntity_kotlin.ts 2d783053029d
 src/cmp/kotlin/Test_kotlin.ts 322f28ee5f6e
 src/cmp/kotlin/fragment/Entity.fragment.kt 39df6554e3aa
-src/cmp/kotlin/fragment/EntityBase.fragment.kt 8ca16d54a4f6
+src/cmp/kotlin/fragment/EntityBase.fragment.kt 53fc6c84e972
 src/cmp/kotlin/fragment/EntityCreateOp.fragment.kt c09facf29596
 src/cmp/kotlin/fragment/EntityListOp.fragment.kt d609d7659afa
 src/cmp/kotlin/fragment/EntityLoadOp.fragment.kt c960d3525382
@@ -940,7 +940,7 @@ tm/kotlin/core/Interfaces.kt 974e287e6bc4
 tm/kotlin/core/Operation.kt 9537ef6d0c07
 tm/kotlin/core/Point.kt 9377461e3cc9
 tm/kotlin/core/Response.kt 1318a8530044
-tm/kotlin/core/Result.kt 88d2f8f40eed
+tm/kotlin/core/Result.kt fcf80c7541e2
 tm/kotlin/core/SdkClient.kt 9a09689e315c
 tm/kotlin/core/Spec.kt ccff6a998f67
 tm/kotlin/core/Utility.kt 056fbbeb2da5
@@ -1015,7 +1015,7 @@ src/cmp/lua/TestClean_lua.ts 238aaa63c20a
 src/cmp/lua/TestDirect_lua.ts 96fe252d19ae
 src/cmp/lua/TestEntity_lua.ts 4013c0f1e36d
 src/cmp/lua/Test_lua.ts c206f43dff79
-src/cmp/lua/fragment/Entity.fragment.lua f392dabfac01
+src/cmp/lua/fragment/Entity.fragment.lua 6c1ceeb30a02
 src/cmp/lua/fragment/EntityCreateOp.fragment.lua b9fbd8e72c85
 src/cmp/lua/fragment/EntityListOp.fragment.lua 50a7ca3835dd
 src/cmp/lua/fragment/EntityLoadOp.fragment.lua e385e0f0204a
@@ -1184,7 +1184,7 @@ src/cmp/perl/TestClean_perl.ts c1f1383a72ea
 src/cmp/perl/TestDirect_perl.ts fc495986cf70
 src/cmp/perl/TestEntity_perl.ts 50b677097176
 src/cmp/perl/Test_perl.ts cb7b4d57d5d1
-src/cmp/perl/fragment/Entity.fragment.pm aca5374deaa4
+src/cmp/perl/fragment/Entity.fragment.pm 848ddd985c0f
 src/cmp/perl/fragment/EntityCreateOp.fragment.pm 3248163ac139
 src/cmp/perl/fragment/EntityListOp.fragment.pm 4cf972ce75f3
 src/cmp/perl/fragment/EntityLoadOp.fragment.pm 7759dbf83543
@@ -1196,7 +1196,7 @@ src/cmp/perl/tsconfig.json 720a3f229019
 src/cmp/perl/utility_perl.ts 30622889a579
 tm/perl/Makefile f2eb4b627fd1
 tm/perl/core/context.pm 44f4c0eaa3f0
-tm/perl/core/control.pm cb6185bbc19f
+tm/perl/core/control.pm 025d182e3222
 tm/perl/core/error.pm d1bec69c8ee7
 tm/perl/core/helpers.pm 8f2c49fcbb46
 tm/perl/core/operation.pm c15d6df50079
@@ -1290,7 +1290,7 @@ src/cmp/php/TestClean_php.ts 4decdfb5438d
 src/cmp/php/TestDirect_php.ts 8731b768120c
 src/cmp/php/TestEntity_php.ts a092b6688809
 src/cmp/php/Test_php.ts 4b04d7202c7a
-src/cmp/php/fragment/Entity.fragment.php 76a9ceae92d3
+src/cmp/php/fragment/Entity.fragment.php 51d243191837
 src/cmp/php/fragment/EntityCreateOp.fragment.php 685a8e173d2a
 src/cmp/php/fragment/EntityListOp.fragment.php f6e2016df08c
 src/cmp/php/fragment/EntityLoadOp.fragment.php bb8944c28447
@@ -1302,7 +1302,7 @@ src/cmp/php/tsconfig.json 720a3f229019
 src/cmp/php/utility_php.ts c65bddbe5deb
 tm/php/Makefile b9f4aa19ca8a
 tm/php/core/Context.php 1d48cfbe8e57
-tm/php/core/Control.php 6cb0e03bea15
+tm/php/core/Control.php c03bbb9064a4
 tm/php/core/Error.php d3ddfe0c0238
 tm/php/core/Helpers.php 75cc7fb2f06c
 tm/php/core/Operation.php dde7df1447a3
@@ -1393,7 +1393,7 @@ src/cmp/py/TestClean_py.ts 5bc29c06e8df
 src/cmp/py/TestDirect_py.ts 6048b9a4737e
 src/cmp/py/TestEntity_py.ts ce0526e18112
 src/cmp/py/Test_py.ts 637c586815a4
-src/cmp/py/fragment/Entity.fragment.py ba46590272d1
+src/cmp/py/fragment/Entity.fragment.py c3be7e8e8f44
 src/cmp/py/fragment/EntityCreateOp.fragment.py 52fe24fc2490
 src/cmp/py/fragment/EntityListOp.fragment.py f181126674f2
 src/cmp/py/fragment/EntityLoadOp.fragment.py 064347063bcd
@@ -1482,7 +1482,7 @@ model/target/target-index.aontu fab6a58fafb8
 src/cmp/py-data/Main_py-data.ts 512d23d8cf22
 tm/py-data/Makefile 43f5e411fa15
 tm/py-data/pkg/auth.py c3d9f24cd480
-tm/py-data/pkg/fetch.py 5a3573da5894
+tm/py-data/pkg/fetch.py c859604c7b62
 tm/py-data/pkg/frames.py ac33e1a16cb4
 tm/py-data/src/feature/README.md bb687edfc361
 tm/py-data/src/feature/base/.gitkeep e3b0c44298fc
@@ -1526,7 +1526,7 @@ src/cmp/rb/TestClean_rb.ts 1b9425fc153c
 src/cmp/rb/TestDirect_rb.ts 438fdf9acb6e
 src/cmp/rb/TestEntity_rb.ts cd1aecc4b30d
 src/cmp/rb/Test_rb.ts a98c4dcbd2fb
-src/cmp/rb/fragment/Entity.fragment.rb b7f25ba79af7
+src/cmp/rb/fragment/Entity.fragment.rb b456ce7816f7
 src/cmp/rb/fragment/EntityCreateOp.fragment.rb 04a3ce4d10c7
 src/cmp/rb/fragment/EntityListOp.fragment.rb 932618c88bfc
 src/cmp/rb/fragment/EntityLoadOp.fragment.rb b42f6587ad83
@@ -1539,7 +1539,7 @@ src/cmp/rb/utility_rb.ts 4cbd0b86307b
 tm/rb/Gemfile 2cf46ddd24ec
 tm/rb/Makefile ca8ba78b7770
 tm/rb/core/context.rb 053a5f15082d
-tm/rb/core/control.rb 14d11fa63c1f
+tm/rb/core/control.rb a95134293902
 tm/rb/core/error.rb 2d18f2460bab
 tm/rb/core/helpers.rb 2c5a92707620
 tm/rb/core/operation.rb 2057392541cd
@@ -1653,7 +1653,7 @@ tm/rust/core/mod.rs 88b87556e1a9
 tm/rust/core/operation.rs eee6bf650c8a
 tm/rust/core/point.rs 7bf6c67e5767
 tm/rust/core/response.rs 8ce129e52ca5
-tm/rust/core/result.rs 6b675ba029a7
+tm/rust/core/result.rs f05555ded530
 tm/rust/core/spec.rs e8ecb6a484a6
 tm/rust/core/types.rs 09174c6cc827
 tm/rust/core/utility_type.rs bf8b85c3146d
@@ -1752,7 +1752,7 @@ src/cmp/scala/TestDirect_scala.ts 07de948be724
 src/cmp/scala/TestEntity_scala.ts a0e204b5c8d3
 src/cmp/scala/Test_scala.ts 2fb85405a87f
 src/cmp/scala/fragment/Entity.fragment.scala 02bf1b00e3b5
-src/cmp/scala/fragment/EntityBase.fragment.scala 78e2cfa9718f
+src/cmp/scala/fragment/EntityBase.fragment.scala 81fb92e84dcd
 src/cmp/scala/fragment/EntityCreateOp.fragment.scala e590dac67f21
 src/cmp/scala/fragment/EntityListOp.fragment.scala b67e9794e0ea
 src/cmp/scala/fragment/EntityLoadOp.fragment.scala cd8574cf6924
@@ -1770,7 +1770,7 @@ tm/scala/core/Helpers.scala 46cff0707ade
 tm/scala/core/Operation.scala 0010d42accb3
 tm/scala/core/Point.scala ef199bf59853
 tm/scala/core/Response.scala be42b8f2f7a9
-tm/scala/core/Result.scala 7d45eefe7847
+tm/scala/core/Result.scala 977a59f27783
 tm/scala/core/SdkClient.scala 1b71d47de0d2
 tm/scala/core/SdkError.scala 428cfdf49186
 tm/scala/core/Spec.scala 82b6987995f5
@@ -1919,7 +1919,7 @@ src/cmp/swift/TestDirect_swift.ts 3c38c4dfe812
 src/cmp/swift/TestEntity_swift.ts 1d49c1ac1803
 src/cmp/swift/Test_swift.ts ab9d033258f1
 src/cmp/swift/fragment/Entity.fragment.swift 6465d5e5f684
-src/cmp/swift/fragment/EntityBase.fragment.swift b68f7330ff84
+src/cmp/swift/fragment/EntityBase.fragment.swift 103d1529f4f1
 src/cmp/swift/fragment/EntityCreateOp.fragment.swift 04354aa2e20a
 src/cmp/swift/fragment/EntityListOp.fragment.swift ad2306ed1981
 src/cmp/swift/fragment/EntityLoadOp.fragment.swift c16476c536cc
@@ -1949,7 +1949,7 @@ tm/swift/Sources/ProjectNameSDK/core/Control.swift 0a8b7e2e8afd
 tm/swift/Sources/ProjectNameSDK/core/Operation.swift a4a46f1b329e
 tm/swift/Sources/ProjectNameSDK/core/Point.swift a9edf1830201
 tm/swift/Sources/ProjectNameSDK/core/Response.swift c1f8db895310
-tm/swift/Sources/ProjectNameSDK/core/Result.swift 903a2df8c22e
+tm/swift/Sources/ProjectNameSDK/core/Result.swift daa005cbcb48
 tm/swift/Sources/ProjectNameSDK/core/Spec.swift b6c053c1d26b
 tm/swift/Sources/ProjectNameSDK/core/Support.swift 9ea090f17dbe
 tm/swift/Sources/ProjectNameSDK/core/Types.swift b9ccbf883682
@@ -2147,7 +2147,7 @@ src/cmp/zig/TestDirect_zig.ts 60144692ef88
 src/cmp/zig/TestEntity_zig.ts a46e513a43a7
 src/cmp/zig/Test_zig.ts db2e195e07e2
 src/cmp/zig/fragment/Build.fragment.zig 766e8a609810
-src/cmp/zig/fragment/Entity.fragment.zig 3aba8651f11a
+src/cmp/zig/fragment/Entity.fragment.zig 0691273bbd3a
 src/cmp/zig/fragment/EntityCreateOp.fragment.zig 204e55446419
 src/cmp/zig/fragment/EntityListOp.fragment.zig 547f12bfa1ac
 src/cmp/zig/fragment/EntityLoadOp.fragment.zig 6eec03e0eb48
@@ -2167,7 +2167,7 @@ tm/zig/core/mem.zig e89c73647973
 tm/zig/core/operation.zig cf42eb51f4ea
 tm/zig/core/point.zig e44bda57ea57
 tm/zig/core/response.zig bc91112131b7
-tm/zig/core/result.zig 84c2386a4c53
+tm/zig/core/result.zig cc300079bab2
 tm/zig/core/spec.zig 25a014ab27fa
 tm/zig/core/types.zig 06a853449e9c
 tm/zig/core/utility.zig 57edf44b1d8e

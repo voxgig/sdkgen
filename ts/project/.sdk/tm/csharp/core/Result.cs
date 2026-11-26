@@ -15,8 +15,8 @@ public class Result
     public object? Resdata;
     public Dictionary<string, object?>? Resmatch;
 
-    // Feature extensions: pagination signals (paging feature) and the
-    // incremental item iterator (streaming feature).
+    // Feature extensions, set only while their feature is active: pagination
+    // signals (paging) and the incremental item iterator (streaming).
     public Dictionary<string, object?>? Paging;
     public bool Streaming;
     public Func<IEnumerable<object?>>? Stream;

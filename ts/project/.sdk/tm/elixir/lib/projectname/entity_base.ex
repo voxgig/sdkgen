@@ -103,13 +103,12 @@ defmodule ProjectName.EntityBase do
   end
 
   # Streaming operation. Runs `action` (an op name, e.g. "list") through the
-  # full pipeline and returns a lazy Elixir Stream of result items, so the
-  # `streaming` feature's incremental output is reachable (a normal op call
-  # materialises the whole result). When the streaming feature is active the
-  # result carries a `stream` closure and this yields from it (honouring
-  # chunkSize); otherwise it falls back to the materialised items, so stream
-  # always yields. An entity is yielded as its record, the struct map its
-  # data_get/1 returns.
+  # full pipeline and returns a lazy Elixir Stream of result items, so
+  # incremental output is reachable (a normal op call materialises the whole
+  # result). When the streaming feature is active the result carries a
+  # `stream` closure and this yields from it (honouring chunkSize); otherwise
+  # it falls back to the materialised items, so stream always yields. An
+  # entity is yielded as its record, the struct map its data_get/1 returns.
   # `callopts` parameterises the call:
   #   - ctrl:   per-call pipeline control (threaded onto the op ctx);
   #   - body:   an enumerable/list payload for outbound (upload) streaming,

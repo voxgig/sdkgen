@@ -133,12 +133,12 @@ sub match_get {
 
 # Streaming operation. Runs `action` (an op name, e.g. 'list') through the
 # full operation pipeline and returns an ITERATOR coderef: each call yields
-# the next item (undef when exhausted), so the `streaming` feature's
-# incremental output is reachable (a normal op call materialises the whole
-# result). When the streaming feature is active the result carries a `stream`
-# coderef and this yields from it (honouring chunkSize / chunkDelay); else it
-# falls back to yielding the materialised items so stream() always yields.
-# An entity is yielded as its record, the hashref its data_get returns.
+# the next item (undef when exhausted), so incremental output is reachable (a
+# normal op call materialises the whole result). When the streaming feature
+# is active the result carries a `stream` coderef and this yields from it
+# (honouring chunkSize / chunkDelay); else it falls back to yielding the
+# materialised items so stream() always yields. An entity is yielded as its
+# record, the hashref its data_get returns.
 #
 # $callopts parameterises the call:
 #   - ctrl:   per-call pipeline control (threaded onto the op ctx);

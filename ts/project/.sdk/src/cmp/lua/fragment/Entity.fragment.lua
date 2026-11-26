@@ -118,10 +118,10 @@ end
 
 
 -- Feature #4: run `action` through the full pipeline and return a stateful
--- iterator over result items, so the `streaming` feature's incremental output
--- is reachable from a generated entity (a normal op call materialises the
--- whole result). Use it as `for item in ent:stream("list") do ... end`.
--- `callopts` parameterises the call:
+-- iterator over result items, so the `streaming` feature's incremental
+-- output, when that feature is active, is reachable from a generated entity
+-- (a normal op call materialises the whole result). Use it as `for item in
+-- ent:stream("list") do ... end`. `callopts` parameterises the call:
 --   - inbound (download): iterate items/chunks (from the streaming feature
 --     when active, else the materialised items);
 --   - outbound (upload): an iterable `body` in callopts is attached to the

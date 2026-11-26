@@ -246,8 +246,9 @@ public abstract class ProjectNameEntityBase : IEntity
 
     // Streaming operations. Runs `action` through the full pipeline and returns
     // an async iterator over result items, so the `streaming` feature's
-    // incremental output is reachable from a generated entity (a normal op call
-    // materialises the whole result). `callopts` parameterises the call:
+    // incremental output, when that feature is active, is reachable from a
+    // generated entity (a normal op call materialises the whole result).
+    // `callopts` parameterises the call:
     //   - inbound (download): iterate the yielded items/chunks (from the
     //     streaming feature when active, else the materialised items);
     //   - outbound (upload): pass a streamable payload as callopts["body"] - it

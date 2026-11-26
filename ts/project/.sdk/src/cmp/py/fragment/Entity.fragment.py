@@ -73,9 +73,10 @@ class EntyClass:
 
     def stream(self, action, args=None, callopts=None):
         # Feature #4: run `action` through the full pipeline and yield result
-        # items, so the `streaming` feature's incremental output is reachable
-        # from a generated entity (a normal op call materialises the whole
-        # result). `callopts` parameterises the call:
+        # items, so the `streaming` feature's incremental output, when that
+        # feature is active, is reachable from a generated entity (a normal
+        # op call materialises the whole result). `callopts` parameterises
+        # the call:
         #   - inbound (download): yield items/chunks (from the streaming
         #     feature when active, else the materialised items);
         #   - outbound (upload): an iterable `body` in callopts is attached to

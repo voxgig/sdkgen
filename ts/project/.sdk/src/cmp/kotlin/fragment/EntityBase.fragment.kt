@@ -167,8 +167,9 @@ abstract class EntityBase(nm: String, clientIn: SdkClient, entoptsIn: MutableMap
   /**
    * Streaming operations. Runs `action` through the full pipeline and returns
    * a Sequence over result items, so the streaming feature's incremental
-   * output is reachable from a generated entity (a normal op call materialises
-   * the whole result). `callopts` parameterises the call:
+   * output, when that feature is active, is reachable from a generated entity
+   * (a normal op call materialises the whole result). `callopts` parameterises
+   * the call:
    *   - inbound (download): iterate the yielded items/chunks (from the
    *     streaming feature when active, else the materialised items);
    *   - outbound (upload): pass a streamable payload as callopts["body"] - it

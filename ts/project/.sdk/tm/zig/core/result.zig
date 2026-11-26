@@ -4,8 +4,8 @@ const h = @import("helpers.zig");
 const err = @import("error.zig");
 const Value = h.Value;
 
-// Stream producer attached by the streaming feature: yields result items
-// (or chunked batches) with configured pacing applied.
+// Stream producer, attached by the streaming feature when it is active: yields
+// result items (or chunked batches) with configured pacing applied.
 pub const StreamFn = struct {
     ctx: *anyopaque,
     call: *const fn (ctx: *anyopaque) []Value,

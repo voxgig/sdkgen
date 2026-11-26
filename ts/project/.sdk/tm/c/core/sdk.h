@@ -254,7 +254,7 @@ PNError* unreadable_body(Context* ctx, int64_t status, voxgig_value* headers,
 // SdkResult (mirrors core/result.rs)
 // ===========================================================================
 
-// Stream producer attached by the streaming feature.
+// Stream producer, attached by the streaming feature when it is active.
 typedef voxgig_value* (*StreamFn)(void* ud); // returns a List of items
 
 struct SdkResult {

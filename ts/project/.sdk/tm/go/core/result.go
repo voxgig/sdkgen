@@ -14,8 +14,8 @@ type Result struct {
 	Resdata    any
 	Resmatch   map[string]any
 
-	// Feature extensions: pagination signals (paging feature) and the
-	// incremental item iterator (streaming feature).
+	// Feature extensions, set only while their feature is active: pagination
+	// signals (paging) and the incremental item iterator (streaming).
 	Paging    map[string]any
 	Streaming bool
 	Stream    func() <-chan any
