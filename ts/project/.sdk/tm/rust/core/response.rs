@@ -65,7 +65,8 @@ pub fn unreadable_body(
         if agent.is_empty() { "transport default" } else { &agent },
         match text {
             Value::Noval | Value::Null => String::new(),
-            t if quotable(ctx, &ctype) => format!(", body: {}", preview(ctx, t)),
+            // Only text is quoted: bytes are a file's.
+            t if !is_binary_response(&ctx.point.borrow(), &ctype) => format!(", body: {}", preview(ctx, t)),
             _ => String::new(),
         }
     );
@@ -88,7 +89,7 @@ pub fn unreadable_body(
     }
 }
 
-fn header_value(headers: &Value, name: &str) -> String {
+pub fn header_value(headers: &Value, name: &str) -> String {
     if let Value::Map(m) = headers {
         for (k, v) in m.borrow().iter() {
             if k.eq_ignore_ascii_case(name) {
@@ -110,14 +111,14 @@ const TEXT_MEDIA: [&str; 8] = [
     "json", "xml", "html", "javascript", "ecmascript", "yaml", "urlencoded", "graphql",
 ];
 
-// Only text is quoted: bytes are a file's, by the model or by their type.
+// A response whose body is bytes: by the model, or by the type it declares.
 // Text is no declared type, text/*, or a structured text format.
-fn quotable(ctx: &Rc<Context>, ctype: &str) -> bool {
-    if getp(&getp(&ctx.point.borrow(), "response"), "binary") == Value::Bool(true) {
-        return false;
+pub fn is_binary_response(point: &Value, ctype: &str) -> bool {
+    if getp(&getp(point, "response"), "binary") == Value::Bool(true) {
+        return true;
     }
     let media = ctype.split(';').next().unwrap_or("").trim().to_lowercase();
-    media.is_empty() || media.starts_with("text/") || TEXT_MEDIA.iter().any(|part| media.contains(part))
+    !(media.is_empty() || media.starts_with("text/") || TEXT_MEDIA.iter().any(|part| media.contains(part)))
 }
 
 // Cleaned whole: a secret the bound would split could leave its prefix.

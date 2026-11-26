@@ -278,48 +278,69 @@ inline std::string cleanName(const Value& cfg, const Value& out, const std::stri
 inline bool isRawRequest(const Value& point);
 inline const char* rawBodyKey();
 
-// Where the live request body of a point the model marks binary is held,
-// and its type. Handles, so the body is compared in place, never copied.
+// Where the live bodies of this call that are bytes are held, each with its
+// type. Handles, so a body is compared in place, never copied.
 struct CleanBinary {
   SpecPtr spec;
   Value reqdata = Value::undef();
   Value media = Value::undef();
+  ResponsePtr response;
+  Value type = Value::undef();
 };
 
-// A string shorter than the registry accepts is not told from ordinary text.
+// The request body of a point the model marks binary, and a response body
+// that is bytes. A string shorter than the registry accepts is not told
+// from ordinary text.
 inline CleanBinary cleanBinaryBody(CtxPtr ctx) {
   CleanBinary bin;
   if (!ctx) return bin;
   Value body = getp(ctx->point, "body");
-  if (!isRawRequest(ctx->point) || !is_true(getp(body, "binary"))) return bin;
+  bool sent = isRawRequest(ctx->point) && is_true(getp(body, "binary"));
+  std::string type = ctx->response ? headerValue(ctx->response->headers, "content-type") : "";
+  bool answered = ctx->response && isBinaryResponse(ctx->point, type);
+  if (!sent && !answered) return bin;
   size_t min = static_cast<size_t>(cleanCount(getp(cleanConfig(ctx), "min"), 4));
   auto longEnough = [min](const Value* live) {
     return nullptr != live && live->is_string() && min <= live->as_string().size();
   };
-  if (ctx->spec && longEnough(&ctx->spec->body)) bin.spec = ctx->spec;
-  if (ctx->reqdata.is_map() && longEnough(ctx->reqdata.as_map()->find(rawBodyKey()))) {
-    bin.reqdata = ctx->reqdata;
+  if (sent) {
+    if (ctx->spec && longEnough(&ctx->spec->body)) bin.spec = ctx->spec;
+    if (ctx->reqdata.is_map() && longEnough(ctx->reqdata.as_map()->find(rawBodyKey()))) {
+      bin.reqdata = ctx->reqdata;
+    }
+    bin.media = getp(body, "media");
   }
-  bin.media = getp(body, "media");
+  if (answered && longEnough(&ctx->response->body)) {
+    bin.response = ctx->response;
+    if (!type.empty()) bin.type = Value(type);
+  }
   return bin;
 }
 
-inline bool cleanIsLiveBody(const CleanBinary& bin, const std::string& text) {
+inline bool cleanIsRequestBody(const CleanBinary& bin, const std::string& text) {
   if (bin.spec && bin.spec->body.is_string() && bin.spec->body.as_string() == text) return true;
   if (!bin.reqdata.is_map()) return false;
   const Value* given = bin.reqdata.as_map()->find(rawBodyKey());
   return nullptr != given && given->is_string() && given->as_string() == text;
 }
 
+inline bool cleanIsResponseBody(const CleanBinary& bin, const std::string& text) {
+  return bin.response && bin.response->body.is_string() && bin.response->body.as_string() == text;
+}
+
 // Bytes are described, never copied (ADR-006). The value union has no
-// variant for bytes: a string is bytes only as the body of a point the
-// model marks binary, by equal content. Undef when val is not that body.
+// variant for bytes: a string is bytes only as a live body, by equal
+// content. A response read as text does not say how many bytes it was, so
+// it is not sized. Undef when val is no live body.
 inline Value cleanDescribeBinary(const CleanBinary& bin, const Value& val) {
-  if (!val.is_string() || !cleanIsLiveBody(bin, val.as_string())) return Value::undef();
+  if (!val.is_string()) return Value::undef();
+  bool sent = cleanIsRequestBody(bin, val.as_string());
+  if (!sent && !cleanIsResponseBody(bin, val.as_string())) return Value::undef();
   Value desc = vmap();
   map_put(desc, CLEAN_BINARY_KEY, Value("bytes"));
-  map_put(desc, "size", Value(static_cast<long long>(val.as_string().size())));
-  if (bin.media.is_string()) map_put(desc, "type", bin.media);
+  if (sent) map_put(desc, "size", Value(static_cast<long long>(val.as_string().size())));
+  const Value& type = sent ? bin.media : bin.type;
+  if (type.is_string()) map_put(desc, "type", type);
   return desc;
 }
 

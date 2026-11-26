@@ -34,11 +34,13 @@ typedef struct {
   int64_t min;
 } CleanCfg;
 
-// The live request body of a point the model marks binary, and its type.
+// The live bodies of this call that are bytes, each with its type. A
+// response read as text does not say how many bytes it was, so is unsized.
 typedef struct {
-  voxgig_value* live[2];
+  voxgig_value* live[3];
+  const char* type[3]; // NULL where none is declared
+  bool sized[3];
   size_t n;
-  const char* media; // NULL when the point declares none
 } BinaryBody;
 
 static char* dup_str(const char* s) {
@@ -372,43 +374,53 @@ static char* clean_name(const CleanCfg* cfg, voxgig_value* out, const char* key)
 }
 
 // A string shorter than the registry accepts is not told from ordinary text.
+static void binary_add(BinaryBody* bin, voxgig_value* live, int64_t min, const char* type,
+                       bool sized) {
+  if (!voxgig_is_string(live) || (int64_t)voxgig_string_len(live) < min) return;
+  bin->live[bin->n] = live;
+  bin->type[bin->n] = type;
+  bin->sized[bin->n] = sized;
+  bin->n++;
+}
+
+// The request body of a point the model marks binary, and a response body
+// that is bytes.
 static bool binary_body(Context* ctx, BinaryBody* bin) {
   bin->n = 0;
-  bin->media = NULL;
   if (!ctx) return false;
-  voxgig_value* body = getp(ctx->point, "body");
-  bool binary = false;
-  if (!media_is_raw_request(ctx->point) || !get_bool(body, "binary", &binary) || !binary) {
-    return false;
-  }
   int64_t min = count(getp(config_block(ctx), "min"), 4);
   if (min < 1) min = 1;
-  voxgig_value* live[2] = { ctx->spec ? ctx->spec->body : NULL, media_raw_body(ctx->reqdata) };
-  for (size_t i = 0; i < 2; i++) {
-    if (voxgig_is_string(live[i]) && min <= (int64_t)voxgig_string_len(live[i])) {
-      bin->live[bin->n++] = live[i];
+
+  voxgig_value* body = getp(ctx->point, "body");
+  bool binary = false;
+  if (media_is_raw_request(ctx->point) && get_bool(body, "binary", &binary) && binary) {
+    const char* media = get_str(body, "media");
+    binary_add(bin, ctx->spec ? ctx->spec->body : NULL, min, media, true);
+    binary_add(bin, media_raw_body(ctx->reqdata), min, media, true);
+  }
+
+  if (ctx->response) {
+    const char* type = response_header(ctx->response->headers, "content-type");
+    if (response_is_binary(ctx->point, type)) {
+      binary_add(bin, ctx->response->body, min, '\0' == type[0] ? NULL : type, false);
     }
   }
-  bin->media = get_str(body, "media");
   return 0 < bin->n;
 }
 
 // Bytes are described, never copied (ADR-006). The value union has no
-// variant for bytes: a string value is bytes only as the body of a point
-// the model marks binary, by identity or equal content. Its length, not a
-// NUL, ends it.
+// variant for bytes: a string value is bytes only as a live body, by
+// identity or equal content. Its length, not a NUL, ends it.
 static voxgig_value* describe_binary(const BinaryBody* bin, voxgig_value* val) {
   if (!bin || !voxgig_is_string(val)) return NULL;
-  bool declared = false;
-  for (size_t i = 0; i < bin->n && !declared; i++) {
-    declared = voxgig_equals(bin->live[i], val);
+  for (size_t i = 0; i < bin->n; i++) {
+    if (!voxgig_equals(bin->live[i], val)) continue;
+    voxgig_value* desc = cmap(1, CLEAN_BINARY_KEY, v_str("bytes"));
+    if (bin->sized[i]) setp(desc, "size", v_int((int64_t)voxgig_string_len(val)));
+    if (bin->type[i]) setp(desc, "type", v_str(bin->type[i]));
+    return desc;
   }
-  if (!declared) return NULL;
-  voxgig_value* desc = cmap(2,
-    CLEAN_BINARY_KEY, v_str("bytes"),
-    "size", v_int((int64_t)voxgig_string_len(val)));
-  if (bin->media) setp(desc, "type", v_str(bin->media));
-  return desc;
+  return NULL;
 }
 
 // A plain-data copy of what is about to leave: functions are dropped
