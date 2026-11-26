@@ -34,7 +34,7 @@
         utility (core/get-utility client)
         data (atom (vs/jm))
         match (atom (vs/jm))
-        ;; Set once a successful `remove` resolves on this instance.
+        ;; Set when a remove marks this instance deleted.
         deleted (atom false)
         entctx (core/make-context (vs/jm "entopts" entopts) (core/client-root-ctx client))
         ent {:_name "entityname" :_client client :_utility utility :_entopts entopts
@@ -66,9 +66,9 @@
   (let [result (core/oget ctx :result)]
     (if (and result (true? (core/oget result :ok))) ent out)))
 
-;; `remove` resolves to the entity, marked. The instance KEEPS the data it
-;; held — a caller can still read what was deleted — but it is no longer a
-;; live record.
+;; A remove resolves to the entity, marked deleted. The instance KEEPS the
+;; data it held — a caller can still read what was deleted — but it is no
+;; longer a live record.
 (defn mark-deleted [ent] (reset! (:_deleted ent) true) ent)
 
 (defn deleted [ent] (true? (deref (:_deleted ent))))

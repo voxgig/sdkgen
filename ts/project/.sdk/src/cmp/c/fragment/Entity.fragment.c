@@ -14,7 +14,7 @@ typedef struct entyvar_entity {
   voxgig_value* data;     // Map
   voxgig_value* mtch;     // Map
   Context* entctx;
-  // Set once a successful `remove` resolves on this instance.
+  // Set when a remove marks this instance deleted.
   bool deleted;
 } entyvar_entity;
 
@@ -272,9 +272,9 @@ static voxgig_value* entyvar_matchv(Entity* e, voxgig_value* args) {
 
 // #RemoveOp
 
-// `remove` resolves to the entity, marked. The instance KEEPS the data it
-// held - a caller can still read what was deleted - but it is no longer a
-// live record.
+// A remove resolves to the entity, marked deleted. The instance KEEPS the
+// data it held - a caller can still read what was deleted - but it is no
+// longer a live record.
 static void entyvar_mark_deleted(Entity* e) {
   ((entyvar_entity*)e)->deleted = true;
 }

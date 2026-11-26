@@ -54,9 +54,9 @@ defmodule ProjectName.EntityBase do
     end
   end
 
-  # `remove` resolves to the entity, marked. The instance KEEPS the data it
-  # held — a caller can still read what was deleted — but it is no longer a
-  # live record.
+  # A remove resolves to the entity, marked deleted. The instance KEEPS the
+  # data it held — a caller can still read what was deleted — but it is no
+  # longer a live record.
   def mark_deleted(ent) do
     S.setprop(ent, "_deleted", true)
     ent

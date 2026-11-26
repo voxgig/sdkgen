@@ -411,9 +411,9 @@ public:
   virtual Value data(const Value& arg = Value::undef()) = 0;
   virtual Value match(const Value& arg = Value::undef()) = 0;
 
-  // `remove` resolves to the entity, marked. The instance KEEPS the data it
-  // held - a caller can still read what was deleted - but it is no longer a
-  // live record.
+  // A remove resolves to the entity, marked deleted. The instance KEEPS the
+  // data it held - a caller can still read what was deleted - but it is no
+  // longer a live record.
   virtual void markDeleted() = 0;
   virtual bool deleted() = 0;
 };

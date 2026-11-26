@@ -81,7 +81,7 @@ func (e *EntyClass) MarkDeleted() {
 }
 
 
-// Deleted reports whether a successful Remove has resolved on this instance.
+// Deleted reports whether a remove has marked this instance deleted.
 func (e *EntyClass) Deleted() bool {
 	return e.deleted
 }

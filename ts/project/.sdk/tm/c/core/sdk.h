@@ -350,9 +350,9 @@ typedef struct EntityVT {
   voxgig_value* (*data)(Entity*, voxgig_value* args);   // args NULL => none
   voxgig_value* (*matchv)(Entity*, voxgig_value* args); // args NULL => none
 
-  // `remove` resolves to the entity, marked. The instance KEEPS the data it
-  // held - a caller can still read what was deleted - but it is no longer a
-  // live record.
+  // A remove resolves to the entity, marked deleted. The instance KEEPS the
+  // data it held - a caller can still read what was deleted - but it is no
+  // longer a live record.
   void (*mark_deleted)(Entity*);
   bool (*deleted)(Entity*);
 

@@ -43,7 +43,7 @@ pub const EntyClass = struct {
     data: Value,
     mtch: Value,
     entctx: ?*Context = null,
-    // Set once a successful `remove` resolves on this instance.
+    // Set when a remove marks this instance deleted.
     deleted: bool = false,
 
     pub fn new(client: *sdk.ProjectNameSDK, entopts_in: Value) *EntyClass {
@@ -102,9 +102,9 @@ pub const EntyClass = struct {
         };
     }
 
-    // `remove` resolves to the entity, marked. The instance KEEPS the data it
-    // held — a caller can still read what was deleted — but it is no longer a
-    // live record.
+    // A remove resolves to the entity, marked deleted. The instance KEEPS the
+    // data it held — a caller can still read what was deleted — but it is no
+    // longer a live record.
     pub fn mark_deleted(self: *EntyClass) void {
         self.deleted = true;
     }

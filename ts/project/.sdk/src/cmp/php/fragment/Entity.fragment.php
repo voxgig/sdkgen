@@ -67,7 +67,7 @@ class EntyClass
     }
 
     /**
-     * A `remove` marks the entity deleted. The instance KEEPS the data it
+     * A remove marks the entity deleted. The instance KEEPS the data it
      * held — a caller can still read what was removed — but it is no longer a
      * live record. See AGENTS.md "Entity operations return ENTITIES".
      *
@@ -390,7 +390,7 @@ class EntyClass
         // instance, and the caller reaches the record through data(). Two
         // structural exceptions: `list` resolves to the ARRAY of entity
         // instances make_result built, and a failed op with throwing disabled
-        // hands back the error payload unchanged. `remove` additionally marks
+        // hands back the error payload unchanged. A remove additionally marks
         // the entity deleted; it KEEPS its data, so a caller can still read
         // what was removed. See AGENTS.md "Entity operations return ENTITIES".
         $opname = $ctx->op === null ? null : $ctx->op->name;
