@@ -20,7 +20,6 @@ const Entity = types.Entity;
 
 // Every operation resolves to the ENTITY, not the raw data — `list` to a
 // slice of them, one per record; the record is reached through `data()`.
-// See AGENTS.md "Entity operations return ENTITIES".
 //
 // `Value` cannot carry an entity (it is a closed data union) and the shared
 // `OpResult` cannot name a per-entity type, so each entity declares its own
@@ -94,7 +93,7 @@ pub const EntyClass = struct {
     }
 
     // Runs the pipeline and hands back THIS entity: run_op has just absorbed
-    // the result into it. See AGENTS.md "Entity operations return ENTITIES".
+    // the result into it.
     fn run_op_ent(self: *EntyClass, ctx: *Context, post_done: *const fn (*EntyClass, *Context) void) EntResult {
         return switch (self.run_op(ctx, post_done)) {
             .err => |e| EntResult{ .err = e },

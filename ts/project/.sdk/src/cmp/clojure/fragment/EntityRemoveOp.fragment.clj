@@ -1,6 +1,6 @@
 ; EJECT-START
 ;; Remove an EntityName matching the criteria (reqmatch: match fields).
-;; Resolves to THIS entity, marked as deleted (see AGENTS.md). The instance
+;; Resolves to THIS entity, marked as deleted. The instance
 ;; keeps the data it held, so a caller can still read what was removed.
 (defn remove [ent reqmatch ctrl]
   (let [ctx (core/make-context

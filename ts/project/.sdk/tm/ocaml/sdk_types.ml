@@ -210,7 +210,7 @@ and entity_obj = {
   (* Every operation resolves to the ENTITY, not the raw record - e_list to
    * one per record. The record is reached through e_data_get. `value` is a
    * closed data union with no slot for an entity, so the CONTRACT lives in
-   * these signatures. See AGENTS.md "Entity operations return ENTITIES". *)
+   * these signatures. *)
   mutable e_load : value -> value -> entity_obj;
   mutable e_list : value -> value -> entity_obj list;
   mutable e_create : value -> value -> entity_obj;

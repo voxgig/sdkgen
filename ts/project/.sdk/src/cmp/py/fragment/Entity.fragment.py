@@ -39,7 +39,7 @@ class EntyClass:
 
     # Every operation resolves to the entity; a remove additionally marks it
     # deleted. The instance KEEPS the data it held — a caller can still read
-    # what was deleted — but it is no longer a live record. See AGENTS.md.
+    # what was deleted — but it is no longer a live record.
     def mark_deleted(self):
         self._deleted = True
 
@@ -261,7 +261,7 @@ class EntyClass:
     # instances make_result built, and a failed op with throwing disabled
     # hands back the error payload unchanged. A remove additionally marks
     # the entity deleted; it KEEPS its data, so a caller can still read
-    # what was removed. See AGENTS.md "Entity operations return ENTITIES".
+    # what was removed.
             opname = None if ctx.op is None else ctx.op.name
 
             if ctx.result is not None and ctx.result.ok and opname != "list":

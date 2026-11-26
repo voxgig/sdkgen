@@ -61,7 +61,7 @@
 ;; Every operation resolves to the ENTITY, not the raw data — the record is
 ;; reached through data-get. run-op returns the terminal result value, so the
 ;; op hands that back only when the pipeline FAILED; on success it hands back
-;; the entity. See AGENTS.md "Entity operations return ENTITIES".
+;; the entity.
 (defn- op-return [ent ctx out]
   (let [result (core/oget ctx :result)]
     (if (and result (true? (core/oget result :ok))) ent out)))

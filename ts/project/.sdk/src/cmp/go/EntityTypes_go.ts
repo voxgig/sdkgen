@@ -208,7 +208,7 @@ func asMap(v any) map[string]any {
 
 // entityData unwraps an entity to its data map.
 //
-// Operations resolve to the ENTITY, not the raw data (see AGENTS.md), and an
+// Operations resolve to the ENTITY, not the raw data, and an
 // entity's fields are UNEXPORTED — marshalling one directly yields \`{}\`, so
 // every typed accessor would silently hand back a zero-valued struct. The
 // typed boundary therefore takes the data hop first.

@@ -338,7 +338,7 @@ voxgig_value* utility_fetch(Utility* u, Context* ctx, const char* url,
 
 // Every operation resolves to the ENTITY, not the raw data. `list` resolves
 // to a NULL-terminated array of them, one per record; the record is reached
-// through `data`. See AGENTS.md "Entity operations return ENTITIES".
+// through `data`.
 //
 // `voxgig_value` cannot carry an entity - it is a closed data union
 // (UNDEF|NULL|BOOL|INT|DOUBLE|STRING|LIST|MAP|FUNC|SENTINEL), and adding a

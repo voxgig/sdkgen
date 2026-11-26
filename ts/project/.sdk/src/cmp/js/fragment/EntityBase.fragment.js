@@ -42,7 +42,7 @@ class ProjectNameEntityBase {
   // True once a remove has marked this instance deleted. A remove
   // resolves to the entity like every other operation, and the instance KEEPS
   // the data it held — a caller can still read what was deleted — but it is
-  // no longer a live record. See AGENTS.md.
+  // no longer a live record.
   markDeleted() {
     this._deleted = true
   }

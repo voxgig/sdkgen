@@ -37,7 +37,7 @@ public abstract class EntityBase implements SdkEntity {
 
   // Every operation resolves to the entity; a remove additionally marks it
   // deleted. The instance KEEPS the data it held — a caller can still read
-  // what was deleted — but it is no longer a live record. See AGENTS.md.
+  // what was deleted — but it is no longer a live record.
   private boolean deleted = false;
 
   public void markDeleted() {
@@ -152,7 +152,7 @@ public abstract class EntityBase implements SdkEntity {
       // instances makeResult built, and a failed op with throwing disabled
       // hands back the error payload unchanged. A remove additionally marks
       // the entity deleted; it KEEPS its data, so a caller can still read
-      // what was removed. See AGENTS.md "Entity operations return ENTITIES".
+      // what was removed.
       String opname = ctx.op == null ? null : ctx.op.name;
 
       if (ctx.result != null && ctx.result.ok && !"list".equals(opname)) {

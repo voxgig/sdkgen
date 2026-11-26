@@ -22,7 +22,7 @@ public abstract class ProjectNameEntityBase : IEntity
 
     // Every operation resolves to the entity; a remove additionally marks it
     // deleted. The instance KEEPS the data it held — a caller can still read
-    // what was deleted — but it is no longer a live record. See AGENTS.md.
+    // what was deleted — but it is no longer a live record.
     private bool _deleted = false;
 
     public void MarkDeleted()
@@ -229,7 +229,7 @@ public abstract class ProjectNameEntityBase : IEntity
         // instances MakeResult built, and a failed op with throwing disabled
         // hands back the error payload unchanged. A remove additionally marks
         // the entity deleted; it KEEPS its data, so a caller can still read
-        // what was removed. See AGENTS.md "Entity operations return ENTITIES".
+        // what was removed.
         var opname = ctx.Op?.Name;
 
         if (ctx.Result != null && ctx.Result.Ok && "list" != opname)

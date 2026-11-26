@@ -43,7 +43,6 @@ defmodule ProjectName.EntityBase do
   # reached through data_get/1. `run_op` returns the terminal result value, so
   # the op hands that value back only when the pipeline FAILED (the error
   # shape is utility-configurable); on success it hands back the entity.
-  # See AGENTS.md "Entity operations return ENTITIES".
   def op_return(ent, ctx, out) do
     result = S.getprop(ctx, "result")
 

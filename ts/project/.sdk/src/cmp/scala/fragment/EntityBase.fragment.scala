@@ -64,7 +64,7 @@ abstract class EntityBase(name0: String, client0: SdkClient, entopts0: JMap[Stri
   // makeError (which throws, or returns fallback data when ctrl.throw false).
   // Every operation resolves to the entity; a remove additionally marks it
   // deleted. The instance KEEPS the data it held — a caller can still read
-  // what was deleted — but it is no longer a live record. See AGENTS.md.
+  // what was deleted — but it is no longer a live record.
   private var deletedFlag: Boolean = false
 
   def markDeleted(): Unit = { deletedFlag = true }
@@ -114,7 +114,7 @@ abstract class EntityBase(name0: String, client0: SdkClient, entopts0: JMap[Stri
       // instances makeResult built, and a failed op with throwing disabled
       // hands back the error payload unchanged. A remove additionally marks
       // the entity deleted; it KEEPS its data, so a caller can still read
-      // what was removed. See AGENTS.md "Entity operations return ENTITIES".
+      // what was removed.
       val opname = if (ctx.op == null) null else ctx.op.name
 
       if (ctx.result != null && ctx.result.ok && "list" != opname) {

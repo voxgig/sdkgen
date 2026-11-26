@@ -82,7 +82,7 @@ ${0 < head.length ? '\n' + head.join('\n') + '\n' : ''}
     sdk = mk_sdk()
     ent = ${Name}.${accessor}(sdk)
     # The op resolves to one ENTITY per record; the record is reached with
-    # data_get. See AGENTS.md "Entity operations return ENTITIES".
+    # data_get.
     result = ${Name}.Entity.${EName}.list(ent, S.jm([]))
     assert S.islist(result)
     if S.size(result) > 0 do

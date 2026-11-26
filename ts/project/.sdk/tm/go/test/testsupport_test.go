@@ -243,7 +243,7 @@ func getSpec(spec map[string]any, keys ...string) map[string]any {
 
 // entityData extracts the data map from an op result.
 //
-// Every entity operation resolves to the ENTITY (see AGENTS.md), so a flow
+// Every entity operation resolves to the ENTITY, so a flow
 // test that wants the record takes this hop. A plain map passes through
 // unchanged, so this is safe for the direct/prepare results too.
 func entityData(v any) any {

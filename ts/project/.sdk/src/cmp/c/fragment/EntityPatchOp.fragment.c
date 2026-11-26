@@ -28,7 +28,6 @@ static Entity* entyvar_patch(Entity* e, voxgig_value* reqdata, voxgig_value* ctr
 
   // The operation resolves to THIS entity: run_op has just absorbed the
   // result into it, and the caller reaches the record through vt->data.
-  // See AGENTS.md "Entity operations return ENTITIES".
 
   return e;
 }

@@ -693,7 +693,6 @@ using SdkEntityPtr = std::shared_ptr<SdkEntity>;
 
 // Every operation resolves to the ENTITY, not the raw data - `list` to a
 // vector of them, one per record. The record is reached through `data()`.
-// See AGENTS.md "Entity operations return ENTITIES".
 //
 // `Value` cannot carry an entity: it is a closed data union, and adding a
 // variant to a general-purpose struct library to hold SDK objects would be

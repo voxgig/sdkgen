@@ -20,7 +20,7 @@ func makeOptionsUtil(_ ctx: Context) -> VMap {
   // type, so honouring them means one `as?` arm per member with the signature
   // written exactly. `fetcher` is the documented seam and the one the corpus
   // needs; the rest stay in `custom` until a swift toolchain can compile the
-  // arms rather than have them written blind. See AGENTS.md.
+  // arms rather than have them written blind.
   if let customUtils = gp(options, "utility").asMap {
     if let utility = ctx.utility {
       for (k, v) in customUtils.entries {

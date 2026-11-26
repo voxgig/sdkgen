@@ -144,9 +144,9 @@ class ProjectNameTestRunner:
     def entity_data(v):
         """Extract the data map from an op result.
 
-        Every entity operation resolves to the ENTITY (see AGENTS.md), so a
-        flow test that wants the record takes this hop. A plain dict passes
-        through unchanged.
+        Every entity operation resolves to the ENTITY, so a flow test that
+        wants the record takes this hop. A plain dict passes through
+        unchanged.
         """
         if hasattr(v, "data_get") and callable(v.data_get):
             return v.data_get()

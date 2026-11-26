@@ -203,4 +203,21 @@ describe('generated source comments state no model fact', () => {
       .map(([rel, m]) => rel + ': ' + m![0])
     deepStrictEqual(found, [], 'name the rule, not the features:\n  ' + found.join('\n  '))
   })
+
+  // No generated guide has the section, whatever phases run: state the rule.
+  test('no source cites the agent guide on what an operation resolves to', () => {
+    const components = Fs.readdirSync(Path.join(SCAFFOLD, 'src', 'cmp'))
+      .flatMap((lang: string) => sourceFiles(Path.join(SCAFFOLD, 'src', 'cmp', lang))
+        .map((file: string) => ({ rel: Path.relative(SCAFFOLD, file), text: Fs.readFileSync(file, 'utf8') })))
+    const section = /AGENTS\.md\W{0,4}Entity operations return ENTITIES/
+    const found = [...sources, ...components]
+      .filter(({ text }) => section.test(unwrapped(text)))
+      .map(({ rel }) => rel)
+    deepStrictEqual(found, [], 'state the rule where it is cited:\n  ' + found.join('\n  '))
+
+    const fragments = sources
+      .filter(({ rel, text }) => rel.startsWith('src/') && text.includes('AGENTS.md'))
+      .map(({ rel }) => rel)
+    deepStrictEqual(fragments, [], 'a fragment cites AGENTS.md:\n  ' + fragments.join('\n  '))
+  })
 })
