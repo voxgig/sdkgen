@@ -225,7 +225,7 @@ tm/clojure/src/feature/test/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/timeout/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/validate/.gitkeep e3b0c44298fc
 tm/clojure/src/sdk/client.clj 747bdcaf4b47
-tm/clojure/src/sdk/core.clj 0a42d312480e
+tm/clojure/src/sdk/core.clj 0019eb9bd68c
 tm/clojure/src/sdk/features.clj 52383c72eed5
 tm/clojure/src/voxgig/struct.clj 007fea2d9426
 tm/clojure/test/sdk/test/concurrency.clj a9bfd623695b
