@@ -239,7 +239,7 @@ tm/clojure/src/sdk/codec/form.clj 174beede2b52
 tm/clojure/src/sdk/codec/handle.clj 7255831c6257
 tm/clojure/src/sdk/codec/multipart.clj ab08d5bdac04
 tm/clojure/src/sdk/codec/raw.clj e1d8703355f9
-tm/clojure/src/sdk/core.clj ae1a4fd15d0f
+tm/clojure/src/sdk/core.clj 591e8a91cf24
 tm/clojure/src/sdk/features.clj 2253ec33ce52
 tm/clojure/src/voxgig/struct.clj 007fea2d9426
 tm/clojure/test/sdk/test/codec_test.clj b80495099dc2
