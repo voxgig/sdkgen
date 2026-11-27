@@ -15,6 +15,7 @@ import * as struct from '@voxgig/struct'
 
 import {
   makeClient, makeClock, makeResponse, loadFeature, loadFeatureModule,
+  sandboxLoad, struct as vstruct, UTILITY_DIR,
 } from './featureharness'
 
 
@@ -1579,5 +1580,154 @@ describe('feature:clean', () => {
     })
     await h.op({ op: 'load', headers: { authorization: 'Bearer ' + CANARY } })
     ok(sinks.some((s) => 0 < leaks(s).length), 'clean off should show the canary')
+  })
+})
+
+
+// A custom action is `$action` in the request argument, and its keys name it:
+// `<entity>.<op>:<action>`, most specific first.
+describe('feature:action-keys', () => {
+
+  const AUDIO = { $action: 'audio', id: 'e1' }
+
+  test('rbac: the record is granted and the action refused', async () => {
+    const rec = recordingServer()
+    const h = makeClient({
+      features: [{
+        name: 'rbac', options: {
+          rules: { 'episode.load': 'read', 'episode.load:audio': 'audio' },
+          permissions: ['read'],
+        }
+      }],
+      server: rec.server,
+    })
+    strictEqual((await h.op({ entity: 'episode', op: 'load', reqmatch: { id: 'e1' } })).ok, true)
+    const res = await h.op({ entity: 'episode', op: 'load', reqmatch: AUDIO })
+    strictEqual(res.ok, false)
+    strictEqual(res.error.code, 'rbac_denied')
+    ok(res.error.message.includes('operation "load:audio"'), res.error.message)
+    strictEqual(rec.calls.length, 1, 'the refused action sent nothing')
+    strictEqual(h.client._rbac.last.action, 'audio')
+  })
+
+  test('rbac: the action is granted and the record refused', async () => {
+    const h = makeClient({
+      features: [{
+        name: 'rbac', options: {
+          rules: { 'episode.load': 'read', 'episode.load:audio': 'audio' },
+          permissions: ['audio'],
+        }
+      }],
+    })
+    strictEqual((await h.op({ entity: 'episode', op: 'load', reqmatch: { id: 'e1' } }))
+      .error.code, 'rbac_denied')
+    strictEqual((await h.op({ entity: 'episode', op: 'load', reqmatch: AUDIO })).ok, true)
+  })
+
+  test('rbac: with no action rule an action falls back to its operation', async () => {
+    const h = makeClient({
+      features: [{ name: 'rbac', options: { rules: { 'episode.load': 'read' }, permissions: [] } }],
+    })
+    strictEqual((await h.op({ entity: 'episode', op: 'load', reqmatch: AUDIO }))
+      .error.code, 'rbac_denied')
+  })
+
+  test('rbac: a data operation reads its action from reqdata', async () => {
+    const h = makeClient({
+      features: [{
+        name: 'rbac',
+        options: { rules: { 'episode.create:upload': 'write' }, permissions: [], deny: false },
+      }],
+    })
+    strictEqual((await h.op({ entity: 'episode', op: 'create', reqdata: { $action: 'upload' } }))
+      .error.code, 'rbac_denied')
+    strictEqual((await h.op({ entity: 'episode', op: 'create', reqmatch: { $action: 'upload' } }))
+      .ok, true, 'a match argument does not carry a data operation\'s action')
+  })
+
+  test('metrics: an action is counted apart from its operation', async () => {
+    const h = makeClient({ features: [{ name: 'metrics' }] })
+    await h.op({ entity: 'episode', op: 'load', reqmatch: { id: 'e1' } })
+    await h.op({ entity: 'episode', op: 'load', reqmatch: AUDIO })
+    await h.op({ entity: 'episode', op: 'load', reqmatch: AUDIO })
+    const m = h.client._metrics
+    strictEqual(m.total.count, 3)
+    strictEqual(m.ops['episode.load'].count, 1)
+    strictEqual(m.ops['episode.load:audio'].count, 2)
+  })
+
+  test('audit: a record names its action, and a plain one has none', async () => {
+    const h = makeClient({ features: [{ name: 'audit' }] })
+    await h.op({ entity: 'episode', op: 'load', reqmatch: { id: 'e1' } })
+    await h.op({ entity: 'episode', op: 'load', reqmatch: AUDIO })
+    const recs = h.client._audit.records
+    strictEqual(recs[0].op, 'load')
+    ok(!('action' in recs[0]), 'a plain operation\'s record is unchanged')
+    strictEqual(recs[1].op, 'load')
+    strictEqual(recs[1].action, 'audio')
+  })
+
+  test('cost: an action is priced and attributed apart from its operation', async () => {
+    const records: any[] = []
+    const h = makeClient({
+      features: [{
+        name: 'cost', options: {
+          rates: { 'episode.load': 1, 'episode.load:audio': 5 },
+          sink: (r: any) => records.push(r),
+        }
+      }],
+    })
+    await h.op({ entity: 'episode', op: 'load', reqmatch: { id: 'e1' } })
+    await h.op({ entity: 'episode', op: 'load', reqmatch: AUDIO })
+    const cost = h.client._cost
+    strictEqual(cost.total.amount, 6)
+    deepStrictEqual(cost.ops['episode.load'], { calls: 1, amount: 1 })
+    deepStrictEqual(cost.ops['episode.load:audio'], { calls: 1, amount: 5 })
+    ok(!('action' in records[0]))
+    strictEqual(records[1].action, 'audio')
+  })
+
+  test('cost: an action with no rate of its own takes its operation\'s', async () => {
+    const h = makeClient({
+      features: [{ name: 'cost', options: { rates: { 'episode.load': 2, '*': 9 } } }],
+    })
+    await h.op({ entity: 'episode', op: 'load', reqmatch: AUDIO })
+    deepStrictEqual(h.client._cost.ops['episode.load:audio'], { calls: 1, amount: 2 })
+  })
+
+  // The real makePoint, over an episode whose load has a plain point and an
+  // `audio` action point.
+  function pointFor(allow: string, reqmatch: any): any {
+    const shims: Record<string, any> = { '../types': {} }
+    for (const name of ['ParamUtility', 'PrepareMethodUtility', 'OpKeyUtility']) {
+      shims['./' + name] = sandboxLoad(Path.join(UTILITY_DIR, name + '.ts'), shims)
+    }
+    const { makePoint } = sandboxLoad(Path.join(UTILITY_DIR, 'MakePointUtility.ts'), shims)
+    const plain = { parts: ['episode', '{id}'], select: { exist: ['id'] } }
+    const audio = { parts: ['episode', '{id}', 'audio'], select: { exist: ['id'], $action: 'audio' } }
+    const ctx: any = {
+      op: { name: 'load', entity: 'episode', input: 'match', points: [plain, audio] },
+      entity: { name: 'episode' },
+      options: { allow: { op: allow } },
+      utility: { struct: vstruct },
+      out: {}, data: {}, reqdata: {}, match: {}, reqmatch,
+      error: (code: string, msg: string) => Object.assign(new Error(msg), { code }),
+    }
+    const res = makePoint(ctx)
+    return res instanceof Error ? (res as any).code : res === audio ? 'audio' : 'plain'
+  }
+
+  test('allow: an entry may name an action alone', () => {
+    strictEqual(pointFor('episode.load:audio', AUDIO), 'audio')
+    strictEqual(pointFor('episode.load:audio', { id: 'e1' }), 'point_op_allow')
+    strictEqual(pointFor('Episode.Load:AUDIO', AUDIO), 'audio', 'in any case, as before')
+  })
+
+  test('allow: an operation entry still admits its actions', () => {
+    strictEqual(pointFor('load', AUDIO), 'audio')
+    strictEqual(pointFor('load', { id: 'e1' }), 'plain')
+    strictEqual(pointFor('episode.load', AUDIO), 'audio')
+    strictEqual(pointFor('episode.load:video', AUDIO), 'point_op_allow')
+    strictEqual(pointFor('list', { id: 'e1' }), 'point_op_allow')
   })
 })

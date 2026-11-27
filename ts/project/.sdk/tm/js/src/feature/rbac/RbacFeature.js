@@ -1,6 +1,7 @@
 
 
 const { BaseFeature } = require('../base/BaseFeature')
+const { opAction, opKeys } = require('../../utility/OpKeyUtility')
 
 
 // Client-side role/permission enforcement. Before an operation resolves its
@@ -8,7 +9,8 @@ const { BaseFeature } = require('../base/BaseFeature')
 // against the permissions the client holds; a disallowed call is
 // short-circuited with an `rbac_denied` error and never touches the
 // network. Required permissions come from `rules` (keyed by
-// `<entity>.<op>`, `<op>`, or `*`); the default when no rule matches is
+// `<entity>.<op>:<action>`, `<entity>.<op>`, `<op>`, or `*`, most specific
+// first); the default when no rule matches is
 // controlled by `deny` (default: allow when unspecified). Held permissions
 // are the `permissions` list (a `*` grants everything).
 class RbacFeature extends BaseFeature {
@@ -59,17 +61,10 @@ class RbacFeature extends BaseFeature {
 
   _required(ctx) {
     const rules = this._options.rules || {}
-    const entity = (ctx.entity && ctx.entity.name) || (ctx.op && ctx.op.entity) || ''
-    const opname = (ctx.op && ctx.op.name) || ''
-
-    if (null != rules[entity + '.' + opname]) {
-      return rules[entity + '.' + opname]
-    }
-    if (null != rules[opname]) {
-      return rules[opname]
-    }
-    if (null != rules['*']) {
-      return rules['*']
+    for (const key of opKeys(ctx)) {
+      if (null != rules[key]) {
+        return rules[key]
+      }
     }
     return null
   }
@@ -79,7 +74,7 @@ class RbacFeature extends BaseFeature {
     this._track(ctx, required, false)
     const err = ctx.error('rbac_denied',
       'Permission "' + required + '" required for operation "' +
-      ((ctx.op && ctx.op.name) || '?') + '"')
+      this._opname(ctx) + '"')
     // Short-circuit endpoint resolution; the pipeline surfaces this error.
     ctx.out.point = err
     return err
@@ -92,7 +87,19 @@ class RbacFeature extends BaseFeature {
       client._rbac = { allowed: 0, denied: 0, last: undefined }
     }
     client._rbac[allowed ? 'allowed' : 'denied']++
-    client._rbac.last = { required, allowed, op: ctx.op && ctx.op.name }
+    const last = { required, allowed, op: ctx.op && ctx.op.name }
+    const action = opAction(ctx)
+    if (null != action) {
+      last.action = action
+    }
+    client._rbac.last = last
+  }
+
+
+  _opname(ctx) {
+    const name = (ctx.op && ctx.op.name) || '?'
+    const action = opAction(ctx)
+    return null == action ? name : name + ':' + action
   }
 }
 

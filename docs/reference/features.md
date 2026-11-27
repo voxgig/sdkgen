@@ -307,6 +307,42 @@ aborts, as `fetch` does.
 
 ---
 
+## Operation keys
+
+[`rbac`](#rbac), [`metrics`](#metrics), [`audit`](#audit) and
+[`cost`](#cost), and the SDK's `allow.op` option, name an operation by a key.
+A call that selects a custom action with `$action` in its request argument
+has a more specific key than the operation it runs on, so a policy or a
+count can tell the two apart. The keys, most specific first:
+
+1. `<entity>.<op>:<action>`, as in `episode.load:audio`, for a call naming
+   an action.
+2. `<entity>.<op>`, as in `episode.load`.
+3. `<op>`, as in `load`.
+4. `*`.
+
+The action is read from the request argument the operation takes: the match
+for `load`, `list` and `remove`, the data for `create`, `update` and
+`patch`. A response never supplies it. It is known before the endpoint is
+resolved, so `rbac` still refuses at `PrePoint`.
+
+A lookup takes the first key present, so a project that names no action
+gets the lookups it had before: an action call falls back to the rule or
+rate of its operation. Accounting files a call under its most specific key.
+A call with no action keeps the `<entity>.<op>` name it always had; a call
+naming an action is counted under `<entity>.<op>:<action>` and no longer
+adds to `<entity>.<op>`, and `total` counts both. A consumer that wants the
+old combined figure for an operation adds the `<entity>.<op>` bucket to
+every bucket whose name starts `<entity>.<op>:`.
+
+An `allow.op` entry may take any of these forms. A call is admitted when
+any of its keys is in the list, so `load` and `episode.load` admit every
+action on that operation, and `episode.load:audio` admits that action and
+nothing else.
+
+The `ts` and `js` targets read the action today. The other targets still
+file an action call under the keys of its operation.
+
 ## Inspecting what a feature did
 
 Every feature records its own activity on the client under `_<name>`. This
@@ -327,7 +363,7 @@ of the way of your API's own surface.
 | `streaming` | `client._streaming` | `{ opened }` |
 | `rbac` | `client._rbac` | `{ allowed, denied, last }` |
 | `telemetry` | `client._telemetry` | `{ spans: [...], active }` |
-| `metrics` | `client._metrics` | `{ total, ops: { '<entity>.<op>': {...} } }` |
+| `metrics` | `client._metrics` | `{ total, ops: { '<entity>.<op>[:<action>]': {...} } }` |
 | `audit` | `client._audit` | `{ records: [...] }` |
 | `debug` | `client._debug` | `{ entries: [...] }` |
 | `clienttrack` | `client._clienttrack` | `{ session, requests, clientName, lastRequestId }` |
@@ -667,14 +703,16 @@ This is the one bundled feature that uses **both seams**, and it has to.
 Money is spent per HTTP **attempt** (a retried call is charged again,
 because the upstream API charges it again), but it is owed by an
 **operation**. So the transport wrap prices each attempt, and `PreDone`
-attributes the running total to `<entity>.<op>` and to the caller.
+attributes the running total to the operation's
+[key](#operation-keys) and to the caller.
 
 The price of an attempt comes from the first source that answers:
 
 1. **A response header** — `header` names it, `perUnit` converts the
    reported figure to money. Read per attempt.
-2. **The rate table** — `rates`, keyed `'<entity>.<op>'`, then `'<op>'`,
-   then `'*'`. The same lookup grammar [`rbac`](#rbac) uses for its rules.
+2. **The rate table** — `rates`, looked up by the
+   [operation keys](#operation-keys), most specific first, as
+   [`rbac`](#rbac) looks up its rules.
 3. **The flat `unit`** — a single price for any call.
 
 A **body** figure is different, and is read at `PreDone` from the parsed
@@ -696,7 +734,7 @@ are different claims and should not be silently summed.
 | `active` | `false` | Enable the feature. |
 | `currency` | `'USD'` | Label for the amounts. No conversion is done. |
 | `unit` | `0` | Flat cost per attempt, when nothing else applies. |
-| `rates` | `{}` | Cost per attempt, keyed `'<entity>.<op>'` / `'<op>'` / `'*'`. |
+| `rates` | `{}` | Cost per attempt, keyed by [operation key](#operation-keys). |
 | `header` | `''` | Response header carrying a reported usage figure. |
 | `path` | `''` | Dot path into the response body carrying a usage figure. |
 | `perUnit` | `0` | Price per reported unit. Multiplies a header or body figure. |
@@ -962,8 +1000,10 @@ permissions the client holds, at `PrePoint`, before an endpoint is even
 resolved. A disallowed call short-circuits with an `rbac_denied` error and
 never touches the network.
 
-Required permissions are looked up in `rules`, most specific first:
-`'<entity>.<op>'`, then `'<op>'`, then `'*'`. When no rule matches, `deny`
+Required permissions are looked up in `rules` by the
+[operation keys](#operation-keys), most specific first:
+`'<entity>.<op>:<action>'`, then `'<entity>.<op>'`, then `'<op>'`, then `'*'`.
+The first rule present decides. When no rule matches, `deny`
 decides: allow by default, or default-deny if you set it. Held permissions
 come from `permissions`, where `'*'` grants everything.
 
@@ -973,7 +1013,7 @@ come from `permissions`, where `'*'` grants everything.
 | --- | --- | --- |
 | `active` | `false` | Enable the feature. |
 | `permissions` | `[]` | Permissions the client holds. `'*'` grants everything. |
-| `rules` | `{}` | Required permission, keyed by `'<entity>.<op>'`, `'<op>'`, or `'*'`. |
+| `rules` | `{}` | Required permission, keyed by [operation key](#operation-keys). |
 | `deny` | `false` | Deny operations that match no rule. |
 
 ```ts
@@ -985,6 +1025,22 @@ feature: {
     rules: { 'product.list': 'product:read', 'product.remove': 'product:write' },
   },
 }
+```
+
+A custom action has a rule of its own. Here a caller may read an episode's
+record but not its audio:
+
+```ts
+feature: {
+  rbac: {
+    active: true,
+    permissions: ['episode:read'],
+    rules: { 'episode.load': 'episode:read', 'episode.load:audio': 'episode:audio' },
+  },
+}
+
+await client.Episode().load({ id: 'e1' })                     // allowed
+await client.Episode().load({ id: 'e1', $action: 'audio' })   // rbac_denied
 ```
 
 **Notes.** This is client-side enforcement: it gives fast, local
@@ -1025,7 +1081,9 @@ where `name` is `<entity>.<op>`.
 > Statistics capture: per-operation counters and latency
 
 Counts every call and times it from endpoint resolution to return: a
-total, plus a breakdown keyed `<entity>.<op>`. Each bucket is
+total, plus a breakdown keyed by the most specific
+[operation key](#operation-keys): `<entity>.<op>`, or
+`<entity>.<op>:<action>` for a custom action. Each bucket is
 `{ count, ok, err, totalMs, maxMs }`.
 
 **Seam:** `PrePoint`, `PreDone`, `PreUnexpected`.
@@ -1078,7 +1136,8 @@ await client.Invoice().remove({ id: 'i1' }, { actor: 'user:42' })
 ```
 
 A record is
-`{ seq, ts, actor, entity, op, outcome, status, correlationId }`.
+`{ seq, ts, actor, entity, op, outcome, status, correlationId }`, plus
+`action` when the call named a [custom action](#operation-keys).
 
 **Notes.** Exactly one record per operation: a `PreDone` followed by
 `PreUnexpected` on a non-2xx does not double-log. A throwing `sink` is

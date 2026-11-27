@@ -60,6 +60,8 @@ const struct: any = sandboxLoad(Path.join(UTILITY_DIR, 'StructUtility.ts'), {})
 // The media helpers a feature template may import, from the real template.
 const media: any = sandboxLoad(Path.join(UTILITY_DIR, 'MediaUtility.ts'), {})
 
+const opkey: any = sandboxLoad(Path.join(UTILITY_DIR, 'OpKeyUtility.ts'), {})
+
 
 // The real BaseFeature template, loaded once and shared as the superclass.
 let _BaseFeature: any = null
@@ -83,6 +85,7 @@ function loadFeatureModule(name: string): any {
     '../../Config': { FEATURE_PLUGINS: {} },
 
     '../../utility/MediaUtility': media,
+    '../../utility/OpKeyUtility': opkey,
 
     // The GENERATED schema module, which exists only inside a real SDK: the
     // validate feature reads its per-entity specs from it. Stubbed EMPTY so
@@ -152,6 +155,11 @@ function defaultServer(): ServerFn {
     }
     return makeResponse(200, { ok: true, method, echo: fetchdef.body })
   }
+}
+
+
+function opInput(op: string): string {
+  return ('create' === op || 'update' === op || 'patch' === op) ? 'data' : 'match'
 }
 
 
@@ -337,7 +345,7 @@ function makeClient(spec: {
     const method = o.method || defaultMethod(opname)
 
     const ctx = makeCtx({
-      op: { name: opname, entity },
+      op: { name: opname, entity, input: opInput(opname) },
       entity: { name: entity },
       ctrl: o.ctrl || {},
       data: o.data,
@@ -431,6 +439,7 @@ function makeClient(spec: {
 
 export {
   CLEAN_DEFAULTS,
+  UTILITY_DIR,
   struct,
   sandboxLoad,
   loadFeature,

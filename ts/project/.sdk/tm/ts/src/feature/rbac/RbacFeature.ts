@@ -3,6 +3,7 @@ import type { Context, FeatureOptions } from '../../types'
 import type { ProjectNameSDK } from '../../ProjectNameSDK'
 
 import { BaseFeature } from '../base/BaseFeature'
+import { opAction, opKeys } from '../../utility/OpKeyUtility'
 
 
 class RbacFeature extends BaseFeature {
@@ -52,17 +53,10 @@ class RbacFeature extends BaseFeature {
 
   _required(this: any, ctx: any): string | null {
     const rules = this._options.rules || {}
-    const entity = (ctx.entity && ctx.entity.name) || (ctx.op && ctx.op.entity) || ''
-    const opname = (ctx.op && ctx.op.name) || ''
-
-    if (null != rules[entity + '.' + opname]) {
-      return rules[entity + '.' + opname]
-    }
-    if (null != rules[opname]) {
-      return rules[opname]
-    }
-    if (null != rules['*']) {
-      return rules['*']
+    for (const key of opKeys(ctx)) {
+      if (null != rules[key]) {
+        return rules[key]
+      }
     }
     return null
   }
@@ -72,7 +66,7 @@ class RbacFeature extends BaseFeature {
     this._track(ctx, required, false)
     const err = ctx.error('rbac_denied',
       'Permission "' + required + '" required for operation "' +
-      ((ctx.op && ctx.op.name) || '?') + '"')
+      this._opname(ctx) + '"')
     // Short-circuit endpoint resolution; the pipeline surfaces this error.
     ctx.out.point = err
     return err
@@ -85,7 +79,19 @@ class RbacFeature extends BaseFeature {
       client._rbac = { allowed: 0, denied: 0, last: undefined }
     }
     client._rbac[allowed ? 'allowed' : 'denied']++
-    client._rbac.last = { required, allowed, op: ctx.op && ctx.op.name }
+    const last: any = { required, allowed, op: ctx.op && ctx.op.name }
+    const action = opAction(ctx)
+    if (null != action) {
+      last.action = action
+    }
+    client._rbac.last = last
+  }
+
+
+  _opname(this: any, ctx: any): string {
+    const name = (ctx.op && ctx.op.name) || '?'
+    const action = opAction(ctx)
+    return null == action ? name : name + ':' + action
   }
 }
 

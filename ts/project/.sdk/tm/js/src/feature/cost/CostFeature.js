@@ -1,18 +1,21 @@
 
 
 const { BaseFeature } = require('../base/BaseFeature')
+const { opAction, opKeys } = require('../../utility/OpKeyUtility')
 
 
 // Cost tracking and spend budget. Uses BOTH seams, which is the point of
 // the feature: money is spent per HTTP ATTEMPT (a retried call is charged
 // again, because the upstream API charges it again), but it is owed by an
 // OPERATION. So the transport wrap prices each attempt, and PreDone
-// attributes the running total to `<entity>.<op>` and to the caller
+// attributes the running total to `<entity>.<op>` (with `:<action>` for a
+// custom action) and to the caller
 // (`ctrl.actor`, the same actor the audit feature records).
 //
 // The price of an attempt comes from the first source that answers:
 // a response header (`header` x `perUnit`), the rate table (`rates`, keyed
-// '<entity>.<op>' / '<op>' / '*'), then the flat `unit`. A body figure
+// '<entity>.<op>:<action>' / '<entity>.<op>' / '<op>' / '*'), then the flat
+// `unit`. A body figure
 // (`path` x `perUnit`, e.g. 'usage.total_tokens') is read at PreDone
 // instead, from the already-parsed result: the response body is a one-shot
 // stream, and consuming it at the transport seam would leave the pipeline
@@ -164,7 +167,7 @@ class CostFeature extends BaseFeature {
     // never be counted and could run past an onBudget: 'deny' ceiling
     // indefinitely. `piped` is set by PrePoint, so its absence is the signal.
     if (!pending.piped) {
-      this._commit(ctx, pending, '_', 'direct')
+      this._commit(ctx, pending, { key: '_.direct', entity: '_', op: 'direct' })
       this._pending.delete(ctx)
     }
 
@@ -220,17 +223,20 @@ class CostFeature extends BaseFeature {
       return
     }
 
-    const entity = (ctx.op && ctx.op.entity) || '_'
-    const opname = (ctx.op && ctx.op.name) || '_'
-
-    this._commit(ctx, pending, entity, opname)
+    this._commit(ctx, pending, {
+      key: opKeys(ctx)[0],
+      entity: (ctx.op && ctx.op.entity) || '_',
+      op: (ctx.op && ctx.op.name) || '_',
+      action: opAction(ctx),
+    })
   }
 
 
   // Commit one operation's spend: totals, budget, per-op and per-actor
   // attribution, and the record. Shared by PreDone and the raw-request path
   // in _charge, which has no PreDone to reach.
-  _commit(ctx, pending, entity, opname) {
+  // `call` names what the spend is filed under: its key, entity, op and action.
+  _commit(ctx, pending, call) {
     const client = this._client
     const cost = client._cost
 
@@ -254,20 +260,24 @@ class CostFeature extends BaseFeature {
     const actor = (ctx.ctrl && ctx.ctrl.actor) || this._options.actor || 'anonymous'
 
     cost.total.calls++
-    this._bump(cost.ops, entity + '.' + opname, amount)
+    this._bump(cost.ops, call.key, amount)
     this._bump(cost.actors, actor, amount)
 
     this._seq++
-    const record = ctx.utility.clean(ctx, {
+    const entry = {
       seq: this._seq,
-      entity,
-      op: opname,
+      entity: call.entity,
+      op: call.op,
       actor,
       amount,
       currency: cost.currency,
       source,
       attempts: pending.attempts,
-    })
+    }
+    if (null != call.action) {
+      entry.action = call.action
+    }
+    const record = ctx.utility.clean(ctx, entry)
     cost.last = record
 
     const sink = this._options.sink
@@ -302,21 +312,13 @@ class CostFeature extends BaseFeature {
   }
 
 
-  // The rate table uses the same lookup grammar as rbac's rules:
-  // '<entity>.<op>', then '<op>', then '*'.
+  // The rate table is keyed as rbac's rules are.
   _rate(ctx) {
     const rates = this._options.rates || {}
-    const entity = (ctx.entity && ctx.entity.name) || (ctx.op && ctx.op.entity) || ''
-    const opname = (ctx.op && ctx.op.name) || ''
-
-    if ('number' === typeof rates[entity + '.' + opname]) {
-      return rates[entity + '.' + opname]
-    }
-    if ('number' === typeof rates[opname]) {
-      return rates[opname]
-    }
-    if ('number' === typeof rates['*']) {
-      return rates['*']
+    for (const key of opKeys(ctx)) {
+      if ('number' === typeof rates[key]) {
+        return rates[key]
+      }
     }
     return null
   }

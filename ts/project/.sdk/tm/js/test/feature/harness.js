@@ -63,6 +63,12 @@ function defaultServer() {
 }
 
 
+// Which request argument an operation reads, as the generated Context decides.
+function opInput(op) {
+  return ('create' === op || 'update' === op || 'patch' === op) ? 'data' : 'match'
+}
+
+
 function defaultMethod(op) {
   if ('create' === op) return 'POST'
   if ('update' === op || 'patch' === op) return 'PATCH'
@@ -125,6 +131,8 @@ function makeClient(spec) {
       meta: {},
       op: over.op,
       entity: over.entity,
+      reqdata: over.reqdata || {},
+      reqmatch: over.reqmatch || {},
       spec: undefined,
       response: undefined,
       result: undefined,
@@ -206,9 +214,11 @@ function makeClient(spec) {
     const method = o.method || defaultMethod(opname)
 
     const ctx = makeCtx({
-      op: { name: opname, entity },
+      op: { name: opname, entity, input: opInput(opname) },
       entity: { name: entity },
       ctrl: o.ctrl || {},
+      reqdata: o.reqdata,
+      reqmatch: o.reqmatch,
     })
 
     await featureHook(ctx, 'PostConstructEntity')
