@@ -1,5 +1,5 @@
-// VENDORED: @voxgig/omni 0.1.5 (typescript/src/Runner.ts)
-// Source: https://github.com/voxgig/omni @ ef55ad0fa48470146a81a1d652c859b03ebab6fc  [tag: sdk-20261125-1959-0]
+// VENDORED: @voxgig/omni 0.2.0 (typescript/src/Runner.ts)
+// Source: https://github.com/voxgig/omni @ ef55ad0fa48470146a81a1d652c859b03ebab6fc  [tag: sdk-20261127-1940-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 
 import { readFileSync } from 'node:fs'

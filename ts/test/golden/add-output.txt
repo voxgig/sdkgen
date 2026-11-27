@@ -72,10 +72,10 @@ tm/c/tests/primary_utility_test.c eadee6200d3b
 tm/c/tests/server_variable_test.c 70397054a27f
 tm/c/tests/struct_corpus_test.c abcbe555be91
 tm/c/tests/transport_test.c 996c12c69954
-tm/c/tests/vendor/omni/json.c de7977a6a465
-tm/c/tests/vendor/omni/omni.h 1b11585a7a37
-tm/c/tests/vendor/omni/runner.c 94530ec5cf80
-tm/c/tests/vendor/omni/util.c 3fb43d6dd936
+tm/c/tests/vendor/omni/json.c 8eab272bf90e
+tm/c/tests/vendor/omni/omni.h 491c497df574
+tm/c/tests/vendor/omni/runner.c eefa03bcc9cd
+tm/c/tests/vendor/omni/util.c 61936dfb7f1d
 tm/c/utility/clean.c 3520eac45358
 tm/c/utility/done.c c34b62a8b13a
 tm/c/utility/feature_add.c d77b2f280d84
@@ -106,17 +106,17 @@ tm/c/utility/prepare_query.c 5ec5ef1b660e
 tm/c/utility/result_basic.c 0f1b53dd5eb9
 tm/c/utility/result_body.c bd42f2c05ace
 tm/c/utility/result_headers.c 3eaca35dfcb8
-tm/c/utility/struct/inject.c 5629ee48f683
-tm/c/utility/struct/re_util.c af6e0489db0f
-tm/c/utility/struct/regex.c 2ab6a6031fe7
-tm/c/utility/struct/regex.h ec1a8ed66621
-tm/c/utility/struct/transform.c cc4908a50673
-tm/c/utility/struct/utility.c c652c580a2ba
-tm/c/utility/struct/value.c 4e53c5553631
-tm/c/utility/struct/value.h 081ad7fe6801
-tm/c/utility/struct/value_io.c c0fe36c074b5
-tm/c/utility/struct/value_io.h b2261d1e4aa4
-tm/c/utility/struct/voxgig_struct.h ff99998ca7a4
+tm/c/utility/struct/inject.c 3bb62e45ec10
+tm/c/utility/struct/re_util.c e212894a8b64
+tm/c/utility/struct/regex.c 1ea617c1bfad
+tm/c/utility/struct/regex.h 3168c73779f9
+tm/c/utility/struct/transform.c a73c4c44e6b4
+tm/c/utility/struct/utility.c 6a3555563a01
+tm/c/utility/struct/value.c b10b6fabfe65
+tm/c/utility/struct/value.h 35de6d3feb3c
+tm/c/utility/struct/value_io.c 534776484fd2
+tm/c/utility/struct/value_io.h 16e65f2c8de8
+tm/c/utility/struct/voxgig_struct.h e6d2c97ad984
 tm/c/utility/tls/none.c aaadabd4d899
 tm/c/utility/tls/openssl.c 6e4cf4adec55
 tm/c/utility/tls/tls.h e86b668c9420
@@ -166,42 +166,42 @@ src/cmp/clojure/tsconfig.json 720a3f229019
 src/cmp/clojure/utility_clojure.ts fa25f9feb766
 tm/clojure/Makefile d3ac03fe6a52
 tm/clojure/feature/secrets/sdk/feature/secrets.clj 1149bd35627a
-tm/clojure/feature/secrets/voxgig/plugin.clj eda66525b164
-tm/clojure/feature/secrets/voxgig/plugin/capability.clj b95da92fb675
-tm/clojure/feature/secrets/voxgig/plugin/catalog.clj 0b97b9f7d05c
-tm/clojure/feature/secrets/voxgig/plugin/config.clj 675e39a0f4d4
-tm/clojure/feature/secrets/voxgig/plugin/depend.clj f36a9a8c1ac0
-tm/clojure/feature/secrets/voxgig/plugin/env.clj 5c6200a73a5f
-tm/clojure/feature/secrets/voxgig/plugin/export.clj aace315dc54d
-tm/clojure/feature/secrets/voxgig/plugin/graph.clj cf9049bb23cf
-tm/clojure/feature/secrets/voxgig/plugin/host.clj facf90bd5802
-tm/clojure/feature/secrets/voxgig/plugin/json.clj c4f477c68b09
-tm/clojure/feature/secrets/voxgig/plugin/order.clj 2cdd9627ebe8
-tm/clojure/feature/secrets/voxgig/plugin/point.clj 6825445e87a0
-tm/clojure/feature/secrets/voxgig/plugin/ref.clj 6cc9c5c4e625
-tm/clojure/feature/secrets/voxgig/plugin/resolve.clj 7578facb5d4d
-tm/clojure/feature/secrets/voxgig/plugin/types.clj e4ff25471dd2
-tm/clojure/feature/secrets/voxgig/plugin/version.clj 0dc30be274c7
-tm/clojure/feature/secrets/voxgig/sekreto.clj cb2970119bf3
-tm/clojure/feature/secrets/voxgig/sekreto/addr.clj a854037af586
-tm/clojure/feature/secrets/voxgig/sekreto/chain.clj e96e97c78ebc
-tm/clojure/feature/secrets/voxgig/sekreto/core.clj acc0a43676a8
-tm/clojure/feature/secrets/voxgig/sekreto/json.clj 0e8d85d4d846
-tm/clojure/feature/secrets/voxgig/sekreto/plugins/aws.clj 9fe6f842de1a
-tm/clojure/feature/secrets/voxgig/sekreto/plugins/azuresecrets.clj 60438ec00d1c
-tm/clojure/feature/secrets/voxgig/sekreto/plugins/boru.clj 5739408c17e6
-tm/clojure/feature/secrets/voxgig/sekreto/plugins/doppler.clj b984727c089d
-tm/clojure/feature/secrets/voxgig/sekreto/plugins/gcpsecrets.clj 7c46774843d3
-tm/clojure/feature/secrets/voxgig/sekreto/plugins/hashicorp.clj 9fa07f1fde91
-tm/clojure/feature/secrets/voxgig/sekreto/plugins/httpjson.clj 1cac994e935c
-tm/clojure/feature/secrets/voxgig/sekreto/plugins/infisical.clj 28c9c3d52ab2
-tm/clojure/feature/secrets/voxgig/sekreto/plugins/minivault.clj 57bea0d97853
-tm/clojure/feature/secrets/voxgig/sekreto/plugins/onepassword.clj 049f4e8d06f7
-tm/clojure/feature/secrets/voxgig/sekreto/plugins/proc.clj dac33941f297
-tm/clojure/feature/secrets/voxgig/sekreto/plugins/secretspec.clj 1ba641dfd36a
-tm/clojure/feature/secrets/voxgig/sekreto/plugins/sigv4.clj 1844c24e1c75
-tm/clojure/feature/secrets/voxgig/sekreto/provider.clj 1d0d6b32131f
-tm/clojure/feature/secrets/voxgig/sekreto/providers.clj 0d78d0a4012d
+tm/clojure/feature/secrets/voxgig/plugin.clj f7a80b121599
+tm/clojure/feature/secrets/voxgig/plugin/capability.clj 544b6dbef757
+tm/clojure/feature/secrets/voxgig/plugin/catalog.clj 686582391c9b
+tm/clojure/feature/secrets/voxgig/plugin/config.clj d20b606d9c93
+tm/clojure/feature/secrets/voxgig/plugin/depend.clj 219a398f367e
+tm/clojure/feature/secrets/voxgig/plugin/env.clj 290ef211d0d0
+tm/clojure/feature/secrets/voxgig/plugin/export.clj 4e5793ca22c8
+tm/clojure/feature/secrets/voxgig/plugin/graph.clj f813ff22ba9e
+tm/clojure/feature/secrets/voxgig/plugin/host.clj fbce7c8c7bb0
+tm/clojure/feature/secrets/voxgig/plugin/json.clj 871824c6ef60
+tm/clojure/feature/secrets/voxgig/plugin/order.clj 7c87a890e996
+tm/clojure/feature/secrets/voxgig/plugin/point.clj 1cfab6ca5e58
+tm/clojure/feature/secrets/voxgig/plugin/ref.clj cb60f2380885
+tm/clojure/feature/secrets/voxgig/plugin/resolve.clj 747893331357
+tm/clojure/feature/secrets/voxgig/plugin/types.clj 7cbad3ed7ad9
+tm/clojure/feature/secrets/voxgig/plugin/version.clj 7d08e8373cd7
+tm/clojure/feature/secrets/voxgig/sekreto.clj 0c68500da37e
+tm/clojure/feature/secrets/voxgig/sekreto/addr.clj d7538d383cf3
+tm/clojure/feature/secrets/voxgig/sekreto/chain.clj cd3848f14526
+tm/clojure/feature/secrets/voxgig/sekreto/core.clj b5ba8f66e2c2
+tm/clojure/feature/secrets/voxgig/sekreto/json.clj 73738d2a9224
+tm/clojure/feature/secrets/voxgig/sekreto/plugins/aws.clj 83de7a6a246d
+tm/clojure/feature/secrets/voxgig/sekreto/plugins/azuresecrets.clj d3a2bd1a3901
+tm/clojure/feature/secrets/voxgig/sekreto/plugins/boru.clj d28f6442ea4a
+tm/clojure/feature/secrets/voxgig/sekreto/plugins/doppler.clj c6e526299f90
+tm/clojure/feature/secrets/voxgig/sekreto/plugins/gcpsecrets.clj d46159888d51
+tm/clojure/feature/secrets/voxgig/sekreto/plugins/hashicorp.clj 09a79c2f7111
+tm/clojure/feature/secrets/voxgig/sekreto/plugins/httpjson.clj 0adb3a736b7f
+tm/clojure/feature/secrets/voxgig/sekreto/plugins/infisical.clj 0f541039acc4
+tm/clojure/feature/secrets/voxgig/sekreto/plugins/minivault.clj feb008a2439f
+tm/clojure/feature/secrets/voxgig/sekreto/plugins/onepassword.clj fc124210553f
+tm/clojure/feature/secrets/voxgig/sekreto/plugins/proc.clj f89fe1e96720
+tm/clojure/feature/secrets/voxgig/sekreto/plugins/secretspec.clj d92502fe67d3
+tm/clojure/feature/secrets/voxgig/sekreto/plugins/sigv4.clj b5f24713c1f4
+tm/clojure/feature/secrets/voxgig/sekreto/provider.clj 7497912dcdfb
+tm/clojure/feature/secrets/voxgig/sekreto/providers.clj 08d69d565285
 tm/clojure/src/feature/README.md d3e22e11d675
 tm/clojure/src/feature/audit/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/base/.gitkeep e3b0c44298fc
@@ -227,7 +227,7 @@ tm/clojure/src/feature/validate/.gitkeep e3b0c44298fc
 tm/clojure/src/sdk/client.clj 747bdcaf4b47
 tm/clojure/src/sdk/core.clj 0019eb9bd68c
 tm/clojure/src/sdk/features.clj 52383c72eed5
-tm/clojure/src/voxgig/struct.clj 007fea2d9426
+tm/clojure/src/voxgig/struct.clj 40d7f37b7bc1
 tm/clojure/test/sdk/test/concurrency.clj a9bfd623695b
 tm/clojure/test/sdk/test/feature.clj 889886b26a0d
 tm/clojure/test/sdk/test/feature/secrets.clj bda002c19167
@@ -239,9 +239,9 @@ tm/clojure/test/sdk/test/primary.clj 692bbd7fb756
 tm/clojure/test/sdk/test/struct_corpus.clj e740f6a9de77
 tm/clojure/test/sdk/test_runner.clj b190614c3815
 tm/clojure/test/sdk/testutil.clj 389d40fa6cbc
-tm/clojure/test/vendor/omni/voxgig/omni/json.clj d987ead3e30b
-tm/clojure/test/vendor/omni/voxgig/omni/runner.clj 857c4ae4840b
-tm/clojure/test/vendor/omni/voxgig/omni/util.clj 3087871b2351
+tm/clojure/test/vendor/omni/voxgig/omni/json.clj efc9caf44f9b
+tm/clojure/test/vendor/omni/voxgig/omni/runner.clj 7dcc6f5fac12
+tm/clojure/test/vendor/omni/voxgig/omni/util.clj 04ee148be6b2
 
 ## target cpp
 model/feature/feature-index.aontu 0351fe150e6a
@@ -311,14 +311,14 @@ tm/cpp/test/sdk-test-control.json acadc87764f6
 tm/cpp/test/server_variable_test.cpp a6a1670e96ac
 tm/cpp/test/struct_corpus_test.cpp 63c1c1fe1123
 tm/cpp/test/testlib.hpp f5f70c8c25b7
-tm/cpp/test/vendor/omni/json.hpp 6d6905ece4ee
-tm/cpp/test/vendor/omni/omni.hpp 4ae233e45711
-tm/cpp/test/vendor/omni/util.hpp 68bce9af68e1
+tm/cpp/test/vendor/omni/json.hpp 782312f9324a
+tm/cpp/test/vendor/omni/omni.hpp 519db3764a03
+tm/cpp/test/vendor/omni/util.hpp db0093860432
 tm/cpp/utility/cookie.hpp d2b5fb5f0264
 tm/cpp/utility/pipeline.hpp 2eb4de2240d0
-tm/cpp/utility/voxgigstruct/value.hpp 5940b917f9e3
-tm/cpp/utility/voxgigstruct/value_io.hpp 1d3f5089c81b
-tm/cpp/utility/voxgigstruct/voxgig_struct.hpp 0950d4b20676
+tm/cpp/utility/voxgigstruct/value.hpp 5082ba101448
+tm/cpp/utility/voxgigstruct/value_io.hpp 1dc81da9b914
+tm/cpp/utility/voxgigstruct/voxgig_struct.hpp 585c2ce74005
 
 ## target csharp
 model/feature/feature-index.aontu 0351fe150e6a
@@ -396,8 +396,8 @@ tm/csharp/test/PrimaryUtilityTest.cs 816c6bbaca75
 tm/csharp/test/Runner.cs b07634213c7a
 tm/csharp/test/StructUtilityTest.cs 4fb8c992be9d
 tm/csharp/test/sdk-test-control.json 1368770ffc61
-tm/csharp/test/vendor/omni/Runner.cs c14c09fce847
-tm/csharp/test/vendor/omni/Util.cs 24726ec52e81
+tm/csharp/test/vendor/omni/Runner.cs 6be34dc0172f
+tm/csharp/test/vendor/omni/Util.cs 137df58013c0
 tm/csharp/utility/Clean.cs ecd63b4d1079
 tm/csharp/utility/Done.cs 0106c22118b7
 tm/csharp/utility/FeatureAdd.cs 5a5f0fd34beb
@@ -429,7 +429,7 @@ tm/csharp/utility/ResultBody.cs a42bdf77aeb6
 tm/csharp/utility/ResultHeaders.cs e593a27709b5
 tm/csharp/utility/TransformRequest.cs ef1aec6981ed
 tm/csharp/utility/TransformResponse.cs 01583a33873e
-tm/csharp/utility/struct/Struct.cs 1869439cc446
+tm/csharp/utility/struct/Struct.cs 607e2da5255f
 
 ## target elixir
 model/feature/feature-index.aontu 0351fe150e6a
@@ -485,7 +485,7 @@ tm/elixir/lib/projectname/feature/test.ex 3ed981b7a867
 tm/elixir/lib/projectname/helpers.ex c22f481d543d
 tm/elixir/lib/projectname/json.ex d69502568def
 tm/elixir/lib/projectname/utility.ex 5a201f3efdb9
-tm/elixir/lib/utility/struct/voxgig_struct.ex 64b7e5a83476
+tm/elixir/lib/utility/struct/voxgig_struct.ex ad45c12fa39e
 tm/elixir/src/feature/README.md 7a6d4b091ddd
 tm/elixir/src/feature/base/.gitkeep e3b0c44298fc
 tm/elixir/src/feature/test/.gitkeep e3b0c44298fc
@@ -500,9 +500,9 @@ tm/elixir/test/struct_corpus_test.exs 4fac3861aa6f
 tm/elixir/test/support/feature_harness.ex 9b26420ea50d
 tm/elixir/test/support/omni.ex ea5a52578fb4
 tm/elixir/test/test_helper.exs b086ec47f0c6
-tm/elixir/test/vendor/omni/json.ex 35dc2ab63c91
-tm/elixir/test/vendor/omni/runner.ex 40140860f9df
-tm/elixir/test/vendor/omni/util.ex d99e62b4ba17
+tm/elixir/test/vendor/omni/json.ex 13c4b23d1dcd
+tm/elixir/test/vendor/omni/runner.ex 32acfe90929f
+tm/elixir/test/vendor/omni/util.ex c89dcd3d7a4a
 
 ## target go
 model/feature/feature-index.aontu 0351fe150e6a
@@ -569,8 +569,8 @@ tm/go/test/custom_utility_test.go eaa31da36d92
 tm/go/test/feature_corpus_test.go cf78569c52a0
 tm/go/test/feature_harness_test.go 3be4a16626d6
 tm/go/test/netsim_test.go 30f992e9d5c0
-tm/go/test/omni/omni.go bbcf2b9f6e21
-tm/go/test/omni/util.go 20899341170f
+tm/go/test/omni/omni.go a7ec5454c9f2
+tm/go/test/omni/util.go 456df92f5d59
 tm/go/test/omniresolver_test.go 852a9c29601f
 tm/go/test/omnismoke_test.go fb76d8db5060
 tm/go/test/pipeline_test.go 823453857225
@@ -608,7 +608,7 @@ tm/go/utility/register.go 3ac88d5c7e43
 tm/go/utility/result_basic.go 6621fff8681d
 tm/go/utility/result_body.go 4f2adb05c626
 tm/go/utility/result_headers.go 1bf8bf65b390
-tm/go/utility/struct/voxgigstruct.go 1ffffbc937cc
+tm/go/utility/struct/voxgigstruct.go 7db3c8c8de52
 tm/go/utility/transform_request.go 57bd64677f80
 tm/go/utility/transform_response.go 3c0e1101ed39
 
@@ -718,9 +718,9 @@ tm/java/test/PrimaryUtilityTest.java da39ccb6e019
 tm/java/test/RunnerSupport.java fef0736a4b6e
 tm/java/test/StructCorpusTest.java b3679703f344
 tm/java/test/sdk-test-control.json acadc87764f6
-tm/java/test/vendor/omni/Json.java dc6a99746155
-tm/java/test/vendor/omni/Runner.java e0b21bc5b48b
-tm/java/test/vendor/omni/Util.java edbdc13443cb
+tm/java/test/vendor/omni/Json.java 4265d17105fc
+tm/java/test/vendor/omni/Runner.java bc491317be49
+tm/java/test/vendor/omni/Util.java f9e218cd2030
 tm/java/utility/Clean.java 5b3127fa7ce3
 tm/java/utility/Done.java 539e95bb155a
 tm/java/utility/FeatureAdd.java 77fd1ce39d5a
@@ -753,7 +753,7 @@ tm/java/utility/ResultBody.java 2bbd84dffff9
 tm/java/utility/ResultHeaders.java 9fab31e3503b
 tm/java/utility/TransformRequest.java eb4e1242448f
 tm/java/utility/TransformResponse.java 57d3cd8e82e1
-tm/java/utility/struct/Struct.java d551d07016d0
+tm/java/utility/struct/Struct.java f914189fff8b
 
 ## target js
 model/feature/feature-index.aontu 0351fe150e6a
@@ -850,7 +850,7 @@ tm/js/src/utility/README.md 443e45445e95
 tm/js/src/utility/ResultBasicUtility.js 5cbbeb7567d8
 tm/js/src/utility/ResultBodyUtility.js b34a7a988642
 tm/js/src/utility/ResultHeadersUtility.js 152bcfc7ac7b
-tm/js/src/utility/StructUtility.js 7f743bd7d9c3
+tm/js/src/utility/StructUtility.js 397cc6556775
 tm/js/src/utility/TransformRequestUtility.js 2f8242b5493f
 tm/js/src/utility/TransformResponseUtility.js 36fb184e55c9
 tm/js/src/utility/Utility.js d348a4fbdb8e
@@ -874,9 +874,9 @@ tm/js/test/utility/Custom.test.js deeb256f75c3
 tm/js/test/utility/PrimaryUtility.test.js 986dc8b73ec2
 tm/js/test/utility/StructUtility.test.js 622e718fcb60
 tm/js/test/utility/index.js 08d9ee64079f
-tm/js/test/vendor/omni/index.js ed637dc1210c
-tm/js/test/vendor/omni/runner.js 5c0e7e7835dd
-tm/js/test/vendor/omni/util.js d8f7aa6d9d14
+tm/js/test/vendor/omni/index.js 59f81571a7bf
+tm/js/test/vendor/omni/runner.js fdb854665140
+tm/js/test/vendor/omni/util.js b617ba038ee6
 
 ## target kotlin
 model/feature/feature-index.aontu 0351fe150e6a
@@ -956,9 +956,9 @@ tm/kotlin/test/RunnerSupport.kt 658e60d7adb2
 tm/kotlin/test/ServerVariableTest.kt cf52d241cde8
 tm/kotlin/test/StructCorpusTest.kt e240d16295a8
 tm/kotlin/test/sdk-test-control.json bb1582608f2f
-tm/kotlin/test/vendor/omni/Json.kt 2d08a08facb2
-tm/kotlin/test/vendor/omni/Runner.kt ab92a25844a0
-tm/kotlin/test/vendor/omni/Util.kt 993e6ff9ab67
+tm/kotlin/test/vendor/omni/Json.kt 798eeb7b621e
+tm/kotlin/test/vendor/omni/Runner.kt f2362fbe68a8
+tm/kotlin/test/vendor/omni/Util.kt d60c2c8fdbc6
 tm/kotlin/utility/CoreUtil.kt 12d9c94d0cd9
 tm/kotlin/utility/FeatureUtil.kt 0afe6596ecdb
 tm/kotlin/utility/Fetcher.kt 4943fc198a6a
@@ -972,7 +972,7 @@ tm/kotlin/utility/Media.kt ef8fb4b14bf3
 tm/kotlin/utility/Prepare.kt 42a5a6c90bd9
 tm/kotlin/utility/Register.kt 2e2bfb7a34a1
 tm/kotlin/utility/ResultTransform.kt f47721f930a8
-tm/kotlin/utility/struct/Struct.kt edddf10ef0b4
+tm/kotlin/utility/struct/Struct.kt d7b0b722c66c
 
 ## target lua
 model/feature/feature-index.aontu 0351fe150e6a
@@ -1042,10 +1042,10 @@ tm/lua/test/primary_utility_test.lua ff9b889e5063
 tm/lua/test/runner.lua 1b90a1ad5bc2
 tm/lua/test/sdk-test-control.json da0a617f04f6
 tm/lua/test/struct_utility_test.lua 66f391b1594e
-tm/lua/test/vendor/omni/json.lua 4a327f9b5f61
-tm/lua/test/vendor/omni/regex.lua 2071623ccdfe
-tm/lua/test/vendor/omni/runner.lua 98e6933589a6
-tm/lua/test/vendor/omni/util.lua 8648200e2b6f
+tm/lua/test/vendor/omni/json.lua dee16a27351e
+tm/lua/test/vendor/omni/regex.lua e1ad7889dcd7
+tm/lua/test/vendor/omni/runner.lua 71002ce8f932
+tm/lua/test/vendor/omni/util.lua 61fd727b8329
 tm/lua/utility/clean.lua d015d4240bd2
 tm/lua/utility/clean_explain.lua 7714e924592e
 tm/lua/utility/done.lua c1c77faea694
@@ -1076,8 +1076,8 @@ tm/lua/utility/register.lua 5deca3174840
 tm/lua/utility/result_basic.lua 891e11848ea9
 tm/lua/utility/result_body.lua e61618b29a84
 tm/lua/utility/result_headers.lua 33df8d29e12f
-tm/lua/utility/struct/regex.lua 0b986c9d187b
-tm/lua/utility/struct/struct.lua cad5e62caada
+tm/lua/utility/struct/regex.lua 57ce6fc8471e
+tm/lua/utility/struct/struct.lua 2140aebe486c
 tm/lua/utility/tls.lua 4ed1453010a5
 tm/lua/utility/transform_request.lua 83de7b64e4f1
 tm/lua/utility/transform_response.lua 37d0bb1f1d1f
@@ -1138,9 +1138,9 @@ tm/ocaml/test/t_feature.ml 44e435ee0611
 tm/ocaml/test/t_main.ml a468eae08da5
 tm/ocaml/test/t_pipeline.ml 135b82d775d0
 tm/ocaml/test/testutil.ml d06c690245b6
-tm/ocaml/test/vendor/omni/omni.ml 8917090afcdd
-tm/ocaml/utility/voxgig_struct.ml b7f4a0d6f795
-tm/ocaml/utility/vregex.ml 4fe044e7375d
+tm/ocaml/test/vendor/omni/omni.ml fc94ff5f6d87
+tm/ocaml/utility/voxgig_struct.ml aaf9c46cbb5b
+tm/ocaml/utility/vregex.ml 05aed9a892b8
 
 ## target perl
 model/feature/feature-index.aontu 0351fe150e6a
@@ -1195,7 +1195,7 @@ tm/perl/core/spec.pm c0abea4855e4
 tm/perl/core/utility_type.pm ae99fdaaf3fb
 tm/perl/feature/base_feature.pm af88f71c0bd9
 tm/perl/feature/test_feature.pm 9ce89de1c07f
-tm/perl/lib/Voxgig/Struct.pm d05692fc7f71
+tm/perl/lib/Voxgig/Struct.pm e567238d7e41
 tm/perl/src/feature/README.md 74fc01b8a34f
 tm/perl/src/feature/base/.gitkeep e3b0c44298fc
 tm/perl/src/feature/test/.gitkeep e3b0c44298fc
@@ -1211,9 +1211,9 @@ tm/perl/t/sdk-test-control.json b75ea700c514
 tm/perl/t/server_variables.t 4404608c9256
 tm/perl/t/stream.t 0e1aa023c171
 tm/perl/t/struct_utility.t 720ca1afc0ab
-tm/perl/t/vendor/omni/Voxgig/Omni.pm f59d4931f8ac
-tm/perl/t/vendor/omni/Voxgig/Omni/Runner.pm 1e1c2987786d
-tm/perl/t/vendor/omni/Voxgig/Omni/Util.pm 3c4317f3a7a4
+tm/perl/t/vendor/omni/Voxgig/Omni.pm 6097f5436065
+tm/perl/t/vendor/omni/Voxgig/Omni/Runner.pm beeeca62b7d3
+tm/perl/t/vendor/omni/Voxgig/Omni/Util.pm 812b5d1ef6a3
 tm/perl/utility/clean.pm 355a6b9394fd
 tm/perl/utility/done.pm 543780c62fb8
 tm/perl/utility/feature_add.pm 1904c2689cad
@@ -1313,8 +1313,8 @@ tm/php/test/PrimaryUtilityTest.php c00f9e0f1061
 tm/php/test/Runner.php af062cbd1387
 tm/php/test/StructUtilityTest.php ff86f7212f72
 tm/php/test/sdk-test-control.json 0ef7278caec2
-tm/php/test/vendor/omni/Runner.php 33037261dbc3
-tm/php/test/vendor/omni/Util.php de5f0484bab5
+tm/php/test/vendor/omni/Runner.php 5658fbd5e204
+tm/php/test/vendor/omni/Util.php 3e977bdb5aa9
 tm/php/utility/Clean.php 7116a555f2bf
 tm/php/utility/Done.php dd5e686391dd
 tm/php/utility/FeatureAdd.php 7729798603cf
@@ -1346,7 +1346,7 @@ tm/php/utility/ResultBody.php 8334cf4cc51a
 tm/php/utility/ResultHeaders.php 378a2c5bfdd9
 tm/php/utility/TransformRequest.php 6532e5142cc8
 tm/php/utility/TransformResponse.php 5a4119171b02
-tm/php/utility/struct/Struct.php a018bafe8c3c
+tm/php/utility/struct/Struct.php 763a6f239c90
 
 ## target py
 model/feature/feature-index.aontu 0351fe150e6a
@@ -1438,7 +1438,7 @@ tm/py/pkg/utility/result_headers.py 682e8c1eb0b7
 tm/py/pkg/utility/transform_request.py e49b3d02e6cd
 tm/py/pkg/utility/transform_response.py b695fb4ac29d
 tm/py/pkg/utility/voxgig_struct/__init__.py 1608e9ae60d8
-tm/py/pkg/utility/voxgig_struct/voxgig_struct.py 005a56ce5fb3
+tm/py/pkg/utility/voxgig_struct/voxgig_struct.py 9a02490b48d9
 tm/py/src/feature/README.md 74fc01b8a34f
 tm/py/src/feature/base/.gitkeep e3b0c44298fc
 tm/py/src/feature/test/.gitkeep e3b0c44298fc
@@ -1456,9 +1456,9 @@ tm/py/test/test_omni_smoke.py abeaa5fc717b
 tm/py/test/test_pipeline.py e6b2539fab2c
 tm/py/test/test_primary_utility.py 5ddb9bb428a7
 tm/py/test/test_struct_utility.py aa1a3e28adf1
-tm/py/test/voxgig_omni/__init__.py 8c4cfee5ffed
-tm/py/test/voxgig_omni/runner.py de7ec104f286
-tm/py/test/voxgig_omni/util.py 0c2cdf078b3b
+tm/py/test/voxgig_omni/__init__.py c9452d615bc6
+tm/py/test/voxgig_omni/runner.py 3e0677d7663f
+tm/py/test/voxgig_omni/util.py 1b8c1f20400c
 
 ## target py-data
 model/feature/feature-index.aontu 0351fe150e6a
@@ -1549,9 +1549,9 @@ tm/rb/test/primary_utility_test.rb ef398a12693b
 tm/rb/test/runner.rb ebde68cbfda9
 tm/rb/test/sdk-test-control.json 9b96054952f6
 tm/rb/test/struct_utility_test.rb 2e0e456c795d
-tm/rb/test/vendor/omni/runner.rb 690ad9321825
-tm/rb/test/vendor/omni/util.rb 920739d15d6b
-tm/rb/test/vendor/omni/voxgig_omni.rb 134d9dd6ef12
+tm/rb/test/vendor/omni/runner.rb 0607d5261875
+tm/rb/test/vendor/omni/util.rb becb59b83df3
+tm/rb/test/vendor/omni/voxgig_omni.rb c97ff5a551c8
 tm/rb/utility/clean.rb cd274c8afdfd
 tm/rb/utility/done.rb 748be3d441f3
 tm/rb/utility/feature_add.rb 56c05f79aaf6
@@ -1581,7 +1581,7 @@ tm/rb/utility/register.rb 0ed4b4e32df7
 tm/rb/utility/result_basic.rb 90d9f4bfb77a
 tm/rb/utility/result_body.rb 1bef9cbd2220
 tm/rb/utility/result_headers.rb ee4460e396f5
-tm/rb/utility/struct/voxgig_struct.rb fecef33a0ae0
+tm/rb/utility/struct/voxgig_struct.rb 759893d7fab1
 tm/rb/utility/transform_request.rb 0f21de00236b
 tm/rb/utility/transform_response.rb 13e4100890d3
 
@@ -1658,11 +1658,11 @@ tm/rust/tests/primary_utility_test.rs 59587210d89b
 tm/rust/tests/sdk-test-control.json 8e1530378d2f
 tm/rust/tests/server_variable_test.rs b3742da6d989
 tm/rust/tests/struct_utility_test.rs 3b736ddcc5e1
-tm/rust/tests/vendor/omni/json.rs 991f8e73ed03
-tm/rust/tests/vendor/omni/mod.rs 0c8c126f41b7
-tm/rust/tests/vendor/omni/regex.rs 7fc4e6e82af4
-tm/rust/tests/vendor/omni/runner.rs d2742d6a0229
-tm/rust/tests/vendor/omni/util.rs 9b75aef741dc
+tm/rust/tests/vendor/omni/json.rs 22c2d2d02035
+tm/rust/tests/vendor/omni/mod.rs b5003d897605
+tm/rust/tests/vendor/omni/regex.rs 890327df6b04
+tm/rust/tests/vendor/omni/runner.rs 51e81702becf
+tm/rust/tests/vendor/omni/util.rs 1c447a8d6568
 tm/rust/utility/clean.rs 5cca27dd2d08
 tm/rust/utility/done.rs b15d29a24839
 tm/rust/utility/feature_add.rs 17f2d1fcb7c3
@@ -1695,13 +1695,13 @@ tm/rust/utility/result_body.rs d32b6b82fb7d
 tm/rust/utility/result_headers.rs 58e9bdefa347
 tm/rust/utility/transform_request.rs d20d4efbaedb
 tm/rust/utility/transform_response.rs 236bdb7a35a5
-tm/rust/utility/voxgigstruct/consts.rs 339a7d0756c7
-tm/rust/utility/voxgigstruct/major.rs 5309a5058d69
-tm/rust/utility/voxgigstruct/mini.rs d1f58d6d0fd2
-tm/rust/utility/voxgigstruct/mod.rs 2a4dd7bf0c03
-tm/rust/utility/voxgigstruct/ordered_map.rs 019de6e8a84e
-tm/rust/utility/voxgigstruct/re.rs 3e5b286cd8d2
-tm/rust/utility/voxgigstruct/value.rs 3f045d85febe
+tm/rust/utility/voxgigstruct/consts.rs 6ed847fcf1a7
+tm/rust/utility/voxgigstruct/major.rs 8d9f4bb0442b
+tm/rust/utility/voxgigstruct/mini.rs 4c9500a6a422
+tm/rust/utility/voxgigstruct/mod.rs 6eafc9ab481a
+tm/rust/utility/voxgigstruct/ordered_map.rs ea1d80cf5b20
+tm/rust/utility/voxgigstruct/re.rs a9055dc5812e
+tm/rust/utility/voxgigstruct/value.rs e74973191fbc
 
 ## target scala
 model/feature/feature-index.aontu 0351fe150e6a
@@ -1783,40 +1783,40 @@ tm/scala/feature/TelemetryFeature.scala b1bf710a5667
 tm/scala/feature/TestFeature.scala 4beda610ed9b
 tm/scala/feature/TimeoutFeature.scala 007550fa7e00
 tm/scala/feature/ValidateFeature.scala 4ef01bf58cf5
-tm/scala/feature/secrets/plugin/Capability.scala 53ea1f8d5a5b
-tm/scala/feature/secrets/plugin/Config.scala 1c14936b2b9d
-tm/scala/feature/secrets/plugin/Depend.scala 2290142d915c
-tm/scala/feature/secrets/plugin/Env.scala d1176e08950e
-tm/scala/feature/secrets/plugin/Export.scala e6fc20fbc7e7
-tm/scala/feature/secrets/plugin/Graph.scala 5646c9415b44
-tm/scala/feature/secrets/plugin/Host.scala ce9011de83cd
-tm/scala/feature/secrets/plugin/Json.scala b7ca9d000744
-tm/scala/feature/secrets/plugin/Order.scala db55a067f7cc
-tm/scala/feature/secrets/plugin/Plugin.scala b4cbe5af6ff7
-tm/scala/feature/secrets/plugin/Point.scala 805cdfdc61a1
-tm/scala/feature/secrets/plugin/Refs.scala 5ad59b74ec0d
-tm/scala/feature/secrets/plugin/Resolve.scala 343c495a0415
-tm/scala/feature/secrets/plugin/Types.scala 8381dcfedb79
-tm/scala/feature/secrets/plugin/Value.scala d827ff8aacd4
-tm/scala/feature/secrets/plugin/Version.scala b5853a929baa
-tm/scala/feature/secrets/sekreto/Json.scala 210e7dee6763
-tm/scala/feature/secrets/sekreto/Provider.scala 96ea33b71274
-tm/scala/feature/secrets/sekreto/Providers.scala 3e9c0ecab67c
-tm/scala/feature/secrets/sekreto/Sekreto.scala 68ededcd64ee
-tm/scala/feature/secrets/sekreto/Spec.scala 908f22342c84
-tm/scala/feature/secrets/sekreto/Support.scala a98421cf199b
-tm/scala/feature/secrets/sekreto/plugins/Aws.scala 0707c610a497
-tm/scala/feature/secrets/sekreto/plugins/Azuresecrets.scala 3ec2ec41189e
-tm/scala/feature/secrets/sekreto/plugins/Boru.scala 84ae3fff99f0
-tm/scala/feature/secrets/sekreto/plugins/Doppler.scala 2f875873a371
-tm/scala/feature/secrets/sekreto/plugins/Gcpsecrets.scala 9ba5166ad1f0
-tm/scala/feature/secrets/sekreto/plugins/Hashicorp.scala 606c8fc348d3
-tm/scala/feature/secrets/sekreto/plugins/Httpjson.scala 957d514df8e9
-tm/scala/feature/secrets/sekreto/plugins/Infisical.scala a2bdeacfe87d
-tm/scala/feature/secrets/sekreto/plugins/Minivault.scala f13e6a3853fc
-tm/scala/feature/secrets/sekreto/plugins/Onepassword.scala 93e64c2227dd
-tm/scala/feature/secrets/sekreto/plugins/Secretspec.scala 9b7611e89568
-tm/scala/feature/secrets/sekreto/plugins/Sigv4.scala 451abb59d7bb
+tm/scala/feature/secrets/plugin/Capability.scala f956ce9a5715
+tm/scala/feature/secrets/plugin/Config.scala 83a01b1fe1e3
+tm/scala/feature/secrets/plugin/Depend.scala 02b228c417dd
+tm/scala/feature/secrets/plugin/Env.scala cfffe4f05975
+tm/scala/feature/secrets/plugin/Export.scala 74f50fcf1119
+tm/scala/feature/secrets/plugin/Graph.scala 357f2bd58a11
+tm/scala/feature/secrets/plugin/Host.scala 56c23d0a1f06
+tm/scala/feature/secrets/plugin/Json.scala 22b88e043e68
+tm/scala/feature/secrets/plugin/Order.scala 034e33c5eca5
+tm/scala/feature/secrets/plugin/Plugin.scala 1c847b58288a
+tm/scala/feature/secrets/plugin/Point.scala d723f86d00c4
+tm/scala/feature/secrets/plugin/Refs.scala 4175c68864cb
+tm/scala/feature/secrets/plugin/Resolve.scala 363fe21c8f1d
+tm/scala/feature/secrets/plugin/Types.scala ce03a1298522
+tm/scala/feature/secrets/plugin/Value.scala 35f593422528
+tm/scala/feature/secrets/plugin/Version.scala 44e1a17b879d
+tm/scala/feature/secrets/sekreto/Json.scala 8e8622de0dca
+tm/scala/feature/secrets/sekreto/Provider.scala 49477ab9f922
+tm/scala/feature/secrets/sekreto/Providers.scala 29cfdc46a9ad
+tm/scala/feature/secrets/sekreto/Sekreto.scala 84f92e9bae06
+tm/scala/feature/secrets/sekreto/Spec.scala e341abc738e4
+tm/scala/feature/secrets/sekreto/Support.scala 23d02a4cc2aa
+tm/scala/feature/secrets/sekreto/plugins/Aws.scala 3e05e5ba0204
+tm/scala/feature/secrets/sekreto/plugins/Azuresecrets.scala bf9f916e4169
+tm/scala/feature/secrets/sekreto/plugins/Boru.scala a98c52eeb8e9
+tm/scala/feature/secrets/sekreto/plugins/Doppler.scala 5bf8ebb0e9fd
+tm/scala/feature/secrets/sekreto/plugins/Gcpsecrets.scala b80a91b36e88
+tm/scala/feature/secrets/sekreto/plugins/Hashicorp.scala 03419279d5fd
+tm/scala/feature/secrets/sekreto/plugins/Httpjson.scala 8285675fae2d
+tm/scala/feature/secrets/sekreto/plugins/Infisical.scala 535cc716c947
+tm/scala/feature/secrets/sekreto/plugins/Minivault.scala f8c84298cb0a
+tm/scala/feature/secrets/sekreto/plugins/Onepassword.scala 213f36b3e954
+tm/scala/feature/secrets/sekreto/plugins/Secretspec.scala 8b7f4545f932
+tm/scala/feature/secrets/sekreto/plugins/Sigv4.scala 94b6d5083859
 tm/scala/sdktest/ConcurrencyTest.scala f27840bb67d8
 tm/scala/sdktest/OmniResolver.scala 2bbd5639ca7c
 tm/scala/sdktest/OmniSmoke.scala 5c22c83fb51f
@@ -1827,9 +1827,9 @@ tm/scala/sdktest/ServerVariableTest.scala 0c041b23fd44
 tm/scala/sdktest/StructCorpus.scala c6453791202c
 tm/scala/sdktest/feature/secrets/SecretsTestMain.scala 74ec2047e95d
 tm/scala/sdktest/sdk-test-control.json acadc87764f6
-tm/scala/sdktest/vendor/omni/Json.scala 832ecba5fdf8
-tm/scala/sdktest/vendor/omni/Runner.scala 004f6fce4126
-tm/scala/sdktest/vendor/omni/Util.scala d6b7b289246e
+tm/scala/sdktest/vendor/omni/Json.scala 0aea05c02f2d
+tm/scala/sdktest/vendor/omni/Runner.scala 7e0d230511e6
+tm/scala/sdktest/vendor/omni/Util.scala a8173338c325
 tm/scala/src/feature/README.md fe95b0698ffe
 tm/scala/src/feature/audit/.gitkeep e3b0c44298fc
 tm/scala/src/feature/base/.gitkeep e3b0c44298fc
@@ -1865,8 +1865,8 @@ tm/scala/utility/Register.scala 8168a7d87226
 tm/scala/utility/Results.scala 474c78263b3a
 tm/scala/utility/StructUtility.scala 2dc27377f838
 tm/scala/utility/Transform.scala 0ccb3018997b
-tm/scala/utility/struct/Struct.java 231bab0dfa04
-tm/scala/utility/struct/voxgig_struct.scala c2f8554a4c45
+tm/scala/utility/struct/Struct.java d7e8345182de
+tm/scala/utility/struct/voxgig_struct.scala 53a547f7c6fa
 
 ## target swift
 model/feature/feature-index.aontu 0351fe150e6a
@@ -1915,20 +1915,20 @@ src/cmp/swift/fragment/SdkError.fragment.swift 927b9a03be0d
 src/cmp/swift/tsconfig.json 720a3f229019
 src/cmp/swift/utility_swift.ts 9e76972fbb77
 tm/swift/Makefile 739c886b61af
-tm/swift/Sources/ProjectNameSDK/Struct/Condense.swift 9d1436c9116b
-tm/swift/Sources/ProjectNameSDK/Struct/Constants.swift 959f9736e12d
-tm/swift/Sources/ProjectNameSDK/Struct/Inject.swift e4fee617ae6f
-tm/swift/Sources/ProjectNameSDK/Struct/Injection.swift 5db439977a01
-tm/swift/Sources/ProjectNameSDK/Struct/JSON.swift bdc0fd5a2955
-tm/swift/Sources/ProjectNameSDK/Struct/Merge.swift b9d84aa633ce
-tm/swift/Sources/ProjectNameSDK/Struct/Minor.swift 3d126d0fe99f
-tm/swift/Sources/ProjectNameSDK/Struct/OrderedDictionary.swift f82b4433fe81
-tm/swift/Sources/ProjectNameSDK/Struct/Path.swift afa387b74853
-tm/swift/Sources/ProjectNameSDK/Struct/Select.swift 721a148de791
-tm/swift/Sources/ProjectNameSDK/Struct/Transform.swift 3eef24f19a69
-tm/swift/Sources/ProjectNameSDK/Struct/Validate.swift 3c6b42b3cc40
-tm/swift/Sources/ProjectNameSDK/Struct/Value.swift d773ec707dfc
-tm/swift/Sources/ProjectNameSDK/Struct/Walk.swift d62e9eca7d8e
+tm/swift/Sources/ProjectNameSDK/Struct/Condense.swift b54e41d81ecb
+tm/swift/Sources/ProjectNameSDK/Struct/Constants.swift 95303cf3caf2
+tm/swift/Sources/ProjectNameSDK/Struct/Inject.swift c5c3ebd7948e
+tm/swift/Sources/ProjectNameSDK/Struct/Injection.swift 4b6e918cf79b
+tm/swift/Sources/ProjectNameSDK/Struct/JSON.swift 912b7c859d26
+tm/swift/Sources/ProjectNameSDK/Struct/Merge.swift b0db7f50ca76
+tm/swift/Sources/ProjectNameSDK/Struct/Minor.swift 8483962907e7
+tm/swift/Sources/ProjectNameSDK/Struct/OrderedDictionary.swift 6320aac25c4e
+tm/swift/Sources/ProjectNameSDK/Struct/Path.swift 9028edb51347
+tm/swift/Sources/ProjectNameSDK/Struct/Select.swift 554643a08f97
+tm/swift/Sources/ProjectNameSDK/Struct/Transform.swift 0d540683d556
+tm/swift/Sources/ProjectNameSDK/Struct/Validate.swift 8762d5f5d345
+tm/swift/Sources/ProjectNameSDK/Struct/Value.swift 5e412a63971c
+tm/swift/Sources/ProjectNameSDK/Struct/Walk.swift 038c7123e3c8
 tm/swift/Sources/ProjectNameSDK/core/Context.swift 63767422bb84
 tm/swift/Sources/ProjectNameSDK/core/Control.swift ef28560d98d9
 tm/swift/Sources/ProjectNameSDK/core/Operation.swift a4a46f1b329e
@@ -1963,9 +1963,9 @@ tm/swift/Tests/ProjectNameSDKTests/PrimaryUtilityTest.swift 10f6effd0143
 tm/swift/Tests/ProjectNameSDKTests/Runner.swift 3b72c402586e
 tm/swift/Tests/ProjectNameSDKTests/ServerVariableTest.swift e3469c9beea6
 tm/swift/Tests/ProjectNameSDKTests/StructUtilityTest.swift 6c8d0fcf9d13
-tm/swift/Tests/vendor/omni/Json.swift 2eccab5405e0
-tm/swift/Tests/vendor/omni/Runner.swift 4b79c3dd7f01
-tm/swift/Tests/vendor/omni/Util.swift 671740258efb
+tm/swift/Tests/vendor/omni/Json.swift 1d5f28fb1dee
+tm/swift/Tests/vendor/omni/Runner.swift 5a54936ce7b3
+tm/swift/Tests/vendor/omni/Util.swift 71f780f7ce6b
 tm/swift/src/feature/README.md ea8b8ace9e1f
 tm/swift/src/feature/base/.gitkeep e3b0c44298fc
 tm/swift/src/feature/test/.gitkeep e3b0c44298fc
@@ -2068,7 +2068,7 @@ tm/ts/src/utility/README.md b5e4e3a70bcd
 tm/ts/src/utility/ResultBasicUtility.ts 76208bbfaf7d
 tm/ts/src/utility/ResultBodyUtility.ts b820c1b64e4e
 tm/ts/src/utility/ResultHeadersUtility.ts 974461285293
-tm/ts/src/utility/StructUtility.ts b26acddd8aa3
+tm/ts/src/utility/StructUtility.ts 0aa2a11669b3
 tm/ts/src/utility/TransformRequestUtility.ts 121f2308888e
 tm/ts/src/utility/TransformResponseUtility.ts 41fb5e4d265a
 tm/ts/src/utility/Utility.ts 69a6e0a54350
@@ -2094,9 +2094,9 @@ tm/ts/test/utility/Custom.test.ts a8780a38b0ea
 tm/ts/test/utility/PrimaryUtility.test.ts e1a36db2c498
 tm/ts/test/utility/StructUtility.test.ts 9b21ba19467d
 tm/ts/test/utility/index.ts 44da3715207a
-tm/ts/test/vendor/omni/Runner.ts 76ab8ba60ec2
-tm/ts/test/vendor/omni/Util.ts ef18918e297a
-tm/ts/test/vendor/omni/index.ts a306b1549afc
+tm/ts/test/vendor/omni/Runner.ts e69bba8d867e
+tm/ts/test/vendor/omni/Util.ts 241ecfc146eb
+tm/ts/test/vendor/omni/index.ts c568062b165e
 
 ## target zig
 model/feature/feature-index.aontu 0351fe150e6a
@@ -2170,39 +2170,39 @@ tm/zig/feature/ratelimit.zig 635710bddb9a
 tm/zig/feature/rbac.zig c46b76ef1e31
 tm/zig/feature/retry.zig 684949f0d189
 tm/zig/feature/secrets.zig f27d920894c1
-tm/zig/feature/secrets/plugin/capability.zig 7984c09f8071
-tm/zig/feature/secrets/plugin/catalog.zig 860e5471d9c3
-tm/zig/feature/secrets/plugin/config.zig 973b702b9e21
-tm/zig/feature/secrets/plugin/depend.zig 823029051360
-tm/zig/feature/secrets/plugin/env.zig a7d39b7abf31
-tm/zig/feature/secrets/plugin/export.zig 76c5f8aeffcf
-tm/zig/feature/secrets/plugin/graph.zig 8bb5651ad4d5
-tm/zig/feature/secrets/plugin/host.zig 20b7d45215d8
-tm/zig/feature/secrets/plugin/inst.zig 748dfbfbfcc0
-tm/zig/feature/secrets/plugin/order.zig 93119ab2937d
-tm/zig/feature/secrets/plugin/plugin.zig cb5c356ff24e
-tm/zig/feature/secrets/plugin/point.zig e52de2b57a61
-tm/zig/feature/secrets/plugin/ref.zig e13490e8ae50
-tm/zig/feature/secrets/plugin/resolve.zig 6786790e6afc
-tm/zig/feature/secrets/plugin/types.zig dbf66e1d334b
-tm/zig/feature/secrets/plugin/value.zig e9f0027245f8
-tm/zig/feature/secrets/plugin/version.zig a5b80a475c8c
-tm/zig/feature/secrets/plugins/aws.zig 4ff47730da23
-tm/zig/feature/secrets/plugins/azuresecrets.zig f3000811b370
-tm/zig/feature/secrets/plugins/boru.zig e779005bb4a8
-tm/zig/feature/secrets/plugins/doppler.zig 639217dcaead
-tm/zig/feature/secrets/plugins/gcpsecrets.zig 50dcbfa93afb
-tm/zig/feature/secrets/plugins/hashicorp.zig 16c27d0252a6
-tm/zig/feature/secrets/plugins/httpjson.zig 75c6a53d3abd
-tm/zig/feature/secrets/plugins/infisical.zig 9cbc14da4b98
-tm/zig/feature/secrets/plugins/minivault.zig 5e121453a202
-tm/zig/feature/secrets/plugins/onepassword.zig e8ea88e031f5
-tm/zig/feature/secrets/plugins/secretspec.zig 1763f008a1d5
-tm/zig/feature/secrets/plugins/sigv4.zig 3681abe83d05
-tm/zig/feature/secrets/sekreto/addr.zig b73bb5afab92
-tm/zig/feature/secrets/sekreto/builtins.zig a0ece3114bd7
-tm/zig/feature/secrets/sekreto/provider.zig c553d8d718c1
-tm/zig/feature/secrets/sekreto/sekreto.zig a962045cf59e
+tm/zig/feature/secrets/plugin/capability.zig d28ea4358e29
+tm/zig/feature/secrets/plugin/catalog.zig fcc133ff39a6
+tm/zig/feature/secrets/plugin/config.zig 98ff75117f5b
+tm/zig/feature/secrets/plugin/depend.zig b47f767cbd17
+tm/zig/feature/secrets/plugin/env.zig 9eee4cb661ed
+tm/zig/feature/secrets/plugin/export.zig 1a867543e204
+tm/zig/feature/secrets/plugin/graph.zig c703f65cd16e
+tm/zig/feature/secrets/plugin/host.zig ff8fcdb82963
+tm/zig/feature/secrets/plugin/inst.zig 3b539babdf10
+tm/zig/feature/secrets/plugin/order.zig 3211504ea460
+tm/zig/feature/secrets/plugin/plugin.zig 1985bef17b83
+tm/zig/feature/secrets/plugin/point.zig 86861a39fd63
+tm/zig/feature/secrets/plugin/ref.zig cfc802e35404
+tm/zig/feature/secrets/plugin/resolve.zig 7c9319edf2d1
+tm/zig/feature/secrets/plugin/types.zig 04f476119ecf
+tm/zig/feature/secrets/plugin/value.zig 05b05c1a6fc6
+tm/zig/feature/secrets/plugin/version.zig 92275d7097a5
+tm/zig/feature/secrets/plugins/aws.zig 243f4bc51515
+tm/zig/feature/secrets/plugins/azuresecrets.zig 5c6e3f9db30f
+tm/zig/feature/secrets/plugins/boru.zig e81e0ce041a1
+tm/zig/feature/secrets/plugins/doppler.zig 1432d658e338
+tm/zig/feature/secrets/plugins/gcpsecrets.zig 70d60e16e077
+tm/zig/feature/secrets/plugins/hashicorp.zig 1d4a8e4caa10
+tm/zig/feature/secrets/plugins/httpjson.zig f02159dc65d1
+tm/zig/feature/secrets/plugins/infisical.zig 47a6ff22ce16
+tm/zig/feature/secrets/plugins/minivault.zig 151471c258e5
+tm/zig/feature/secrets/plugins/onepassword.zig 4acee80e3ac3
+tm/zig/feature/secrets/plugins/secretspec.zig d9245ce68107
+tm/zig/feature/secrets/plugins/sigv4.zig ff9458c8fd14
+tm/zig/feature/secrets/sekreto/addr.zig 7bb76925df31
+tm/zig/feature/secrets/sekreto/builtins.zig 46632361b263
+tm/zig/feature/secrets/sekreto/provider.zig 8318c3181520
+tm/zig/feature/secrets/sekreto/sekreto.zig 37f4cefa982a
 tm/zig/feature/streaming.zig 05fa89649a72
 tm/zig/feature/support.zig 0151996e9aab
 tm/zig/feature/telemetry.zig a1284e6f3d25
@@ -2241,11 +2241,11 @@ tm/zig/test/pipeline_test.zig 2bfab846b619
 tm/zig/test/primary_utility_test.zig 5946aade30e9
 tm/zig/test/server_variable_test.zig 298253af36a4
 tm/zig/test/struct_corpus.zig 3fb4726cebc6
-tm/zig/test/vendor/omni/omni.zig 95f951634d02
-tm/zig/test/vendor/omni/regex.zig 312a793668e8
+tm/zig/test/vendor/omni/omni.zig eaba470b3b68
+tm/zig/test/vendor/omni/regex.zig f009be3e89cb
 tm/zig/utility/jsonparse.zig 3bf825b60025
-tm/zig/utility/voxgigstruct/regex.zig 37e1a8357ac3
-tm/zig/utility/voxgigstruct/struct.zig 21b833b99b66
+tm/zig/utility/voxgigstruct/regex.zig 555bfcbea35e
+tm/zig/utility/voxgigstruct/struct.zig 081aa8d64dae
 
 ## feature audit
 

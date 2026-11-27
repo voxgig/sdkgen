@@ -6741,8 +6741,8 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
 
     const vs = findFile(out, 'lib/Voxgig/Struct.pm')
     ok(null != vs, 'perl: vendored struct missing')
-    ok(/VENDORED: @voxgig\/struct 0\.1\.1/.test(vs!),
-      'perl: vendored struct is not the 0.1.1 resync')
+    ok(/VENDORED: @voxgig\/struct 0\.2\.0/.test(vs!),
+      'perl: vendored struct is not the 0.2.0 resync')
 
     // The support module is RETAINED untouched (emitted TestEntity /
     // TestDirect call sites use it), and the suites run on the resolver.
@@ -6775,8 +6775,8 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
 
     const vs = findFile(out, 'utility/struct/Struct.kt')
     ok(null != vs, 'kotlin: vendored struct missing')
-    ok(/VENDORED: @voxgig\/struct 0\.1\.1/.test(vs!),
-      'kotlin: vendored struct is not the 0.1.1 resync')
+    ok(/VENDORED: @voxgig\/struct 0\.2\.0/.test(vs!),
+      'kotlin: vendored struct is not the 0.2.0 resync')
 
     // The support object is RETAINED under its own name (emitted
     // TestEntity/TestDirect call sites reference RunnerSupport.*), with
@@ -6812,8 +6812,8 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
 
     const vs = findFile(out, 'utility/struct/Struct.cs')
     ok(null != vs, 'csharp: vendored struct missing')
-    ok(/VENDORED: @voxgig\/struct 0\.1\.1/.test(vs!),
-      'csharp: vendored struct is not the 0.1.1 resync')
+    ok(/VENDORED: @voxgig\/struct 0\.2\.0/.test(vs!),
+      'csharp: vendored struct is not the 0.2.0 resync')
 
     // The support class is RETAINED under its own name (emitted
     // TestEntity/TestDirect call sites reference TestRunner.* and

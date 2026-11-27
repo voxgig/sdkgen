@@ -1,5 +1,5 @@
-// VENDORED: @voxgig/struct 0.1.3 (swift/Sources/VoxgigStruct/Minor.swift)
-// Source: https://github.com/voxgig/struct @ 358af9d51c90b589a295a70b2165dbe4629eaf8e  [tag: sdk-20261125-1959-0]
+// VENDORED: @voxgig/struct 0.2.0 (swift/Sources/VoxgigStruct/Minor.swift)
+// Source: https://github.com/voxgig/struct @ f92879818ed0ae05c9da5e5af734e9f4892ffb6a  [tag: sdk-20261127-1940-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 // Minor utilities — type predicates, property access, slicing,
 // formatting. Each function mirrors its canonical TS counterpart in

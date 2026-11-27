@@ -1,5 +1,5 @@
-// VENDORED: @voxgig/plugin sdk-20261125-1959-0 (cpp/src/export.hpp)
-// Source: https://github.com/voxgig/plugin @ 8605cdc5e68a691130ae9b585baf8c0091a66351  [tag: sdk-20261125-1959-0]
+// VENDORED: @voxgig/plugin sdk-20261127-1940-0 (cpp/src/export.hpp)
+// Source: https://github.com/voxgig/plugin @ 8605cdc5e68a691130ae9b585baf8c0091a66351  [tag: sdk-20261127-1940-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 /* Exports (§11). An instance publishes values for other plugins and for
  * the application. THE UNQUALIFIED ALIAS IS THE INTERESTING PART; see

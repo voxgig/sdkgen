@@ -1,5 +1,5 @@
--- VENDORED: @voxgig/plugin sdk-20261125-1959-0 (lua/src/plugin.lua)
--- Source: https://github.com/voxgig/plugin @ 8605cdc5e68a691130ae9b585baf8c0091a66351  [tag: sdk-20261125-1959-0]
+-- VENDORED: @voxgig/plugin sdk-20261127-1940-0 (lua/src/plugin.lua)
+-- Source: https://github.com/voxgig/plugin @ 8605cdc5e68a691130ae9b585baf8c0091a66351  [tag: sdk-20261127-1940-0]
 -- License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 -- The canonical surface `make parity` checks (AGENTS.md section 4). Small
 -- on purpose (section 19): everything else is methods on the host and

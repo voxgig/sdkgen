@@ -1,5 +1,5 @@
-// VENDORED: @voxgig/plugin sdk-20261125-1959-0 (c/src/point.c)
-// Source: https://github.com/voxgig/plugin @ 8605cdc5e68a691130ae9b585baf8c0091a66351  [tag: sdk-20261125-1959-0]
+// VENDORED: @voxgig/plugin sdk-20261127-1940-0 (c/src/point.c)
+// Source: https://github.com/voxgig/plugin @ 8605cdc5e68a691130ae9b585baf8c0091a66351  [tag: sdk-20261127-1940-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 /* Extension points (§6). See point.h for the closure representation. */
 
