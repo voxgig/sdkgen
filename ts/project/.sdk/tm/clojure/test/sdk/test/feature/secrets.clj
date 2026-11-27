@@ -184,7 +184,9 @@
     (.createContext server "/"
                     (reify com.sun.net.httpserver.HttpHandler
                       (handle [_ ex]
-                        (let [path (.getRawPath (.getRequestURI ex))
+                        (let [uri (.getRequestURI ex)
+                              ;; The target with its query: a query alone is another request.
+                              path (str (.getRawPath uri) (when-let [q (.getRawQuery uri)] (str "?" q)))
                               sent (String. (.readAllBytes (.getRequestBody ex)) "UTF-8")
                               [code to text] (answer path)
                               body (.getBytes ^String text "UTF-8")
@@ -215,6 +217,39 @@
   ([got token msg secret]
    (t/is-eq (str (or got "")) (credential token secret)
             (str msg ": the " CREDHEADER " header carries " token))))
+
+(defn- with-origins
+  "Runs `run` with two listeners: the origin answers the exchange as the atom
+  `:answer` says and records the rest in `:seen`; `:elsewhere` is the other's."
+  [run]
+  (let [elsewhere (java.util.Collections/synchronizedList (java.util.ArrayList.))
+        seen (java.util.Collections/synchronizedList (java.util.ArrayList.))
+        answer (atom [307 ""])
+        other (listener elsewhere (fn [_] [200 nil "{\"access_token\":\"ELSEWHERE01\"}"]))
+        origin (listener seen (fn [path]
+                                (if (= path "/api/auth/token")
+                                  (conj @answer "")
+                                  [200 nil "{\"access_token\":\"MOVED01\"}"])))
+        at (str "http://127.0.0.1:" (.getPort (.getAddress origin)))]
+    (try
+      (run {:elsewhere elsewhere :seen seen :answer answer :origin at :base (str at "/api")
+            :away (str "http://127.0.0.1:" (.getPort (.getAddress other)) "/api/auth/token")})
+      (finally
+        (.stop origin 0)
+        (.stop other 0)))))
+
+(defn- redirect-direct [o status location xextra]
+  (.clear ^java.util.List (:elsewhere o))
+  (.clear ^java.util.List (:seen o))
+  (reset! (:answer o) [status location])
+  (let [exchange (vs/jm "active" true "refresh" "REFRESH01")]
+    (doseq [[k v] xextra] (vs/setprop exchange k v))
+    (client/direct (client/make-sdk
+                    (vs/jm "base" (:base o)
+                           "allow" (vs/jm "op" ALLOWOP)
+                           "feature" (vs/jm "secrets" (sekopts "name" "refresh_token"
+                                                               "exchange" exchange))))
+                   (vs/jm "path" "/thing"))))
 
 
 ;; ---------------------------------------------------------------------------
@@ -644,51 +679,76 @@
       ;; Real listeners and core's own raw HTTP: a stub follows nothing.
       (chk "secrets-exchange-a-redirect-is-a-failure-and-nothing-follows-it"
            (fn []
-             (let [elsewhere (java.util.Collections/synchronizedList (java.util.ArrayList.))
-                   seen (java.util.Collections/synchronizedList (java.util.ArrayList.))
-                   answer (atom [307 ""])
-                   other (listener elsewhere (fn [_] [200 nil "{\"access_token\":\"ELSEWHERE01\"}"]))
-                   origin (listener seen (fn [path]
-                                           (if (= path "/api/auth/token")
-                                             (conj @answer "")
-                                             [200 nil "{\"access_token\":\"MOVED01\"}"])))
-                   base (str "http://127.0.0.1:" (.getPort (.getAddress origin)) "/api")
-                   away (str "http://127.0.0.1:" (.getPort (.getAddress other)) "/api/auth/token")]
-               (try
+             (with-origins
+               (fn [{:keys [elsewhere seen base away] :as o}]
                  (let [results
                        (doall
                         (for [[status location] [[307 away] [308 away] [302 away] [307 "/api/moved/token"]]]
-                          (do
-                            (.clear elsewhere)
-                            (.clear seen)
-                            (reset! answer [status location])
-                            (let [sdk (client/make-sdk
-                                       (vs/jm "base" base
-                                              "allow" (vs/jm "op" ALLOWOP)
-                                              "feature" (vs/jm "secrets"
-                                                               (sekopts "name" "refresh_token"
-                                                                        "exchange" (vs/jm "active" true
-                                                                                          "refresh" "REFRESH01")))))
-                                  res (client/direct sdk (vs/jm "path" "/thing"))
-                                  err (vs/getprop res "err")
-                                  message (if (some? err) (str (core/err-msg err)) (brief res))
-                                  followed (concat (vec elsewhere)
-                                                   (remove #(= "/api/auth/token" (:path %)) (vec seen)))]
-                              {:label (str status " to " location)
-                               :refused (str/includes? message (str "token exchange failed: " status
-                                                                    " from " base "/auth/token"))
-                               :message message
-                               :followed (vec followed)}))))
+                          (let [res (redirect-direct o status location nil)
+                                err (vs/getprop res "err")
+                                message (if (some? err) (str (core/err-msg err)) (brief res))
+                                followed (concat (vec elsewhere)
+                                                 (remove #(= "/api/auth/token" (:path %)) (vec seen)))]
+                            {:label (str status " to " location)
+                             :refused (str/includes? message (str "token exchange failed: " status
+                                                                  " from " base "/auth/token"))
+                             :message message
+                             :followed (vec followed)})))
                        refused (count (filter :refused results))
                        followed (reduce + (map (comp count :followed) results))]
                    (println (str "secrets: exchange refused " refused " redirect(s), " followed " followed"))
                    (doseq [r results]
                      (t/is-eq (:followed r) [] (str (:label r) ": followed"))
                      (t/is-true (:refused r) (str (:label r) ": not a failed exchange: " (:message r))))
-                   (t/is-eq refused 4 "refused"))
-                 (finally
-                   (.stop origin 0)
-                   (.stop other 0))))))
+                   (t/is-eq refused 4 "refused"))))))
+
+      (chk "secrets-exchange-with-the-option-a-redirect-on-its-own-origin-is-followed-and-no-other"
+           (fn []
+             (with-origins
+               (fn [{:keys [elsewhere seen base away origin] :as o}]
+                 (let [moved (fn [path] {:method "POST" :path path
+                                         :body "{\"refresh_token\":\"REFRESH01\"}"})
+                       ;; Each case: the status, the Location, and the target the exchange
+                       ;; is asked again at, or nil where the redirect is refused.
+                       results
+                       (doall
+                        (for [[status location path] [[307 "/api/moved/token" "/api/moved/token"]
+                                                      [308 (str origin "/api/moved/token") "/api/moved/token"]
+                                                      ;; A Location of a query alone keeps the path that answered.
+                                                      [307 "?step=2" "/api/auth/token?step=2"]
+                                                      [307 away nil]
+                                                      [302 "/api/moved/token" nil]
+                                                      [307 "/api/auth/token" nil]]]
+                          (let [res (redirect-direct o status location {"redirect" "same-origin"})
+                                err (vs/getprop res "err")
+                                message (if (some? err) (str (core/err-msg err)) (brief res))
+                                mine (remove #(= "/api/auth/token" (:path %)) (vec seen))
+                                verdict (cond
+                                          (and path (= true (vs/getprop res "ok"))
+                                               (= 2 (count mine)) (= (moved path) (first mine)))
+                                          :followed
+                                          (and (nil? path) (empty? mine)
+                                               (str/includes? message (str "token exchange failed: " status
+                                                                           " from " base "/auth/token")))
+                                          :refused
+                                          :else (str status " to " location ": " message " " (vec mine)))]
+                            {:verdict verdict
+                             :location location
+                             :exchanged (count (filter #(= "/api/auth/token" (:path %)) (vec seen)))
+                             :elsewhere (count elsewhere)})))
+                       followed (count (filter #(= :followed (:verdict %)) results))
+                       refused (count (filter #(= :refused (:verdict %)) results))
+                       elsewhere (reduce + (map :elsewhere results))
+                       looped (:exchanged (first (filter #(= "/api/auth/token" (:location %)) results)))]
+                   (println (str "secrets: exchange opt-in followed " followed
+                                 " redirect(s) on its own origin, refused " refused ", "
+                                 elsewhere " elsewhere"))
+                   (t/is-eq elsewhere 0 "the exchange reached another origin")
+                   (t/is-eq (vec (remove keyword? (map :verdict results))) [] "wrong")
+                   (t/is-eq followed 3 "followed")
+                   (t/is-eq refused 3 "refused")
+                   ;; A redirect to itself stops at the hop limit.
+                   (t/is-eq looped 6 "the loop's exchange count"))))))
 
       (chk "secrets-exchange-with-no-refresh-token-fails-closed"
            (fn []

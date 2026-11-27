@@ -1093,8 +1093,20 @@ final class SecretsFeatureTest: XCTestCase {
       "the refresh token did not survive the body encoding: " + w.token()[0].body)
   }
 
-  // Real listeners and the SDK's own raw fetch: a stub follows nothing.
-  func testARedirectAnsweringTheExchangeIsAFailureAndNothingFollowsIt() {
+  // Real listeners: the origin answers the exchange as `answer` says and
+  // records whatever else it gets; the other records everything.
+  private final class RedirectOrigins {
+    let lock = NSLock()
+    var elsewhere: [String] = []
+    var followed: [String] = []
+    var exchanged = 0
+    var answer: (Int, String) = (307, "")
+    var origin = ""
+    var away = ""
+    var base: String { origin + "/api" }
+  }
+
+  private func withOrigins(_ run: (RedirectOrigins) -> Void) {
     func listener() -> (Int32, String) {
       #if os(Linux)
       let fd = socket(AF_INET, Int32(SOCK_STREAM.rawValue), 0)
@@ -1122,13 +1134,11 @@ final class SecretsFeatureTest: XCTestCase {
       return (fd, "http://127.0.0.1:\(UInt16(bigEndian: addr.sin_port))")
     }
 
+    let o = RedirectOrigins()
     let (originfd, originbase) = listener()
     let (otherfd, otherbase) = listener()
-
-    let lock = NSLock()
-    var elsewhere: [String] = []
-    var followed: [String] = []
-    var answer: (Int, String) = (307, "")
+    o.origin = originbase
+    o.away = otherbase + "/api/auth/token"
 
     for (fd, isorigin) in [(originfd, true), (otherfd, false)] {
       Thread.detachNewThread {
@@ -1165,19 +1175,20 @@ final class SecretsFeatureTest: XCTestCase {
           var status = "200 X"
           var location = ""
           var reply = ""
-          lock.lock()
+          o.lock.lock()
           if target == "/stop" {
           } else if !isorigin {
-            elsewhere.append(method + " " + target + " " + sent)
+            o.elsewhere.append(method + " " + target + " " + sent)
             reply = "{\"access_token\":\"ELSEWHERE01\"}"
           } else if target == "/api/auth/token" {
-            status = "\(answer.0) X"
-            location = "Location: " + answer.1 + "\r\n"
+            o.exchanged += 1
+            status = "\(o.answer.0) X"
+            location = "Location: " + o.answer.1 + "\r\n"
           } else {
-            followed.append(method + " " + target)
+            o.followed.append((method + " " + target + " " + sent).trimmingCharacters(in: .whitespaces))
             reply = "{\"access_token\":\"MOVED01\"}"
           }
-          lock.unlock()
+          o.lock.unlock()
 
           let out = Array(("HTTP/1.1 \(status)\r\nContent-Type: application/json\r\n" + location +
             "Content-Length: \(reply.utf8.count)\r\nConnection: close\r\n\r\n\(reply)").utf8)
@@ -1195,56 +1206,139 @@ final class SecretsFeatureTest: XCTestCase {
       close(otherfd)
     }
 
-    let base = originbase + "/api"
-    let away = otherbase + "/api/auth/token"
-    let answers: [(Int, String)] = [(307, away), (308, away), (302, away), (307, "/api/moved/token")]
+    run(o)
+  }
 
-    var allowed: [String] = []
-    var refused = 0
-
-    for next in answers {
-      lock.lock()
-      answer = next
-      lock.unlock()
-
-      let client = withSecrets { extend in
-        let fopts = VMap()
-        fopts.entries["active"] = .bool(true)
-        fopts.entries["name"] = .string("refresh_token")
-        fopts.entries["exchange"] = .map(vm(
-          ("active", .bool(true)), ("refresh", .string("REFRESH01"))))
-        let opts = VMap()
-        opts.entries["base"] = .string(base)
-        opts.entries["allow"] = .map(vm(
-          ("op", .string("create,update,load,list,remove,command,direct,graphql"))))
-        opts.entries["feature"] = .map(vm(("secrets", .map(fopts))))
-        if extend {
-          opts.entries["extend"] = .list([.nat(SecretsFeature())])
-        }
-        return ProjectNameSDK(opts)
+  private func redirectClient(_ o: RedirectOrigins, _ redirect: String? = nil) -> ProjectNameSDK {
+    return withSecrets { extend in
+      let xopts = vm(("active", .bool(true)), ("refresh", .string("REFRESH01")))
+      if let redirect = redirect {
+        xopts.entries["redirect"] = .string(redirect)
       }
-
-      let res = client.direct(vm(("path", .string("/thing"))))
-      let message = messageOf(errOf(res))
-
-      if message.contains("token exchange failed: \(next.0) from " + base + "/auth/token") {
-        refused += 1
-      } else {
-        allowed.append("\(next.0) to \(next.1): " + message)
+      let fopts = VMap()
+      fopts.entries["active"] = .bool(true)
+      fopts.entries["name"] = .string("refresh_token")
+      fopts.entries["exchange"] = .map(xopts)
+      let opts = VMap()
+      opts.entries["base"] = .string(o.base)
+      opts.entries["allow"] = .map(vm(
+        ("op", .string("create,update,load,list,remove,command,direct,graphql"))))
+      opts.entries["feature"] = .map(vm(("secrets", .map(fopts))))
+      if extend {
+        opts.entries["extend"] = .list([.nat(SecretsFeature())])
       }
+      return ProjectNameSDK(opts)
     }
+  }
 
-    lock.lock()
-    let reached = elsewhere
-    let after = followed
-    lock.unlock()
+  // Real listeners and the SDK's own raw fetch: a stub follows nothing.
+  func testARedirectAnsweringTheExchangeIsAFailureAndNothingFollowsIt() {
+    withOrigins { o in
+      let base = o.base
+      let answers: [(Int, String)] = [(307, o.away), (308, o.away), (302, o.away), (307, "/api/moved/token")]
 
-    print("secrets: exchange refused \(refused) redirect(s), \(reached.count + after.count) followed")
+      var allowed: [String] = []
+      var refused = 0
 
-    XCTAssertEqual([], reached, "the exchange reached another origin")
-    XCTAssertEqual([], after, "a request followed a refused exchange")
-    XCTAssertEqual([], allowed, "a redirect was not a failed exchange")
-    XCTAssertEqual(answers.count, refused)
+      for next in answers {
+        o.lock.lock()
+        o.answer = next
+        o.lock.unlock()
+
+        let res = redirectClient(o).direct(vm(("path", .string("/thing"))))
+        let message = messageOf(errOf(res))
+
+        if message.contains("token exchange failed: \(next.0) from " + base + "/auth/token") {
+          refused += 1
+        } else {
+          allowed.append("\(next.0) to \(next.1): " + message)
+        }
+      }
+
+      o.lock.lock()
+      let reached = o.elsewhere
+      let after = o.followed
+      o.lock.unlock()
+
+      print("secrets: exchange refused \(refused) redirect(s), \(reached.count + after.count) followed")
+
+      XCTAssertEqual([], reached, "the exchange reached another origin")
+      XCTAssertEqual([], after, "a request followed a refused exchange")
+      XCTAssertEqual([], allowed, "a redirect was not a failed exchange")
+      XCTAssertEqual(answers.count, refused)
+    }
+  }
+
+  func testWithTheOptionARedirectOnTheExchangesOwnOriginIsFollowedAndNoOther() {
+    withOrigins { o in
+      let sent = " {\"refresh_token\":\"REFRESH01\"}"
+      // Each case: the status, the Location, and the path the exchange is
+      // asked again at, or nil where the redirect is refused.
+      let cases: [(Int, String, String?)] = [
+        (307, "/api/moved/token", "/api/moved/token"),
+        (308, o.origin + "/api/moved/token", "/api/moved/token"),
+        // A Location of a query alone keeps the path that answered.
+        (307, "?step=2", "/api/auth/token?step=2"),
+        (307, o.away, nil),
+        (302, "/api/moved/token", nil),
+        (307, "/api/auth/token", nil),
+      ]
+
+      var wrong: [String] = []
+      var followed = 0
+      var refused = 0
+      var looped = 0
+
+      for (status, location, path) in cases {
+        o.lock.lock()
+        o.answer = (status, location)
+        o.followed = []
+        o.exchanged = 0
+        o.lock.unlock()
+
+        let res = redirectClient(o, "same-origin").direct(vm(("path", .string("/thing"))))
+        let message = messageOf(errOf(res))
+
+        o.lock.lock()
+        let seen = o.followed
+        let exchanged = o.exchanged
+        o.lock.unlock()
+
+        let report = "\(status) to \(location): " + message + " [" + seen.joined(separator: " | ") + "]"
+
+        if let path = path {
+          let asked = "POST " + path + sent
+          if true == res.entries["ok"]?.asBool && 2 == seen.count && asked == seen[0] {
+            followed += 1
+          } else {
+            wrong.append(report)
+          }
+        } else if seen.isEmpty &&
+          message.contains("token exchange failed: \(status) from " + o.base + "/auth/token") {
+          refused += 1
+        } else {
+          wrong.append(report)
+        }
+
+        if "/api/auth/token" == location {
+          looped = exchanged
+        }
+      }
+
+      o.lock.lock()
+      let reached = o.elsewhere
+      o.lock.unlock()
+
+      print("secrets: exchange opt-in followed \(followed) redirect(s) on its own origin, " +
+        "refused \(refused), \(reached.count) elsewhere")
+
+      XCTAssertEqual([], reached, "the exchange reached another origin")
+      XCTAssertEqual([], wrong)
+      XCTAssertEqual(3, followed)
+      XCTAssertEqual(3, refused)
+      // A redirect to itself stops at the hop limit.
+      XCTAssertEqual(6, looped)
+    }
   }
 
   // ===================================================================

@@ -55,6 +55,23 @@ require_relative '../utility/struct/voxgig_struct'
 require_relative 'secrets/voxgig_sekreto'
 
 class ProjectNameSecretsFeature < ProjectNameBaseFeature
+  REDIRECT_MAX = 5
+
+  # Where a method-keeping redirect points, when that is on the exchange's
+  # own origin. Any other redirect would drop the body or leave the origin.
+  def self.moved(url, at, res)
+    return nil unless res.is_a?(Hash) && [307, 308].include?(res["status"].to_i)
+    headers = res["headers"]
+    location = headers.is_a?(Hash) ? headers["location"] : nil
+    return nil unless location.is_a?(String) && !location.empty?
+    nxt = URI.join(at, location)
+    here = URI.parse(url)
+    origin = ->(u) { [u.scheme.to_s.downcase, u.host.to_s.downcase, u.port] }
+    origin.call(nxt) == origin.call(here) ? nxt.to_s : nil
+  rescue URI::Error, ArgumentError
+    nil
+  end
+
   def initialize
     super
     @version = "0.1.0"
@@ -135,6 +152,7 @@ class ProjectNameSecretsFeature < ProjectNameBaseFeature
         "response" => _str(xopts["response"], "access_token"),
         "statuses" => statuses,
         "retries" => xopts["retries"].is_a?(Numeric) ? xopts["retries"].to_i : 1,
+        "redirect" => "same-origin" == xopts["redirect"] ? "same-origin" : "refuse",
       }
     end
 
@@ -451,13 +469,26 @@ class ProjectNameSecretsFeature < ProjectNameBaseFeature
     # feature wraps, and sending the token request back through it would
     # recurse on the first expiry - and would route the exchange through
     # the test mock, which knows nothing about it.
-    res, err = fetch.call(url, {
+    fetchdef = {
       "method" => x["method"],
       "headers" => { "content-type" => "application/json" },
       "body" => JSON.generate({ x["request"] => @refresh }),
-      # Never followed: a redirect would carry the refresh token on.
+      # Never followed by the client: a redirect would carry the refresh token on.
       "redirect" => "manual",
-    })
+    }
+
+    res, err = fetch.call(url, fetchdef)
+
+    # By option alone, and only while the exchange stays on its own origin.
+    at = url
+    hops = 0
+    while err.nil? && "same-origin" == x["redirect"] && hops < REDIRECT_MAX
+      nxt = ProjectNameSecretsFeature.moved(url, at, res)
+      break if nxt.nil?
+      at = nxt
+      hops += 1
+      res, err = fetch.call(at, fetchdef)
+    end
 
     unless err.nil?
       raise VoxgigSekreto::SekretoError,
@@ -603,8 +634,12 @@ class ProjectNameSecretsFeature < ProjectNameBaseFeature
     # A non-2xx answer IS a response: hand back its status so the caller
     # reports "token exchange failed: <status>" rather than a transport
     # error.
+    resp_headers = {}
+    resp.each_header { |k, v| resp_headers[k.downcase] = v }
+
     return {
       "status" => resp.code.to_i,
+      "headers" => resp_headers,
       "json" => -> {
         begin
           raw.nil? || raw.empty? ? nil : JSON.parse(raw)

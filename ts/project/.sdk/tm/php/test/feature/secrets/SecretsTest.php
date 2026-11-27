@@ -1041,17 +1041,18 @@ class ProjectNameSecretsTest extends TestCase
         $this->assertNull($leak, 'the stub outlived stop(): ' . (string)$leak);
     }
 
-    // Real listeners and the SDK's raw HTTP function: a stub follows nothing.
-    // Its own process, for the reason the test above gives.
-    #[\PHPUnit\Framework\Attributes\RunInSeparateProcess]
-    #[\PHPUnit\Framework\Attributes\PreserveGlobalState(false)]
-    public function testARedirectAnsweringTheExchangeIsAFailureAndNothingFollowsIt(): void
+    // Real listeners and the SDK's raw HTTP function: a stub follows
+    // nothing. The origin answers the exchange as its `answer.txt` says and
+    // records what else it gets; `exchanged.txt` counts the exchanges.
+    private function withOrigins(callable $run): void
     {
         $record = <<<'ROUTER'
 <?php
-$path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/';
+// The request target, query included: only the bare token path is the exchange.
+$path = (string)($_SERVER['REQUEST_URI'] ?? '/');
 $answer = @file_get_contents(__DIR__ . '/answer.txt');
 if (false !== $answer && '/api/auth/token' === $path) {
+    file_put_contents(__DIR__ . '/exchanged.txt', 'x', FILE_APPEND);
     [$status, $location] = explode(' ', $answer, 2);
     header('location: ' . $location, true, (int)$status);
     return;
@@ -1073,38 +1074,71 @@ ROUTER;
             if (0 === $oport || 0 === $aport) {
                 $this->markTestSkipped('could not start the local HTTP stubs');
             }
-            $base = 'http://127.0.0.1:' . $oport . '/api';
-            $away = 'http://127.0.0.1:' . $aport . '/api/auth/token';
+            $run((object)[
+                'origin' => $origin,
+                'other' => $other,
+                'at' => 'http://127.0.0.1:' . $oport,
+                'base' => 'http://127.0.0.1:' . $oport . '/api',
+                'away' => 'http://127.0.0.1:' . $aport . '/api/auth/token',
+            ]);
+        } finally {
+            $origin->stop();
+            $other->stop();
+        }
+    }
+
+    private function redirectClient(string $base, array $exchange = [])
+    {
+        return $this->withSecrets(function (bool $adopt) use ($base, $exchange) {
+            $opts = [
+                'base' => $base,
+                'feature' => ['secrets' => [
+                    'active' => true,
+                    'name' => 'refresh_token',
+                    'exchange' => array_merge(['active' => true, 'refresh' => 'REFRESH01'], $exchange),
+                ]],
+            ];
+            if ($adopt) {
+                $opts['extend'] = [new ProjectNameSecretsFeature()];
+            }
+            return new ProjectNameSDK($opts);
+        });
+    }
+
+    private function redirectProbe($client): array
+    {
+        try {
+            $res = $client->direct(['path' => '/probe']);
+            $message = is_array($res) && null !== ($res['err'] ?? null)
+                ? (string)(($res['err'] instanceof \Throwable) ? $res['err']->getMessage() : $res['err'])
+                : json_encode($res);
+            return [$res, $message];
+        } catch (\Throwable $e) {
+            return [null, $e->getMessage()];
+        }
+    }
+
+    private static function lines(?string $text): array
+    {
+        return array_values(array_filter(explode("\n", (string)$text)));
+    }
+
+    // Its own process, for the reason the test above gives.
+    #[\PHPUnit\Framework\Attributes\RunInSeparateProcess]
+    #[\PHPUnit\Framework\Attributes\PreserveGlobalState(false)]
+    public function testARedirectAnsweringTheExchangeIsAFailureAndNothingFollowsIt(): void
+    {
+        $this->withOrigins(function (object $o) {
+            $base = $o->base;
+            $away = $o->away;
             $answers = [[307, $away], [308, $away], [302, $away], [307, '/api/moved/token']];
 
             $allowed = [];
             $refused = 0;
 
             foreach ($answers as [$status, $location]) {
-                $origin->put('answer.txt', $status . ' ' . $location);
-                $client = $this->withSecrets(function (bool $adopt) use ($base) {
-                    $opts = [
-                        'base' => $base,
-                        'feature' => ['secrets' => [
-                            'active' => true,
-                            'name' => 'refresh_token',
-                            'exchange' => ['active' => true, 'refresh' => 'REFRESH01'],
-                        ]],
-                    ];
-                    if ($adopt) {
-                        $opts['extend'] = [new ProjectNameSecretsFeature()];
-                    }
-                    return new ProjectNameSDK($opts);
-                });
-
-                try {
-                    $res = $client->direct(['path' => '/probe']);
-                    $message = is_array($res) && null !== ($res['err'] ?? null)
-                        ? (string)(($res['err'] instanceof \Throwable) ? $res['err']->getMessage() : $res['err'])
-                        : json_encode($res);
-                } catch (\Throwable $e) {
-                    $message = $e->getMessage();
-                }
+                $o->origin->put('answer.txt', $status . ' ' . $location);
+                [, $message] = $this->redirectProbe($this->redirectClient($base));
 
                 if (str_contains($message,
                     'token exchange failed: ' . $status . ' from ' . $base . '/auth/token')) {
@@ -1114,8 +1148,8 @@ ROUTER;
                 }
             }
 
-            $elsewhere = array_values(array_filter(explode("\n", (string)$other->read('seen.txt'))));
-            $followed = array_values(array_filter(explode("\n", (string)$origin->read('seen.txt'))));
+            $elsewhere = self::lines($o->other->read('seen.txt'));
+            $followed = self::lines($o->origin->read('seen.txt'));
 
             print("\nsecrets: exchange refused " . $refused . ' redirect(s), ' .
                 (count($elsewhere) + count($followed)) . " followed\n");
@@ -1124,10 +1158,77 @@ ROUTER;
             $this->assertSame([], $followed, 'a request followed a refused exchange');
             $this->assertSame([], $allowed, 'a redirect was not a failed exchange');
             $this->assertSame(count($answers), $refused);
-        } finally {
-            $origin->stop();
-            $other->stop();
-        }
+        });
+    }
+
+    #[\PHPUnit\Framework\Attributes\RunInSeparateProcess]
+    #[\PHPUnit\Framework\Attributes\PreserveGlobalState(false)]
+    public function testWithTheOptionARedirectOnTheExchangesOwnOriginIsFollowedAndNoOther(): void
+    {
+        $this->withOrigins(function (object $o) {
+            $sent = ' {"refresh_token":"REFRESH01"}';
+            // Each case: the status, the Location, and the path the exchange
+            // is asked again at, or null where the redirect is refused.
+            $cases = [
+                [307, '/api/moved/token', '/api/moved/token'],
+                [308, $o->at . '/api/moved/token', '/api/moved/token'],
+                // A Location of a query alone keeps the path that answered.
+                [307, '?step=2', '/api/auth/token?step=2'],
+                [307, $o->away, null],
+                [302, '/api/moved/token', null],
+                [307, '/api/auth/token', null],
+            ];
+
+            $wrong = [];
+            $followed = 0;
+            $refused = 0;
+            $looped = 0;
+
+            foreach ($cases as [$status, $location, $path]) {
+                $o->origin->put('answer.txt', $status . ' ' . $location);
+                $o->origin->put('seen.txt', '');
+                $o->origin->put('exchanged.txt', '');
+
+                [$res, $message] = $this->redirectProbe(
+                    $this->redirectClient($o->base, ['redirect' => 'same-origin']));
+                $seen = array_map(function (string $line) {
+                    $r = json_decode($line, true);
+                    return trim($r['method'] . ' ' . $r['path'] . ' ' . $r['body']);
+                }, self::lines($o->origin->read('seen.txt')));
+                $shown = $status . ' to ' . $location . ': ' . $message . ' ' . json_encode($seen);
+
+                if (null !== $path) {
+                    if (is_array($res) && true === ($res['ok'] ?? null) &&
+                        2 === count($seen) && 'POST ' . $path . $sent === $seen[0]) {
+                        $followed++;
+                    } else {
+                        $wrong[] = $shown;
+                    }
+                } elseif (0 === count($seen) && str_contains($message,
+                    'token exchange failed: ' . $status . ' from ' . $o->base . '/auth/token')) {
+                    $refused++;
+                } else {
+                    $wrong[] = $shown;
+                }
+
+                if ('/api/auth/token' === $location) {
+                    $looped = strlen((string)$o->origin->read('exchanged.txt'));
+                }
+            }
+
+            $elsewhere = self::lines($o->other->read('seen.txt'));
+
+            print("\nsecrets: exchange opt-in followed " . $followed .
+                ' redirect(s) on its own origin, refused ' . $refused . ', ' .
+                count($elsewhere) . " elsewhere\n");
+
+            $this->assertSame([], $elsewhere, 'the exchange reached another origin');
+            $this->assertSame([], $wrong);
+            $this->assertSame(3, $followed);
+            $this->assertSame(3, $refused);
+            // A redirect to itself is followed up to the hop limit and no more.
+            $this->assertSame(6, $looped);
+        });
     }
 
     // -----------------------------------------------------------------
@@ -1301,8 +1402,10 @@ ROUTER;
         // harness that captures output must not end up waiting on the
         // server's.
         $pipes = [];
+        // Windows names its null device NUL, and has no /dev/null to open.
+        $null = '\\' === DIRECTORY_SEPARATOR ? 'NUL' : '/dev/null';
         $this->proc = @proc_open($cmd, [
-            0 => ['file', '/dev/null', 'r'],
+            0 => ['file', $null, 'r'],
             1 => ['file', $this->dir . '/out.log', 'a'],
             2 => ['file', $this->dir . '/err.log', 'a'],
         ], $pipes, $this->dir);

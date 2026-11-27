@@ -405,6 +405,26 @@ defmodule ProjectName.FeatureTest do
     end
   end
 
+  test "cache passes a body that declares another type than JSON by, unread" do
+    if has?("cache") do
+      {server, calls} =
+        FH.recording_server(fn n, _fd ->
+          res = FH.make_response(200, nil, S.jm(["content-type", "audio/wav"]))
+          S.setprop(res, "sent", n)
+          {res, nil}
+        end)
+
+      h = harness([fspec("cache")], %{server: server})
+      a = FH.op(h, %{path: "/w/1/audio"})
+      b = FH.op(h, %{path: "/w/1/audio"})
+      assert S.size(calls) == 2, "the body was stored"
+      assert S.getprop(S.getprop(a.ctx, "response"), "sent") == 1,
+             "the cache handed on a copy it had read"
+      assert S.getprop(S.getprop(b.ctx, "response"), "sent") == 2
+      assert S.getprop(track(h, "_cache"), "bypass") == 2
+    end
+  end
+
   test "cache refetches after the ttl" do
     if has?("cache") do
       clock = FH.make_clock()

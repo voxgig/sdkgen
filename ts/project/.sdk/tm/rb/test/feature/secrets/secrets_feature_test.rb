@@ -975,12 +975,12 @@ class SecretsFeatureTest < Minitest::Test
     assert_credential(server.auth, "RAWTOK01")
   end
 
-  # Real listeners and the raw fallback: a stub follows nothing.
-  def test_a_redirect_answering_the_exchange_is_a_failure_and_nothing_follows_it
-    elsewhere = []
-    followed = []
-    answer = [307, ""]
+  # Real listeners and the raw fallback: a stub follows nothing. The
+  # origin answers the exchange as o["answer"] says and records what else it gets.
+  def with_origins
+    o = { "elsewhere" => [], "followed" => [], "exchanged" => 0, "answer" => [307, ""] }
     lock = Mutex.new
+    o["lock"] = lock
 
     listen = lambda do |&handle|
       server = TCPServer.new("127.0.0.1", 0)
@@ -1014,50 +1014,74 @@ class SecretsFeatureTest < Minitest::Test
     end
 
     other, otherthread = listen.call do |method, path, body|
-      lock.synchronize { elsewhere << { "method" => method, "path" => path, "body" => body } }
+      lock.synchronize { o["elsewhere"] << { "method" => method, "path" => path, "body" => body } }
       ok.call('{"access_token":"ELSEWHERE01"}')
     end
-    origin, originthread = listen.call do |method, path, _body|
+    origin, originthread = listen.call do |method, path, body|
       if "/api/auth/token" == path
-        status, location = lock.synchronize { answer }
+        status, location = lock.synchronize do
+          o["exchanged"] += 1
+          o["answer"]
+        end
         "HTTP/1.1 #{status} Redirect\r\nlocation: #{location}\r\n" \
           "content-length: 0\r\nconnection: close\r\n\r\n"
       else
-        lock.synchronize { followed << "#{method} #{path}" }
+        lock.synchronize { o["followed"] << "#{method} #{path} #{body}".strip }
         ok.call('{"access_token":"MOVED01"}')
       end
     end
 
-    base = "http://127.0.0.1:#{origin.addr[1]}/api"
-    away = "http://127.0.0.1:#{other.addr[1]}/api/auth/token"
+    o["origin"] = "http://127.0.0.1:#{origin.addr[1]}"
+    o["base"] = o["origin"] + "/api"
+    o["away"] = "http://127.0.0.1:#{other.addr[1]}/api/auth/token"
 
     begin
+      yield o
+    ensure
+      origin.close rescue nil
+      other.close rescue nil
+      originthread.join
+      otherthread.join
+    end
+  end
+
+  def redirect_client(o, exchange = {})
+    with_secrets do |extend_it|
+      opts = {
+        "base" => o["base"],
+        "allow" => { "op" => "direct" },
+        "feature" => { "secrets" => {
+          "active" => true,
+          "name" => "refresh_token",
+          "exchange" => { "active" => true, "refresh" => "REFRESH01" }.merge(exchange),
+        } },
+      }
+      opts["extend"] = [ProjectNameSecretsFeature.new] if extend_it
+      ProjectNameSDK.new(opts)
+    end
+  end
+
+  def redirect_probe(client)
+    res = client.direct({ "path" => "/probe" })
+    [res, res.is_a?(Hash) && !res["err"].nil? ? res["err"].to_s : res.inspect]
+  rescue StandardError => e
+    [nil, e.message]
+  end
+
+  def test_a_redirect_answering_the_exchange_is_a_failure_and_nothing_follows_it
+    with_origins do |o|
+      base = o["base"]
+      away = o["away"]
+      elsewhere = o["elsewhere"]
+      followed = o["followed"]
+
       answers = [[307, away], [308, away], [302, away], [307, "/api/moved/token"]]
       allowed = []
       refused = 0
 
       answers.each do |a|
-        lock.synchronize { answer = a }
-        client = with_secrets do |extend_it|
-          opts = {
-            "base" => base,
-            "allow" => { "op" => "direct" },
-            "feature" => { "secrets" => {
-              "active" => true,
-              "name" => "refresh_token",
-              "exchange" => { "active" => true, "refresh" => "REFRESH01" },
-            } },
-          }
-          opts["extend"] = [ProjectNameSecretsFeature.new] if extend_it
-          ProjectNameSDK.new(opts)
-        end
-
-        message = begin
-          res = client.direct({ "path" => "/probe" })
-          res.is_a?(Hash) && !res["err"].nil? ? res["err"].to_s : res.inspect
-        rescue StandardError => e
-          e.message
-        end
+        o["lock"].synchronize { o["answer"] = a }
+        _res, message = redirect_probe(redirect_client(o))
 
         if message.include?("token exchange failed: #{a[0]} from #{base}/auth/token")
           refused += 1
@@ -1073,11 +1097,65 @@ class SecretsFeatureTest < Minitest::Test
       assert_equal [], followed, "a request followed a refused exchange"
       assert_equal [], allowed, "a redirect was not a failed exchange"
       assert_equal answers.length, refused
-    ensure
-      origin.close rescue nil
-      other.close rescue nil
-      originthread.join
-      otherthread.join
+    end
+  end
+
+  def test_with_the_option_a_redirect_on_the_exchanges_own_origin_is_followed_and_no_other
+    with_origins do |o|
+      sent = ' {"refresh_token":"REFRESH01"}'
+      # Each case: the status, the Location, and the path the exchange is
+      # asked again at, or nil where the redirect is refused.
+      cases = [
+        [307, "/api/moved/token", "/api/moved/token"],
+        [308, o["origin"] + "/api/moved/token", "/api/moved/token"],
+        # A Location of a query alone keeps the path that answered.
+        [307, "?step=2", "/api/auth/token?step=2"],
+        [307, o["away"], nil],
+        [302, "/api/moved/token", nil],
+        [307, "/api/auth/token", nil],
+      ]
+
+      wrong = []
+      followed = 0
+      refused = 0
+      looped = 0
+
+      cases.each do |status, location, path|
+        o["lock"].synchronize do
+          o["answer"] = [status, location]
+          o["followed"].clear
+          o["exchanged"] = 0
+        end
+
+        res, message = redirect_probe(redirect_client(o, { "redirect" => "same-origin" }))
+        seen = "#{status} to #{location}: #{message} #{o['followed'].inspect}"
+
+        if path
+          if res.is_a?(Hash) && true == res["ok"] &&
+             "POST #{path}#{sent}" == o["followed"][0] && 2 == o["followed"].length
+            followed += 1
+          else
+            wrong << seen
+          end
+        elsif o["followed"].empty? &&
+              message.include?("token exchange failed: #{status} from #{o['base']}/auth/token")
+          refused += 1
+        else
+          wrong << seen
+        end
+
+        looped = o["exchanged"] if "/api/auth/token" == location
+      end
+
+      puts "secrets: exchange opt-in followed #{followed} redirect(s) on its own origin, " \
+        "refused #{refused}, #{o['elsewhere'].length} elsewhere"
+
+      assert_equal [], o["elsewhere"], "the exchange reached another origin"
+      assert_equal [], wrong
+      assert_equal 3, followed
+      assert_equal 3, refused
+      # A redirect to itself is followed up to the hop limit and no more.
+      assert_equal 6, looped
     end
   end
 

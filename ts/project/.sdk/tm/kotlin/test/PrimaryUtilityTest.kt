@@ -451,6 +451,41 @@ class PrimaryUtilityTest {
     }
   }
 
+  // A Location of a query alone keeps the path that answered.
+  @Test
+  fun fetcherRedirectToAQueryKeepsThePath() {
+    val seen = java.util.Collections.synchronizedList(mutableListOf<String>())
+    val server = com.sun.net.httpserver.HttpServer.create(java.net.InetSocketAddress("127.0.0.1", 0), 0)
+    server.createContext("/") { exchange ->
+      val query = exchange.requestURI.rawQuery
+      seen.add(exchange.requestURI.rawPath + (if (query == null) "" else "?" + query))
+      if (query == null) {
+        exchange.responseHeaders.set("Location", "?step=2")
+        exchange.sendResponseHeaders(302, -1L)
+      } else {
+        val body = "{\"id\":\"q1\"}".toByteArray()
+        exchange.responseHeaders.set("Content-Type", "application/json")
+        exchange.sendResponseHeaders(200, body.size.toLong())
+        exchange.responseBody.write(body)
+      }
+      exchange.close()
+    }
+    server.start()
+    val base = "http://127.0.0.1:" + server.address.port
+    try {
+      val liveClient = ProjectNameSDK(fhMap("base", base))
+      val liveUtility = liveClient.getUtility()
+      val ctx = liveUtility.makeContext(
+        fhMap("opname", "load", "client", liveClient, "utility", liveUtility), null)
+      val res = liveUtility.fetcher(ctx, "$base/redirect/q1",
+        fhMap("method", "GET", "headers", linkedMapOf<String, Any?>())) as Map<*, *>
+      assertEquals(200, res["status"])
+      assertEquals(listOf("/redirect/q1", "/redirect/q1?step=2"), seen.toList())
+    } finally {
+      server.stop(0)
+    }
+  }
+
   // The API's origin, which redirects, and another origin, which records
   // what reaches it: another port on the same host is another origin.
   class RedirectOrigins : AutoCloseable {

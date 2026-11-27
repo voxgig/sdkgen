@@ -110,8 +110,6 @@ defmodule ProjectName.EntityBase do
   # entity is yielded as its record, the struct map its data_get/1 returns.
   # `callopts` parameterises the call:
   #   - ctrl:   per-call pipeline control (threaded onto the op ctx);
-  #   - body:   an enumerable/list payload for outbound (upload) streaming,
-  #             attached to the request (reqdata.body$ + a stream_out marker);
   #   - signal: an optional 0-arity fn; when it returns true iteration stops.
   def stream(ent, action, args \\ nil, callopts \\ nil) do
     callopts = if S.ismap(callopts), do: callopts, else: S.jm([])
@@ -133,17 +131,6 @@ defmodule ProjectName.EntityBase do
     if am != nil, do: Enum.each(H.entries(am), fn {k, v} -> S.setprop(ctxmap, k, v) end)
 
     ctx = Context.new(ctxmap, S.getprop(ent, "_entctx"))
-
-    # Outbound: expose an enumerable/list payload so the request builder /
-    # transport can stream it as the request body.
-    body = S.getprop(callopts, "body")
-
-    if body != nil do
-      reqdata = H.or_(H.to_map(S.getprop(ctx, "reqdata")), S.jm([]))
-      S.setprop(reqdata, "body$", body)
-      S.setprop(ctx, "reqdata", reqdata)
-      S.setprop(ctx, "stream_out", body)
-    end
 
     Pipeline.run_op(ctx, fn -> nil end)
 

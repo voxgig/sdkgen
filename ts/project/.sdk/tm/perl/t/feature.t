@@ -593,6 +593,30 @@ if (has_feature('cache')) {
   }
 
   {
+    my @sent;
+    my ($server, $calls) = recording_server(sub {
+      my ($n) = @_;
+      my $res = make_response(200, undef, { 'content-type' => 'audio/wav' });
+      $res->{body} = "RIFF$n";
+      push @sent, $res;
+      return ($res, undef);
+    });
+    my $h = harness([fspec('cache')], server => $server);
+    my $a = $h->op('path' => '/w/1/audio')->{ctx}{response};
+    my $b = $h->op('path' => '/w/1/audio')->{ctx}{response};
+    my $same = sub {
+      my ($res, $sent) = @_;
+      return Scalar::Util::refaddr($res->{json_func}) == Scalar::Util::refaddr($sent->{json})
+        && Scalar::Util::refaddr($res->{headers}) == Scalar::Util::refaddr($sent->{headers})
+        && $res->{body} eq $sent->{body};
+    };
+    is(scalar @$calls, 2, 'cache: a body that declares another type than JSON is not stored');
+    ok($same->($a, $sent[0]), 'cache: the transport response is handed on, not a copy it read');
+    ok($same->($b, $sent[1]), 'cache: the second read hands on its own response');
+    is($h->track('_cache')->{bypass}, 2, 'cache: a body that is not JSON passes by');
+  }
+
+  {
     my $clock = HarnessClock->new;
     my ($server, $calls) = recording_server();
     my $h = harness([fspec('cache', 'ttl' => 1000, 'now' => $clock->now)],

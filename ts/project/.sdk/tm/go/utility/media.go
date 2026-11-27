@@ -13,7 +13,7 @@ import (
 // The data key of a raw request body; like `$action`, never an argument name.
 const rawBodyKey = "$body"
 
-func isJSONMedia(media string) bool {
+func IsJSONMedia(media string) bool {
 	m := strings.ToLower(strings.TrimSpace(strings.SplitN(media, ";", 2)[0]))
 	return "application/json" == m || "text/json" == m || strings.HasSuffix(m, "+json")
 }
@@ -81,7 +81,7 @@ func mediaHeaders(point map[string]any, headers map[string]any) map[string]any {
 	media, _ := vs.GetProp(body, "media").(string)
 	if ("raw" == kind || "json" == kind) && "" != media {
 		for key, val := range headers {
-			if sv, ok := val.(string); ok && "content-type" == strings.ToLower(key) && isJSONMedia(sv) {
+			if sv, ok := val.(string); ok && "content-type" == strings.ToLower(key) && IsJSONMedia(sv) {
 				delete(headers, key)
 			}
 		}

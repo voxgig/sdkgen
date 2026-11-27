@@ -1127,6 +1127,116 @@ test "secrets exchange: a redirect answering the exchange is a failure, and noth
     try testing.expect(0 == followed);
 }
 
+// A supplied fetch answering the exchange with `status` to `location`, every
+// other exchange URL with a token, and the API call with a record. It keeps
+// each exchange request as "url method redirect body".
+const Mover = struct {
+    status: i64,
+    location: []const u8,
+    calls: std.ArrayList([]const u8) = .empty,
+    elsewhere: usize = 0,
+
+    fn call(p: *anyopaque, _: std.mem.Allocator, arg: Value) anyerror!Value {
+        const self: *Mover = @ptrCast(@alignCast(p));
+        const url: []const u8 = if (arg.array.data.items[0] == .string) arg.array.data.items[0].string else "";
+        const fetchdef = arg.array.data.items[1];
+        if (!std.mem.startsWith(u8, url, "http://api.test/")) self.elsewhere += 1;
+        if (std.mem.endsWith(u8, url, "/api/thing")) return response(200, h.jo(&.{.{ "ok", h.vbool(true) }}));
+        try self.calls.append(h.A(), try std.fmt.allocPrint(h.A(), "{s} {s} {s} {s}", .{
+            url,
+            h.get_str(fetchdef, "method") orelse "",
+            h.get_str(fetchdef, "redirect") orelse "",
+            h.get_str(fetchdef, "body") orelse "",
+        }));
+        if (!std.mem.eql(u8, url, "http://api.test/api/auth/token")) {
+            return response(200, h.jo(&.{.{ "access_token", h.vstr("MOVED01") }}));
+        }
+        return h.jo(&.{
+            .{ "status", h.vnum(self.status) },
+            .{ "headers", h.jo(&.{.{ "location", h.vstr(self.location) }}) },
+            .{ "body", h.vstr("") },
+        });
+    }
+};
+
+// Through the caller's system.fetch: the exchange's own client reports no
+// Location, and the SDK has no live transport for the API call.
+test "secrets exchange: with the option, a redirect on the exchange's own origin is followed, and no other" {
+    if (!present() or !placesCredential()) return error.SkipZigTest;
+    const base = "http://api.test/api";
+    const sent = " POST manual {\"refresh_token\":\"REFRESH01\"}";
+    const asked = base ++ "/auth/token" ++ sent;
+    // The request the exchange is asked again with, null when refused; a
+    // Location of a query alone keeps the path that answered.
+    const Case = struct { status: i64, location: []const u8, next: ?[]const u8 };
+    const cases = [_]Case{
+        .{ .status = 307, .location = "/api/moved/token", .next = base ++ "/moved/token" ++ sent },
+        .{ .status = 308, .location = "http://api.test/api/moved/token", .next = base ++ "/moved/token" ++ sent },
+        .{ .status = 307, .location = "?step=2", .next = base ++ "/auth/token?step=2" ++ sent },
+        .{ .status = 307, .location = "http://other.test/api/auth/token", .next = null },
+        .{ .status = 302, .location = "/api/moved/token", .next = null },
+        .{ .status = 307, .location = "/api/auth/token", .next = null },
+    };
+
+    var followed: usize = 0;
+    var refused: usize = 0;
+    var elsewhere: usize = 0;
+    var looped: usize = 0;
+    var wrong: std.ArrayList([]const u8) = .empty;
+
+    for (cases) |c| {
+        const m = try h.A().create(Mover);
+        m.* = .{ .status = c.status, .location = c.location };
+        const opts = h.jo(&.{
+            .{ "base", h.vstr(base) },
+            .{ "system", h.jo(&.{.{ "fetch", h.callable(@ptrCast(m), Mover.call) }}) },
+            .{ "feature", h.jo(&.{.{ "secrets", h.jo(&.{
+                .{ "active", h.vbool(true) },
+                .{ "name", h.vstr("refresh_token") },
+                .{ "exchange", h.jo(&.{
+                    .{ "active", h.vbool(true) },
+                    .{ "refresh", h.vstr("REFRESH01") },
+                    .{ "redirect", h.vstr("same-origin") },
+                }) },
+            }) }}) },
+        });
+        const client = sdk.SDK.new_with(opts, &.{sdk.SecretsFeature.make()}).ok;
+        const res = client.direct(h.jo(&.{.{ "path", h.vstr("/thing") }}));
+
+        const ok = h.get_bool(res, "ok") orelse false;
+        const msg = h.get_str(res, "err") orelse "";
+        const want = try std.fmt.allocPrint(h.A(), "token exchange failed: {d} from {s}/auth/token", .{ c.status, base });
+        const loop = std.mem.eql(u8, c.location, "/api/auth/token");
+        if (loop) looped = m.calls.items.len;
+        elsewhere += m.elsewhere;
+
+        const follows = null != c.next;
+        var right = if (c.next) |next|
+            ok and 2 == m.calls.items.len and std.mem.eql(u8, m.calls.items[1], next)
+        else
+            !ok and contains(msg, want) and 0 < m.calls.items.len and (loop or 1 == m.calls.items.len);
+        for (m.calls.items, 0..) |seen, i| {
+            if ((0 == i or !follows) and !std.mem.eql(u8, seen, asked)) right = false;
+        }
+        if (!right) {
+            try wrong.append(h.A(), try std.fmt.allocPrint(h.A(), "{d} to {s}: {s} {d} call(s)", .{ c.status, c.location, msg, m.calls.items.len }));
+        } else if (follows) {
+            followed += 1;
+        } else {
+            refused += 1;
+        }
+    }
+
+    std.debug.print("secrets: exchange opt-in followed {d} redirect(s) on its own origin, refused {d}, {d} elsewhere\n", .{ followed, refused, elsewhere });
+    for (wrong.items) |w| std.debug.print("same-origin not as expected: {s}\n", .{w});
+    try testing.expect(0 == wrong.items.len);
+    try testing.expect(0 == elsewhere);
+    try testing.expect(3 == followed);
+    try testing.expect(3 == refused);
+    // A redirect to itself is followed five times and no more.
+    try testing.expect(6 == looped);
+}
+
 // ---- auth off ----------------------------------------------------------------
 
 // Off by the config where it declares no auth, else by `auth: null`: either

@@ -569,6 +569,26 @@ class FeatureTest < Minitest::Test
     assert_equal 2, h.track(:@_cache)["bypass"]
   end
 
+  def test_cache_a_body_that_declares_another_type_than_json_passes_by_unread
+    skip_unless_feature("cache")
+    sent = []
+    server, calls = H.recording_server do |n, _fd|
+      res = H.make_response(200, nil, { "content-type" => "audio/wav" })
+      res["body"] = +"RIFF#{n}"
+      sent << res
+      [res, nil]
+    end
+    h = harness([fspec("cache")], server: server)
+    a = h.op(path: "/w/1/audio")["ctx"].response
+    b = h.op(path: "/w/1/audio")["ctx"].response
+    assert_equal 2, calls.length, "the body was stored"
+    assert_same sent[0]["body"], a.body, "the cache handed on a copy it had read"
+    assert_same sent[0]["json"], a.json_func
+    assert_same sent[1]["body"], b.body
+    assert_same sent[1]["json"], b.json_func
+    assert_equal 2, h.track(:@_cache)["bypass"]
+  end
+
   def test_cache_refetches_after_the_ttl
     skip_unless_feature("cache")
     clock = H::Clock.new

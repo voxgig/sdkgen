@@ -1136,19 +1136,33 @@ public class SecretsFeatureTest {
     assertEquals("test-access_token", requireFeature(client).credential());
   }
 
-  // Real listeners and the feature's own HTTP client: a stub follows nothing.
-  @Test
-  public void exchange_aRedirectAnsweringTheExchangeIsAFailureAndNothingFollowsIt() throws Exception {
-    List<String> elsewhere = Collections.synchronizedList(new ArrayList<>());
-    List<String> followed = Collections.synchronizedList(new ArrayList<>());
-    Object[] answer = new Object[] {307, ""};
+  // Two real listeners and the feature's own HTTP client: a stub follows
+  // nothing. The origin answers the exchange as `answer` says and records
+  // what else it gets.
+  private static final class Origins {
+    final List<String> elsewhere = Collections.synchronizedList(new ArrayList<>());
+    final List<String> followed = Collections.synchronizedList(new ArrayList<>());
+    final java.util.concurrent.atomic.AtomicInteger exchanged =
+        new java.util.concurrent.atomic.AtomicInteger();
+    volatile Object[] answer = new Object[] {307, ""};
+    String origin;
+    String base;
+    String away;
+  }
+
+  private interface OriginsRun {
+    void run(Origins o) throws Exception;
+  }
+
+  private static void withOrigins(OriginsRun run) throws Exception {
+    Origins o = new Origins();
 
     com.sun.net.httpserver.HttpServer other = com.sun.net.httpserver.HttpServer.create(
         new java.net.InetSocketAddress("127.0.0.1", 0), 0);
     other.createContext("/", (ex) -> {
       String body = new String(ex.getRequestBody().readAllBytes(),
           java.nio.charset.StandardCharsets.UTF_8);
-      elsewhere.add(ex.getRequestMethod() + " " + ex.getRequestURI().getRawPath() + " " + body);
+      o.elsewhere.add(ex.getRequestMethod() + " " + ex.getRequestURI().getRawPath() + " " + body);
       byte[] out = "{\"access_token\":\"ELSEWHERE01\"}".getBytes();
       ex.getResponseHeaders().set("Content-Type", "application/json");
       ex.sendResponseHeaders(200, out.length);
@@ -1158,15 +1172,19 @@ public class SecretsFeatureTest {
     com.sun.net.httpserver.HttpServer origin = com.sun.net.httpserver.HttpServer.create(
         new java.net.InetSocketAddress("127.0.0.1", 0), 0);
     origin.createContext("/", (ex) -> {
-      ex.getRequestBody().readAllBytes();
-      String path = ex.getRequestURI().getRawPath();
+      String body = new String(ex.getRequestBody().readAllBytes(),
+          java.nio.charset.StandardCharsets.UTF_8);
+      String query = ex.getRequestURI().getRawQuery();
+      String path = ex.getRequestURI().getRawPath() + (query == null ? "" : "?" + query);
       if ("/api/auth/token".equals(path)) {
+        o.exchanged.incrementAndGet();
+        Object[] answer = o.answer;
         ex.getResponseHeaders().set("Location", (String) answer[1]);
         ex.sendResponseHeaders((int) answer[0], -1);
         ex.close();
         return;
       }
-      followed.add(ex.getRequestMethod() + " " + path);
+      o.followed.add((ex.getRequestMethod() + " " + path + " " + body).trim());
       byte[] out = "{\"access_token\":\"MOVED01\"}".getBytes();
       ex.getResponseHeaders().set("Content-Type", "application/json");
       ex.sendResponseHeaders(200, out.length);
@@ -1176,37 +1194,59 @@ public class SecretsFeatureTest {
     other.start();
     origin.start();
 
-    String base = "http://127.0.0.1:" + origin.getAddress().getPort() + "/api";
-    String away = "http://127.0.0.1:" + other.getAddress().getPort() + "/api/auth/token";
+    o.origin = "http://127.0.0.1:" + origin.getAddress().getPort();
+    o.base = o.origin + "/api";
+    o.away = "http://127.0.0.1:" + other.getAddress().getPort() + "/api/auth/token";
 
     try {
-      Object[][] answers = {{307, away}, {308, away}, {302, away}, {307, "/api/moved/token"}};
+      run.run(o);
+    }
+    finally {
+      origin.stop(0);
+      other.stop(0);
+    }
+  }
+
+  private static ProjectNameSDK redirectClient(Origins o, Map<String, Object> exchange) {
+    Map<String, Object> x = map("active", true, "refresh", "REFRESH01");
+    if (exchange != null) {
+      x.putAll(exchange);
+    }
+    Map<String, Object> opts = map(
+        "base", o.base,
+        "allow", map("op", "direct,graphql,load,list"),
+        "feature", map("secrets", map(
+            "active", true,
+            "name", "refresh_token",
+            "exchange", x)));
+    return withSecrets(opts, ProjectNameSDK::new);
+  }
+
+  // The error message of a direct call, or the result when there is none.
+  private static String directMessage(Map<String, Object>[] out, ProjectNameSDK client) {
+    try {
+      Map<String, Object> res = client.direct(map("path", "/thing"));
+      out[0] = res;
+      Object err = res == null ? null : res.get("err");
+      return String.valueOf(err instanceof Throwable ? ((Throwable) err).getMessage() : res);
+    }
+    catch (RuntimeException e) {
+      return String.valueOf(e.getMessage());
+    }
+  }
+
+  @Test
+  public void exchange_aRedirectAnsweringTheExchangeIsAFailureAndNothingFollowsIt() throws Exception {
+    withOrigins((o) -> {
+      Object[][] answers = {{307, o.away}, {308, o.away}, {302, o.away}, {307, "/api/moved/token"}};
       List<String> allowed = new ArrayList<>();
       int refused = 0;
 
       for (Object[] a : answers) {
-        answer[0] = a[0];
-        answer[1] = a[1];
-        Map<String, Object> opts = map(
-            "base", base,
-            "allow", map("op", "direct,graphql,load,list"),
-            "feature", map("secrets", map(
-                "active", true,
-                "name", "refresh_token",
-                "exchange", map("active", true, "refresh", "REFRESH01"))));
-        ProjectNameSDK client = withSecrets(opts, ProjectNameSDK::new);
+        o.answer = a;
+        String message = directMessage(new Map[1], redirectClient(o, null));
 
-        String message;
-        try {
-          Map<String, Object> res = client.direct(map("path", "/thing"));
-          Object err = res == null ? null : res.get("err");
-          message = String.valueOf(err instanceof Throwable ? ((Throwable) err).getMessage() : res);
-        }
-        catch (RuntimeException e) {
-          message = String.valueOf(e.getMessage());
-        }
-
-        if (message.contains("token exchange failed: " + a[0] + " from " + base + "/auth/token")) {
+        if (message.contains("token exchange failed: " + a[0] + " from " + o.base + "/auth/token")) {
           refused++;
         }
         else {
@@ -1215,17 +1255,79 @@ public class SecretsFeatureTest {
       }
 
       System.out.println("secrets: exchange refused " + refused + " redirect(s), "
-          + (elsewhere.size() + followed.size()) + " followed");
+          + (o.elsewhere.size() + o.followed.size()) + " followed");
 
-      assertEquals(List.of(), elsewhere, "the exchange reached another origin");
-      assertEquals(List.of(), followed, "a request followed a refused exchange");
+      assertEquals(List.of(), o.elsewhere, "the exchange reached another origin");
+      assertEquals(List.of(), o.followed, "a request followed a refused exchange");
       assertEquals(List.of(), allowed, "a redirect was not a failed exchange");
       assertEquals(answers.length, refused);
-    }
-    finally {
-      origin.stop(0);
-      other.stop(0);
-    }
+    });
+  }
+
+  @Test
+  public void exchange_withTheOptionARedirectOnTheExchangesOwnOriginIsFollowedAndNoOther() throws Exception {
+    withOrigins((o) -> {
+      String sent = " {\"refresh_token\":\"REFRESH01\"}";
+      // Each case: the status, the Location, and the path the exchange is
+      // asked again at, or null where the redirect is refused.
+      Object[][] cases = {
+        {307, "/api/moved/token", "/api/moved/token"},
+        {308, o.origin + "/api/moved/token", "/api/moved/token"},
+        // A Location of a query alone keeps the path that answered.
+        {307, "?step=2", "/api/auth/token?step=2"},
+        {307, o.away, null},
+        {302, "/api/moved/token", null},
+        {307, "/api/auth/token", null},
+      };
+
+      List<String> wrong = new ArrayList<>();
+      int followed = 0;
+      int refused = 0;
+      int looped = 0;
+
+      for (Object[] c : cases) {
+        o.answer = new Object[] {c[0], c[1]};
+        o.followed.clear();
+        o.exchanged.set(0);
+
+        Map<String, Object>[] out = new Map[1];
+        String message = directMessage(out,
+            redirectClient(o, map("redirect", "same-origin")));
+        String seen = c[0] + " to " + c[1] + ": " + message + " " + o.followed;
+
+        if (c[2] != null) {
+          if (out[0] != null && Boolean.TRUE.equals(out[0].get("ok"))
+              && 2 == o.followed.size() && ("POST " + c[2] + sent).equals(o.followed.get(0))) {
+            followed++;
+          }
+          else {
+            wrong.add(seen);
+          }
+        }
+        else if (o.followed.isEmpty() && message.contains(
+            "token exchange failed: " + c[0] + " from " + o.base + "/auth/token")) {
+          refused++;
+        }
+        else {
+          wrong.add(seen);
+        }
+
+        if ("/api/auth/token".equals(c[1])) {
+          looped = o.exchanged.get();
+        }
+      }
+
+      System.out.println("secrets: exchange opt-in followed " + followed
+          + " redirect(s) on its own origin, refused " + refused + ", "
+          + o.elsewhere.size() + " elsewhere");
+
+      assertEquals(List.of(), o.elsewhere, "the exchange reached another origin");
+      assertEquals(List.of(), wrong);
+      assertEquals(3, followed);
+      assertEquals(3, refused);
+      // A redirect to itself stops at the hop limit.
+      assertEquals(6, looped);
+    });
   }
 
   // ------------------------------------------------------------------

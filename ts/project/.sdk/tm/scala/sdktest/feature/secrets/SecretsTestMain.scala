@@ -1043,17 +1043,27 @@ object SecretsTestMain {
       "an empty chain must refuse rather than send unauthenticated, got " + res)
   }
 
-  // Real listeners and the SDK's raw HTTP path: a stub follows nothing.
-  private def testExchangeRedirectRefused(): Unit = {
+  // Two real listeners and the SDK's raw HTTP path: a stub follows nothing.
+  // The origin answers the exchange as `answer` says and records what else
+  // it gets.
+  private final class Origins {
     val elsewhere = java.util.Collections.synchronizedList(new ArrayList[String]())
     val followed = java.util.Collections.synchronizedList(new ArrayList[String]())
+    val exchanged = new java.util.concurrent.atomic.AtomicInteger()
     @volatile var answer: (Int, String) = (307, "")
+    var origin = ""
+    var base = ""
+    var away = ""
+  }
+
+  private def withOrigins(run: Origins => Unit): Unit = {
+    val o = new Origins()
 
     val other = com.sun.net.httpserver.HttpServer.create(
       new java.net.InetSocketAddress("127.0.0.1", 0), 0)
     other.createContext("/", (ex: com.sun.net.httpserver.HttpExchange) => {
       val body = new String(ex.getRequestBody.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8)
-      elsewhere.add(ex.getRequestMethod + " " + ex.getRequestURI.getRawPath + " " + body)
+      o.elsewhere.add(ex.getRequestMethod + " " + ex.getRequestURI.getRawPath + " " + body)
       val out = "{\"access_token\":\"ELSEWHERE01\"}".getBytes
       ex.getResponseHeaders.set("Content-Type", "application/json")
       ex.sendResponseHeaders(200, out.length.toLong)
@@ -1063,14 +1073,17 @@ object SecretsTestMain {
     val origin = com.sun.net.httpserver.HttpServer.create(
       new java.net.InetSocketAddress("127.0.0.1", 0), 0)
     origin.createContext("/", (ex: com.sun.net.httpserver.HttpExchange) => {
-      ex.getRequestBody.readAllBytes()
-      val path = ex.getRequestURI.getRawPath
+      val body = new String(ex.getRequestBody.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8)
+      val query = ex.getRequestURI.getRawQuery
+      val path = ex.getRequestURI.getRawPath + (if (query == null) "" else "?" + query)
       if ("/api/auth/token" == path) {
+        o.exchanged.incrementAndGet()
+        val answer = o.answer
         ex.getResponseHeaders.set("Location", answer._2)
         ex.sendResponseHeaders(answer._1, -1)
         ex.close()
       } else {
-        followed.add(ex.getRequestMethod + " " + path)
+        o.followed.add((ex.getRequestMethod + " " + path + " " + body).trim)
         val out = "{\"access_token\":\"MOVED01\"}".getBytes
         ex.getResponseHeaders.set("Content-Type", "application/json")
         ex.sendResponseHeaders(200, out.length.toLong)
@@ -1081,60 +1094,123 @@ object SecretsTestMain {
     other.start()
     origin.start()
 
-    val base = "http://127.0.0.1:" + origin.getAddress.getPort + "/api"
-    val away = "http://127.0.0.1:" + other.getAddress.getPort + "/api/auth/token"
+    o.origin = "http://127.0.0.1:" + origin.getAddress.getPort
+    o.base = o.origin + "/api"
+    o.away = "http://127.0.0.1:" + other.getAddress.getPort + "/api/auth/token"
 
-    try {
-      val answers = List((307, away), (308, away), (302, away), (307, "/api/moved/token"))
-      val allowed = ListBuffer.empty[String]
-      var refused = 0
-
-      for (a <- answers) {
-        answer = a
-        val client = withSecrets { extend =>
-          val opts = jmap(
-            "base" -> base,
-            "allow" -> jmap("op" -> "direct"),
-            "feature" -> jmap("secrets" -> jmap(
-              "active" -> java.lang.Boolean.TRUE,
-              "name" -> "refresh_token",
-              "exchange" -> jmap("active" -> java.lang.Boolean.TRUE, "refresh" -> "REFRESH01"))))
-          if (extend) opts.put("extend", jlist(new SecretsFeature()))
-          new ProjectNameSDK(opts)
-        }
-
-        val message =
-          try {
-            val res = client.direct(jmap("path" -> "/thing"))
-            res.get("err") match {
-              case err: Throwable => errtext(err)
-              case _ => String.valueOf(res)
-            }
-          }
-          catch { case err: RuntimeException => errtext(err) }
-
-        if (message.contains("token exchange failed: " + a._1 + " from " + base + "/auth/token")) {
-          refused += 1
-        } else {
-          allowed += (a._1.toString + " to " + a._2 + ": " + message)
-        }
-      }
-
-      println("secrets: exchange refused " + refused + " redirect(s), " +
-        (elsewhere.size() + followed.size()) + " followed")
-
-      check("exchange.redirect.elsewhere", elsewhere.isEmpty,
-        "the exchange reached another origin: " + elsewhere)
-      check("exchange.redirect.followed", followed.isEmpty,
-        "a request followed a refused exchange: " + followed)
-      check("exchange.redirect.allowed", allowed.isEmpty,
-        "a redirect was not a failed exchange: " + allowed.mkString("; "))
-      eqi("exchange.redirect.refused", answers.length, refused)
-    }
+    try run(o)
     finally {
       origin.stop(0)
       other.stop(0)
     }
+  }
+
+  private def redirectClient(o: Origins, exchange: (String, Object)*): ProjectNameSDK =
+    withSecrets { extend =>
+      val x = jmap("active" -> java.lang.Boolean.TRUE, "refresh" -> "REFRESH01")
+      for ((k, v) <- exchange) x.put(k, v)
+      val opts = jmap(
+        "base" -> o.base,
+        "allow" -> jmap("op" -> "direct"),
+        "feature" -> jmap("secrets" -> jmap(
+          "active" -> java.lang.Boolean.TRUE,
+          "name" -> "refresh_token",
+          "exchange" -> x)))
+      if (extend) opts.put("extend", jlist(new SecretsFeature()))
+      new ProjectNameSDK(opts)
+    }
+
+  // The direct call's result, and its error message (the result when none).
+  private def directOutcome(client: ProjectNameSDK): (JMap[String, Object], String) =
+    try {
+      val res = client.direct(jmap("path" -> "/thing"))
+      res.get("err") match {
+        case err: Throwable => (res, errtext(err))
+        case _ => (res, String.valueOf(res))
+      }
+    }
+    catch { case err: RuntimeException => (null, errtext(err)) }
+
+  private def testExchangeRedirectRefused(): Unit = withOrigins { o =>
+    val answers = List((307, o.away), (308, o.away), (302, o.away), (307, "/api/moved/token"))
+    val allowed = ListBuffer.empty[String]
+    var refused = 0
+
+    for (a <- answers) {
+      o.answer = a
+      val message = directOutcome(redirectClient(o))._2
+
+      if (message.contains("token exchange failed: " + a._1 + " from " + o.base + "/auth/token")) {
+        refused += 1
+      } else {
+        allowed += (a._1.toString + " to " + a._2 + ": " + message)
+      }
+    }
+
+    println("secrets: exchange refused " + refused + " redirect(s), " +
+      (o.elsewhere.size() + o.followed.size()) + " followed")
+
+    check("exchange.redirect.elsewhere", o.elsewhere.isEmpty,
+      "the exchange reached another origin: " + o.elsewhere)
+    check("exchange.redirect.followed", o.followed.isEmpty,
+      "a request followed a refused exchange: " + o.followed)
+    check("exchange.redirect.allowed", allowed.isEmpty,
+      "a redirect was not a failed exchange: " + allowed.mkString("; "))
+    eqi("exchange.redirect.refused", answers.length, refused)
+  }
+
+  private def testExchangeRedirectSameOrigin(): Unit = withOrigins { o =>
+    val sent = " {\"refresh_token\":\"REFRESH01\"}"
+    // Each case: the status, the Location, and the path the exchange is
+    // asked again at, or null where the redirect is refused.
+    val cases: List[(Int, String, String)] = List(
+      (307, "/api/moved/token", "/api/moved/token"),
+      (308, o.origin + "/api/moved/token", "/api/moved/token"),
+      // A Location of a query alone keeps the path that answered.
+      (307, "?step=2", "/api/auth/token?step=2"),
+      (307, o.away, null),
+      (302, "/api/moved/token", null),
+      (307, "/api/auth/token", null),
+    )
+
+    val wrong = ListBuffer.empty[String]
+    var followed = 0
+    var refused = 0
+    var looped = 0
+
+    for ((status, location, path) <- cases) {
+      o.answer = (status, location)
+      o.followed.clear()
+      o.exchanged.set(0)
+
+      val (res, message) = directOutcome(redirectClient(o, "redirect" -> "same-origin"))
+      val seen = status.toString + " to " + location + ": " + message + " " + o.followed
+
+      if (path != null) {
+        if (res != null && java.lang.Boolean.TRUE == res.get("ok") &&
+          2 == o.followed.size() && ("POST " + path + sent) == o.followed.get(0)) followed += 1
+        else wrong += seen
+      } else if (o.followed.isEmpty && message.contains(
+          "token exchange failed: " + status + " from " + o.base + "/auth/token")) {
+        refused += 1
+      } else {
+        wrong += seen
+      }
+
+      if ("/api/auth/token" == location) looped = o.exchanged.get()
+    }
+
+    println("secrets: exchange opt-in followed " + followed +
+      " redirect(s) on its own origin, refused " + refused + ", " +
+      o.elsewhere.size() + " elsewhere")
+
+    check("exchange.sameorigin.elsewhere", o.elsewhere.isEmpty,
+      "the exchange reached another origin: " + o.elsewhere)
+    check("exchange.sameorigin.wrong", wrong.isEmpty, wrong.mkString("; "))
+    eqi("exchange.sameorigin.followed", 3, followed)
+    eqi("exchange.sameorigin.refused", 3, refused)
+    // A redirect to itself stops at the hop limit.
+    eqi("exchange.sameorigin.looped", 6, looped)
   }
 
   // TEST MODE BUYS NOTHING and needs no token endpoint.
@@ -1228,6 +1304,7 @@ object SecretsTestMain {
       "exchangeAuthNullNotRetried" -> testExchangeAuthNullNotRetried,
       "exchangeNoRefresh" -> testExchangeNoRefresh,
       "exchangeRedirectRefused" -> testExchangeRedirectRefused,
+      "exchangeRedirectSameOrigin" -> testExchangeRedirectSameOrigin,
       "exchangeTestMode" -> testExchangeTestMode,
       "resolvedKeyPaired" -> testResolvedKeyPaired,
       "exchangeRetryPaired" -> testExchangeRetryPaired,

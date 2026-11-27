@@ -119,7 +119,10 @@ public final class SecretsFeature: BaseFeature {
     let response: String
     let statuses: [Int]
     let retries: Int
+    let sameOrigin: Bool
   }
+
+  private static let redirectMax = 5
 
   // One shared in-flight resolution: late arrivals wait on `done` and read
   // `err`.
@@ -205,7 +208,8 @@ public final class SecretsFeature: BaseFeature {
         request: foptStr(xopts, "request", "refresh_token"),
         response: foptStr(xopts, "response", "access_token"),
         statuses: statuses,
-        retries: foptInt(xopts, "retries", 1))
+        retries: foptInt(xopts, "retries", 1),
+        sameOrigin: "same-origin" == foptStr(xopts, "redirect", "refuse"))
     }
 
     // WRAP FIRST, BUILD SECOND. The transport wrapper is the fail-closed
@@ -646,7 +650,7 @@ public final class SecretsFeature: BaseFeature {
     fetchdef.entries["method"] = .string(x.method)
     fetchdef.entries["headers"] = .map(vm(("content-type", .string("application/json"))))
     fetchdef.entries["body"] = .string(body)
-    // Never followed: a redirect would carry the refresh token on.
+    // Never followed by the client: a redirect would carry the refresh token on.
     fetchdef.entries["redirect"] = .string("manual")
 
     // Deliberately NOT the SDK transport. The transport is what this feature
@@ -658,11 +662,22 @@ public final class SecretsFeature: BaseFeature {
     // rawExchangeFetch twin, unlike go); a supplied system.fetch is honoured
     // so a test can intercept the purchase.
     let sysFetch = gpath(options, "system", "fetch")
-    let res: Value
-    if let fn = sysFetch.asNative as? SystemFetch {
-      res = fn(url, fetchdef)
-    } else {
-      res = try defaultHttpFetch(url, fetchdef)
+    func fetch(_ at: String) throws -> Value {
+      if let fn = sysFetch.asNative as? SystemFetch {
+        return fn(at, fetchdef)
+      }
+      return try defaultHttpFetch(at, fetchdef)
+    }
+
+    var res = try fetch(url)
+
+    // By option alone, and only while the exchange stays on its own origin.
+    var at = url
+    var hops = 0
+    while x.sameOrigin, hops < SecretsFeature.redirectMax, let next = SecretsFeature.moved(url, at, res) {
+      at = next
+      res = try fetch(at)
+      hops += 1
     }
 
     let (status, _) = fresStatus(res)
@@ -688,6 +703,29 @@ public final class SecretsFeature: BaseFeature {
     register(token)
 
     return token
+  }
+
+  // Where a redirect that keeps method and body points, when that is on the
+  // exchange's own origin. Any other would drop the body or leave the origin.
+  private static func moved(_ url: String, _ at: String, _ res: Value) -> String? {
+    let (status, _) = fresStatus(res)
+    let (location, has) = fresHeader(res, "location")
+    guard 307 == status || 308 == status, has, "" != location,
+      let next = resolveLocation(at, location),
+      let own = origin(url), own == origin(next)
+    else {
+      return nil
+    }
+    return next
+  }
+
+  private static func origin(_ url: String) -> String? {
+    guard let parts = URLComponents(string: url), let scheme = parts.scheme?.lowercased(),
+      let host = parts.host?.lowercased()
+    else {
+      return nil
+    }
+    return "\(scheme)://\(host):\(parts.port ?? (scheme == "https" ? 443 : 80))"
   }
 
   // An SDK Value (a plain map from the options) as the plugin host's own

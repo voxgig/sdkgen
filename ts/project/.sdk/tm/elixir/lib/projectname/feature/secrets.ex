@@ -88,6 +88,8 @@ defmodule ProjectName.Feature.Secrets do
   @specfields Map.keys(Map.from_struct(%Sekreto.ProviderSpec{}))
   @authfields Map.keys(Map.from_struct(%Sekreto.AuthSpec{}))
 
+  @redirect_max 5
+
   def new do
     f = F.base("secrets", "0.1.0")
     F.install(f, "init", fn ctx, opts -> init(f, ctx, opts) end)
@@ -131,7 +133,9 @@ defmodule ProjectName.Feature.Secrets do
             request: H.str_or(S.getprop(xopts, "request"), "refresh_token"),
             response: H.str_or(S.getprop(xopts, "response"), "access_token"),
             statuses: statuses(S.getprop(xopts, "statuses")),
-            retries: intor(S.getprop(xopts, "retries"), 1)
+            retries: intor(S.getprop(xopts, "retries"), 1),
+            redirect:
+              if(S.getprop(xopts, "redirect") == "same-origin", do: "same-origin", else: "refuse")
           }
         end
 
@@ -709,7 +713,7 @@ defmodule ProjectName.Feature.Secrets do
           "method", x.method,
           "headers", S.jm(["content-type", "application/json"]),
           "body", S.jsonify(S.jm([x.request, refresh]), S.jm(["indent", 0])),
-          # Never followed: a redirect would carry the refresh token on.
+          # Never followed by the client: a redirect would carry the refresh token on.
           "redirect", "manual"
         ])
 
@@ -720,14 +724,21 @@ defmodule ProjectName.Feature.Secrets do
       # recurse on the first expiry - and would route the exchange through
       # the test mock, which knows nothing about it. `options.system.fetch`
       # is preferred when set, so a test can intercept the purchase.
-      {res, ferr} =
+      ask = fn at ->
         try do
           if S.isfunc(sysfetch),
-            do: sysfetch.(url, fetchdef),
-            else: raw_exchange_fetch(url, fetchdef)
+            do: sysfetch.(at, fetchdef),
+            else: raw_exchange_fetch(at, fetchdef)
         rescue
           e -> {nil, fail(e)}
         end
+      end
+
+      # By option alone, and only while the exchange stays on its own origin.
+      {res, ferr} =
+        if x.redirect == "same-origin",
+          do: follow(url, url, ask.(url), ask, @redirect_max),
+          else: ask.(url)
 
       cond do
         ferr != nil ->
@@ -757,6 +768,33 @@ defmodule ProjectName.Feature.Secrets do
       end
     end
   end
+
+  defp follow(url, at, {res, nil} = got, ask, hops) when hops > 0 do
+    case moved(url, at, res) do
+      nil -> got
+      next -> follow(url, next, ask.(next), ask, hops - 1)
+    end
+  end
+
+  defp follow(_url, _at, got, _ask, _hops), do: got
+
+  # Where a redirect keeping method and body (307 or 308) points, on the
+  # exchange's own origin. Any other would drop the body or leave the origin.
+  defp moved(url, at, res) do
+    location = if S.ismap(res), do: S.getprop(S.getprop(res, "headers"), "location")
+
+    if S.ismap(res) and H.to_int(S.getprop(res, "status")) in [307, 308] and
+         is_binary(location) and location != "" do
+      try do
+        next = URI.merge(URI.parse(at), location)
+        if origin(next) == origin(URI.parse(url)), do: URI.to_string(next)
+      rescue
+        _ -> nil
+      end
+    end
+  end
+
+  defp origin(uri), do: {uri.scheme, uri.host, uri.port}
 
   defp bodyfield(res, name) do
     jf = S.getprop(res, "json")
@@ -801,7 +839,7 @@ defmodule ProjectName.Feature.Secrets do
       end
 
     case :httpc.request(method, request, [autoredirect: false], body_format: :binary) do
-      {:ok, {{_v, status, _reason}, _rh, resbody}} ->
+      {:ok, {{_v, status, _reason}, rh, resbody}} ->
         text = if is_binary(resbody), do: resbody, else: to_string(resbody)
 
         parsed =
@@ -811,7 +849,10 @@ defmodule ProjectName.Feature.Secrets do
             _ -> nil
           end
 
-        {S.jm(["status", status, "json", fn -> parsed end, "body", text]), nil}
+        headers =
+          S.jm(Enum.flat_map(rh, fn {k, v} -> [String.downcase(to_string(k)), to_string(v)] end))
+
+        {S.jm(["status", status, "headers", headers, "json", fn -> parsed end, "body", text]), nil}
 
       {:error, reason} ->
         {nil, err("secrets_exchange_failed", "secrets: token exchange transport: " <> inspect(reason))}

@@ -9,6 +9,7 @@
 # inspection. Replayed responses expose a re-readable "json" body.
 
 require_relative 'base_feature'
+require_relative '../utility/media'
 
 class ProjectNameCacheFeature < ProjectNameBaseFeature
   def initialize
@@ -57,6 +58,12 @@ class ProjectNameCacheFeature < ProjectNameBaseFeature
 
     res, err = inner.call(ctx, url, fetchdef)
 
+    # A body that declares another type than JSON passes by, unread.
+    if err.nil? && _cacheable(res) && !_json(res)
+      _track("bypass")
+      return res, err
+    end
+
     if err.nil? && _cacheable(res)
       snapshot = _snapshot(res)
       ttl = @options["ttl"].nil? ? 5000 : @options["ttl"]
@@ -76,6 +83,11 @@ class ProjectNameCacheFeature < ProjectNameBaseFeature
     return false if true == res["unreadable"]
     status = res["status"]
     status.is_a?(Numeric) && status >= 200 && status < 300
+  end
+
+  def _json(res)
+    type = ProjectNameUtilities.header_value(res["headers"], "content-type")
+    type.empty? || ProjectNameUtilities.json_media?(type)
   end
 
   def _snapshot(res)

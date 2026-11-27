@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Locale;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,6 +21,7 @@ import JAVAPACKAGE.core.Config;
 import JAVAPACKAGE.core.Context;
 import JAVAPACKAGE.core.SdkClient;
 import JAVAPACKAGE.core.Utility;
+import JAVAPACKAGE.utility.Fetcher;
 import JAVAPACKAGE.feature.secrets.plugin.Definition;
 import JAVAPACKAGE.feature.secrets.sekreto.Json;
 import JAVAPACKAGE.feature.secrets.sekreto.Sekreto;
@@ -134,7 +136,10 @@ public class SecretsFeature extends BaseFeature {
     String response;
     List<Integer> statuses;
     int retries;
+    String redirect;
   }
+
+  private static final int REDIRECT_MAX = 5;
 
   // One shared in-flight resolution: late arrivals await the latch and
   // read the outcome.
@@ -175,6 +180,8 @@ public class SecretsFeature extends BaseFeature {
       x.request = FeatureOptions.foptStr(xopts, "request", "refresh_token");
       x.response = FeatureOptions.foptStr(xopts, "response", "access_token");
       x.retries = FeatureOptions.foptInt(xopts, "retries", 1);
+      x.redirect = "same-origin".equals(FeatureOptions.foptStr(xopts, "redirect", "refuse"))
+          ? "same-origin" : "refuse";
       x.statuses = new ArrayList<>();
       List<Object> rawstatuses = FeatureOptions.foptList(xopts, "statuses");
       if (rawstatuses != null) {
@@ -705,24 +712,24 @@ public class SecretsFeature extends BaseFeature {
     fetchdef.put("method", x.method);
     fetchdef.put("headers", headers);
     fetchdef.put("body", Json.stringify(payload));
-    // Never followed: a redirect would carry the refresh token on.
+    // Never followed by the client: a redirect would carry the refresh token on.
     fetchdef.put("redirect", "manual");
 
     // Deliberately NOT the SDK transport. The transport is what this
     // feature wraps, and sending the token request back through it would
     // recurse on the first expiry - and would route the exchange through
     // the test mock, which knows nothing about it.
-    Object res;
-    if (fetchRaw instanceof BiFunction) {
-      res = ((BiFunction<String, Map<String, Object>, Object>) fetchRaw)
-          .apply(url, fetchdef);
-    }
-    else {
-      // No custom transport supplied - the ordinary case. makeOptions
-      // leaves system.fetch unset, so the exchange gets its own raw HTTP
-      // path: requiring a custom transport for the COMMON case would
-      // reject every live token purchase before a request was made.
-      res = rawExchangeFetch(url, fetchdef);
+    Object res = exchangeFetch(fetchRaw, url, fetchdef);
+
+    // By option alone, and only while the exchange stays on its own origin.
+    String at = url;
+    for (int hops = 0; "same-origin".equals(x.redirect) && hops < REDIRECT_MAX; hops++) {
+      String next = moved(url, at, res);
+      if (next == null) {
+        break;
+      }
+      at = next;
+      res = exchangeFetch(fetchRaw, at, fetchdef);
     }
 
     int status = FeatureOptions.fresStatus(res);
@@ -755,6 +762,51 @@ public class SecretsFeature extends BaseFeature {
     }
 
     return token;
+  }
+
+  private static Object exchangeFetch(Object fetchRaw, String url,
+      Map<String, Object> fetchdef) {
+    if (fetchRaw instanceof BiFunction) {
+      return ((BiFunction<String, Map<String, Object>, Object>) fetchRaw)
+          .apply(url, fetchdef);
+    }
+    // No custom transport supplied - the ordinary case. makeOptions
+    // leaves system.fetch unset, so the exchange gets its own raw HTTP
+    // path: requiring a custom transport for the COMMON case would
+    // reject every live token purchase before a request was made.
+    return rawExchangeFetch(url, fetchdef);
+  }
+
+  // Where a 307 or 308 points, when that is on the exchange's own origin. Any
+  // other redirect would drop the body or leave the origin.
+  private static String moved(String url, String at, Object res) {
+    int status = FeatureOptions.fresStatus(res);
+    if (307 != status && 308 != status) {
+      return null;
+    }
+    String location = FeatureOptions.fresHeader(res, "location");
+    if ("".equals(location)) {
+      return null;
+    }
+    try {
+      URI next = Fetcher.resolveLocation(URI.create(at), location);
+      String origin = originOf(next);
+      return origin != null && origin.equals(originOf(URI.create(url))) ? next.toString() : null;
+    }
+    catch (RuntimeException e) {
+      return null;
+    }
+  }
+
+  private static String originOf(URI uri) {
+    String scheme = uri.getScheme();
+    String host = uri.getHost();
+    if (scheme == null || host == null) {
+      return null;
+    }
+    scheme = scheme.toLowerCase(Locale.ROOT);
+    int port = uri.getPort() < 0 ? ("https".equals(scheme) ? 443 : 80) : uri.getPort();
+    return scheme + "://" + host.toLowerCase(Locale.ROOT) + ":" + port;
   }
 
   // rawExchangeFetch is the token-exchange transport of last resort: plain
@@ -815,7 +867,9 @@ public class SecretsFeature extends BaseFeature {
 
     Map<String, Object> out = new LinkedHashMap<>();
     out.put("status", resp.statusCode());
-    out.put("headers", new LinkedHashMap<String, Object>());
+    Map<String, Object> rheaders = new LinkedHashMap<>();
+    resp.headers().firstValue("location").ifPresent((v) -> rheaders.put("location", v));
+    out.put("headers", rheaders);
     out.put("json", (Supplier<Object>) () -> jsonBody);
     out.put("body", text);
     return out;

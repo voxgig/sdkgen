@@ -79,8 +79,6 @@ class EntyClass:
         # the call:
         #   - inbound (download): yield items/chunks (from the streaming
         #     feature when active, else the materialised items);
-        #   - outbound (upload): an iterable `body` in callopts is attached to
-        #     the request so the transport can stream the payload;
         #   - `ctrl` (pipeline control) and `signal` (cancellation) honoured.
         utility = self._utility
 
@@ -102,14 +100,6 @@ class EntyClass:
                 ctxmap[k] = v
 
         ctx = utility.make_context(ctxmap, self._entctx)
-
-        # Outbound: expose the caller's iterable payload so the request builder
-        # / transport can stream it as the request body.
-        body = callopts.get("body")
-        if body is not None:
-            ctx.reqdata = dict(ctx.reqdata or {})
-            ctx.reqdata["body$"] = body
-            ctx.meta["stream_out"] = body
 
         def aborted():
             if signal is None:

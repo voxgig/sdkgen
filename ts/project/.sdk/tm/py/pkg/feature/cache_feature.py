@@ -4,6 +4,7 @@ from __future__ import annotations
 import time
 
 from projectname_sdk.feature.base_feature import ProjectNameBaseFeature
+from projectname_sdk.utility.media import header_value, is_json_media
 
 
 # Response caching for safe (read) requests. Wraps the active transport and
@@ -84,7 +85,12 @@ class ProjectNameCacheFeature(ProjectNameBaseFeature):
         status = res.get("status")
         if not isinstance(status, (int, float)) or isinstance(status, bool):
             return False
-        return 200 <= status < 300
+        return 200 <= status < 300 and self._json(res)
+
+    # A body that declares another type than JSON passes by, unread.
+    def _json(self, res):
+        ctype = header_value(res.get("headers"), "content-type")
+        return ctype == "" or is_json_media(ctype)
 
     def _snapshot(self, res):
         data = None

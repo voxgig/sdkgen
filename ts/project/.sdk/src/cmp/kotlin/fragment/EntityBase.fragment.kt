@@ -172,8 +172,6 @@ abstract class EntityBase(nm: String, clientIn: SdkClient, entoptsIn: MutableMap
    * the call:
    *   - inbound (download): iterate the yielded items/chunks (from the
    *     streaming feature when active, else the materialised items);
-   *   - outbound (upload): pass a streamable payload as callopts["body"] - it
-   *     is attached to the request so the transport can send it;
    *   - callopts["ctrl"] threads pipeline control and callopts["signal"] (a
    *     () -> Boolean that returns true when aborted) is honoured between
    *     yields.
@@ -201,14 +199,6 @@ abstract class EntityBase(nm: String, clientIn: SdkClient, entoptsIn: MutableMap
     }
 
     val ctx = this.utility.makeContext(ctxmap, this.entctx)
-
-    // Outbound: expose the caller's streamable payload so the request builder
-    // / transport can stream it as the request body.
-    val body = opts["body"]
-    if (body != null) {
-      ctx.reqdata["body\$"] = body
-      ctx.ctrl.streamOut = body
-    }
 
     // Run the same pipeline the op methods run.
     val materialised = runOp(ctx) {}

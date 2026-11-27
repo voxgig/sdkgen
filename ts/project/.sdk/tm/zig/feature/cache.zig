@@ -13,6 +13,7 @@ const h = @import("../core/helpers.zig");
 const err = @import("../core/error.zig");
 const types = @import("../core/types.zig");
 const sup = @import("support.zig");
+const media = @import("../core/utility.zig");
 
 const Value = h.Value;
 const Context = types.Context;
@@ -146,7 +147,7 @@ fn through(track: *CacheTrack, options: Value, ctx: *Context, url: []const u8, f
     }
 
     if (inner.invoke(ctx, url, fetchdef)) |res| {
-        if (storable(res)) {
+        if (storable(res) and json(res)) {
             const snap = h.A().create(CacheSnapshot) catch unreachable;
             snap.* = snapshot(res);
             const ttl = sup.fopt_int(options, "ttl", 5000);
@@ -169,6 +170,19 @@ fn storable(res: Value) bool {
     const status = sup.fres_status(res) orelse return false;
     if (h.get_bool(res, "unreadable") orelse false) return false;
     return status >= 200 and status < 300;
+}
+
+// A body that declares another type than JSON passes by, unread.
+fn json(res: Value) bool {
+    const headers = h.getp(res, "headers");
+    if (headers != .object) return true;
+    var it = headers.object.iterator();
+    while (it.next()) |kv| {
+        if (!std.ascii.eqlIgnoreCase(kv.key_ptr.*, "content-type") or kv.value_ptr.* != .string) continue;
+        const declared = kv.value_ptr.*.string;
+        return 0 == std.mem.trim(u8, declared, " \t").len or media.is_json_media(declared);
+    }
+    return true;
 }
 
 fn snapshot(res: Value) CacheSnapshot {

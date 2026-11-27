@@ -12,7 +12,7 @@ import JAVAPACKAGE.utility.struct.Struct;
 
 // The media types a point declares: `response` (the model's `rs`) for the
 // Accept header, and `body` (the model's `rb`) for the request body.
-final class Media {
+public final class Media {
 
   // The data key holding a raw request body. Like `$action`, it can never be
   // a declared argument name.
@@ -20,7 +20,7 @@ final class Media {
 
   private Media() {}
 
-  static boolean isJsonMedia(Object media) {
+  public static boolean isJsonMedia(Object media) {
     String m = (media instanceof String ? (String) media : "").split(";", 2)[0]
         .trim().toLowerCase(Locale.ROOT);
     return "application/json".equals(m) || "text/json".equals(m) || m.endsWith("+json");

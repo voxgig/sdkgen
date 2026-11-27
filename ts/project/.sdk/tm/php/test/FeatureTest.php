@@ -713,6 +713,29 @@ class FeatureTest extends TestCase
         $this->assertSame(2, $h->client->_cache['bypass']);
     }
 
+    public function test_cache_a_body_that_declares_another_type_than_json_passes_by_unread(): void
+    {
+        $this->needs('cache');
+        $sent = [];
+        $rec = new FtRecorder(function (int $n) use (&$sent) {
+            $res = FtHarness::response(200, null, ['content-type' => 'audio/wav']);
+            $res['body'] = 'RIFF' . $n;
+            $sent[] = $res;
+            return $res;
+        });
+        $h = new FtHarness([
+            ['name' => 'cache'],
+        ], $rec->server());
+        $a = $h->op(['op' => 'load', 'path' => '/w/1/audio'])['ctx']->response;
+        $b = $h->op(['op' => 'load', 'path' => '/w/1/audio'])['ctx']->response;
+        $this->assertCount(2, $rec->calls, 'the body was stored');
+        $this->assertSame($sent[0]['json'], $a->json_func, 'the cache handed on a copy it had read');
+        $this->assertSame('RIFF1', $a->body);
+        $this->assertSame($sent[1]['json'], $b->json_func);
+        $this->assertSame('RIFF2', $b->body);
+        $this->assertSame(2, $h->client->_cache['bypass']);
+    }
+
     public function test_cache_refetches_after_the_ttl(): void
     {
         $this->needs('cache');

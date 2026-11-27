@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.api.Test
@@ -403,6 +404,29 @@ class FeatureTest {
     h.op(fhOp("load").path("/w"))
     h.op(fhOp("load").path("/w"))
     assertEquals(2, rec.calls.size, "expected 2 calls")
+    assertEquals(2, f.bypass, "expected 2 bypasses")
+  }
+
+  @Test
+  fun cache_aBodyThatDeclaresAnotherTypeThanJsonPassesByUnread() {
+    assumeFeatures("cache")
+    val sent = mutableListOf<MutableMap<String, Any?>>()
+    val rec = FhRecorder()
+    rec.reply = { _, _ ->
+      val res = fhResponse(200, null, mapOf("content-type" to "audio/wav"))
+      res["body"] = "RIFF".toByteArray()
+      sent.add(res)
+      res
+    }
+    val f = CacheFeature()
+    val h = fhMake(rec::fetch, fhF(f, fhMap("ttl", 10000)))
+    val a = h.op(fhOp("load").path("/w/1/audio"))
+    val b = h.op(fhOp("load").path("/w/1/audio"))
+    assertEquals(2, rec.calls.size, "the body was stored")
+    assertSame(sent[0]["body"], a.ctx?.response?.body, "the cache handed on a copy it had read")
+    assertSame(sent[0]["headers"], a.ctx?.response?.headers)
+    assertSame(sent[1]["body"], b.ctx?.response?.body)
+    assertSame(sent[1]["headers"], b.ctx?.response?.headers)
     assertEquals(2, f.bypass, "expected 2 bypasses")
   }
 

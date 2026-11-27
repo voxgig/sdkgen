@@ -371,6 +371,32 @@ static void cache_doesNotCacheNon2xx() {
   ASSERT_EQ(f->bypass, 2, "expected 2 bypasses");
 }
 
+static void cache_passesOtherThanJsonByUnread() {
+  if (!have({"cache"})) return;
+  auto rec = std::make_shared<FhRecorder>();
+  auto sent = std::make_shared<std::vector<Value>>();
+  rec->reply = [sent](int, const Value&) {
+    Value res = fhResponse(200, Value::undef(), vmap({{"content-type", Value(std::string("audio/wav"))}}));
+    sent->push_back(res);
+    return res;
+  };
+  FetcherFn server = [rec](CtxPtr c, const std::string& u, const Value& fd) { return rec->fetch(c, u, fd); };
+  auto f = std::make_shared<CacheFeature>();
+  auto h = fhMake(server, {FF(f, Value::undef())});
+  FhOpResult a = h->op(fhOp("load").setPath("/w/1/audio"));
+  FhOpResult b = h->op(fhOp("load").setPath("/w/1/audio"));
+  // The transport's own response shares its headers map; a rebuilt copy does not.
+  auto same = [&](const FhOpResult& r, size_t i) {
+    Value got = r.ctx && r.ctx->response ? r.ctx->response->headers : Value::undef();
+    Value own = i < sent->size() ? getp((*sent)[i], "headers") : Value::undef();
+    return got.is_map() && own.is_map() && got.as_map() == own.as_map();
+  };
+  ASSERT_EQ((int)rec->calls.size(), 2, "the body was stored");
+  ASSERT_TRUE(same(a, 0), "the cache handed on a copy it had read");
+  ASSERT_TRUE(same(b, 1), "the cache handed on a copy it had read");
+  ASSERT_EQ(f->bypass, 2, "expected 2 bypasses");
+}
+
 static void cache_refetchesAfterTtl() {
   if (!have({"cache"})) return;
   FhClock clock;
@@ -905,6 +931,7 @@ int main() {
   T_RUN(cache_servesRepeatedReadFromCache);
   T_RUN(cache_doesNotCacheNonGet);
   T_RUN(cache_doesNotCacheNon2xx);
+  T_RUN(cache_passesOtherThanJsonByUnread);
   T_RUN(cache_refetchesAfterTtl);
   T_RUN(cache_evictsOldestPastMax);
   T_RUN(cache_inactiveDoesNotWrap);

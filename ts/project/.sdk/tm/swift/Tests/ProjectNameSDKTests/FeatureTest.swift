@@ -573,6 +573,27 @@ final class FeatureCacheTest: XCTestCase {
     XCTAssertEqual(rec.calls.count, 3)
   }
 
+  func testBodyOfAnotherTypeThanJsonPassesByUnread() {
+    if Fh.skipWithout("cache") { return }
+    let rec = FhRecorder()
+    var sent: [VMap?] = []
+    rec.reply = { _, _ in
+      let res = Fh.response(200, .noval, vm(("content-type", .string("audio/wav"))))
+      res.asMap?.entries["body"] = .string("RIFF")
+      sent.append(res.asMap?.entries["headers"]?.asMap)
+      return res
+    }
+    let f = CacheFeature()
+    let h = Fh.make(rec.fetch, (f, nil))
+    let a = h.op(FhOpSpec(op: "load", path: "/w/1/audio"))
+    let b = h.op(FhOpSpec(op: "load", path: "/w/1/audio"))
+    XCTAssertEqual(rec.calls.count, 2, "the body was stored")
+    XCTAssertTrue(a.ctx?.response?.headers.asMap === sent[0],
+      "the cache handed on a copy it had read")
+    XCTAssertTrue(sent.count == 2 && b.ctx?.response?.headers.asMap === sent[1])
+    XCTAssertEqual(f.bypass, 2)
+  }
+
   func testInactiveDoesNotWrap() {
     if Fh.skipWithout("cache") { return }
     let rec = FhRecorder()

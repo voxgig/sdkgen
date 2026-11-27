@@ -124,8 +124,6 @@ end
 -- ent:stream("list") do ... end`. `callopts` parameterises the call:
 --   - inbound (download): iterate items/chunks (from the streaming feature
 --     when active, else the materialised items);
---   - outbound (upload): an iterable `body` in callopts is attached to the
---     request so the transport can stream the payload;
 --   - `ctrl` (pipeline control) and `signal` (cancellation) honoured.
 function EntyClass:stream(action, args, callopts)
   local utility = self._utility
@@ -153,15 +151,6 @@ function EntyClass:stream(action, args, callopts)
   end
 
   local ctx = utility.make_context(ctxmap, self._entctx)
-
-  -- Outbound: expose the caller's iterable payload so the request builder /
-  -- transport can stream it as the request body.
-  local body = callopts["body"]
-  if body ~= nil then
-    ctx.reqdata = ctx.reqdata or {}
-    ctx.reqdata["body$"] = body
-    ctx.meta["stream_out"] = body
-  end
 
   local function aborted()
     if signal == nil then

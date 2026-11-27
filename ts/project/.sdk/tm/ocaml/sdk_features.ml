@@ -276,6 +276,10 @@ let cache_feature () : feature =
     | Map _ when getp res "unreadable" = Bool true -> false
     | Map _ -> (match getp res "status" with Num n -> n >= 200. && n < 300. | _ -> false)
     | _ -> false in
+  let json res =
+    match header_ci (getp res "headers") "content-type" with
+    | Str t -> "" = t || is_json_media t
+    | _ -> true in
   let snapshot res =
     let data = match getp res "json" with Func _ as fn -> (try call_json fn with _ -> Noval) | _ -> Noval in
     let headers = empty_map () in
@@ -301,7 +305,9 @@ let cache_feature () : feature =
         track ctx "hit"; (replay (getp hit "snapshot"), None)
       | _ ->
         let (res, err) = inner ctx url fetchdef in
-        if err = None && cacheable res then begin
+        (* A body that declares another type than JSON passes by, unread. *)
+        if err = None && cacheable res && not (json res) then (track ctx "bypass"; (res, err))
+        else if err = None && cacheable res then begin
           let snap = snapshot res in
           let ttl = opt_num !options "ttl" ~default:5000. in
           evict ();

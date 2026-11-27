@@ -281,7 +281,7 @@ every target.
 
 The token exchange of the [`secrets`](#secrets) feature makes its own
 request and follows no redirect: a redirect that answers it is a failed
-exchange.
+exchange, unless `exchange.redirect` allows one on its own origin.
 
 ### Cancelling a request
 
@@ -950,7 +950,8 @@ for await (const product of client.Product().stream('list')) {
 
 **Notes.** The entity-level `stream()` also takes an `AbortSignal` in
 `callopts.signal`, which cancels the request as well as ending the
-iteration, and for uploads an async-iterable `body`.
+iteration. It sends no request body of its own: a `body` in `callopts` is
+not read.
 
 ## `rbac`
 
@@ -1199,12 +1200,25 @@ in it), the access token is written into the live options where the
 synchronous `prepareAuth` reads it, and a response in `exchange.statuses`
 buys another and retries the request once.
 
-The exchange follows no redirect. A `3xx` from the token endpoint is a
-failed exchange, reported as `secrets: token exchange failed: 307 from
-<url>`, and nothing is sent to its `Location`, whichever origin that names.
-The refresh token is the longest-lived credential the SDK holds, so it goes
-to the token endpoint under `base` and nowhere else. A `system.fetch` the
-caller supplies is handed `redirect: 'manual'` in the fetch definition.
+By default the exchange follows no redirect. A `3xx` from the token
+endpoint is a failed exchange, reported as `secrets: token exchange failed:
+307 from <url>`, and nothing is sent to its `Location`, whichever origin
+that names. The refresh token is the longest-lived credential the SDK
+holds, so it goes to the token endpoint under `base` and nowhere else. A
+`system.fetch` the caller supplies is handed `redirect: 'manual'` in the
+fetch definition.
+
+A token endpoint that answers with a redirect to its own origin needs
+`exchange.redirect: 'same-origin'`. A `307` or `308` whose `Location`
+resolves to the exchange's own origin is then asked again there, with the
+same request, for five hops at most. Nothing else is followed: a redirect
+to another origin stays a failed exchange, and so does a `301`, `302` or
+`303`, which would turn the request into a `GET` without the token. In a
+browser the option has no effect, since a script cannot read where a
+redirect points. In `ocaml`, `cpp` and `zig` the client the exchange ships
+with reports no response headers, so the option takes effect there only
+with a `system.fetch` of the caller's own, and without one the exchange
+refuses as it does by default.
 
 Set `name` to the refresh secret when exchanging — `name` is what the chain
 is asked for.
@@ -1308,6 +1322,7 @@ rather than hidden.
 | `exchange.refresh` | `''` | An explicit refresh token, given in code. First in the chain, so it wins. `apikey` cannot serve here: with an exchange configured it means "an access token already held". |
 | `exchange.statuses` | `[401]` | Statuses meaning "your access token is spent". |
 | `exchange.retries` | `1` | Purchases-and-retries per request. One: a second refusal on a token bought moments ago is a real failure. |
+| `exchange.redirect` | `'refuse'` | What the exchange does with a redirect. `'refuse'`: a redirect is a failed exchange. `'same-origin'`: a `307` or `308` is followed while it stays on the exchange's own origin. |
 
 ```ts
 feature: {

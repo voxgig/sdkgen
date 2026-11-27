@@ -177,13 +177,6 @@ func (e *EntyClass) Stream(action string, args map[string]any, callopts map[stri
 	ctx := utility.MakeContext(ctxmap, e.entctx)
 	ctx.Meta["stream"] = callopts
 
-	// Outbound: expose the caller's payload so the request builder / transport
-	// can stream it as the request body.
-	if body := callopts["body"]; body != nil {
-		ctx.Reqdata["body$"] = body
-		ctx.Meta["stream_out"] = body
-	}
-
 	send := func(item core.StreamItem) bool {
 		select {
 		case <-signal:

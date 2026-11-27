@@ -114,7 +114,7 @@ internal fun followRedirects(
     val next: URI
     try {
       from = URI.create(url)
-      next = from.resolve(URI.create(location.trim()))
+      next = resolveLocation(from, location)
     } catch (e: RuntimeException) {
       return res
     }
@@ -167,6 +167,18 @@ internal fun followRedirects(
 
 // For a caller with no operation context, as the secrets exchange is: a
 // redirect follows the same rules, a credential told by the clean defaults.
+// A reference of a query alone keeps the path, as RFC 3986 resolves it;
+// URI.resolve follows RFC 2396 there and drops the last segment.
+fun resolveLocation(from: URI, location: String): URI {
+  val loc = location.trim()
+  if (loc.startsWith("?")) {
+    val base = from.toString()
+    val cut = base.indexOfAny(charArrayOf('?', '#'))
+    return URI.create((if (cut < 0) base else base.substring(0, cut)) + loc)
+  }
+  return from.resolve(URI.create(loc))
+}
+
 fun defaultHttpFetch(fullurl: String, fetchdef: MutableMap<String, Any?>): MutableMap<String, Any?> =
   followRedirects(null, fullurl, fetchdef)
 

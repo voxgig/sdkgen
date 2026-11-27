@@ -138,8 +138,6 @@
 ;; record, the struct map its data-get returns.
 ;; `callopts` parameterises the call:
 ;;   - ctrl:   per-call pipeline control (threaded onto the op ctx);
-;;   - body:   an async-iterable/list payload for outbound (upload) streaming,
-;;             attached to the request (reqdata.body$ + a stream-out marker);
 ;;   - signal: an optional 0-arg fn; when it returns true iteration stops.
 (defn stream [ent action args callopts]
   (let [callopts (let [m (core/to-map callopts)] (if m m (vs/jm)))
@@ -153,13 +151,6 @@
             (doseq [item (or (vs/items am) [])]
               (.put ^java.util.Map ctxmap (vs/getprop item 0) (vs/getprop item 1))))
         ctx (core/make-context ctxmap (:_entctx ent))]
-    ;; Outbound: expose an async-iterable/list payload so the request builder /
-    ;; transport can stream it as the request body.
-    (when-let [body (vs/getprop callopts "body")]
-      (let [reqdata (let [r (core/to-map (core/oget ctx :reqdata))] (if r r (vs/jm)))]
-        (.put ^java.util.Map reqdata "body$" body)
-        (core/oset! ctx :reqdata reqdata)
-        (core/oset! ctx :stream-out body)))
     (run-op ctx (fn []))
     (let [result (core/oget ctx :result)
           signal (vs/getprop callopts "signal")

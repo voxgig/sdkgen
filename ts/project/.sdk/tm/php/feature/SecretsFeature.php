@@ -94,6 +94,8 @@ class ProjectNameSecretsMapProvider implements \Voxgig\Sekreto\Provider
 // and answers with a deterministic fake token.
 class ProjectNameSecretsFeature extends ProjectNameBaseFeature
 {
+    private const REDIRECT_MAX = 5;
+
     private mixed $client = null;
 
     /** @var array<string,mixed> */
@@ -200,6 +202,7 @@ class ProjectNameSecretsFeature extends ProjectNameBaseFeature
                 'response' => self::str($xopts['response'] ?? null, 'access_token'),
                 'statuses' => $statuses,
                 'retries' => is_numeric($xopts['retries'] ?? null) ? (int)$xopts['retries'] : 1,
+                'redirect' => 'same-origin' === ($xopts['redirect'] ?? null) ? 'same-origin' : 'refuse',
             ];
         }
 
@@ -556,13 +559,26 @@ class ProjectNameSecretsFeature extends ProjectNameBaseFeature
         // feature wraps, and sending the token request back through it
         // would recurse on the first expiry - and would route the exchange
         // through the test mock, which knows nothing about it.
-        [$res, $err] = $fetch($url, [
+        $fetchdef = [
             'method' => $x['method'],
             'headers' => ['content-type' => 'application/json'],
             'body' => $body,
-            // Never followed: a redirect would carry the refresh token on.
+            // Never followed by the client: a redirect would carry the refresh token on.
             'redirect' => 'manual',
-        ]);
+        ];
+
+        [$res, $err] = $fetch($url, $fetchdef);
+
+        // By option alone, and only while the exchange stays on its own origin.
+        $at = $url;
+        for ($hops = 0; null === $err && 'same-origin' === $x['redirect'] && $hops < self::REDIRECT_MAX; $hops++) {
+            $next = self::moved($url, $at, $res);
+            if (null === $next) {
+                break;
+            }
+            $at = $next;
+            [$res, $err] = $fetch($at, $fetchdef);
+        }
 
         if (null !== $err) {
             throw new \Voxgig\Sekreto\SekretoError(
@@ -717,6 +733,31 @@ class ProjectNameSecretsFeature extends ProjectNameBaseFeature
         }
         $plugs = ProjectNameConfig::feature_plugins($this->name);
         return is_array($plugs) ? $plugs : [];
+    }
+
+    // Where a method-keeping redirect points, when that is on the exchange's
+    // own origin. Any other redirect would drop the body or leave the origin.
+    private static function moved(string $url, string $at, mixed $res): ?string
+    {
+        $status = is_array($res) && is_numeric($res['status'] ?? null) ? (int)$res['status'] : 0;
+        if (307 !== $status && 308 !== $status) {
+            return null;
+        }
+        $location = $res['headers']['location'] ?? null;
+        if (!is_string($location) || '' === $location) {
+            return null;
+        }
+        $next = ProjectNameFetcher::resolveLocation($at, $location);
+        $origin = function (?string $u): ?string {
+            $p = null === $u ? false : parse_url(strtolower($u));
+            if (!is_array($p) || !isset($p['scheme'], $p['host'])) {
+                return null;
+            }
+            return $p['scheme'] . '://' . $p['host'] . ':' .
+                ($p['port'] ?? ('https' === $p['scheme'] ? 443 : 80));
+        };
+        $here = $origin($url);
+        return null !== $here && $here === $origin($next) ? $next : null;
     }
 
     private static function str(mixed $value, string $dflt): string

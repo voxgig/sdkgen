@@ -115,6 +115,7 @@ const Exchange = struct {
     response: []const u8,
     statuses: []const i64,
     retries: i64,
+    sameorigin: bool,
 };
 
 /// Everything the transport wrapper needs, heap-allocated once per feature
@@ -289,6 +290,7 @@ pub const SecretsFeature = struct {
                 .response = sup.fopt_str(xopts, "response", "access_token"),
                 .statuses = statuses.items,
                 .retries = sup.fopt_int(xopts, "retries", 1),
+                .sameorigin = std.mem.eql(u8, sup.fopt_str(xopts, "redirect", "refuse"), "same-origin"),
             };
         }
 
@@ -796,26 +798,14 @@ fn buy(st: *State, ctx: *Context) E![]const u8 {
 
     const sysfetch = h.getpath(&.{ "system", "fetch" }, options);
 
-    var res: Value = undefined;
-    if (sysfetch == .function) {
-        // The caller's transport, when there is one - the same seam the SDK
-        // itself uses for every request. Never followed: a redirect would
-        // carry the refresh token on.
-        res = h.call_vfn(sysfetch, h.ja(&.{
-            h.vstr(url),
-            h.jo(&.{
-                .{ "method", h.vstr(x.method) },
-                .{ "headers", h.jo(&.{.{ "content-type", h.vstr("application/json") }}) },
-                .{ "body", h.vstr(body) },
-                .{ "redirect", h.vstr("manual") },
-            }),
-        }));
-        if (h.get_str(res, "__err__")) |message| return ctx.fail(ERRCODE, message);
-    } else {
-        // No custom transport supplied - the ordinary case (make_options
-        // leaves system.fetch unset, and the SDK's default transport has no
-        // HTTP client). See raw_exchange_fetch.
-        res = try raw_exchange_fetch(ctx, url, x.method, body);
+    var res = try send(ctx, sysfetch, url, x.method, body);
+
+    // By option alone, and only while the exchange stays on its own origin.
+    var at = url;
+    var hops: usize = 0;
+    while (x.sameorigin and hops < REDIRECT_MAX) : (hops += 1) {
+        at = moved(url, at, res) orelse break;
+        res = try send(ctx, sysfetch, at, x.method, body);
     }
 
     const status = h.to_int(h.getp(res, "status"));
@@ -845,6 +835,59 @@ fn buy(st: *State, ctx: *Context) E![]const u8 {
     return token;
 }
 
+const REDIRECT_MAX = 5;
+
+// One request of the exchange.
+fn send(ctx: *Context, sysfetch: Value, url: []const u8, method: []const u8, body: []const u8) E!Value {
+    if (sysfetch == .function) {
+        // The caller's transport, when there is one - the same seam the SDK
+        // itself uses for every request. Never followed: a redirect would
+        // carry the refresh token on.
+        const res = h.call_vfn(sysfetch, h.ja(&.{
+            h.vstr(url),
+            h.jo(&.{
+                .{ "method", h.vstr(method) },
+                .{ "headers", h.jo(&.{.{ "content-type", h.vstr("application/json") }}) },
+                .{ "body", h.vstr(body) },
+                .{ "redirect", h.vstr("manual") },
+            }),
+        }));
+        if (h.get_str(res, "__err__")) |message| return ctx.fail(ERRCODE, message);
+        return res;
+    }
+    // No custom transport supplied - the ordinary case (make_options leaves
+    // system.fetch unset, and the SDK's default transport has no HTTP
+    // client). See raw_exchange_fetch.
+    return raw_exchange_fetch(ctx, url, method, body);
+}
+
+// Where a 307 or 308 points, when that is on the exchange's own origin. Any
+// other redirect would drop the body or leave the origin.
+fn moved(url: []const u8, at: []const u8, res: Value) ?[]const u8 {
+    const status = h.to_int(h.getp(res, "status"));
+    if (307 != status and 308 != status) return null;
+    const location = h.get_str(h.getp(res, "headers"), "location") orelse return null;
+    if (0 == location.len) return null;
+    const own = std.Uri.parse(url) catch return null;
+    const from = std.Uri.parse(at) catch return null;
+    const buf = h.A().alloc(u8, 2 * location.len + at.len) catch return null;
+    @memcpy(buf[0..location.len], location);
+    var aux = buf;
+    const next = from.resolveInPlace(location.len, &aux) catch return null;
+    if (!std.ascii.eqlIgnoreCase(own.scheme, next.scheme) or port_of(own) != port_of(next)) return null;
+    const ownhost = (own.host orelse return null).toRawMaybeAlloc(h.A()) catch return null;
+    const nexthost = (next.host orelse return null).toRawMaybeAlloc(h.A()) catch return null;
+    if (!std.ascii.eqlIgnoreCase(ownhost, nexthost)) return null;
+    return std.fmt.allocPrint(h.A(), "{f}", .{next}) catch null;
+}
+
+fn port_of(uri: std.Uri) ?u16 {
+    if (uri.port) |port| return port;
+    if (std.ascii.eqlIgnoreCase(uri.scheme, "https")) return 443;
+    if (std.ascii.eqlIgnoreCase(uri.scheme, "http")) return 80;
+    return null;
+}
+
 // The token-exchange transport of last resort: the vendored sekreto
 // plugins' own HTTP round-trip (std.http.Client + std TLS, always exported
 // by the generated feature/secrets/plugins.zig), answering in the shape the
@@ -869,6 +912,7 @@ fn raw_exchange_fetch(ctx: *Context, url: []const u8, method_name: []const u8, b
         .ok => |response| h.jo(&.{
             .{ "status", h.vnum(@intCast(response.status)) },
             .{ "statusText", h.vstr("") },
+            // sekreto's client answers no headers, so no Location reaches the redirect option.
             .{ "headers", h.omap() },
             .{ "json", h.json_thunk(from_std_json(response.body)) },
         }),

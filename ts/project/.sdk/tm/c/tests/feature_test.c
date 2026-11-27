@@ -432,6 +432,36 @@ static void test_cache_does_not_cache_non_2xx(void) {
   CHECK_INT_EQ(fh_track_int(f, "bypass"), 2, "cache non-2xx: 2 bypasses");
 }
 
+static voxgig_value* rep_audio(void* ud, int64_t n, voxgig_value* fd, Context* ctx, PNError** e) {
+  voxgig_value* res = fh_response(200, v_undef(), cmap(1, "content-type", v_str("audio/wav")));
+  voxgig_list_push(voxgig_as_list((voxgig_value*)ud), res);
+  return res;
+}
+
+static Response* handed(FhOpResult r) { return NULL == r.ctx ? NULL : r.ctx->response; }
+
+// The response's headers are the transport's own map; a rebuilt copy has another.
+static bool handed_is(FhOpResult r, voxgig_value* sent, size_t i) {
+  voxgig_list* l = voxgig_as_list(sent);
+  return NULL != handed(r) && i < l->len && handed(r)->headers == getp(l->items[i], "headers");
+}
+
+static void test_cache_passes_other_than_json_by_unread(void) {
+  if (!fh_present("cache")) return;
+  voxgig_value* calls;
+  voxgig_value* sent = voxgig_new_list();
+  Fetcher* srv = fh_recorder(rep_audio, sent, &calls);
+  Feature* f = feature_cache_new();
+  FhFeat feats[] = {{f, v_undef()}};
+  FhHarness h = fh_make(srv, feats, 1);
+  FhOpResult a = fh_op(&h, op_load_path("/w/1/audio"));
+  FhOpResult b = fh_op(&h, op_load_path("/w/1/audio"));
+  CHECK_INT_EQ(rec_count(calls), 2, "cache audio: the body was stored");
+  CHECK(handed_is(a, sent, 0), "cache audio: the cache handed on a copy it had read");
+  CHECK(handed_is(b, sent, 1), "cache audio: the cache handed on a copy it had read");
+  CHECK_INT_EQ(fh_track_int(f, "bypass"), 2, "cache audio: 2 bypasses");
+}
+
 static void test_cache_refetches_after_ttl(void) {
   if (!fh_present("cache")) return;
   FhClock clock = fh_clock_new();
@@ -1146,6 +1176,7 @@ int main(void) {
   RUN(test_cache_serves_repeated_read_from_cache);
   RUN(test_cache_does_not_cache_non_get);
   RUN(test_cache_does_not_cache_non_2xx);
+  RUN(test_cache_passes_other_than_json_by_unread);
   RUN(test_cache_refetches_after_ttl);
   RUN(test_cache_evicts_oldest_past_max);
   RUN(test_cache_inactive_does_not_wrap);
