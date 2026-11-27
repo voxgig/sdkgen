@@ -3,8 +3,9 @@
 Status: **plan** (2026-11-27). Nothing here is implemented. The plan was
 checked against sdkgen `main` at 033305a8 (4.45.0 plus the merges of #500,
 #501, #513 and #522) and the tracker as read on 2026-11-26: 57 open issues,
-#196 to #512. Paths are relative to the sdkgen repository root unless another
-repository is named.
+#196 to #512, to which five filed later that day were added on 2026-11-27
+(#527 to #532), 62 in all. Paths are relative to the sdkgen repository root
+unless another repository is named.
 
 The request, in full:
 
@@ -13,7 +14,7 @@ The request, in full:
 
 Twelve rulings were asked and answered on 2026-11-26 and 2026-11-27; they are
 DQ1 to DQ12 in section 6, and the plan follows them. Decisions the plan makes
-on its own are D1 to D43, each beside the item it decides; any of them can be
+on its own are D1 to D46, each beside the item it decides; any of them can be
 reversed before its package starts.
 
 ---
@@ -24,13 +25,16 @@ decision this plan makes.
 
 ## 1. Summary
 
-The 57 issues divide into 48 defects and 9 capabilities. None of them is
-covered by a delivery or a plan in force: the November round fixed apidef's
-issues and sdkgen's CI and CLI, and the two plans in force (the generated
-text, files in the generated SDKs) touch five of these only at their edges
-(#365 and #435 are documentation defects of the kind the text plan's
-catalogue holds; #398 and #465 need the file plan's noun and form codec;
-#455 and #491 sit beside its security rules).
+The 62 issues divide into 53 defects and 9 capabilities. Two of them, #527
+and #528, are the request and response halves of what the file plan builds
+(multipart bodies, binary and event-stream responses) and are tracked in
+its delivery, file-handling-0; this plan names them and does not repeat
+them. None of the other 60 is covered by a delivery or a plan in force: the
+November round fixed apidef's issues and sdkgen's CI and CLI, and the two
+plans in force (the generated text, files in the generated SDKs) touch five
+of these only at their edges (#365 and #435 are documentation defects of the
+kind the text plan's catalogue holds; #398 and #465 need the file plan's
+noun and form codec; #455 and #491 sit beside its security rules).
 
 The order is by harm. Four issues let one caller's data or credential reach
 another caller or a log (#427, #491, #510, #455); they go first, alone, in
@@ -246,7 +250,7 @@ errors.
 
 ### WP03. Typed models, the small defects (T3)
 
-Issues: #511, #269, #398. Size: M.
+Issues: #511, #269, #398, #532. Size: M.
 
 - **#511.** `skipUntaggable` in `EntityTypes_go.ts` reads `member.name`
   where the field carries `n`, and drops every field before the warning it
@@ -265,13 +269,18 @@ Issues: #511, #269, #398. Size: M.
   `byte[]`, ts `Blob | Uint8Array`, and so on) and stays a string where the
   field travels inside JSON; `canonToType` reads `fo`. Lands after
   file-handling-0's codec work names the roles.
+- **#532.** A load match type requires `id` when the record has an `id`
+  field, although no load route takes one. D44: the match type requires `id`
+  only when a load route of the entity has an id parameter, in
+  `EntityTypes_ts` and the other typed targets' match types. Pinned by the
+  typed-model guard over a no-id load whose record has an `id` field.
 
 Depends on apidef for #269 and on file-handling-0 for #398. #220 is out
 (DQ12).
 
 ### WP04. The generator and the packages (T3)
 
-Issues: #509, #506, #507, #432, #505, #512, #392. Size: M.
+Issues: #509, #506, #507, #432, #505, #512, #392, #530. Size: L.
 
 - **#509.** `SdkGen.makeBuild` constructs the generator from the build's
   options and never from `build.fs` or `build.dryrun`, so a dry run writes
@@ -304,12 +313,20 @@ Issues: #509, #506, #507, #432, #505, #512, #392. Size: M.
   ignores (`make deps` forbids a committed one); the Makefile's publish
   target refuses to tag go-cli or go-mcp until `go/v<version>` exists on
   origin; the root README's Install cells carry `go install` again.
+- **#530.** Generating a large SDK (558 entities, nine targets) runs out of
+  memory at Node's default heap, because what one target's generation holds
+  (jostraca's trees and content, per-target model copies, caches keyed by
+  target) is kept through the next. D45: measure the heap after each target
+  on the Composal model, release each target's trees and caches once its
+  files are written, and add a test that generates several targets of a
+  large fixture under a heap limit set well below the sum. Peak memory then
+  belongs to the largest target.
 
 Depends on nothing. Releases as R3.
 
-### WP05. Transport capabilities and parity (T3)
+### WP05. Transports, the pipeline and parity (T3)
 
-Issues: #408, #351, #407, #416, #420, #465, #402, #404. Size: XL.
+Issues: #408, #351, #407, #416, #420, #465, #402, #404, #529. Size: XL.
 
 - **#408 TLS trust.** D26: one client option in `main.kit.optspec`,
   `tls: { fingerprint, ca }`, honoured by every target's transport:
@@ -356,6 +373,13 @@ Issues: #408, #351, #407, #416, #420, #465, #402, #404. Size: XL.
   vendor tool with a per-SDK module prefix, so two SDKs and station load in
   one process without redefinition. Pinned by a harness test loading two
   generated SDKs.
+- **#529 point selection.** A call with a valid `$action` and a missing
+  required field fails as `point_action_invalid`, naming the action. D46:
+  when the action names at least one point, the error is `point_no_match`
+  with the missing fields of that action's points, as a call without an
+  action already gets; `point_action_invalid` stays for an action no point
+  declares. Every target's `make_point` carries the same rule. Pinned by a
+  corpus case with the action and no required header.
 
 Depends on file-handling-0 for #465's codec. Releases as R3 with migration
 notes for the Python transport and floor, `result.text` and the go error
@@ -515,7 +539,7 @@ Rulings given by the maintainer, 2026-11-26 and 2026-11-27:
 | DQ11 | #234, #433 Windows | Supported: both fixed, with a Windows lane for generated projects. |
 | DQ12 | #220 nested types | A delivery of its own after this round; #269, #398 and #511 now. |
 
-Decisions this plan makes (D1 to D43) are beside their items in section 4.
+Decisions this plan makes (D1 to D46) are beside their items in section 4.
 Three of them touch other repositories and need their owners: D4 (sekreto),
 D18 (apidef) and D35 (station). D25 changes how a Go consumer installs the
 CLI and MCP server and so belongs in R3's notes. Nothing here authorises a
@@ -533,6 +557,10 @@ release; each one is the maintainer's dispatch.
   the list; generating the registration in eight targets is station's Stage 4
   and goes to that delivery.
 - **#274** is a note, not a build (WP11).
+- **#527 and #528, multipart requests and binary or event-stream responses.**
+  The file plan (`docs/design/file-transfer.md`, delivery file-handling-0)
+  builds the body codecs these need, and tracks them; WP03's #398 and
+  WP05's #465 follow that work.
 
 ## Appendix A. Issue index
 
@@ -598,3 +626,8 @@ target.
 | #433 | Windows: generate fails, `api/api-info.aontu` not found | defect | model path resolution on Windows | generator | M | WP10 |
 | #234 | cross-platform build and test scripts for Windows | capability | Makefiles and scripts of every target | all 20 | L | WP10 |
 | #274 | hold credentials XOR-masked in memory | investigation | design note | all | M | WP11 |
+| #527 | multipart request bodies are sent as JSON | defect | body codecs | all 20 | L | file-handling-0 |
+| #528 | binary and event-stream responses parsed as JSON | defect | `ResultBodyUtility` and siblings | all 20 | L | file-handling-0 |
+| #529 | a valid `$action` with a missing required field fails as `point_action_invalid` | defect | `MakePointUtility` and every `make_point` | all 20 | S | WP05 |
+| #530 | generating a large SDK runs out of memory; memory kept across targets | defect | `sdkgen.ts`, jostraca trees, caches | generator | M | WP04 |
+| #532 | a no-id load's match type requires `id` when the record has an `id` field | defect | `EntityTypes_ts` and typed siblings | typed targets | S | WP03 |
