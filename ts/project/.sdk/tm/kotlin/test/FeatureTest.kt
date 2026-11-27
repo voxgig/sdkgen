@@ -768,6 +768,26 @@ class FeatureTest {
     assertEquals(0, f.records.size, "expected no records")
   }
 
+  // --- one call, one id -----------------------------------------------------------
+
+  @Test
+  fun correlation_telemetryDebugAndAuditCarryOneCallsContextId() {
+    assumeFeatures("telemetry", "debug", "audit")
+    val telemetry = TelemetryFeature()
+    val debug = DebugFeature()
+    val audit = AuditFeature()
+    val h = fhMake(null, fhF(telemetry, null), fhF(debug, null), fhF(audit, null))
+    h.op(fhOp("load"))
+    h.op(fhOp("list"))
+    val ids = { recs: List<Map<String, Any?>> -> recs.map { it["correlationId"] } }
+    val calls = ids(audit.records)
+    assertEquals(2, calls.size, "expected one audit record per call")
+    assertTrue(calls.all { it is String && "" != it }, "expected a context id per call, got $calls")
+    assertNotEquals(calls[0], calls[1], "expected a different id per call")
+    assertEquals(calls, ids(telemetry.spans), "expected the spans to carry the audit ids")
+    assertEquals(calls, ids(debug.entries), "expected the debug entries to carry the audit ids")
+  }
+
   // --- clienttrack ----------------------------------------------------------------
 
   @Test

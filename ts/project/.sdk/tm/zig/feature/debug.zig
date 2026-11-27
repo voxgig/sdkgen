@@ -107,6 +107,7 @@ pub const DebugFeature = struct {
 
         const entry = h.omap();
         h.setp(entry, "op", h.vstr(std.fmt.allocPrint(h.A(), "{s}.{s}", .{ entity, opname }) catch ""));
+        h.setp(entry, "correlationId", h.vstr(ctx.id));
         h.setp(entry, "start", h.vnum(sup.fopt_now(self.options)));
         if (ctx.spec) |sp| {
             h.setp(entry, "method", h.vstr(sp.method));

@@ -92,6 +92,7 @@ pub const TelemetryFeature = struct {
         const span = h.omap();
         h.setp(span, "traceId", h.vstr(self.id("trace")));
         h.setp(span, "spanId", h.vstr(self.id("span")));
+        h.setp(span, "correlationId", h.vstr(ctx.id));
         h.setp(span, "name", h.vstr(std.fmt.allocPrint(h.A(), "{s}.{s}", .{ entity, opname }) catch ""));
         h.setp(span, "start", h.vnum(sup.fopt_now(self.options)));
         ctx.out_set(TELEMETRY_SPAN_KEY, OutVal{ .val = span });

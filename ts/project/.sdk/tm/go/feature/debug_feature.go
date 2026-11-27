@@ -46,8 +46,9 @@ func (f *DebugFeature) PreRequest(ctx *core.Context) {
 	}
 
 	entry := map[string]any{
-		"op":    entity + "." + opname,
-		"start": foptNow(f.options)(),
+		"op":            entity + "." + opname,
+		"correlationId": ctx.Id,
+		"start":         foptNow(f.options)(),
 	}
 	if ctx.Spec != nil {
 		entry["method"] = ctx.Spec.Method

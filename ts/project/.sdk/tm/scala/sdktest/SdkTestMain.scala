@@ -541,6 +541,28 @@ object SdkTestMain {
       h.op(fhOp("load")); eqI("audit.inactive", 0, f.records.size()) }
   }
 
+  private def testCorrelation(): Unit = {
+    { val telemetry = new TelemetryFeature(); val debug = new DebugFeature(); val audit = new AuditFeature()
+      val h = fhMake(null, fhF(telemetry, null), fhF(debug, null), fhF(audit, null))
+      h.op(fhOp("load")); h.op(fhOp("list"))
+      def ids(recs: JList[JMap[String, Object]]): JList[Object] = {
+        val out = new ArrayList[Object]()
+        val it = recs.iterator()
+        while (it.hasNext) out.add(it.next().get("correlationId"))
+        out
+      }
+      val calls = ids(audit.records)
+      eqI("correlation.calls", 2, calls.size())
+      val it = calls.iterator()
+      while (it.hasNext) {
+        val id = it.next()
+        check("correlation.id", id.isInstanceOf[String] && "" != id, "expected a context id, got " + calls)
+      }
+      check("correlation.distinct", 2 == calls.size() && !jeq(calls.get(0), calls.get(1)), "expected a different id per call, got " + calls)
+      eq("correlation.spans", calls, ids(telemetry.spans))
+      eq("correlation.debug", calls, ids(debug.entries)) }
+  }
+
   private def testClienttrack(): Unit = {
     { val rec = new FhRecorder(); val f = new ClienttrackFeature()
       val h = fhMake((c, u, fd) => rec.fetch(c, u, fd), fhF(f, om("clientName" -> "Acme", "clientVersion" -> "2.0.0")))
@@ -1048,7 +1070,8 @@ object SdkTestMain {
       "netsim" -> testNetsim, "retry" -> testRetry, "timeout" -> testTimeout,
       "ratelimit" -> testRatelimit, "cache" -> testCache, "idempotency" -> testIdempotency,
       "rbac" -> testRbac, "metrics" -> testMetrics, "telemetry" -> testTelemetry,
-      "debug" -> testDebug, "audit" -> testAudit, "clienttrack" -> testClienttrack,
+      "debug" -> testDebug, "audit" -> testAudit, "correlation" -> testCorrelation,
+      "clienttrack" -> testClienttrack,
       "paging" -> testPaging, "streaming" -> testStreaming, "proxy" -> testProxy,
       "composition" -> testComposition, "featureAdd" -> testFeatureAdd,
       "featureOrder" -> testFeatureOrder, "entityCrud" -> testEntityCrud,

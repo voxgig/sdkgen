@@ -119,6 +119,7 @@ impl Feature for DebugFeature {
 
         let entry = Value::empty_map();
         setp(&entry, "op", Value::str(format!("{}.{}", entity, opname)));
+        setp(&entry, "correlationId", Value::str(ctx.id.clone()));
         setp(
             &entry,
             "start",

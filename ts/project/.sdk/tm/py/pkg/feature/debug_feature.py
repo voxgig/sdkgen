@@ -46,6 +46,7 @@ class ProjectNameDebugFeature(ProjectNameBaseFeature):
 
         entry = {
             "op": opname,
+            "correlationId": ctx.id,
             "method": spec.method if spec is not None else None,
             "url": (spec.url or spec.path) if spec is not None else None,
             "headers": self._redact(ctx, spec.headers if spec is not None else None),
