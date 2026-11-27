@@ -1,12 +1,14 @@
 package SCALAPACKAGE.feature
 
 import java.util.{LinkedHashMap, List => JList, Map => JMap}
-import SCALAPACKAGE.core.{Context, SdkClient}
+import SCALAPACKAGE.core.{Context, Helpers, SdkClient}
 
 // Client-side role/permission enforcement. Before an operation resolves its
 // endpoint, the required permission is checked against the held permissions;
 // a disallowed call is short-circuited with an `rbac_denied` error (via
 // ctx.out["point"], which makePoint surfaces) and never touches the network.
+// Required permissions come from `rules`, keyed by `<entity>.<op>:<action>`,
+// `<entity>.<op>`, `<op>` or `*`, most specific first.
 class RbacFeature extends BaseFeature("rbac", "0.0.1", true) {
 
   private var client: SdkClient = null
@@ -51,17 +53,9 @@ class RbacFeature extends BaseFeature("rbac", "0.0.1", true) {
     val rules = FeatureOptions.foptMap(this.options, "rules")
     if (rules == null) return null
 
-    var entity = ""
-    if (ctx.entity != null) entity = ctx.entity.getName()
-    else if (ctx.op != null) entity = ctx.op.entity
-    var opname = ""
-    if (ctx.op != null) opname = ctx.op.name
-
-    val keys = Array(entity + "." + opname, opname, "*")
-    var i = 0
-    while (i < keys.length) {
-      rules.get(keys(i)) match { case s: String => return s; case _ => }
-      i += 1
+    val it = Helpers.opKeys(ctx).iterator()
+    while (it.hasNext) {
+      rules.get(it.next()) match { case s: String => return s; case _ => }
     }
     null
   }
@@ -71,6 +65,8 @@ class RbacFeature extends BaseFeature("rbac", "0.0.1", true) {
 
     var opname = "?"
     if (ctx.op != null) opname = ctx.op.name
+    val action = Helpers.opAction(ctx)
+    if (action != null) opname = opname + ":" + action
     val err = ctx.makeError("rbac_denied",
       "Permission \"" + required + "\" required for operation \"" + opname + "\"")
 
@@ -85,6 +81,8 @@ class RbacFeature extends BaseFeature("rbac", "0.0.1", true) {
     rec.put("required", required)
     rec.put("allowed", java.lang.Boolean.valueOf(wasAllowed))
     rec.put("op", opname)
+    val action = Helpers.opAction(ctx)
+    if (action != null) rec.put("action", action)
     this.last = rec
   }
 }

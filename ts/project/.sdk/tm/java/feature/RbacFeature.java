@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import JAVAPACKAGE.core.Context;
+import JAVAPACKAGE.core.Helpers;
 import JAVAPACKAGE.core.SdkClient;
 
 // Client-side role/permission enforcement. Before an operation resolves its
@@ -12,7 +13,8 @@ import JAVAPACKAGE.core.SdkClient;
 // against the permissions the client holds; a disallowed call is
 // short-circuited with an `rbac_denied` error (via ctx.out["point"], which
 // makePoint surfaces) and never touches the network. Required permissions
-// come from `rules` (keyed by `<entity>.<op>`, `<op>`, or `*`); the default
+// come from `rules` (keyed by `<entity>.<op>:<action>`, `<entity>.<op>`,
+// `<op>` or `*`, most specific first); the default
 // when no rule matches is controlled by `deny` (default: allow when
 // unspecified). Held permissions are the `permissions` list (a `*` grants
 // everything).
@@ -76,19 +78,7 @@ public class RbacFeature extends BaseFeature {
       return null;
     }
 
-    String entity = "";
-    if (ctx.entity != null) {
-      entity = ctx.entity.getName();
-    }
-    else if (ctx.op != null) {
-      entity = ctx.op.entity;
-    }
-    String opname = "";
-    if (ctx.op != null) {
-      opname = ctx.op.name;
-    }
-
-    for (String key : new String[] { entity + "." + opname, opname, "*" }) {
+    for (String key : Helpers.opKeys(ctx)) {
       Object r = rules.get(key);
       if (r instanceof String) {
         return (String) r;
@@ -103,6 +93,10 @@ public class RbacFeature extends BaseFeature {
     String opname = "?";
     if (ctx.op != null) {
       opname = ctx.op.name;
+    }
+    String action = Helpers.opAction(ctx);
+    if (action != null) {
+      opname = opname + ":" + action;
     }
     RuntimeException err = ctx.makeError("rbac_denied",
         "Permission \"" + required + "\" required for operation \"" + opname + "\"");
@@ -127,6 +121,10 @@ public class RbacFeature extends BaseFeature {
     rec.put("required", required);
     rec.put("allowed", wasAllowed);
     rec.put("op", opname);
+    String action = Helpers.opAction(ctx);
+    if (action != null) {
+      rec.put("action", action);
+    }
     this.last = rec;
   }
 }

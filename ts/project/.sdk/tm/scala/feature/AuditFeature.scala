@@ -85,6 +85,8 @@ class AuditFeature extends BaseFeature("audit", "0.0.1", true) {
     if (ctx.result != null) {
       raw.put("status", java.lang.Integer.valueOf(ctx.result.status))
     }
+    val action = Helpers.opAction(ctx)
+    if (action != null) raw.put("action", action)
     val record =
       if (ctx.utility == null || ctx.utility.clean == null) raw
       else {

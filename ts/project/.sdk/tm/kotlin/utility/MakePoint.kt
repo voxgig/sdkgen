@@ -78,10 +78,11 @@ fun makePoint(ctx: Context): Map<String, Any?> {
 
   val allowOpRaw = Struct.getpath(options, listOf("allow", "op"))
   val allowOp = if (allowOpRaw is String) allowOpRaw else ""
-  if (!Helpers.allowed(allowOpRaw, op.name)) {
+  if (Helpers.opKeys(ctx).none { Helpers.allowed(allowOpRaw, it) }) {
+    val action = Helpers.opAction(ctx)
     throw ctx.makeError(
       "point_op_allow",
-      "Operation \"" + op.name +
+      "Operation \"" + op.name + (if (action == null) "" else ":" + action) +
         "\" not allowed by SDK option allow.op value: \"" + allowOp + "\"",
     )
   }

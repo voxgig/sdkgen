@@ -1,6 +1,7 @@
 package KOTLINPACKAGE.feature
 
 import KOTLINPACKAGE.core.Context
+import KOTLINPACKAGE.core.Helpers
 import KOTLINPACKAGE.core.FetcherFn
 import KOTLINPACKAGE.core.SdkClient
 import KOTLINPACKAGE.utility.struct.Struct
@@ -14,7 +15,7 @@ import KOTLINPACKAGE.utility.struct.Struct
 //
 // The price of an attempt comes from the first source that answers: a
 // response header (`header` x `perUnit`), the rate table (`rates`, keyed
-// '<entity>.<op>' / '<op>' / '*'), then the flat `unit`. A body figure
+// as rbac's rules are), then the flat `unit`. A body figure
 // (`path` x `perUnit`, e.g. "usage.total_tokens") is read at preDone
 // instead, from the already-parsed result. A body figure describes the whole
 // call, so it REPLACES the per-attempt estimate rather than adding to it.
@@ -69,6 +70,9 @@ class CostFeature : BaseFeature("cost", "0.0.1", true) {
     var currency = ""
     var source = ""
     var attempts = 0
+
+    // A typed record cannot omit a field: a call that names no action holds null.
+    var action: String? = null
   }
 
   // Per-operation accumulator. Held in ctx.out for the life of one call, the
@@ -198,7 +202,7 @@ class CostFeature : BaseFeature("cost", "0.0.1", true) {
     // and could run past an onBudget = "deny" ceiling indefinitely. `piped`
     // is set by prePoint, so its absence is the signal.
     if (!pending.piped) {
-      commit(ctx, pending, "_", "direct")
+      commit(ctx, pending, "_.direct", "_", "direct", null)
       ctx.out.remove(COST_PENDING_KEY)
     }
 
@@ -259,13 +263,21 @@ class CostFeature : BaseFeature("cost", "0.0.1", true) {
     val entity = if ("" == ctx.op.entity) "_" else ctx.op.entity
     val opname = if ("" == ctx.op.name) "_" else ctx.op.name
 
-    commit(ctx, raw, entity, opname)
+    commit(ctx, raw, Helpers.opKeys(ctx)[0], entity, opname, Helpers.opAction(ctx))
   }
 
   // Commit one operation's spend: totals, budget, per-op and per-actor
   // attribution, and the record. Shared by finish and the raw-request path
-  // in charge, which has no preDone to reach.
-  private fun commit(ctx: Context, pending: CostPending, entity: String, opname: String) {
+  // in charge, which has no preDone to reach. `key` is what the spend is
+  // filed under.
+  private fun commit(
+    ctx: Context,
+    pending: CostPending,
+    key: String,
+    entity: String,
+    opname: String,
+    action: String?,
+  ) {
     var amount = pending.amount
     var reported = pending.reported
     var estimated = pending.estimated
@@ -294,7 +306,7 @@ class CostFeature : BaseFeature("cost", "0.0.1", true) {
     }
 
     this.total.calls++
-    bump(this.ops, "$entity.$opname", amount)
+    bump(this.ops, key, amount)
     bump(this.actors, actor, amount)
 
     // The record leaves through `last` and the sink, so its text is cleaned.
@@ -310,6 +322,7 @@ class CostFeature : BaseFeature("cost", "0.0.1", true) {
     record.currency = cs(this.currency)
     record.source = cs(source)
     record.attempts = pending.attempts
+    record.action = action?.let { cs(it) }
     this.last = record
 
     val sink = this.options?.get("sink")
@@ -346,15 +359,11 @@ class CostFeature : BaseFeature("cost", "0.0.1", true) {
     return Pair(0.0, "none")
   }
 
-  // The rate table uses the same lookup grammar as rbac's rules:
-  // '<entity>.<op>', then '<op>', then '*'.
+  // The rate table is keyed as rbac's rules are.
   private fun rate(ctx: Context): Double? {
     val rates = FeatureOptions.foptMap(this.options, "rates") ?: return null
 
-    val entity = if (ctx.entity != null) ctx.entity!!.name else ctx.op.entity
-    val opname = ctx.op.name
-
-    for (key in arrayOf("$entity.$opname", opname, "*")) {
+    for (key in Helpers.opKeys(ctx)) {
       val r = rates[key]
       if (r is Number) {
         return r.toDouble()

@@ -3333,6 +3333,7 @@ echo get_class($client->ContactsField(null)), ' ',
 
 const CORPUS_FEATURES = [
   'test', 'log', 'cost', 'netsim', 'retry', 'cache', 'timeout', 'ratelimit', 'paging',
+  'rbac', 'metrics',
 ]
 
 
@@ -5478,6 +5479,51 @@ const CORPUS_FIXTURE: { feature: Record<string, any> } = {
           },
         ],
       },
+    },
+    // A step's `action` is `$action` in the call's request. `zz` names no
+    // endpoint, so a call rbac admits then fails to resolve one.
+    rbac: {
+      basic: {
+        set: [
+          {
+            name: 'a rule naming an action refuses the action and leaves its operation alone',
+            feature: [{ name: 'rbac', active: true, rules: { '#OP1:zz': 'never' }, permissions: [] }],
+            op: [{ op: '#OP1' }, { op: '#OP1', action: 'zz', err: 'rbac_denied' }],
+            out: { denied: 1, last: { required: 'never', allowed: false, action: 'zz' } },
+          },
+          {
+            name: 'the action rule decides when present, so an action is admitted while its operation is refused',
+            feature: [{
+              name: 'rbac', active: true,
+              rules: { '#OP1': 'never', '#OP1:zz': 'held' }, permissions: ['held'],
+            }],
+            op: [{ op: '#OP1', err: 'rbac_denied' }, { op: '#OP1', action: 'zz', err: true }],
+            out: { denied: 1, allowed: 1, last: { required: 'held', allowed: true, action: 'zz' } },
+          },
+          {
+            name: 'an action with no rule of its own takes its operation\'s',
+            feature: [{ name: 'rbac', active: true, rules: { '#OP1': 'never' }, permissions: [] }],
+            op: [{ op: '#OP1', action: 'zz', err: 'rbac_denied' }],
+            out: { denied: 1 },
+          },
+        ],
+      },
+    },
+    metrics: {
+      basic: {
+        set: [
+          {
+            name: 'an action is counted apart from its operation',
+            feature: [{ name: 'metrics', active: true }],
+            op: [{ op: '#OP1' }, { op: '#OP1', action: 'zz', err: true }],
+            out: {
+              total: { count: 2, ok: 1, err: 1 },
+              ops: { '#OP1': { count: 1, ok: 1, err: 0 }, '#OP1:zz': { count: 1, ok: 0, err: 1 } },
+            },
+          },
+        ],
+      },
+      partial: 'an action that completes is counted under its own key in the per-language suites; the corpus has no endpoint for an action to reach.',
     },
   },
 }

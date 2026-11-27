@@ -557,4 +557,41 @@ class PipelineTest {
     utility.prepareAuth(ctx)
     assertFalse(AuthCredential.contains(ctx.spec!!, cred), "expected credential dropped")
   }
+
+  // --- makePoint: allow.op ---------------------------------------------------
+
+  private fun plPoint(allow: String, reqmatch: MutableMap<String, Any?>, points: MutableList<Any?>): Any? {
+    val client = plClient(null)
+    val utility = client.getUtility()
+    val ctx = plCtx(client, utility, null)
+    ctx.op = Operation(fhMap("name", "load", "entity", "episode", "input", "match", "points", points))
+    ctx.options = fhMap("allow", fhMap("op", allow))
+    ctx.reqmatch = reqmatch
+    ctx.match = linkedMapOf()
+    return try {
+      utility.makePoint(ctx)
+    } catch (e: SdkError) {
+      e.code
+    }
+  }
+
+  @Test
+  fun makePoint_allowListEntryMayNameAnAction() {
+    val plain = fhMap("method", "GET", "parts", mutableListOf<Any?>("episode", "{id}"),
+      "select", fhMap("exist", mutableListOf<Any?>("id")))
+    val audio = fhMap("method", "GET", "parts", mutableListOf<Any?>("episode", "{id}", "audio"),
+      "select", fhMap("exist", mutableListOf<Any?>("id"), "\$action", "audio"))
+    val points = mutableListOf<Any?>(plain, audio)
+    val record = fhMap("id", "e1")
+    val action = fhMap("\$action", "audio", "id", "e1")
+
+    assertTrue(audio === plPoint("episode.load:audio", action, points))
+    assertEquals("point_op_allow", plPoint("episode.load:audio", record, points))
+    assertTrue(audio === plPoint("Episode.Load:AUDIO", action, points))
+    assertEquals("point_op_allow", plPoint("episode.load:video", action, points))
+    assertTrue(audio === plPoint("episode.load", action, points))
+    assertTrue(audio === plPoint("load", action, points))
+    assertTrue(plain === plPoint("load", record, points))
+    assertEquals("point_op_allow", plPoint("list", record, points))
+  }
 }

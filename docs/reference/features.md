@@ -340,9 +340,6 @@ any of its keys is in the list, so `load` and `episode.load` admit every
 action on that operation, and `episode.load:audio` admits that action and
 nothing else.
 
-The `ts` and `js` targets read the action today. The other targets still
-file an action call under the keys of its operation.
-
 ## Inspecting what a feature did
 
 Every feature records its own activity on the client under `_<name>`. This

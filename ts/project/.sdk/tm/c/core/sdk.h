@@ -549,6 +549,21 @@ Response* make_request_util(Context* ctx, PNError** err);
 Response* make_response_util(Context* ctx, PNError** err);
 SdkResult* make_result_util(Context* ctx, PNError** err);
 voxgig_value* make_point_util(Context* ctx, PNError** err);
+
+// The custom action a call names: `$action` in its own request argument
+// (reqdata for a data op, else reqmatch), never in a response. Borrowed from
+// that request map; NULL when there is none.
+const char* op_action(Context* ctx);
+
+// The keys an operation is looked up and filed by, most specific first:
+// `<entity>.<op>:<action>`, `<entity>.<op>`, `<op>`, `*`. Each item is
+// malloc'd and owned by the OpKeys; op_keys_free releases them.
+typedef struct {
+  char* items[4];
+  size_t len;
+} OpKeys;
+OpKeys op_keys(Context* ctx);
+void op_keys_free(OpKeys* keys);
 Spec* make_spec_util(Context* ctx, PNError** err);
 char* make_url_util(Context* ctx, PNError** err); // malloc'd
 voxgig_value* param_util(Context* ctx, voxgig_value* paramdef);

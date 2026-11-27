@@ -1,5 +1,6 @@
 package JAVAPACKAGE.core;
 
+import java.util.List;
 import java.util.Map;
 
 /** Small shared conversions used across the ProjectName SDK runtime. */
@@ -15,6 +16,38 @@ public final class Helpers {
   public static SdkError unsupportedOp(String opname, String entityname) {
     return new SdkError("op_unsupported",
         "operation '" + opname + "' not supported by entity '" + entityname + "'", null);
+  }
+
+  // The custom action a call names: `$action` in its own request argument,
+  // never in a response.
+  public static String opAction(Context ctx) {
+    if (ctx == null || ctx.op == null) {
+      return null;
+    }
+    Map<String, Object> req = "data".equals(ctx.op.input) ? ctx.reqdata : ctx.reqmatch;
+    Object action = req == null ? null : req.get("$action");
+    return action instanceof String && !((String) action).isEmpty() ? (String) action : null;
+  }
+
+  // The keys an operation is looked up and filed by, most specific first:
+  // `<entity>.<op>:<action>`, `<entity>.<op>`, `<op>`, `*`.
+  public static List<String> opKeys(Context ctx) {
+    Operation op = ctx == null ? null : ctx.op;
+    String name = op == null || op.name == null || op.name.isEmpty() ? "_" : op.name;
+    // Operation holds `_` for an entity it was not given.
+    String entity = op == null || op.entity == null || op.entity.isEmpty()
+        || "_".equals(op.entity) ? null : op.entity;
+    if (entity == null && ctx != null && ctx.entity != null) {
+      entity = ctx.entity.getName();
+    }
+    if (entity == null || entity.isEmpty()) {
+      entity = "_";
+    }
+    String base = entity + "." + name;
+    String action = opAction(ctx);
+    return action == null
+        ? List.of(base, name, "*")
+        : List.of(base + ":" + action, base, name, "*");
   }
 
   // Whether a comma-separated allow option names the item: whole names, any case.

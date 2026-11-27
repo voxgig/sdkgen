@@ -1,7 +1,7 @@
 package SCALAPACKAGE.feature
 
 import java.util.{LinkedHashMap, Map => JMap}
-import SCALAPACKAGE.core.{Context, FetcherFn, SdkClient}
+import SCALAPACKAGE.core.{Context, FetcherFn, Helpers, SdkClient}
 import SCALAPACKAGE.utility.struct.Struct
 
 // Public per-key aggregate. Tests read `f.ops.get(key).calls`, `.amount`.
@@ -34,6 +34,8 @@ class CostRecord {
   var currency: String = ""
   var source: String = ""
   var attempts: Int = 0
+  // A typed record cannot omit a field: a call that names no action holds null.
+  var action: String = null
 }
 
 // Per-operation accumulator. Held in ctx.out for the life of one call, the
@@ -59,7 +61,7 @@ class CostPending {
 //
 // The price of an attempt comes from the first source that answers: a
 // response header (`header` x `perUnit`), the rate table (`rates`, keyed
-// '<entity>.<op>' / '<op>' / '*'), then the flat `unit`. A body figure
+// as rbac's rules are), then the flat `unit`. A body figure
 // (`path` x `perUnit`, e.g. "usage.total_tokens") is read at preDone
 // instead, from the already-parsed result. A body figure describes the whole
 // call, so it REPLACES the per-attempt estimate rather than adding to it.
@@ -175,7 +177,7 @@ class CostFeature extends BaseFeature("cost", "0.0.1", true) {
     // and could run past an onBudget = "deny" ceiling indefinitely. `piped`
     // is set by prePoint, so its absence is the signal.
     if (!pending.piped) {
-      commit(ctx, pending, "_", "direct")
+      commit(ctx, pending, "_.direct", "_", "direct", null)
       ctx.out.remove(COST_PENDING_KEY)
     }
 
@@ -230,13 +232,15 @@ class CostFeature extends BaseFeature("cost", "0.0.1", true) {
       if (ctx.op.name != null && !"".equals(ctx.op.name)) opname = ctx.op.name
     }
 
-    commit(ctx, pending, entity, opname)
+    commit(ctx, pending, Helpers.opKeys(ctx).get(0), entity, opname, Helpers.opAction(ctx))
   }
 
   // Commit one operation's spend: totals, budget, per-op and per-actor
   // attribution, and the record. Shared by finish and the raw-request path
-  // in charge, which has no preDone to reach.
-  private def commit(ctx: Context, pending: CostPending, entity: String, opname: String): Unit = {
+  // in charge, which has no preDone to reach. `key` is what the spend is
+  // filed under.
+  private def commit(ctx: Context, pending: CostPending, key: String, entity: String,
+      opname: String, action: String): Unit = {
     var amount = pending.amount
     var reported = pending.reported
     var estimated = pending.estimated
@@ -263,7 +267,7 @@ class CostFeature extends BaseFeature("cost", "0.0.1", true) {
     }
 
     this.total.calls += 1
-    bump(this.ops, entity + "." + opname, amount)
+    bump(this.ops, key, amount)
     bump(this.actors, actor, amount)
 
     // The record leaves through `last` and the sink, so its text is cleaned.
@@ -281,6 +285,7 @@ class CostFeature extends BaseFeature("cost", "0.0.1", true) {
     record.currency = cs(this.currency)
     record.source = cs(source)
     record.attempts = pending.attempts
+    if (action != null) record.action = cs(action)
     this.last = record
 
     this.options match {
@@ -313,26 +318,17 @@ class CostFeature extends BaseFeature("cost", "0.0.1", true) {
     (0.0, "none")
   }
 
-  // The rate table uses the same lookup grammar as rbac's rules:
-  // '<entity>.<op>', then '<op>', then '*'.
+  // The rate table is keyed as rbac's rules are.
   private def rateFor(ctx: Context): java.lang.Double = {
     val rates = FeatureOptions.foptMap(this.options, "rates")
     if (rates == null) return null
 
-    var entity = ""
-    if (ctx.entity != null) entity = ctx.entity.getName()
-    else if (ctx.op != null) entity = ctx.op.entity
-    var opname = ""
-    if (ctx.op != null) opname = ctx.op.name
-
-    val keys = Array(entity + "." + opname, opname, "*")
-    var i = 0
-    while (i < keys.length) {
-      rates.get(keys(i)) match {
+    val it = Helpers.opKeys(ctx).iterator()
+    while (it.hasNext) {
+      rates.get(it.next()) match {
         case n: java.lang.Number => return java.lang.Double.valueOf(n.doubleValue())
         case _ =>
       }
-      i += 1
     }
     null
   }

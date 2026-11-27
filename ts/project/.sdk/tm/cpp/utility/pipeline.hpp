@@ -867,9 +867,13 @@ inline Value makePoint(CtxPtr ctx) {
 
   Value allowOpVal = Struct::getpath(options, {"allow", "op"});
   std::string allowOp = as_str(allowOpVal);
-  if (!Helpers::allowed(allowOpVal, op->name)) {
+  std::vector<std::string> keys = opKeys(ctx);
+  if (std::none_of(keys.begin(), keys.end(),
+        [&](const std::string& key) { return Helpers::allowed(allowOpVal, key); })) {
+    std::string action = opAction(ctx);
     throw ctx->makeError("point_op_allow",
-        "Operation \"" + op->name + "\" not allowed by SDK option allow.op value: \"" + allowOp + "\"");
+        "Operation \"" + op->name + (action.empty() ? "" : ":" + action) +
+        "\" not allowed by SDK option allow.op value: \"" + allowOp + "\"");
   }
 
   if (op->points.empty()) {
