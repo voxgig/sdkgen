@@ -442,6 +442,22 @@ let () =
         check_int "records" (size (getp (track h "audit") "records")) 0)
   end;
 
+  (* ---------------- one call, one id ---------------- *)
+  if has_feature "telemetry" && has_feature "debug" && has_feature "audit" then begin
+    test "telemetry_debug_audit.one_context_id" (fun () ->
+        let h = make_client [("telemetry", empty_map ()); ("debug", empty_map ()); ("audit", empty_map ())] in
+        ignore (op h ~op:"load" ());
+        ignore (op h ~op:"list" ());
+        let ids recs = ja (List.init (size recs) (fun i -> getp (getelem recs (Num (float_of_int i))) "correlationId")) in
+        let calls = ids (getp (track h "audit") "records") in
+        check_int "records" (size calls) 2;
+        check ("string ids " ^ stringify calls)
+          (List.for_all (function Str s -> s <> "" | _ -> false) (match calls with List r -> !r | _ -> []));
+        check "one id per call" (not (veq (getelem calls (Num 0.)) (getelem calls (Num 1.))));
+        check "span ids" (veq (ids (getp (track h "telemetry") "spans")) calls);
+        check "debug entry ids" (veq (ids (getp (track h "debug") "entries")) calls))
+  end;
+
   (* ---------------- clienttrack ---------------- *)
   if has_feature "clienttrack" then begin
     test "clienttrack.stable_id_ua" (fun () ->

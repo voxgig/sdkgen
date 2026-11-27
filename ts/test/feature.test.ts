@@ -925,6 +925,24 @@ describe('feature:audit', () => {
 })
 
 
+
+describe('feature:telemetry+debug+audit', () => {
+
+  test("one operation's span, debug entry and audit record carry its context id", async () => {
+    const h = makeClient({ features: [{ name: 'telemetry' }, { name: 'debug' }, { name: 'audit' }] })
+    await h.op({ op: 'load' })
+    await h.op({ op: 'list' })
+    const ids = (recs: any[]) => recs.map((rec: any) => rec.correlationId)
+    const calls = ids(h.client._audit.records)
+    deepStrictEqual(calls.length, 2)
+    ok(calls.every((id: any) => 'string' === typeof id && '' !== id), JSON.stringify(calls))
+    ok(calls[0] !== calls[1], 'each operation has its own id')
+    deepStrictEqual(ids(h.client._telemetry.spans), calls)
+    deepStrictEqual(ids(h.client._debug.entries), calls)
+  })
+})
+
+
 describe('feature:clienttrack', () => {
 
   test('stamps stable client id and unique request ids', async () => {

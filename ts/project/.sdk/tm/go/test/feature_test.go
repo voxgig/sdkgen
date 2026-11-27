@@ -1108,6 +1108,46 @@ func TestFeatureAudit(t *testing.T) {
 	})
 }
 
+// --- one call, one id -----------------------------------------------------------
+
+func TestFeatureOneCallOneId(t *testing.T) {
+	fhSkipWithout(t, "telemetry", "debug", "audit")
+
+	t.Run("telemetry-debug-and-audit-carry-one-calls-context-id", func(t *testing.T) {
+		ft := feat.NewTelemetryFeature()
+		fd := feat.NewDebugFeature()
+		fa := feat.NewAuditFeature()
+		h := fhMake(nil, fhF(ft, nil), fhF(fd, nil), fhF(fa, nil))
+		h.op(fhOpSpec{op: "load"})
+		h.op(fhOpSpec{op: "list"})
+		ids := func(recs []map[string]any) []any {
+			out := []any{}
+			for _, rec := range recs {
+				out = append(out, rec["correlationId"])
+			}
+			return out
+		}
+		calls := ids(fa.Records)
+		if len(calls) != 2 {
+			t.Fatalf("expected 2 audit records, got %d", len(calls))
+		}
+		for _, id := range calls {
+			if s, ok := id.(string); !ok || s == "" {
+				t.Fatalf("expected non-empty string ids, got %v", calls)
+			}
+		}
+		if calls[0] == calls[1] {
+			t.Errorf("expected one id per call, got %v", calls)
+		}
+		if spans := ids(ft.Spans); !reflect.DeepEqual(spans, calls) {
+			t.Errorf("expected span ids %v, got %v", calls, spans)
+		}
+		if entries := ids(fd.Entries); !reflect.DeepEqual(entries, calls) {
+			t.Errorf("expected debug entry ids %v, got %v", calls, entries)
+		}
+	})
+}
+
 // --- clienttrack ----------------------------------------------------------------
 
 func TestFeatureClienttrack(t *testing.T) {

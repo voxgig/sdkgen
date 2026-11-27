@@ -982,6 +982,42 @@ static void test_audit_inactive_records_nothing(void) {
 }
 
 // =============================================================================
+// one call, one id
+// =============================================================================
+
+static void test_telemetry_debug_audit_carry_one_calls_context_id(void) {
+  if (!fh_present("telemetry,debug,audit")) return;
+  voxgig_value* spans = v_list();
+  voxgig_value* entries = v_list();
+  voxgig_value* records = v_list();
+  Feature* tf = feature_telemetry_new();
+  Feature* df = feature_debug_new();
+  Feature* af = feature_audit_new();
+  FhFeat feats[] = {
+    {tf, cmap(1, "exporter", vfn(collect_fn, spans))},
+    {df, cmap(1, "onEntry", vfn(collect_fn, entries))},
+    {af, cmap(1, "sink", vfn(collect_fn, records))},
+  };
+  FhHarness h = fh_make(NULL, feats, 3);
+  fh_op(&h, op_load());
+  FhOpSpec ol; memset(&ol, 0, sizeof(ol)); ol.op = "list";
+  fh_op(&h, ol);
+  CHECK_INT_EQ((int)voxgig_list_len(voxgig_as_list(records)), 2, "one id: 2 audit records");
+  CHECK_INT_EQ((int)voxgig_list_len(voxgig_as_list(spans)), 2, "one id: 2 spans");
+  CHECK_INT_EQ((int)voxgig_list_len(voxgig_as_list(entries)), 2, "one id: 2 debug entries");
+  const char* calls[2];
+  for (int i = 0; i < 2; i++) {
+    calls[i] = get_str(voxgig_getelem(records, v_int(i), v_undef()), "correlationId");
+    CHECK(calls[i] && calls[i][0] != '\0', "one id: audit id is a non-empty string");
+    CHECK_STR_EQ(get_str(voxgig_getelem(spans, v_int(i), v_undef()), "correlationId"),
+                 calls[i], "one id: span id is the audit id");
+    CHECK_STR_EQ(get_str(voxgig_getelem(entries, v_int(i), v_undef()), "correlationId"),
+                 calls[i], "one id: debug entry id is the audit id");
+  }
+  CHECK(calls[0] && calls[1] && strcmp(calls[0], calls[1]) != 0, "one id: one id per call");
+}
+
+// =============================================================================
 // clienttrack
 // =============================================================================
 
@@ -1316,6 +1352,8 @@ int main(void) {
   RUN(test_audit_default_actor_anonymous);
   RUN(test_audit_injected_clock);
   RUN(test_audit_inactive_records_nothing);
+  // one call, one id
+  RUN(test_telemetry_debug_audit_carry_one_calls_context_id);
   // clienttrack
   RUN(test_clienttrack_stable_client_id_unique_request_ids_ua);
   RUN(test_clienttrack_does_not_clobber_caller_ua);

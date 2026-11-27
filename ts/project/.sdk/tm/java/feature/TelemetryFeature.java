@@ -61,6 +61,7 @@ public class TelemetryFeature extends BaseFeature {
     Map<String, Object> span = new LinkedHashMap<>();
     span.put("traceId", id("trace"));
     span.put("spanId", id("span"));
+    span.put("correlationId", ctx.id);
     span.put("name", entity + "." + opname);
     span.put("start", FeatureOptions.foptNow(this.options).getAsLong());
     ctx.out.put(TELEMETRY_SPAN_KEY, span);

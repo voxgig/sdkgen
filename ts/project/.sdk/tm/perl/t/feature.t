@@ -949,6 +949,25 @@ else { note('feature "audit" not present in this SDK') }
   }
 }
 
+# === one call, one id ===
+
+if (has_feature('telemetry') && has_feature('debug') && has_feature('audit')) {
+  my $h = harness([fspec('telemetry'), fspec('debug'), fspec('audit')]);
+  $h->op;
+  $h->op('opname' => 'list');
+  my $ids = sub { [map { $_->{correlationId} } @{ $_[0] }] };
+  my $calls = $ids->($h->track('_audit')->{records});
+  is(scalar @$calls, 2, 'telemetry, debug and audit: two calls audited');
+  is(scalar(grep { defined $_ && !ref $_ && '' ne $_ } @$calls), 2,
+    'telemetry, debug and audit: each call id is a non-empty string');
+  isnt($calls->[0], $calls->[1], 'telemetry, debug and audit: each call has its own id');
+  is_deeply($ids->($h->track('_telemetry')->{spans}), $calls,
+    'telemetry, debug and audit: spans carry the call ids');
+  is_deeply($ids->($h->track('_debug')->{entries}), $calls,
+    'telemetry, debug and audit: debug entries carry the call ids');
+}
+else { note('feature "telemetry", "debug" or "audit" not present in this SDK') }
+
 
 # === clienttrack ===
 

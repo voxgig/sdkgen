@@ -39,6 +39,7 @@ class DebugFeature extends BaseFeature("debug", "0.0.1", true) {
 
     val entry = new LinkedHashMap[String, Object]()
     entry.put("op", entity + "." + opname)
+    entry.put("correlationId", ctx.id)
     entry.put("start", java.lang.Long.valueOf(FeatureOptions.foptNow(this.options).getAsLong()))
     if (ctx.spec != null) {
       entry.put("method", ctx.spec.method)

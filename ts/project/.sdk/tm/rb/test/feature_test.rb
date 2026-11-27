@@ -927,6 +927,25 @@ class FeatureTest < Minitest::Test
   end
 
 
+  # === one call, one id ===
+
+  def test_telemetry_debug_and_audit_carry_one_calls_context_id
+    skip_unless_feature("telemetry")
+    skip_unless_feature("debug")
+    skip_unless_feature("audit")
+    h = harness([fspec("telemetry"), fspec("debug"), fspec("audit")])
+    h.op
+    h.op(opname: "list")
+    ids = ->(recs) { recs.map { |r| r["correlationId"] } }
+    calls = ids.call(h.track(:@_audit)["records"])
+    assert_equal 2, calls.length
+    assert calls.all? { |id| id.is_a?(String) && !id.empty? }, calls.inspect
+    refute_equal calls[0], calls[1]
+    assert_equal calls, ids.call(h.track(:@_telemetry)["spans"])
+    assert_equal calls, ids.call(h.track(:@_debug)["entries"])
+  end
+
+
   # === clienttrack ===
 
   def test_clienttrack_stable_client_id_unique_request_ids_and_ua

@@ -58,6 +58,7 @@ class ProjectNameTelemetryFeature extends ProjectNameBaseFeature
         $span = [
             'traceId' => $this->_id('trace'),
             'spanId' => $this->_id('span'),
+            'correlationId' => $ctx->id,
             'name' => ($ctx->op->entity !== '' ? $ctx->op->entity : '_')
                 . '.' . ($ctx->op->name !== '' ? $ctx->op->name : '_'),
             'start' => $this->_now(),

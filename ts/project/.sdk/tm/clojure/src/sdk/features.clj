@@ -1125,6 +1125,7 @@
              (when (active? fa)
                (let [op (core/oget ctx :op)
                      span (vs/jm "traceId" (gen-id2 "trace") "spanId" (gen-id2 "span")
+                                 "correlationId" (core/oget ctx :id)
                                  "name" (str (if op (core/op-entity op) "_") "." (if op (core/op-name op) "_"))
                                  "start" (now-ms fa) "end" nil "durationMs" nil "ok" nil)]
                  (swap! fa update :spans assoc ctx span)
@@ -1246,6 +1247,7 @@
                      method (when spec (core/oget spec :method))
                      headers (when spec (core/oget spec :headers))
                      entry (vs/jm "op" (str (if op (core/op-entity op) "_") "." (if op (core/op-name op) "_"))
+                                  "correlationId" (core/oget ctx :id)
                                   "method" method "url" url "headers" (redact ctx headers) "start" (now-ms fa)
                                   "status" nil "ok" nil "durationMs" nil "error" nil)]
                  (swap! fa update :entries assoc ctx entry))))

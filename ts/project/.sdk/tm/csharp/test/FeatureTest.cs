@@ -1096,6 +1096,31 @@ public class FeatureAuditTest
     }
 }
 
+// --- one call, one id -----------------------------------------------------------
+
+public class FeatureCorrelationTest
+{
+    [Fact]
+    public void TelemetryDebugAndAuditCarryOneCallsContextId()
+    {
+        if (Fh.SkipWithout("telemetry", "debug", "audit")) return;
+        var telemetry = new TelemetryFeature();
+        var debug = new DebugFeature();
+        var audit = new AuditFeature();
+        var h = Fh.Make(null, (telemetry, null), (debug, null), (audit, null));
+        h.Op(new FhOpSpec { Op = "load" });
+        h.Op(new FhOpSpec { Op = "list" });
+        static List<object?> Ids(List<Dictionary<string, object?>> recs) =>
+            recs.Select(rec => rec.GetValueOrDefault("correlationId")).ToList();
+        var calls = Ids(audit.Records);
+        Assert.Equal(2, calls.Count);
+        Assert.All(calls, id => Assert.True(id is string s && s != "", $"context id: {id}"));
+        Assert.NotEqual(calls[0], calls[1]);
+        Assert.Equal(calls, Ids(telemetry.Spans));
+        Assert.Equal(calls, Ids(debug.Entries));
+    }
+}
+
 // --- clienttrack ----------------------------------------------------------------
 
 public class FeatureClienttrackTest

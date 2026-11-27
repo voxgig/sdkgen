@@ -40,6 +40,7 @@ class TelemetryFeature : BaseFeature("telemetry", "0.0.1", true) {
     val span = linkedMapOf<String, Any?>()
     span["traceId"] = id("trace")
     span["spanId"] = id("span")
+    span["correlationId"] = ctx.id
     span["name"] = "$entity.$opname"
     span["start"] = FeatureOptions.foptNow(this.options).getAsLong()
     ctx.out[TELEMETRY_SPAN_KEY] = span

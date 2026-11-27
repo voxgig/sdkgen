@@ -775,6 +775,29 @@ defmodule ProjectName.FeatureTest do
     end
   end
 
+  # === one call, one id ===
+
+  test "telemetry, debug and audit carry one call's context id" do
+    if has?("telemetry") and has?("debug") and has?("audit") do
+      h = harness([fspec("telemetry"), fspec("debug"), fspec("audit")])
+      FH.op(h, %{op: "load"})
+      FH.op(h, %{op: "list"})
+
+      ids = fn recs ->
+        Enum.map(0..(S.size(recs) - 1)//1, fn i ->
+          S.getprop(S.getelem(recs, i), "correlationId")
+        end)
+      end
+
+      calls = ids.(S.getprop(track(h, "_audit"), "records"))
+      assert length(calls) == 2
+      assert Enum.all?(calls, fn id -> is_binary(id) and id != "" end), inspect(calls)
+      assert Enum.at(calls, 0) != Enum.at(calls, 1)
+      assert ids.(S.getprop(track(h, "_telemetry"), "spans")) == calls
+      assert ids.(S.getprop(track(h, "_debug"), "entries")) == calls
+    end
+  end
+
   # === clienttrack ===
 
   test "clienttrack stable client id unique request ids and ua" do
