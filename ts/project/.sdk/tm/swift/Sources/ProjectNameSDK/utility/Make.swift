@@ -34,7 +34,16 @@ private func unfilledParams(_ ctx: Context, _ point: VMap) -> [String] {
   return missing
 }
 
+// Once the point is known, a body of bytes it answers is refused and the
+// sources its binary fields carry are lifted out of the data.
 func makePointUtil(_ ctx: Context) throws -> VMap? {
+  let point = try selectPoint(ctx)
+  try bytesRefused(ctx)
+  try liftSources(ctx)
+  return point
+}
+
+private func selectPoint(_ ctx: Context) throws -> VMap? {
   if let stored = ctx.out["point"], let sp = stored {
     // A PrePoint feature hook (e.g. rbac) may short-circuit the operation by
     // storing an error here; surface it before any endpoint resolution.
@@ -238,7 +247,7 @@ func makeSpecUtil(_ ctx: Context) throws -> Spec {
     ctx.spec!.headers.entries["content-type"] = .string(graphqlContentType)
   }
   else {
-    ctx.spec!.body = utility.prepareBody(ctx)
+    ctx.spec!.body = try utility.prepareBody(ctx)
     ctx.spec!.path = utility.preparePath(ctx)
   }
 

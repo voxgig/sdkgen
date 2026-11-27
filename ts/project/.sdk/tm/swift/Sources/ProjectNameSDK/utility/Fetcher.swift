@@ -109,7 +109,7 @@ func defaultHttpFetch(_ fullurl: String, _ fetchdef: VMap, _ ctx: Context? = nil
     if let refused = getOnlyRefusal(url, method) {
       throw refused
     }
-    let res = try sendOnce(url, def)
+    let res = try sendOnce(url, def, ctx)
     guard follow, hops < redirectMax, let status = gp(res, "status").asInt,
       redirectStatus.contains(status), let location = gp(gp(res, "headers"), "location").asString,
       let next = resolveLocation(url, location)
@@ -127,7 +127,7 @@ func defaultHttpFetch(_ fullurl: String, _ fetchdef: VMap, _ ctx: Context? = nil
   }
 }
 
-private func sendOnce(_ fullurl: String, _ fetchdef: VMap) throws -> Value {
+private func sendOnce(_ fullurl: String, _ fetchdef: VMap, _ ctx: Context?) throws -> Value {
   // A request that cannot be sent fails the operation.
   guard let url = URL(string: fullurl) else {
     throw ProjectNameError("fetch_transport", "the URL could not be parsed", nil)
@@ -188,8 +188,6 @@ private func sendOnce(_ fullurl: String, _ fetchdef: VMap) throws -> Value {
   let respData = box.data
   let http = box.resp as? HTTPURLResponse
   let status = http?.statusCode ?? 0
-  // Bytes that are not text still reach the unreadable-body error.
-  let bodyText = respData.map { String(decoding: $0, as: UTF8.self) } ?? ""
 
   let resheaders = VMap()
   if let http = http {
@@ -199,6 +197,20 @@ private func sendOnce(_ fullurl: String, _ fetchdef: VMap) throws -> Value {
       }
     }
   }
+
+  // A raw success body is the raw codec's to read, as the bytes that came:
+  // decoding it as text would replace what is not UTF-8.
+  if gpath(ctx?.point, "response", "kind").asString == "raw", 200 <= status, status < 300 {
+    let m = VMap()
+    m.entries["status"] = .int(Int64(status))
+    m.entries["statusText"] = .string(HTTPURLResponse.localizedString(forStatusCode: status))
+    m.entries["headers"] = .map(resheaders)
+    m.entries["body"] = .nat(respData ?? Data())
+    return .map(m)
+  }
+
+  // Bytes that are not text still reach the unreadable-body error.
+  let bodyText = respData.map { String(decoding: $0, as: UTF8.self) } ?? ""
 
   var jsonBody: Value = .noval
   var unreadable = false

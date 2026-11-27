@@ -335,6 +335,7 @@ ${updateLines}]), nil)
             const note = bodyNote(ent.op[opname], {
               tier: codecTier(target),
               values: 'a `String`, or `Data` or `[UInt8]` as a `.nat` value',
+              source: 'a source made by `BinarySource.bytes(data, name: name, type: type)`, as a `.nat` value',
             })
             if ('' !== note) Content(note)
           }

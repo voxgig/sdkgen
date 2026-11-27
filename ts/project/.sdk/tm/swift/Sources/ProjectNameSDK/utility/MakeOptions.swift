@@ -28,6 +28,9 @@ func makeOptionsUtil(_ ctx: Context) -> VMap {
         if "fetcher" == k, let fn = native as? FetcherFunc {
           utility.fetcher = fn
         }
+        else if "multipartBoundary" == k, let fn = native as? (Context) -> String {
+          utility.multipartBoundary = fn
+        }
         else {
           utility.custom[k] = native
         }

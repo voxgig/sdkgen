@@ -422,4 +422,25 @@ describe('codec: core opens no file', () => {
       }
     }
   })
+
+  // C# has no import to scan: System.IO is implicit, and Stream lives in it.
+  test('no csharp codec source touches a file', () => {
+    for (const rel of ['core/BinarySource.cs', 'utility/Binary.cs', 'utility/PrepareBody.cs',
+      'utility/MakePoint.cs', 'utility/codec/FormCodec.cs', 'utility/codec/MultipartCodec.cs',
+      'utility/codec/RawCodec.cs', 'utility/codec/HandleCodec.cs']) {
+      const src = readFileSync(Path.join(TM, 'csharp', rel), 'utf8')
+      ok(!/\b(File|FileInfo|FileStream|Directory|DirectoryInfo)\s*[.(]/.test(src) &&
+        !/\bnew\s+(FileStream|FileInfo|StreamReader)\b/.test(src), 'csharp ' + rel + ' touches a file')
+    }
+  })
+
+  test('no swift codec source touches a file', () => {
+    for (const rel of ['core/BinarySource.swift', 'utility/Binary.swift', 'utility/Prepare.swift',
+      'utility/Make.swift', 'utility/codec/FormCodec.swift', 'utility/codec/MultipartCodec.swift',
+      'utility/codec/RawCodec.swift', 'utility/codec/HandleCodec.swift']) {
+      const src = readFileSync(Path.join(TM, 'swift', 'Sources', 'ProjectNameSDK', rel), 'utf8')
+      ok(!/\b(FileManager|FileHandle|InputStream)\b|contentsOfFile|fileURLWithPath|(Data|String)\(contentsOf/.test(src),
+        'swift ' + rel + ' touches a file')
+    }
+  })
 })

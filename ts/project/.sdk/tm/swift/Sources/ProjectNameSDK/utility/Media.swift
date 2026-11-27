@@ -70,7 +70,12 @@ func mediaHeaders(_ point: VMap?, _ headers: VMap) -> VMap {
   return headers
 }
 
-// A String, or Data or [UInt8] as a native value, sent as it is.
-func rawBodyOf(_ reqdata: VMap) -> Value {
-  reqdata.entries[rawBodyKey] ?? .noval
+// A String, or Data or [UInt8] as a native value, sent as it is; a source as
+// its bytes.
+func rawBodyOf(_ sources: VMap) -> Value {
+  let body = sources.entries[rawBodyKey] ?? .noval
+  if let source = body.asNative as? BinarySource {
+    return .nat(source.data)
+  }
+  return body
 }

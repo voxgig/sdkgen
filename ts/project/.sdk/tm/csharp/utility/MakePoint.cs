@@ -73,7 +73,17 @@ public static partial class SdkUtility
         return missing;
     }
 
+    // Once the point is known, a body of bytes it answers is refused and the
+    // sources its binary fields carry are lifted out of the data.
     internal static Dictionary<string, object?>? MakePointUtil(Context ctx)
+    {
+        var point = SelectPoint(ctx);
+        BytesRefused(ctx);
+        LiftSources(ctx);
+        return point;
+    }
+
+    private static Dictionary<string, object?>? SelectPoint(Context ctx)
     {
         if (ctx.Out.TryGetValue("point", out var outPoint) && outPoint != null)
         {

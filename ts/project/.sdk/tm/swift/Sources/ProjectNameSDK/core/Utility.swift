@@ -25,7 +25,7 @@ public final class Utility {
   public var makeUrl: ((Context) throws -> String)!
   public var param: ((Context, Value) -> Value)!
   public var prepareAuth: ((Context) throws -> Spec)!
-  public var prepareBody: ((Context) -> Value)!
+  public var prepareBody: ((Context) throws -> Value)!
   public var prepareHeaders: ((Context) -> VMap)!
   public var prepareMethod: ((Context) -> String)!
   public var prepareParams: ((Context) -> VMap)!
@@ -39,6 +39,13 @@ public final class Utility {
   public var transformRequest: ((Context) -> Value)!
   public var transformResponse: ((Context) -> Value)!
   public var custom: [String: Any?] = [:]
+
+  // A form or multipart encoder: the content type and the encoded body.
+  public typealias BodyEncoder = (Context, Value, VMap) throws -> (media: String, body: Value)
+
+  // The body codecs this SDK was generated with; see the generated codecIndex.
+  public var codec: [String: Any] = [:]
+  public var multipartBoundary: ((Context) -> String)? = nil
 
   public init() {
     registerAll(self)
@@ -84,6 +91,8 @@ public final class Utility {
     u.transformRequest = src.transformRequest
     u.transformResponse = src.transformResponse
     u.custom = src.custom
+    u.codec = src.codec
+    u.multipartBoundary = src.multipartBoundary
     return u
   }
 }

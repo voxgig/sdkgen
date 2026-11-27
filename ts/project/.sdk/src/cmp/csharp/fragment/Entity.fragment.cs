@@ -16,6 +16,8 @@ public class EntyClass : ProjectNameEntityBase
         return new EntyClass(client, CloneOpts());
     }
 
+    // #BinarySlot
+
     // #LoadOp
 
     // #ListOp

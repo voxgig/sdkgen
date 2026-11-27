@@ -8,6 +8,7 @@ main: kit: target: swift: {
   srcfeature: false
 
   provides: { sekreto: true, schema: true }
+  codec: tier: 'encoded'
 
   superseded: []
 

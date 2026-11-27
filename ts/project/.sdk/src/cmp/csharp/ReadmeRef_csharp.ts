@@ -334,6 +334,7 @@ ${updateLines}    // ${'patch' === opname ? 'Only the fields to change' : 'Field
               tier: codecTier(target),
               values: 'a `byte[]`, a `string` or a `Stream`',
               once: 'a `Stream`',
+              source: 'a source made by `BinarySource.Bytes(data, name, type)`',
             })
             if ('' !== note) Content(note)
           }

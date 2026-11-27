@@ -12107,6 +12107,50 @@ const CODEC_LANES: CodecLane[] = [
       env: nestedTestEnv(),
     }),
   },
+  {
+    target: 'csharp',
+    runner: 'test/CodecTest.cs',
+    needs: 'dotnet',
+    // Built here, under the budget a restore needs; the suite then runs
+    // `--no-build`, and the detailed console logger shows its line.
+    prepare: (sdkroot) => {
+      const dotnet = toolchain('dotnet')
+      if (null == dotnet) return null
+      const built = run(dotnet, ['build', '--nologo', '-v', 'quiet', 'test'],
+        sdkroot, undefined, 30 * 60 * 1000)
+      return built.ok ? null : 'the generated csharp test project does not build:\n' + tail(built.out)
+    },
+    command: () => {
+      const dotnet = toolchain('dotnet')
+      return null == dotnet ? null : {
+        bin: dotnet,
+        args: ['test', '--nologo', '--no-build', '-v', 'quiet',
+          '--logger', 'console;verbosity=detailed',
+          '--filter', 'FullyQualifiedName~CodecTest', 'test'],
+      }
+    },
+  },
+  {
+    target: 'swift',
+    runner: 'Tests/DemoSdkTests/CodecTest.swift',
+    needs: 'swift',
+    // Built here, under the budget a first SwiftPM build needs; the filtered
+    // run below is then quick. XCTest shows a test's stdout, where the suite
+    // prints its line.
+    prepare: (sdkroot) => {
+      const swift = toolchain('swift')
+      if (null == swift) return null
+      const built = run(swift, ['build', '--build-tests', '-j', '2'],
+        sdkroot, undefined, 30 * 60 * 1000)
+      return built.ok ? null : 'the generated swift package does not build:\n' + tail(built.out)
+    },
+    command: () => {
+      const swift = toolchain('swift')
+      return null == swift
+        ? null
+        : { bin: swift, args: ['test', '-j', '2', '--skip-build', '--filter', 'CodecTest'] }
+    },
+  },
 ]
 
 

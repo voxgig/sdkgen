@@ -261,11 +261,27 @@ public static partial class SdkUtility
         if ("raw".Equals(StructUtils.GetProp(body, "kind")) &&
             StructUtils.GetProp(body, "binary") is true)
         {
+            var raw = ctx!.Sources?.GetValueOrDefault(RawBody) ?? ctx.Reqdata?.GetValueOrDefault(RawBody);
             bodies.Add(new CleanBinaryBody
             {
                 // The same value twice, unless it was a Stream: the spec holds what was read.
-                Live = Known(ctx!.Spec?.Body, ctx.Reqdata?.GetValueOrDefault(RawBody)),
+                Live = Known(ctx.Spec?.Body, raw, (raw as BinarySource)?.Data),
                 Type = StructUtils.GetProp(body, "media") as string,
+                Sized = true,
+            });
+        }
+
+        // An encoded multipart body, and a form body that carries a file.
+        var kind = StructUtils.GetProp(body, "kind");
+        var files = StructUtils.GetProp(body, "fields") is List<object?> fields &&
+            fields.Exists(f => StructUtils.GetProp(f, "binary") is true);
+        if ("multipart".Equals(kind) || ("form".Equals(kind) && files))
+        {
+            var sent = Response.HeaderValue(ctx!.Spec?.Headers, "content-type");
+            bodies.Add(new CleanBinaryBody
+            {
+                Live = Known(ctx.Spec?.Body),
+                Type = "" == sent ? null : sent,
                 Sized = true,
             });
         }
@@ -383,6 +399,11 @@ public static partial class SdkUtility
         if (CleanSensitiveKey(cfg, key))
         {
             return cfg.Mask;
+        }
+
+        if (val is BinarySource source)
+        {
+            return source.Describe();
         }
 
         var desc = CleanDescribeBinary(val, bin);

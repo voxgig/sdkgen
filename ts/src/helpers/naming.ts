@@ -114,6 +114,7 @@ const SWIFT_SDK_TYPES = new Set<string>([
   'WalkApply',
   'FetcherFunc', 'Formatter', 'NativeCall0', 'NativeRef', 'SystemFetch',
   'ManualRedirectDelegate',
+  'BinaryHandle', 'BinarySource',
   'AuditFeature', 'BaseFeature', 'CacheFeature', 'ClienttrackFeature',
   'CostBucket', 'CostBudget', 'CostFeature', 'CostPending', 'CostRecord',
   'CostTotal', 'DebugFeature', 'IdempotencyFeature', 'LogFeature',
