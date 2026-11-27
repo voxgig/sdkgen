@@ -144,3 +144,4 @@ Xdebug
 accessor
 accessors
 codec
+codecs

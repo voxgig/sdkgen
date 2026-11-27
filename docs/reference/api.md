@@ -339,6 +339,34 @@ that names the switch when the model has one but switches it off.
 - `away`: whether the target is generated into a repository of its own, and
   `url`, that repository's address when the model names one.
 
+### Body codec helpers
+
+What a component reads about bodies that are not JSON. The model reference
+describes [the bodies themselves](./model.md#request-and-response-bodies).
+
+- **`modelCodecs(model)`** — which body codecs the model's active points
+  need: `form`, `multipart`, `raw`, and `slots` when an entity has a binary
+  slot.
+- **`codecsUsed(model)`** — the same answer keyed by codec name, with
+  `handle` standing for the slots.
+- **`codecExcludes(model) → RegExp[]`** — the patterns a target's `Copy`
+  excludes: the source of each codec the model does not use, and the codec
+  suite when it uses none.
+- **`entitySlots(entity)`** — the entity's binary slots, sorted by name. A
+  slot is an action whose points answer or take bytes, and the entity's own
+  bytes are the slot with the empty name. Each holds its `name`, the
+  operation that reads it as `read`, and the one that writes it as `write`,
+  where it has one.
+- **`CODECS`** — the codec names: `form`, `multipart`, `raw` and `handle`.
+- **`CODEC_DIR`** — `codec`, the directory a target keeps one source per
+  codec in.
+- **`CODEC_TIERS`** — the tiers in order: `none`, `encoded`, `streamed` and
+  `resumable`.
+- **`codecTier(target)`** — the tier a target's model declares as
+  `codec.tier`, or `none`.
+- **`atTier(target, tier) → boolean`** — whether the target has reached that
+  tier.
+
 ### Typing helpers
 
 The typed-model subsystem (full picture:
@@ -379,9 +407,11 @@ The typed-model subsystem (full picture:
 - **`opReachable(op, given) → boolean`** — whether a call that gives these
   parameter names, and no `$action`, reaches a route of the op, by the rule
   the runtime point choice applies: only a route without an action that the
-  call fills. **`opNeedsAction(op) → boolean`** — whether every route of the
-  op is an action, a lone one included, so a call must name one with
-  `$action`.
+  call fills and that does not answer bytes. **`opNeedsAction(op) → boolean`**
+  — whether every route of the op is an action, a lone one included, so a
+  call must name one with `$action`. **`opNeedsHandle(op) → boolean`** —
+  whether every route a plain call of the op can select answers bytes, which
+  are read through the entity's binary handle.
 
 ---
 

@@ -511,9 +511,8 @@ function invalidRequest(ent: any):
 // The entity's ACTIVE op names that the bundled targets generate, in canonical
 // CRUD order. Doc generators gate an op example on this, NOT on the raw
 // `Object.keys(ent.op)`: an op outside `CANON_OP_ORDER` generates no method,
-// an op whose every route is an action is refused without one, and so is an
-// op whose every plain route answers bytes, so a plain example of any would
-// fail.
+// and one whose every route is an action, or answers bytes, is refused when
+// called plainly, so a plain example of any would fail.
 const CANON_OP_ORDER = ['list', 'load', 'create', 'update', 'patch', 'remove']
 
 function entityOps(ent: any): string[] {

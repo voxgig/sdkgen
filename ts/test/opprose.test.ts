@@ -290,7 +290,10 @@ describe('operation-dependent prose', () => {
         const source = entitySource(files, target, byName[heading])
         strictEqual('' !== source, true, target + ': no source for ' + heading)
         for (const name of line.slice('Operations: '.length).replace(/\.$/, '').split(', ')) {
-          strictEqual(defines(source, name, 'c' === target ? byName[heading] : undefined), true,
+          // rust defines an operation that may take sources in its `_with`
+          // form, and its trait supplies the plain one.
+          strictEqual(defines(source, name, 'c' === target ? byName[heading] : undefined) ||
+            ('rust' === target && defines(source, name + '_with')), true,
             target + ': ' + heading + ' has no method ' + name)
           named++
         }

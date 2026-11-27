@@ -329,7 +329,7 @@ main: kit: optspec: {
     }
   }
 
-  maxBuffer: 16777216
+  maxBuffer: ['`$NOF`', { min: 1 }, '`$NUMBER`', '`$NIL`']
 
   # Redaction of everything the SDK emits (ADR-003); numbers are strings.
   clean: {
