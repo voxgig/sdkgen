@@ -165,7 +165,7 @@ src/cmp/clojure/fragment/EntityUpdateOp.fragment.clj 0245cb72c0ee
 src/cmp/clojure/tsconfig.json 720a3f229019
 src/cmp/clojure/utility_clojure.ts fa25f9feb766
 tm/clojure/Makefile d3ac03fe6a52
-tm/clojure/feature/secrets/sdk/feature/secrets.clj 2a51cde57e5b
+tm/clojure/feature/secrets/sdk/feature/secrets.clj 1149bd35627a
 tm/clojure/feature/secrets/voxgig/plugin.clj eda66525b164
 tm/clojure/feature/secrets/voxgig/plugin/capability.clj b95da92fb675
 tm/clojure/feature/secrets/voxgig/plugin/catalog.clj 0b97b9f7d05c
@@ -230,7 +230,7 @@ tm/clojure/src/sdk/features.clj 52383c72eed5
 tm/clojure/src/voxgig/struct.clj 007fea2d9426
 tm/clojure/test/sdk/test/concurrency.clj a9bfd623695b
 tm/clojure/test/sdk/test/feature.clj 889886b26a0d
-tm/clojure/test/sdk/test/feature/secrets.clj 7cbe1696eec6
+tm/clojure/test/sdk/test/feature/secrets.clj bda002c19167
 tm/clojure/test/sdk/test/netsim.clj 2e797c353a8b
 tm/clojure/test/sdk/test/omni.clj cabff67d9640
 tm/clojure/test/sdk/test/omni_smoke.clj 8a48e55961c6
@@ -1046,7 +1046,7 @@ tm/lua/test/vendor/omni/json.lua 4a327f9b5f61
 tm/lua/test/vendor/omni/regex.lua 2071623ccdfe
 tm/lua/test/vendor/omni/runner.lua 98e6933589a6
 tm/lua/test/vendor/omni/util.lua 8648200e2b6f
-tm/lua/utility/clean.lua 8c86d363c03a
+tm/lua/utility/clean.lua d015d4240bd2
 tm/lua/utility/clean_explain.lua 7714e924592e
 tm/lua/utility/done.lua c1c77faea694
 tm/lua/utility/feature_add.lua f6a951686474
@@ -1777,7 +1777,7 @@ tm/scala/feature/ProxyFeature.scala c93944c9ada6
 tm/scala/feature/RatelimitFeature.scala 4b96e4be9fd5
 tm/scala/feature/RbacFeature.scala 978c969eccca
 tm/scala/feature/RetryFeature.scala 117b343c03a4
-tm/scala/feature/SecretsFeature.scala b6ae3d8ba6a0
+tm/scala/feature/SecretsFeature.scala 07443c30e38e
 tm/scala/feature/StreamingFeature.scala 8ce264ff9371
 tm/scala/feature/TelemetryFeature.scala b1bf710a5667
 tm/scala/feature/TestFeature.scala 4beda610ed9b
@@ -1825,7 +1825,7 @@ tm/scala/sdktest/SdkTestMain.scala 91ab2822e6d7
 tm/scala/sdktest/SdkTestSupport.scala 9a0a70dcb153
 tm/scala/sdktest/ServerVariableTest.scala 0c041b23fd44
 tm/scala/sdktest/StructCorpus.scala c6453791202c
-tm/scala/sdktest/feature/secrets/SecretsTestMain.scala 722f225f6c0a
+tm/scala/sdktest/feature/secrets/SecretsTestMain.scala 74ec2047e95d
 tm/scala/sdktest/sdk-test-control.json acadc87764f6
 tm/scala/sdktest/vendor/omni/Json.scala 832ecba5fdf8
 tm/scala/sdktest/vendor/omni/Runner.scala 004f6fce4126
@@ -2169,7 +2169,7 @@ tm/zig/feature/proxy.zig cbe0d0918153
 tm/zig/feature/ratelimit.zig 635710bddb9a
 tm/zig/feature/rbac.zig c46b76ef1e31
 tm/zig/feature/retry.zig 684949f0d189
-tm/zig/feature/secrets.zig cf436a36165f
+tm/zig/feature/secrets.zig f27d920894c1
 tm/zig/feature/secrets/plugin/capability.zig 7984c09f8071
 tm/zig/feature/secrets/plugin/catalog.zig 860e5471d9c3
 tm/zig/feature/secrets/plugin/config.zig 973b702b9e21
@@ -2231,7 +2231,7 @@ tm/zig/src/feature/telemetry/.gitkeep e3b0c44298fc
 tm/zig/src/feature/test/.gitkeep e3b0c44298fc
 tm/zig/src/feature/timeout/.gitkeep e3b0c44298fc
 tm/zig/src/feature/validate/.gitkeep e3b0c44298fc
-tm/zig/test/feature/secrets/secrets_test.zig 83e14d97a3f9
+tm/zig/test/feature/secrets/secrets_test.zig 055dca65cd4b
 tm/zig/test/feature_test.zig 55222746c2bc
 tm/zig/test/fh.zig 4a248b2bc6b7
 tm/zig/test/gotcha_test.zig d235341e8986

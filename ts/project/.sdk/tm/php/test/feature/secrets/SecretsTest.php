@@ -81,6 +81,7 @@ class ProjectNameSecretsWire
             'url' => $fullurl,
             'auth' => $headers[self::credheader()] ?? null,
             'has' => array_key_exists(self::credheader(), $headers),
+            'values' => implode("\n", array_map(fn($v) => is_scalar($v) ? (string)$v : '', $headers)),
             'body' => $fetchdef['body'] ?? null,
             'redirect' => $fetchdef['redirect'] ?? null,
         ];
@@ -134,8 +135,13 @@ class ProjectNameSecretsTest extends TestCase
 
     // Read from the config, never from a probe: an SDK whose config declares no
     // auth places no credential, and these tests assert on the one it places.
+    // The auth-off test asserts it places none.
     protected function setUp(): void
     {
+        $test = method_exists($this, 'name') ? $this->name() : $this->getName();
+        if ('testAuthOffPlacesNoCredentialAndBuysNoToken' === $test) {
+            return;
+        }
         if (!array_key_exists('auth', ProjectNameConfig::shared_config()['options'] ?? [])) {
             $this->markTestSkipped("this SDK's config declares no auth, so it places no credential");
         }
@@ -164,17 +170,23 @@ class ProjectNameSecretsTest extends TestCase
     // -----------------------------------------------------------------
     // Support.
 
-    // The credential header carries the SPEC's credential prefix (if any),
-    // which a TEMPLATE cannot know - so assert on the CREDENTIAL and let
-    // the prefix be whatever this SDK's API declares.
-    private function assertCredential(mixed $header, string $token): void
+    // The header value prepare_auth writes for a token, in the form the
+    // DEFAULT client's auth gives: under Basic the token is the key half of
+    // the encoded pair, and a prefix is space-joined.
+    private function credential(string $token, string $secret = ''): string
     {
-        $ok = $header === $token
-            || (is_string($header) && str_ends_with($header, ' ' . $token));
-        $this->assertTrue($ok,
+        $auth = ProjectNameSDK::test(null, null)->options_map()['auth'] ?? [];
+        $prefix = is_string($auth['prefix'] ?? null) ? $auth['prefix'] : '';
+        $value = true === ($auth['basic'] ?? null)
+            ? base64_encode($token . ':' . $secret) : $token;
+        return '' === $prefix ? $value : $prefix . ' ' . $value;
+    }
+
+    private function assertCredential(mixed $header, string $token, string $secret = ''): void
+    {
+        $this->assertSame($this->credential($token, $secret), $header,
             'expected the ' . ProjectNameSecretsWire::credheader() .
-            ' header to carry ' . $token .
-            ', got: ' . var_export($header, true));
+            ' header to carry ' . $token);
     }
 
     private function secretsFeatureOf($client): ?ProjectNameSecretsFeature
@@ -393,6 +405,19 @@ class ProjectNameSecretsTest extends TestCase
         // error.
         $this->assertSame('', $client->options_map()['apikey'],
             'the chain credential must never be written into the client options');
+    }
+
+    public function testAResolvedKeyIsPlacedAsPrepareAuthPlacesItTheSecretKept(): void
+    {
+        $this->setenv('APIKEY', 'ENVKEY04');
+        $wire = new ProjectNameSecretsWire();
+        $client = $this->secretsClient($wire, [
+            'secret' => 'PASS01',
+            'feature' => $this->secretsOpts(),
+        ]);
+
+        $this->driveOp($client, $wire);
+        $this->assertCredential($wire->api()[0]['auth'], 'ENVKEY04', 'PASS01');
     }
 
     // The same pin where it matters most: `auth: null` is the caller saying
@@ -819,6 +844,28 @@ class ProjectNameSecretsTest extends TestCase
         $this->assertCredential($api[1]['auth'], 'ACCESS02');
     }
 
+    public function testATokenBoughtOnARefusalIsPlacedAsPrepareAuthPlacesIt(): void
+    {
+        $this->setenv('REFRESH_TOKEN', 'REFRESH01');
+        $wire = new ProjectNameSecretsWire();
+        $wire->apistatus = [401, 200];
+
+        $client = $this->secretsClient($wire, [
+            'secret' => 'PASS01',
+            'feature' => $this->secretsOpts([
+                'name' => 'refresh_token',
+                'exchange' => ['active' => true],
+            ]),
+        ]);
+
+        $this->driveOp($client, $wire);
+
+        $api = $wire->api();
+        $this->assertCount(2, $api, 'expected the request to be retried exactly once');
+        $this->assertCredential($api[0]['auth'], 'ACCESS01', 'PASS01');
+        $this->assertCredential($api[1]['auth'], 'ACCESS02', 'PASS01');
+    }
+
     // `auth: null` SUPPRESSES THE PURCHASE, not just the retry.
     //
     // resolve() runs before with_refresh's suppression check, so the
@@ -1208,6 +1255,66 @@ ROUTER;
 
         $this->assertSame(1, $calls, 'the refusal must not be retried');
         $this->assertCount(0, $wire->calls);
+    }
+
+    // -----------------------------------------------------------------
+    // Off by the config where it declares no auth, else by `auth: null`:
+    // either way the feature places no credential, buys no token and
+    // retries nothing.
+
+    public function testAuthOffPlacesNoCredentialAndBuysNoToken(): void
+    {
+        $declared = array_key_exists('auth', ProjectNameConfig::shared_config()['options'] ?? []);
+        $by = $declared ? 'option' : 'config';
+        $off = $declared ? ['auth' => null] : [];
+        $secrets = ['OFFKEY01', 'OFFKEY02', 'OFFREFRESH01', 'ACCESS01'];
+        $carries = function (array $call) use ($secrets): bool {
+            if ($call['has']) {
+                return true;
+            }
+            foreach ($secrets as $secret) {
+                if (str_contains((string)$call['values'], $secret)) {
+                    return true;
+                }
+            }
+            return false;
+        };
+        $sent = [];
+        $bought = 0;
+
+        $scenarios = [
+            ['a key the chain resolves', ['APIKEY' => 'OFFKEY01'], [], [], [200]],
+            ['an explicit apikey', [], ['apikey' => 'OFFKEY02'], [], [200]],
+            ['a refusal', ['REFRESH_TOKEN' => 'OFFREFRESH01'], [],
+                ['name' => 'refresh_token', 'exchange' => ['active' => true]], [401]],
+        ];
+
+        foreach ($scenarios as [$what, $env, $sdkopts, $fopts, $statuses]) {
+            foreach ($env as $name => $value) {
+                $this->setenv($name, $value);
+            }
+            $wire = new ProjectNameSecretsWire();
+            $wire->apistatus = $statuses;
+            $client = $this->secretsClient($wire,
+                array_merge($sdkopts, $off, ['feature' => $this->secretsOpts($fopts)]));
+
+            $this->driveOp($client, $wire);
+
+            $this->assertCount(1, $wire->api(), $what . ': a request was retried with auth off');
+            $this->assertCount(0, $wire->token(), $what . ': a token was bought with auth off');
+            $this->assertFalse($carries($wire->api()[0]), $what . ': a credential was sent with auth off');
+            $this->assertSame('', $this->secretsFeatureOf($client)->credential(),
+                $what . ': the feature resolved a credential with auth off');
+
+            $sent = array_merge($sent, $wire->api());
+            $bought += count($wire->token());
+            foreach ($env as $name => $value) {
+                $this->clearenv($name);
+            }
+        }
+
+        print("\nsecrets: auth off by " . $by . ': ' . count($sent) . ' request(s), ' .
+            count(array_filter($sent, $carries)) . ' credential(s), ' . $bought . " token(s)\n");
     }
 }
 

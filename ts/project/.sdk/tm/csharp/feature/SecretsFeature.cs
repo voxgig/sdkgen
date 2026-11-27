@@ -92,6 +92,11 @@ public class SecretsFeature : BaseFeature
     // never writes it (see the header).
     private Dictionary<string, object?>? _liveopts;
 
+    // What PrepareAuth was generated from: the config declares auth only
+    // where it places a credential, and Basic only where it composes one.
+    private bool _declared;
+    private bool _basic;
+
     private string _secretname = "apikey";
     private bool _cache = true;
     private Sekreto? _sek;
@@ -132,6 +137,11 @@ public class SecretsFeature : BaseFeature
         _client = ctx.Client;
         _liveopts = ctx.Options;
         Active = FoptBool(options, "active", false);
+
+        var declared = StructUtils.GetPath(ctx.Config, StructUtils.Jt("options", "auth"));
+        _declared = declared is Dictionary<string, object?>;
+        _basic = declared is Dictionary<string, object?> authdecl &&
+            authdecl.TryGetValue("basic", out var basic) && true.Equals(basic);
 
         if (!Active)
         {
@@ -413,7 +423,7 @@ public class SecretsFeature : BaseFeature
     // from a miss it must not keep.
     private bool ResolveOnce()
     {
-        if (null == _sek)
+        if (null == _sek || AuthSuppressed())
         {
             return false;
         }
@@ -470,18 +480,6 @@ public class SecretsFeature : BaseFeature
             return true;
         }
 
-        // `auth: null` is the documented way to send NO credential, and a
-        // purchase is a credential-bearing call: the refresh token goes to
-        // the token endpoint in the request body. WithRefresh honours
-        // suppression for the RETRY, but it runs after this - by then the
-        // refresh token has already left the process, and no later check
-        // can call it back. The suppression has to be honoured here, before
-        // the first purchase, or it only ever half-held.
-        if (AuthSuppressed())
-        {
-            return false;
-        }
-
         Buy();
 
         return true;
@@ -532,11 +530,8 @@ public class SecretsFeature : BaseFeature
     private object? WithRefresh(Context ctx, string url,
         Dictionary<string, object?> fetchdef, FetcherFunc inner)
     {
-        // `auth: null` is the documented way to send NO credential, and
-        // PrepareAuth honours it by removing the header. A refusal of a
-        // deliberately unauthenticated request is not an expired token and
-        // cannot be fixed by buying one - retrying would transmit exactly
-        // the credential the caller suppressed.
+        // A refusal of an unauthenticated request is not an expired token,
+        // and retrying would transmit the credential that auth off withholds.
         if (AuthSuppressed())
         {
             return inner(ctx, url, fetchdef);
@@ -612,18 +607,13 @@ public class SecretsFeature : BaseFeature
         return false;
     }
 
-    // `auth` ABSENT and `auth` PRESENT-AND-NULL both mean suppression.
-    //
-    // go gets away with one nil check because a Go map returns nil for
-    // both; a C# Dictionary does not, and MakeOptions.cs deliberately
-    // RESTORES a supplied `auth: null` after validate (that IS csharp's
-    // auth-suppression fix). Testing only for absence would re-transmit
-    // exactly the credential the caller suppressed. Same two-branch shape
-    // PrepareAuth uses.
+    // PrepareAuth's decision: suppressed where the config declares no auth,
+    // and where `auth` is absent or a present null. MakeOptions.cs restores
+    // a supplied `auth: null` after validate, so absence alone misses it.
     private bool AuthSuppressed()
     {
         var opts = _liveopts;
-        if (null == opts)
+        if (!_declared || null == opts)
         {
             return true;
         }
@@ -653,10 +643,22 @@ public class SecretsFeature : BaseFeature
             return;
         }
 
+        var value = _basic && true.Equals(StructUtils.GetPath(_liveopts, StructUtils.Jt("auth", "basic")))
+            ? Pair(token) : token;
+
         var prefix = StructUtils.GetPath(_liveopts, StructUtils.Jt("auth", "prefix"))
             as string ?? "";
 
-        headers[name] = "" == prefix ? token : prefix + " " + token;
+        headers[name] = "" == prefix ? value : prefix + " " + value;
+    }
+
+    // Under Basic the token is the key half, as apikey is: PrepareAuth's pair.
+    private string Pair(string token)
+    {
+        var secret = StructUtils.GetProp(_liveopts, "secret") as string ?? "";
+        var pair = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(token + ":" + secret));
+        Register(pair);
+        return pair;
     }
 
     // ---------------------------------------------------------------

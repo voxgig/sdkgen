@@ -223,6 +223,10 @@ let make ?(plugins : Defs.definition list = [])
   let cred = ref "" in
   (* The refresh credential the chain resolved, for every later purchase. *)
   let refresh = ref "" in
+  (* What prepare_auth was generated from: the config declares auth only
+   * where it places a credential, and Basic only where it composes one. *)
+  let declared = ref false in
+  let basic = ref false in
 
   let refuse (msg : string) =
     (match !initerr with None -> initerr := Some msg | Some _ -> ()) in
@@ -237,6 +241,18 @@ let make ?(plugins : Defs.definition list = [])
 
   let live_options () : value =
     match !client with Some c -> c.cl_options | None -> empty_map () in
+
+  (* prepare_auth's decision: auth the config declares, not suppressed by
+   * `auth: null`. *)
+  let authon () : bool =
+    !declared && (match getp (live_options ()) "auth" with Map _ -> true | _ -> false) in
+
+  (* Under Basic the token is the key half, as apikey is: prepare_auth's pair. *)
+  let pair (token : string) : string =
+    let secret = match getp (live_options ()) "secret" with Str s -> s | _ -> "" in
+    let joined = base64_encode (token ^ ":" ^ secret) in
+    register joined;
+    joined in
 
   let bucket () : value =
     match !client with
@@ -256,11 +272,14 @@ let make ?(plugins : Defs.definition list = [])
       let name = match getpath_s opts "auth.name" with
         | Str s when s <> "" -> String.lowercase_ascii s
         | _ -> "authorization" in
-      (match getp opts "auth" with
-       | Map _ ->
-         let prefix = match getpath_s opts "auth.prefix" with Str s -> s | _ -> "" in
-         setp headers name (Str (if prefix <> "" then prefix ^ " " ^ token else token))
-       | _ -> ignore (delprop headers (Str name)))
+      if authon () then begin
+        let value =
+          if !basic && (match getpath_s opts "auth.basic" with Bool b -> b | _ -> false)
+          then pair token else token in
+        let prefix = match getpath_s opts "auth.prefix" with Str s -> s | _ -> "" in
+        setp headers name (Str (if prefix <> "" then prefix ^ " " ^ value else value))
+      end
+      else ignore (delprop headers (Str name))
     | _ -> () in
 
   let spent (x : xchg) (res : value) : bool =
@@ -358,6 +377,7 @@ let make ?(plugins : Defs.definition list = [])
   let resolve () : (unit, string) Stdlib.result =
     match !sek with
     | None -> Ok ()
+    | Some _ when not (authon ()) -> Ok ()
     | Some s ->
       bump_num (bucket ()) "resolves" 1.;
       (match Sekreto.tryget s !secretname with
@@ -390,13 +410,10 @@ let make ?(plugins : Defs.definition list = [])
    * one is spent. The retry rewrites the credential header IN PLACE on
    * the fetchdef, because the header carries the token that just failed. *)
   let withrefresh (x : xchg) fctx url fetchdef inner : (value * sdk_error option) =
-    (* `auth: null` is the documented way to send NO credential, and
-     * prepare_auth honours it by removing the header. A refusal of a
-     * deliberately unauthenticated request is not an expired token and
-     * cannot be fixed by buying one. *)
-    match getp (live_options ()) "auth" with
-    | Noval | Null -> inner fctx url fetchdef
-    | _ ->
+    (* A refusal of an unauthenticated request is not an expired token, and
+     * retrying would transmit the credential that auth off withholds. *)
+    if not (authon ()) then inner fctx url fetchdef
+    else
       let rec attempt (n : int) =
         (* The credential THIS attempt goes out with, captured before it
          * leaves: it is what tells a stale refusal apart from a fresh one. *)
@@ -450,6 +467,9 @@ let make ?(plugins : Defs.definition list = [])
       if f.f_active then begin
         let c = cc ctx in
         client := Some c;
+        let declared_auth = getpath_s ctx.c_config "options.auth" in
+        declared := (match declared_auth with Map _ -> true | _ -> false);
+        basic := (match getp declared_auth "basic" with Bool b -> b | _ -> false);
         secretname := (let n = opt_str opts "name" ~default:"apikey" in if "" = n then "apikey" else n);
         cache := (getp opts "cache" <> Bool false);
 

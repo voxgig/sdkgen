@@ -1891,6 +1891,7 @@ describe('auth null', () => {
     ok(probe.ok, 'js secrets suite failed:\n' + failed.join('\n') +
       '\n' + tail(probe.out))
     exchangeRefused('js', probe.out)
+    authOff('js', probe.out, 'option')
 
     // A suite that skips exits zero too, so with auth on none may.
     ok(!/# SKIP/.test(probe.out), 'js: secrets tests were SKIPPED with auth on:\n' +
@@ -1987,6 +1988,8 @@ describe('auth null', () => {
     t.diagnostic('lua: secrets suite ran ' + successes + ' tests, ' + failures +
       ' failures, ' + errors + ' errors (vault group, native helper built)')
 
+    authOff('lua', out, 'option')
+
     // The redirect case listens through LuaSocket, and is pending without it.
     if (/^Pending -> [^\n]*\n[^\n]*a redirect answering the exchange/m.test(out)) {
       return t.skip('lua: the redirect case is pending: no LuaSocket here for its listeners')
@@ -2041,6 +2044,7 @@ describe('auth null', () => {
     ok(probe.ok, 'rb secrets suite failed:\n' + failed.join('\n') +
       '\n' + tail(probe.out))
     exchangeRefused('rb', probe.out)
+    authOff('rb', probe.out, 'option')
 
     // A minitest file that defines no test method EXITS ZERO. Without this
     // the lane would go green on a suite `target add` had trimmed to
@@ -2146,6 +2150,7 @@ abort("FAIL: a multi-segment envelope was not synthesised - #{n} of 3 records") 
     else {
       exchangeRefused('c', out)
     }
+    authOff('c', out, 'option')
 
     const ran = /^secrets: ran (\d+) case\(s\)$/m.exec(out)
     ok(null != ran, 'c: the suite printed no case count:\n' + tail(out))
@@ -2548,6 +2553,7 @@ int main(void) {
     ok(probe.ok, 'perl secrets suite failed:\n' + failed.join('\n') +
       '\n' + tail(probe.out))
     exchangeRefused('perl', probe.out)
+    authOff('perl', probe.out, 'option')
 
     const plan = lines
       .map((l: string) => /^1\.\.(\d+)$/.exec(l))
@@ -2612,6 +2618,7 @@ int main(void) {
     ok(probe.ok, 'zig secrets suite failed:\n' + failed.join('\n') +
       '\n' + tail(out))
     exchangeRefused('zig', out)
+    authOff('zig', out, 'option')
 
     const tally = /(\d+)\/(\d+) tests passed( \(([^)]*)\))?/.exec(out)
     ok(null != tally,
@@ -2677,6 +2684,7 @@ int main(void) {
     ok(probe.ok, 'swift secrets suite failed:\n' + failed.join('\n') +
       '\n' + tail(probe.out))
     exchangeRefused('swift', probe.out)
+    authOff('swift', probe.out, 'option')
 
     // POSITIVE evidence the tests RAN. XCTest prints `Executed N tests,
     // with F failures (U unexpected)` per suite and then for the run; the
@@ -2827,6 +2835,7 @@ func TestTypesProbe(t *testing.T) {
       'csharp: the secrets suite ran only ' + npassed +
       ' tests - it was trimmed, not run:\n' + tail(probe.out))
     exchangeRefused('csharp', probe.out)
+    authOff('csharp', probe.out, 'option')
   })
 
 
@@ -2874,6 +2883,7 @@ func TestTypesProbe(t *testing.T) {
     const failed = out.split('\n').filter((l: string) => /^\s*FAIL \[/.test(l))
     ok(probe.ok, 'cpp secrets suite failed:\n' + failed.join('\n') + '\n' + tail(out))
     exchangeRefused('cpp', out)
+    authOff('cpp', out, 'option')
 
     // POSITIVE evidence the tests RAN: the case count the suite prints from
     // its own RUN macro, and testlib's summary. A suite that `target add`
@@ -3219,6 +3229,7 @@ echo get_class($client->ContactsField(null)), ' ',
     ok(probe.ok, 'clojure secrets suite failed:\n' + failed.join('\n') +
       '\n' + tail(probe.out))
     exchangeRefused('clojure', probe.out)
+    authOff('clojure', probe.out, 'option')
 
     const ran = /^feature\.secrets: ran (\d+) check\(s\)$/m.exec(probe.out)
     ok(null != ran,
@@ -3284,6 +3295,7 @@ echo get_class($client->ContactsField(null)), ' ',
     const failed = out.split('\n').filter((l: string) => /^FAIL /.test(l))
     ok(probe.ok, 'ocaml secrets suite failed:\n' + failed.join('\n') + '\n' + tail(out))
     exchangeRefused('ocaml', out)
+    authOff('ocaml', out, 'option')
 
     const ran = /^feature\.secrets: ran (\d+) check\(s\)$/m.exec(out)
     ok(null != ran,
@@ -3394,6 +3406,22 @@ function exchangeRefused(target: string, out: string) {
   ok(0 < Number(optin![2]), target + ': with the option, no redirect was refused')
   strictEqual(Number(optin![3]), 0,
     target + ': with the option, the token exchange reached another origin')
+}
+
+
+// Each secrets suite says what its auth-off case sent: off by the config
+// where the API declares no auth, else by `auth: null`.
+const AUTHOFF_LINE =
+  /secrets: auth off by (config|option): (\d+) request\(s\), (\d+) credential\(s\), (\d+) token\(s\)/
+
+function authOff(target: string, out: string, by: 'config' | 'option') {
+  const line = AUTHOFF_LINE.exec(out)
+  ok(null != line, target + ': the secrets suite did not say what its auth-off case sent:\n' +
+    tail(out))
+  strictEqual(line![1], by, target + ': auth was off by the ' + line![1] + ', not the ' + by)
+  ok(0 < Number(line![2]), target + ': the auth-off case sent no request')
+  strictEqual(Number(line![3]), 0, target + ': a credential was sent with auth off')
+  strictEqual(Number(line![4]), 0, target + ': a token was bought with auth off')
 }
 
 
@@ -4629,6 +4657,7 @@ describe('the elixir secrets feature runs from a generated SDK', () => {
     strictEqual(counted!.failed, 0,
       'elixir: ' + counted!.failed + ' secrets tests failed:\n' + tail(out))
     exchangeRefused('elixir', out)
+    authOff('elixir', out, 'option')
     ok(!/\b[1-9]\d* skipped\b/.test(out),
       'elixir: secrets tests were SKIPPED with auth on:\n' + tail(out))
 
@@ -4645,10 +4674,18 @@ describe('the elixir secrets feature runs from a generated SDK', () => {
 
 
 // The secrets suites assert the credential an SDK places, so for an API that
-// declares no auth each skips and says why; exit zero alone cannot show it.
-// The skip comes before any plugin matters, so this model selects none and
-// no lane needs a TLS or HTTP library.
+// declares no auth each skips those cases and says why, and asserts in their
+// place that the feature places nothing and buys nothing; exit zero alone
+// cannot show either. No plugin matters to that, so this model selects none
+// and no lane needs a TLS or HTTP library.
 const SECRETS_NOAUTH_MODEL = 'main: kit: feature: secrets: active: true'
+
+// An API that takes HTTP Basic, where every credential a suite checks is the
+// composite prepareAuth writes, the secret included.
+const SECRETS_BASIC_MODEL = SECRETS_NOAUTH_MODEL + '\n' +
+  "main: kit: config: auth: { active: true, prefix: 'Basic', basic: true }"
+
+const SECRETS_SKIP_REASON = "this SDK's config declares no auth, so it places no credential"
 
 const SECRETS_SKIP = "this SDK's config declares no auth, so it places no credential"
   .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -4660,9 +4697,12 @@ type SecretsSkipLane = {
   // A build step, for targets that have one.
   prepare?: (sdkroot: string) => Run,
   command: (sdkroot: string) => { bin: string, args: string[], env?: NodeJS.ProcessEnv } | null,
-  // Every one of these the run prints, and none of what a test that ran prints.
+  // Every one of these the run prints, and none of what a test that asserts
+  // the placed credential prints when it runs.
   skipped: RegExp[],
   ran: RegExp,
+  // A check on the run's own tally, where a regex cannot say it.
+  tally?: (out: string) => string | null,
 }
 
 
@@ -4700,7 +4740,7 @@ const SECRETS_SKIP_LANES: SecretsSkipLane[] = [
       new RegExp('^ok \\d+ - secrets # SKIP ' + SECRETS_SKIP + '$', 'm'),
       new RegExp('^ok \\d+ - secrets exchange # SKIP ' + SECRETS_SKIP + '$', 'm'),
     ],
-    ran: /^# tests [1-9]/m,
+    ran: /# Subtest: ((in)?active: |the refresh token buys an access token)/m,
   },
   {
     target: 'go',
@@ -4732,10 +4772,15 @@ const SECRETS_SKIP_LANES: SecretsSkipLane[] = [
       }
     },
     skipped: [
-      /^([1-9]\d*) runs, 0 assertions, 0 failures, 0 errors, \1 skips$/m,
       new RegExp('Skipped:\\s*\\nSecretsFeatureTest#\\w+ [^\\n]*\\n' + SECRETS_SKIP + '$', 'm'),
     ],
-    ran: /^\d+ runs, [1-9]\d* assertions/m,
+    ran: /Failure:\s*\nSecretsFeatureTest#test_(?!auth_off_)/,
+    // The auth-off test runs and every other one skips.
+    tally: (out) => {
+      const line = /^(\d+) runs, (\d+) assertions, 0 failures, 0 errors, (\d+) skips$/m.exec(out)
+      return null != line && 0 < Number(line[2]) && Number(line[3]) === Number(line[1]) - 1
+        ? null : 'not every test but the auth-off one skipped'
+    },
   },
   {
     target: 'perl',
@@ -4746,8 +4791,8 @@ const SECRETS_SKIP_LANES: SecretsSkipLane[] = [
       if (null == perl || !probeOk(perl, ['-MTest::More', '-e', '1'])) return null
       return { bin: perl, args: ['-Ilib', Path.join('t', 'feature', 'secrets', 'secrets.t')] }
     },
-    skipped: [new RegExp('^1\\.\\.0 # SKIP ' + SECRETS_SKIP + '$', 'm')],
-    ran: /^(not )?ok \d+/m,
+    skipped: [new RegExp('^ok \\d+ # skip ' + SECRETS_SKIP + '$', 'm')],
+    ran: /^(not )?ok \d+ - (?!auth off: )/m,
   },
   {
     target: 'zig',
@@ -4761,11 +4806,14 @@ const SECRETS_SKIP_LANES: SecretsSkipLane[] = [
         ? { bin: zig, args: ['build', 'test-secrets', '--summary', 'all'] }
         : null
     },
-    skipped: [
-      /\b0\/([1-9]\d*) tests passed \(\1 skipped\)/,
-      new RegExp('^ {2}SKIP secrets: ' + SECRETS_SKIP + '$', 'm'),
-    ],
-    ran: /\b[1-9]\d*\/\d+ tests passed/,
+    skipped: [new RegExp('^ {2}SKIP secrets: ' + SECRETS_SKIP + '$', 'm')],
+    ran: /\b(?:[2-9]|[1-9]\d+)\/\d+ tests passed/,
+    // The auth-off test passes and every other one skips.
+    tally: (out) => {
+      const line = /\b1\/(\d+) tests passed \((\d+) skipped\)/.exec(out)
+      return null != line && Number(line[2]) === Number(line[1]) - 1
+        ? null : 'not every test but the auth-off one skipped'
+    },
   },
   {
     target: 'c',
@@ -4812,7 +4860,7 @@ const SECRETS_SKIP_LANES: SecretsSkipLane[] = [
 ]
 
 
-describe('a secrets suite skips for an SDK that places no credential', () => {
+describe('a secrets suite asserts auth off for an SDK that places no credential', () => {
 
   let tmp = ''
 
@@ -4825,8 +4873,8 @@ describe('a secrets suite skips for an SDK that places no credential', () => {
   })
 
   for (const lane of SECRETS_SKIP_LANES) {
-    test(lane.target + ': the secrets suite skips, saying why, where the API declares no auth',
-      async (t) => {
+    test(lane.target + ': the secrets suite skips, saying why, and asserts auth off, ' +
+      'where the API declares no auth', async (t) => {
         const sdkroot = Path.join(tmp, lane.target)
         await generateTo(lane.target, sdkroot, SECRETS_NOAUTH_MODEL, ['test', 'log', 'secrets'])
         ok(Fs.existsSync(Path.join(sdkroot, lane.suite)),
@@ -4857,6 +4905,39 @@ describe('a secrets suite skips for an SDK that places no credential', () => {
           ok(line.test(out), lane.target + ': the run did not print ' + line + ':\n' + tail(out))
         }
         ok(!lane.ran.test(out), lane.target + ': a secrets test ran with no auth:\n' + tail(out))
+        strictEqual(null == lane.tally ? null : lane.tally(out), null,
+          lane.target + ':\n' + tail(out))
+        authOff(lane.target, out, 'config')
+      })
+
+    test(lane.target + ': the secrets suite keeps the secret where the API takes HTTP Basic',
+      async (t) => {
+        const sdkroot = Path.join(tmp, lane.target + '-basic')
+        await generateTo(lane.target, sdkroot, SECRETS_BASIC_MODEL, ['test', 'log', 'secrets'])
+
+        const cmd = lane.command(sdkroot)
+        if (null == cmd) {
+          return t.skip('no usable ' + lane.target + ' toolchain here (' + lane.needs + ')')
+        }
+
+        if (null != lane.prepare) {
+          const built = lane.prepare(sdkroot)
+          if (built.timedOut) return t.skip(lane.target + ': ' + built.out)
+          ok(built.ok, lane.target + ': the secrets suite did not build:\n' + tail(built.out))
+        }
+
+        const probe = run(cmd.bin, cmd.args, sdkroot, cmd.env)
+        if (probe.unlaunchable) {
+          return t.skip(lane.target + ': the toolchain could not be started here: ' +
+            tail(probe.out, 3))
+        }
+        if (probe.timedOut) return t.skip(lane.target + ': ' + probe.out)
+
+        const out = probe.out.replace(/\r\n/g, '\n').replace(/\x1b\[[0-9;]*m/g, '')
+        ok(probe.ok, lane.target + ' secrets suite failed under HTTP Basic:\n' + tail(out))
+        ok(!out.includes(SECRETS_SKIP_REASON),
+          lane.target + ': the secrets suite skipped under HTTP Basic:\n' + tail(out))
+        authOff(lane.target, out, 'option')
       })
   }
 })
@@ -8551,6 +8632,7 @@ describe('the secrets suite runs from a generated SDK', () => {
         return t.skip(lane.target + ': ' + unrun)
       }
       exchangeRefused(lane.target, ran.out)
+      authOff(lane.target, ran.out, 'option')
     })
   }
 })

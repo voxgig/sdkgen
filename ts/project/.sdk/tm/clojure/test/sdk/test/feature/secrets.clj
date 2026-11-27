@@ -83,6 +83,9 @@
                     n (inc (count @calls))]
                 (swap! calls conj {:url url
                                    :auth (when (some? auth) (str auth))
+                                   :values (if (vs/ismap headers)
+                                             (str/join "\n" (map str (vals headers)))
+                                             "")
                                    :method (vs/getprop fetchdef "method")
                                    :body (vs/getprop fetchdef "body")
                                    :redirect (vs/getprop fetchdef "redirect")})
@@ -153,11 +156,12 @@
 ;; so core/u-fetcher really does call system.fetch.
 ;; ---------------------------------------------------------------------------
 
-(defn- live-sdk [stub & {:keys [apikey auth-nil secrets]}]
+(defn- live-sdk [stub & {:keys [apikey auth-nil secret secrets]}]
   (let [opts (vs/jm "base" BASE
                     "allow" (vs/jm "op" ALLOWOP)
                     "system" (vs/jm "fetch" (:fetch stub)))]
     (when apikey (.put ^java.util.Map opts "apikey" apikey))
+    (when secret (.put ^java.util.Map opts "secret" secret))
     (when auth-nil (.put ^java.util.Map opts "auth" nil))
     (when secrets (.put ^java.util.Map opts "feature" (vs/jm "secrets" secrets)))
     (client/make-sdk opts)))
@@ -172,10 +176,6 @@
                  (deref (core/client-features sdk)))))
 
 
-;; The credential header carries the SPEC's credential prefix, which a
-;; TEMPLATE cannot know: an OpenAPI `http`/`bearer` scheme gives
-;; `Bearer <token>`, an apiKey scheme the raw token. So assert on the
-;; CREDENTIAL and let the prefix be whatever this SDK's API declares.
 (defn- listener
   "A server on 127.0.0.1 that records each request in `seen` and answers it
   as `answer` says, [status location body]."
@@ -199,6 +199,24 @@
                           (.close ex)))))
     (.start server)
     server))
+
+;; The header value u-prepare-auth writes for a token, in the form the
+;; DEFAULT client's auth gives: under Basic the token is the key half of the
+;; encoded pair, and a prefix is space-joined.
+(defn- credential [token secret]
+  (let [auth (vs/getprop (core/client-options-map (client/test-sdk nil nil)) "auth")
+        prefix (let [p (vs/getprop auth "prefix")] (if (string? p) p ""))
+        value (if (= true (vs/getprop auth "basic"))
+                (.encodeToString (java.util.Base64/getEncoder)
+                                 (.getBytes (str token ":" secret) "UTF-8"))
+                token)]
+    (if (= "" prefix) value (str prefix " " value))))
+
+(defn- credential-is
+  ([got token msg] (credential-is got token msg ""))
+  ([got token msg secret]
+   (t/is-eq (str (or got "")) (credential token secret)
+            (str msg ": the " CREDHEADER " header carries " token))))
 
 (defn- with-origins
   "Runs `run` with two listeners: the origin answers the exchange as the atom
@@ -232,12 +250,6 @@
                            "feature" (vs/jm "secrets" (sekopts "name" "refresh_token"
                                                                "exchange" exchange))))
                    (vs/jm "path" "/thing"))))
-
-(defn- credential-is [got token msg]
-  (let [s (str (or got ""))]
-    (t/is-true (or (= s token) (str/ends-with? s (str " " token)))
-               (str msg ": expected the " CREDHEADER " header to carry " token
-                    ", got " (pr-str got)))))
 
 
 ;; ---------------------------------------------------------------------------
@@ -322,6 +334,16 @@
                (t/is-some f "secrets feature installed")
                (t/is-eq (sekreto/getfrom (secrets/sek f) "options" "apikey")
                         "OPTKEY01" "directed read of the options store")))))
+
+    (chk "secrets-a-resolved-key-is-placed-as-prepare-auth-places-it"
+         (fn []
+           (let [stub (counting-fetch)
+                 sdk (live-sdk stub :secret "PASS01"
+                               :secrets (sekopts "providers"
+                                                 (vs/jt (fixed-provider "apikey" "CHAINKEY05"))))
+                 res (client/direct sdk (vs/jm "path" "/thing"))]
+             (t/is-true (= true (vs/getprop res "ok")) (str "direct failed: " (brief res)))
+             (credential-is (:auth (call-at stub 0)) "CHAINKEY05" "the secret kept" "PASS01"))))
 
     (chk "secrets-omitted-apikey-defers-to-the-chain"
          (fn []
@@ -614,6 +636,24 @@
                (credential-is (:auth (call-at stub 1)) "ACCESS01" "attempt 1")
                (credential-is (:auth (call-at stub 3)) "ACCESS02" "the retry"))))
 
+      (chk "secrets-exchange-a-token-bought-on-a-refusal-is-placed-as-prepare-auth-places-it"
+           (fn []
+             (let [issued (atom 0)
+                   apicalls (atom 0)
+                   stub (counting-fetch
+                         (fn [_n url _fd]
+                           (if (str/ends-with? url tokenpath)
+                             [(response 200 (vs/jm "access_token"
+                                                   (str "ACCESS0" (swap! issued inc)))) nil]
+                             (if (= 1 (swap! apicalls inc))
+                               [(response 401 (vs/jm "err" "expired")) nil]
+                               [(response 200 (vs/jm "ok" true)) nil]))))
+                   sdk (live-sdk stub :secret "PASS01" :secrets (xsecrets))]
+               (client/direct sdk (vs/jm "path" "/thing"))
+               (t/is-eq (sent stub) 4 (str "token, 401, token, retry: " (wire stub)))
+               (credential-is (:auth (call-at stub 1)) "ACCESS01" "attempt 1, the secret kept" "PASS01")
+               (credential-is (:auth (call-at stub 3)) "ACCESS02" "the retry, the secret kept" "PASS01"))))
+
       (chk "secrets-exchange-with-auth-nil-never-buys-or-retries"
            (fn []
              (let [stub (counting-fetch
@@ -724,10 +764,53 @@
                           "the missing-refresh-token message")))))))
 
 
+;; Off by the config where it declares no auth, else by `auth: nil`: either
+;; way the feature places no credential, buys no token and retries nothing.
+(defn- auth-off [rec declared]
+  (t/run-check
+   rec "secrets-auth-off-places-no-credential-and-buys-no-token"
+   (fn []
+     (let [secrets ["OFFKEY01" "OFFKEY02" "OFFREFRESH01" "ACCESS01"]
+           carries (fn [c] (or (some? (:auth c))
+                               (boolean (some (fn [s] (str/includes? (str (:values c)) s)) secrets))))
+           tokenpath "auth/token"
+           token? (fn [c] (str/ends-with? (str (:url c)) tokenpath))
+           scenarios [["a key the chain resolves" nil
+                       (sekopts "providers" (vs/jt (fixed-provider "apikey" "OFFKEY01"))) 200]
+                      ["an explicit apikey" "OFFKEY02" (sekopts) 200]
+                      ["a refusal" nil
+                       (sekopts "name" "refresh_token"
+                                "providers" (vs/jt (fixed-provider "refresh_token" "OFFREFRESH01"))
+                                "exchange" (vs/jm "active" true)) 401]]
+           totals (atom {:sent [] :bought 0})]
+       (doseq [[what apikey secrets-opts status] scenarios]
+         (let [stub (counting-fetch
+                     (fn [_n url _fd]
+                       (if (str/ends-with? url tokenpath)
+                         [(response 200 (vs/jm "access_token" "ACCESS01")) nil]
+                         [(response status (vs/jm "ok" (< status 400))) nil])))
+               sdk (live-sdk stub :apikey apikey :auth-nil declared :secrets secrets-opts)]
+           (client/direct sdk (vs/jm "path" "/thing"))
+           (let [calls (deref (:calls stub))
+                 api (remove token? calls)
+                 bought (count (filter token? calls))]
+             (t/is-eq (count api) 1 (str what ": one request, not retried"))
+             (t/is-eq bought 0 (str what ": no token bought"))
+             (t/is-true (not-any? carries api) (str what ": no credential sent: " (wire stub)))
+             (t/is-eq (secrets/credential (secrets/of sdk)) "" (str what ": nothing resolved"))
+             (swap! totals (fn [t] (-> t (update :sent into api) (update :bought + bought)))))))
+       (println (str "secrets: auth off by " (if declared "option" "config") ": "
+                     (count (:sent @totals)) " request(s), "
+                     (count (filter carries (:sent @totals))) " credential(s), "
+                     (:bought @totals) " token(s)"))))))
+
+
 ;; Read from the config, never from a probe: an SDK whose config declares no
 ;; auth places no credential, and these tests assert on the one it places.
 (defn run [rec]
   (if (vs/ismap (vs/getprop (vs/getprop (config/make-config) "options") "auth"))
-    (run-checks rec)
+    (do (run-checks rec)
+        (auth-off rec true))
     (do (println "SKIP secrets: this SDK's config declares no auth, so it places no credential")
+        (auth-off rec false)
         :skipped)))

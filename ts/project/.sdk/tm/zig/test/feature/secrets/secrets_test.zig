@@ -103,6 +103,7 @@ fn cred_header() []const u8 {
 const Call = struct {
     url: []const u8,
     auth: ?[]const u8,
+    values: []const u8 = "",
     body: ?[]const u8,
     redirect: ?[]const u8,
 };
@@ -140,7 +141,17 @@ const Wire = struct {
         const auth: ?[]const u8 = if (h.get_str(headers, cred_header())) |a| (h.A().dupe(u8, a) catch a) else null;
         const body: ?[]const u8 = if (h.get_str(fetchdef, "body")) |b| (h.A().dupe(u8, b) catch b) else null;
         const redirect = h.get_str(fetchdef, "redirect");
-        self.calls.append(h.A(), .{ .url = h.A().dupe(u8, url) catch url, .auth = auth, .body = body, .redirect = redirect }) catch {};
+        var values: std.ArrayList(u8) = .empty;
+        if (headers == .object) {
+            var it = headers.object.iterator();
+            while (it.next()) |kv| {
+                if (kv.value_ptr.* == .string) {
+                    values.appendSlice(h.A(), kv.value_ptr.*.string) catch {};
+                    values.append(h.A(), '\n') catch {};
+                }
+            }
+        }
+        self.calls.append(h.A(), .{ .url = h.A().dupe(u8, url) catch url, .auth = auth, .values = values.items, .body = body, .redirect = redirect }) catch {};
 
         const suffix = std.fmt.allocPrint(h.A(), "/{s}", .{self.tokenpath}) catch "/auth/token";
         if (std.mem.endsWith(u8, url, suffix)) {
@@ -262,17 +273,41 @@ fn count_named(client: *sdk.SDK, name: []const u8) usize {
     return n;
 }
 
-// The credential header carries the SPEC's credential prefix (if any), which
-// a TEMPLATE cannot know: an OpenAPI bearer scheme gives `Bearer <token>`, an
-// apiKey scheme the raw token. So assert on the CREDENTIAL and let the
-// prefix be whatever this SDK's API declares.
-fn credential_is(auth: ?[]const u8, token: []const u8) !void {
+// The header value prepare_auth writes for a token, in the form the DEFAULT
+// client's auth gives: under Basic the token is the key half of the encoded
+// pair, and a prefix is space-joined.
+fn credential(token: []const u8, secret: []const u8) []const u8 {
+    const auth = h.getp(sdk.test_sdk(vnull(), vnull()).options_map(), "auth");
+    const prefix: []const u8 = switch (h.getp(auth, "prefix")) {
+        .string => |p| p,
+        else => "",
+    };
+    const basic = switch (h.getp(auth, "basic")) {
+        .bool => |b| b,
+        else => false,
+    };
+    var value = token;
+    if (basic) {
+        const text = std.fmt.allocPrint(h.A(), "{s}:{s}", .{ token, secret }) catch token;
+        const enc = std.base64.standard.Encoder;
+        const buf = h.A().alloc(u8, enc.calcSize(text.len)) catch unreachable;
+        value = enc.encode(buf, text);
+    }
+    if (0 == prefix.len) return value;
+    return std.fmt.allocPrint(h.A(), "{s} {s}", .{ prefix, value }) catch value;
+}
+
+fn paired_is(auth: ?[]const u8, token: []const u8, secret: []const u8) !void {
     const got = auth orelse "";
-    const suffix = std.fmt.allocPrint(h.A(), " {s}", .{token}) catch token;
-    if (!(std.mem.eql(u8, got, token) or std.mem.endsWith(u8, got, suffix))) {
-        std.debug.print("expected the {s} header to carry {s}, got: {s}\n", .{ cred_header(), token, got });
+    const want = credential(token, secret);
+    if (!std.mem.eql(u8, got, want)) {
+        std.debug.print("expected the {s} header to carry {s} as {s}, got: {s}\n", .{ cred_header(), token, want, got });
         return error.TestUnexpectedResult;
     }
+}
+
+fn credential_is(auth: ?[]const u8, token: []const u8) !void {
+    return paired_is(auth, token, "");
 }
 
 fn contains(text: []const u8, needle: []const u8) bool {
@@ -658,6 +693,16 @@ test "secrets active: auth null suppresses the credential, chain or no chain" {
     try testing.expect(raw == .null);
 }
 
+test "secrets active: a resolved key is placed as prepare_auth places it, the secret kept" {
+    if (!present() or !placesCredential()) return error.SkipZigTest;
+    const w = Wire.new();
+    const chain = Scripted.new("CHAINKEY05", null);
+    const client = secrets_client(w, h.jo(&.{.{ "secret", h.vstr("PASS01") }}), secrets_opts(h.ja(&.{chain.fn_val()}), vnull()));
+    _ = direct_probe(client);
+    try testing.expect(w.api().len == 1);
+    try paired_is(w.api()[0].auth, "CHAINKEY05", "PASS01");
+}
+
 test "secrets active: the secret name is configurable" {
     if (!present() or !placesCredential()) return error.SkipZigTest;
     const w = Wire.new();
@@ -792,6 +837,17 @@ test "secrets exchange: a 401 buys another token and retries the SAME request" {
     try testing.expectEqualStrings(w.api()[0].url, w.api()[1].url);
 }
 
+test "secrets exchange: a token bought on a refusal is placed as prepare_auth places it" {
+    if (!present() or !placesCredential()) return error.SkipZigTest;
+    const w = Wire.new();
+    w.apistatus = &.{ 401, 200 };
+    const client = secrets_client(w, h.jo(&.{.{ "secret", h.vstr("PASS01") }}), exchange_opts(h.ja(&.{Scripted.new("REFRESH01", null).fn_val()}), vnull()));
+    _ = direct_probe(client);
+    try testing.expect(w.api().len == 2);
+    try paired_is(w.api()[0].auth, "ACCESS01", "PASS01");
+    try paired_is(w.api()[1].auth, "ACCESS02", "PASS01");
+}
+
 test "secrets exchange: the retry happens once, not in a loop" {
     if (!present() or !placesCredential()) return error.SkipZigTest;
     const w = Wire.new();
@@ -886,6 +942,7 @@ test "secrets exchange: auth null suppresses the credential, refusal or not" {
     _ = direct_probe(client);
     try testing.expect(w.api().len == 1);
     try testing.expect(w.api()[0].auth == null);
+    try testing.expect(w.token_calls() == 0);
 }
 
 test "secrets exchange: exchange off leaves the feature exactly as it was" {
@@ -1178,4 +1235,60 @@ test "secrets exchange: with the option, a redirect on the exchange's own origin
     try testing.expect(3 == refused);
     // A redirect to itself is followed five times and no more.
     try testing.expect(6 == looped);
+}
+
+// ---- auth off ----------------------------------------------------------------
+
+// Off by the config where it declares no auth, else by `auth: null`: either
+// way the feature places no credential, buys no token and retries nothing.
+fn carries(c: Call) bool {
+    if (c.auth != null) return true;
+    const secrets = [_][]const u8{ "OFFKEY01", "OFFKEY02", "OFFREFRESH01", "ACCESS01" };
+    for (secrets) |secret| {
+        if (contains(c.values, secret)) return true;
+    }
+    return false;
+}
+
+test "auth off: the feature places no credential and buys no token" {
+    if (!present()) return error.SkipZigTest;
+    const declared = h.getp(h.getp(sdk.make_config(), "options"), "auth") == .object;
+    var sent: usize = 0;
+    var credentials: usize = 0;
+    var bought: usize = 0;
+
+    var scenario: usize = 0;
+    while (scenario < 3) : (scenario += 1) {
+        const w = Wire.new();
+        const sdkopts = h.omap();
+        if (declared) h.setp(sdkopts, "auth", h.vnull());
+        var fopts: Value = undefined;
+        if (0 == scenario) {
+            fopts = secrets_opts(h.ja(&.{Scripted.new("OFFKEY01", null).fn_val()}), vnull());
+        } else if (1 == scenario) {
+            h.setp(sdkopts, "apikey", h.vstr("OFFKEY02"));
+            fopts = secrets_opts(h.ja(&.{}), vnull());
+        } else {
+            w.apistatus = &.{401};
+            fopts = exchange_opts(h.ja(&.{Scripted.new("OFFREFRESH01", null).fn_val()}), vnull());
+        }
+        const client = secrets_client(w, sdkopts, fopts);
+        _ = direct_probe(client);
+
+        try testing.expect(w.api().len == 1);
+        try testing.expect(w.token_calls() == 0);
+        try testing.expect(!carries(w.api()[0]));
+        const sf = secrets_of(client) orelse return error.TestUnexpectedResult;
+        try testing.expectEqualStrings("", sf.credential());
+
+        for (w.api()) |c| {
+            if (carries(c)) credentials += 1;
+        }
+        sent += w.api().len;
+        bought += w.token_calls();
+    }
+
+    std.debug.print("\nsecrets: auth off by {s}: {d} request(s), {d} credential(s), {d} token(s)\n", .{
+        if (declared) "option" else "config", sent, credentials, bought,
+    });
 }

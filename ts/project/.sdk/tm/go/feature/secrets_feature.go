@@ -1,6 +1,7 @@
 package feature
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -22,6 +23,8 @@ type SecretsFeature struct {
 	options map[string]any
 
 	liveopts map[string]any
+	declared bool
+	basic    bool
 
 	secretname string
 	cache      bool
@@ -82,6 +85,12 @@ func (f *SecretsFeature) Init(ctx *core.Context, options map[string]any) {
 	f.options = options
 	f.liveopts = ctx.Options
 	f.Active = foptBool(options, "active", false)
+
+	// PrepareAuth's generation inputs: auth where it places, Basic where it composes.
+	configopts, _ := ctx.Config["options"].(map[string]any)
+	declared, _ := configopts["auth"].(map[string]any)
+	f.declared = nil != declared
+	f.basic, _ = declared["basic"].(bool)
 
 	if !f.Active {
 		return
@@ -190,6 +199,11 @@ func (f *SecretsFeature) Init(ctx *core.Context, options map[string]any) {
 	}
 }
 
+// authon is PrepareAuth's decision: declared auth, not suppressed by `auth: nil`.
+func (f *SecretsFeature) authon() bool {
+	return f.declared && nil != f.liveopts["auth"]
+}
+
 // Every value this feature resolves or buys is a secret the SDK handles,
 // and none arrives under an option key the intake registration saw.
 func (f *SecretsFeature) register(value string) {
@@ -234,7 +248,7 @@ func (f *SecretsFeature) resolve() error {
 // That bool is the whole of what resolve() needs to tell a cacheable HIT
 // from a miss it must not retain.
 func (f *SecretsFeature) resolveonce() (bool, error) {
-	if nil == f.sek {
+	if nil == f.sek || !f.authon() {
 		return false, nil
 	}
 
@@ -279,10 +293,6 @@ func (f *SecretsFeature) resolveonce() (bool, error) {
 		return true, nil
 	}
 
-	if nil == f.liveopts["auth"] {
-		return false, nil
-	}
-
 	_, err = f.buy()
 	return nil == err, err
 }
@@ -316,7 +326,7 @@ func (f *SecretsFeature) transport(ctx *core.Context, url string,
 func (f *SecretsFeature) withrefresh(ctx *core.Context, url string,
 	fetchdef map[string]any, inner core.FetcherFunc) (any, error) {
 
-	if nil == f.liveopts["auth"] {
+	if !f.authon() {
 		return inner(ctx, url, fetchdef)
 	}
 
@@ -392,9 +402,8 @@ func (f *SecretsFeature) reauth(fetchdef map[string]any, token string) {
 		return
 	}
 
-	rawauth := f.liveopts["auth"]
-	auth, _ := rawauth.(map[string]any)
-	if nil == rawauth || nil == auth {
+	auth, _ := f.liveopts["auth"].(map[string]any)
+	if !f.authon() || nil == auth {
 		delete(headers, "authorization")
 		return
 	}
@@ -406,12 +415,25 @@ func (f *SecretsFeature) reauth(fetchdef map[string]any, token string) {
 	}
 	name = strings.ToLower(name)
 
+	value := token
+	if basic, _ := auth["basic"].(bool); f.basic && basic {
+		value = f.pair(token)
+	}
+
 	prefix, _ := auth["prefix"].(string)
 	if "" == prefix {
-		headers[name] = token
+		headers[name] = value
 	} else {
-		headers[name] = prefix + " " + token
+		headers[name] = prefix + " " + value
 	}
+}
+
+// pair is prepareAuth's Basic pair, with the token as its key half.
+func (f *SecretsFeature) pair(token string) string {
+	secret, _ := f.liveopts["secret"].(string)
+	pair := base64.StdEncoding.EncodeToString([]byte(token + ":" + secret))
+	f.register(pair)
+	return pair
 }
 
 // buy an access token with the refresh token. Concurrent callers share the

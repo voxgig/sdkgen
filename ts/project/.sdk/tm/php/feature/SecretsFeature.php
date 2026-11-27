@@ -108,6 +108,11 @@ class ProjectNameSecretsFeature extends ProjectNameBaseFeature
     /** @var array<string,mixed> */
     private array $liveopts = [];
 
+    // What prepare_auth was generated from: the config declares auth only
+    // where it places a credential, and Basic only where it composes one.
+    private bool $declared = false;
+    private bool $basic = false;
+
     private string $secretname = 'apikey';
     private bool $cache = true;
     private ?\Voxgig\Sekreto\Sekreto $sekreto = null;
@@ -162,6 +167,10 @@ class ProjectNameSecretsFeature extends ProjectNameBaseFeature
         $this->liveopts = is_array($ctx->options) ? $ctx->options : [];
         $this->active = ($options['active'] ?? null) === true;
         $this->rootctx = $ctx;
+
+        $declared = \Voxgig\Struct\Struct::getpath($ctx->config, 'options.auth');
+        $this->declared = is_array($declared);
+        $this->basic = $this->declared && true === ($declared['basic'] ?? null);
 
         if (!$this->active) {
             return;
@@ -365,7 +374,7 @@ class ProjectNameSecretsFeature extends ProjectNameBaseFeature
     // from a miss it must not cache.
     private function resolve_once(): bool
     {
-        if (null === $this->sekreto) {
+        if (null === $this->sekreto || !$this->authon()) {
             return false;
         }
 
@@ -411,17 +420,6 @@ class ProjectNameSecretsFeature extends ProjectNameBaseFeature
             return true;
         }
 
-        // `auth: null` is the documented way to send NO credential, and a
-        // purchase is a credential-bearing call: the refresh token goes to
-        // the token endpoint in the request body. with_refresh honours
-        // suppression for the RETRY, but it runs after this - by then the
-        // refresh token has already left the process, and no later check
-        // can call it back. The suppression has to be honoured here, before
-        // the first purchase, or it only ever half-held.
-        if (null === ($this->liveopts['auth'] ?? null)) {
-            return false;
-        }
-
         $this->buy();
 
         return true;
@@ -435,12 +433,9 @@ class ProjectNameSecretsFeature extends ProjectNameBaseFeature
     // this request left, and it carries the token that just failed.
     private function with_refresh(ProjectNameContext $ctx, string $url, array $fetchdef, mixed $inner): array
     {
-        // `auth: null` is the documented way to send NO credential, and
-        // prepare_auth honours it by removing the header. A refusal of a
-        // deliberately unauthenticated request is not an expired token and
-        // cannot be fixed by buying one - retrying would transmit exactly
-        // the credential the caller suppressed.
-        if (null === ($this->liveopts['auth'] ?? null)) {
+        // A refusal of an unauthenticated request is not an expired token,
+        // and retrying would transmit the credential that auth off withholds.
+        if (!$this->authon()) {
             return $inner($ctx, $url, $fetchdef);
         }
 
@@ -643,10 +638,14 @@ class ProjectNameSecretsFeature extends ProjectNameBaseFeature
 
         // Suppressed auth means NO header, the same answer prepare_auth
         // gives - and so does an empty credential.
-        if (null === ($this->liveopts['auth'] ?? null) || '' === $token) {
+        if (!$this->authon() || '' === $token) {
             unset($fetchdef['headers'][$name]);
             return;
         }
+
+        $value = $this->basic
+            && true === (\Voxgig\Struct\Struct::getpath($this->liveopts, 'auth.basic') ?? null)
+            ? $this->pair($token) : $token;
 
         $prefix = \Voxgig\Struct\Struct::getpath($this->liveopts, 'auth.prefix');
         if (!is_string($prefix)) {
@@ -655,7 +654,23 @@ class ProjectNameSecretsFeature extends ProjectNameBaseFeature
 
         // Empty prefix (raw apiKey credential) must not add a leading space.
         $fetchdef['headers'][$name] = '' === $prefix
-            ? $token : $prefix . ' ' . $token;
+            ? $value : $prefix . ' ' . $value;
+    }
+
+    // prepare_auth's decision: auth the config declares, not suppressed by
+    // `auth: null`.
+    private function authon(): bool
+    {
+        return $this->declared && null !== ($this->liveopts['auth'] ?? null);
+    }
+
+    // Under Basic the token is the key half, as apikey is: prepare_auth's pair.
+    private function pair(string $token): string
+    {
+        $secret = $this->liveopts['secret'] ?? null;
+        $pair = base64_encode($token . ':' . (is_string($secret) ? $secret : ''));
+        $this->_register($pair);
+        return $pair;
     }
 
     // One chain entry as sekreto will take it: a ProviderSpec array (it has

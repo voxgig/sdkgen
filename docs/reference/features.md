@@ -1223,6 +1223,19 @@ refuses as it does by default.
 Set `name` to the refresh secret when exchanging — `name` is what the chain
 is asked for.
 
+**Auth off.** The feature places a credential only where `prepareAuth`
+places one: the generated config declares auth, and the caller has not
+passed `auth: null`. The config declares none for an API whose spec declares
+no authentication, unless the project switches auth on. Where auth is off,
+the feature asks the chain for nothing, buys no access token, and retries no
+refusal; `sdk.secrets()` still answers arbitrary lookups.
+
+**HTTP Basic.** The value the chain resolves, or the access token the
+exchange buys, is the key half of the pair, as `apikey` is. The feature
+writes the header `prepareAuth` writes for it: `Basic` and the base64 of
+the value joined to the `secret` option by a colon, so the secret survives
+a token bought on a refusal.
+
 **Seam:** `PreSpec` (awaited), plus a transport wrapper installed only when
 `exchange.active`. Resolution is async and the auth header is built
 synchronously inside `makeSpec`, so `PreSpec` is the one place a lookup can

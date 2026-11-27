@@ -37,14 +37,12 @@ defmodule ProjectName.SecretsTest do
   alias ProjectName.Feature.Secrets
 
   # Read from the config, never from a probe: an SDK whose config declares no
-  # auth places no credential, and these tests assert on the one it places.
-  # Decided as this file compiles, which `mix test` does after the SDK, so
-  # ExUnit can skip every test and say so.
-  if nil == S.getprop(S.getprop(ProjectName.Config.shared_config(), "options"), "auth") do
-    reason = "this SDK's config declares no auth, so it places no credential"
-    IO.puts("SKIP secrets: " <> reason)
-    @moduletag skip: reason
-  end
+  # auth places no credential, and the tests that assert on the one it
+  # places skip. Decided as this file compiles, which `mix test` does after
+  # the SDK, so ExUnit can skip them and say so.
+  @noauth if(nil == S.getprop(S.getprop(ProjectName.Config.shared_config(), "options"), "auth"),
+            do: "this SDK's config declares no auth, so it places no credential")
+  if @noauth, do: IO.puts("SKIP secrets: " <> @noauth)
 
   @envprefix "PROJECTENV_TEST_SECRETS_"
   @base "http://raw.test/api"
@@ -86,10 +84,15 @@ defmodule ProjectName.SecretsTest do
 
       [{:calls, cs}] = :ets.lookup(t, :calls)
 
+      values =
+        if S.ismap(headers),
+          do: S.keysof(headers) |> Enum.map_join("\n", &to_string(S.getprop(headers, &1))),
+          else: ""
+
       :ets.insert(t,
         {:calls,
          cs ++
-           [%{url: url, auth: auth, body: S.getprop(fetchdef, "body"),
+           [%{url: url, auth: auth, values: values, body: S.getprop(fetchdef, "body"),
               redirect: S.getprop(fetchdef, "redirect")}]})
 
       if String.ends_with?(url, "/" <> path) do
@@ -185,21 +188,24 @@ defmodule ProjectName.SecretsTest do
 
   # ---- assertions ----------------------------------------------------------
 
-  # The credential header carries the SPEC's credential prefix, which a
-  # TEMPLATE cannot know: an OpenAPI `http`/`bearer` scheme gives
-  # `Bearer <token>`, an apiKey scheme the raw token. So assert on the
-  # CREDENTIAL and let the prefix be whatever this SDK's API declares -
-  # pinning the whole header value passes only for a prefix-less API, and
-  # this file ships to every project that selects the feature.
-  defp credential_is(header, token) do
-    got = if is_binary(header), do: header, else: ""
+  # The header value prepare_auth writes for a token, in the form the DEFAULT
+  # client's auth gives: under Basic the token is the key half of the encoded
+  # pair, and a prefix is space-joined.
+  defp credential(token, secret) do
+    auth = S.getprop(ProjectName.options_map(ProjectName.test()), "auth")
+    prefix = S.getprop(auth, "prefix")
+    value = if S.getprop(auth, "basic") == true, do: Base.encode64(token <> ":" <> secret), else: token
+    if is_binary(prefix) and prefix != "", do: prefix <> " " <> value, else: value
+  end
 
-    assert got == token or String.ends_with?(got, " " <> token),
+  defp credential_is(header, token, secret \\ "") do
+    assert header == credential(token, secret),
            "expected the " <> credheader() <> " header to carry " <> token <> ", got: " <>
              inspect(header)
   end
 
-  defp auth_is(call, token), do: credential_is(if(call == nil, do: nil, else: call.auth), token)
+  defp auth_is(call, token, secret \\ ""),
+    do: credential_is(if(call == nil, do: nil, else: call.auth), token, secret)
 
   # Does this options value CARRY the token - bare, or under the spec's
   # prefix? The negative half of credential_is, for the assertions that pin
@@ -233,6 +239,15 @@ defmodule ProjectName.SecretsTest do
   end
 
   describe "secrets" do
+    if @noauth, do: @describetag(skip: @noauth)
+
+    test "active: a resolved key is placed as prepare_auth places it, the secret kept" do
+      System.put_env(@envprefix <> "APIKEY", "ENVKEY05")
+      r = recorder()
+      ProjectName.direct(sdk(r, [{"secret", "PASS01"}, {"feature", envchain()}]), S.jm(["path", "/thing"]))
+      auth_is(hd(api(r)), "ENVKEY05", "PASS01")
+    end
+
     test "inactive: the apikey option behaves exactly as before" do
       r = recorder()
       client = sdk(r, [{"apikey", "OPTKEY01"}])
@@ -824,6 +839,8 @@ defmodule ProjectName.SecretsTest do
   # A LIVE client throughout. Test mode is deliberately excluded here - it
   # buys nothing, which is the subject of its own test at the end.
   describe "secrets exchange" do
+    if @noauth, do: @describetag(skip: @noauth)
+
     @refresh "REFRESH01"
 
     defp exchange_sdk(r, xextra \\ [], extra \\ []) do
@@ -925,6 +942,17 @@ defmodule ProjectName.SecretsTest do
       auth_is(Enum.at(api(r), 1), "ACCESS02")
 
       assert S.getprop(res, "ok") == true, "the caller sees the successful retry"
+    end
+
+    test "a token bought on a refusal is placed as prepare_auth places it" do
+      System.put_env(@envprefix <> "REFRESH_TOKEN", @refresh)
+
+      r = recorder(%{api: [401, 200]})
+      ProjectName.direct(exchange_sdk(r, [], [{"secret", "PASS01"}]), S.jm(["path", "/thing"]))
+
+      assert length(api(r)) == 2, "expected the request to be retried"
+      auth_is(Enum.at(api(r), 0), "ACCESS01", "PASS01")
+      auth_is(Enum.at(api(r), 1), "ACCESS02", "PASS01")
     end
 
     test "the retry happens once, not in a loop" do
@@ -1233,6 +1261,44 @@ defmodule ProjectName.SecretsTest do
 
   # A listener on 127.0.0.1 that answers by `route` and sends the test
   # {:req, tag, method, path, body} for each request. {socket, port}.
+  # Off by the config where it declares no auth, else by `auth: nil`: either
+  # way the feature places no credential, buys no token and retries nothing.
+  describe "secrets with auth off" do
+    test "places no credential and buys no token" do
+      off = if @noauth, do: [], else: [{"auth", nil}]
+      secrets = ["OFFKEY01", "OFFKEY02", "OFFREFRESH01", "ACCESS01"]
+      carries = fn c -> c.auth != nil or Enum.any?(secrets, &String.contains?(c.values, &1)) end
+
+      scenarios = [
+        {"a key the chain resolves", [{"APIKEY", "OFFKEY01"}], [], [], [200]},
+        {"an explicit apikey", [], [{"apikey", "OFFKEY02"}], [], [200]},
+        {"a refusal", [{"REFRESH_TOKEN", "OFFREFRESH01"}], [],
+         [{"name", "refresh_token"}, {"exchange", S.jm(["active", true])}], [401]}
+      ]
+
+      {sent, bought} =
+        Enum.reduce(scenarios, {[], 0}, fn {what, env, extra, fextra, statuses}, {sent, bought} ->
+          Enum.each(env, fn {k, v} -> System.put_env(@envprefix <> k, v) end)
+          r = recorder(%{api: statuses})
+          client = sdk(r, [{"feature", envchain(fextra)} | extra ++ off])
+          ProjectName.direct(client, S.jm(["path", "/thing"]))
+          Enum.each(env, fn {k, _v} -> System.delete_env(@envprefix <> k) end)
+
+          assert length(api(r)) == 1, what <> ": a request was retried with auth off"
+          assert token(r) == [], what <> ": a token was bought with auth off"
+          refute Enum.any?(api(r), carries), what <> ": a credential was sent with auth off: " <> wire(r)
+          assert Secrets.credential(client) == "", what <> ": the feature resolved a credential with auth off"
+
+          {sent ++ api(r), bought + length(token(r))}
+        end)
+
+      IO.puts(
+        "\nsecrets: auth off by " <> if(@noauth, do: "config", else: "option") <> ": " <>
+          "#{length(sent)} request(s), #{Enum.count(sent, carries)} credential(s), #{bought} token(s)"
+      )
+    end
+  end
+
   defp listener(tag, route) do
     {:ok, listen} =
       :gen_tcp.listen(0, [:binary, active: false, reuseaddr: true, ip: {127, 0, 0, 1}])

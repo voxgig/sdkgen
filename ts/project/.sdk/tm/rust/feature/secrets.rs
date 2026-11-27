@@ -67,6 +67,11 @@ pub struct SecretsState {
     options: Value,
     mode: String,
 
+    /// What prepare_auth was generated from: the config declares auth only
+    /// where it places a credential, and Basic only where it composes one.
+    declared: bool,
+    basic: bool,
+
     cred: String,
     refresh: String,
 
@@ -91,6 +96,8 @@ impl SecretsState {
             exchange: None,
             options: Value::Noval,
             mode: "live".to_string(),
+            declared: false,
+            basic: false,
             cred: String::new(),
             refresh: String::new(),
             resolved: false,
@@ -218,6 +225,12 @@ impl Feature for SecretsFeature {
             .map(|c| c.mode.borrow().clone())
             .unwrap_or_else(|| "live".to_string());
         state.options = ctx.options.borrow().clone();
+
+        let config = ctx.config.borrow().clone();
+        let declared = getpath(&["options", "auth"], &config);
+        state.declared = matches!(declared, Value::Map(_));
+        state.basic = matches!(getp(&declared, "basic"), Value::Bool(true));
+
         state.secretname = fopt_str(options, "name", "apikey");
         state.cache = fopt_bool(options, "cache", true);
 
@@ -432,7 +445,7 @@ fn resolve(state: &Rc<RefCell<SecretsState>>) -> Result<(), ProjectNameError> {
 fn resolve_once(state: &Rc<RefCell<SecretsState>>) -> Result<bool, ProjectNameError> {
     let name = {
         let s = state.borrow();
-        if s.sek.is_none() {
+        if s.sek.is_none() || !authon(&s) {
             return Ok(false);
         }
         s.secretname.clone()
@@ -483,10 +496,6 @@ fn resolve_once(state: &Rc<RefCell<SecretsState>>) -> Result<bool, ProjectNameEr
             // buys another, which is the same path expiry takes anyway.
             return Ok(true);
         }
-
-        if !authactive(&s.options) {
-            return Ok(false);
-        }
     }
 
     buy(state).map(|_| true)
@@ -528,7 +537,7 @@ fn with_refresh(
     let (suppressed, max) = {
         let s = state.borrow();
         (
-            !authactive(&s.options),
+            !authon(&s),
             s.exchange.as_ref().map(|x| x.retries).unwrap_or(0),
         )
     };
@@ -605,13 +614,22 @@ fn authactive(options: &Value) -> bool {
     }
 }
 
+// prepare_auth's decision: auth the config declares, not suppressed by
+// `auth: null`.
+fn authon(s: &SecretsState) -> bool {
+    s.declared && authactive(&s.options)
+}
+
 fn reauth(state: &Rc<RefCell<SecretsState>>, fetchdef: &Value, token: &str) {
     let headers = getp(fetchdef, "headers");
     if !matches!(headers, Value::Map(_)) {
         return;
     }
 
-    let options = state.borrow().options.clone();
+    let (options, on, basic) = {
+        let s = state.borrow();
+        (s.options.clone(), authon(&s), s.basic)
+    };
 
     let name = match getpath(&["auth", "name"], &options) {
         Value::Str(s) if !s.is_empty() => s.to_ascii_lowercase(),
@@ -619,13 +637,16 @@ fn reauth(state: &Rc<RefCell<SecretsState>>, fetchdef: &Value, token: &str) {
     };
 
     // Suppressed auth means NO header, the same answer prepare_auth gives.
-    // Reached defensively - with_refresh does not retry at all when auth
-    // is suppressed - but this is the function that writes the credential,
-    // so it is where the rule has to hold.
-    if !authactive(&options) {
+    if !on {
         vs::del_prop(headers, &Value::str(name.as_str()));
         return;
     }
+
+    let value = if basic && matches!(getpath(&["auth", "basic"], &options), Value::Bool(true)) {
+        pair(&options, token)
+    } else {
+        token.to_string()
+    };
 
     let prefix = match getpath(&["auth", "prefix"], &options) {
         Value::Str(s) => s,
@@ -634,10 +655,21 @@ fn reauth(state: &Rc<RefCell<SecretsState>>, fetchdef: &Value, token: &str) {
 
     // Empty prefix (a raw apiKey credential) must not add a leading space.
     if prefix.is_empty() {
-        setp(&headers, &name, Value::str(token));
+        setp(&headers, &name, Value::str(value));
     } else {
-        setp(&headers, &name, Value::str(format!("{} {}", prefix, token)));
+        setp(&headers, &name, Value::str(format!("{} {}", prefix, value)));
     }
+}
+
+// Under Basic the token is the key half, as apikey is: prepare_auth's pair.
+fn pair(options: &Value, token: &str) -> String {
+    let secret = match getp(options, "secret") {
+        Value::Str(s) => s,
+        _ => String::new(),
+    };
+    let pair = crate::utility::clean::base64_encode(format!("{}:{}", token, secret).as_bytes());
+    register(options, &pair);
+    pair
 }
 
 

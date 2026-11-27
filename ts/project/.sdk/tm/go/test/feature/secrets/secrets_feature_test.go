@@ -2,6 +2,7 @@
 package secretstest
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -43,6 +44,21 @@ var credheader = func() string {
 	return "authorization"
 }()
 
+// credform is the form prepare_auth writes, from the DEFAULT client's auth:
+// under Basic the token is the key half of the encoded pair, and a prefix is
+// space-joined.
+var credform = func() authform {
+	auth, _ := sdk.TestSDK(nil, nil).OptionsMap()["auth"].(map[string]any)
+	prefix, _ := auth["prefix"].(string)
+	basic, _ := auth["basic"].(bool)
+	return authform{prefix: prefix, basic: basic}
+}()
+
+type authform struct {
+	prefix string
+	basic  bool
+}
+
 // ---------------------------------------------------------------------
 // The recording transport: system.fetch for a LIVE client, scripting one
 // status per API call (the last repeating) and a token endpoint for the
@@ -52,6 +68,7 @@ type wirecall struct {
 	url      string
 	auth     string
 	has      bool
+	values   string
 	body     string
 	redirect string
 }
@@ -82,16 +99,20 @@ func (w *wire) fetch(url string, fetchdef map[string]any) (map[string]any, error
 
 	auth := ""
 	has := false
+	values := ""
 	if headers, is := fetchdef["headers"].(map[string]any); is {
 		if v, found := headers[credheader]; found {
 			auth, _ = v.(string)
 			has = true
 		}
+		for _, v := range headers {
+			values += fmt.Sprint(v) + "\n"
+		}
 	}
 	body, _ := fetchdef["body"].(string)
 	redirect, _ := fetchdef["redirect"].(string)
 	w.calls = append(w.calls,
-		wirecall{url: url, auth: auth, has: has, body: body, redirect: redirect})
+		wirecall{url: url, auth: auth, has: has, values: values, body: body, redirect: redirect})
 
 	if strings.HasSuffix(url, "/"+w.tokenpath) {
 		token := w.tokens[min(w.issued, len(w.tokens)-1)]
@@ -149,13 +170,28 @@ func (w *wire) token() []wirecall {
 // ---------------------------------------------------------------------
 // Support.
 
-// The credential header carries the SPEC's credential prefix (if any),
-// which a TEMPLATE cannot know - so assert on the CREDENTIAL and let the
-// prefix be whatever this SDK's API declares.
+// credential is the header value prepare_auth writes for a token.
+func credential(token string, secret string) string {
+	value := token
+	if credform.basic {
+		value = base64.StdEncoding.EncodeToString([]byte(token + ":" + secret))
+	}
+	if "" == credform.prefix {
+		return value
+	}
+	return credform.prefix + " " + value
+}
+
 func credentialIs(t *testing.T, header string, token string) {
 	t.Helper()
-	if header != token && !strings.HasSuffix(header, " "+token) {
-		t.Fatalf("expected the %s header to carry %s, got: %q", credheader, token, header)
+	pairedIs(t, header, token, "")
+}
+
+func pairedIs(t *testing.T, header string, token string, secret string) {
+	t.Helper()
+	if want := credential(token, secret); header != want {
+		t.Fatalf("expected the %s header to carry %s as %q, got: %q",
+			credheader, token, want, header)
 	}
 }
 
@@ -426,6 +462,20 @@ func TestSecretsChain(t *testing.T) {
 		}
 	})
 
+	t.Run("a resolved key is placed as prepare_auth places it, the secret kept", func(t *testing.T) {
+		os.Setenv(envprefix+"APIKEY", "ENVKEY04")
+		defer os.Unsetenv(envprefix + "APIKEY")
+
+		w := makewire()
+		client := secretsClient(w, map[string]any{
+			"secret":  "PASS01",
+			"feature": secretsOpts(nil),
+		})
+
+		driveEntityOp(t, client, w)
+		pairedIs(t, w.api()[0].auth, "ENVKEY04", "PASS01")
+	})
+
 	t.Run("custom provider objects are accepted verbatim", func(t *testing.T) {
 		asked := []string{}
 		w := makewire()
@@ -681,6 +731,31 @@ func TestSecretsExchange(t *testing.T) {
 		}
 		credentialIs(t, api[0].auth, "ACCESS01")
 		credentialIs(t, api[1].auth, "ACCESS02")
+	})
+
+	t.Run("a token bought on a refusal is placed as prepare_auth places it, the secret kept", func(t *testing.T) {
+		os.Setenv(envprefix+"REFRESH_TOKEN", "REFRESH01")
+		defer os.Unsetenv(envprefix + "REFRESH_TOKEN")
+
+		w := makewire()
+		w.apistatus = []int{401, 200}
+
+		client := secretsClient(w, map[string]any{
+			"secret": "PASS01",
+			"feature": secretsOpts(map[string]any{
+				"name":     "refresh_token",
+				"exchange": map[string]any{"active": true},
+			}),
+		})
+
+		driveEntityOp(t, client, w)
+
+		api := w.api()
+		if 2 != len(api) {
+			t.Fatalf("expected the request to be retried exactly once, got %d calls", len(api))
+		}
+		pairedIs(t, api[0].auth, "ACCESS01", "PASS01")
+		pairedIs(t, api[1].auth, "ACCESS02", "PASS01")
 	})
 
 	t.Run("auth nil buys no token at all", func(t *testing.T) {
@@ -1301,4 +1376,111 @@ func TestSecretsGateRecovery(t *testing.T) {
 	if 2 != len(w.api()) {
 		t.Fatalf("recovery must let both operations out, saw %d", len(w.api()))
 	}
+}
+
+// authoff is off by the config where it declares no auth, else by `auth:
+// nil`: either way the feature places no credential, buys no token and
+// retries nothing.
+func authoff() (string, map[string]any) {
+	if options, _ := sdk.MakeConfig()["options"].(map[string]any); nil == options["auth"] {
+		return "config", map[string]any{}
+	}
+	return "option", map[string]any{"auth": nil}
+}
+
+func TestAuthOff(t *testing.T) {
+	by, off := authoff()
+	secrets := []string{"OFFKEY01", "OFFKEY02", "OFFREFRESH01", "ACCESS01"}
+	sent := []wirecall{}
+	bought := 0
+
+	// The header prepare_auth writes, or any header holding one of the secrets.
+	carries := func(call wirecall) bool {
+		if call.has {
+			return true
+		}
+		for _, secret := range secrets {
+			if strings.Contains(call.values, secret) {
+				return true
+			}
+		}
+		return false
+	}
+
+	offclient := func(w *wire, sdkopts map[string]any, fopts map[string]any) *sdk.ProjectNameSDK {
+		opts := map[string]any{"feature": secretsOpts(fopts)}
+		for k, v := range sdkopts {
+			opts[k] = v
+		}
+		for k, v := range off {
+			opts[k] = v
+		}
+		return secretsClient(w, opts)
+	}
+
+	record := func(w *wire) {
+		sent = append(sent, w.api()...)
+		bought += len(w.token())
+	}
+
+	t.Run("a key the chain resolves is not placed", func(t *testing.T) {
+		os.Setenv(envprefix+"APIKEY", "OFFKEY01")
+		defer os.Unsetenv(envprefix + "APIKEY")
+
+		w := makewire()
+		client := offclient(w, nil, nil)
+		driveEntityOp(t, client, w)
+		record(w)
+
+		if carries(w.api()[0]) {
+			t.Fatalf("a credential was sent with auth off: %q", w.api()[0].values)
+		}
+		if v := secretsFeatureOf(client).Credential(); "" != v {
+			t.Fatalf("the feature resolved a credential with auth off: %q", v)
+		}
+	})
+
+	t.Run("an explicit apikey is not placed", func(t *testing.T) {
+		w := makewire()
+		client := offclient(w, map[string]any{"apikey": "OFFKEY02"}, nil)
+		driveEntityOp(t, client, w)
+		record(w)
+
+		if carries(w.api()[0]) {
+			t.Fatalf("a credential was sent with auth off: %q", w.api()[0].values)
+		}
+	})
+
+	t.Run("a refusal buys no token and is not retried", func(t *testing.T) {
+		os.Setenv(envprefix+"REFRESH_TOKEN", "OFFREFRESH01")
+		defer os.Unsetenv(envprefix + "REFRESH_TOKEN")
+
+		w := makewire()
+		w.apistatus = []int{401}
+		client := offclient(w, nil, map[string]any{
+			"name":     "refresh_token",
+			"exchange": map[string]any{"active": true},
+		})
+		driveEntityOp(t, client, w)
+		record(w)
+
+		if 0 != len(w.token()) {
+			t.Fatalf("a token was bought with auth off (%d purchases)", len(w.token()))
+		}
+		if 1 != len(w.api()) {
+			t.Fatalf("a refusal was retried with auth off (%d calls)", len(w.api()))
+		}
+		if carries(w.api()[0]) {
+			t.Fatalf("a credential was sent with auth off: %q", w.api()[0].values)
+		}
+	})
+
+	credentials := 0
+	for _, call := range sent {
+		if carries(call) {
+			credentials++
+		}
+	}
+	fmt.Printf("secrets: auth off by %s: %d request(s), %d credential(s), %d token(s)\n",
+		by, len(sent), credentials, bought)
 }

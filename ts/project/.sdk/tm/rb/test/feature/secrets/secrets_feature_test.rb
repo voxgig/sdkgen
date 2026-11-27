@@ -43,6 +43,16 @@ class SecretsFeatureTest < Minitest::Test
     name.is_a?(String) && !name.empty? ? name.downcase : "authorization"
   end
 
+  # The form prepare_auth writes, from the DEFAULT client's auth: under Basic
+  # the token is the key half of the encoded pair, and a prefix is
+  # space-joined.
+  CREDFORM = begin
+    auth = ProjectNameSDK.test(nil, nil).options_map["auth"]
+    auth = {} unless auth.is_a?(Hash)
+    prefix = auth["prefix"].is_a?(String) ? auth["prefix"] : ""
+    { "prefix" => prefix, "basic" => auth["basic"] == true }
+  end
+
   # ---------------------------------------------------------------------
   # The recording transport: system.fetch for a LIVE client, scripting one
   # status per API call (the last repeating) and a token endpoint for the
@@ -75,6 +85,7 @@ class SecretsFeatureTest < Minitest::Test
           "url" => fullurl,
           "auth" => headers[CREDHEADER],
           "has" => headers.key?(CREDHEADER),
+          "values" => headers.values.map(&:to_s).join("\n"),
           "body" => fetchdef["body"],
           "redirect" => fetchdef["redirect"],
         }
@@ -217,12 +228,15 @@ class SecretsFeatureTest < Minitest::Test
   # -------------------------------------------------------------------
   # Support.
 
-  # The credential header carries the SPEC's credential prefix (if any),
-  # which a TEMPLATE cannot know - so assert on the CREDENTIAL and let the
-  # prefix be whatever this SDK's API declares.
-  def assert_credential(header, token)
-    ok = header == token || header.to_s.end_with?(" " + token)
-    assert ok, "expected the #{CREDHEADER} header to carry #{token}, got: #{header.inspect}"
+  # The header value prepare_auth writes for a token.
+  def credential(token, secret = "")
+    value = CREDFORM["basic"] ? ["#{token}:#{secret}"].pack("m0") : token
+    CREDFORM["prefix"].empty? ? value : "#{CREDFORM["prefix"]} #{value}"
+  end
+
+  def assert_credential(header, token, secret = "")
+    assert_equal credential(token, secret), header,
+      "expected the #{CREDHEADER} header to carry #{token}"
   end
 
   def secrets_feature_of(client)
@@ -351,7 +365,9 @@ class SecretsFeatureTest < Minitest::Test
 
   # Read from the config, never from a probe: an SDK whose config declares no
   # auth places no credential, and these tests assert on the one it places.
+  # The auth-off test asserts it places none.
   def setup
+    return if name.start_with?("test_auth_off_")
     unless ProjectNameConfig.shared_config["options"].key?("auth")
       skip("this SDK's config declares no auth, so it places no credential")
     end
@@ -413,6 +429,17 @@ class SecretsFeatureTest < Minitest::Test
     # crosses - so the credential is ON THE WIRE, not merely resolved.
     assert_credential(wire.api[0]["auth"], "ENVKEY02")
     assert_equal "ENVKEY02", secrets_feature_of(client).credential
+  ensure
+    clearenv("APIKEY")
+  end
+
+  def test_a_resolved_key_is_placed_as_prepare_auth_places_it_the_secret_kept
+    setenv("APIKEY", "ENVKEY04")
+    wire = Wire.new
+    client = secrets_client(wire, { "secret" => "PASS01", "feature" => secrets_opts })
+
+    drive_op(client, wire)
+    assert_credential(wire.api[0]["auth"], "ENVKEY04", "PASS01")
   ensure
     clearenv("APIKEY")
   end
@@ -780,6 +807,29 @@ class SecretsFeatureTest < Minitest::Test
     clearenv("REFRESH_TOKEN")
   end
 
+  def test_a_token_bought_on_a_refusal_is_placed_as_prepare_auth_places_it
+    setenv("REFRESH_TOKEN", "REFRESH01")
+    wire = Wire.new
+    wire.apistatus = [401, 200]
+
+    client = secrets_client(wire, {
+      "secret" => "PASS01",
+      "feature" => secrets_opts({
+        "name" => "refresh_token",
+        "exchange" => { "active" => true },
+      }),
+    })
+
+    drive_op(client, wire)
+
+    api = wire.api
+    assert_equal 2, api.length, "expected the request to be retried exactly once"
+    assert_credential(api[0]["auth"], "ACCESS01", "PASS01")
+    assert_credential(api[1]["auth"], "ACCESS02", "PASS01")
+  ensure
+    clearenv("REFRESH_TOKEN")
+  end
+
   # `auth: nil` SUPPRESSES THE PURCHASE, not just the retry.
   #
   # resolve runs before _with_refresh's suppression check, so the refresh
@@ -1135,5 +1185,48 @@ class SecretsFeatureTest < Minitest::Test
     assert_equal 1, calls, "the refusal must not be retried"
     assert_equal 0, wire.calls.length,
       "a refused op must never yield a request: #{wire.calls.inspect}"
+  end
+
+  # -------------------------------------------------------------------
+  # Off by the config where it declares no auth, else by `auth: nil`: either
+  # way the feature places no credential, buys no token and retries nothing.
+
+  def test_auth_off_places_no_credential_and_buys_no_token
+    declared = ProjectNameConfig.shared_config["options"].key?("auth")
+    by = declared ? "option" : "config"
+    off = declared ? { "auth" => nil } : {}
+    secrets = ["OFFKEY01", "OFFKEY02", "OFFREFRESH01", "ACCESS01"]
+    carries = ->(call) { call["has"] || secrets.any? { |s| call["values"].include?(s) } }
+    sent = []
+    bought = 0
+
+    scenarios = [
+      ["a key the chain resolves", { "APIKEY" => "OFFKEY01" }, {}, {}, [200]],
+      ["an explicit apikey", {}, { "apikey" => "OFFKEY02" }, {}, [200]],
+      ["a refusal", { "REFRESH_TOKEN" => "OFFREFRESH01" }, {},
+       { "name" => "refresh_token", "exchange" => { "active" => true } }, [401]],
+    ]
+
+    scenarios.each do |what, env, sdkopts, fopts, statuses|
+      env.each { |k, v| setenv(k, v) }
+      wire = Wire.new
+      wire.apistatus = statuses
+      client = secrets_client(wire, sdkopts.merge(off).merge("feature" => secrets_opts(fopts)))
+      drive_op(client, wire)
+
+      assert_equal 1, wire.api.length, "#{what}: a request was retried with auth off"
+      assert_equal 0, wire.token.length, "#{what}: a token was bought with auth off"
+      refute carries.call(wire.api[0]), "#{what}: a credential was sent with auth off"
+      assert_equal "", secrets_feature_of(client).credential,
+        "#{what}: the feature resolved a credential with auth off"
+
+      sent.concat(wire.api)
+      bought += wire.token.length
+    ensure
+      env.each_key { |k| clearenv(k) }
+    end
+
+    puts "secrets: auth off by #{by}: #{sent.length} request(s), " \
+      "#{sent.count { |c| carries.call(c) }} credential(s), #{bought} token(s)"
   end
 end

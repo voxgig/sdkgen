@@ -121,6 +121,11 @@ typedef struct {
   // never written.
   voxgig_value* liveopts;
 
+  // What prepare_auth was generated from: the config declares auth only
+  // where it places a credential, and Basic only where it composes one.
+  bool declared;
+  bool basic;
+
   const char* secretname;
   bool cache;
 
@@ -278,6 +283,13 @@ static bool spec_of_map(sek_pool* pool, voxgig_value* m, sek_spec* spec, const c
 
 // ---- credential injection ---------------------------------------------------
 
+// prepare_auth's decision: auth the config declares, not suppressed by
+// `auth: null`.
+static bool secrets_authon(SecretsFeature* f) {
+  voxgig_value* auth = getp(f->liveopts, "auth");
+  return f->declared && !v_is_noval(auth) && !v_is_null(auth);
+}
+
 // Write the resolved credential into THIS request's credential header,
 // the way prepare_auth builds it (same options auth name and prefix, same
 // suppression rule), so the two cannot drift.
@@ -304,7 +316,7 @@ static void secrets_reauth(SecretsFeature* f, voxgig_value* fetchdef) {
   }
 
   voxgig_value* auth = getp(f->liveopts, "auth");
-  if (v_is_noval(auth) || v_is_null(auth)) {
+  if (!secrets_authon(f)) {
     voxgig_value* k = voxgig_new_string(name);
     voxgig_delprop(headers, k);
     voxgig_release(k);
@@ -317,16 +329,42 @@ static void secrets_reauth(SecretsFeature* f, voxgig_value* fetchdef) {
     return;
   }
 
+  // Under Basic the token is the key half, as apikey is: prepare_auth's pair.
+  bool want_basic = false;
+  if (f->basic) get_bool(auth, "basic", &want_basic);
+  char* value = NULL;
+  if (want_basic) {
+    const char* secret = get_str(f->liveopts, "secret");
+    if (NULL == secret) secret = "";
+    size_t n = strlen(f->cred) + 1 + strlen(secret) + 1;
+    char* pair = (char*)malloc(n);
+    if (NULL == pair) {
+      free(name);
+      return;
+    }
+    snprintf(pair, n, "%s:%s", f->cred, secret);
+    value = clean_base64(pair);
+    free(pair);
+    if (NULL != value) clean_add_opts(f->liveopts, value);
+  } else {
+    value = strdup(f->cred);
+  }
+  if (NULL == value) {
+    free(name);
+    return;
+  }
+
   const char* prefix = get_str(auth, "prefix");
   if (NULL == prefix || '\0' == prefix[0]) {
-    setp(headers, name, v_str(f->cred));
+    setp(headers, name, v_str(value));
   } else {
-    size_t n = strlen(prefix) + 1 + strlen(f->cred) + 1;
+    size_t n = strlen(prefix) + 1 + strlen(value) + 1;
     char* buf = (char*)malloc(n);
-    snprintf(buf, n, "%s %s", prefix, f->cred);
+    snprintf(buf, n, "%s %s", prefix, value);
     setp(headers, name, v_str(buf));
     free(buf);
   }
+  free(value);
   free(name);
 }
 
@@ -546,7 +584,7 @@ static bool secrets_spent(SecretsFeature* f, voxgig_value* res) {
 static const char* secrets_resolve(SecretsFeature* f, Context* ctx) {
   if (NULL != f->initerr) return f->initerr;
   if (f->cache && f->resolved) return NULL;
-  if (NULL == f->sek) return NULL;
+  if (NULL == f->sek || !secrets_authon(f)) return NULL;
 
   char* found = NULL;
   sek_err err = sek_try(f->sek, f->secretname, &found);
@@ -630,10 +668,9 @@ static voxgig_value* secrets_fetch(Fetcher* self, Context* ctx, const char* url,
     return st->inner->fn(st->inner, ctx, url, fetchdef, err);
   }
 
-  // `auth: null` is a deliberately unauthenticated request: a refusal of it
-  // is not an expired token and cannot be fixed by buying one.
-  voxgig_value* auth = getp(f->liveopts, "auth");
-  if (v_is_noval(auth) || v_is_null(auth)) {
+  // A refusal of an unauthenticated request is not an expired token, and
+  // retrying would transmit the credential that auth off withholds.
+  if (!secrets_authon(f)) {
     return st->inner->fn(st->inner, ctx, url, fetchdef, err);
   }
 
@@ -696,6 +733,11 @@ static void secrets_init(Feature* fb, Context* ctx, voxgig_value* options) {
 
   f->client = ctx->client;
   f->liveopts = ctx->options;
+
+  voxgig_value* declared = NULL == ctx->config ? NULL : getpath2(ctx->config, "options", "auth");
+  f->declared = voxgig_is_map(declared);
+  f->basic = false;
+  if (f->declared) get_bool(declared, "basic", &f->basic);
 
   // WRAP FIRST. The fail-closed gate needs the seam whatever happens
   // below - a chain that fails to build must still refuse to send - so the

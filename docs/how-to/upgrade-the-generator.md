@@ -93,11 +93,24 @@ From 4.48.0, the SDK of an API whose spec declares no authentication places
 no credential, unless the project switches auth on. Earlier releases
 documented no authentication for such an API and still sent an API key the
 caller passed. A caller that relies on that key reaching the API now sends
-none, except through the secrets feature, which still sends the key it
-resolves. Where the API takes a key its spec does not declare, switch auth
-on in the project's model, as
+none. Where the API takes a key its spec does not declare, switch auth on
+in the project's model, as
 [`isAuthActive`](../reference/api.md#isauthactivemodel--boolean) describes,
 and regenerate.
+
+## The secrets feature follows the same rule
+
+From 4.48.2, the secrets feature places a credential only where the rest of
+the SDK does. Over an API whose spec declares no authentication it resolves
+no key, buys no access token, and retries no refusal, where 4.48.0 and 4.48.1
+still sent the key it resolved, and bought a token when an exchange was
+configured. A project that relies on that key reaching such an API switches
+auth on, as the preceding section describes, and regenerates.
+
+Under HTTP Basic, the feature now writes the header `prepareAuth` writes:
+`Basic` and the base64 of the resolved key or bought token joined to the
+`secret` option. Earlier releases wrote `Basic` and the bare value, which
+dropped the secret.
 
 ## An empty operation list in a README introduction
 

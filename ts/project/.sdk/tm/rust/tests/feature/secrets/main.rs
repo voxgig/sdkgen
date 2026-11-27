@@ -16,11 +16,15 @@ const BASE: &str = "http://secrets.test/api";
 // The test harness has no skip of its own at run time, so the skip is a
 // printed reason.
 fn skipped_without_auth() -> bool {
-    if matches!(getp(&getp(&RUSTCRATE::make_config(), "options"), "auth"), Value::Map(_)) {
+    if declares_auth() {
         return false;
     }
     println!("SKIP secrets: this SDK's config declares no auth, so it places no credential");
     true
+}
+
+fn declares_auth() -> bool {
+    matches!(getp(&getp(&RUSTCRATE::make_config(), "options"), "auth"), Value::Map(_))
 }
 
 // ---- the counted transport ---------------------------------------------
@@ -29,6 +33,7 @@ fn skipped_without_auth() -> bool {
 struct Call {
     url: String,
     auth: Option<String>,
+    values: String,
     body: Option<String>,
     redirect: Option<String>,
 }
@@ -100,9 +105,22 @@ impl Wire {
                 _ => String::new(),
             };
             let fetchdef = getp(arg, "1");
+            let values = match getp(&fetchdef, "headers") {
+                Value::Map(m) => m
+                    .borrow()
+                    .values()
+                    .map(|v| match v {
+                        Value::Str(s) => s.clone(),
+                        _ => String::new(),
+                    })
+                    .collect::<Vec<String>>()
+                    .join("\n"),
+                _ => String::new(),
+            };
             w.calls.borrow_mut().push(Call {
                 url: url.clone(),
                 auth: authof(&fetchdef),
+                values,
                 body: get_str(&fetchdef, "body"),
                 redirect: get_str(&fetchdef, "redirect"),
             });
@@ -200,14 +218,47 @@ fn authof(fetchdef: &Value) -> Option<String> {
     }
 }
 
+// The form prepare_auth writes, from the DEFAULT client's auth: under Basic
+// the token is the key half of the encoded pair, and a prefix is
+// space-joined.
+fn cred_form() -> &'static (String, bool) {
+    static FORM: std::sync::OnceLock<(String, bool)> = std::sync::OnceLock::new();
+    FORM.get_or_init(|| {
+        let auth = getp(&RUSTCRATE::test_sdk(Value::Noval, Value::Noval).options_map(), "auth");
+        let prefix = match getp(&auth, "prefix") {
+            Value::Str(s) => s,
+            _ => String::new(),
+        };
+        (prefix, matches!(getp(&auth, "basic"), Value::Bool(true)))
+    })
+}
+
+// The header value prepare_auth writes for a token.
+fn credential(token: &str, secret: &str) -> String {
+    let (prefix, basic) = cred_form();
+    let value = if *basic {
+        RUSTCRATE::utility::clean::base64_encode(format!("{}:{}", token, secret).as_bytes())
+    } else {
+        token.to_string()
+    };
+    if prefix.is_empty() {
+        value
+    } else {
+        format!("{} {}", prefix, value)
+    }
+}
+
 fn credential_is(header: Option<String>, token: &str) {
-    let got = header.unwrap_or_default();
-    assert!(
-        got == token || got.ends_with(&format!(" {}", token)),
-        "expected the {} header to carry {}, got: {:?}",
+    paired_is(header, token, "");
+}
+
+fn paired_is(header: Option<String>, token: &str, secret: &str) {
+    assert_eq!(
+        header,
+        Some(credential(token, secret)),
+        "expected the {} header to carry {}",
         cred_header(),
-        token,
-        got
+        token
     );
 }
 
@@ -218,17 +269,27 @@ fn call_auth(calls: &[Call], i: usize) -> Option<String> {
 // ---- clients ------------------------------------------------------------
 
 fn sdk(wire: &Wire, secrets: Vec<(&str, Value)>) -> Rc<ProjectNameSDK> {
+    sdk_with(wire, secrets, vec![])
+}
+
+// `extra` is client options beside the feature's own.
+fn sdk_with(wire: &Wire, secrets: Vec<(&str, Value)>, extra: Vec<(&str, Value)>) -> Rc<ProjectNameSDK> {
     let fopts = jo(vec![("active", Value::Bool(true))]);
     for (k, v) in secrets {
         RUSTCRATE::core::helpers::setp(&fopts, k, v);
     }
 
-    ProjectNameSDK::new(jo(vec![
+    let opts = jo(vec![
         ("base", Value::str(BASE)),
         ("allow", jo(vec![("op", Value::str("direct,graphql"))])),
         ("system", jo(vec![("fetch", wire.fetch())])),
         ("feature", jo(vec![("secrets", fopts)])),
-    ])).unwrap()
+    ]);
+    for (k, v) in extra {
+        RUSTCRATE::core::helpers::setp(&opts, k, v);
+    }
+
+    ProjectNameSDK::new(opts).unwrap()
 }
 
 fn providers(list: Vec<Value>) -> (&'static str, Value) {
@@ -432,6 +493,25 @@ fn an_omitted_apikey_defers_to_the_chain() {
         secrets_call(&client, vec![Value::str("credential")]),
         Value::str("CHAINKEY01")
     );
+}
+
+#[test]
+fn a_resolved_key_is_placed_as_prepare_auth_places_it_the_secret_kept() {
+    if skipped_without_auth() {
+        return;
+    }
+    let wire = Wire::new();
+    let client = sdk_with(
+        &wire,
+        vec![providers(vec![memory("APIKEY", "CHAINKEY05")])],
+        vec![("secret", Value::str("PASS01"))],
+    );
+
+    client
+        .direct(jo(vec![("path", Value::str("/thing"))]))
+        .expect("direct");
+
+    paired_is(call_auth(&wire.api(), 0), "CHAINKEY05", "PASS01");
 }
 
 #[test]
@@ -1289,6 +1369,31 @@ fn an_expiry_buys_another_token_and_retries_the_same_request() {
 }
 
 #[test]
+fn a_token_bought_on_a_refusal_is_placed_as_prepare_auth_places_it() {
+    if skipped_without_auth() {
+        return;
+    }
+    let wire = Wire::new().apistatus(&[401, 200]);
+    let client = sdk_with(
+        &wire,
+        vec![
+            ("name", Value::str("refresh_token")),
+            providers(vec![memory("REFRESH_TOKEN", REFRESH)]),
+            exchange(vec![]),
+        ],
+        vec![("secret", Value::str("PASS01"))],
+    );
+
+    client
+        .direct(jo(vec![("path", Value::str("/thing"))]))
+        .expect("direct");
+
+    assert_eq!(wire.api().len(), 2, "expected the request to be retried");
+    paired_is(call_auth(&wire.api(), 0), "ACCESS01", "PASS01");
+    paired_is(call_auth(&wire.api(), 1), "ACCESS02", "PASS01");
+}
+
+#[test]
 fn the_retry_happens_once_not_in_a_loop() {
     if skipped_without_auth() {
         return;
@@ -1948,4 +2053,62 @@ fn helpers_are_the_ones_the_seam_uses() {
     }
     assert_eq!(to_int(&Value::Num(401.0)), 401);
     assert!(matches!(ja(vec![Value::Noval]), Value::List(_)));
+}
+
+// Off by the config where it declares no auth, else by `auth: null`: either
+// way the feature places no credential, buys no token and retries nothing.
+#[test]
+fn auth_off_places_no_credential_and_buys_no_token() {
+    let declared = declares_auth();
+    let secrets = ["OFFKEY01", "OFFKEY02", "OFFREFRESH01", "ACCESS01"];
+    let carries =
+        |call: &Call| call.auth.is_some() || secrets.iter().any(|s| call.values.contains(s));
+    let mut sent: Vec<Call> = Vec::new();
+    let mut bought = 0;
+
+    let scenarios: Vec<(&str, Vec<(&str, Value)>, Vec<(&str, Value)>, i64)> = vec![
+        ("a key the chain resolves", vec![providers(vec![memory("APIKEY", "OFFKEY01")])], vec![], 200),
+        ("an explicit apikey", vec![], vec![("apikey", Value::str("OFFKEY02"))], 200),
+        (
+            "a refusal",
+            vec![
+                ("name", Value::str("refresh_token")),
+                providers(vec![memory("REFRESH_TOKEN", "OFFREFRESH01")]),
+                exchange(vec![]),
+            ],
+            vec![],
+            401,
+        ),
+    ];
+
+    for (what, fopts, mut extra, status) in scenarios {
+        if declared {
+            extra.push(("auth", Value::Null));
+        }
+        let wire = Wire::new().apistatus(&[status]);
+        let client = sdk_with(&wire, fopts, extra);
+
+        let _ = client.direct(jo(vec![("path", Value::str("/thing"))]));
+
+        assert_eq!(wire.api().len(), 1, "{}: a request was retried with auth off: {}", what, wire.trace());
+        assert_eq!(wire.token().len(), 0, "{}: a token was bought with auth off: {}", what, wire.trace());
+        assert!(!carries(&wire.api()[0]), "{}: a credential was sent with auth off: {}", what, wire.trace());
+        assert_eq!(
+            secrets_call(&client, vec![Value::str("credential")]),
+            Value::str(""),
+            "{}: the feature resolved a credential with auth off",
+            what
+        );
+
+        sent.extend(wire.api());
+        bought += wire.token().len();
+    }
+
+    println!(
+        "secrets: auth off by {}: {} request(s), {} credential(s), {} token(s)",
+        if declared { "option" } else { "config" },
+        sent.len(),
+        sent.iter().filter(|c| carries(c)).count(),
+        bought
+    );
 }

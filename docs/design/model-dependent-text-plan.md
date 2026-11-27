@@ -2046,6 +2046,16 @@ Darwin's header guard.
 - Regenerating the reference SDKs and the fleet before the dispatch
   (authorisation 7) is not part of the pull request.
 
+**Answered after the pull request.** The maintainer answered on 2026-11-26:
+
+- `publish.recipe` stays on by default. A target from a package, which
+  declares nothing, keeps deploying through its own `publish` rule.
+- Four of the items left for later are approved as follow-ups: the secrets
+  feature following DQ11 and keeping the Basic secret, as the patch release
+  4.48.2; apidef writing a patch flow step (WP39); regenerating the
+  reference SDKs and the fleet (authorisation 7); and the language pack's
+  R-LP2.
+
 ## Appendix A. Issue index
 
 Every issue, with the package that resolves it or the reason none does. The

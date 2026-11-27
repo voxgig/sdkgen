@@ -108,6 +108,12 @@ defmodule ProjectName.Feature.Secrets do
       # feature never writes to it.
       S.setprop(f, "_liveopts", S.getprop(client, "options"))
 
+      # What prepare_auth was generated from: the config declares auth only
+      # where it places a credential, and Basic only where it composes one.
+      declared = S.getpath(S.getprop(ctx, "config"), "options.auth")
+      S.setprop(f, "_declared", S.ismap(declared))
+      S.setprop(f, "_basic", S.ismap(declared) and S.getprop(declared, "basic") == true)
+
       name = H.str_or(S.getprop(options, "name"), "apikey")
       S.setprop(f, "_secretname", name)
       S.setprop(f, "_cache", S.getprop(options, "cache") != false)
@@ -477,12 +483,9 @@ defmodule ProjectName.Feature.Secrets do
         keep(f)
         :ok
       else
-        # NO SUPPRESSION CHECK HERE, and that is deliberate: elixir's
-        # transport/5 already returns before resolve/1 when `auth: nil`, so
-        # a suppressed request never reaches this purchase at all. Every
-        # other target guards the purchase itself, because their transports
-        # resolve first. One rule, one place - and here that place is the
-        # transport.
+        # No suppression check here: transport/5 returns before resolve/1
+        # when auth is off, so a suppressed request never reaches this
+        # purchase at all.
         case buy(f, x) do
           {:ok, _token} ->
             keep(f)
@@ -529,13 +532,9 @@ defmodule ProjectName.Feature.Secrets do
     x = S.getprop(f, "_exchange")
 
     if suppressed?(f) do
-      # `auth: nil` is the documented way to send NO credential, and
-      # prepare_auth honours it by removing the header. There is then
-      # nothing to resolve and nothing to buy: asking the chain could only
-      # fail a request that was never going to carry a credential, and
-      # purchasing an access token nobody will send is a wasted exchange.
-      # The header is removed again defensively, because this is the
-      # function that would otherwise write it.
+      # Auth off sends NO credential, as prepare_auth places none. There is
+      # then nothing to resolve and nothing to buy: asking the chain could
+      # only fail a request that was never going to carry a credential.
       reauth(f, fetchdef, "")
       inner.(ctx, url, fetchdef)
     else
@@ -561,7 +560,10 @@ defmodule ProjectName.Feature.Secrets do
     end
   end
 
-  defp suppressed?(f), do: S.getprop(S.getprop(f, "_liveopts"), "auth") == nil
+  # prepare_auth's decision: suppressed where the config declares no auth,
+  # and where `auth` is nil.
+  defp suppressed?(f),
+    do: S.getprop(f, "_declared") != true or S.getprop(S.getprop(f, "_liveopts"), "auth") == nil
 
   # Buy a token and try the request again when the API says the current one
   # is spent.
@@ -634,13 +636,26 @@ defmodule ProjectName.Feature.Secrets do
       if suppressed?(f) or token == "" do
         S.delprop(headers, name)
       else
+        value =
+          if S.getprop(f, "_basic") == true and
+               S.getpath(S.getprop(f, "_liveopts"), "auth.basic") == true,
+             do: pair(f, token),
+             else: token
+
         prefix = S.getpath(S.getprop(f, "_liveopts"), "auth.prefix")
         prefix = if is_binary(prefix), do: prefix, else: ""
-        S.setprop(headers, name, if(prefix != "", do: prefix <> " " <> token, else: token))
+        S.setprop(headers, name, if(prefix != "", do: prefix <> " " <> value, else: value))
       end
     end
 
     nil
+  end
+
+  # Under Basic the token is the key half, as apikey is: prepare_auth's pair.
+  defp pair(f, token) do
+    joined = Base.encode64(token <> ":" <> tostr(S.getprop(S.getprop(f, "_liveopts"), "secret")))
+    register(f, joined)
+    joined
   end
 
   # ---- the exchange --------------------------------------------------------
