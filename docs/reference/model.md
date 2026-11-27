@@ -76,7 +76,7 @@ as declared:
 | `rb.kind` | Sent as |
 | --- | --- |
 | `json` | The request data, as JSON. |
-| `raw` | The data's `$body`, as given, under the declared media type. |
+| `raw` | The `$body` of the data, as given, under the declared media type. |
 | `form` | `application/x-www-form-urlencoded` pairs. |
 | `multipart` | `multipart/form-data` parts, under a random boundary. |
 
