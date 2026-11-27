@@ -978,7 +978,7 @@ tm/kotlin/utility/struct/Struct.kt edddf10ef0b4
 model/feature/feature-index.aontu 0351fe150e6a
 model/feature/test.aontu e0921bbb3a26
 model/sdk.aontu deb90c7d4659
-model/target/lua.aontu 1749dfdcbc95
+model/target/lua.aontu 9839a40f6abe
 model/target/target-index.aontu aaceadc98c0a
 src/cmp/lua/Config_lua.ts 002ce6858c69
 src/cmp/lua/EntityOperation_lua.ts daa4641b002e
@@ -1032,7 +1032,6 @@ tm/lua/src/feature/README.md 74fc01b8a34f
 tm/lua/src/feature/base/.gitkeep e3b0c44298fc
 tm/lua/src/feature/test/.gitkeep e3b0c44298fc
 tm/lua/test/extend_test.lua 35b3bac8ebbd
-tm/lua/test/feature_test.lua e48237318d0a
 tm/lua/test/netsim_test.lua 1b5b020902a3
 tm/lua/test/omni.lua a726441f6dff
 tm/lua/test/omni_smoke_test.lua f889b585f462

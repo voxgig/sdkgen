@@ -174,14 +174,17 @@ Depends on nothing. Releases as R1 with a migration note for the cache.
 #### Follow-up for #455: what voxgig/sekreto needs
 
 The exchange is sdkgen's own code in all 20 targets, so every one now refuses
-the purchase with `fetch_getonly_block` before sending: ts and js send it
-through the SDK fetcher; php, perl, kotlin, scala, csharp and swift through
-the default transport, which holds the guard; go, py, rb, java, rust, c, cpp,
-zig, lua, elixir, ocaml and clojure check the transport's own guard function
-before their raw fallback. Each gate passes the refusal through as the
-operation's error. Where zig, cpp and ocaml fall back to the vendored
-sekreto HTTP client, that check runs before it. What remains is sekreto's
-own traffic: a vault provider's `httpjson.fetchjson` (POST for AWS Secrets
+the purchase with `fetch_getonly_block` before sending. Seventeen targets
+send it through the SDK's own base fetcher, the one that holds the mode
+check, the test feature's block and the GET-only guard, so the purchase
+inherits the default transport's behaviour (its user agent, decoding and the
+timeout feature in place of the raw fallbacks' fixed 30 seconds) and a
+transport failure reaches the caller as the SDK's own error. cpp, zig and
+ocaml are the deliberate exception: their core has no HTTP client, so the
+purchase still uses the vendored sekreto client with the guard check before
+it, commented at the divergence and named in the features reference. Each
+gate passes the refusal through as the operation's error. What remains is
+sekreto's own traffic: a vault provider's `httpjson.fetchjson` (POST for AWS Secrets
 Manager, Vault AppRole login and others) reads no guard. The upstream change:
 `fetchjson` in every port takes an optional `refuse(method, url)` callback
 from the Sekreto config and returns its error before opening a connection, so
