@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 use crate::core::context::Context;
-use crate::core::helpers::{get_str, setp};
+use crate::core::helpers::{get_str, op_action, op_keys, setp};
 use crate::core::types::{Feature, OutVal};
 use crate::feature::support::*;
 use crate::utility::voxgigstruct::Value;
@@ -41,13 +41,7 @@ impl RbacFeature {
             return None;
         }
 
-        let entity = match ctx.entity.borrow().clone() {
-            Some(e) => e.get_name(),
-            None => ctx.op.borrow().entity.clone(),
-        };
-        let opname = ctx.op.borrow().name.clone();
-
-        for key in [format!("{}.{}", entity, opname), opname, "*".to_string()] {
+        for key in op_keys(ctx) {
             if let Some(r) = get_str(&rules, &key) {
                 return Some(r);
             }
@@ -66,6 +60,9 @@ impl RbacFeature {
         setp(&last, "required", Value::str(required));
         setp(&last, "allowed", Value::Bool(allowed));
         setp(&last, "op", Value::str(opname));
+        if let Some(action) = op_action(ctx) {
+            setp(&last, "action", Value::str(action));
+        }
         self.last = last;
     }
 
@@ -74,10 +71,10 @@ impl RbacFeature {
 
         let opname = {
             let n = ctx.op.borrow().name.clone();
-            if n.is_empty() {
-                "?".to_string()
-            } else {
-                n
+            let n = if n.is_empty() { "?".to_string() } else { n };
+            match op_action(ctx) {
+                Some(action) => format!("{}:{}", n, action),
+                None => n,
             }
         };
         let err = ctx.make_error(

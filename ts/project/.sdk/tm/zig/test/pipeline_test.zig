@@ -572,3 +572,46 @@ test "pipeline feature order: map without test is sorted" {
     }));
     try testing.expect(std.mem.eql(u8, orderJoin(opts), "cache,retry"));
 }
+
+// The point make_point chooses under an allow list, or the error code.
+fn akPoint(allow: []const u8, reqmatch: Value, points: Value) []const u8 {
+    const client = sdk.test_sdk(vnull(), vnull());
+    const utility = client.get_utility();
+    const ctx = plCtx(client, utility, null);
+    ctx.op = sdk.Operation.make(h.jo(&.{
+        .{ "entity", h.vstr("episode") },
+        .{ "name", h.vstr("load") },
+        .{ "input", h.vstr("match") },
+        .{ "points", points },
+    }));
+    ctx.options = h.jo(&.{.{ "allow", h.jo(&.{.{ "op", h.vstr(allow) }}) }});
+    ctx.reqmatch = reqmatch;
+    ctx.mtch = h.omap();
+    const point = utility.make_point(ctx) catch return ctx.pending_err.?.code;
+    return if (h.is_noval(h.getp(h.getp(point, "select"), "$action"))) "plain" else "audio";
+}
+
+test "pipeline make_point: an allow list entry may name an action" {
+    const exist = h.ja(&.{h.vstr("id")});
+    const plain = h.jo(&.{
+        .{ "method", h.vstr("GET") },
+        .{ "parts", h.ja(&.{ h.vstr("episode"), h.vstr("{id}") }) },
+        .{ "select", h.jo(&.{.{ "exist", exist }}) },
+    });
+    const audio = h.jo(&.{
+        .{ "method", h.vstr("GET") },
+        .{ "parts", h.ja(&.{ h.vstr("episode"), h.vstr("{id}"), h.vstr("audio") }) },
+        .{ "select", h.jo(&.{ .{ "exist", exist }, .{ "$action", h.vstr("audio") } }) },
+    });
+    const points = h.ja(&.{ plain, audio });
+    const a = h.jo(&.{ .{ "$action", h.vstr("audio") }, .{ "id", h.vstr("e1") } });
+    const r = h.jo(&.{.{ "id", h.vstr("e1") }});
+    try testing.expectEqualStrings("audio", akPoint("episode.load:audio", a, points));
+    try testing.expectEqualStrings("point_op_allow", akPoint("episode.load:audio", r, points));
+    try testing.expectEqualStrings("audio", akPoint("Episode.Load:AUDIO", a, points));
+    try testing.expectEqualStrings("point_op_allow", akPoint("episode.load:video", a, points));
+    try testing.expectEqualStrings("audio", akPoint("episode.load", a, points));
+    try testing.expectEqualStrings("audio", akPoint("load", a, points));
+    try testing.expectEqualStrings("plain", akPoint("load", r, points));
+    try testing.expectEqualStrings("point_op_allow", akPoint("list", r, points));
+}

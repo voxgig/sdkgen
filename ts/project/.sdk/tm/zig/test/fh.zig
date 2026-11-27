@@ -312,6 +312,8 @@ pub const FhOpSpec = struct {
     headers: Value = .{ .null = {} },
     body: Value = .{ .null = {} },
     ctrl: Value = .{ .null = {} },
+    reqmatch: Value = .{ .null = {} },
+    reqdata: Value = .{ .null = {} },
 };
 
 pub const FhOpResult = struct {
@@ -324,6 +326,12 @@ pub const FhOpResult = struct {
 
 pub fn fh_err_code(err: ?*SdkError) []const u8 {
     return if (err) |e| e.code else "";
+}
+
+// Which request argument an operation reads, as the generated Context decides.
+fn fhOpInput(op: []const u8) []const u8 {
+    if (std.mem.eql(u8, op, "create") or std.mem.eql(u8, op, "update") or std.mem.eql(u8, op, "patch")) return "data";
+    return "match";
 }
 
 fn fhDefaultMethod(op: []const u8) []const u8 {
@@ -414,7 +422,10 @@ pub const FhHarness = struct {
         ctx.op = sdk.Operation.make(h.jo(&.{
             .{ "entity", h.vstr(entity) },
             .{ "name", h.vstr(opname) },
+            .{ "input", h.vstr(fhOpInput(opname)) },
         }));
+        ctx.reqmatch = if (o.reqmatch == .object) o.reqmatch else h.omap();
+        ctx.reqdata = if (o.reqdata == .object) o.reqdata else h.omap();
 
         self.utility.feature_hook(ctx, "PostConstructEntity");
 

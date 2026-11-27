@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use crate::core::context::Context;
 use crate::core::error::ProjectNameError;
-use crate::core::helpers::{allowed, getp, getpath, to_map};
+use crate::core::helpers::{allowed, getp, getpath, op_action, op_keys, to_map};
 use crate::core::types::OutVal;
 use crate::utility::make_url::placeholders;
 use crate::utility::param::param_value;
@@ -93,12 +93,16 @@ pub fn make_point_util(ctx: &Rc<Context>) -> Result<Value, ProjectNameError> {
         Value::Str(s) => s.clone(),
         _ => String::new(),
     };
-    if !allowed(&allow_op_val, &op.name) {
+    if !op_keys(ctx).iter().any(|key| allowed(&allow_op_val, key)) {
+        let opname = match op_action(ctx) {
+            Some(action) => format!("{}:{}", op.name, action),
+            None => op.name.clone(),
+        };
         return Err(ctx.make_error(
             "point_op_allow",
             &format!(
                 "Operation \"{}\" not allowed by SDK option allow.op value: \"{}\"",
-                op.name, allow_op
+                opname, allow_op
             ),
         ));
     }

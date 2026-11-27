@@ -40,12 +40,7 @@ pub const RbacFeature = struct {
         const rules = sup.fopt_map(self.options, "rules");
         if (rules != .object) return null;
 
-        const entity: []const u8 = if (ctx.entity) |e| e.get_name() else ctx.op.entity;
-        const opname = ctx.op.name;
-
-        const k0 = std.fmt.allocPrint(h.A(), "{s}.{s}", .{ entity, opname }) catch opname;
-        const keys = [_][]const u8{ k0, opname, "*" };
-        for (keys) |key| {
+        for (h.op_keys(ctx)) |key| {
             if (h.get_str(rules, key)) |r| return r;
         }
         return null;
@@ -62,13 +57,18 @@ pub const RbacFeature = struct {
         h.setp(last, "required", h.vstr(req));
         h.setp(last, "allowed", h.vbool(allowed));
         h.setp(last, "op", h.vstr(opname));
+        if (h.op_action(ctx)) |action| h.setp(last, "action", h.vstr(action));
         self.last = last;
     }
 
     fn reject(self: *RbacFeature, ctx: *Context, req: []const u8) void {
         self.track(ctx, req, false);
         const opname0 = ctx.op.name;
-        const opname = if (opname0.len == 0) "?" else opname0;
+        const opname1 = if (opname0.len == 0) "?" else opname0;
+        const opname = if (h.op_action(ctx)) |action|
+            (std.fmt.allocPrint(h.A(), "{s}:{s}", .{ opname1, action }) catch opname1)
+        else
+            opname1;
         const msg = std.fmt.allocPrint(h.A(), "Permission \"{s}\" required for operation \"{s}\"", .{ req, opname }) catch "rbac denied";
         const e = ctx.make_error("rbac_denied", msg);
         // Short-circuit endpoint resolution; make_point surfaces this error.

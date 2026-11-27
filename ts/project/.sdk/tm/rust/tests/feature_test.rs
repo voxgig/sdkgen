@@ -10,6 +10,7 @@ use RUSTCRATE::core::helpers::{get_bool, get_str, getp, ja, jo, vfn};
 use RUSTCRATE::feature::audit::AuditFeature;
 use RUSTCRATE::feature::cache::CacheFeature;
 use RUSTCRATE::feature::clienttrack::ClienttrackFeature;
+use RUSTCRATE::feature::cost::CostFeature;
 use RUSTCRATE::feature::debug::DebugFeature;
 use RUSTCRATE::feature::idempotency::IdempotencyFeature;
 use RUSTCRATE::feature::metrics::MetricsFeature;
@@ -1395,6 +1396,224 @@ fn feature_audit_inactive_records_nothing() {
     let h = fh_make(None, vec![(fr(&f), jo(vec![("active", Value::Bool(false))]))]);
     h.op(opspec("load"));
     assert_eq!(f.borrow().records.len(), 0, "expected no records");
+}
+
+// --- action keys ----------------------------------------------------------------
+// A custom action is `$action` in the request argument, and its keys name it:
+// `<entity>.<op>:<action>`, most specific first.
+
+fn ak_audio() -> Value {
+    jo(vec![("$action", Value::str("audio")), ("id", Value::str("e1"))])
+}
+
+fn ak_record() -> Value {
+    jo(vec![("id", Value::str("e1"))])
+}
+
+fn ak_op(op: &str, reqmatch: Value, reqdata: Value) -> FhOpSpec {
+    FhOpSpec {
+        entity: "episode".to_string(),
+        op: op.to_string(),
+        reqmatch,
+        reqdata,
+        ..Default::default()
+    }
+}
+
+fn ak_load(reqmatch: Value) -> FhOpSpec {
+    ak_op("load", reqmatch, Value::Noval)
+}
+
+fn ak_rbac(rules: Vec<(&str, Value)>, permissions: Vec<Value>) -> Value {
+    jo(vec![("rules", jo(rules)), ("permissions", ja(permissions))])
+}
+
+#[test]
+fn feature_action_keys_rbac_record_granted_action_refused() {
+    if !fh_present(&["rbac"]) {
+        return;
+    }
+    let (server, calls) = fh_recorder(None);
+    let f = Rc::new(RefCell::new(RbacFeature::new()));
+    let h = fh_make(
+        Some(server),
+        vec![(
+            fr(&f),
+            ak_rbac(
+                vec![
+                    ("episode.load", Value::str("read")),
+                    ("episode.load:audio", Value::str("audio")),
+                ],
+                vec![Value::str("read")],
+            ),
+        )],
+    );
+    assert!(h.op(ak_load(ak_record())).ok, "expected the record granted");
+    let res = h.op(ak_load(ak_audio()));
+    assert_eq!(fh_err_code(&res.err), "rbac_denied");
+    assert_eq!(calls.borrow().len(), 1, "expected one transport call");
+    assert_eq!(getp(&f.borrow().last, "action"), Value::str("audio"));
+    let msg = res.err.map(|e| e.msg).unwrap_or_default();
+    assert!(msg.contains("operation \"load:audio\""), "message: {}", msg);
+}
+
+#[test]
+fn feature_action_keys_rbac_action_granted_record_refused() {
+    if !fh_present(&["rbac"]) {
+        return;
+    }
+    let f = Rc::new(RefCell::new(RbacFeature::new()));
+    let h = fh_make(
+        None,
+        vec![(
+            fr(&f),
+            ak_rbac(
+                vec![
+                    ("episode.load", Value::str("read")),
+                    ("episode.load:audio", Value::str("audio")),
+                ],
+                vec![Value::str("audio")],
+            ),
+        )],
+    );
+    assert_eq!(fh_err_code(&h.op(ak_load(ak_record())).err), "rbac_denied");
+    assert!(h.op(ak_load(ak_audio())).ok, "expected the action granted");
+}
+
+#[test]
+fn feature_action_keys_rbac_action_falls_back_to_its_operation() {
+    if !fh_present(&["rbac"]) {
+        return;
+    }
+    let f = Rc::new(RefCell::new(RbacFeature::new()));
+    let h = fh_make(
+        None,
+        vec![(
+            fr(&f),
+            ak_rbac(vec![("episode.load", Value::str("read"))], vec![]),
+        )],
+    );
+    assert_eq!(fh_err_code(&h.op(ak_load(ak_audio())).err), "rbac_denied");
+}
+
+#[test]
+fn feature_action_keys_rbac_data_op_reads_reqdata_only() {
+    if !fh_present(&["rbac"]) {
+        return;
+    }
+    let upload = || jo(vec![("$action", Value::str("upload"))]);
+    let f = Rc::new(RefCell::new(RbacFeature::new()));
+    let h = fh_make(
+        None,
+        vec![(
+            fr(&f),
+            ak_rbac(vec![("episode.create:upload", Value::str("write"))], vec![]),
+        )],
+    );
+    let res = h.op(ak_op("create", Value::Noval, upload()));
+    assert_eq!(fh_err_code(&res.err), "rbac_denied");
+    assert!(h.op(ak_op("create", upload(), Value::Noval)).ok, "expected reqmatch ignored");
+}
+
+#[test]
+fn feature_action_keys_metrics_counts_action_apart() {
+    if !fh_present(&["metrics"]) {
+        return;
+    }
+    let f = Rc::new(RefCell::new(MetricsFeature::new()));
+    let h = fh_make(None, vec![(fr(&f), Value::Noval)]);
+    h.op(ak_load(ak_record()));
+    h.op(ak_load(ak_audio()));
+    h.op(ak_load(ak_audio()));
+    let fb = f.borrow();
+    assert_eq!(fb.total.count, 3);
+    assert_eq!(fb.ops.get("episode.load").map(|b| b.count), Some(1));
+    assert_eq!(fb.ops.get("episode.load:audio").map(|b| b.count), Some(2));
+}
+
+#[test]
+fn feature_action_keys_audit_record_names_its_action() {
+    if !fh_present(&["audit"]) {
+        return;
+    }
+    let f = Rc::new(RefCell::new(AuditFeature::new()));
+    let h = fh_make(None, vec![(fr(&f), Value::Noval)]);
+    h.op(ak_load(ak_record()));
+    h.op(ak_load(ak_audio()));
+    let fb = f.borrow();
+    assert!(getp(&fb.records[0], "action").is_noval(), "a plain record has no action");
+    assert_eq!(getp(&fb.records[0], "op"), Value::str("load"));
+    assert_eq!(getp(&fb.records[1], "action"), Value::str("audio"));
+    assert_eq!(getp(&fb.records[1], "op"), Value::str("load"));
+}
+
+#[test]
+fn feature_action_keys_cost_prices_action_apart() {
+    if !fh_present(&["cost"]) {
+        return;
+    }
+    let sunk: Rc<RefCell<Vec<Value>>> = Rc::new(RefCell::new(Vec::new()));
+    let sk = sunk.clone();
+    let f = Rc::new(RefCell::new(CostFeature::new()));
+    let h = fh_make(
+        None,
+        vec![(
+            fr(&f),
+            jo(vec![
+                (
+                    "rates",
+                    jo(vec![
+                        ("episode.load", Value::Num(1.0)),
+                        ("episode.load:audio", Value::Num(5.0)),
+                    ]),
+                ),
+                (
+                    "sink",
+                    vfn(move |r| {
+                        sk.borrow_mut().push(r.clone());
+                        Value::Noval
+                    }),
+                ),
+            ]),
+        )],
+    );
+    h.op(ak_load(ak_record()));
+    h.op(ak_load(ak_audio()));
+    let fb = f.borrow();
+    let t = fb.track.borrow();
+    assert_eq!(t.amount, 6.0);
+    let plain = t.ops.get("episode.load").map(|b| (b.calls, b.amount));
+    assert_eq!(plain, Some((1, 1.0)));
+    let audio = t.ops.get("episode.load:audio").map(|b| (b.calls, b.amount));
+    assert_eq!(audio, Some((1, 5.0)));
+    let sunk = sunk.borrow();
+    assert_eq!(sunk.len(), 2);
+    assert!(getp(&sunk[0], "action").is_noval(), "a plain record has no action");
+    assert_eq!(getp(&sunk[1], "action"), Value::str("audio"));
+    assert_eq!(getp(&t.last, "action"), Value::str("audio"));
+}
+
+#[test]
+fn feature_action_keys_cost_action_falls_back_to_operation_rate() {
+    if !fh_present(&["cost"]) {
+        return;
+    }
+    let f = Rc::new(RefCell::new(CostFeature::new()));
+    let h = fh_make(
+        None,
+        vec![(
+            fr(&f),
+            jo(vec![(
+                "rates",
+                jo(vec![("episode.load", Value::Num(2.0)), ("*", Value::Num(9.0))]),
+            )]),
+        )],
+    );
+    h.op(ak_load(ak_audio()));
+    let fb = f.borrow();
+    let t = fb.track.borrow();
+    let audio = t.ops.get("episode.load:audio").map(|b| (b.calls, b.amount));
+    assert_eq!(audio, Some((1, 2.0)));
 }
 
 // --- clienttrack ----------------------------------------------------------------

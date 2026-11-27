@@ -781,3 +781,49 @@ fn pipeline_prepare_auth_public_api_no_auth_block_drops_credential() {
 
 // (get_str used by the auth guards above)
 use RUSTCRATE::core::helpers::get_str;
+
+#[test]
+fn pipeline_make_point_allow_entry_may_name_an_action() {
+    let (client, utility) = pl_client(Value::Noval);
+    let exist = || jo(vec![("exist", ja(vec![Value::str("id")]))]);
+    let plain = jo(vec![
+        ("method", Value::str("GET")),
+        ("parts", ja(vec![Value::str("episode"), Value::str("{id}")])),
+        ("select", exist()),
+    ]);
+    let audio_select = exist();
+    setp(&audio_select, "$action", Value::str("audio"));
+    let audio = jo(vec![
+        ("method", Value::str("GET")),
+        (
+            "parts",
+            ja(vec![Value::str("episode"), Value::str("{id}"), Value::str("audio")]),
+        ),
+        ("select", audio_select),
+    ]);
+    let point = |allow: &str, reqmatch: Value| -> Result<Value, String> {
+        let ctx = pl_ctx(&client, &utility, None);
+        *ctx.op.borrow_mut() = Rc::new(Operation::new(&jo(vec![
+            ("entity", Value::str("episode")),
+            ("name", Value::str("load")),
+            ("input", Value::str("match")),
+            ("points", ja(vec![plain.clone(), audio.clone()])),
+        ])));
+        *ctx.options.borrow_mut() =
+            jo(vec![("allow", jo(vec![("op", Value::str(allow.to_string()))]))]);
+        *ctx.reqmatch.borrow_mut() = reqmatch;
+        *ctx.mtch.borrow_mut() = Value::empty_map();
+        utility.make_point(&ctx).map_err(|e| e.code)
+    };
+    let a = || jo(vec![("$action", Value::str("audio")), ("id", Value::str("e1"))]);
+    let r = || jo(vec![("id", Value::str("e1"))]);
+    let denied = Err("point_op_allow".to_string());
+    assert_eq!(point("episode.load:audio", a()), Ok(audio.clone()));
+    assert_eq!(point("episode.load:audio", r()), denied);
+    assert_eq!(point("Episode.Load:AUDIO", a()), Ok(audio.clone()));
+    assert_eq!(point("episode.load:video", a()), denied);
+    assert_eq!(point("episode.load", a()), Ok(audio.clone()));
+    assert_eq!(point("load", a()), Ok(audio.clone()));
+    assert_eq!(point("load", r()), Ok(plain.clone()));
+    assert_eq!(point("list", r()), denied);
+}

@@ -658,6 +658,8 @@ pub struct FhOpSpec {
     pub headers: Value,
     pub body: Value,
     pub ctrl: Value,
+    pub reqmatch: Value,
+    pub reqdata: Value,
 }
 
 impl Default for FhOpSpec {
@@ -671,6 +673,8 @@ impl Default for FhOpSpec {
             headers: Value::Noval,
             body: Value::Noval,
             ctrl: Value::Noval,
+            reqmatch: Value::Noval,
+            reqdata: Value::Noval,
         }
     }
 }
@@ -681,6 +685,14 @@ pub struct FhOpResult {
     pub err: Option<ProjectNameError>,
     pub result: Option<Rc<RefCell<SdkResult>>>,
     pub ctx: Rc<Context>,
+}
+
+// Which request argument an operation reads, as the generated Context decides.
+pub fn fh_op_input(op: &str) -> &'static str {
+    match op {
+        "create" | "update" | "patch" => "data",
+        _ => "match",
+    }
 }
 
 pub fn fh_default_method(op: &str) -> &'static str {
@@ -804,7 +816,16 @@ impl FhHarness {
         *ctx.op.borrow_mut() = Rc::new(Operation::new(&jo(vec![
             ("entity", Value::str(entity.clone())),
             ("name", Value::str(opname.clone())),
+            ("input", Value::str(fh_op_input(&opname))),
         ])));
+        *ctx.reqmatch.borrow_mut() = match o.reqmatch {
+            Value::Map(m) => Value::Map(m),
+            _ => Value::empty_map(),
+        };
+        *ctx.reqdata.borrow_mut() = match o.reqdata {
+            Value::Map(m) => Value::Map(m),
+            _ => Value::empty_map(),
+        };
 
         self.utility.feature_hook(&ctx, "PostConstructEntity");
 

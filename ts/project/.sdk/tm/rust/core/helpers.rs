@@ -7,6 +7,7 @@
 use std::cell::RefCell;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use crate::core::context::Context;
 use crate::core::error::ProjectNameError;
 use crate::utility::voxgigstruct as vs;
 use crate::utility::voxgigstruct::Injection;
@@ -37,6 +38,41 @@ pub fn allowed(names: &Value, item: &str) -> bool {
             .split(',')
             .any(|name| name.trim().eq_ignore_ascii_case(item)),
         _ => false,
+    }
+}
+
+// The custom action a call names: `$action` in its own request argument.
+pub fn op_action(ctx: &Context) -> Option<String> {
+    let req = if "data" == ctx.op.borrow().input {
+        ctx.reqdata.borrow().clone()
+    } else {
+        ctx.reqmatch.borrow().clone()
+    };
+    match getp(&req, "$action") {
+        Value::Str(s) if !s.is_empty() => Some(s),
+        _ => None,
+    }
+}
+
+// The keys an operation is looked up and filed by, most specific first:
+// `<entity>.<op>:<action>`, `<entity>.<op>`, `<op>`, `*`.
+pub fn op_keys(ctx: &Context) -> Vec<String> {
+    let (opentity, name) = {
+        let op = ctx.op.borrow();
+        (op.entity.clone(), op.name.clone())
+    };
+    let entity = if "_" != opentity && !opentity.is_empty() {
+        opentity
+    } else {
+        match ctx.entity.borrow().as_ref().map(|e| e.get_name()) {
+            Some(n) if !n.is_empty() => n,
+            _ => "_".to_string(),
+        }
+    };
+    let base = format!("{}.{}", entity, name);
+    match op_action(ctx) {
+        Some(action) => vec![format!("{}:{}", base, action), base, name, "*".to_string()],
+        None => vec![base, name, "*".to_string()],
     }
 }
 

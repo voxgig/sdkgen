@@ -132,6 +132,34 @@ pub fn setp(val: Value, key: []const u8, newval: Value) void {
     }
 }
 
+// The custom action a call names: `$action` in its own request argument.
+pub fn op_action(ctx: anytype) ?[]const u8 {
+    const req: Value = if (std.mem.eql(u8, ctx.op.input, "data")) ctx.reqdata else ctx.reqmatch;
+    return switch (getp(req, "$action")) {
+        .string => |s| if (s.len == 0) null else s,
+        else => null,
+    };
+}
+
+// The keys an operation is looked up and filed by, most specific first:
+// `<entity>.<op>:<action>`, `<entity>.<op>`, `<op>`, `*`.
+pub fn op_keys(ctx: anytype) []const []const u8 {
+    const name = if (ctx.op.name.len == 0) "_" else ctx.op.name;
+    const opentity = ctx.op.entity;
+    const entity: []const u8 = if (opentity.len != 0 and !std.mem.eql(u8, opentity, "_"))
+        opentity
+    else if (ctx.entity) |e|
+        (if (e.get_name().len == 0) "_" else e.get_name())
+    else
+        "_";
+    const base = std.fmt.allocPrint(A(), "{s}.{s}", .{ entity, name }) catch name;
+    if (op_action(ctx)) |action| {
+        const full = std.fmt.allocPrint(A(), "{s}:{s}", .{ base, action }) catch base;
+        return A().dupe([]const u8, &.{ full, base, name, "*" }) catch unreachable;
+    }
+    return A().dupe([]const u8, &.{ base, name, "*" }) catch unreachable;
+}
+
 // Whether a comma-separated allow option names the item: whole names, any case.
 pub fn allow_list_has(names: Value, item: []const u8) bool {
     const list: []const u8 = switch (names) {

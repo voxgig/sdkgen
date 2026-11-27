@@ -829,6 +829,146 @@ test "feature audit: inactive records nothing" {
 }
 
 // =====================================================================
+// action keys: a custom action is `$action` in the request argument, and
+// its keys name it: `<entity>.<op>:<action>`, most specific first.
+// =====================================================================
+
+fn akAudio() Value {
+    return h.jo(&.{ .{ "$action", h.vstr("audio") }, .{ "id", h.vstr("e1") } });
+}
+
+fn akRecord() Value {
+    return h.jo(&.{.{ "id", h.vstr("e1") }});
+}
+
+fn akLoad(reqmatch: Value) fh.FhOpSpec {
+    return .{ .entity = "episode", .op = "load", .reqmatch = reqmatch };
+}
+
+fn akRules(perms: Value) Value {
+    return h.jo(&.{
+        .{ "rules", h.jo(&.{
+            .{ "episode.load", h.vstr("read") },
+            .{ "episode.load:audio", h.vstr("audio") },
+        }) },
+        .{ "permissions", perms },
+    });
+}
+
+fn hasKey(v: Value, key: []const u8) bool {
+    return v == .object and v.object.get(key) != null;
+}
+
+test "feature action-keys: rbac grants the record and refuses the action" {
+    if (!fh.fh_present(&.{"rbac"})) return;
+    const rec = fh.Recorder.new(null);
+    const f = sdk.RbacFeature.make();
+    const rf: *sdk.RbacFeature = @ptrCast(@alignCast(f.ptr));
+    const hh = fh.fh_make(rec.fetcher(), &.{.{ .feat = f, .options = akRules(h.ja(&.{h.vstr("read")})) }});
+    try testing.expect(hh.op(akLoad(akRecord())).ok);
+    const res = hh.op(akLoad(akAudio()));
+    try testing.expectEqualStrings("rbac_denied", fh.fh_err_code(res.err));
+    try testing.expect(rec.count() == 1);
+    try testing.expect(h.veq(h.getp(rf.last, "action"), h.vstr("audio")));
+    try testing.expect(std.mem.indexOf(u8, res.err.?.msg, "operation \"load:audio\"") != null);
+}
+
+test "feature action-keys: rbac grants the action and refuses the record" {
+    if (!fh.fh_present(&.{"rbac"})) return;
+    const f = sdk.RbacFeature.make();
+    const hh = fh.fh_make(null, &.{.{ .feat = f, .options = akRules(h.ja(&.{h.vstr("audio")})) }});
+    try testing.expectEqualStrings("rbac_denied", fh.fh_err_code(hh.op(akLoad(akRecord())).err));
+    try testing.expect(hh.op(akLoad(akAudio())).ok);
+}
+
+test "feature action-keys: rbac with no action rule falls back to the operation" {
+    if (!fh.fh_present(&.{"rbac"})) return;
+    const f = sdk.RbacFeature.make();
+    const hh = fh.fh_make(null, &.{.{ .feat = f, .options = h.jo(&.{
+        .{ "rules", h.jo(&.{.{ "episode.load", h.vstr("read") }}) },
+        .{ "permissions", h.olist() },
+    }) }});
+    try testing.expectEqualStrings("rbac_denied", fh.fh_err_code(hh.op(akLoad(akAudio())).err));
+}
+
+test "feature action-keys: rbac reads a data op's action from reqdata only" {
+    if (!fh.fh_present(&.{"rbac"})) return;
+    const f = sdk.RbacFeature.make();
+    const hh = fh.fh_make(null, &.{.{ .feat = f, .options = h.jo(&.{
+        .{ "rules", h.jo(&.{.{ "episode.create:upload", h.vstr("write") }}) },
+        .{ "permissions", h.olist() },
+    }) }});
+    const upload = h.jo(&.{.{ "$action", h.vstr("upload") }});
+    const res = hh.op(.{ .entity = "episode", .op = "create", .reqdata = upload });
+    try testing.expectEqualStrings("rbac_denied", fh.fh_err_code(res.err));
+    try testing.expect(hh.op(.{ .entity = "episode", .op = "create", .reqmatch = upload }).ok);
+}
+
+test "feature action-keys: metrics counts an action apart from its operation" {
+    if (!fh.fh_present(&.{"metrics"})) return;
+    const f = sdk.MetricsFeature.make();
+    const mf: *sdk.MetricsFeature = @ptrCast(@alignCast(f.ptr));
+    const hh = fh.fh_make(null, &.{.{ .feat = f, .options = vnull() }});
+    _ = hh.op(akLoad(akRecord()));
+    _ = hh.op(akLoad(akAudio()));
+    _ = hh.op(akLoad(akAudio()));
+    try testing.expect(mf.total.count == 3);
+    try testing.expect((mf.ops.get("episode.load") orelse unreachable).count == 1);
+    try testing.expect((mf.ops.get("episode.load:audio") orelse unreachable).count == 2);
+}
+
+test "feature action-keys: audit names the action, and a plain record has none" {
+    if (!fh.fh_present(&.{"audit"})) return;
+    const f = sdk.AuditFeature.make();
+    const af: *sdk.AuditFeature = @ptrCast(@alignCast(f.ptr));
+    const hh = fh.fh_make(null, &.{.{ .feat = f, .options = vnull() }});
+    _ = hh.op(akLoad(akRecord()));
+    _ = hh.op(akLoad(akAudio()));
+    try testing.expect(!hasKey(af.records.items[0], "action"));
+    try testing.expect(h.veq(h.getp(af.records.items[0], "op"), h.vstr("load")));
+    try testing.expect(h.veq(h.getp(af.records.items[1], "action"), h.vstr("audio")));
+    try testing.expect(h.veq(h.getp(af.records.items[1], "op"), h.vstr("load")));
+}
+
+test "feature action-keys: cost prices and attributes an action apart" {
+    if (!fh.fh_present(&.{"cost"})) return;
+    const sunk = fh.Collector.new();
+    const f = sdk.CostFeature.make();
+    const cf: *sdk.CostFeature = @ptrCast(@alignCast(f.ptr));
+    const hh = fh.fh_make(null, &.{.{ .feat = f, .options = h.jo(&.{
+        .{ "rates", h.jo(&.{
+            .{ "episode.load", h.vnum(1) },
+            .{ "episode.load:audio", h.vnum(5) },
+        }) },
+        .{ "sink", sunk.fn_val() },
+    }) }});
+    _ = hh.op(akLoad(akRecord()));
+    _ = hh.op(akLoad(akAudio()));
+    const t = cf.track;
+    try testing.expect(t.total.amount == 6);
+    const plain = t.ops.get("episode.load") orelse unreachable;
+    try testing.expect(plain.calls == 1 and plain.amount == 1);
+    const audio = t.ops.get("episode.load:audio") orelse unreachable;
+    try testing.expect(audio.calls == 1 and audio.amount == 5);
+    try testing.expect(sunk.len() == 2);
+    try testing.expect(!hasKey(sunk.at(0), "action"));
+    try testing.expect(h.veq(h.getp(sunk.at(1), "action"), h.vstr("audio")));
+    try testing.expect(h.veq(h.getp(t.last, "action"), h.vstr("audio")));
+}
+
+test "feature action-keys: cost prices an action at its operation's rate" {
+    if (!fh.fh_present(&.{"cost"})) return;
+    const f = sdk.CostFeature.make();
+    const cf: *sdk.CostFeature = @ptrCast(@alignCast(f.ptr));
+    const hh = fh.fh_make(null, &.{.{ .feat = f, .options = h.jo(&.{
+        .{ "rates", h.jo(&.{ .{ "episode.load", h.vnum(2) }, .{ "*", h.vnum(9) } }) },
+    }) }});
+    _ = hh.op(akLoad(akAudio()));
+    const audio = cf.track.ops.get("episode.load:audio") orelse unreachable;
+    try testing.expect(audio.calls == 1 and audio.amount == 2);
+}
+
+// =====================================================================
 // clienttrack
 // =====================================================================
 

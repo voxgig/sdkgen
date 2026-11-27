@@ -1028,8 +1028,13 @@ pub fn make_point_util(ctx: *Context) E!Value {
         .string => |s| s,
         else => "",
     };
-    if (!h.allow_list_has(h.getpath(&.{ "allow", "op" }, options), op.name)) {
-        return ctx.fail("point_op_allow", fmt("Operation \"{s}\" not allowed by SDK option allow.op value: \"{s}\"", .{ op.name, allow_op }));
+    const allow_val = h.getpath(&.{ "allow", "op" }, options);
+    const admitted = for (h.op_keys(ctx)) |key| {
+        if (h.allow_list_has(allow_val, key)) break true;
+    } else false;
+    if (!admitted) {
+        const opname = if (h.op_action(ctx)) |action| fmt("{s}:{s}", .{ op.name, action }) else op.name;
+        return ctx.fail("point_op_allow", fmt("Operation \"{s}\" not allowed by SDK option allow.op value: \"{s}\"", .{ opname, allow_op }));
     }
 
     const points = op.points;

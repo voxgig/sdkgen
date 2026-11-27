@@ -72,6 +72,7 @@ pub const AuditFeature = struct {
         h.setp(record, "outcome", h.vstr(outcome));
         h.setp(record, "correlationId", h.vstr(ctx.id));
         if (ctx.result) |r| h.setp(record, "status", h.vnum(r.status));
+        if (h.op_action(ctx)) |action| h.setp(record, "action", h.vstr(action));
 
         const out = ctx.util().clean(ctx, record);
 
