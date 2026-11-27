@@ -318,6 +318,8 @@ let make ?(plugins : Defs.definition list = [])
         match sysfetch with
         | Func _ as sf -> Some (fun url fd -> call_vfn sf (ja [Str url; fd]))
         | _ -> transport in
+      (* Not fetcher_util, as every other target does: the core bundles no
+       * client, so only its GET-only guard precedes the vendored one. *)
       refused := (match sysfetch, !client with
         | Func _, _ -> None
         | _, Some { cl_rootctx = Some rctx; _ } -> Sdk_runtime.getonly_refusal rctx url fetchdef

@@ -1,12 +1,7 @@
 package JAVAPACKAGE.feature;
 
-import java.io.IOException;
 import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Locale;
@@ -14,7 +9,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
-import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
 import JAVAPACKAGE.core.Config;
@@ -695,9 +689,6 @@ public class SecretsFeature extends BaseFeature {
     }
     String url = base + "/" + path;
 
-    Object sysRaw = opts.get("system");
-    Object fetchRaw = sysRaw instanceof Map
-        ? ((Map<String, Object>) sysRaw).get("fetch") : null;
 
     // The body is SERIALISED, never concatenated: a refresh token (or a
     // configured request-field name) carrying a quote, backslash or
@@ -715,11 +706,8 @@ public class SecretsFeature extends BaseFeature {
     // Never followed by the client: a redirect would carry the refresh token on.
     fetchdef.put("redirect", "manual");
 
-    // Deliberately NOT the SDK transport. The transport is what this
-    // feature wraps, and sending the token request back through it would
-    // recurse on the first expiry - and would route the exchange through
-    // the test mock, which knows nothing about it.
-    Object res = exchangeFetch(fetchRaw, url, fetchdef);
+    // Not the wrapped transport, which would recurse on the first expiry.
+    Object res = exchangeFetch(url, fetchdef);
 
     // By option alone, and only while the exchange stays on its own origin.
     String at = url;
@@ -729,7 +717,7 @@ public class SecretsFeature extends BaseFeature {
         break;
       }
       at = next;
-      res = exchangeFetch(fetchRaw, at, fetchdef);
+      res = exchangeFetch(at, fetchdef);
     }
 
     int status = FeatureOptions.fresStatus(res);
@@ -764,22 +752,10 @@ public class SecretsFeature extends BaseFeature {
     return token;
   }
 
-  private static Object exchangeFetch(Object fetchRaw, String url,
-      Map<String, Object> fetchdef) {
-    if (fetchRaw instanceof BiFunction) {
-      return ((BiFunction<String, Map<String, Object>, Object>) fetchRaw)
-          .apply(url, fetchdef);
-    }
-    // No custom transport supplied - the ordinary case. makeOptions
-    // leaves system.fetch unset, so the exchange gets its own raw HTTP
-    // path: requiring a custom transport for the COMMON case would
-    // reject every live token purchase before a request was made.
-    // The SDK transport's own GET-only guard, before the raw send.
-    RuntimeException refused = Fetcher.getOnlyRefusal(url, (String) fetchdef.get("method"));
-    if (refused != null) {
-      throw refused;
-    }
-    return rawExchangeFetch(url, fetchdef);
+  // The SDK's own transport, beneath every feature's wrapper: it holds the
+  // test feature's block and the GET-only guard.
+  private Object exchangeFetch(String url, Map<String, Object> fetchdef) {
+    return Fetcher.fetcher(this.rootctx, url, fetchdef);
   }
 
   // Where a 307 or 308 points, when that is on the exchange's own origin. Any
@@ -812,72 +788,6 @@ public class SecretsFeature extends BaseFeature {
     scheme = scheme.toLowerCase(Locale.ROOT);
     int port = uri.getPort() < 0 ? ("https".equals(scheme) ? 443 : 80) : uri.getPort();
     return scheme + "://" + host.toLowerCase(Locale.ROOT) + ":" + port;
-  }
-
-  // rawExchangeFetch is the token-exchange transport of last resort: plain
-  // java.net.http, in the same result shape the system.fetch seam promises
-  // ("status" + "json"). utility/Fetcher.defaultHttpFetch is
-  // package-private in JAVAPACKAGE.utility and unreachable from here, and
-  // reaching for it would put the exchange back on the SDK's own transport
-  // stack - which is the thing this must not use.
-  private static Map<String, Object> rawExchangeFetch(String fullurl,
-      Map<String, Object> fetchdef) {
-
-    Object methodRaw = fetchdef.get("method");
-    String method = methodRaw instanceof String && !"".equals(methodRaw)
-        ? (String) methodRaw : "POST";
-
-    Object bodyRaw = fetchdef.get("body");
-    String body = bodyRaw instanceof String ? (String) bodyRaw : "";
-
-    HttpRequest.Builder reqb = HttpRequest.newBuilder(URI.create(fullurl))
-        .method(method, "".equals(body)
-            ? HttpRequest.BodyPublishers.noBody()
-            : HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8));
-
-    Object headersRaw = fetchdef.get("headers");
-    if (headersRaw instanceof Map) {
-      for (Map.Entry<String, Object> h : ((Map<String, Object>) headersRaw).entrySet()) {
-        if (h.getValue() instanceof String) {
-          reqb.setHeader(h.getKey(), (String) h.getValue());
-        }
-      }
-    }
-
-    HttpResponse<String> resp;
-    try {
-      resp = HttpClient.newBuilder()
-          .connectTimeout(Duration.ofSeconds(30))
-          .followRedirects(HttpClient.Redirect.NEVER)
-          .build()
-          .send(reqb.build(), HttpResponse.BodyHandlers.ofString());
-    }
-    catch (IOException | InterruptedException e) {
-      if (e instanceof InterruptedException) {
-        Thread.currentThread().interrupt();
-      }
-      throw new Sekreto.SekretoError(
-          "secrets: token exchange transport failed: " + e.getMessage());
-    }
-
-    String text = resp.body() == null ? "" : resp.body();
-    Object parsed;
-    try {
-      parsed = "".equals(text) ? null : Json.parse(text);
-    }
-    catch (RuntimeException e) {
-      parsed = null;
-    }
-    final Object jsonBody = parsed;
-
-    Map<String, Object> out = new LinkedHashMap<>();
-    out.put("status", resp.statusCode());
-    Map<String, Object> rheaders = new LinkedHashMap<>();
-    resp.headers().firstValue("location").ifPresent((v) -> rheaders.put("location", v));
-    out.put("headers", rheaders);
-    out.put("json", (Supplier<Object>) () -> jsonBody);
-    out.put("body", text);
-    return out;
   }
 
   private static void awaitLatch(CountDownLatch latch) {

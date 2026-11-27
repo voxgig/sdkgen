@@ -1660,7 +1660,7 @@ fn exchange_auth_null_suppresses_and_is_never_retried() {
 }
 
 #[test]
-fn the_exchange_has_a_raw_transport_when_no_system_fetch_is_given() {
+fn the_exchange_goes_through_the_sdk_transport_when_no_system_fetch_is_given() {
     if skipped_without_auth() {
         return;
     }
@@ -1690,8 +1690,8 @@ fn the_exchange_has_a_raw_transport_when_no_system_fetch_is_given() {
     assert_eq!(getp(&res, "ok"), Value::Bool(false));
     let err = get_str(&res, "err").unwrap_or_default();
     assert!(
-        err.contains("token exchange"),
-        "expected the exchange's own refusal from the raw transport, got: {}",
+        err.contains("/api/auth/token"),
+        "expected the SDK transport's failure for the token endpoint, got: {}",
         err
     );
 }

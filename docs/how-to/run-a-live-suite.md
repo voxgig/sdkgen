@@ -217,7 +217,9 @@ requests. Set `VOXGIG_GETONLY_GUARD=TRUE` beside `<PROJ>_TEST_LIVE=TRUE`. With
 the variable set, the generated tests send nothing but GET requests, and every
 target's own transport, and the TS and JS live transport, refuse any other
 method with `fetch_getonly_block` before anything is sent. The `secrets`
-feature's token purchase, a POST, is refused the same way. A transport you
+feature's token purchase, a POST, is refused the same way, but a vault
+provider's own requests to its vault are outside the guard until the vendored
+sekreto client can apply it. A transport you
 supply through `system.fetch` is not guarded, so pair the variable with a
 guard at the HTTP layer when you use one.
 

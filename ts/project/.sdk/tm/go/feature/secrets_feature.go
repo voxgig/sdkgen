@@ -4,13 +4,10 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 	neturl "net/url"
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 
 	"GOMODULE/core"
 	plugin "GOMODULE/feature/secrets/plugin"
@@ -21,6 +18,7 @@ import (
 type SecretsFeature struct {
 	BaseFeature
 	client  *core.ProjectNameSDK
+	rootctx *core.Context
 	options map[string]any
 
 	liveopts map[string]any
@@ -83,6 +81,7 @@ func (f *SecretsFeature) Sekreto() *sekreto.Sekreto {
 
 func (f *SecretsFeature) Init(ctx *core.Context, options map[string]any) {
 	f.client = ctx.Client
+	f.rootctx = ctx
 	f.options = options
 	f.liveopts = ctx.Options
 	f.Active = foptBool(options, "active", false)
@@ -490,15 +489,15 @@ func (f *SecretsFeature) buyonce() (string, error) {
 	base = strings.TrimRight(base, "/")
 	url := base + "/" + strings.TrimLeft(x.path, "/")
 
-	system, _ := options["system"].(map[string]any)
-	fetch, _ := system["fetch"].(func(string, map[string]any) (map[string]any, error))
-
-	if nil == fetch {
-		// The SDK transport's own GET-only guard, before the raw send.
-		if refused := utility.GetOnlyRefusal(url, x.method); nil != refused {
-			return "", refused
+	// The SDK's own transport, beneath every feature's wrapper: it holds the
+	// test feature's block and the GET-only guard.
+	fetch := func(at string, fd map[string]any) (map[string]any, error) {
+		res, err := utility.Fetcher(f.rootctx, at, fd)
+		if nil != err {
+			return nil, err
 		}
-		fetch = rawExchangeFetch
+		out, _ := res.(map[string]any)
+		return out, nil
 	}
 
 	// The body is MARSHALLED, never concatenated: a refresh token (or a
@@ -607,67 +606,4 @@ func secretsOrigin(u *neturl.URL) string {
 		port = map[string]string{"http": "80", "https": "443"}[scheme]
 	}
 	return scheme + "://" + strings.ToLower(u.Hostname()) + ":" + port
-}
-
-// rawExchangeFetch is the token-exchange transport of last resort: plain
-// net/http, same result shape the system.fetch seam promises ("status" +
-// "json"). It exists so an exchange works with ordinary SDK options -
-// requiring a custom transport for the COMMON case would reject every
-// live token purchase before a request was made.
-func rawExchangeFetch(fullurl string, fetchdef map[string]any) (map[string]any, error) {
-	method, _ := fetchdef["method"].(string)
-	if "" == method {
-		method = "POST"
-	}
-
-	var body io.Reader
-	if raw, is := fetchdef["body"].(string); is && "" != raw {
-		body = strings.NewReader(raw)
-	}
-
-	req, err := http.NewRequest(method, fullurl, body)
-	if nil != err {
-		return nil, err
-	}
-	if headers, is := fetchdef["headers"].(map[string]any); is {
-		for k, v := range headers {
-			if vs, is := v.(string); is {
-				req.Header.Set(k, vs)
-			}
-		}
-	}
-
-	client := &http.Client{
-		Timeout: 30 * time.Second,
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
-	}
-	res, err := client.Do(req)
-	if nil != err {
-		return nil, err
-	}
-	defer res.Body.Close()
-
-	raw, err := io.ReadAll(res.Body)
-	if nil != err {
-		return nil, err
-	}
-
-	headers := map[string]any{}
-	for k := range res.Header {
-		headers[strings.ToLower(k)] = res.Header.Get(k)
-	}
-
-	return map[string]any{
-		"status":  res.StatusCode,
-		"headers": headers,
-		"json": func() any {
-			var out any
-			if nil != json.Unmarshal(raw, &out) {
-				return nil
-			}
-			return out
-		},
-	}, nil
 }

@@ -633,6 +633,8 @@ private:
         }
         return "";
       }
+      // Not util::fetcher, as every other target does: the cpp core has no
+      // client of its own, so only the guard is applied before sekreto's.
       refused_ = util::getOnlyRefusal(client->rootctx, at, fetchdef);
       if (refused_) return refused_->msg;
       std::vector<std::pair<std::string, std::string>> hdrs{{"content-type", "application/json"}};

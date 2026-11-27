@@ -537,17 +537,10 @@ class ProjectNameSecretsFeature extends ProjectNameBaseFeature
         $base = is_string($base) ? rtrim($base, '/') : '';
         $url = $base . '/' . ltrim($x['path'], '/');
 
-        $fetch = \Voxgig\Struct\Struct::getpath($options, 'system.fetch');
-
-        if (!is_callable($fetch)) {
-            // No custom transport supplied - the ordinary case.
-            // make_options leaves system.fetch unset, so the exchange gets
-            // the SDK's own default HTTP path. That static consults neither
-            // system.fetch nor the wrapper chain, so there is no recursion,
-            // and it already answers the ['status' => .., 'json' => ..]
-            // shape read below.
-            $fetch = [ProjectNameFetcher::class, 'defaultHttpFetch'];
-        }
+        // The SDK's own transport, beneath every feature's wrapper: it holds
+        // the test feature's block and the GET-only guard.
+        $rootctx = $this->rootctx;
+        $fetch = static fn (string $at, array $fd): array => ProjectNameFetcher::call($rootctx, $at, $fd);
 
         // The body is ENCODED, never concatenated: a refresh token (or a
         // configured request-field name) carrying a quote, backslash or

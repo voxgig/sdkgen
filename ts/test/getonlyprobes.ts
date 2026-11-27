@@ -32,7 +32,10 @@ const { SDK } = require('SDK_MODULE')
 ;(async () => {
   const client = new SDK({
     base: process.env.GETONLY_BASE,
-    feature: { secrets: { active: true, exchange: { active: true, refresh: 'REFRESH01' } } },
+    feature: {
+      secrets: { active: true, exchange: { active: true, refresh: 'REFRESH01' } },
+      ...(process.env.GETONLY_TEST ? { test: { active: true } } : {}),
+    },
   })
   try {
     await client.Cat().load({ id: 'c1' })
@@ -57,13 +60,14 @@ import (
 )
 
 func TestGetonlyProbe(t *testing.T) {
-	client, err := sdk.NewDemoSDK(map[string]any{
-		"base": os.Getenv("GETONLY_BASE"),
-		"feature": map[string]any{"secrets": map[string]any{
-			"active":   true,
-			"exchange": map[string]any{"active": true, "refresh": "REFRESH01"},
-		}},
-	})
+	feature := map[string]any{"secrets": map[string]any{
+		"active":   true,
+		"exchange": map[string]any{"active": true, "refresh": "REFRESH01"},
+	}}
+	if "" != os.Getenv("GETONLY_TEST") {
+		feature["test"] = map[string]any{"active": true}
+	}
+	client, err := sdk.NewDemoSDK(map[string]any{"base": os.Getenv("GETONLY_BASE"), "feature": feature})
 	if nil == err {
 		_, err = client.Cat(nil).Load(map[string]any{"id": "c1"}, nil)
 	}
@@ -83,10 +87,10 @@ const PY_PROBE = String.raw`
 import os
 from demo_sdk import DemoSDK
 
-client = DemoSDK({
-    'base': os.environ['GETONLY_BASE'],
-    'feature': {'secrets': {'active': True, 'exchange': {'active': True, 'refresh': 'REFRESH01'}}},
-})
+feature = {'secrets': {'active': True, 'exchange': {'active': True, 'refresh': 'REFRESH01'}}}
+if os.environ.get('GETONLY_TEST'):
+    feature['test'] = {'active': True}
+client = DemoSDK({'base': os.environ['GETONLY_BASE'], 'feature': feature})
 try:
     client.Cat(None).load({'id': 'c1'}, None)
     print('getonly-probe: ok')
@@ -98,11 +102,10 @@ except Exception as e:
 const RB_PROBE = String.raw`
 require_relative 'Demo_sdk'
 
-client = DemoSDK.new({
-  'base' => ENV['GETONLY_BASE'],
-  'feature' => { 'secrets' => { 'active' => true,
-    'exchange' => { 'active' => true, 'refresh' => 'REFRESH01' } } },
-})
+feature = { 'secrets' => { 'active' => true,
+  'exchange' => { 'active' => true, 'refresh' => 'REFRESH01' } } }
+feature['test'] = { 'active' => true } if ENV['GETONLY_TEST']
+client = DemoSDK.new({ 'base' => ENV['GETONLY_BASE'], 'feature' => feature })
 begin
   client.Cat(nil).load({ 'id' => 'c1' }, nil)
   puts 'getonly-probe: ok'
@@ -115,11 +118,12 @@ end
 const PHP_PROBE = String.raw`<?php
 require_once __DIR__ . '/demo_sdk.php';
 
-$client = new DemoSDK([
-    'base' => getenv('GETONLY_BASE'),
-    'feature' => ['secrets' => ['active' => true,
-        'exchange' => ['active' => true, 'refresh' => 'REFRESH01']]],
-]);
+$feature = ['secrets' => ['active' => true,
+    'exchange' => ['active' => true, 'refresh' => 'REFRESH01']]];
+if (getenv('GETONLY_TEST')) {
+    $feature['test'] = ['active' => true];
+}
+$client = new DemoSDK(['base' => getenv('GETONLY_BASE'), 'feature' => $feature]);
 try {
     $client->Cat(null)->load(['id' => 'c1'], null);
     echo "getonly-probe: ok\n";
@@ -135,11 +139,10 @@ use warnings;
 use lib 'lib';
 use DemoSDK;
 
-my $client = DemoSDK->new({
-  base => $ENV{GETONLY_BASE},
-  feature => { secrets => { active => 1,
-    exchange => { active => 1, refresh => 'REFRESH01' } } },
-});
+my $feature = { secrets => { active => 1,
+  exchange => { active => 1, refresh => 'REFRESH01' } } };
+$feature->{test} = { active => 1 } if $ENV{GETONLY_TEST};
+my $client = DemoSDK->new({ base => $ENV{GETONLY_BASE}, feature => $feature });
 if (eval { $client->Cat(undef)->load({ id => 'c1' }, undef); 1 }) {
   print "getonly-probe: ok\n";
 }
@@ -164,7 +167,11 @@ public class GetonlyProbe {
     secrets.put("exchange", exchange);
     Map<String, Object> opts = new LinkedHashMap<>();
     opts.put("base", System.getenv("GETONLY_BASE"));
-    opts.put("feature", new LinkedHashMap<>(Map.of("secrets", secrets)));
+    Map<String, Object> feature = new LinkedHashMap<>(Map.of("secrets", secrets));
+    if (System.getenv("GETONLY_TEST") != null) {
+      feature.put("test", new LinkedHashMap<>(Map.of("active", true)));
+    }
+    opts.put("feature", feature);
     Map<String, Object> match = new LinkedHashMap<>();
     match.put("id", "c1");
     try {
@@ -199,6 +206,10 @@ class GetonlyProbe {
         "exchange" to linkedMapOf<String, Any?>("active" to true, "refresh" to "REFRESH01"),
       )),
     )
+    if (System.getenv("GETONLY_TEST") != null) {
+      @Suppress("UNCHECKED_CAST")
+      (opts["feature"] as MutableMap<String, Any?>)["test"] = linkedMapOf<String, Any?>("active" to true)
+    }
     try {
       DemoSDK(opts).cat(null).load(linkedMapOf<String, Any?>("id" to "c1"), null)
       println("getonly-probe: ok")
@@ -226,6 +237,11 @@ object GetonlyProbeMain {
     secrets.put("exchange", exchange)
     val feature = new LinkedHashMap[String, Object]()
     feature.put("secrets", secrets)
+    if (System.getenv("GETONLY_TEST") != null) {
+      val test = new LinkedHashMap[String, Object]()
+      test.put("active", java.lang.Boolean.TRUE)
+      feature.put("test", test)
+    }
     val opts = new LinkedHashMap[String, Object]()
     opts.put("base", System.getenv("GETONLY_BASE"))
     opts.put("feature", feature)
@@ -263,6 +279,10 @@ public static class GetonlyProbe
                 },
             },
         };
+        if (Environment.GetEnvironmentVariable("GETONLY_TEST") != null)
+        {
+            ((Dictionary<string, object?>)opts["feature"]!)["test"] = new Dictionary<string, object?> { ["active"] = true };
+        }
         try
         {
             new DemoSDK(opts).Cat().Load(new Dictionary<string, object?> { ["id"] = "c1" });
@@ -289,9 +309,13 @@ final class GetonlyProbeTest: XCTestCase {
   func testGetonlyProbe() throws {
     let exchange = vm(("active", .bool(true)), ("refresh", .string("REFRESH01")))
     let secrets = vm(("active", .bool(true)), ("exchange", .map(exchange)))
+    let feature = vm(("secrets", .map(secrets)))
+    if ProcessInfo.processInfo.environment["GETONLY_TEST"] != nil {
+      feature.entries["test"] = .map(vm(("active", .bool(true))))
+    }
     let opts = vm(
       ("base", .string(ProcessInfo.processInfo.environment["GETONLY_BASE"] ?? "")),
-      ("feature", .map(vm(("secrets", .map(secrets))))))
+      ("feature", .map(feature)))
     do {
       _ = try DemoSDK(opts).Cat(nil).load(vm(("id", .string("c1"))), nil)
       print("getonly-probe: ok")
@@ -313,9 +337,13 @@ use demo_sdk::{DemoEntity, DemoSDK, Value};
 fn getonly_probe() {
     let exchange = jo(vec![("active", Value::Bool(true)), ("refresh", Value::str("REFRESH01"))]);
     let secrets = jo(vec![("active", Value::Bool(true)), ("exchange", exchange)]);
+    let mut feature = vec![("secrets", secrets)];
+    if std::env::var("GETONLY_TEST").is_ok() {
+        feature.push(("test", jo(vec![("active", Value::Bool(true))])));
+    }
     let opts = jo(vec![
         ("base", Value::str(std::env::var("GETONLY_BASE").unwrap())),
-        ("feature", jo(vec![("secrets", secrets)])),
+        ("feature", jo(feature)),
     ]);
     let client = DemoSDK::new(opts).unwrap();
     match client.cat(Value::Noval).load(jo(vec![("id", Value::str("c1"))]), Value::Noval) {
@@ -336,6 +364,7 @@ int main(void) {
   voxgig_value* exchange = cmap(2, "active", v_bool(true), "refresh", v_str("REFRESH01"));
   voxgig_value* opts = cmap(2, "base", v_str(getenv("GETONLY_BASE")),
     "feature", cmap(1, "secrets", cmap(2, "active", v_bool(true), "exchange", exchange)));
+  if (getenv("GETONLY_TEST")) setp(getp(opts, "feature"), "test", cmap(1, "active", v_bool(true)));
   Entity* e = demo_cat(demo_sdk_new(opts, NULL), NULL);
   PNError* err = NULL;
   e->vt->load(e, cmap(1, "id", v_str("c1")), v_map(), &err);
@@ -364,6 +393,7 @@ int main() {
       {"exchange", vmap({{"active", Value(true)}, {"refresh", Value(std::string("REFRESH01"))}})},
     })}})},
   });
+  if (std::getenv("GETONLY_TEST")) map_put(getp(opts, "feature"), "test", vmap({{"active", Value(true)}}));
   auto client = std::make_shared<DemoSDK>(opts);
   try {
     client->cat()->load(vmap({{"id", Value(std::string("c1"))}}), vmap());
@@ -389,6 +419,8 @@ const CLOJURE_PROBE = String.raw`
 (let [opts (vs/jm "base" (System/getenv "GETONLY_BASE")
                   "feature" (vs/jm "secrets" (vs/jm "active" true
                                                     "exchange" (vs/jm "active" true "refresh" "REFRESH01"))))]
+  (when (System/getenv "GETONLY_TEST")
+    (.put ^java.util.Map (vs/getprop opts "feature") "test" (vs/jm "active" true)))
   (try
     (e-cat/load (api/cat (api/make-sdk opts) nil) (vs/jm "id" "c1") nil)
     (println "getonly-probe: ok")
@@ -402,11 +434,12 @@ const CLOJURE_PROBE = String.raw`
 const LUA_PROBE = String.raw`
 local sdk = require("demo_sdk")
 
-local client = sdk.new({
-  base = os.getenv("GETONLY_BASE"),
-  feature = { secrets = { active = true,
-    exchange = { active = true, refresh = "REFRESH01" } } },
-})
+local feature = { secrets = { active = true,
+  exchange = { active = true, refresh = "REFRESH01" } } }
+if os.getenv("GETONLY_TEST") then
+  feature.test = { active = true }
+end
+local client = sdk.new({ base = os.getenv("GETONLY_BASE"), feature = feature })
 local ok, res, err = pcall(function()
   local ent = client:Cat(nil)
   return ent:load({ id = "c1" }, nil)
@@ -435,6 +468,9 @@ defmodule Demo.GetonlyProbeTest do
           "exchange", S.jm(["active", true, "refresh", "REFRESH01"])])])
       ])
 
+    if System.get_env("GETONLY_TEST"),
+      do: S.setprop(S.getprop(opts, "feature"), "test", S.jm(["active", true]))
+
     try do
       Demo.Entity.Cat.load(Demo.cat(Demo.new(opts)), S.jm(["id", "c1"]))
       IO.puts("getonly-probe: ok")
@@ -462,6 +498,9 @@ test "getonly probe" {
             .{ "exchange", h.jo(&.{ .{ "active", h.vbool(true) }, .{ "refresh", h.vstr("REFRESH01") } }) },
         }) }}) },
     });
+    if (environ.getAlloc(h.A(), "GETONLY_TEST")) |_| {
+        h.setp(h.getp(opts, "feature"), "test", h.jo(&.{.{ "active", h.vbool(true) }}));
+    } else |_| {}
     const client = sdk.SDK.new(opts);
     switch (client.cat(Value{ .null = {} }).load(h.jo(&.{.{ "id", h.vstr("c1") }}), h.omap())) {
         .ok => std.debug.print("getonly-probe: ok\n", .{}),
@@ -482,6 +521,9 @@ let () =
     ("feature", jo [("secrets", jo [
       ("active", Bool true);
       ("exchange", jo [("active", Bool true); ("refresh", Str "REFRESH01")])])])] in
+  (match Sys.getenv_opt "GETONLY_TEST" with
+   | Some _ -> setp (getp opts "feature") "test" (jo [("active", Bool true)])
+   | None -> ());
   let client = Sdk_client.make opts in
   match (Sdk_client.cat client Noval).e_load (jo [("id", Str "c1")]) (empty_map ()) with
   | _ -> print_endline "getonly-probe: ok"

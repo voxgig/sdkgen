@@ -72,6 +72,7 @@ import VoxgigPlugin
 
 public final class SecretsFeature: BaseFeature {
   private var client: ProjectNameSDK?
+  private var rootctx: Context?
   private var fopts: VMap?
 
   // The LIVE options map (the root context's options - the same instance
@@ -175,6 +176,7 @@ public final class SecretsFeature: BaseFeature {
   // Sync by feature contract: build the chain, never look anything up here.
   public override func initFeature(_ ctx: Context, _ options: VMap) {
     client = ctx.client
+    rootctx = ctx
     fopts = options
     liveopts = ctx.options ?? VMap()
     active = foptBool(options, "active", false)
@@ -653,20 +655,12 @@ public final class SecretsFeature: BaseFeature {
     // Never followed by the client: a redirect would carry the refresh token on.
     fetchdef.entries["redirect"] = .string("manual")
 
-    // Deliberately NOT the SDK transport. The transport is what this feature
-    // wraps, and sending the token request back through it would recurse on
-    // the first expiry - and would route the exchange through the test mock,
-    // which knows nothing about it. utility/Fetcher.swift's defaultHttpFetch
-    // is the SAME raw HTTP path the SDK uses, taken BELOW the mode/test
-    // gate, so the ordinary case needs no custom transport (and no
-    // rawExchangeFetch twin, unlike go); a supplied system.fetch is honoured
-    // so a test can intercept the purchase.
-    let sysFetch = gpath(options, "system", "fetch")
+    // The SDK's own transport, beneath every feature's wrapper: it holds the
+    // test feature's block and the GET-only guard, and the wrapped one would
+    // recurse on the first expiry.
+    let rootctx = self.rootctx!
     func fetch(_ at: String) throws -> Value {
-      if let fn = sysFetch.asNative as? SystemFetch {
-        return fn(at, fetchdef)
-      }
-      return try defaultHttpFetch(at, fetchdef)
+      return try fetcherUtil(rootctx, at, fetchdef)
     }
 
     var res = try fetch(url)

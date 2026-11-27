@@ -2122,12 +2122,12 @@ abort("FAIL: a multi-segment envelope was not synthesised - #{n} of 3 records") 
 
     const hdrprobe = Path.join(tmp, 'c-secrets-headers.c')
     Fs.writeFileSync(hdrprobe,
-      '#include <openssl/ssl.h>\n#include <curl/curl.h>\nint main(void) { return 0; }\n')
+      '#include <openssl/ssl.h>\nint main(void) { return 0; }\n')
     const hdr = run(cc, ['-fsyntax-only', hdrprobe], tmp)
     if (hdr.timedOut) return t.skip('c: ' + hdr.out)
     if (!hdr.ok) {
-      return t.skip('c: a compiler is here but the OpenSSL and libcurl ' +
-        'development headers are not (libssl-dev, libcurl4-openssl-dev):\n' +
+      return t.skip('c: a compiler is here but the OpenSSL ' +
+        'development headers are not (libssl-dev):\n' +
         tail(hdr.out, 5))
     }
 
@@ -11758,7 +11758,7 @@ describe('probes driven through a generated SDK', () => {
           ok(null != GETONLY_PROBES[probeKey], lane.target + ': no GET-only probe')
 
           const sdkroot = await sdkFor(lane.target, GETONLY_FEATURES, getOnlyModel(lane.target))
-          const probe = (guard: boolean) => async () => {
+          const probe = (guard: boolean, offline = false) => async () => {
             const server = await mediaServer(sdkroot)
             try {
               const env: NodeJS.ProcessEnv = {
@@ -11766,6 +11766,7 @@ describe('probes driven through a generated SDK', () => {
               }
               if (guard) env.VOXGIG_GETONLY_GUARD = 'TRUE'
               else delete env.VOXGIG_GETONLY_GUARD
+              if (offline) env.GETONLY_TEST = '1'
               const ran = lane.exec(sdkroot, env, writer(sdkroot),
                 { name: 'getonly', source: GETONLY_PROBES })
               const sent = Fs.readFileSync(server.log, 'utf8').split('\n')
@@ -11797,6 +11798,14 @@ describe('probes driven through a generated SDK', () => {
             tail(guarded.ran.out))
           ok(outcome!.message.includes('[GET-ONLY GUARD] blocked POST ' + GETONLY_PATH),
             lane.target + ' probe output:\n' + tail(guarded.ran.out))
+
+          // The test feature makes the client a test-mode one, which buys no token.
+          const offline = await probe(false, true)()
+          ok(offline.ran.ok, lane.target + ': the offline probe failed:\n' + tail(offline.ran.out, 60))
+          ok(null != getOnlyOutcome(offline.ran.out), lane.target + ': the offline probe printed ' +
+            'no outcome:\n' + tail(offline.ran.out))
+          deepStrictEqual(offline.sent, [], lane.target + ': an offline run sent requests:\n' +
+            tail(offline.ran.out))
         })
     }
 

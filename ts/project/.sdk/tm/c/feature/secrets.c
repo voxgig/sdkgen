@@ -59,12 +59,9 @@
 //     fails). Conflating the last two is the failure this library exists
 //     to prevent.
 //
-//   * The exchange uses options.system.fetch when supplied - the seam every
-//     live c request lives under - and otherwise `secrets_rawfetch`, which
-//     lives in the GENERATED feature/secrets/kinds.c: a libcurl round-trip
-//     when a plugin group is active, the SDK's own client (utility/http.c)
-//     when none is (see Config_c; the generated kinds.mk beside it is what
-//     links libcurl on the same condition).
+//   * The exchange goes through fetcher_util, the SDK's own transport
+//     beneath every feature's wrapper: options.system.fetch when supplied,
+//     else the SDK's own client (utility/http.c).
 //
 //   * sek_new is documented NOT REENTRANT (a file-scope slot for the
 //     duration of the call). It runs once, in the client constructor,
@@ -84,13 +81,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-// The exchange transport of last resort, defined in the GENERATED
-// feature/secrets/kinds.c (Config_c) - libcurl when a plugin group is
-// active, the SDK's own client otherwise. Prototyped here rather than in
-// sdk.h because core/ must not know a gated feature's internals.
-voxgig_value* secrets_rawfetch(Context* ctx, const char* url,
-                               voxgig_value* fetchdef, PNError** err);
 
 typedef struct {
   const char* path;
@@ -454,21 +444,16 @@ static char* secrets_moved(sek_pool* pool, const char* url, const char* at, voxg
   return secrets_origin(next, to, sizeof(to), NULL) && 0 == strcmp(own, to) ? next : NULL;
 }
 
-// One request of the exchange: options.system.fetch when supplied, else the
-// transport of last resort. A pool-owned message on failure.
-static const char* secrets_send(SecretsFeature* f, Context* ctx, voxgig_value* sys_fetch,
+// One request of the exchange, through the SDK's own transport beneath every
+// feature's wrapper: it holds the test feature's block and the GET-only
+// guard, and its refusal is kept for the gate. A pool-owned message on failure.
+static const char* secrets_send(SecretsFeature* f, Context* ctx,
                                 const char* url, voxgig_value* fetchdef, voxgig_value** res) {
-  if (voxgig_is_func(sys_fetch)) {
-    *res = call_vfn(sys_fetch, clist(2, v_str(url), v_share(fetchdef)));
-    const char* emsg = get_str(*res, "__err__");
-    return NULL == emsg ? NULL : sek_strdup(f->pool, emsg);
-  }
-  f->refused = getonly_refusal(ctx, url, fetchdef);
-  if (NULL != f->refused) return sek_strdup(f->pool, f->refused->msg);
   PNError* ferr = NULL;
-  *res = secrets_rawfetch(ctx, url, fetchdef, &ferr);
-  return NULL == ferr ? NULL :
-    sek_strdup(f->pool, ferr->msg ? ferr->msg : "secrets: transport failed");
+  *res = fetcher_util(NULL, ctx, url, fetchdef, &ferr);
+  if (NULL == ferr) return NULL;
+  f->refused = ferr;
+  return sek_strdup(f->pool, ferr->msg ? ferr->msg : "secrets: transport failed");
 }
 
 // Buy an access token with the refresh token. Answers sekreto-style: a
@@ -526,15 +511,8 @@ static const char* secrets_buy(SecretsFeature* f, Context* ctx) {
     "body", v_str(bodytext),
     "redirect", v_str("manual"));
 
-  // Deliberately NOT the SDK transport. The transport is what this feature
-  // wraps, and sending the token request back through it would recurse on
-  // the first expiry - and would route the exchange through the test mock,
-  // which knows nothing about it. options.system.fetch when the caller
-  // supplied one (the seam every live c request already uses), else the
-  // bundled transport of last resort from the generated kinds.c.
-  voxgig_value* sys_fetch = getpath2(options, "system", "fetch");
   voxgig_value* res = NULL;
-  const char* sent = secrets_send(f, ctx, sys_fetch, url, fetchdef, &res);
+  const char* sent = secrets_send(f, ctx, url, fetchdef, &res);
   if (NULL != sent) return sent;
 
   // By option alone, and only while the exchange stays on its own origin.
@@ -543,7 +521,7 @@ static const char* secrets_buy(SecretsFeature* f, Context* ctx) {
     char* next = secrets_moved(f->pool, url, at, res);
     if (NULL == next) break;
     at = next;
-    sent = secrets_send(f, ctx, sys_fetch, at, fetchdef, &res);
+    sent = secrets_send(f, ctx, at, fetchdef, &res);
     if (NULL != sent) return sent;
   }
 

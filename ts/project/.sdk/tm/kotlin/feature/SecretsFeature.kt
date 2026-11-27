@@ -21,7 +21,7 @@ import KOTLINPACKAGE.feature.secrets.sekreto.SekretoError
 import KOTLINPACKAGE.feature.secrets.sekreto.envkey
 import KOTLINPACKAGE.feature.secrets.sekreto.specof
 import KOTLINPACKAGE.feature.secrets.sekreto.Json as SekJson
-import KOTLINPACKAGE.utility.defaultHttpFetch
+import KOTLINPACKAGE.utility.fetcher
 import KOTLINPACKAGE.utility.resolveLocation
 import KOTLINPACKAGE.utility.struct.Struct
 
@@ -83,6 +83,7 @@ private const val REDIRECT_MAX = 5
 class SecretsFeature : BaseFeature("secrets", "0.1.0", true) {
 
   private var client: SdkClient? = null
+  private var rootctx: Context? = null
 
   // Every value this feature resolves or buys is a secret the SDK handles,
   // and none arrives under an option key the intake registration saw.
@@ -170,6 +171,7 @@ class SecretsFeature : BaseFeature("secrets", "0.1.0", true) {
   // Sync by feature contract: build the chain, never look anything up here.
   override fun init(ctx: Context, options: MutableMap<String, Any?>) {
     this.client = ctx.client
+    this.rootctx = ctx
     this.fopts = options
     this.liveopts = ctx.options ?: linkedMapOf()
     this.active = FeatureOptions.foptBool(options, "active", false)
@@ -706,25 +708,11 @@ class SecretsFeature : BaseFeature("secrets", "0.1.0", true) {
       "redirect" to "manual",
     )
 
-    // Deliberately NOT the SDK transport. The transport is what this feature
-    // wraps, and sending the token request back through it would recurse on
-    // the first expiry - and would route the exchange through the test mock,
-    // which knows nothing about it. utility/Fetcher.kt's defaultHttpFetch is
-    // the SAME raw HTTP path the SDK uses, taken BELOW the mode/test gate,
-    // so the ordinary case needs no custom transport; a supplied
-    // system.fetch is honoured so a test can intercept the purchase.
-    var sysFetch = Struct.getpath(options, listOf("system", "fetch"))
-    if (sysFetch === Struct.UNDEF) {
-      sysFetch = null
-    }
-
-    val ask = { at: String ->
-      if (sysFetch is BiFunction<*, *, *>) {
-        (sysFetch as BiFunction<String, MutableMap<String, Any?>, Any?>).apply(at, fetchdef)
-      } else {
-        defaultHttpFetch(at, fetchdef)
-      }
-    }
+    // The SDK's own transport, beneath every feature's wrapper: it holds the
+    // test feature's block and the GET-only guard, and the wrapped one would
+    // recurse on the first expiry.
+    val rctx = this.rootctx!!
+    val ask = { at: String -> fetcher(rctx, at, fetchdef) }
 
     var res: Any? = ask(url)
 

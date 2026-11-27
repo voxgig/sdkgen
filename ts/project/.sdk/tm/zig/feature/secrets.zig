@@ -858,8 +858,8 @@ fn send(ctx: *Context, sysfetch: Value, url: []const u8, method: []const u8, bod
     }
     // No custom transport supplied - the ordinary case (make_options leaves
     // system.fetch unset, and the SDK's default transport has no HTTP
-    // client). See raw_exchange_fetch. The SDK transport's own GET-only
-    // guard comes first.
+    // client). See raw_exchange_fetch. Not the SDK fetcher, as every other
+    // target does, for that reason: only its GET-only guard comes first.
     if (utility.getonly_refusal(url, h.jo(&.{.{ "method", h.vstr(method) }}))) |msg| {
         return ctx.fail("fetch_getonly_block", msg);
     }

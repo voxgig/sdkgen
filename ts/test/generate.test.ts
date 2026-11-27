@@ -5105,11 +5105,10 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
       .test(kinds!),
       'c: an INACTIVE group reached kinds.c:\n' + kinds)
 
-    // The exchange transport of last resort: libcurl, because a plugin
-    // group is active (the Makefile adds -lcurl on the same condition).
-    ok(/#include <curl\/curl\.h>/.test(kinds!) &&
-      /voxgig_value\* secrets_rawfetch\(/.test(kinds!),
-      'c: a plugin-bearing model must carry the libcurl exchange transport')
+    // The exchange goes through the SDK's own transport, so kinds.c carries
+    // no transport of its own and nothing links libcurl.
+    ok(!/curl|secrets_rawfetch/.test(kinds!),
+      'c: kinds.c must not carry an exchange transport of its own:\n' + kinds)
 
     const mk = findFile(out, 'c/feature/secrets/kinds.mk')
     ok(null != mk, 'c: no feature/secrets/kinds.mk generated')
@@ -5117,7 +5116,7 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
       /^FEATURE_TEST_SRCS \+= \$\(wildcard tests\/feature\/secrets\/\*\.c\)$/m.test(mk!),
       'c: kinds.mk does not wire the vendored cores and the suite:\n' + mk)
     ok(/^FEATURE_SRCS \+= \$\(wildcard feature\/secrets\/plugins\/\*\.c\)$/m.test(mk!) &&
-      /^LDLIBS \+= -lssl -lcrypto -lcurl$/m.test(mk!),
+      /^LDLIBS \+= -lssl -lcrypto$/m.test(mk!),
       'c: a plugin-bearing model must compile the plugin layer and link its libraries:\n' + mk)
 
     // The accessor in core/config.c dispatches to it, and the feature's

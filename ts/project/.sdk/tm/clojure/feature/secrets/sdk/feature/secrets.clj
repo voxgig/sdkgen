@@ -252,19 +252,10 @@
           base0 (let [b (vs/getprop options "base")] (if (string? b) b ""))
           base (str/replace base0 #"/+$" "")
           url (str base "/" (str/replace (:path x) #"^/+" ""))
-          sysfetch (vs/getpath options "system.fetch")
-          ;; Deliberately NOT the SDK transport. The transport is what this
-          ;; feature wraps, so sending the token request back through it
-          ;; would recurse on the first expiry - and would route the
-          ;; purchase through the test mock, which knows nothing about it.
-          ;; `system.fetch` is honoured because that is the seam a caller
-          ;; uses to supply a transport at all; otherwise core's own raw
-          ;; HTTP path, which returns the same [res err] shape.
-          fetch (if (vs/isfunc sysfetch) sysfetch core/default-http-fetch)
-          ;; The SDK transport's own GET-only guard, before the raw send.
-          _ (when-not (vs/isfunc sysfetch)
-              (when-let [refused (core/getonly-refusal nil url (:method x))]
-                (core/sdk-throw refused)))
+          ;; The SDK's own transport, beneath every feature's wrapper: it
+          ;; holds the test feature's block and the GET-only guard, and the
+          ;; wrapped one would recurse on the first expiry.
+          fetch (fn [at fd] (core/u-fetcher (st fa :rootctx) at fd))
           ;; The body is MARSHALLED, never concatenated: a refresh token (or
           ;; a configured request-field name) carrying a quote, backslash or
           ;; newline must arrive as that literal value, not as broken JSON.
@@ -285,6 +276,8 @@
                           (recur next (fetch next fetchdef) (inc hops))
                           answer)))]
 
+      (when (core/sdk-error? err)
+        (core/sdk-throw err))
       (when (some? err)
         (throw (sekreto/sekretoerror
                 (str "secrets: token exchange failed: " (core/err-msg err) " from " url))))
@@ -520,6 +513,7 @@
   (let [options (if (vs/ismap options) options (vs/jm))]
     (swap! fa assoc
            :client (core/oget ctx :client)
+           :rootctx ctx
            :options options
            :liveopts (core/oget ctx :options)
            :active (= true (vs/getprop options "active")))

@@ -13,7 +13,7 @@
 
 // A GET-only live run refuses any other method before it is sent. The error
 // names the path alone: the query can carry a credential.
-PNError* getonly_refusal(Context* ctx, const char* fullurl, voxgig_value* fetchdef) {
+static PNError* getonly_refusal(Context* ctx, const char* fullurl, voxgig_value* fetchdef) {
   const char* flag = getenv(GETONLY_ENV);
   const char* raw = get_str(fetchdef, "method");
   char method[16] = "GET";

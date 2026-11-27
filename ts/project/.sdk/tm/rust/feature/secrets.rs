@@ -5,12 +5,12 @@ pub mod sekreto;
 
 use std::cell::RefCell;
 use std::collections::BTreeMap;
-use std::rc::Rc;
+use std::rc::{Rc, Weak};
 
 use crate::core::context::Context;
 use crate::core::error::ProjectNameError;
 use crate::core::helpers::{
-    call_json, call_vfn, get_str, getp, getpath, ja, jo, json_thunk, setp, to_int, vfn,
+    call_json, call_vfn, get_str, getp, getpath, jo, setp, to_int, vfn,
 };
 use crate::core::types::{Feature, FetcherFn};
 use crate::feature::support::{fopt_bool, fopt_int, fopt_list, fopt_map, fopt_str, fres_status};
@@ -68,6 +68,7 @@ pub struct SecretsState {
     /// The client's clean registry, which a resolved value joins.
     cleancfg: Value,
     mode: String,
+    rootctx: Weak<Context>,
 
     /// What prepare_auth was generated from: the config declares auth only
     /// where it places a credential, and Basic only where it composes one.
@@ -77,10 +78,8 @@ pub struct SecretsState {
     cred: String,
     refresh: String,
 
-    /// A settled SUCCESSFUL resolution. Kept only while caching is on
-    /// (`cache: false` means every request asks the chain again), and
-    /// never set by a FAILURE - a transient vault outage must not poison
-    /// the client permanently.
+    /// A settled SUCCESSFUL resolution, kept only while caching is on and
+    /// never set by a FAILURE, so a vault outage cannot poison the client.
     resolved: bool,
 
     /// A chain that could not be built. The transport gate refuses to send
@@ -99,6 +98,7 @@ impl SecretsState {
             options: Value::Noval,
             cleancfg: Value::Noval,
             mode: "live".to_string(),
+            rootctx: Weak::new(),
             declared: false,
             basic: false,
             cred: String::new(),
@@ -220,6 +220,7 @@ impl Feature for SecretsFeature {
         }
 
         let mut state = SecretsState::empty();
+        state.rootctx = Rc::downgrade(ctx);
 
         state.mode = ctx
             .client
@@ -569,10 +570,8 @@ fn with_refresh(
         }
 
         // Another request may have bought a token while this one was in
-        // flight. Spend what is current before buying: a second exchange
-        // for a token that is already fresh is wasted, and on a provider
-        // that invalidates the previous credential on issuance it breaks
-        // the first request's own retry.
+        // flight: spend what is current rather than buy a second, which a
+        // provider invalidating on issuance would break this retry with.
         let current = state.borrow().cred.clone();
 
         let token = if !current.is_empty() && current != used {
@@ -580,10 +579,8 @@ fn with_refresh(
         } else {
             match buy(state) {
                 Ok(token) => token,
-                // The purchase failed: answer with the API's own refusal
-                // rather than this one. The caller asked for data, and the
-                // refusal is the more useful of the two - the exchange
-                // error is a symptom.
+                // The purchase failed: answer with the API's own refusal,
+                // the more useful of the two.
                 Err(_) => return out,
             }
         };
@@ -709,13 +706,14 @@ fn register(cleancfg: &Value, value: &str) {
 }
 
 fn buy_once(state: &Rc<RefCell<SecretsState>>) -> Result<String, ProjectNameError> {
-    let (refresh, exchange, options, secretname) = {
+    let (refresh, exchange, options, secretname, rootctx) = {
         let s = state.borrow();
         (
             s.refresh.clone(),
             s.exchange.clone(),
             s.options.clone(),
             s.secretname.clone(),
+            s.rootctx.upgrade(),
         )
     };
 
@@ -760,19 +758,9 @@ fn buy_once(state: &Rc<RefCell<SecretsState>>) -> Result<String, ProjectNameErro
         ("redirect", Value::str("manual")),
     ]);
 
-    let sys_fetch = getpath(&["system", "fetch"], &options);
-
-    let fetch = |at: &str| -> Result<Value, ProjectNameError> {
-        if let Value::Func(_) = sys_fetch {
-            let out = call_vfn(&sys_fetch, &ja(vec![Value::str(at), fetchdef.clone()]));
-            if let Some(msg) = get_str(&out, "__err__") {
-                return Err(fail(&msg));
-            }
-            Ok(out)
-        } else {
-            raw_exchange_fetch(at, &fetchdef)
-        }
-    };
+    // The SDK's own transport beneath every wrapper: the test block and GET-only guard.
+    let rootctx = rootctx.ok_or_else(|| fail("secrets: the client is gone"))?;
+    let fetch = |at: &str| crate::utility::fetcher::fetcher_util(&rootctx, at, &fetchdef);
 
     let mut res = fetch(&url)?;
 
@@ -820,6 +808,14 @@ fn buy_once(state: &Rc<RefCell<SecretsState>>) -> Result<String, ProjectNameErro
 
 const REDIRECT_MAX: usize = 5;
 
+// An agent that follows nothing, for reading URLs the way ureq sends them.
+fn exchange_agent() -> ureq::Agent {
+    static AGENT: std::sync::OnceLock<ureq::Agent> = std::sync::OnceLock::new();
+    AGENT
+        .get_or_init(|| ureq::AgentBuilder::new().redirects(0).build())
+        .clone()
+}
+
 // The URL a body-keeping redirect names, while it stays on the exchange's own
 // origin. Any other redirect would drop the body or leave the origin.
 fn moved(url: &str, at: &str, res: &Value) -> Option<String> {
@@ -837,73 +833,4 @@ fn moved(url: &str, at: &str, res: &Value) -> Option<String> {
     } else {
         None
     }
-}
-
-// One pooled agent for every exchange; a followed redirect would carry the token.
-fn exchange_agent() -> ureq::Agent {
-    static AGENT: std::sync::OnceLock<ureq::Agent> = std::sync::OnceLock::new();
-    AGENT
-        .get_or_init(|| ureq::AgentBuilder::new().redirects(0).build())
-        .clone()
-}
-
-fn raw_exchange_fetch(fullurl: &str, fetchdef: &Value) -> Result<Value, ProjectNameError> {
-    let method = get_str(fetchdef, "method")
-        .filter(|m| !m.is_empty())
-        .unwrap_or_else(|| "POST".to_string());
-
-    // The SDK transport's own GET-only guard, before the raw send.
-    if let Some(refused) = crate::utility::fetcher::getonly_refusal(fullurl, &method) {
-        return Err(refused);
-    }
-
-    let agent = exchange_agent();
-    let mut req = agent.request(&method, fullurl);
-
-    if let Value::Map(m) = getp(fetchdef, "headers") {
-        for (k, v) in m.borrow().iter() {
-            if let Value::Str(sv) = v {
-                req = req.set(k, sv);
-            }
-        }
-    }
-
-    let body = get_str(fetchdef, "body").unwrap_or_default();
-
-    let sent = if body.is_empty() {
-        req.call()
-    } else {
-        req.send_string(&body)
-    };
-
-    let resp = match sent {
-        Ok(resp) => resp,
-        Err(ureq::Error::Status(_code, resp)) => resp,
-        Err(err) => return Err(fail(&format!("secrets: token exchange: {}", err))),
-    };
-
-    let status = resp.status() as i64;
-
-    let headers = Value::empty_map();
-    for name in resp.headers_names() {
-        if let Some(val) = resp.header(&name) {
-            setp(&headers, &name.to_lowercase(), Value::str(val));
-        }
-    }
-
-    let text = resp
-        .into_string()
-        .map_err(|err| fail(&format!("secrets: token exchange body: {}", err)))?;
-
-    let parsed = if text.is_empty() {
-        Value::Noval
-    } else {
-        crate::utility::jsonparse::json_parse(&text).unwrap_or(Value::Noval)
-    };
-
-    Ok(jo(vec![
-        ("status", Value::Num(status as f64)),
-        ("headers", headers),
-        ("json", json_thunk(parsed)),
-    ]))
 }

@@ -1297,13 +1297,18 @@ with reports no response headers, so the option takes effect there only
 with a `system.fetch` of the caller's own, and without one the exchange
 refuses as it does by default.
 
-The purchase passes the GET-only guard of the SDK's own transport, beneath
-every feature that wraps it. A GET-only live run (`VOXGIG_GETONLY_GUARD=TRUE`)
-refuses it with `fetch_getonly_block` before anything is sent, redirect hops
-included, and that refusal is the operation's error. A `system.fetch` you
-supply carries the purchase unguarded, as it carries every other request. A
-vault provider's own HTTP request is the vendored sekreto port's, which does
-not read the variable.
+The purchase goes through the SDK's own transport, beneath every feature
+that wraps it, so it is held to what that transport refuses. A GET-only live
+run (`VOXGIG_GETONLY_GUARD=TRUE`) refuses it with `fetch_getonly_block` before
+anything is sent, redirect hops included, and a client with the `test`
+feature active refuses it with `fetch_test_block`, so an offline suite never
+buys a real token; either refusal is the operation's error. A `system.fetch`
+you supply carries the purchase unguarded, as it carries every other request.
+`cpp`, `zig` and `ocaml` are the deliberate exception: their core ships no
+HTTP client, so the purchase goes out through the vendored sekreto client,
+which only the GET-only guard is applied before. A vault provider's own
+requests go to the vault rather than to the API under test, and stay outside
+the guard until sekreto can be handed it.
 
 Set `name` to the refresh secret when exchanging — `name` is what the chain
 is asked for.

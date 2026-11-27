@@ -87,6 +87,7 @@ namespace ProjectNameSdk.Feature;
 public class SecretsFeature : BaseFeature
 {
     private ProjectNameSDK? _client;
+    private Context? _rootctx;
 
     // The LIVE options map (root ctx options). READ ONLY: this feature
     // never writes it (see the header).
@@ -135,6 +136,7 @@ public class SecretsFeature : BaseFeature
     public override void Init(Context ctx, Dictionary<string, object?> options)
     {
         _client = ctx.Client;
+        _rootctx = ctx;
         _liveopts = ctx.Options;
         Active = FoptBool(options, "active", false);
 
@@ -787,33 +789,11 @@ public class SecretsFeature : BaseFeature
             ["redirect"] = "manual",
         };
 
-        // Deliberately NOT the SDK transport. The transport is what this
-        // feature wraps, and sending the token request back through it
-        // would recurse on the first expiry - and would route the exchange
-        // through the test mock, which knows nothing about it.
-        //
-        // system.fetch when the caller supplied one, else SdkUtility's own
-        // raw HttpClient fetch. The fallback matters: MakeOptions leaves
-        // system.fetch unset in the ORDINARY case, and requiring a custom
-        // transport there would reject every live token purchase before a
-        // request was made. DefaultHttpFetch is `internal` in this
-        // assembly, is not the SDK transport (no feature wrapping, no
-        // mode/test block) and returns the same { status, json } shape the
-        // system.fetch seam promises.
-        var sysfetch = StructUtils.GetPath(options, StructUtils.Jt("system", "fetch"));
-
-        object? Fetch(string at)
-        {
-            if (sysfetch is Func<string, Dictionary<string, object?>, Dictionary<string, object?>> ff)
-            {
-                return ff(at, fetchdef);
-            }
-            if (sysfetch is Func<string, Dictionary<string, object?>, object?> ffa)
-            {
-                return ffa(at, fetchdef);
-            }
-            return SdkUtility.DefaultHttpFetch(at, fetchdef);
-        }
+        // The SDK's own transport, beneath every feature's wrapper: it holds
+        // the test feature's block and the GET-only guard, and the wrapped
+        // one would recurse on the first expiry.
+        var rootctx = _rootctx!;
+        object? Fetch(string at) => SdkUtility.FetcherUtil(rootctx, at, fetchdef);
 
         var res = Fetch(url);
 

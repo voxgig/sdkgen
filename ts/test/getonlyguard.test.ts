@@ -28,7 +28,7 @@ const GUARDED: Record<string, { fetcher: string, test: string }> = {
   js: { fetcher: 'js/src/utility/FetcherUtility.js', test: 'js/test/utility/PrimaryUtility.test.js' },
   go: { fetcher: 'go/utility/fetcher.go', test: 'go/test/primary_utility_test.go' },
   py: { fetcher: 'py/pkg/utility/fetcher.py', test: 'py/test/test_primary_utility.py' },
-  lua: { fetcher: 'lua/utility/getonly.lua', test: 'lua/test/primary_utility_test.lua' },
+  lua: { fetcher: 'lua/utility/fetcher.lua', test: 'lua/test/primary_utility_test.lua' },
   php: { fetcher: 'php/utility/Fetcher.php', test: 'php/test/PipelineTest.php' },
   rb: { fetcher: 'rb/utility/fetcher.rb', test: 'rb/test/primary_utility_test.rb' },
   perl: { fetcher: 'perl/utility/fetcher.pm', test: 'perl/t/primary_utility.t' },

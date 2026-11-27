@@ -63,7 +63,7 @@ public final class Fetcher {
 
   // A GET-only live run refuses any other method before it is sent. The error
   // names the path alone: the query can carry a credential.
-  public static SdkError getOnlyRefusal(String fullurl, String method) {
+  static SdkError getOnlyRefusal(String fullurl, String method) {
     method = method.toUpperCase(java.util.Locale.ROOT);
     if (!"TRUE".equals(System.getenv(GETONLY_ENV)) || "GET".equals(method)) {
       return null;
@@ -379,7 +379,7 @@ public final class Fetcher {
     }
   }
 
-  static Object fetcher(Context ctx, String fullurl, Map<String, Object> fetchdef) {
+  public static Object fetcher(Context ctx, String fullurl, Map<String, Object> fetchdef) {
     if (!"live".equals(ctx.client.mode)) {
       throw ctx.makeError("fetch_mode_block",
           "Request blocked by mode: \"" + ctx.client.mode
