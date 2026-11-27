@@ -159,12 +159,37 @@ Issues: #510, #491, #427, #455, #431. Size: L.
   checkpoint. Pinned by a lane that sets the guard and runs the secrets
   suite, expecting `fetch_getonly_block`.
 - **#431.** The rb audit feature holds every context in a Hash it never
-  empties. D5: the entry is removed at the call's `PreDone`, and the same
-  check is made of every feature that keys on a context in every language
-  (audit, debug, clienttrack, telemetry). Pinned by a harness test counting
-  live contexts after a run.
+  empties. D5: the feature holds nothing of a call once it ends, and the
+  same check is made of every feature that keys on a context in every
+  language (audit, debug, clienttrack, telemetry). Pinned by a harness test
+  counting live contexts after a run. As built: the once-per-call mark is
+  kept on the call's own context (`ctx.out`), as go, java, py and c already
+  did, rather than removed at `PreDone` as first written here, because a
+  non-2xx reaches `PreDone` and then `PreUnexpected`, and an entry removed
+  at the first lets the second record the call twice; perl's `refaddr`
+  table and cpp's id map had the same leak and take the same fix.
 
 Depends on nothing. Releases as R1 with a migration note for the cache.
+
+#### Follow-up for #455: what voxgig/sekreto needs
+
+The exchange is sdkgen's own code in all 20 targets, so every one now refuses
+the purchase with `fetch_getonly_block` before sending. Seventeen targets
+send it through the SDK's own base fetcher, the one that holds the mode
+check, the test feature's block and the GET-only guard, so the purchase
+inherits the default transport's behaviour (its user agent, decoding and the
+timeout feature in place of the raw fallbacks' fixed 30 seconds) and a
+transport failure reaches the caller as the SDK's own error. cpp, zig and
+ocaml are the deliberate exception: their core has no HTTP client, so the
+purchase still uses the vendored sekreto client with the guard check before
+it, commented at the divergence and named in the features reference. Each
+gate passes the refusal through as the operation's error. What remains is
+sekreto's own traffic: a vault provider's `httpjson.fetchjson` (POST for AWS Secrets
+Manager, Vault AppRole login and others) reads no guard. The upstream change:
+`fetchjson` in every port takes an optional `refuse(method, url)` callback
+from the Sekreto config and returns its error before opening a connection, so
+sdkgen can pass its guard without sekreto reading an SDK variable. Then
+re-vendor at the next checkpoint and have each feature pass the guard.
 
 ### WP02. The shipped features do what their reference says (T2)
 

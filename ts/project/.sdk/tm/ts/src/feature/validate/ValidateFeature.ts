@@ -131,7 +131,8 @@ class ValidateFeature extends BaseFeature {
 
 
   _entitySpec(this: any, ctx: any): any {
-    return this._spec[entname(ctx)]
+    const name = entname(ctx)
+    return Object.prototype.hasOwnProperty.call(this._spec, name) ? this._spec[name] : undefined
   }
 
 

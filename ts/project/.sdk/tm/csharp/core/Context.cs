@@ -19,6 +19,8 @@ public class Context
     public Dictionary<string, object?>? Config;
     public Dictionary<string, object?>? Entopts;
     public Dictionary<string, object?>? Options;
+    // The clean registry, beside the options rather than in them.
+    public ProjectNameSdk.Util.CleanConfig? CleanCfg;
     public ConcurrentDictionary<string, Operation> Opmap = new();
     public Response? Response;
     public Result? Result;
@@ -125,6 +127,8 @@ public class Context
         {
             Options = basectx.Options;
         }
+        CleanCfg = Helpers.GetCtxProp(ctxmap, "cleancfg") as ProjectNameSdk.Util.CleanConfig
+            ?? basectx?.CleanCfg;
 
         // Entity
         if (Helpers.GetCtxProp(ctxmap, "entity") is IEntity ent)

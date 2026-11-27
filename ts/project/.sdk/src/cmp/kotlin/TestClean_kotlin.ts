@@ -190,6 +190,21 @@ class CleanTest {
     else -> v
   }
 
+  // Every string a value holds, private fields included, as a debugger shows them.
+  private fun dump(v: Any?, depth: Int = 0): String = when {
+    v == null || 12 < depth -> ""
+    v is String -> v
+    v is Map<*, *> -> v.entries.joinToString(" ", "{", "}") {
+      dump(it.key, depth + 1) + "=" + dump(it.value, depth + 1)
+    }
+    v is Iterable<*> -> v.joinToString(" ", "[", "]") { dump(it, depth + 1) }
+    v.javaClass.name.startsWith("java.") || v.javaClass.name.startsWith("kotlin.") -> v.toString()
+    else -> v.javaClass.declaredFields.filter { !Modifier.isStatic(it.modifiers) }
+      .joinToString(" ", "{", "}") { f ->
+        runCatching { f.trySetAccessible(); dump(f.get(v), depth + 1) }.getOrDefault("")
+      }
+  }
+
   private fun stack(err: Throwable): String {
     val sw = StringWriter()
     err.printStackTrace(PrintWriter(sw))
@@ -683,6 +698,13 @@ class CleanTest {
     val named = probe.getUtility().clean(probe.getRootCtx(),
       linkedMapOf<String, Any?>(canaryValue to 1, canaryHeader to 2, "plain" to 3))
     sinks.addAll(surfaces("named", named))
+
+    // The clean registry holds every credential in plain form, and is no option.
+    val held = construct(linkedMapOf<String, Any?>("apikey" to canaryApikey)).optionsMap()
+    val helddump = dump(held)
+    assertEquals(canaryApikey, held["apikey"])
+    assertEquals(listOf<String>(), leaks(helddump.replaceFirst(canaryApikey, "")),
+      "optionsMap carries a credential beyond the option the caller set: " + helddump)
 
     val leaked = sinks
       .map { Pair(it.name, leaks(it.text)) }

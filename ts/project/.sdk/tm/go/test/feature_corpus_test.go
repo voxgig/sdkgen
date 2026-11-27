@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strings"
 	"testing"
+	"time"
 
 	sdk "GOMODULE"
 )
@@ -185,6 +186,10 @@ func fcCandidates(client *sdk.ProjectNameSDK) []fcOp {
 
 // fcInvoke performs one operation on a client, by entity name and method.
 func fcInvoke(client *sdk.ProjectNameSDK, op fcOp, ctrl map[string]any) error {
+	return fcInvokeArgs(client, op, map[string]any{}, ctrl)
+}
+
+func fcInvokeArgs(client *sdk.ProjectNameSDK, op fcOp, args map[string]any, ctrl map[string]any) error {
 	cv := reflect.ValueOf(client)
 	ct := cv.Type()
 	mapType := reflect.TypeOf(map[string]any{})
@@ -208,7 +213,7 @@ func fcInvoke(client *sdk.ProjectNameSDK, op fcOp, ctrl map[string]any) error {
 			return fmt.Errorf("no method %s on entity %s", op.method, op.accessor)
 		}
 		rets := om.Call([]reflect.Value{
-			reflect.ValueOf(map[string]any{}),
+			reflect.ValueOf(args),
 			reflect.ValueOf(ctrl),
 		})
 		if err, ok := rets[1].Interface().(error); ok && err != nil {
@@ -237,6 +242,96 @@ func fcUsableOps(want int) []fcOp {
 		}
 	}
 	return picked
+}
+
+// fcUsablePair finds a read and a write of one entity (#READ, #WRITE), each
+// driven as fcUsableOps drives an op.
+func fcUsablePair() (fcOp, fcOp, bool) {
+	reads := map[string]fcOp{}
+	writes := map[string]fcOp{}
+	for _, cand := range fcCandidates(fcClient(map[string]any{})) {
+		role := ""
+		switch strings.ToLower(cand.method) {
+		case "list", "load":
+			role = "read"
+		case "create", "update", "patch", "remove":
+			role = "write"
+		}
+		seen := reads
+		if role == "write" {
+			seen = writes
+		}
+		if _, done := seen[cand.accessor]; role == "" || done {
+			continue
+		}
+		if err := fcInvoke(fcClient(map[string]any{}), cand, map[string]any{}); err != nil {
+			continue
+		}
+		seen[cand.accessor] = cand
+		read, okr := reads[cand.accessor]
+		write, okw := writes[cand.accessor]
+		if okr && okw {
+			return read, write, true
+		}
+	}
+	return fcOp{}, fcOp{}, false
+}
+
+// fcUsableItem finds a write of one entity (#ITEM) that completes when driven
+// with fcItemArgs.
+func fcUsableItem(entity string) (fcOp, bool) {
+	for _, cand := range fcCandidates(fcClient(map[string]any{})) {
+		switch strings.ToLower(cand.method) {
+		case "update", "patch", "remove":
+		default:
+			continue
+		}
+		if cand.accessor != entity {
+			continue
+		}
+		if err := fcInvokeArgs(fcClient(map[string]any{}), cand, fcItemArgs(), map[string]any{}); err == nil {
+			return cand, true
+		}
+	}
+	return fcOp{}, false
+}
+
+func fcItemArgs() map[string]any {
+	return map[string]any{"id": "corpus-item"}
+}
+
+// fcStep runs one step: it may wait before its call, may add request headers
+// for its call, and may pass `args` as the operation's first argument.
+func fcStep(client *sdk.ProjectNameSDK, op fcOp, step map[string]any, ctrl map[string]any) error {
+	if wait, ok := fcNum(step["wait"]); ok {
+		time.Sleep(time.Duration(wait) * time.Millisecond)
+	}
+	options := client.GetRootCtx().Options
+	prior, had := options["headers"]
+	if extra, ok := step["headers"].(map[string]any); ok {
+		merged := map[string]any{}
+		if pm, ok := prior.(map[string]any); ok {
+			for k, v := range pm {
+				merged[k] = v
+			}
+		}
+		for k, v := range extra {
+			merged[k] = v
+		}
+		options["headers"] = merged
+		defer func() {
+			if had {
+				options["headers"] = prior
+			} else {
+				delete(options, "headers")
+			}
+		}()
+	}
+	args, _ := step["args"].(map[string]any)
+	if args == nil {
+		args = map[string]any{}
+	}
+	return fcInvokeArgs(client, op, args, ctrl)
 }
 
 // fcResolve replaces #OPn throughout a case, keys included.
@@ -419,6 +514,16 @@ func fcMissingFeature(kase map[string]any, have map[string]bool) string {
 	return ""
 }
 
+// fcLacking names the first token a case uses that this SDK cannot drive.
+func fcLacking(encoded string, have map[string]bool) string {
+	for _, tok := range []string{"#ITEM", "#OTHER"} {
+		if !have[tok] && strings.Contains(encoded, tok) {
+			return tok
+		}
+	}
+	return ""
+}
+
 func TestFeatureCorpus(t *testing.T) {
 	spec := loadTestSpec(t)
 
@@ -429,6 +534,18 @@ func TestFeatureCorpus(t *testing.T) {
 
 	ops := fcUsableOps(2)
 	have := map[string]bool{}
+	pairRead, pairWrite, paired := fcUsablePair()
+	var pairItem, pairOther fcOp
+	hasItem, hasOther := false, false
+	if paired {
+		pairItem, hasItem = fcUsableItem(pairRead.accessor)
+		for _, o := range ops {
+			if o.accessor != pairRead.accessor {
+				pairOther, hasOther = o, true
+				break
+			}
+		}
+	}
 
 	// With every operation needing an argument there is nothing to drive:
 	// skip and say so, as the clean test does, rather than fail.
@@ -483,6 +600,20 @@ func TestFeatureCorpus(t *testing.T) {
 					continue
 				}
 
+				encoded, _ := json.Marshal(kase)
+				wantsPair := strings.Contains(string(encoded), "#READ") || strings.Contains(string(encoded), "#WRITE") ||
+					strings.Contains(string(encoded), "#ITEM") || strings.Contains(string(encoded), "#OTHER")
+				if wantsPair && !paired {
+					t.Logf("skip %q: needs a read and a write of one entity, this SDK offers none",
+						kase["name"])
+					continue
+				}
+
+				if lacking := fcLacking(string(encoded), map[string]bool{"#ITEM": hasItem, "#OTHER": hasOther}); paired && lacking != "" {
+					t.Logf("skip %q: needs %s, which this SDK cannot drive", kase["name"], lacking)
+					continue
+				}
+
 				if missing := fcMissingFeature(kase, have); missing != "" {
 					t.Logf("skip %q: needs the %s feature, which this SDK does not generate",
 						kase["name"], missing)
@@ -493,11 +624,28 @@ func TestFeatureCorpus(t *testing.T) {
 				for i := 0; i < need; i++ {
 					tokens[fmt.Sprintf("#OP%d", i+1)] = ops[i].key
 				}
+				if wantsPair {
+					tokens["#READ"] = pairRead.key
+					tokens["#WRITE"] = pairWrite.key
+					if hasItem {
+						tokens["#ITEM"] = pairItem.key
+					}
+					if hasOther {
+						tokens["#OTHER"] = pairOther.key
+					}
+				}
 				resolved, _ := fcResolve(kase, tokens).(map[string]any)
 
 				byKey := map[string]fcOp{}
 				for _, o := range ops {
 					byKey[o.key] = o
+				}
+				if paired {
+					byKey[pairRead.key] = pairRead
+					byKey[pairWrite.key] = pairWrite
+					if hasItem {
+						byKey[pairItem.key] = pairItem
+					}
 				}
 
 				client := fcClient(resolved)
@@ -520,7 +668,7 @@ func TestFeatureCorpus(t *testing.T) {
 						ctrl = c
 					}
 
-					err := fcInvoke(client, op, ctrl)
+					err := fcStep(client, op, step, ctrl)
 					wanterr, haserr := step["err"]
 
 					if !haserr {

@@ -142,6 +142,7 @@ Context* context_new(CtxSpec cs, Context* basectx) {
   ctx->config = cs.config ? cs.config : (basectx ? basectx->config : voxgig_new_undef());
   ctx->entopts = cs.entopts ? cs.entopts : (basectx ? basectx->entopts : voxgig_new_undef());
   ctx->options = cs.options ? cs.options : (basectx ? basectx->options : voxgig_new_undef());
+  ctx->cleancfg = cs.cleancfg ? cs.cleancfg : (basectx ? basectx->cleancfg : voxgig_new_undef());
   ctx->entity = cs.entity ? cs.entity : (basectx ? basectx->entity : NULL);
   if (cs.shared) {
     ctx->shared = cs.shared;

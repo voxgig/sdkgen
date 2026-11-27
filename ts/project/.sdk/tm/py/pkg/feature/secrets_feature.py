@@ -3,13 +3,13 @@
 from __future__ import annotations
 import base64
 import json
-import urllib.error
 import urllib.parse
-import urllib.request
 
 from projectname_sdk.utility.voxgig_struct import voxgig_struct as vs
 from projectname_sdk.feature.base_feature import ProjectNameBaseFeature
 from projectname_sdk.feature.secrets.voxgig_sekreto import Sekreto, envkey
+from projectname_sdk.utility.fetcher import fetcher_util
+from projectname_sdk.core.error import ProjectNameError
 # The plugin DEFINITIONS the model selected for this feature, emitted by
 # config generically from the catalogue's active `plugin.def` entries.
 # Upstream sekreto's contract since the registry was retired: a kind not
@@ -335,21 +335,14 @@ class ProjectNameSecretsFeature(ProjectNameBaseFeature):
         base = str(options.get("base") or "").rstrip("/")
         url = base + "/" + str(x["path"]).lstrip("/")
 
-        fetch = vs.getpath(options, "system.fetch")
+        # The SDK's own transport, beneath every feature's wrapper: it holds
+        # the test feature's block and the GET-only guard, and the wrapped
+        # one would recurse on the first 401.
+        rootctx = getattr(self._client, "_rootctx", None)
 
-        if not callable(fetch):
-            # No custom transport supplied - the ordinary case.
-            # make_options leaves system.fetch unset, so the exchange
-            # gets its own raw HTTP path (stdlib urllib, mirroring the ts
-            # reference whose system.fetch is initialized from the
-            # platform fetcher). Local and minimal on purpose: see the
-            # NOT-the-SDK-transport note below.
-            fetch = _raw_exchange_fetch
+        def fetch(at, fd):
+            return fetcher_util(rootctx, at, fd)
 
-        # Deliberately NOT the SDK transport. The transport is what this
-        # feature wraps, and sending the token request back through it
-        # would recurse on the first 401 - and would route the exchange
-        # through the test mock, which knows nothing about it.
         fetchdef = {
             "method": x["method"],
             "headers": {"content-type": "application/json"},
@@ -357,6 +350,9 @@ class ProjectNameSecretsFeature(ProjectNameBaseFeature):
             # Never followed by the client: a redirect would carry the
             # refresh token on.
             "redirect": "manual",
+            # Seconds; its own bound, as the timeout feature's wrapper is
+            # above this call.
+            "timeout": 30,
         }
 
         res, err = fetch(url, fetchdef)
@@ -373,6 +369,8 @@ class ProjectNameSecretsFeature(ProjectNameBaseFeature):
             res, err = fetch(at, fetchdef)
             hops += 1
 
+        if isinstance(err, ProjectNameError):
+            raise err
         if err is not None:
             raise Exception(
                 "secrets: token exchange failed: " + str(err) + " from " + url)
@@ -527,52 +525,3 @@ def _moved(url, at, res):
     except ValueError:
         return None
     return nxt if same else None
-
-
-class _NoRedirect(urllib.request.HTTPRedirectHandler):
-    def redirect_request(self, req, fp, code, msg, headers, newurl):
-        return None
-
-
-# A 3xx then surfaces as HTTPError, the exchange's own failed answer.
-_NO_REDIRECT = urllib.request.build_opener(_NoRedirect)
-
-
-def _raw_exchange_fetch(fullurl, fetchdef):
-    """Token-exchange transport of last resort: stdlib urllib, answering
-    the same (res, err) shape the system.fetch seam promises. Exists so an
-    exchange works with ordinary SDK options - requiring a custom
-    transport for the COMMON case would reject every live token purchase
-    before a request was made."""
-    try:
-        body = fetchdef.get("body")
-        data = body.encode("utf-8") if isinstance(body, str) and body else None
-        req = urllib.request.Request(
-            fullurl,
-            data=data,
-            method=str(fetchdef.get("method") or "POST"),
-        )
-        for k, v in (fetchdef.get("headers") or {}).items():
-            if isinstance(v, str):
-                req.add_header(k, v)
-        with _NO_REDIRECT.open(req, timeout=30) as res:
-            raw = res.read()
-            status = res.status
-            headers = {k.lower(): v for k, v in res.headers.items()}
-
-        def _json():
-            try:
-                return json.loads(raw.decode("utf-8"))
-            except Exception:
-                return None
-
-        return {"status": status, "headers": headers, "json": _json}, None
-    except urllib.error.HTTPError as e:
-        # A non-2xx answer IS a response: hand back its status so the
-        # caller reports "token exchange failed: <status>" rather than a
-        # transport error.
-        headers = {k.lower(): v for k, v in (e.headers or {}).items()}
-        return {"status": e.code, "headers": headers,
-                "json": lambda: None}, None
-    except Exception as e:
-        return None, e

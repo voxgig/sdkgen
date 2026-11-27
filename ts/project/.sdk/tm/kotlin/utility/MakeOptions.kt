@@ -211,9 +211,11 @@ fun makeOptions(ctx: Context): MutableMap<String, Any?> {
   }
 
   val derived = linkedMapOf<String, Any?>()
-  derived["clean"] = cleancfg
   derived["featureorder"] = featureorder
   opts["__derived__"] = derived
+
+  // Beside the options, not in them: optionsMap hands them to callers.
+  ctx.cleancfg = cleancfg
 
   // Again over the merged result: the config's own defaults can carry one.
   registerSensitive(cleancfg, opts - "clean" - "__derived__")

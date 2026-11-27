@@ -313,6 +313,9 @@ class ProjectNameSecretsFeature extends ProjectNameBaseFeature
         // gets. A provider ERROR refuses the request with the provider's
         // own message; never an unauthenticated send.
         $err = $this->resolve();
+        if ($err instanceof ProjectNameError) {
+            return [null, $err];
+        }
         if (null !== $err) {
             return [null, $ctx->make_error('secrets_provider', $err->getMessage())];
         }
@@ -534,17 +537,10 @@ class ProjectNameSecretsFeature extends ProjectNameBaseFeature
         $base = is_string($base) ? rtrim($base, '/') : '';
         $url = $base . '/' . ltrim($x['path'], '/');
 
-        $fetch = \Voxgig\Struct\Struct::getpath($options, 'system.fetch');
-
-        if (!is_callable($fetch)) {
-            // No custom transport supplied - the ordinary case.
-            // make_options leaves system.fetch unset, so the exchange gets
-            // the SDK's own default HTTP path. That static consults neither
-            // system.fetch nor the wrapper chain, so there is no recursion,
-            // and it already answers the ['status' => .., 'json' => ..]
-            // shape read below.
-            $fetch = [ProjectNameFetcher::class, 'defaultHttpFetch'];
-        }
+        // The SDK's own transport, beneath every feature's wrapper: it holds
+        // the test feature's block and the GET-only guard.
+        $rootctx = $this->rootctx;
+        $fetch = static fn (string $at, array $fd): array => ProjectNameFetcher::call($rootctx, $at, $fd);
 
         // The body is ENCODED, never concatenated: a refresh token (or a
         // configured request-field name) carrying a quote, backslash or
@@ -555,16 +551,18 @@ class ProjectNameSecretsFeature extends ProjectNameBaseFeature
                 'secrets: token exchange request could not be encoded');
         }
 
-        // Deliberately NOT the SDK transport. The transport is what this
-        // feature wraps, and sending the token request back through it
-        // would recurse on the first expiry - and would route the exchange
-        // through the test mock, which knows nothing about it.
+        // Deliberately NOT the wrapped transport: sending the token request
+        // back through it would recurse on the first expiry - and would
+        // route the exchange through the test mock, which knows nothing
+        // about it.
         $fetchdef = [
             'method' => $x['method'],
             'headers' => ['content-type' => 'application/json'],
             'body' => $body,
             // Never followed by the client: a redirect would carry the refresh token on.
             'redirect' => 'manual',
+            // Its own bound, in milliseconds: the timeout feature's wrapper is above it.
+            'timeout' => 30000,
         ];
 
         [$res, $err] = $fetch($url, $fetchdef);
@@ -580,6 +578,11 @@ class ProjectNameSecretsFeature extends ProjectNameBaseFeature
             [$res, $err] = $fetch($at, $fetchdef);
         }
 
+        // The transport's own refusal, the GET-only guard's among them, is
+        // the operation's error.
+        if ($err instanceof ProjectNameError) {
+            throw $err;
+        }
         if (null !== $err) {
             throw new \Voxgig\Sekreto\SekretoError(
                 'secrets: token exchange failed: ' . self::errtext($err) . ' from ' . $url);

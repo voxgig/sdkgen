@@ -29,7 +29,7 @@ class MetricsFeature extends BaseFeature {
     if (null == client._metrics) {
       client._metrics = {
         total: { count: 0, ok: 0, err: 0, totalMs: 0, maxMs: 0 },
-        ops: {},
+        ops: Object.create(null),
       }
     }
   }

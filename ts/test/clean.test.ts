@@ -60,9 +60,9 @@ function loadMakeError(lang: string): { cleanmod: any, makeError: any } {
 }
 
 
-// A context carrying a derived clean block, as makeOptions leaves it.
+// A context carrying a clean registry, as makeOptions leaves it.
 function ctxWith(mod: any, over?: any, values?: string[]): any {
-  const ctx = { options: { __derived__: { clean: mod.makeCleanConfig({ ...CLEAN_DEFAULTS, ...(over || {}) }) } } }
+  const ctx = { cleancfg: mod.makeCleanConfig({ ...CLEAN_DEFAULTS, ...(over || {}) }) }
   for (const v of values || []) mod.cleanAdd(ctx, v)
   return ctx
 }
@@ -247,7 +247,7 @@ describe('clean: the shipped ts utility', () => {
     ok(!mod.cleanKey(ctx, 0))
     mod.cleanAdd(ctx, 'SECRET-abc123')
     mod.cleanAdd(ctx, 'SECRET-abc123')
-    const values = ctx.options.__derived__.clean.values
+    const values = ctx.cleancfg.values
     strictEqual(values.filter((v: string) => 'SECRET-abc123' === v).length, 1)
     ok(values.includes(Buffer.from('SECRET-abc123').toString('base64')))
   })
@@ -276,7 +276,7 @@ describe('clean: the shipped ts utility', () => {
       secret: 123456789,
       name: 'not-a-secret',
     })
-    const values = ctx.options.__derived__.clean.values
+    const values = ctx.cleancfg.values
     ok(values.includes('NESTED-SECRET-1'))
     ok(values.includes('LISTED-SECRET-2'))
     ok(values.includes('123456789'))
@@ -295,7 +295,7 @@ describe('clean: the shipped ts utility', () => {
     mod.cleanAddSensitive(ctx, {
       feature: { secrets: { provider: 'filestore', path: '/etc/app', token: 'FEATURE-TOKEN-4' } },
     })
-    const values = ctx.options.__derived__.clean.values
+    const values = ctx.cleancfg.values
     ok(!values.includes('filestore'))
     ok(!values.includes('/etc/app'))
     ok(values.includes('FEATURE-TOKEN-4'))
@@ -423,6 +423,16 @@ describe('clean: the registry makeOptions builds', () => {
       strictEqual(explain.spec.headers.authorization, active ? MASK : 'Bearer LIVE-TOKEN-1')
       strictEqual(spec.headers.authorization, 'Bearer LIVE-TOKEN-1')
     }
+  })
+
+
+  test('the registry is held beside the options, not in them', () => {
+    const { cleanmod, makeOptions } = loadOptions()
+    const ctx: any = { utility: { struct }, config: {}, options: { apikey: 'BESIDE-KEY-12345' } }
+    ctx.options = makeOptions(ctx)
+    strictEqual(JSON.stringify(ctx.options).split('BESIDE-KEY-12345').length, 2)
+    ok(ctx.cleancfg.values.includes('BESIDE-KEY-12345'))
+    strictEqual(cleanmod.clean(ctx, 'a BESIDE-KEY-12345'), 'a ' + MASK)
   })
 
 

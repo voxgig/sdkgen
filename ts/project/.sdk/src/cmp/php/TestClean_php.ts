@@ -846,12 +846,12 @@ class CleanTest extends TestCase
         // and is not changed by it.
         $config = ['options' => ['clean' => ['keys' => 'zzsens', 'values' => self::CANARY['config']]]];
         $util = $hooked->get_utility();
-        $built = ($util->make_options)(new ${Name}Context([
+        $cfgctx = new ${Name}Context([
             'utility' => $util,
             'config' => $config,
             'options' => ['clean' => ['values' => self::CANARY['value']]],
-        ], null));
-        $cfgctx = new ${Name}Context(['options' => $built], null);
+        ], null);
+        $cfgctx->options = ($util->make_options)($cfgctx);
         $seeded = ($util->clean)($cfgctx, 'config ' . self::CANARY['config'] . ' caller ' . self::CANARY['value']);
         $sinks[] = ['name' => 'config-clean', 'text' => (string)$seeded];
         $this->assertSame('config ' . self::MASK . ' caller ' . self::MASK, $seeded);
@@ -898,6 +898,13 @@ class CleanTest extends TestCase
         $frecord = $fclean($featured->get_root_ctx(), 'record PLAINRECORD-t5r3e1w9');
         $falias = $fclean($featured->get_root_ctx(), 'alias PLAINALIAS-m2n4b6v8');
         $frule = $fclean($featured->get_root_ctx(), 'rule PLAINRULE-k7j5h3g1');
+
+        // The clean registry holds every credential in plain form, and is no option.
+        $held = self::construct(['apikey' => self::CANARY['apikey']])->options_map();
+        $heldjson = (string)json_encode($held, JSON_PARTIAL_OUTPUT_ON_ERROR);
+        $this->assertSame(self::CANARY['apikey'], $held['apikey'] ?? null);
+        $this->assertSame([], self::leaks(preg_replace('/' . preg_quote(json_encode(self::CANARY['apikey']), '/') . '/',
+            '', $heldjson, 1)), 'options_map carries a credential beyond the option the caller set: ' . $heldjson);
 
         $leaked = [];
         $excerpt = '';

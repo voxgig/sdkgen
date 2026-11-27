@@ -7,11 +7,11 @@ from projectname_sdk.utility.clean import (
     clean_util, clean_add_util, clean_add_sensitive, make_clean_config, split_values)
 
 
-# A context carrying only the derived clean block, for the registry that
-# exists before the real options do.
+# A context carrying only the clean registry, which exists before the real
+# options do.
 class _CleanCtx:
     def __init__(self, cleancfg):
-        self.options = {"__derived__": {"clean": cleancfg}}
+        self.cleancfg = cleancfg
 
 
 
@@ -232,12 +232,11 @@ def make_options_util(ctx):
             at = featureorder.index("test") + 1 if "test" in featureorder else 0
             featureorder.insert(at, "station")
 
-    # The clean block stays MUTABLE: features register what they resolve
-    # after construction.
-    opts["__derived__"] = {
-        "clean": cleancfg,
-        "featureorder": featureorder,
-    }
+    opts["__derived__"] = {"featureorder": featureorder}
+
+    # The registry stays MUTABLE, as features register what they resolve after
+    # construction, and sits beside the options: callers read those back.
+    ctx.cleancfg = cleancfg
 
     # Again over the merged result: the config's own defaults can carry one.
     _clean_add_options(cleanctx, {

@@ -49,6 +49,9 @@ import {
 } from './nonjsonprobes'
 import { HOOK_KINDS, HOOK_PROBES, hookCounts } from './hookprobes'
 import { LOAD_LIVE, LOAD_PROBES, loadOutcomes } from './loadprobes'
+import {
+  GETONLY_FEATURES, GETONLY_PATH, GETONLY_PROBES, GETONLY_STALL_MS, getOnlyModel, getOnlyOutcome,
+} from './getonlyprobes'
 
 
 // A list requiring a Lua keyword and `__proto__`, which an object literal must compute.
@@ -2119,12 +2122,12 @@ abort("FAIL: a multi-segment envelope was not synthesised - #{n} of 3 records") 
 
     const hdrprobe = Path.join(tmp, 'c-secrets-headers.c')
     Fs.writeFileSync(hdrprobe,
-      '#include <openssl/ssl.h>\n#include <curl/curl.h>\nint main(void) { return 0; }\n')
+      '#include <openssl/ssl.h>\nint main(void) { return 0; }\n')
     const hdr = run(cc, ['-fsyntax-only', hdrprobe], tmp)
     if (hdr.timedOut) return t.skip('c: ' + hdr.out)
     if (!hdr.ok) {
-      return t.skip('c: a compiler is here but the OpenSSL and libcurl ' +
-        'development headers are not (libssl-dev, libcurl4-openssl-dev):\n' +
+      return t.skip('c: a compiler is here but the OpenSSL ' +
+        'development headers are not (libssl-dev):\n' +
         tail(hdr.out, 5))
     }
 
@@ -5238,6 +5241,11 @@ function runCorpus(t: any, lane: CorpusLane, sdkroot: string, files: Record<stri
       ' cases:\n' + tail(ran.out))
   }
 
+  const cache = ran.out.match(ranLine('cache'))!
+  strictEqual(cache[1], cache[2],
+    'the ' + lane.target + ' corpus runner skipped a cache case: ' + cache[0] +
+    '\n' + tail(ran.out))
+
   ok(SKIPPED_LINE.test(ran.out),
     'the ' + lane.target + ' corpus runner did not skip, by name, a case ' +
     'composing a feature the SDK does not generate:\n' + tail(ran.out))
@@ -5402,6 +5410,60 @@ const CORPUS_FIXTURE: { feature: Record<string, any> } = {
             op: [{ op: '#OP1' }, { op: '#OP1' }],
             out: { hit: 1, miss: 1 },
           },
+          {
+            name: 'a request header selects its own entry',
+            feature: [{ name: 'cache', active: true, ttl: 10000 }],
+            op: [
+              { op: '#OP1', headers: { 'x-tenant': 'tenant-a' } },
+              { op: '#OP1', headers: { 'x-tenant': 'tenant-b' } },
+            ],
+            out: { hit: 0, miss: 2 },
+          },
+          {
+            name: 'a repeat with the same headers is served from cache',
+            feature: [{ name: 'cache', active: true, ttl: 10000 }],
+            op: [
+              { op: '#OP1', headers: { 'x-tenant': 'tenant-a' } },
+              { op: '#OP1', headers: { 'x-tenant': 'tenant-a' } },
+            ],
+            out: { hit: 1, miss: 1 },
+          },
+          {
+            name: 'a write drops the cached reads of its entity',
+            feature: [{ name: 'cache', active: true, ttl: 10000 }],
+            op: [{ op: '#READ' }, { op: '#WRITE' }, { op: '#READ' }],
+            out: { hit: 0, miss: 2 },
+          },
+          {
+            name: 'a write to one collection keeps another collection\'s entry',
+            feature: [{ name: 'cache', active: true, ttl: 10000 }],
+            op: [{ op: '#OTHER' }, { op: '#WRITE' }, { op: '#OTHER' }],
+            out: { hit: 1, miss: 1 },
+          },
+          {
+            name: 'an update to an item drops the item\'s list',
+            feature: [{ name: 'cache', active: true, ttl: 10000 }],
+            op: [
+              { op: '#READ' },
+              { op: '#ITEM', args: { id: 'corpus-item' } },
+              { op: '#READ' },
+            ],
+            out: { hit: 0, miss: 2 },
+          },
+          {
+            name: 'a response marked no-store is not stored',
+            feature: [{ name: 'cache', active: true, ttl: 10000 }],
+            res: [{ status: 200, headers: { 'Cache-Control': 'no-store' }, body: {} }],
+            op: [{ op: '#OP1' }, { op: '#OP1' }],
+            out: { hit: 0, miss: 0, bypass: 2 },
+          },
+          {
+            name: 'max-age expires an entry before the ttl',
+            feature: [{ name: 'cache', active: true, ttl: 10000 }],
+            res: [{ status: 200, headers: { 'Cache-Control': 'max-age=1' }, body: {} }],
+            op: [{ op: '#OP1' }, { op: '#OP1' }, { op: '#OP1', wait: 1100 }],
+            out: { hit: 1, miss: 2 },
+          },
         ],
       },
     },
@@ -5474,6 +5536,21 @@ const CORPUS_FIXTURE: { feature: Record<string, any> } = {
               { op: '#OP1' }, { op: '#OP1' }, { op: '#OP1', err: 'cost_budget' },
             ],
             out: { total: { calls: 2, attempts: 2, amount: 2 }, budget: { exceeded: true } },
+          },
+          {
+            name: 'an actor named like a prototype member gets an entry of its own',
+            feature: [{ name: 'cost', active: true, unit: 1 }],
+            op: [
+              { op: '#OP1', ctrl: { actor: '__proto__' } },
+              { op: '#OP1', ctrl: { actor: 'constructor' } },
+            ],
+            out: {
+              total: { calls: 2, amount: 2 },
+              actors: {
+                ['__proto__']: { calls: 1, amount: 1 },
+                constructor: { calls: 1, amount: 1 },
+              },
+            },
           },
         ],
       },
@@ -8537,7 +8614,10 @@ const SECRETS_LANES: SecretsLane[] = [
   {
     target: 'py',
     runner: 'test/feature/secrets/test_secrets.py',
-    command: () => pytest(['test/feature/secrets/test_secrets.py', '-q', '-s']),
+    command: () => pytest(['test/feature/secrets/test_secrets.py', '-q', '-s', '-rs']),
+    // The exchange tests go over the default transport, which needs requests.
+    unrun: (out) => /SKIPPED.*the default transport needs the requests module/.test(out)
+      ? 'the exchange tests skipped: no requests module here' : null,
   },
   {
     target: 'php',
@@ -11264,6 +11344,28 @@ function tlsServer(dir: string, name: string): Promise<{ port: number, log: stri
 }
 
 
+// A server that accepts every connection and never answers.
+function silentServer(dir: string): Promise<{ port: number, stop: () => void }> {
+  const file = Path.join(dir, 'silent-server.cjs')
+  Fs.writeFileSync(file, "const s = require('node:net').createServer(() => {})\n" +
+    "s.listen(0, '127.0.0.1', () => console.log('listening ' + s.address().port))\n")
+  const proc = spawn(process.execPath, [file], { stdio: ['ignore', 'pipe', 'inherit'] })
+  return new Promise((resolve, reject) => {
+    let seen = ''
+    proc.on('error', reject)
+    proc.on('exit', (code) => reject(new Error('silent server exited: ' + code)))
+    proc.stdout!.on('data', (chunk) => {
+      seen += String(chunk)
+      const m = /listening (\d+)/.exec(seen)
+      if (null != m) {
+        proc.removeAllListeners('exit')
+        resolve({ port: Number(m[1]), stop: () => proc.kill('SIGKILL') })
+      }
+    })
+  })
+}
+
+
 // A base URL nothing listens on: a port the system handed out, then closed.
 async function refusedBase(): Promise<string> {
   const server = Net.createServer()
@@ -11295,6 +11397,42 @@ function nonjsonServer(dir: string, cases: string): Promise<{ port: number, stop
 
 
 // Each target's SDK is generated once, and every probe runs beside it.
+// The exchange runs over each SDK's default transport, which some machines
+// cannot supply: py's needs the requests module, lua's luasocket, c's and
+// the vendored client cpp and ocaml fall back to POSIX sockets, and that
+// client the OpenSSL headers.
+function liveExchangeUnready(target: string): string | null {
+  if ('py' === target) {
+    const py = mediaPython()
+    return null == py || !probeOk(py, ['-c', 'import requests'])
+      ? 'needs Python with requests to send the exchange' : null
+  }
+  if ('win32' === process.platform && ('c' === target || 'cpp' === target)) {
+    return 'the default transport needs POSIX sockets, which windows lacks'
+  }
+  if ('lua' === target) {
+    const lua = mediaLua()
+    return null == lua || !probeOk(lua, ['-e', 'require "socket.http"'])
+      ? 'needs lua with luasocket to send the exchange' : null
+  }
+  if ('cpp' === target || 'ocaml' === target) {
+    const cc = 'cpp' === target ? cleanCxx() : authProbeCc()
+    if (null == cc) return null
+    const dir = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-ssl-'))
+    try {
+      const probe = Path.join(dir, 'cpp' === target ? 'ssl.cpp' : 'ssl.c')
+      Fs.writeFileSync(probe, '#include <openssl/ssl.h>\nint main(void) { return 0; }\n')
+      const hdr = run(cc, ['-fsyntax-only', probe], dir)
+      return hdr.ok ? null : 'the vendored client needs the OpenSSL development headers'
+    }
+    finally {
+      Fs.rmSync(dir, { recursive: true, force: true })
+    }
+  }
+  return null
+}
+
+
 describe('probes driven through a generated SDK', () => {
   let tmp = ''
   const generated = new Map<string, Promise<string>>()
@@ -11682,6 +11820,90 @@ describe('probes driven through a generated SDK', () => {
       })
     }
 
+    // Without the guard the same probe posts to the token endpoint, so the
+    // guarded run's silence is the guard's doing.
+    if (null == lane.label) {
+      test(lane.target + ': a GET-only run refuses the secrets token exchange before it is sent',
+        async (t) => {
+          const missing = lane.ready() || liveExchangeUnready(lane.target)
+          if (null != missing) return t.skip(missing)
+          ok(null != GETONLY_PROBES[probeKey], lane.target + ': no GET-only probe')
+
+          const sdkroot = await sdkFor(lane.target, GETONLY_FEATURES, getOnlyModel(lane.target))
+          const probe = (guard: boolean, offline = false) => async () => {
+            const server = await mediaServer(sdkroot)
+            try {
+              const env: NodeJS.ProcessEnv = {
+                ...nestedTestEnv(), GETONLY_BASE: 'http://127.0.0.1:' + server.port,
+              }
+              if (guard) env.VOXGIG_GETONLY_GUARD = 'TRUE'
+              else delete env.VOXGIG_GETONLY_GUARD
+              if (offline) env.GETONLY_TEST = '1'
+              const ran = lane.exec(sdkroot, env, writer(sdkroot),
+                { name: 'getonly', source: GETONLY_PROBES })
+              const sent = Fs.readFileSync(server.log, 'utf8').split('\n')
+                .filter((line) => '' !== line).map((line) => JSON.parse(line))
+                .map((r) => r.method + ' ' + r.url.split('?')[0])
+              return { ran, sent }
+            }
+            finally {
+              server.stop()
+            }
+          }
+
+          const opened = Date.now()
+          const open = await probe(false)()
+          const baseline = Date.now() - opened
+          if (open.ran.unlaunchable) {
+            return t.skip(lane.target + ': the toolchain could not be started here: ' +
+              tail(open.ran.out, 3))
+          }
+          ok(open.ran.ok, lane.target + ': the probe failed:\n' + tail(open.ran.out, 60))
+          ok(open.sent.includes('POST ' + GETONLY_PATH),
+            lane.target + ': without the guard the probe never reached the exchange: ' +
+            JSON.stringify(open.sent) + '\n' + tail(open.ran.out))
+
+          const guarded = await probe(true)()
+          ok(guarded.ran.ok, lane.target + ': the guarded probe failed:\n' + tail(guarded.ran.out, 60))
+          deepStrictEqual(guarded.sent, [], lane.target + ': a GET-only run sent requests:\n' +
+            tail(guarded.ran.out))
+          const outcome = getOnlyOutcome(guarded.ran.out)
+          strictEqual(outcome?.code, 'fetch_getonly_block', lane.target + ' probe output:\n' +
+            tail(guarded.ran.out))
+          ok(outcome!.message.includes('[GET-ONLY GUARD] blocked POST ' + GETONLY_PATH),
+            lane.target + ' probe output:\n' + tail(guarded.ran.out))
+
+          // A token endpoint that accepts and never answers fails the purchase
+          // at the exchange's own limit.
+          const silent = await silentServer(sdkroot)
+          let stalled: ReturnType<typeof run>
+          const began = Date.now()
+          try {
+            stalled = lane.exec(sdkroot, {
+              ...nestedTestEnv(), GETONLY_BASE: 'http://127.0.0.1:' + silent.port,
+            }, writer(sdkroot), { name: 'getonly', source: GETONLY_PROBES })
+          }
+          finally {
+            silent.stop()
+          }
+          const waited = Date.now() - began
+          ok(stalled.ok, lane.target + ': the stalled probe failed:\n' + tail(stalled.out, 60))
+          const stall = getOnlyOutcome(stalled.out)
+          ok(null != stall && 'ok' !== stall.code, lane.target + ': a silent token endpoint did ' +
+            'not fail the load:\n' + tail(stalled.out))
+          ok(waited < baseline + GETONLY_STALL_MS, lane.target + ': the stalled purchase took ' +
+            waited + 'ms against ' + baseline + 'ms answered, past the exchange limit')
+
+          // The test feature makes the client a test-mode one, which buys no token.
+          const offline = await probe(false, true)()
+          ok(offline.ran.ok, lane.target + ': the offline probe failed:\n' + tail(offline.ran.out, 60))
+          ok(null != getOnlyOutcome(offline.ran.out), lane.target + ': the offline probe printed ' +
+            'no outcome:\n' + tail(offline.ran.out))
+          deepStrictEqual(offline.sent, [], lane.target + ': an offline run sent requests:\n' +
+            tail(offline.ran.out))
+        })
+    }
+
     // A signal is the TypeScript and JavaScript targets' own seam.
     if (['ts', 'js'].includes(lane.target)) {
       test(lane.target + ': a caller\'s AbortSignal cancels a request in flight', async (t) => {
@@ -11702,3 +11924,94 @@ describe('probes driven through a generated SDK', () => {
     }
   }
 })
+
+// The features that keep state per call must let it go with the call. Each
+// target's own feature suite pins it: many calls, half of them failing, no
+// table left holding a context, and one audit record per call.
+const PER_CALL_FEATURES = ['test', 'log', 'netsim', 'audit', 'debug', 'telemetry', 'metrics', 'cost']
+
+const PER_CALL_LANES: {
+  target: string,
+  needs: string,
+  // Every feature: a cpp suite naming them all is trimmed with any one.
+  every?: boolean,
+  prepare?: (sdkroot: string) => string | null,
+  command: () => { bin: string, args: string[], env?: NodeJS.ProcessEnv } | null,
+  ran: RegExp,
+}[] = [
+  {
+    target: 'rb',
+    needs: 'ruby with minitest',
+    command: () => {
+      const rb = toolchain('ruby')
+      if (null == rb || !probeOk(rb, ['-e', 'require "minitest/autorun"'])) return null
+      return { bin: rb, args: ['test/feature_test.rb', '-v', '-n', '/audit|context_past/'],
+        env: rubyEnv() }
+    },
+    ran: /test_no_feature_keeps_a_context_past_its_call = [\d.]+ s = \./,
+  },
+  {
+    target: 'perl',
+    needs: 'perl',
+    command: () => {
+      const perl = toolchain('perl')
+      return null == perl ? null : { bin: perl, args: ['-Ilib', 't/feature.t'] }
+    },
+    ran: /^ok \d+ - audit records every one of 20 calls$/m,
+  },
+  {
+    target: 'cpp',
+    needs: 'make and a C++ compiler',
+    every: true,
+    prepare: (sdkroot) => {
+      const make = toolchain('make')
+      const cxx = cleanCxx()
+      if (null == make || null == cxx) return 'no make or C++ compiler'
+      const built = run(make, ['CXX=' + cxx, 'test/feature_test.out'], sdkroot)
+      return built.ok ? null : 'the generated feature suite does not compile:\n' + tail(built.out)
+    },
+    command: () => null == toolchain('make') || null == cleanCxx() ? null
+      : { bin: Path.join('test', 'feature_test.out'), args: [] },
+    ran: /feature_test: \d+ tests, \d+ checks, 0 fail/,
+  },
+]
+
+
+describe('per-call feature state ends with the call', () => {
+
+  let tmp = ''
+
+  before(() => {
+    tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-percall-'))
+  })
+
+  after(() => {
+    if ('' !== tmp) Fs.rmSync(tmp, { recursive: true, force: true })
+  })
+
+  for (const lane of PER_CALL_LANES) {
+    test(lane.target + ': no feature keeps a context past its call', async (t) => {
+      const cmd = lane.command()
+      if (null == cmd) {
+        return t.skip('no usable ' + lane.target + ' toolchain here (' + lane.needs + ')')
+      }
+      const sdkroot = Path.join(tmp, lane.target)
+      const every = Fs.readdirSync(Path.join(SCAFFOLD, 'model', 'feature'))
+        .filter((f: string) => f.endsWith('.aontu') && 'feature-index.aontu' !== f)
+        .map((f: string) => f.replace(/\.aontu$/, ''))
+      const features = true === lane.every ? every : PER_CALL_FEATURES
+      await generateTo(lane.target, sdkroot,
+        features.map((f: string) => 'main: kit: feature: ' + f + ': active: true').join('\n'),
+        features)
+      const notready = null == lane.prepare ? null : lane.prepare(sdkroot)
+      ok(null == notready, lane.target + ': ' + notready)
+
+      const ran = run(cmd.bin, cmd.args, sdkroot, cmd.env)
+      ok(ran.ok, 'the generated ' + lane.target + ' feature suite FAILED:\n' + tail(ran.out, 60))
+      ok(lane.ran.test(ran.out), lane.target + ': the per-call state test did not run:\n' +
+        tail(ran.out))
+    })
+  }
+})
+
+

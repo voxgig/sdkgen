@@ -15,6 +15,7 @@
   (let [utility (core/get-utility sdk)
         ctx (core/make-context (vs/jm "opname" opname "client" sdk "utility" utility) nil)]
     (when (nil? (core/oget ctx :options)) (core/oset! ctx :options (core/client-options-map sdk)))
+    (core/oset! ctx :cleancfg (core/oget (core/client-root-ctx sdk) :cleancfg))
     ctx))
 
 (defn- set-points! [ctx pts] (swap! (core/oget ctx :op) assoc :points pts))

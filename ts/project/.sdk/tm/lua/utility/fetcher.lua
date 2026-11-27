@@ -267,6 +267,14 @@ local function send_once(fullurl, fetchdef)
     return nil, refused
   end
 
+  -- A bound in milliseconds, for a caller beneath the timeout feature;
+  -- luasocket reads its timeout from the module, so it is restored after.
+  local bound = fetchdef["timeout"]
+  local was = http.TIMEOUT
+  if type(bound) == "number" and bound > 0 then
+    http.TIMEOUT = bound / 1000
+  end
+
   local response_body = {}
   local res, code, response_headers = http.request({
     url = fullurl,
@@ -277,6 +285,7 @@ local function send_once(fullurl, fetchdef)
     redirect = false,
     create = create,
   })
+  http.TIMEOUT = was
 
   if not res then
     return nil, code

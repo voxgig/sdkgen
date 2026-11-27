@@ -68,7 +68,7 @@ module ProjectNameUtilities
     cfgclean = cfgopts["clean"].is_a?(Hash) ? VoxgigStruct.clone(cfgopts["clean"]) : nil
     cleancfg = CleanSupport.make_config(VoxgigStruct.merge(
       [{}, ProjectNameSchema::OPTSPEC["clean"], cfgclean, opts["clean"]].select { |c| c.is_a?(Hash) }))
-    cleanctx = { "options" => { "__derived__" => { "clean" => cleancfg } } }
+    cleanctx = { "cleancfg" => cleancfg }
     CleanSupport.add_options(cleanctx, opts.reject { |k, _| k == "clean" })
     [cfgopts, opts].each do |block|
       CleanSupport.splitvalues(VoxgigStruct.getpath(block, "clean.values")).each do |raw|
@@ -194,10 +194,10 @@ module ProjectNameUtilities
     # Again over the merged result: the config's own defaults can carry one.
     CleanSupport.add_options(cleanctx, opts.reject { |k, _| k == "clean" })
 
-    opts["__derived__"] = {
-      "clean" => cleancfg,
-      "featureorder" => featureorder,
-    }
+    opts["__derived__"] = { "featureorder" => featureorder }
+
+    # Beside the options, not in them: options_map hands them to callers.
+    ctx.cleancfg = cleancfg
 
     opts
   }

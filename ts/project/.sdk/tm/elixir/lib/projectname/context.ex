@@ -94,6 +94,8 @@ defmodule ProjectName.Context do
     S.setprop(ctx, "config", inh_map.("config"))
     S.setprop(ctx, "entopts", inh_map.("entopts"))
     S.setprop(ctx, "options", inh_map.("options"))
+    # The clean registry, beside the options rather than in them.
+    S.setprop(ctx, "cleancfg", inh_map.("cleancfg"))
     S.setprop(ctx, "entity", inh.("entity"))
     S.setprop(ctx, "shared", inh_map.("shared"))
 

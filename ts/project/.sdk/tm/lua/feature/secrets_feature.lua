@@ -63,8 +63,8 @@ local json = require("dkjson")
 local helpers = require("core.helpers")
 local BaseFeature = require("feature.base_feature")
 local sekreto = require("feature.secrets.sekreto")
-local tls = require("utility.tls")
 local base64 = require("utility.clean").base64
+local fetcher_util = require("utility.fetcher")
 
 
 local SecretsFeature = {}
@@ -469,6 +469,9 @@ function SecretsFeature:_transport(ctx, fullurl, fetchdef, inner)
   -- settled success is free, and with `cache = false` the chain is asked
   -- once per REQUEST, which is that option's meaning.
   local refused = self:_resolve()
+  if type(refused) == "table" and refused.is_sdk_error then
+    return nil, refused
+  end
   if refused ~= nil then
     return nil, ctx:make_error("secrets_refused", sekreto.errmessage(refused))
   end
@@ -637,77 +640,6 @@ function SecretsFeature:_buy()
 end
 
 
--- The token-exchange transport of last resort: LuaSocket's http, answering
--- the same shape the system.fetch seam promises (status + json). It exists
--- so an exchange works with ordinary SDK options - requiring a custom
--- transport for the COMMON case would reject every live token purchase
--- before a request was made. Mirrors utility/fetcher.lua's own default
--- (which is a local there, not exported); like it, this is HTTP through
--- socket.http, and an https token endpoint needs luasec on the package path,
--- which the rockspec does not require, and is verified as utility/tls says.
-local function raw_exchange_fetch(fullurl, fetchdef)
-  local http_ok, http = pcall(require, "socket.http")
-  local ltn12_ok, ltn12 = pcall(require, "ltn12")
-  if not http_ok or not ltn12_ok then
-    return nil, "HTTP library not available (install luasocket)"
-  end
-
-  local headers = {}
-  for k, v in pairs(fetchdef["headers"] or {}) do
-    if type(v) == "string" then
-      headers[k] = v
-    end
-  end
-
-  local body = fetchdef["body"]
-  if type(body) ~= "string" then
-    body = nil
-  end
-  if body ~= nil then
-    headers["content-length"] = tostring(#body)
-  end
-
-  local create, refused = tls.create(fullurl)
-  if refused ~= nil then
-    return nil, refused
-  end
-
-  local chunks = {}
-  local res, code, rawheaders = http.request({
-    url = fullurl,
-    method = fetchdef["method"] or "POST",
-    headers = headers,
-    source = body and ltn12.source.string(body) or nil,
-    sink = ltn12.sink.table(chunks),
-    create = create,
-    redirect = false,
-  })
-
-  if not res then
-    return nil, code
-  end
-
-  local raw = table.concat(chunks)
-  local resheaders = {}
-  for k, v in pairs(type(rawheaders) == "table" and rawheaders or {}) do
-    resheaders[string.lower(k)] = v
-  end
-
-  return {
-    status = code,
-    headers = resheaders,
-    json = function()
-      if #raw == 0 then
-        return nil
-      end
-      local decoded = json.decode(raw)
-      return decoded
-    end,
-    body = raw,
-  }, nil
-end
-
-
 function SecretsFeature:_buy_once()
   local x = self._exchange
 
@@ -728,14 +660,12 @@ function SecretsFeature:_buy_once()
   base = base:gsub("/+$", "")
   local url = base .. "/" .. (x.path:gsub("^/+", ""))
 
-  -- Deliberately NOT the SDK transport. The transport is what this feature
-  -- wraps, and sending the token request back through it would recurse on
-  -- the first expiry - and would route the exchange through the test mock,
-  -- which knows nothing about it. system.fetch, when the caller supplied
-  -- one, is the raw seam beneath the transport and is honoured.
-  local fetch = vs.getpath(options, "system.fetch")
-  if type(fetch) ~= "function" then
-    fetch = raw_exchange_fetch
+  -- The SDK's own transport, beneath every feature's wrapper: it holds the
+  -- test feature's block and the GET-only guard, and the wrapped one would
+  -- recurse on the first expiry.
+  local rootctx = self._rootctx
+  local fetch = function(at, fd)
+    return fetcher_util(rootctx, at, fd)
   end
 
   -- The body is ENCODED, never concatenated: a refresh token (or a
@@ -747,6 +677,8 @@ function SecretsFeature:_buy_once()
     body = json.encode({ [x.request] = self._refresh }),
     -- Never followed by the client: a redirect would carry the refresh token on.
     redirect = "manual",
+    -- Its own bound, in milliseconds: the timeout feature's wrapper is above it.
+    timeout = 30000,
   }
   local res, err = fetch(url, fetchdef)
 
@@ -761,6 +693,9 @@ function SecretsFeature:_buy_once()
     res, err = fetch(at, fetchdef)
   end
 
+  if type(err) == "table" and err.is_sdk_error then
+    return nil, err
+  end
   if err ~= nil then
     return nil, sekreto.SekretoError(
       "secrets: token exchange failed: " .. tostring(err) .. " from " .. url)

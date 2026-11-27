@@ -7,10 +7,10 @@
 // sensitive KEY name is masked whatever it holds. Inside the pipeline data
 // stays raw, so a hook can still read the header it must add to.
 //
-// The registry is the `values` list of the derived clean block that
-// make_options builds (`options.__derived__.clean`). Nodes are shared by
-// pointer, so a feature registering a value later reaches the same list
-// every context reads.
+// The registry is the `values` list of the clean block that make_options
+// builds and holds on the context as `cleancfg`, beside the options rather
+// than in them. Nodes are shared by pointer, so a feature registering a value
+// later reaches the same list every context reads.
 
 #include "sdk.h"
 
@@ -142,16 +142,12 @@ voxgig_value* clean_make_config(voxgig_value* cleanopts) {
     "min", v_int(min));
 }
 
-static voxgig_value* derived_block(voxgig_value* options) {
-  return getpath2(options, "__derived__", "clean");
-}
-
-// A context without options (make_error is reached with a bare one) falls
+// A context without a registry (make_error is reached with a bare one) falls
 // back to the schema defaults, so nothing leaves raw for want of a
 // constructor.
 static voxgig_value* config_block(Context* ctx) {
-  voxgig_value* derived = ctx ? derived_block(ctx->options) : NULL;
-  if (voxgig_is_map(derived)) return derived;
+  voxgig_value* cfg = ctx ? ctx->cleancfg : NULL;
+  if (voxgig_is_map(cfg)) return cfg;
   return clean_make_config(getp(shared_optspec(), "clean"));
 }
 
@@ -227,12 +223,11 @@ static int longest_first(const void* a, const void* b) {
   return la < lb ? 1 : (la > lb ? -1 : 0);
 }
 
-// Register a secret value against an options map. Idempotent; shorter
-// than `min` is not a secret the SDK can mask without blanking ordinary
-// text. A map with no derived block registers nothing.
-void clean_add_opts(voxgig_value* options, const char* value) {
+// Register a secret value in a clean registry. Idempotent; shorter than
+// `min` is not a secret the SDK can mask without blanking ordinary text.
+// Anything but a registry map registers nothing.
+void clean_add_cfg(voxgig_value* block, const char* value) {
   if (!value) return;
-  voxgig_value* block = derived_block(options);
   if (!voxgig_is_map(block)) return;
   int64_t min = count(getp(block, "min"), 4);
   if (min < 1) min = 1;
@@ -267,10 +262,10 @@ void clean_add_opts(voxgig_value* options, const char* value) {
   }
 }
 
-// Register a secret value the context's options will mask from now on.
+// Register a secret value the context's registry will mask from now on.
 void clean_add_util(Context* ctx, const char* value) {
   if (!ctx) return;
-  clean_add_opts(ctx->options, value);
+  clean_add_cfg(ctx->cleancfg, value);
 }
 
 static char* mask_value(const CleanCfg* cfg, const char* value) {
@@ -507,10 +502,9 @@ char* clean_str(Context* ctx, const char* val) {
   return clean_string(&cfg, val);
 }
 
-// Clean a value against an options map rather than a context, for a
-// feature that holds the options but no context.
-voxgig_value* clean_opts(voxgig_value* options, voxgig_value* val) {
-  voxgig_value* block = derived_block(options);
+// Clean a value against a registry rather than a context, for a feature
+// that holds the registry but no context.
+voxgig_value* clean_cfg(voxgig_value* block, voxgig_value* val) {
   if (!voxgig_is_map(block)) return val;
   CleanCfg cfg;
   read_cfg(block, &cfg);
@@ -549,17 +543,17 @@ typedef struct {
   size_t cap;
 } Visited;
 
-static void add_sensitive(const CleanCfg* cfg, voxgig_value* options, voxgig_value* val,
+static void add_sensitive(const CleanCfg* cfg, voxgig_value* block, voxgig_value* val,
                           bool under, size_t depth, Visited* seen) {
   if (!val || CLEAN_MAXDEPTH <= depth) return;
   if (voxgig_is_string(val)) {
-    if (under) clean_add_opts(options, voxgig_as_string(val));
+    if (under) clean_add_cfg(block, voxgig_as_string(val));
     return;
   }
   if (voxgig_is_number(val)) {
     if (under) {
       char* text = voxgig_stringify(val, -1);
-      clean_add_opts(options, text);
+      clean_add_cfg(block, text);
       free(text);
     }
     return;
@@ -579,33 +573,32 @@ static void add_sensitive(const CleanCfg* cfg, voxgig_value* options, voxgig_val
   if (voxgig_is_list(val)) {
     voxgig_list* l = voxgig_as_list(val);
     for (size_t i = 0; i < l->len; i++) {
-      add_sensitive(cfg, options, l->items[i], under, depth + 1, seen);
+      add_sensitive(cfg, block, l->items[i], under, depth + 1, seen);
     }
   } else {
     voxgig_map* m = voxgig_as_map(val);
     for (size_t i = 0; i < m->len; i++) {
       bool sub = under || sensitive_key(cfg, m->entries[i].key);
-      add_sensitive(cfg, options, m->entries[i].value, sub, depth + 1, seen);
+      add_sensitive(cfg, block, m->entries[i].value, sub, depth + 1, seen);
     }
   }
 }
 
 // Every scalar under a sensitive name, at any depth and of any shape, is
-// registered against `options`: a credential mistyped as a map or a number
-// is still a credential.
-void clean_add_sensitive_opts(voxgig_value* options, voxgig_value* val) {
-  voxgig_value* block = derived_block(options);
+// registered in `block`: a credential mistyped as a map or a number is
+// still a credential.
+void clean_add_sensitive_cfg(voxgig_value* block, voxgig_value* val) {
   if (!voxgig_is_map(block)) return;
   CleanCfg cfg;
   read_cfg(block, &cfg);
   Visited seen = { NULL, 0, 0 };
-  add_sensitive(&cfg, options, val, false, 0, &seen);
+  add_sensitive(&cfg, block, val, false, 0, &seen);
   free((void*)seen.ptrs);
 }
 
 void clean_add_sensitive_util(Context* ctx, voxgig_value* val) {
   if (!ctx) return;
-  clean_add_sensitive_opts(ctx->options, val);
+  clean_add_sensitive_cfg(ctx->cleancfg, val);
 }
 
 // Whether a named value is a secret: by its name, or by a registered value

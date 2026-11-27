@@ -40,8 +40,8 @@ import JAVAPACKAGE.utility.struct.Struct;
 // sensitive KEY name is masked whatever it holds. Inside the pipeline data
 // stays raw, so a hook can still read the header it must add to.
 //
-// The configuration is the derived block MakeOptions builds
-// (`options.__derived__.clean`): active, keys, values, mask, hint, min. It
+// The configuration is the registry MakeOptions builds beside the options
+// (`ctx.cleancfg`): active, keys, values, mask, hint, min. It
 // is a map so the registry can grow after construction - the auth step and
 // the features register what they handle later.
 @SuppressWarnings({"unchecked"})
@@ -74,16 +74,12 @@ final class Clean {
 
   private Clean() {}
 
-  // A context without options (makeError is reached with a bare one) falls
-  // back to the schema defaults, so nothing leaves raw for want of a
+  // A context without a registry (makeError is reached with a bare one)
+  // falls back to the schema defaults, so nothing leaves raw for want of a
   // constructor.
   static Map<String, Object> cleanConfig(Context ctx) {
-    Object derived = null;
-    if (ctx != null && ctx.options != null) {
-      derived = Struct.getpath(ctx.options, List.of("__derived__", "clean"));
-    }
-    if (derived instanceof Map) {
-      return (Map<String, Object>) derived;
+    if (ctx != null && ctx.cleancfg != null) {
+      return ctx.cleancfg;
     }
     return makeCleanConfig(Helpers.toMapAny(Schema.optspec().get("clean")));
   }

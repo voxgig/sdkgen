@@ -18,7 +18,7 @@ class RbacFeature extends BaseFeature {
 
   _client
   _options = {}
-  _granted = {}
+  _granted = new Set()
 
 
   init(ctx, options) {
@@ -26,10 +26,10 @@ class RbacFeature extends BaseFeature {
     this._options = options || {}
     this.active = options.active
 
-    this._granted = {}
+    this._granted = new Set()
     const perms = this._options.permissions || []
     for (const p of perms) {
-      this._granted[p] = true
+      this._granted.add(p)
     }
   }
 
@@ -48,7 +48,7 @@ class RbacFeature extends BaseFeature {
       return
     }
 
-    if (this._granted['*'] || this._granted[required]) {
+    if (this._granted.has('*') || this._granted.has(required)) {
       this._track(ctx, required, true)
       return
     }

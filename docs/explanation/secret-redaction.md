@@ -130,7 +130,10 @@ The `debug` feature's `redact` option adds header names on top of
   under a sensitive key or was registered through `clean.values`. The
   registry covers what the SDK handles, not what the caller sends.
 - `client.options()` returns the raw credential. It is the documented way
-  to read it back, and it is neither a log nor an error.
+  to read it back, and it is neither a log nor an error. It returns only
+  what the caller set: the registry is held beside the options, so a
+  credential taken out of an option, by a broker that replaces the key with
+  a placeholder, is not readable there in any encoded form.
 - For an API that takes its key in the query string, the request carries
   the key and `entity.match()` does not. An entity records the query it sent
   as its match, less the parameter `prepareAuth` placed, whether the key

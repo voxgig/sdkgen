@@ -69,8 +69,7 @@ func makeOptionsUtil(_ ctx: Context) -> VMap {
     }
   }
   let cleancfg = makeCleanConfig(merge(.list(cleanlayers)))
-  let cleanctx = Context(
-    ["options": vm(("__derived__", .map(vm(("clean", .nat(cleancfg))))))], nil)
+  let cleanctx = Context(["cleancfg": cleancfg], nil)
   cleanAddOptions(cleanctx, cleanOmit(opts, ["clean"]))
   let cleanvalues = cleanSplitValues(gpath(cfgopts, "clean", "values"))
     + cleanSplitValues(gpath(opts, "clean", "values"))
@@ -176,12 +175,14 @@ func makeOptionsUtil(_ ctx: Context) -> VMap {
   }
 
   let derived = VMap()
-  derived.entries["clean"] = .nat(cleancfg)
   derived.entries["featureorder"] = .list(VList(featureorder))
   result.entries["__derived__"] = .map(derived)
 
+  // Beside the options, not in them: optionsMap hands them to callers.
+  ctx.cleancfg = cleancfg
+
   // Again over the merged result: the config's own defaults can carry one.
-  cleanAddOptions(Context(["options": result], nil), cleanOmit(result, ["clean", "__derived__"]))
+  cleanAddOptions(cleanctx, cleanOmit(result, ["clean", "__derived__"]))
 
   return result
 }

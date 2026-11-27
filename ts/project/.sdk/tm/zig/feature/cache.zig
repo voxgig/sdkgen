@@ -1,12 +1,6 @@
-// Response caching for safe (read) requests (mirrors go
-// feature/cache_feature.go / rust feature/cache.rs). Wraps the active
-// transport and serves a fresh cached snapshot instead of hitting the network
-// when the same method+URL was fetched within `ttl` ms (default: 5000). Only
-// successful (2xx) responses to cacheable methods (default: GET) are stored,
-// keyed by method+URL. The cache is bounded (`max` entries, default 256,
-// oldest evicted first) and every hit/miss/bypass is counted. Bodies are
-// snapshotted on capture so both the current caller and later hits can
-// re-read the JSON body repeatedly.
+// Response caching for safe (read) requests, per client (mirrors go
+// feature/cache_feature.go / rust feature/cache.rs): see the features
+// reference for the key, the write invalidation and the Cache-Control rules.
 
 const std = @import("std");
 const h = @import("../core/helpers.zig");
@@ -19,6 +13,7 @@ const Value = h.Value;
 const Context = types.Context;
 const Feature = types.Feature;
 const Fetcher = types.Fetcher;
+const HmacSha256 = std.crypto.auth.hmac.sha2.HmacSha256;
 
 pub const CacheSnapshot = struct {
     status: i64,
@@ -29,12 +24,14 @@ pub const CacheSnapshot = struct {
 
 pub const CacheEntry = struct {
     expiry: i64,
+    scope: []const u8,
     snapshot: *CacheSnapshot,
 };
 
 pub const CacheTrack = struct {
     store: std.StringHashMap(CacheEntry),
     order: std.ArrayList([]const u8),
+    secret: [32]u8 = undefined,
 
     // Activity tracking (mirrors the ts client._cache record).
     hit: i64 = 0,
@@ -74,6 +71,8 @@ pub const CacheFeature = struct {
         self.options = options;
         self.active = sup.fopt_bool(options, "active", false);
         if (!self.active) return;
+
+        h.IO().randomSecure(&self.track.secret) catch h.IO().random(&self.track.secret);
 
         const util = ctx.util();
         const w = h.A().create(WrapCtx) catch unreachable;
@@ -133,9 +132,16 @@ fn through(track: *CacheTrack, options: Value, ctx: *Context, url: []const u8, f
             break;
         }
     }
-    if (!cacheable) return inner.invoke(ctx, url, fetchdef);
+    if (!cacheable) {
+        if (std.mem.eql(u8, method, "GET") or std.mem.eql(u8, method, "HEAD")) {
+            return inner.invoke(ctx, url, fetchdef);
+        }
+        defer invalidate(track, url);
+        return inner.invoke(ctx, url, fetchdef);
+    }
 
-    const key = std.fmt.allocPrint(h.A(), "{s} {s}", .{ method, url }) catch method;
+    const hdigest = digest(&track.secret, h.getp(fetchdef, "headers"));
+    const key = std.fmt.allocPrint(h.A(), "{s} {s} {s}", .{ method, url, hdigest }) catch method;
     const now = sup.fopt_now(options);
 
     if (track.store.get(key)) |hit| {
@@ -150,9 +156,14 @@ fn through(track: *CacheTrack, options: Value, ctx: *Context, url: []const u8, f
         if (storable(res) and json(res)) {
             const snap = h.A().create(CacheSnapshot) catch unreachable;
             snap.* = snapshot(res);
-            const ttl = sup.fopt_int(options, "ttl", 5000);
+            const ttl = lifetime(snap.headers, sup.fopt_int(options, "ttl", 5000));
+            if (ttl <= 0) {
+                track.bypass += 1;
+                return replay(snap);
+            }
+            dropEntry(track, key);
             evict(track, options);
-            track.store.put(key, .{ .expiry = now + ttl, .snapshot = snap }) catch {};
+            track.store.put(key, .{ .expiry = now + ttl, .scope = urlScope(url), .snapshot = snap }) catch {};
             track.order.append(h.A(), key) catch {};
             track.miss += 1;
             return replay(snap);
@@ -163,6 +174,126 @@ fn through(track: *CacheTrack, options: Value, ctx: *Context, url: []const u8, f
         track.bypass += 1;
         return e;
     }
+}
+
+fn headerText(v: Value) ?[]const u8 {
+    return switch (v) {
+        .string => |t| t,
+        .integer => |n| std.fmt.allocPrint(h.A(), "{d}", .{n}) catch null,
+        .float => |f| if (f == @floor(f) and @abs(f) < 9.0e15)
+            std.fmt.allocPrint(h.A(), "{d}", .{@as(i64, @intFromFloat(f))}) catch null
+        else
+            std.fmt.allocPrint(h.A(), "{d}", .{f}) catch null,
+        .bool => |b| if (b) "true" else "false",
+        else => null,
+    };
+}
+
+const HeaderPair = struct { name: []const u8, value: []const u8 };
+
+fn pairLess(_: void, a: HeaderPair, b: HeaderPair) bool {
+    const order = std.mem.order(u8, a.name, b.name);
+    if (order != .eq) return order == .lt;
+    return std.mem.lessThan(u8, a.value, b.value);
+}
+
+fn digest(secret: *const [32]u8, headers: Value) []const u8 {
+    var pairs: std.ArrayList(HeaderPair) = .empty;
+    if (headers == .object) {
+        var it = headers.object.iterator();
+        while (it.next()) |kv| {
+            const text = headerText(kv.value_ptr.*) orelse continue;
+            pairs.append(h.A(), .{ .name = lowerAlloc(kv.key_ptr.*), .value = text }) catch {};
+        }
+    }
+    std.mem.sort(HeaderPair, pairs.items, {}, pairLess);
+    var mac = HmacSha256.init(secret);
+    for (pairs.items) |p| {
+        mac.update(p.name);
+        mac.update(":");
+        mac.update(p.value);
+        mac.update("\n");
+    }
+    var out: [HmacSha256.mac_length]u8 = undefined;
+    mac.final(&out);
+    const hex = std.fmt.bytesToHex(out, .lower);
+    return h.A().dupe(u8, &hex) catch "";
+}
+
+fn invalidate(track: *CacheTrack, url: []const u8) void {
+    const path = urlScope(url);
+    const collection = urlParent(path);
+    var dropped: std.ArrayList([]const u8) = .empty;
+    var it = track.store.iterator();
+    while (it.next()) |kv| {
+        const scope = kv.value_ptr.scope;
+        if (scopeUnder(scope, path) or std.mem.eql(u8, scope, collection)) {
+            dropped.append(h.A(), kv.key_ptr.*) catch {};
+        }
+    }
+    for (dropped.items) |key| dropEntry(track, key);
+}
+
+fn dropEntry(track: *CacheTrack, key: []const u8) void {
+    if (!track.store.remove(key)) return;
+    var i: usize = track.order.items.len;
+    while (i > 0) {
+        i -= 1;
+        if (std.mem.eql(u8, track.order.items[i], key)) _ = track.order.orderedRemove(i);
+    }
+}
+
+// The configured ttl capped by the response's Cache-Control; zero when the
+// response may not be stored.
+fn lifetime(headers: Value, ttl: i64) i64 {
+    var control: []const u8 = "";
+    if (headers == .object) {
+        var it = headers.object.iterator();
+        while (it.next()) |kv| {
+            if (std.ascii.eqlIgnoreCase(kv.key_ptr.*, "cache-control")) {
+                control = lowerAlloc(headerText(kv.value_ptr.*) orelse "");
+            }
+        }
+    }
+    var life = ttl;
+    var parts = std.mem.splitScalar(u8, control, ',');
+    while (parts.next()) |part| {
+        const directive = std.mem.trim(u8, part, " \t");
+        if (std.mem.eql(u8, directive, "no-store") or std.mem.eql(u8, directive, "private") or
+            std.mem.eql(u8, directive, "no-cache")) return 0;
+        if (std.mem.startsWith(u8, directive, "max-age")) {
+            const rest = std.mem.trim(u8, directive["max-age".len..], " \t");
+            if (rest.len == 0 or rest[0] != '=') continue;
+            const value = std.mem.trim(u8, std.mem.trim(u8, rest[1..], " \t"), "\"");
+            if (value.len == 0) continue;
+            var digits = true;
+            for (value) |c| digits = digits and std.ascii.isDigit(c);
+            if (!digits) continue;
+            const secs = std.fmt.parseInt(i64, value, 10) catch continue;
+            life = @min(life, secs *| 1000);
+        }
+    }
+    return life;
+}
+
+fn urlScope(url: []const u8) []const u8 {
+    var end = std.mem.indexOfAny(u8, url, "?#") orelse url.len;
+    while (end > 0 and url[end - 1] == '/') end -= 1;
+    return url[0..end];
+}
+
+fn urlParent(scope: []const u8) []const u8 {
+    var root: usize = 0;
+    if (std.mem.indexOf(u8, scope, "://")) |scheme| {
+        root = std.mem.indexOfScalarPos(u8, scope, scheme + 3, '/') orelse return scope;
+    }
+    const cut = std.mem.lastIndexOfScalar(u8, scope, '/') orelse 0;
+    return scope[0..@max(cut, root)];
+}
+
+fn scopeUnder(scope: []const u8, prefix: []const u8) bool {
+    if (std.mem.eql(u8, scope, prefix)) return true;
+    return scope.len > prefix.len and std.mem.startsWith(u8, scope, prefix) and scope[prefix.len] == '/';
 }
 
 // A body the transport could not read as JSON passes through, for the operation to report.

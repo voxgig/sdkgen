@@ -83,15 +83,12 @@ object Clean {
     )
   }
 
-  // A context without options (makeError accepts a bare one) still masks by
-  // the schema defaults.
+  // A context without a registry (makeError accepts a bare one) still masks
+  // by the schema defaults.
   private def cleanConfig(ctx: Context): CleanConfig = {
-    if (ctx != null && ctx.options != null) {
-      val derived = Helpers.toMapAny(ctx.options.get("__derived__"))
-      if (derived != null) derived.get("clean") match {
-        case c: CleanConfig => return c
-        case _ =>
-      }
+    if (ctx != null) ctx.cleancfg match {
+      case c: CleanConfig => return c
+      case _ =>
     }
     makeCleanConfig(Schema.optspec.get("clean"))
   }

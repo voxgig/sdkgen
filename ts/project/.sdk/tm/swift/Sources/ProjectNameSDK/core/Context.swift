@@ -24,6 +24,8 @@ public final class Context {
   public var config: VMap?
   public var entopts: VMap?
   public var options: VMap?
+  // The clean registry, beside the options rather than in them.
+  public var cleancfg: Utility.CleanConfig?
   public var opmap: [String: Operation] = [:]
   public var response: Response?
   public var result: Result?
@@ -79,6 +81,7 @@ public final class Context {
     // Options
     if let om = ctxProp(ctxmap, "options") as? VMap { options = om }
     if options == nil, let b = basectx { options = b.options }
+    cleancfg = (ctxProp(ctxmap, "cleancfg") as? Utility.CleanConfig) ?? basectx?.cleancfg
 
     // Entity
     if let ent = ctxProp(ctxmap, "entity") as? Entity { entity = ent }

@@ -22,6 +22,8 @@ class ProjectNameContext implements \JsonSerializable
     public ?array $config;
     public ?array $entopts;
     public ?array $options;
+    // The clean registry, beside the options rather than in them.
+    public ?\stdClass $cleancfg = null;
     public mixed $entity;
     public ?array $shared;
     public array $opmap;
@@ -77,6 +79,8 @@ class ProjectNameContext implements \JsonSerializable
 
         $o = ProjectNameHelpers::get_ctx_prop($ctxmap, 'options');
         $this->options = is_array($o) ? $o : ($basectx ? $basectx->options : null);
+        $cc = ProjectNameHelpers::get_ctx_prop($ctxmap, 'cleancfg');
+        $this->cleancfg = $cc instanceof \stdClass ? $cc : ($basectx ? $basectx->cleancfg : null);
 
         $e = ProjectNameHelpers::get_ctx_prop($ctxmap, 'entity');
         $this->entity = $e ?? ($basectx ? $basectx->entity : null);

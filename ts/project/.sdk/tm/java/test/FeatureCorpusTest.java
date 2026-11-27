@@ -203,9 +203,14 @@ public class FeatureCorpusTest {
 
   private static Object invoke(ProjectNameSDK client, Op op, Map<String, Object> ctrl)
       throws Exception {
+    return invoke(client, op, ctrl, new LinkedHashMap<String, Object>());
+  }
+
+  private static Object invoke(ProjectNameSDK client, Op op, Map<String, Object> ctrl,
+      Map<String, Object> args) throws Exception {
     Object ent = op.accessor.invoke(client, new Object[] {null});
     try {
-      return op.call.invoke(ent, new LinkedHashMap<String, Object>(), ctrl);
+      return op.call.invoke(ent, new LinkedHashMap<String, Object>(args), ctrl);
     }
     catch (java.lang.reflect.InvocationTargetException ite) {
       // Unwrap: a reflective call reports the SDK's error as its cause, and a
@@ -239,6 +244,92 @@ public class FeatureCorpusTest {
       }
     }
     return picked;
+  }
+
+  private static final List<String> READ_OPS = List.of("list", "load");
+  private static final List<String> WRITE_OPS = List.of("create", "update", "patch", "remove");
+
+  /** A read and a write of one entity (#READ, #WRITE), each driven as usableOps drives an op. */
+  private static Map<String, Op> usablePair() {
+    Map<String, Map<String, Op>> found = new LinkedHashMap<>();
+    for (Op cand : candidates(buildClient(Map.of()))) {
+      int dot = cand.key.indexOf('.');
+      String entity = cand.key.substring(0, dot);
+      String opname = cand.key.substring(dot + 1);
+      String role = READ_OPS.contains(opname) ? "read" : WRITE_OPS.contains(opname) ? "write" : null;
+      Map<String, Op> seen = found.computeIfAbsent(entity, (k) -> new LinkedHashMap<>());
+      if (null == role || seen.containsKey(role)) {
+        continue;
+      }
+      try {
+        invoke(buildClient(Map.of()), cand, new LinkedHashMap<>());
+      }
+      catch (Exception e) {
+        continue;
+      }
+      seen.put(role, cand);
+      if (seen.containsKey("read") && seen.containsKey("write")) {
+        return seen;
+      }
+    }
+    return null;
+  }
+
+  private static final Map<String, Object> ITEM_ARGS = Map.of("id", "corpus-item");
+
+  private static String entityOf(Op op) {
+    return op.key.substring(0, op.key.indexOf('.'));
+  }
+
+  /** A write of one entity (#ITEM) that completes when driven with ITEM_ARGS. */
+  private static Op usableItem(String entity) {
+    for (Op cand : candidates(buildClient(Map.of()))) {
+      String opname = cand.key.substring(cand.key.indexOf('.') + 1);
+      if (!entity.equals(entityOf(cand)) || !List.of("update", "patch", "remove").contains(opname)) {
+        continue;
+      }
+      try {
+        invoke(buildClient(Map.of()), cand, new LinkedHashMap<>(), ITEM_ARGS);
+      }
+      catch (Exception e) {
+        continue;
+      }
+      return cand;
+    }
+    return null;
+  }
+
+  /** One step: it may wait, may add request headers, and may pass `args` as the first argument. */
+  private static Object step(ProjectNameSDK client, Op op, Map<String, Object> step,
+      Map<String, Object> ctrl) throws Exception {
+    if (step.get("wait") instanceof Number) {
+      Thread.sleep(((Number) step.get("wait")).longValue());
+    }
+    Map<String, Object> args = step.get("args") instanceof Map
+        ? (Map<String, Object>) step.get("args") : new LinkedHashMap<>();
+    if (!(step.get("headers") instanceof Map)) {
+      return invoke(client, op, ctrl, args);
+    }
+    Map<String, Object> options = client.getRootCtx().options;
+    boolean had = options.containsKey("headers");
+    Object prior = options.get("headers");
+    Map<String, Object> merged = new LinkedHashMap<>();
+    if (prior instanceof Map) {
+      merged.putAll((Map<String, Object>) prior);
+    }
+    merged.putAll((Map<String, Object>) step.get("headers"));
+    options.put("headers", merged);
+    try {
+      return invoke(client, op, ctrl, args);
+    }
+    finally {
+      if (had) {
+        options.put("headers", prior);
+      }
+      else {
+        options.remove("headers");
+      }
+    }
   }
 
   /** Replace #OPn throughout a case, keys included. */
@@ -448,6 +539,23 @@ public class FeatureCorpusTest {
       for (Op o : ops) {
         byKey.put(o.key, o);
       }
+      Map<String, Op> pair = usablePair();
+      if (null != pair) {
+        for (Op o : pair.values()) {
+          byKey.put(o.key, o);
+        }
+      }
+      Op item = null == pair ? null : usableItem(entityOf(pair.get("read")));
+      if (null != item) {
+        byKey.put(item.key, item);
+      }
+      Op other = null;
+      for (Op o : null == pair ? List.<Op>of() : ops) {
+        if (!entityOf(o).equals(entityOf(pair.get("read")))) {
+          other = o;
+          break;
+        }
+      }
 
       int ran = 0;
       for (Object rawCase : cases) {
@@ -457,6 +565,27 @@ public class FeatureCorpusTest {
         if (need > ops.size()) {
           System.err.println(String.format(
               "skip \"%s\": needs %d operations, this SDK offers %d", rawName, need, ops.size()));
+          continue;
+        }
+
+        boolean paired = java.util.regex.Pattern.compile("#(READ|WRITE|ITEM|OTHER)\\b")
+            .matcher(String.valueOf(rawCase)).find();
+        if (paired && null == pair) {
+          System.err.println(String.format(
+              "skip \"%s\": needs a read and a write of one entity, this SDK offers none", rawName));
+          continue;
+        }
+
+        String lacking = null;
+        if (paired && null == item && String.valueOf(rawCase).matches("(?s).*#ITEM\\b.*")) {
+          lacking = "#ITEM";
+        }
+        else if (paired && null == other && String.valueOf(rawCase).matches("(?s).*#OTHER\\b.*")) {
+          lacking = "#OTHER";
+        }
+        if (null != lacking) {
+          System.err.println(String.format(
+              "skip \"%s\": needs %s, which this SDK cannot drive", rawName, lacking));
           continue;
         }
 
@@ -471,6 +600,16 @@ public class FeatureCorpusTest {
         Map<String, String> tokens = new LinkedHashMap<>();
         for (int i = 0; i < need; i++) {
           tokens.put("#OP" + (i + 1), ops.get(i).key);
+        }
+        if (paired) {
+          tokens.put("#READ", pair.get("read").key);
+          tokens.put("#WRITE", pair.get("write").key);
+          if (null != item) {
+            tokens.put("#ITEM", item.key);
+          }
+          if (null != other) {
+            tokens.put("#OTHER", other.key);
+          }
         }
         Map<String, Object> kase = (Map<String, Object>) resolve(rawCase, tokens);
         String label = String.valueOf(kase.get("name"));
@@ -492,7 +631,7 @@ public class FeatureCorpusTest {
             Object wanterr = step.get("err");
 
             try {
-              invoke(client, op, ctrl);
+              step(client, op, step, ctrl);
               if (null != wanterr) {
                 fail(label + ": " + step.get("op") + " was expected to fail, and did not");
               }

@@ -472,9 +472,10 @@ describe('clean', () => {
     // and is not changed by it.
     const util: any = makeSdk(SCENARIOS[0], sinks).utility()
     const cfgclean = { keys: 'zzsens', values: CANARY.config }
-    const built = util.makeOptions({ utility: util, config: { options: { clean: cfgclean } },
-      options: { clean: { values: CANARY.value } } })
-    const seeded = util.clean({ options: built }, 'config ' + CANARY.config + ' caller ' + CANARY.value)
+    const built: any = { utility: util, config: { options: { clean: cfgclean } },
+      options: { clean: { values: CANARY.value } } }
+    built.options = util.makeOptions(built)
+    const seeded = util.clean(built, 'config ' + CANARY.config + ' caller ' + CANARY.value)
     sinks.push({ name: 'config-clean', text: seeded })
 
     // A feature's name is not a field name: only the sensitive names inside
@@ -487,7 +488,7 @@ describe('clean', () => {
       rbac: { active: false, rules: { 'zztoken.load': 'PLAINRULE-k7j5h3g1' } },
       test: { active: false, entity: { zztoken: { ZZTOKEN01: { note: 'PLAINRECORD-t5r3e1w9' } } } },
     }, entity: { zztoken: { alias: { zzkey: 'PLAINALIAS-m2n4b6v8' } } } })
-    const fctx = { options: featured._options }
+    const fctx = featured._rootctx
 
     // The raw path returns its failure rather than throwing it, a
     // DOMException's included.
@@ -498,6 +499,13 @@ describe('clean', () => {
     const raw = await makeSdk(SCENARIOS[3], sinks).direct({ path: 'raw' })
     ok(false === raw.ok && null != raw.err, 'a transport failure should fail direct()')
     sinks.push(...forms('direct', raw.err))
+
+    // The clean registry holds every credential in plain form, and is no option.
+    const held = construct({ apikey: CANARY.apikey }).options()
+    const optsjson = JSON.stringify(held)
+    equal(held.apikey, CANARY.apikey)
+    deepStrictEqual(leaks(optsjson.replace(JSON.stringify(CANARY.apikey), '')), [],
+      'options() carries a credential beyond the option the caller set: ' + optsjson)
 
     const leaked = sinks
       .map((s) => ({ name: s.name, found: leaks(s.text) }))
@@ -532,7 +540,7 @@ describe('clean', () => {
     equal(header(notfound.spec.headers, 'x-custom-token'), MASK)
 
     equal(seeded, 'config ' + MASK + ' caller ' + MASK)
-    deepStrictEqual(util.clean({ options: built }, { my_zzsens: 'x', other: 'y' }), { my_zzsens: MASK, other: 'y' })
+    deepStrictEqual(util.clean(built, { my_zzsens: 'x', other: 'y' }), { my_zzsens: MASK, other: 'y' })
     deepStrictEqual(cfgclean, { keys: 'zzsens', values: CANARY.config })
 
     equal(featured.utility().clean(fctx, 'kind PLAINSETTING-q8w2e4r6'), 'kind PLAINSETTING-q8w2e4r6')

@@ -501,6 +501,105 @@ static void test_cache_inactive_does_not_wrap(void) {
   CHECK_INT_EQ(rec_count(calls), 2, "cache inactive: 2 calls");
 }
 
+uint64_t feature_cache_siphash24(const uint8_t key[16], const uint8_t* in, size_t len);
+
+// The reference vectors of the SipHash paper: key 00..0f, message 00..len-1.
+static void test_cache_siphash_matches_the_reference_vectors(void) {
+  if (!fh_present("cache")) return;
+  static const struct { size_t len; uint64_t want; } vectors[] = {
+    {0, 0x726fdb47dd0e0e31ULL},
+    {1, 0x74f839c593dc67fdULL},
+    {2, 0x0d6c8009d9a94f5aULL},
+    {3, 0x85676696d7fb7e2dULL},
+    {4, 0xcf2794e0277187b7ULL},
+    {5, 0x18765564cd99a68dULL},
+    {6, 0xcbc9466e58fee3ceULL},
+    {7, 0xab0200f58b01d137ULL},
+    {8, 0x93f5f5799a932462ULL},
+    {15, 0xa129ca6149be45e5ULL},
+    {16, 0x3f2acc7f57c29bdbULL},
+    {63, 0x958a324ceb064572ULL}
+  };
+  uint8_t key[16], msg[64];
+  for (int i = 0; i < 16; i++) key[i] = (uint8_t)i;
+  for (int i = 0; i < 64; i++) msg[i] = (uint8_t)i;
+  for (size_t i = 0; i < sizeof(vectors) / sizeof(vectors[0]); i++) {
+    CHECK(feature_cache_siphash24(key, msg, vectors[i].len) == vectors[i].want, "cache: siphash reference vector");
+  }
+}
+
+static voxgig_value* rep_control(void* ud, int64_t n, voxgig_value* fd, Context* ctx, PNError** e) {
+  (void)n; (void)fd; (void)ctx; *e = NULL;
+  return fh_response(200, cmap(1, "ok", v_bool(true)),
+                     cmap(1, "Cache-Control", v_str((const char*)ud)));
+}
+
+static FhOpSpec op_load_headers(const char* path, voxgig_value* headers) {
+  FhOpSpec o = op_load_path(path); o.headers = headers; return o;
+}
+
+static void test_cache_keys_on_request_headers(void) {
+  if (!fh_present("cache")) return;
+  voxgig_value* calls;
+  Fetcher* srv = fh_recorder(NULL, NULL, &calls);
+  Feature* f = feature_cache_new();
+  FhFeat feats[] = {{f, cmap(1, "ttl", v_num(10000))}};
+  FhHarness h = fh_make(srv, feats, 1);
+  fh_op(&h, op_load_headers("/w/1", cmap(1, "x-tenant", v_str("tenant-a"))));
+  fh_op(&h, op_load_headers("/w/1", cmap(1, "X-Tenant", v_str("tenant-b"))));
+  CHECK_INT_EQ(rec_count(calls), 2, "cache tenant header: 2 calls");
+  fh_op(&h, op_load_headers("/w/1", cmap(1, "x-tenant", v_str("tenant-b"))));
+  CHECK_INT_EQ(rec_count(calls), 2, "cache same headers: still 2 calls");
+}
+
+static void test_cache_a_write_drops_its_collection(void) {
+  if (!fh_present("cache")) return;
+  voxgig_value* calls;
+  Fetcher* srv = fh_recorder(NULL, NULL, &calls);
+  Feature* f = feature_cache_new();
+  FhFeat feats[] = {{f, cmap(1, "ttl", v_num(10000))}};
+  FhHarness h = fh_make(srv, feats, 1);
+  const char* paths[] = {"/w/1", "/w", "/w/1/part", "/other/1", "/w/2"};
+  for (int i = 0; i < 5; i++) fh_op(&h, op_load_path(paths[i]));
+  FhOpSpec w; memset(&w, 0, sizeof(w)); w.op = "update"; w.method = "PUT"; w.path = "/w/1";
+  fh_op(&h, w);
+  for (int i = 0; i < 5; i++) fh_op(&h, op_load_path(paths[i]));
+  CHECK_INT_EQ(rec_count(calls), 9, "cache write: collection refetched");
+  CHECK_INT_EQ(fh_track_int(f, "hit"), 2, "cache write: other entity cached");
+}
+
+static void test_cache_control_prevents_storing(void) {
+  if (!fh_present("cache")) return;
+  const char* controls[] = {"no-store", "private", "No-Cache", "max-age=60, private"};
+  for (int i = 0; i < 4; i++) {
+    voxgig_value* calls;
+    Fetcher* srv = fh_recorder(rep_control, (void*)controls[i], &calls);
+    Feature* f = feature_cache_new();
+    FhFeat feats[] = {{f, cmap(1, "ttl", v_num(10000))}};
+    FhHarness h = fh_make(srv, feats, 1);
+    fh_op(&h, op_load_path("/w"));
+    fh_op(&h, op_load_path("/w"));
+    CHECK_INT_EQ(rec_count(calls), 2, controls[i]);
+  }
+}
+
+static void test_cache_max_age_caps_the_ttl(void) {
+  if (!fh_present("cache")) return;
+  FhClock clock = fh_clock_new();
+  voxgig_value* calls;
+  Fetcher* srv = fh_recorder(rep_control, (void*)"max-age=1", &calls);
+  Feature* f = feature_cache_new();
+  FhFeat feats[] = {{f, cmap(2, "ttl", v_num(10000), "now", fh_now_fn(&clock))}};
+  FhHarness h = fh_make(srv, feats, 1);
+  fh_op(&h, op_load_path("/w"));
+  fh_advance(&clock, 500);
+  fh_op(&h, op_load_path("/w"));
+  CHECK_INT_EQ(rec_count(calls), 1, "cache max-age: a hit inside max-age");
+  fh_advance(&clock, 600);
+  fh_op(&h, op_load_path("/w"));
+  CHECK_INT_EQ(rec_count(calls), 2, "cache max-age: expired before the ttl");
+}
+
 // =============================================================================
 // idempotency
 // =============================================================================
@@ -1216,6 +1315,11 @@ int main(void) {
   RUN(test_cache_refetches_after_ttl);
   RUN(test_cache_evicts_oldest_past_max);
   RUN(test_cache_inactive_does_not_wrap);
+  RUN(test_cache_keys_on_request_headers);
+  RUN(test_cache_a_write_drops_its_collection);
+  RUN(test_cache_control_prevents_storing);
+  RUN(test_cache_max_age_caps_the_ttl);
+  RUN(test_cache_siphash_matches_the_reference_vectors);
   // idempotency
   RUN(test_idempotency_adds_key_to_mutating_ops);
   RUN(test_idempotency_adds_key_by_http_method);

@@ -125,8 +125,24 @@ class FeatureCorpusTest < Minitest::Test
     out.sort_by { |o| [safe.fetch(o["op"], 2), o["key"]] }
   end
 
-  def invoke(client, op, ctrl)
-    client.public_send(op["accessor"]).public_send(op["op"], {}, ctrl)
+  def invoke(client, op, ctrl, args = nil)
+    client.public_send(op["accessor"]).public_send(op["op"], (args || {}).dup, ctrl)
+  end
+
+  ITEM_ARGS = { "id" => "corpus-item" }.freeze
+
+  # A write of one entity (#ITEM) that completes when driven with ITEM_ARGS.
+  def usable_item(accessor)
+    candidates(build_client({})).each do |cand|
+      next unless cand["accessor"] == accessor && %w[update patch remove].include?(cand["op"])
+      begin
+        invoke(build_client({}), cand, {}, ITEM_ARGS)
+      rescue StandardError
+        next
+      end
+      return cand
+    end
+    nil
   end
 
   # Pick operations by DRIVING them: an op is usable when it completes
@@ -145,6 +161,48 @@ class FeatureCorpusTest < Minitest::Test
       break if picked.length >= want
     end
     picked
+  end
+
+  READ_OPS = ["list", "load"].freeze
+  WRITE_OPS = ["create", "update", "patch", "remove"].freeze
+
+  # A read and a write of one entity (#READ, #WRITE), each driven as
+  # usable_ops drives an op.
+  def usable_pair
+    found = {}
+    candidates(build_client({})).each do |cand|
+      role = READ_OPS.include?(cand["op"]) ? "read" : (WRITE_OPS.include?(cand["op"]) ? "write" : nil)
+      seen = (found[cand["accessor"]] ||= {})
+      next if role.nil? || seen.key?(role)
+      begin
+        invoke(build_client({}), cand, {})
+      rescue StandardError
+        next
+      end
+      seen[role] = cand
+      return seen if seen.key?("read") && seen.key?("write")
+    end
+    nil
+  end
+
+  # One step: it may wait before its call, may add request headers for its
+  # call, and may pass `args` as the operation's first argument.
+  def step_call(client, op, step, ctrl)
+    sleep(step["wait"] / 1000.0) unless step["wait"].nil?
+    return invoke(client, op, ctrl, step["args"]) if step["headers"].nil?
+    options = client.options
+    had = options.key?("headers")
+    prior = options["headers"]
+    options["headers"] = (prior || {}).merge(step["headers"])
+    begin
+      invoke(client, op, ctrl, step["args"])
+    ensure
+      if had
+        options["headers"] = prior
+      else
+        options.delete("headers")
+      end
+    end
   end
 
   # Replace #OPn throughout a case, keys included.
@@ -286,12 +344,30 @@ class FeatureCorpusTest < Minitest::Test
 
       ops = usable_ops(2)
       by_key = ops.each_with_object({}) { |o, h| h[o["key"]] = o }
+      pair = usable_pair
+      pair&.each_value { |o| by_key[o["key"]] = o }
+      item = pair && usable_item(pair["read"]["accessor"])
+      by_key[item["key"]] = item unless item.nil?
+      other = pair && ops.find { |o| o["accessor"] != pair["read"]["accessor"] }
 
       ran = 0
       cases.each do |raw|
         need = tokens_used(raw)
         if need > ops.length
           puts "skip \"#{raw['name']}\": needs #{need} operations, this SDK offers #{ops.length}"
+          next
+        end
+
+        paired = JSON.generate(raw).match?(/#(READ|WRITE|ITEM|OTHER)\b/)
+        if paired && pair.nil?
+          puts "skip \"#{raw['name']}\": needs a read and a write of one entity, this SDK offers none"
+          next
+        end
+        lacking = [["#ITEM", item], ["#OTHER", other]].find do |tok, op|
+          paired && op.nil? && JSON.generate(raw).match?(/#{tok}\b/)
+        end
+        unless lacking.nil?
+          puts "skip \"#{raw['name']}\": needs #{lacking[0]}, which this SDK cannot drive"
           next
         end
 
@@ -304,6 +380,12 @@ class FeatureCorpusTest < Minitest::Test
 
         tokens = {}
         need.times { |i| tokens["#OP#{i + 1}"] = ops[i]["key"] }
+        if paired
+          tokens["#READ"] = pair["read"]["key"]
+          tokens["#WRITE"] = pair["write"]["key"]
+          tokens["#ITEM"] = item["key"] unless item.nil?
+          tokens["#OTHER"] = other["key"] unless other.nil?
+        end
         kase = resolve(raw, tokens)
         label = kase["name"].to_s
         ran += 1
@@ -319,7 +401,7 @@ class FeatureCorpusTest < Minitest::Test
             wanterr = step["err"]
 
             begin
-              invoke(client, op, ctrl)
+              step_call(client, op, step, ctrl)
               assert_nil wanterr, "#{label}: #{step['op']} was expected to fail, and did not"
             rescue Minitest::Assertion
               raise

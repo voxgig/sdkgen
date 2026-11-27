@@ -170,8 +170,8 @@ defmodule ProjectName.Utility do
     end
   end
 
-  # The derived clean block: a struct node so it lives in options.__derived__
-  # and its `values` stays MUTABLE after make_options - features register
+  # The clean registry: a struct node held on the context as `cleancfg`, whose
+  # `values` stays MUTABLE after make_options - features register
   # what they resolve later.
   def make_clean_config(cleanopts) do
     o = fn k -> if S.ismap(cleanopts), do: S.getprop(cleanopts, k), else: nil end
@@ -187,14 +187,13 @@ defmodule ProjectName.Utility do
     ])
   end
 
-  # A context without options (make_error accepts a bare one) still masks by
-  # the schema defaults.
+  # A context without a registry (make_error accepts a bare one) still masks
+  # by the schema defaults.
   defp clean_config(ctx) do
-    options = if S.ismap(ctx), do: S.getprop(ctx, "options"), else: nil
-    derived = if S.ismap(options), do: S.getpath(options, "__derived__.clean"), else: nil
+    cfg = if S.ismap(ctx), do: S.getprop(ctx, "cleancfg"), else: nil
 
-    if S.ismap(derived) do
-      derived
+    if S.ismap(cfg) do
+      cfg
     else
       make_clean_config(S.getprop(ProjectName.Schema.optspec(), "clean"))
     end
@@ -781,7 +780,7 @@ defmodule ProjectName.Utility do
     end)
 
     cleancfg = make_clean_config(cleanraw)
-    cleanctx = S.jm(["options", S.jm(["__derived__", S.jm(["clean", cleancfg])])])
+    cleanctx = S.jm(["cleancfg", cleancfg])
 
     clean_add_sensitive(cleanctx, secret_scan(opts0, ["clean"]))
 
@@ -907,11 +906,14 @@ defmodule ProjectName.Utility do
           list
       end
 
-    derived = S.jm(["clean", cleancfg, "featureorder", S.jt(feature_order)])
+    derived = S.jm(["featureorder", S.jt(feature_order)])
     S.setprop(opts, "__derived__", derived)
 
+    # Beside the options, not in them: options_map hands them to callers.
+    S.setprop(ctx, "cleancfg", cleancfg)
+
     # Again over the merged result: the config's own defaults can carry one.
-    clean_add_sensitive(S.jm(["options", opts]), secret_scan(opts, ["clean", "__derived__"]))
+    clean_add_sensitive(cleanctx, secret_scan(opts, ["clean", "__derived__"]))
 
     opts
   end
@@ -2780,7 +2782,11 @@ defmodule ProjectName.Utility do
     # A 3xx rides back as a normal response: follow_redirects decides the
     # next request, and a `redirect: "manual"` annotation (set by the station
     # feature when a hosts egress policy is active) makes the 3xx the answer.
-    case :httpc.request(method, request, [autoredirect: false], body_format: :binary) do
+    # A bound in milliseconds, for a caller beneath the timeout feature.
+    bound = S.getprop(fetchdef, "timeout")
+    httpopts = [autoredirect: false] ++ if is_number(bound) and bound > 0, do: [timeout: trunc(bound)], else: []
+
+    case :httpc.request(method, request, httpopts, body_format: :binary) do
       {:ok, {{_v, status, _reason}, resp_headers, resp_body}} ->
         rh =
           Enum.reduce(resp_headers, S.jm([]), fn {k, v}, acc ->

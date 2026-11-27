@@ -227,6 +227,9 @@ let make ?(plugins : Defs.definition list = [])
    * where it places a credential, and Basic only where it composes one. *)
   let declared = ref false in
   let basic = ref false in
+  (* The transport's refusal of the last purchase, which the gate answers in
+   * place of a resolution error. *)
+  let refused : sdk_error option ref = ref None in
 
   let refuse (msg : string) =
     (match !initerr with None -> initerr := Some msg | Some _ -> ()) in
@@ -310,17 +313,25 @@ let make ?(plugins : Defs.definition list = [])
         ("body", Str (jsonify (jo [(x.xrequest, Str !refresh)])));
         (* Never followed by the client: a redirect would carry the refresh token on. *)
         ("redirect", Str "manual")] in
+      let sysfetch = getpath_s opts "system.fetch" in
       let fetch =
-        match getpath_s opts "system.fetch" with
+        match sysfetch with
         | Func _ as sf -> Some (fun url fd -> call_vfn sf (ja [Str url; fd]))
         | _ -> transport in
-      match fetch with
-      | None ->
+      (* Not fetcher_util, as every other target does: the core bundles no
+       * client, so only its GET-only guard precedes the vendored one. *)
+      refused := (match sysfetch, !client with
+        | Func _, _ -> None
+        | _, Some { cl_rootctx = Some rctx; _ } -> Sdk_runtime.getonly_refusal rctx url fetchdef
+        | _ -> None);
+      match !refused, fetch with
+      | Some e, _ -> Error e.err_msg
+      | None, None ->
         Error ("secrets: the token exchange has no HTTP transport: this SDK's core bundles "
                ^ "none and no secrets plugin group needing one is active, so the vendored "
                ^ "HTTP client is not compiled; supply options.system.fetch or activate a "
                ^ "plugin group")
-      | Some fetch ->
+      | None, Some fetch ->
         (* By option alone, and only while the exchange stays on its own origin. *)
         let rec ask at hops =
           let res = fetch at fetchdef in
@@ -426,7 +437,7 @@ let make ?(plugins : Defs.definition list = [])
           let current = !cred in
           let token =
             if "" <> current && current <> used then Some current
-            else (match buy x with Ok t -> Some t | Error _ -> None) in
+            else (match buy x with Ok t -> Some t | Error _ -> refused := None; None) in
           match token with
           (* The purchase failed: answer with the API's own refusal rather
            * than this one - the refusal is the more useful of the two. *)
@@ -451,7 +462,11 @@ let make ?(plugins : Defs.definition list = [])
       (match resolve () with
        | Error msg ->
          bump_num (bucket ()) "refusals" 1.;
-         (Noval, Some (ctx_make_error fctx "secrets_provider" msg))
+         let blocked = !refused in
+         refused := None;
+         (Noval, Some (match blocked with
+            | Some e -> e
+            | None -> ctx_make_error fctx "secrets_provider" msg))
        | Ok () ->
          if "" <> !cred then reauth fetchdef !cred;
          (match !exchange with

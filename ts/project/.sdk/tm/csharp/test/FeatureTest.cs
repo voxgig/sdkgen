@@ -573,6 +573,82 @@ public class FeatureCacheTest
     }
 
     [Fact]
+    public void KeysOnRequestHeaders()
+    {
+        if (Fh.SkipWithout("cache")) return;
+        var rec = new FhRecorder();
+        var h = Fh.Make(rec.Fetch, (new CacheFeature(), new Dictionary<string, object?> { ["ttl"] = 10000 }));
+        h.Op(new FhOpSpec { Op = "load", Path = "/w/1", Headers = new() { ["x-tenant"] = "tenant-a" } });
+        h.Op(new FhOpSpec { Op = "load", Path = "/w/1", Headers = new() { ["X-Tenant"] = "tenant-b" } });
+        Assert.Equal(2, rec.Calls.Count);
+        h.Op(new FhOpSpec { Op = "load", Path = "/w/1", Headers = new() { ["x-tenant"] = "tenant-b" } });
+        Assert.Equal(2, rec.Calls.Count);
+    }
+
+    [Fact]
+    public void AWriteDropsItsCollection()
+    {
+        if (Fh.SkipWithout("cache")) return;
+        var rec = new FhRecorder();
+        var f = new CacheFeature();
+        var h = Fh.Make(rec.Fetch, (f, new Dictionary<string, object?> { ["ttl"] = 10000 }));
+        var paths = new[] { "/w/1", "/w", "/w/1/part", "/other/1", "/w/2" };
+        foreach (var p in paths)
+        {
+            h.Op(new FhOpSpec { Op = "load", Path = p });
+        }
+        h.Op(new FhOpSpec { Op = "update", Method = "PUT", Path = "/w/1" });
+        foreach (var p in paths)
+        {
+            h.Op(new FhOpSpec { Op = "load", Path = p });
+        }
+        Assert.Equal(9, rec.Calls.Count);
+        Assert.Equal(2, f.Hit);
+    }
+
+    [Fact]
+    public void CacheControlPreventsStoring()
+    {
+        if (Fh.SkipWithout("cache")) return;
+        foreach (var control in new[] { "no-store", "private", "No-Cache", "max-age=60, private" })
+        {
+            var rec = new FhRecorder
+            {
+                Reply = (_, _) => Fh.Response(200, new Dictionary<string, object?> { ["ok"] = true },
+                    new Dictionary<string, object?> { ["Cache-Control"] = control }),
+            };
+            var h = Fh.Make(rec.Fetch, (new CacheFeature(), new Dictionary<string, object?> { ["ttl"] = 10000 }));
+            h.Op(new FhOpSpec { Op = "load", Path = "/w" });
+            h.Op(new FhOpSpec { Op = "load", Path = "/w" });
+            Assert.True(2 == rec.Calls.Count, control + " was stored");
+        }
+    }
+
+    [Fact]
+    public void MaxAgeCapsTheTtl()
+    {
+        if (Fh.SkipWithout("cache")) return;
+        var clock = new FhClock();
+        var rec = new FhRecorder
+        {
+            Reply = (_, _) => Fh.Response(200, new Dictionary<string, object?> { ["ok"] = true },
+                new Dictionary<string, object?> { ["cache-control"] = "max-age=1" }),
+        };
+        var h = Fh.Make(rec.Fetch, (new CacheFeature(), new Dictionary<string, object?>
+        {
+            ["ttl"] = 10000,
+            ["now"] = (Func<long>)clock.Now,
+        }));
+        h.Op(new FhOpSpec { Op = "load", Path = "/w" });
+        clock.Advance(500);
+        h.Op(new FhOpSpec { Op = "load", Path = "/w" });
+        Assert.Single(rec.Calls);
+        clock.Advance(600);
+        h.Op(new FhOpSpec { Op = "load", Path = "/w" });
+        Assert.Equal(2, rec.Calls.Count);
+    }
+
+    [Fact]
     public void InactiveDoesNotWrap()
     {
         if (Fh.SkipWithout("cache")) return;

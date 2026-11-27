@@ -643,6 +643,51 @@ if (has_feature('cache')) {
     $h->op('path' => '/x');
     is(scalar @$calls, 2, 'cache inactive does not wrap');
   }
+
+  {
+    my ($server, $calls) = recording_server();
+    my $h = harness([fspec('cache', 'ttl' => 10000)], server => $server);
+    $h->op('path' => '/w/1', 'headers' => { 'x-tenant' => 'tenant-a' });
+    $h->op('path' => '/w/1', 'headers' => { 'X-Tenant' => 'tenant-b' });
+    is(scalar @$calls, 2, 'cache keys on the request headers');
+    $h->op('path' => '/w/1', 'headers' => { 'x-tenant' => 'tenant-b' });
+    is(scalar @$calls, 2, 'cache shares an entry between the same headers');
+  }
+
+  {
+    my ($server, $calls) = recording_server();
+    my $h = harness([fspec('cache', 'ttl' => 10000)], server => $server);
+    my @paths = ('/w/1', '/w', '/w/1/part', '/other/1', '/w/2');
+    $h->op('path' => $_) for @paths;
+    $h->op('opname' => 'update', 'method' => 'PUT', 'path' => '/w/1');
+    $h->op('path' => $_) for @paths;
+    is(scalar @$calls, 9, 'cache write drops its collection');
+    is($h->track('_cache')->{hit}, 2, 'cache write keeps another entity');
+  }
+
+  for my $control ('no-store', 'private', 'No-Cache', 'max-age=60, private') {
+    my ($server, $calls) = recording_server(sub {
+      (make_response(200, { 'ok' => 1 }, { 'Cache-Control' => $control }), undef) });
+    my $h = harness([fspec('cache', 'ttl' => 10000)], server => $server);
+    $h->op('path' => '/w');
+    $h->op('path' => '/w');
+    is(scalar @$calls, 2, "cache does not store $control");
+  }
+
+  {
+    my $clock = HarnessClock->new;
+    my ($server, $calls) = recording_server(sub {
+      (make_response(200, { 'ok' => 1 }, { 'cache-control' => 'max-age=1' }), undef) });
+    my $h = harness([fspec('cache', 'ttl' => 10000, 'now' => $clock->now)],
+      server => $server);
+    $h->op('path' => '/w');
+    $clock->advance(500);
+    $h->op('path' => '/w');
+    is(scalar @$calls, 1, 'cache serves inside max-age');
+    $clock->advance(600);
+    $h->op('path' => '/w');
+    is(scalar @$calls, 2, 'cache max-age caps the ttl');
+  }
 }
 else { note('feature "cache" not present in this SDK') }
 
@@ -882,6 +927,27 @@ if (has_feature('audit')) {
 }
 else { note('feature "audit" not present in this SDK') }
 
+
+# === per-call state ===
+
+{
+  my @names = grep { has_feature($_) } qw(audit debug telemetry metrics cost);
+  if (has_feature('netsim') && @names) {
+    my $h = harness([fspec('netsim', 'failEvery' => 2, 'failStatus' => 500),
+      map { fspec($_) } @names]);
+    $h->op('path' => "/w/$_") for 1 .. 20;
+    for my $name (@names) {
+      my $f = $h->feature($name);
+      for my $table (qw(seen entries spans starts pending)) {
+        next unless ref($f->{$table}) eq 'HASH';
+        is(scalar(keys %{ $f->{$table} }), 0,
+          "$name $table holds no call after 20 calls");
+      }
+    }
+    is(scalar @{ $h->track('_audit')->{records} }, 20, 'audit records every one of 20 calls')
+      if grep { 'audit' eq $_ } @names;
+  }
+}
 
 # === one call, one id ===
 

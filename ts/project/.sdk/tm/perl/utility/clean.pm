@@ -69,16 +69,14 @@ sub count {
   return $n < 0 ? $dflt : $n;
 }
 
-# The derived block make_options builds; a context without options
-# (make_error is reached with a bare one) falls back to the schema
-# defaults, so nothing leaves raw for want of a constructor. A plain hash
-# stands in for a context before one exists (make_options).
+# The registry make_options builds; a context without one (make_error is
+# reached with a bare one) falls back to the schema defaults, so nothing
+# leaves raw for want of a constructor. A plain hash stands in for a context
+# before one exists (make_options).
 sub config {
   my ($ctx) = @_;
-  my $opts = (defined $ctx && ref $ctx && (Scalar::Util::reftype($ctx) // '') eq 'HASH')
-    ? $ctx->{options} : undef;
-  my $derived = Voxgig::Struct::ismap($opts) ? $opts->{__derived__} : undef;
-  my $cfg = Voxgig::Struct::ismap($derived) ? $derived->{clean} : undef;
+  my $cfg = (defined $ctx && ref $ctx && (Scalar::Util::reftype($ctx) // '') eq 'HASH')
+    ? $ctx->{cleancfg} : undef;
   return $cfg if Voxgig::Struct::ismap($cfg) && Voxgig::Struct::islist($cfg->{values});
   return make_config(ProjectNameSchema::optspec()->{clean});
 }

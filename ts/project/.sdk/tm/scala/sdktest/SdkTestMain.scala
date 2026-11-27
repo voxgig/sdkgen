@@ -428,6 +428,34 @@ object SdkTestMain {
         (sent.get(1).get("headers") eq b.ctx.response.headers),
         "the cache handed on a copy it had read")
       eqI("cache.notJson.bypass", 2, f.bypass) }
+    { val rec = new FhRecorder()
+      val h = fhMake((c, u, fd) => rec.fetch(c, u, fd), fhF(new CacheFeature(), om("ttl" -> I(10000))))
+      h.op(fhOp("load").withPath("/w/1").withHeaders(om("x-tenant" -> "tenant-a")))
+      h.op(fhOp("load").withPath("/w/1").withHeaders(om("X-Tenant" -> "tenant-b")))
+      eqI("cache.tenantHeader", 2, rec.calls.size())
+      h.op(fhOp("load").withPath("/w/1").withHeaders(om("x-tenant" -> "tenant-b")))
+      eqI("cache.sameHeaders", 2, rec.calls.size()) }
+    { val rec = new FhRecorder(); val f = new CacheFeature()
+      val h = fhMake((c, u, fd) => rec.fetch(c, u, fd), fhF(f, om("ttl" -> I(10000))))
+      val paths = Seq("/w/1", "/w", "/w/1/part", "/other/1", "/w/2")
+      paths.foreach(p => h.op(fhOp("load").withPath(p)))
+      h.op(fhOp("update").withMethod("PUT").withPath("/w/1"))
+      paths.foreach(p => h.op(fhOp("load").withPath(p)))
+      eqI("cache.writeDrops", 9, rec.calls.size()); eqI("cache.writeKeepsOther", 2, f.hit) }
+    for (control <- Seq("no-store", "private", "No-Cache", "max-age=60, private")) {
+      val rec = new FhRecorder()
+      rec.reply = (n, fd) => fhResponse(200, om("ok" -> B(true)), om("Cache-Control" -> control))
+      val h = fhMake((c, u, fd) => rec.fetch(c, u, fd), fhF(new CacheFeature(), om("ttl" -> I(10000))))
+      h.op(fhOp("load").withPath("/w")); h.op(fhOp("load").withPath("/w"))
+      eqI("cache.unstored " + control, 2, rec.calls.size())
+    }
+    { val clk = new FhClock(); val rec = new FhRecorder()
+      rec.reply = (n, fd) => fhResponse(200, om("ok" -> B(true)), om("cache-control" -> "max-age=1"))
+      val h = fhMake((c, u, fd) => rec.fetch(c, u, fd), fhF(new CacheFeature(), om("ttl" -> I(10000), "now" -> f0(clk.nowFn))))
+      h.op(fhOp("load").withPath("/w")); clk.advance(500); h.op(fhOp("load").withPath("/w"))
+      eqI("cache.insideMaxAge", 1, rec.calls.size())
+      clk.advance(600); h.op(fhOp("load").withPath("/w"))
+      eqI("cache.maxAge", 2, rec.calls.size()) }
   }
 
   private def testIdempotency(): Unit = {

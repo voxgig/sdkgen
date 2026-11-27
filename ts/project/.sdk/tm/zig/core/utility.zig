@@ -179,9 +179,9 @@ pub const Utility = struct {
 
 // Everything that leaves the pipeline passes through clean; inside it data
 // stays raw, so a hook can still read the header it must add to. The zig
-// port of tm/ts/src/utility/CleanUtility.ts. The derived clean block is a
-// Value map (`options.__derived__.clean`) whose `values` list is MUTABLE:
-// features register secrets after make_options.
+// port of tm/ts/src/utility/CleanUtility.ts. The clean registry is a Value
+// map held on the context beside the options (`ctx.cleancfg`), whose
+// `values` list is MUTABLE: features register secrets after make_options.
 
 const CLEAN_MAXDEPTH: usize = 32;
 const CLEAN_CIRCULAR = "[circular]";
@@ -279,11 +279,11 @@ pub fn clean_splitvalues(values: Value) [][]const u8 {
     return out.toOwnedSlice(h.A()) catch &.{};
 }
 
-// A context without options (make_error accepts a bare one) still masks by
-// the schema defaults.
+// A context without a registry (make_error accepts a bare one) still masks
+// by the schema defaults.
 fn clean_config(ctx: *Context) Value {
-    const derived = h.getpath(&.{ "__derived__", "clean" }, ctx.options);
-    if (derived == .object and h.getp(derived, "values") == .array) return derived;
+    const cfg = ctx.cleancfg;
+    if (cfg == .object and h.getp(cfg, "values") == .array) return cfg;
     return make_clean_config(h.getp(schema.shared_optspec(), "clean"));
 }
 
@@ -938,9 +938,11 @@ pub fn make_options_util(ctx: *Context) E!Value {
     }
 
     h.setp(opts, "__derived__", h.jo(&.{
-        .{ "clean", cleancfg },
         .{ "featureorder", feature_order },
     }));
+
+    // Beside the options, not in them: options_map hands them to callers.
+    ctx.cleancfg = cleancfg;
 
     // Again over the merged result: the config's own defaults can carry one.
     clean_add_sensitive_cfg(cleancfg, mo_without(opts, &.{ "clean", "__derived__" }));
@@ -2430,7 +2432,7 @@ pub fn fetcher_util(ctx: *Context, fullurl: []const u8, fetchdef: Value) E!Value
 
 // A GET-only live run refuses any other method before it is sent. The error
 // names the path alone: the query can carry a credential.
-fn getonly_refusal(fullurl: []const u8, fetchdef: Value) ?[]const u8 {
+pub fn getonly_refusal(fullurl: []const u8, fetchdef: Value) ?[]const u8 {
     const environ = mem.threaded().environ.process_environ;
     const flag = environ.getAlloc(h.A(), "VOXGIG_GETONLY_GUARD") catch return null;
     if (!std.mem.eql(u8, flag, "TRUE")) return null;

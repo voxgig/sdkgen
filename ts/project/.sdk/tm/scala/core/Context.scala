@@ -18,6 +18,8 @@ class Context(ctxmap: JMap[String, Object], basectx: Context) {
   var config: JMap[String, Object] = null
   var entopts: JMap[String, Object] = null
   var options: JMap[String, Object] = null
+  // The clean registry, beside the options rather than in them.
+  var cleancfg: Object = null
   var opmap: JMap[String, Operation] = null
   var response: Response = null
   var result: Result = null
@@ -73,6 +75,8 @@ class Context(ctxmap: JMap[String, Object], basectx: Context) {
     // Options
     Helpers.getCtxProp(ctxmap, "options") match { case o: JMap[_, _] => options = o.asInstanceOf[JMap[String, Object]]; case _ => }
     if (options == null && basectx != null) options = basectx.options
+    cleancfg = Helpers.getCtxProp(ctxmap, "cleancfg")
+    if (cleancfg == null && basectx != null) cleancfg = basectx.cleancfg
 
     // Entity
     Helpers.getCtxProp(ctxmap, "entity") match { case e: Entity => entity = e; case _ => }

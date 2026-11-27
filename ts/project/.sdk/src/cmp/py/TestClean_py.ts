@@ -613,12 +613,12 @@ class TestClean:
         # The generated config's own clean block is read beside the caller's,
         # and is not changed by it.
         cfgclean = {"keys": "zzsens", "values": CANARY["config"]}
-        built = util.make_options(util.make_context({
+        cfgctx = util.make_context({
             "utility": util,
             "config": {"options": {"clean": cfgclean}},
             "options": {"clean": {"values": CANARY["value"]}},
-        }, None))
-        cfgctx = util.make_context({"options": built}, None)
+        }, None)
+        cfgctx.options = util.make_options(cfgctx)
         seeded = util.clean(cfgctx, "config " + CANARY["config"] + " caller " + CANARY["value"])
         sinks.append(("config-clean", seeded))
         assert seeded == "config " + MASK + " caller " + MASK, seeded
@@ -657,6 +657,13 @@ class TestClean:
         frecord = fclean(froot, "record PLAINRECORD-t5r3e1w9")
         falias = fclean(froot, "alias PLAINALIAS-m2n4b6v8")
         frule = fclean(froot, "rule PLAINRULE-k7j5h3g1")
+
+        # The clean registry holds every credential in plain form, and is no option.
+        held = _construct({"apikey": CANARY["apikey"]}).options_map()
+        optsjson = json.dumps(held, default=str)
+        assert held.get("apikey") == CANARY["apikey"], optsjson
+        assert _leaks(optsjson.replace(json.dumps(CANARY["apikey"]), "", 1)) == [], \\
+            "options_map() carries a credential beyond the option the caller set: " + optsjson
 
         leaked = [(name, _leaks(text)) for name, text in sinks]
         leaked = [(name, found) for name, found in leaked if 0 < len(found)]

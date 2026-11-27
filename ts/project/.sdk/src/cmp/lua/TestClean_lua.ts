@@ -798,6 +798,15 @@ describe("clean", function()
     assert.are.same({ [MASK] = 1, [MASK .. "#1"] = 2, plain = 3 }, named)
     append(sinks, surfaces("named", named))
 
+    -- The clean registry holds every credential in plain form, and is no option.
+    local held = construct({ apikey = CANARY.apikey }):options_map()
+    local heldjson = tojson(held)
+    assert.are.equal(CANARY.apikey, held.apikey)
+    local at, upto = string.find(heldjson, CANARY.apikey, 1, true)
+    local heldrest = at and (heldjson:sub(1, at - 1) .. heldjson:sub(upto + 1)) or heldjson
+    assert.are.same({}, leaks(heldrest),
+      "options_map carries a credential beyond the option the caller set: " .. heldjson)
+
     local leaked = {}
     for _, s in ipairs(sinks) do
       local found = leaks(s.text)
@@ -898,12 +907,12 @@ describe("clean", function()
   it("the generated config's own clean block is honoured", function()
     local utility = construct({}):get_utility()
     local config = { options = { clean = { keys = "zzsens", values = "CONFIG-SEEDED-1" } } }
-    local opts = utility.make_options({
+    local ctx = {
       utility = utility,
       config = config,
       options = { clean = { values = "CALLER-SEEDED-2" } },
-    })
-    local ctx = { options = opts }
+    }
+    ctx.options = utility.make_options(ctx)
     assert.are.equal("a " .. MASK .. " b " .. MASK,
       utility.clean(ctx, "a CONFIG-SEEDED-1 b CALLER-SEEDED-2"))
     assert.are.same({ my_zzsens = MASK, other = "y" }, utility.clean(ctx, { my_zzsens = "x", other = "y" }))

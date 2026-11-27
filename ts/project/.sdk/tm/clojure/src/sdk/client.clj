@@ -22,7 +22,7 @@
 (defmethod print-method ::options [a ^java.io.Writer w]
   (let [opts (deref a)]
     (.write w (str "#sdk/options "
-                   (vs/jsonify (core/u-clean (atom {:options opts}) opts) (vs/jm "indent" 0))))))
+                   (vs/jsonify (core/u-clean (or (:ctx (meta a)) (atom {})) opts) (vs/jm "indent" 0))))))
 
 (defn make-sdk [options]
   (let [options (or options (vs/jm))
@@ -37,6 +37,8 @@
                  (vs/jm "client" client "utility" utility "config" cfg "options" options "shared" (vs/jm)) nil)
         validated ((core/uget rootctx :make-options) rootctx)]
     (reset! (:root-ctx client) rootctx)
+    ;; The options print cleans against the registry the root context holds.
+    (alter-meta! (:options client) assoc :ctx rootctx)
     (reset! (:options client) validated)
     (when (= true (vs/getpath validated "feature.test.active"))
       (reset! (:mode client) "test"))

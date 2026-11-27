@@ -15,7 +15,7 @@ class ProjectNameContext
   OPMAP_LOCK = Mutex.new
 
   attr_accessor :id, :out, :client, :utility, :ctrl, :meta, :config,
-                :entopts, :options, :entity, :shared, :opmap,
+                :entopts, :options, :cleancfg, :entity, :shared, :opmap,
                 :data, :reqdata, :match, :reqmatch, :point,
                 :spec, :result, :response, :op, :unexpected_fired
 
@@ -52,6 +52,9 @@ class ProjectNameContext
 
     o = ProjectNameHelpers.get_ctx_prop(ctxmap, "options")
     @options = o.is_a?(Hash) ? o : basectx&.options
+
+    # The clean registry, beside the options rather than in them.
+    @cleancfg = ProjectNameHelpers.get_ctx_prop(ctxmap, "cleancfg") || basectx&.cleancfg
 
     e = ProjectNameHelpers.get_ctx_prop(ctxmap, "entity")
     @entity = e || basectx&.entity

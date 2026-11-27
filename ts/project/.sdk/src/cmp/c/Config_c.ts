@@ -92,11 +92,10 @@ FEATURE_TEST_SRCS += $(wildcard tests/feature/${fname}/*.c)
             Content(`
 # A plugin group is active: the selected kinds and the five shared helpers
 # they call (the socket HTTP client and its OpenSSL binding, the encoders,
-# the clock and the child-process launcher), with the two external
-# libraries they bring - OpenSSL for the vault kinds' TLS, libcurl for the
-# token-exchange transport of last resort in kinds.c.
+# the clock and the child-process launcher), with the external library they
+# bring - OpenSSL for the vault kinds' TLS.
 FEATURE_SRCS += $(wildcard feature/${fname}/plugins/*.c)
-LDLIBS += -lssl -lcrypto -lcurl
+LDLIBS += -lssl -lcrypto
 `)
           }
         })
@@ -138,136 +137,6 @@ ${syms.map((sym: string, i: number) => `  ${fname.toUpperCase()}_KINDS[${i}] = $
   return ${fname.toUpperCase()}_KINDS;
 }
 `}`)
-
-          if ('secrets' !== fname) return
-
-          if (0 === groups) {
-            Content(`
-// THE EXCHANGE TRANSPORT OF LAST RESORT, when no plugin group is active: the
-// SDK's own client (utility/http.c), called directly rather than through
-// the transport this feature wraps, which the token request must never pass
-// back through. Reached only by an exchange whose caller supplied no
-// system.fetch; a chain that resolves a static credential never comes here.
-voxgig_value* secrets_rawfetch(Context* ctx, const char* url,
-                               voxgig_value* fetchdef, PNError** err) {
-  return http_fetch(ctx, url, fetchdef, err);
-}
-`)
-            return
-          }
-
-          Content(`
-// THE EXCHANGE TRANSPORT OF LAST RESORT (go's rawExchangeFetch): plain
-// libcurl, answering the same transport-shaped map the system.fetch seam
-// promises ({status, statusText, headers, json(), body}). It exists so an
-// exchange works with ordinary SDK options - requiring a custom transport
-// for the COMMON case would refuse every live token purchase before a
-// request was made. Deliberately NOT the SDK transport: that is what the
-// secrets feature wraps, and sending the token request back through it
-// would recurse on the first expiry.
-//
-// libcurl is linked because a plugin group is active in this model; the
-// Makefile adds -lcurl on exactly that condition.
-
-#include <curl/curl.h>
-
-typedef struct {
-  char* data;
-  size_t len;
-} SecretsBuf;
-
-static size_t secrets_curl_write(char* ptr, size_t size, size_t nmemb, void* ud) {
-  SecretsBuf* b = (SecretsBuf*)ud;
-  size_t add = size * nmemb;
-  char* grown = (char*)realloc(b->data, b->len + add + 1);
-  if (NULL == grown) return 0;
-  b->data = grown;
-  memcpy(b->data + b->len, ptr, add);
-  b->len += add;
-  b->data[b->len] = '\\0';
-  return add;
-}
-
-voxgig_value* secrets_rawfetch(Context* ctx, const char* url,
-                               voxgig_value* fetchdef, PNError** err) {
-  static bool inited = false;
-  *err = NULL;
-  if (!inited) {
-    curl_global_init(CURL_GLOBAL_DEFAULT);
-    inited = true;
-  }
-
-  CURL* curl = curl_easy_init();
-  if (NULL == curl) {
-    *err = context_make_error(ctx, "secrets_transport", "secrets: curl_easy_init failed");
-    return NULL;
-  }
-
-  const char* method = get_str(fetchdef, "method");
-  if (NULL == method || '\\0' == method[0]) method = "POST";
-
-  struct curl_slist* hdrs = NULL;
-  voxgig_value* headers = getp(fetchdef, "headers");
-  if (voxgig_is_map(headers)) {
-    voxgig_map* hm = voxgig_as_map(headers);
-    for (size_t i = 0; i < hm->len; i++) {
-      if (!voxgig_is_string(hm->entries[i].value)) continue;
-      size_t klen = strlen(hm->entries[i].key);
-      const char* v = voxgig_as_string(hm->entries[i].value);
-      char* line = (char*)malloc(klen + 2 + strlen(v) + 1);
-      sprintf(line, "%s: %s", hm->entries[i].key, v);
-      hdrs = curl_slist_append(hdrs, line);
-      free(line);
-    }
-  }
-
-  SecretsBuf body = {NULL, 0};
-  curl_easy_setopt(curl, CURLOPT_URL, url);
-  curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, method);
-  curl_easy_setopt(curl, CURLOPT_HTTPHEADER, hdrs);
-  curl_easy_setopt(curl, CURLOPT_TIMEOUT, 30L);
-  curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 0L);
-  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, secrets_curl_write);
-  curl_easy_setopt(curl, CURLOPT_WRITEDATA, &body);
-  const char* reqbody = get_str(fetchdef, "body");
-  if (NULL != reqbody) {
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, reqbody);
-  }
-
-  CURLcode rc = curl_easy_perform(curl);
-  long status = 0;
-  // Where a redirect points, resolved by curl, which follows none.
-  voxgig_value* rheaders = v_map();
-  if (CURLE_OK == rc) {
-    char* location = NULL;
-    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &status);
-    curl_easy_getinfo(curl, CURLINFO_REDIRECT_URL, &location);
-    if (NULL != location) setp(rheaders, "location", v_str(location));
-  }
-  curl_slist_free_all(hdrs);
-  curl_easy_cleanup(curl);
-
-  if (CURLE_OK != rc) {
-    char msg[512];
-    snprintf(msg, sizeof(msg), "secrets: token exchange transport failed: %s (URL was: \\"%s\\")",
-             curl_easy_strerror(rc), url);
-    free(body.data);
-    *err = context_make_error(ctx, "secrets_transport", msg);
-    return NULL;
-  }
-
-  const char* text = body.data ? body.data : "";
-  voxgig_value* parsed = json_parse(text);
-  voxgig_value* out = cmap(5,
-    "status", v_num((double)status),
-    "statusText", v_str(status >= 400 ? "ERR" : "OK"),
-    "headers", rheaders,
-    "json", json_thunk(parsed),
-    "body", v_str(text));
-  free(body.data);
-  return out;
-}
-`)
         })
       })
     }

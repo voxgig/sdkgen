@@ -20,6 +20,7 @@ use FindBin;
 use lib "$FindBin::Bin/../lib";
 use Cwd ();
 use Scalar::Util ();
+use Time::HiRes ();
 
 use ProjectNameSDK;
 
@@ -162,11 +163,25 @@ sub candidates {
 
 
 sub invoke {
-  my ($client, $op, $ctrl) = @_;
+  my ($client, $op, $ctrl, $args) = @_;
   my $acc = $op->{accessor};
   my $fn  = $op->{op};
   my $ent = $client->$acc();
-  return $ent->$fn({}, $ctrl);
+  return $ent->$fn({ %{ $args || {} } }, $ctrl);
+}
+
+
+my %ITEM_ARGS = (id => 'corpus-item');
+
+# A write of one entity (#ITEM) that completes when driven with %ITEM_ARGS.
+sub usable_item {
+  my ($accessor) = @_;
+  for my $cand (candidates(build_client({}))) {
+    next unless $cand->{accessor} eq $accessor && grep { $_ eq $cand->{op} } qw(update patch remove);
+    next unless eval { invoke(build_client({}), $cand, {}, \%ITEM_ARGS); 1 };
+    return $cand;
+  }
+  return undef;
 }
 
 
@@ -209,6 +224,43 @@ sub resolve {
     return $out;
   }
   return $node;
+}
+
+
+# A read and a write of one entity (#READ, #WRITE), each driven as usable_ops
+# drives an op.
+sub usable_pair {
+  my %found;
+  for my $cand (candidates(build_client({}))) {
+    my $role = (grep { $_ eq $cand->{op} } qw(list load)) ? 'read'
+      : (grep { $_ eq $cand->{op} } qw(create update patch remove)) ? 'write' : undef;
+    next unless defined $role;
+    my $seen = $found{ $cand->{accessor} } ||= {};
+    next if $seen->{$role};
+    next unless eval { invoke(build_client({}), $cand, {}); 1 };
+    $seen->{$role} = $cand;
+    return $seen if $seen->{read} && $seen->{write};
+  }
+  return undef;
+}
+
+
+# One step: it may wait before its call, may add request headers for its
+# call, and may pass `args` as the operation's first argument.
+sub step_call {
+  my ($client, $op, $step, $ctrl) = @_;
+  Time::HiRes::sleep($step->{wait} / 1000) if defined $step->{wait};
+  my $args = Voxgig::Struct::ismap($step->{args}) ? $step->{args} : {};
+  return invoke($client, $op, $ctrl, $args) unless Voxgig::Struct::ismap($step->{headers});
+  my $options = $client->{options};
+  my $had = exists $options->{headers};
+  my $prior = $options->{headers};
+  $options->{headers} = { %{ $prior || {} }, %{ $step->{headers} } };
+  my $ok = eval { invoke($client, $op, $ctrl, $args); 1 };
+  my $err = $@;
+  if ($had) { $options->{headers} = $prior } else { delete $options->{headers} }
+  die $err unless $ok;
+  return;
 }
 
 
@@ -304,6 +356,9 @@ sub missing_feature {
 
 
 my @ops = usable_ops(2);
+my $pair = usable_pair();
+my $item = $pair ? usable_item($pair->{read}{accessor}) : undef;
+my ($other) = $pair ? grep { $_->{accessor} ne $pair->{read}{accessor} } @ops : ();
 
 # At least one operation, or every case would skip and this file would report
 # green having run nothing.
@@ -333,7 +388,7 @@ for my $name (sort keys %{ $CORPUS->{feature} || {} }) {
     next;
   }
 
-  my %by_key = map { $_->{key} => $_ } @ops;
+  my %by_key = map { $_->{key} => $_ } @ops, ($pair ? values %$pair : ()), ($item ? $item : ());
 
   my $ran = 0;
   for my $raw (@$cases) {
@@ -341,6 +396,21 @@ for my $name (sort keys %{ $CORPUS->{feature} || {} }) {
     if ($need > scalar(@ops)) {
       diag(sprintf('skip "%s": needs %d operations, this SDK offers %d',
         $raw->{name} // '', $need, scalar(@ops)));
+      next;
+    }
+
+    my $paired = Voxgig::Struct::stringify($raw) =~ /#(READ|WRITE|ITEM|OTHER)\b/;
+    if ($paired && !$pair) {
+      diag(sprintf('skip "%s": needs a read and a write of one entity, this SDK offers none',
+        $raw->{name} // ''));
+      next;
+    }
+    my ($lacking) = grep {
+      my ($tok, $found) = @$_;
+      $paired && !$found && Voxgig::Struct::stringify($raw) =~ /\Q$tok\E\b/
+    } (['#ITEM', $item], ['#OTHER', $other]);
+    if ($lacking) {
+      diag(sprintf('skip "%s": needs %s, which this SDK cannot drive', $raw->{name} // '', $lacking->[0]));
       next;
     }
 
@@ -354,6 +424,12 @@ for my $name (sort keys %{ $CORPUS->{feature} || {} }) {
     my %tokens;
     for my $i (0 .. $need - 1) {
       $tokens{ '#OP' . ($i + 1) } = $ops[$i]{key};
+    }
+    if ($paired) {
+      $tokens{'#READ'} = $pair->{read}{key};
+      $tokens{'#WRITE'} = $pair->{write}{key};
+      $tokens{'#ITEM'} = $item->{key} if $item;
+      $tokens{'#OTHER'} = $other->{key} if $other;
     }
     my $kase = resolve($raw, \%tokens);
     my $label = $kase->{name} || '';
@@ -369,7 +445,7 @@ for my $name (sort keys %{ $CORPUS->{feature} || {} }) {
         my $ctrl = $step->{ctrl} || {};
         my $wanterr = $step->{err};
 
-        my $ok = eval { invoke($client, $op, $ctrl); 1 };
+        my $ok = eval { step_call($client, $op, $step, $ctrl); 1 };
         my $err = $@;
 
         if (!defined $wanterr) {

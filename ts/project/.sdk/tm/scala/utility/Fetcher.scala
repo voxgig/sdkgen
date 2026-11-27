@@ -174,6 +174,11 @@ object Fetcher {
     val reqb =
       try HttpRequest.newBuilder(URI.create(fullurl)).method(method, bodyPublisher)
       catch { case e: RuntimeException => throw new RuntimeException("fetch: invalid url: " + fullurl, e) }
+    // A bound in milliseconds, for a caller beneath the timeout feature.
+    fetchdef.get("timeout") match {
+      case n: java.lang.Number if 0 < n.longValue() => reqb.timeout(java.time.Duration.ofMillis(n.longValue()))
+      case _ =>
+    }
 
     var hasUA = false
     fetchdef.get("headers") match {

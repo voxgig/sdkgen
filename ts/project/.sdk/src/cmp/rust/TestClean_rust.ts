@@ -870,6 +870,16 @@ fn clean_no_credential_leaves_the_sdk_in_any_form() {
     assert_eq!(getp(&raw, "ok"), Value::Bool(false), "a transport failure should fail direct()");
     push_value(&sinks, "direct", &raw);
 
+    // The clean registry holds every credential in plain form, and is no option.
+    let held = construct(jo(vec![("apikey", Value::str(CANARY_APIKEY))])).options_map();
+    let heldjson = vs::jsonify(&held, None);
+    assert_eq!(getp(&held, "apikey"), Value::str(CANARY_APIKEY));
+    assert!(
+        leaks(&heldjson.replacen(CANARY_APIKEY, "", 1)).is_empty(),
+        "options_map carries a credential beyond the option the caller set: {}",
+        heldjson
+    );
+
     let leaked: Vec<String> = sinks
         .borrow()
         .iter()

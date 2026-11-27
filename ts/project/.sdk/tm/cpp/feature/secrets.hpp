@@ -425,6 +425,9 @@ private:
 
   std::shared_ptr<Exchange> exchange_;
   std::string refresh_;
+  // The transport's refusal of the last purchase, which the gate throws in
+  // place of a resolution error.
+  SdkErrorPtr refused_;
 
   // The custom-provider slot table: the Injector each `custom` spec's slot
   // ticket names.
@@ -567,6 +570,7 @@ private:
   // message, or "" for success with the token in cred_. Called under mu_.
   std::string buy() {
     const Exchange& x = *exchange_;
+    refused_ = nullptr;
 
     // TEST MODE BUYS NOTHING. The test feature replaces the transport so no
     // request leaves the process; an exchange here would be the one HTTP
@@ -629,6 +633,10 @@ private:
         }
         return "";
       }
+      // Not util::fetcher, as every other target does: the cpp core has no
+      // client of its own, so only the guard is applied before sekreto's.
+      refused_ = util::getOnlyRefusal(client->rootctx, at, fetchdef);
+      if (refused_) return refused_->msg;
       std::vector<std::pair<std::string, std::string>> hdrs{{"content-type", "application/json"}};
       SecretsRawResponse raw = secrets_rawfetch(x.method, at, hdrs, bodytext);
       if (!raw.ok) return raw.err;
@@ -824,6 +832,9 @@ private:
       std::string rerr = resolve();
       if (!rerr.empty()) {
         track_.refused++;
+        SdkErrorPtr refused = refused_;
+        refused_ = nullptr;
+        if (refused) throw refused;
         throw ctx->makeError("secrets_resolve", rerr);
       }
 
@@ -865,6 +876,7 @@ private:
             // The purchase failed: answer with the API's own refusal rather
             // than this one. The caller asked for data, and the refusal is
             // the more useful of the two - the exchange error is a symptom.
+            refused_ = nullptr;
             return out;
           }
         }

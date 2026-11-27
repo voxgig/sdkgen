@@ -1,21 +1,23 @@
 # ProjectName SDK cache feature
 
 from __future__ import annotations
+import hashlib
+import hmac
+import re
+import secrets
 import time
 
 from projectname_sdk.feature.base_feature import ProjectNameBaseFeature
 from projectname_sdk.utility.media import header_value, is_json_media
 
 
-# Response caching for safe (read) requests. Wraps the active transport and
-# serves a fresh cached snapshot instead of hitting the network when the
-# same method+URL was fetched within `ttl` ms (default 5000). Only
-# successful (2xx) responses to cacheable methods (default: GET) are
-# stored, keyed by method+URL. The cache is bounded (`max` entries, default
-# 256, oldest evicted first) and every hit/miss is recorded on
-# `client._cache` for inspection. Response bodies are snapshotted on
-# capture so both the current caller and later hits can read the JSON body
-# repeatedly.
+SAFE_METHODS = ("GET", "HEAD")
+UNSTORED = ("no-store", "private", "no-cache")
+MAX_AGE = re.compile(r'^max-age\s*=\s*"?(\d+)"?$')
+
+
+# Response caching for safe (read) requests, per client: see the features
+# reference for the key, the write invalidation and the Cache-Control rules.
 class ProjectNameCacheFeature(ProjectNameBaseFeature):
     def __init__(self):
         super().__init__()
@@ -25,6 +27,7 @@ class ProjectNameCacheFeature(ProjectNameBaseFeature):
         self.client = None
         self.options = {}
         self.store = {}
+        self.secret = b""
 
     def init(self, ctx, options):
         self.client = ctx.client
@@ -39,6 +42,7 @@ class ProjectNameCacheFeature(ProjectNameBaseFeature):
             return
 
         self.store = {}
+        self.secret = secrets.token_bytes(32)
 
         utility = ctx.utility
         inner = utility.fetcher
@@ -55,9 +59,15 @@ class ProjectNameCacheFeature(ProjectNameBaseFeature):
         methods = self.options.get("methods") or ["GET"]
 
         if method not in methods:
-            return inner(ctx, url, fetchdef)
+            if method in SAFE_METHODS:
+                return inner(ctx, url, fetchdef)
+            try:
+                return inner(ctx, url, fetchdef)
+            finally:
+                self._invalidate(url)
 
-        key = method + " " + url
+        headers = fetchdef.get("headers") if isinstance(fetchdef, dict) else None
+        key = method + " " + url + " " + self._digest(headers)
         now = self._now()
         hit = self.store.get(key)
 
@@ -69,14 +79,35 @@ class ProjectNameCacheFeature(ProjectNameBaseFeature):
 
         if err is None and self._cacheable(res):
             snapshot = self._snapshot(res)
-            ttl = 5000 if self.options.get("ttl") is None else self.options.get("ttl")
+            ttl = cache_lifetime(snapshot["headers"],
+                                 5000 if self.options.get("ttl") is None else self.options.get("ttl"))
+            if ttl <= 0:
+                self._track("bypass")
+                return self._replay(snapshot), None
+            self.store.pop(key, None)
             self._evict()
-            self.store[key] = {"expiry": now + ttl, "snapshot": snapshot}
+            self.store[key] = {"expiry": now + ttl, "scope": url_scope(url), "snapshot": snapshot}
             self._track("miss")
             return self._replay(snapshot), None
 
         self._track("bypass")
         return res, err
+
+    def _digest(self, headers):
+        pairs = []
+        if isinstance(headers, dict):
+            for name, val in headers.items():
+                if val is not None:
+                    pairs.append((str(name).lower(), val if isinstance(val, str) else str(val)))
+        text = "".join(name + ":" + val + "\n" for name, val in sorted(pairs))
+        return hmac.new(self.secret, text.encode("utf-8"), hashlib.sha256).hexdigest()
+
+    def _invalidate(self, url):
+        path = url_scope(url)
+        collection = url_parent(path)
+        for key in [k for k, e in self.store.items()
+                    if scope_under(e["scope"], path) or e["scope"] == collection]:
+            del self.store[key]
 
     # A body the transport could not read as JSON passes through, for the operation to report.
     def _cacheable(self, res):
@@ -143,3 +174,38 @@ class ProjectNameCacheFeature(ProjectNameBaseFeature):
             track = {"hit": 0, "miss": 0, "bypass": 0}
             client._cache = track
         track[kind] += 1
+
+
+# The configured ttl capped by the response's Cache-Control; zero when the
+# response may not be stored.
+def cache_lifetime(headers, ttl):
+    control = ""
+    for name, val in (headers or {}).items():
+        if str(name).lower() == "cache-control":
+            control = str(val)
+    life = ttl
+    for part in control.lower().split(","):
+        directive = part.strip()
+        if directive in UNSTORED:
+            return 0
+        age = MAX_AGE.match(directive)
+        if age is not None:
+            life = min(life, int(age.group(1)) * 1000)
+    return life
+
+
+def url_scope(url):
+    return re.split(r"[?#]", str(url), maxsplit=1)[0].rstrip("/")
+
+
+def url_parent(scope):
+    scheme = scope.find("://")
+    root = 0 if scheme < 0 else scope.find("/", scheme + 3)
+    if root < 0:
+        return scope
+    cut = scope.rfind("/")
+    return scope[:max(cut, root)]
+
+
+def scope_under(scope, prefix):
+    return scope == prefix or scope.startswith(prefix + "/")

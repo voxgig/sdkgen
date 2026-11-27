@@ -226,6 +226,7 @@ let make_context_impl (cs : ctxspec) (basectx : ctx option) : ctx =
   let options =
     match cs.cs_options with Some (Map _ as m) -> m
     | _ -> (match basectx with Some b -> b.c_options | None -> Noval) in
+  let cleancfg = match basectx with Some b -> b.c_cleancfg | None -> Noval in
   let entity =
     match cs.cs_entity with Some _ as e -> e
     | None -> (match basectx with Some b -> b.c_entity | None -> None) in
@@ -248,6 +249,7 @@ let make_context_impl (cs : ctxspec) (basectx : ctx option) : ctx =
     c_id = id; c_out = Hashtbl.create 8; c_ctrl = ctrl; c_meta = meta;
     c_client = client; c_utility = utility; c_op = new_operation (empty_map ());
     c_point = point; c_config = config; c_entopts = entopts; c_options = options;
+    c_cleancfg = cleancfg;
     c_opmap = opmap; c_response = response; c_result = result; c_spec = spec;
     c_data = data; c_reqdata = reqdata; c_match = mtch; c_reqmatch = reqmatch;
     c_entity = entity; c_shared = shared; c_scratch = Hashtbl.create 8;
@@ -302,9 +304,9 @@ let count_opt (v : value) (dflt : int) : int =
     | _ -> None in
   match n with Some n when n >= 0. -> int_of_float (Float.floor n) | _ -> dflt
 
-(* The derived clean block: a struct map so it lives in options.__derived__
- * and its `values` list stays MUTABLE after make_options - features
- * register what they resolve later. *)
+(* The clean registry: a struct map held on the context as c_cleancfg, whose
+ * `values` list stays MUTABLE after make_options - features register what
+ * they resolve later. *)
 let make_clean_config (cleanopts : value) : value =
   jo [("active", Bool (getp cleanopts "active" <> Bool false));
       ("keys", ja (List.map (fun s -> Str s) (splitkeys (getp cleanopts "keys"))));
@@ -313,10 +315,10 @@ let make_clean_config (cleanopts : value) : value =
       ("hint", vint_of (count_opt (getp cleanopts "hint") 0));
       ("min", vint_of (max 1 (count_opt (getp cleanopts "min") 4)))]
 
-(* A context without options (make_error accepts a bare one) still masks by
- * the schema defaults. *)
+(* A context without a registry (make_error accepts a bare one) still masks
+ * by the schema defaults. *)
 let clean_config (ctx : ctx) : value =
-  match getpath_s ctx.c_options "__derived__.clean" with
+  match ctx.c_cleancfg with
   | Map _ as m -> m
   | _ -> make_clean_config (getp (Sdk_schema.opt_spec_value ()) "clean")
 
@@ -1776,7 +1778,7 @@ let make_options_util (ctx : ctx) : value =
       | Map _ -> List.iter (fun k -> setp cleanraw k (getp src k)) (keysof src)
       | _ -> ()) [getp optspec "clean"; getp cfgopts "clean"; getp opts "clean"];
   let cleancfg = make_clean_config cleanraw in
-  let cleanctx = { ctx with c_options = jo [("__derived__", jo [("clean", cleancfg)])] } in
+  let cleanctx = { ctx with c_cleancfg = cleancfg } in
   clean_add_sensitive cleanctx (secret_scan opts ["clean"]);
   List.iter (fun src -> List.iter (clean_add_util cleanctx) (splitvalues (getpath_s src "clean.values")))
     [cfgopts; opts];
@@ -1857,11 +1859,12 @@ let make_options_util (ctx : ctx) : value =
       if List.mem "test" names
       then "test" :: List.filter (fun n -> n <> "test") names
       else names in
-  let derived = jo [("clean", cleancfg);
-                    ("featureorder", ja (List.map (fun s -> Str s) feature_order))] in
+  let derived = jo [("featureorder", ja (List.map (fun s -> Str s) feature_order))] in
   setp opts "__derived__" derived;
+  (* Beside the options, not in them: options_map hands them to callers. *)
+  ctx.c_cleancfg <- cleancfg;
   (* Again over the merged result: the config's own defaults can carry one. *)
-  clean_add_sensitive { ctx with c_options = opts } (secret_scan opts ["clean"; "__derived__"]);
+  clean_add_sensitive cleanctx (secret_scan opts ["clean"; "__derived__"]);
   opts
 
 (* ------------------------------------------------------------------ *)

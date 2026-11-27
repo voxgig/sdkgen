@@ -39,6 +39,7 @@ pub const CtxSpec = struct {
     config: ?Value = null,
     entopts: ?Value = null,
     options: ?Value = null,
+    cleancfg: ?Value = null,
     entity: ?Entity = null,
     shared: ?Value = null,
     opmap: ?*OpMap = null,
@@ -64,6 +65,8 @@ pub const Context = struct {
     config: Value,
     entopts: Value,
     options: Value,
+    // The clean registry, beside the options rather than in them.
+    cleancfg: Value,
     opmap: *OpMap,
     response: ?*Response,
     result: ?*SdkResult,
@@ -118,6 +121,7 @@ pub const Context = struct {
         const config: Value = ctxspec.config orelse (if (basectx) |b| b.config else h.vnull());
         const entopts: Value = ctxspec.entopts orelse (if (basectx) |b| b.entopts else h.vnull());
         const options: Value = ctxspec.options orelse (if (basectx) |b| b.options else h.vnull());
+        const cleancfg: Value = ctxspec.cleancfg orelse (if (basectx) |b| b.cleancfg else h.vnull());
         const entity: ?Entity = ctxspec.entity orelse (if (basectx) |b| b.entity else null);
         const shared: Value = ctxspec.shared orelse blk: {
             if (basectx) |b| {
@@ -163,6 +167,7 @@ pub const Context = struct {
             .config = config,
             .entopts = entopts,
             .options = options,
+            .cleancfg = cleancfg,
             .opmap = opmap,
             .response = response,
             .result = result,

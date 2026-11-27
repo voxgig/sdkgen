@@ -216,20 +216,19 @@ voxgig_value* make_options_util(Context* ctx, PNError** err) {
   voxgig_value* optspec = shared_optspec();
 
   /* The secret registry exists BEFORE validation, fed from the raw input.
-   * Its block is shared by pointer: what is registered into `cleanopts`
-   * here is what `opts.__derived__.clean` carries out below. */
+   * Its block is shared by pointer: what is registered here is what the
+   * context's `cleancfg` carries out below. */
   voxgig_value* cleancfg = clean_make_config(voxgig_merge(
     clist(4, v_map(), voxgig_clone(getp(optspec, "clean")),
           mo_clean_block(cfgopts), mo_clean_block(opts)),
     VOXGIG_MAXDEPTH));
-  voxgig_value* cleanopts = cmap(1, "__derived__", cmap(1, "clean", v_share(cleancfg)));
-  clean_add_sensitive_opts(cleanopts, mo_without(opts, "clean", NULL));
+  clean_add_sensitive_cfg(cleancfg, mo_without(opts, "clean", NULL));
   voxgig_value* valueblocks[2] = { cfgopts, opts };
   for (int b = 0; b < 2; b++) {
     voxgig_list* rawvals =
       voxgig_as_list(clean_split_values(getpath2(valueblocks[b], "clean", "values")));
     for (size_t i = 0; i < rawvals->len; i++) {
-      clean_add_opts(cleanopts, voxgig_as_string(rawvals->items[i]));
+      clean_add_cfg(cleancfg, voxgig_as_string(rawvals->items[i]));
     }
   }
 
@@ -304,11 +303,13 @@ voxgig_value* make_options_util(Context* ctx, PNError** err) {
     }
   }
 
-  setp(opts, "__derived__",
-       cmap(2, "clean", v_share(cleancfg), "featureorder", feature_order));
+  setp(opts, "__derived__", cmap(1, "featureorder", feature_order));
+
+  // Beside the options, not in them: options_map hands them to callers.
+  ctx->cleancfg = v_share(cleancfg);
 
   // Again over the merged result: the config's own defaults can carry one.
-  clean_add_sensitive_opts(opts, mo_without(opts, "clean", "__derived__"));
+  clean_add_sensitive_cfg(cleancfg, mo_without(opts, "clean", "__derived__"));
 
   return opts;
 }

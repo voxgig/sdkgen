@@ -6,20 +6,18 @@ declare(strict_types=1);
 require_once __DIR__ . '/BaseFeature.php';
 require_once __DIR__ . '/../utility/Media.php';
 
-// Response caching for safe (read) requests. Wraps the active transport and
-// serves a fresh cached snapshot instead of hitting the network when the
-// same method+URL was fetched within `ttl` ms (default 5000). Only
-// successful (2xx) responses to cacheable methods (default: GET) are
-// stored, keyed by method+URL. The cache is bounded (`max` entries, default
-// 256, oldest evicted first) and every hit/miss/bypass is recorded on
-// `client->_cache` for inspection. Snapshots replay through a fresh `json`
-// closure so both the current caller and later hits can read the body
-// repeatedly. Mirrors ts/src/feature/cache/CacheFeature.ts.
+// Response caching for safe (read) requests, per client: see the features
+// reference for the key, the write invalidation and the Cache-Control rules.
+// Mirrors ts/src/feature/cache/CacheFeature.ts.
 class ProjectNameCacheFeature extends ProjectNameBaseFeature
 {
+    private const SAFE_METHODS = ['GET', 'HEAD'];
+    private const UNSTORED = ['no-store', 'private', 'no-cache'];
+
     private mixed $client;
     private ?array $options;
     private array $store;
+    private string $secret = '';
 
     public function __construct()
     {
@@ -43,6 +41,7 @@ class ProjectNameCacheFeature extends ProjectNameBaseFeature
         }
 
         $this->store = [];
+        $this->secret = random_bytes(32);
 
         $utility = $ctx->utility;
         $inner = $utility->fetcher;
@@ -58,10 +57,17 @@ class ProjectNameCacheFeature extends ProjectNameBaseFeature
         $methods = $this->options['methods'] ?? ['GET'];
 
         if (!is_array($methods) || !in_array($method, $methods, true)) {
-            return $inner($ctx, $url, $fetchdef);
+            if (in_array($method, self::SAFE_METHODS, true)) {
+                return $inner($ctx, $url, $fetchdef);
+            }
+            try {
+                return $inner($ctx, $url, $fetchdef);
+            } finally {
+                $this->_invalidate($url);
+            }
         }
 
-        $key = $method . ' ' . $url;
+        $key = $method . ' ' . $url . ' ' . $this->_digest($fetchdef['headers'] ?? null);
         $now = $this->_now();
         $hit = $this->store[$key] ?? null;
 
@@ -80,15 +86,94 @@ class ProjectNameCacheFeature extends ProjectNameBaseFeature
 
         if ($this->_cacheable($res, $err)) {
             $snapshot = $this->_snapshot($res);
-            $ttl = is_numeric($this->options['ttl'] ?? null) ? (float)$this->options['ttl'] : 5000.0;
+            $ttl = self::lifetime($snapshot['headers'],
+                is_numeric($this->options['ttl'] ?? null) ? (float)$this->options['ttl'] : 5000.0);
+            if ($ttl <= 0) {
+                $this->_track('bypass');
+                return [$this->_replay($snapshot), null];
+            }
+            unset($this->store[$key]);
             $this->_evict();
-            $this->store[$key] = ['expiry' => $now + $ttl, 'snapshot' => $snapshot];
+            $this->store[$key] = ['expiry' => $now + $ttl, 'scope' => self::scope($url), 'snapshot' => $snapshot];
             $this->_track('miss');
             return [$this->_replay($snapshot), null];
         }
 
         $this->_track('bypass');
         return [$res, $err];
+    }
+
+    private function _digest(mixed $headers): string
+    {
+        $pairs = [];
+        if (is_array($headers)) {
+            foreach ($headers as $name => $val) {
+                if ($val !== null) {
+                    $pairs[] = [strtolower((string)$name), is_scalar($val) ? (string)$val : json_encode($val)];
+                }
+            }
+        }
+        usort($pairs, fn($a, $b) => strcmp($a[0], $b[0]) ?: strcmp($a[1], $b[1]));
+        $text = '';
+        foreach ($pairs as [$name, $val]) {
+            $text .= $name . ':' . $val . "\n";
+        }
+        return hash_hmac('sha256', $text, $this->secret);
+    }
+
+    private function _invalidate(string $url): void
+    {
+        $path = self::scope($url);
+        $collection = self::parent($path);
+        foreach ($this->store as $key => $entry) {
+            if (self::under($entry['scope'], $path) || $entry['scope'] === $collection) {
+                unset($this->store[$key]);
+            }
+        }
+    }
+
+    // The configured ttl capped by the response's Cache-Control; zero when
+    // the response may not be stored.
+    private static function lifetime(array $headers, float $ttl): float
+    {
+        $control = '';
+        foreach ($headers as $name => $val) {
+            if (strtolower((string)$name) === 'cache-control') {
+                $control = strtolower((string)$val);
+            }
+        }
+        $life = $ttl;
+        foreach (explode(',', $control) as $part) {
+            $directive = trim($part);
+            if (in_array($directive, self::UNSTORED, true)) {
+                return 0.0;
+            }
+            if (preg_match('/^max-age\s*=\s*"?(\d+)"?$/', $directive, $age)) {
+                $life = min($life, (float)$age[1] * 1000.0);
+            }
+        }
+        return $life;
+    }
+
+    private static function scope(string $url): string
+    {
+        return rtrim(preg_split('/[?#]/', $url, 2)[0], '/');
+    }
+
+    private static function parent(string $scope): string
+    {
+        $scheme = strpos($scope, '://');
+        $root = $scheme === false ? 0 : strpos($scope, '/', $scheme + 3);
+        if ($root === false) {
+            return $scope;
+        }
+        $cut = strrpos($scope, '/');
+        return substr($scope, 0, max($cut === false ? 0 : $cut, $root));
+    }
+
+    private static function under(string $scope, string $prefix): bool
+    {
+        return $scope === $prefix || str_starts_with($scope, $prefix . '/');
     }
 
     private function _cacheable(mixed $res, mixed $err): bool
