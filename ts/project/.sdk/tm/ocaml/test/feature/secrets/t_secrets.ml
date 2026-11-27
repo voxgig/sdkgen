@@ -734,16 +734,20 @@ let () =
 
   test "exchange.a_token_bought_on_a_refusal_is_placed_as_prepare_auth_places_it" (fun () ->
       let (r, fetch) = recorder () in
+      (* Read as each request left: the retry rewrites the fetchdef it shares. *)
+      let sent = ref [] in
       token_server r (fun token ->
+          sent := !sent @ [Str token];
           if credential_is ~secret:"PASS01" (Str token) "ACCESS1" then 401 else 200);
       let client = live ~sdkopts:[("secret", Str "PASS01")] fetch
           [refresh_chain "R1"; ("name", Str "refresh_token"); xchg []] in
       check "ok" (res_ok (direct client));
       check_int "two API calls: the refusal and the retry" (List.length (api_calls r)) 2;
+      let nth i = match List.nth_opt !sent i with Some v -> v | None -> Noval in
       check "the first carries ACCESS1, the secret kept"
-        (credential_is ~secret:"PASS01" (auth_of r 0) "ACCESS1");
+        (credential_is ~secret:"PASS01" (nth 0) "ACCESS1");
       check "the retry carries ACCESS2, the secret kept"
-        (credential_is ~secret:"PASS01" (auth_of r 1) "ACCESS2"));
+        (credential_is ~secret:"PASS01" (nth 1) "ACCESS2"));
 
   test "exchange.a_second_refusal_surfaces_rather_than_spinning" (fun () ->
       let (r, fetch) = recorder () in

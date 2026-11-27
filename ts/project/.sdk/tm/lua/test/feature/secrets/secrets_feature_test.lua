@@ -1121,7 +1121,7 @@ describe("secrets with auth off", function()
     local refresh = { kind = "memory", values = { REFRESH_TOKEN = "OFFREFRESH01" } }
     local scenarios = {
       { "a key the chain resolves", {}, chain({ memory("OFFKEY01") }), { 200 } },
-      { "an explicit apikey", { apikey = "OFFKEY02" }, chain({}), { 200 } },
+      { "an explicit apikey", { apikey = "OFFKEY02" }, { secrets = { active = true } }, { 200 } },
       { "a refusal", {},
         chain({ refresh }, { name = "refresh_token", exchange = { active = true } }), { 401 } },
     }
