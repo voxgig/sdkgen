@@ -468,6 +468,24 @@ describe('feature:cost', () => {
     strictEqual(actors['svc:sync'].amount, 1)
   })
 
+  test('an actor named like a prototype member gets its own entry and touches nothing else', async () => {
+    const h = makeClient({ features: [{ name: 'cost', options: { unit: 1 } }] })
+    await h.op({ op: 'load', ctrl: { actor: '__proto__' } })
+    await h.op({ op: 'load', ctrl: { actor: 'constructor' } })
+    await h.op({ op: 'load', ctrl: { actor: 'toString' } })
+
+    const actors = h.client._cost.actors
+    deepStrictEqual(Object.keys(actors).sort(), ['__proto__', 'constructor', 'toString'])
+    strictEqual(actors['__proto__'].calls, 1)
+    strictEqual(actors['constructor'].amount, 1)
+    strictEqual(actors['toString'].calls, 1)
+    const fresh: any = {}
+    strictEqual(fresh.calls, undefined)
+    strictEqual(fresh.amount, undefined)
+    strictEqual((Object as any).calls, undefined)
+    strictEqual(JSON.parse(JSON.stringify(h.client._cost)).actors['__proto__'].calls, 1)
+  })
+
   test('warns but continues once the budget is spent', async () => {
     const rec = recordingServer()
     const h = makeClient({
@@ -676,6 +694,17 @@ describe('feature:rbac', () => {
     const res = await h.op({ op: 'load' })
     strictEqual(res.ok, false)
     strictEqual(res.error.code, 'rbac_denied')
+  })
+
+  test('a required permission named like a prototype member is not held by default', async () => {
+    for (const perm of ['constructor', 'toString', '__proto__']) {
+      const h = makeClient({
+        features: [{ name: 'rbac', options: { rules: { load: perm }, permissions: ['reader'] } }],
+      })
+      const res = await h.op({ op: 'load' })
+      strictEqual(res.ok, false, perm + ' was granted without being held')
+      strictEqual(res.error.code, 'rbac_denied')
+    }
   })
 })
 

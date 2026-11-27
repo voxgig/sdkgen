@@ -169,12 +169,23 @@ function resolve(node, tokens) {
   if (null != node && 'object' === typeof node) {
     const out = {}
     for (const k of Object.keys(node)) {
-      out[resolve(k, tokens)] = resolve(node[k], tokens)
+      Object.defineProperty(out, resolve(k, tokens), {
+        value: resolve(node[k], tokens), enumerable: true, writable: true, configurable: true,
+      })
     }
     return out
   }
   return node
 }
+
+
+// No case may write onto the shared prototypes, as a `__proto__` key can.
+function shared() {
+  return [Object.prototype, Object]
+    .map((o) => Object.getOwnPropertyNames(o).sort().join(',')).join(' | ')
+}
+
+const PRISTINE = shared()
 
 
 // Which #OPn tokens a case uses. A case wanting more operations than this SDK
@@ -324,6 +335,8 @@ describe('FeatureCorpus', () => {
           }
 
           subset(client[`_${name}`], kase.out, `${kase.name}: _${name}`)
+          deepStrictEqual(shared(), PRISTINE,
+            `${kase.name}: the case wrote onto Object or Object.prototype`)
         }
         catch (err) {
           const msg = String(err?.message ?? err)

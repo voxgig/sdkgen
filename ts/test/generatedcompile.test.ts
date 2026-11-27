@@ -5475,6 +5475,21 @@ const CORPUS_FIXTURE: { feature: Record<string, any> } = {
             ],
             out: { total: { calls: 2, attempts: 2, amount: 2 }, budget: { exceeded: true } },
           },
+          {
+            name: 'an actor named like a prototype member gets an entry of its own',
+            feature: [{ name: 'cost', active: true, unit: 1 }],
+            op: [
+              { op: '#OP1', ctrl: { actor: '__proto__' } },
+              { op: '#OP1', ctrl: { actor: 'constructor' } },
+            ],
+            out: {
+              total: { calls: 2, amount: 2 },
+              actors: {
+                ['__proto__']: { calls: 1, amount: 1 },
+                constructor: { calls: 1, amount: 1 },
+              },
+            },
+          },
         ],
       },
     },

@@ -727,6 +727,11 @@ client._cost.actors['user:42']
 client._cost.budget         // { limit, spent, remaining, exceeded }
 ```
 
+An actor is any string, `__proto__` and `constructor` included: each gets an
+entry of its own and nothing outside `client._cost` changes. In ts and js the
+`ops` and `actors` tables have no prototype, so read them by key, with
+`Object.keys`, or with `Object.hasOwn`, not with a `hasOwnProperty` method.
+
 ### The budget
 
 `budget` is checked at `PrePoint`, before an endpoint is even resolved, so
@@ -966,6 +971,9 @@ Required permissions are looked up in `rules`, most specific first:
 `'<entity>.<op>'`, then `'<op>'`, then `'*'`. When no rule matches, `deny`
 decides: allow by default, or default-deny if you set it. Held permissions
 come from `permissions`, where `'*'` grants everything.
+A permission is held only when `permissions` names it, so a required
+permission spelled like a built-in property, such as `constructor`, is not
+held by default.
 
 **Seam:** `PrePoint`.
 
@@ -1042,6 +1050,8 @@ feature: { metrics: { active: true } }
 client._metrics.total          // { count: 12, ok: 11, err: 1, totalMs: 840, maxMs: 210 }
 client._metrics.ops['product.list']   // the same shape, for one operation
 ```
+
+In ts and js, `ops` has no prototype, as `client._cost.ops` has none.
 
 **Notes.** A non-2xx result reaches `PreDone` before the pipeline throws,
 so `PreUnexpected` then fires for the same operation. The feature records
