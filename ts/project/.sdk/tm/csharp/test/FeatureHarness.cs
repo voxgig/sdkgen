@@ -86,6 +86,8 @@ internal class FhOpSpec
     public Dictionary<string, object?>? Headers;
     public object? Body;
     public Dictionary<string, object?>? Ctrl;
+    public Dictionary<string, object?>? Reqmatch;
+    public Dictionary<string, object?>? Reqdata;
 }
 
 internal class FhOpResult
@@ -115,6 +117,12 @@ internal class FhHarness
             "remove" => "DELETE",
             _ => "GET",
         };
+    }
+
+    // Which request argument an operation reads, as the generated Context decides.
+    private static string FhOpInput(string op)
+    {
+        return op is "create" or "update" or "patch" ? "data" : "match";
     }
 
     private static string FhBuildUrl(Spec spec)
@@ -150,7 +158,10 @@ internal class FhHarness
         {
             ["entity"] = entity,
             ["name"] = opname,
+            ["input"] = FhOpInput(opname),
         });
+        ctx.Reqmatch = o.Reqmatch ?? new Dictionary<string, object?>();
+        ctx.Reqdata = o.Reqdata ?? new Dictionary<string, object?>();
 
         Utility.FeatureHook(ctx, "PostConstructEntity");
 

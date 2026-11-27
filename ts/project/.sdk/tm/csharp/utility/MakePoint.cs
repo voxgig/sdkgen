@@ -96,10 +96,11 @@ public static partial class SdkUtility
 
         var allowOpVal = StructUtils.GetPath(options, StructUtils.Jt("allow", "op"));
         var allowOp = allowOpVal as string ?? "";
-        if (!global::ProjectNameSdk.Helpers.Allowed(allowOpVal, op.Name))
+        if (!OpKeys(ctx).Any(key => global::ProjectNameSdk.Helpers.Allowed(allowOpVal, key)))
         {
+            var action = OpAction(ctx);
             throw ctx.MakeError("point_op_allow",
-                "Operation \"" + op.Name +
+                "Operation \"" + op.Name + (action == null ? "" : ":" + action) +
                 "\" not allowed by SDK option allow.op value: \"" + allowOp + "\"");
         }
 

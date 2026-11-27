@@ -37,10 +37,12 @@ function loadTemplate(rel: string, shims: Record<string, any> = {}): any {
 const IMPL: [string, any][] = [
   ['ts', loadTemplate('ts/src/utility/MakePointUtility.ts', {
     '../types': {},
+    './OpKeyUtility': loadTemplate('ts/src/utility/OpKeyUtility.ts'),
     './ParamUtility': loadTemplate('ts/src/utility/ParamUtility.ts', { '../types': {} }),
     './PrepareMethodUtility': loadTemplate('ts/src/utility/PrepareMethodUtility.ts', { '../types': {} }),
   }).makePoint],
   ['js', loadTemplate('js/src/utility/MakePointUtility.js', {
+    './OpKeyUtility': loadTemplate('js/src/utility/OpKeyUtility.js'),
     './ParamUtility': loadTemplate('js/src/utility/ParamUtility.js'),
     './PrepareMethodUtility': loadTemplate('js/src/utility/PrepareMethodUtility.js'),
   }).makePoint],

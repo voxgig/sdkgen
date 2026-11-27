@@ -46,9 +46,10 @@ func makePointUtil(_ ctx: Context) throws -> VMap? {
   let options = ctx.options
 
   let allowOp = gpath(options, "allow", "op").asString ?? ""
-  if !allowed(gpath(options, "allow", "op"), op.name) {
+  if !opKeys(ctx).contains(where: { allowed(gpath(options, "allow", "op"), $0) }) {
+    let action = opAction(ctx).map { ":" + $0 } ?? ""
     throw ctx.makeError("point_op_allow",
-      "Operation \"\(op.name)\" not allowed by SDK option allow.op value: \"\(allowOp)\"")
+      "Operation \"\(op.name)\(action)\" not allowed by SDK option allow.op value: \"\(allowOp)\"")
   }
 
   if op.points.isEmpty {

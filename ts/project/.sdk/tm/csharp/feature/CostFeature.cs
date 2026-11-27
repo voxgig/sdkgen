@@ -2,12 +2,12 @@
 // the feature: money is spent per HTTP ATTEMPT (a retried call is charged
 // again, because the upstream API charges it again), but it is owed by an
 // OPERATION. So the transport wrap prices each attempt, and PreDone
-// attributes the running total to `<entity>.<op>` and to the caller
+// attributes the running total to the operation's key and to the caller
 // (`ctrl.actor`, the same actor the audit feature records).
 //
 // The price of an attempt comes from the first source that answers: a
-// response header (`header` x `perUnit`), the rate table (`rates`, keyed
-// '<entity>.<op>' / '<op>' / '*'), then the flat `unit`. A body figure
+// response header (`header` x `perUnit`), the rate table (`rates`, keyed as
+// rbac's rules are), then the flat `unit`. A body figure
 // (`path` x `perUnit`, e.g. "usage.total_tokens") is read at PreDone
 // instead, from the already-parsed result. A body figure describes the
 // whole call, so it REPLACES the per-attempt estimate rather than adding
@@ -21,6 +21,8 @@
 // cache is charged for money that was never spent.
 
 using Voxgig.Struct;
+
+using ProjectNameSdk.Util;
 
 using static ProjectNameSdk.Feature.FeatureOptions;
 
@@ -42,6 +44,8 @@ public class CostRecord
     public string Currency = "";
     public string Source = "";
     public int Attempts;
+    // Null for a call that names no action: a typed record has no absent field.
+    public string? Action;
 }
 
 // Per-operation accumulator. Held in ctx.Out for the life of one call, the
@@ -220,7 +224,7 @@ public class CostFeature : BaseFeature
         // signal.
         if (!pending.Piped)
         {
-            Commit(ctx, pending, "_", "direct");
+            Commit(ctx, pending, "_.direct", "_", "direct", null);
             ctx.Out.Remove(PendingKey);
         }
 
@@ -298,13 +302,14 @@ public class CostFeature : BaseFeature
             opname = "_";
         }
 
-        Commit(ctx, pending, entity, opname);
+        Commit(ctx, pending, SdkUtility.OpKeys(ctx)[0], entity, opname, SdkUtility.OpAction(ctx));
     }
 
     // Commit one operation's spend: totals, budget, per-op and per-actor
     // attribution, and the record. Shared by Finish and the raw-request
     // path in Charge, which has no PreDone to reach.
-    private void Commit(Context ctx, CostPending pending, string entity, string opname)
+    private void Commit(Context ctx, CostPending pending, string key, string entity,
+        string opname, string? action)
     {
         var amount = pending.Amount;
         var reported = pending.Reported;
@@ -336,7 +341,7 @@ public class CostFeature : BaseFeature
         }
 
         Total.Calls++;
-        Bump(Ops, entity + "." + opname, amount);
+        Bump(Ops, key, amount);
         Bump(Actors, actor, amount);
 
         _seq++;
@@ -352,6 +357,7 @@ public class CostFeature : BaseFeature
             Currency = FcleanStr(ctx, Currency),
             Source = FcleanStr(ctx, source),
             Attempts = pending.Attempts,
+            Action = action == null ? null : FcleanStr(ctx, action),
         };
 
         if (Opt(_options, "sink") is Action<CostRecord> sink)
@@ -396,8 +402,7 @@ public class CostFeature : BaseFeature
         return (0, "none");
     }
 
-    // The rate table uses the same lookup grammar as rbac's rules:
-    // '<entity>.<op>', then '<op>', then '*'.
+    // The rate table is keyed as rbac's rules are.
     private (double, bool) Rate(Context ctx)
     {
         var rates = FoptMap(_options, "rates");
@@ -406,10 +411,7 @@ public class CostFeature : BaseFeature
             return (0, false);
         }
 
-        var entity = ctx.Entity?.GetName() ?? ctx.Op?.Entity ?? "";
-        var opname = ctx.Op?.Name ?? "";
-
-        foreach (var key in new[] { entity + "." + opname, opname, "*" })
+        foreach (var key in SdkUtility.OpKeys(ctx))
         {
             if (rates.TryGetValue(key, out var r))
             {

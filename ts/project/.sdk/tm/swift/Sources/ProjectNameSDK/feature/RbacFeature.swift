@@ -3,7 +3,8 @@
 // against the permissions the client holds; a disallowed call is
 // short-circuited with an `rbac_denied` error (via ctx.out["point"], which
 // makePoint surfaces) and never touches the network. Required permissions
-// come from `rules` (keyed by `<entity>.<op>`, `<op>`, or `*`); the default
+// come from `rules` (keyed by `<entity>.<op>:<action>`, `<entity>.<op>`, `<op>`
+// or `*`, most specific first); the default
 // when no rule matches is controlled by `deny` (default: allow when
 // unspecified). Held permissions are the `permissions` list (a `*` grants
 // everything).
@@ -65,10 +66,7 @@ public final class RbacFeature: BaseFeature {
       return ("", false)
     }
 
-    let entity = ctx.entity?.getName() ?? ctx.op?.entity ?? ""
-    let opname = ctx.op?.name ?? ""
-
-    for key in [entity + "." + opname, opname, "*"] {
+    for key in opKeys(ctx) {
       if let rs = gp(rules, key).asString {
         return (rs, true)
       }
@@ -79,9 +77,8 @@ public final class RbacFeature: BaseFeature {
   private func reject(_ ctx: Context, _ required: String) {
     track(ctx, required, false)
 
-    let opname = ctx.op?.name ?? "?"
     let err = ctx.makeError("rbac_denied",
-      "Permission \"" + required + "\" required for operation \"" + opname + "\"")
+      "Permission \"" + required + "\" required for operation \"" + opName(ctx) + "\"")
 
     // Short-circuit endpoint resolution; makePoint surfaces this error
     // before any network activity.
@@ -98,6 +95,15 @@ public final class RbacFeature: BaseFeature {
     l.entries["required"] = .string(required)
     l.entries["allowed"] = .bool(isAllowed)
     l.entries["op"] = .string(ctx.op?.name ?? "")
+    if let action = opAction(ctx) {
+      l.entries["action"] = .string(action)
+    }
     last = l
+  }
+
+  private func opName(_ ctx: Context) -> String {
+    let name = ctx.op?.name ?? "?"
+    guard let action = opAction(ctx) else { return name }
+    return name + ":" + action
   }
 }
