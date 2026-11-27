@@ -765,6 +765,82 @@ static void actionKeys_costPricedApart() {
   ASSERT_EQ_VAL(getp(f->last, "action"), Value("audio"), "expected last.action audio");
 }
 
+// An action that holds a registered secret (the client's apikey) is cleaned
+// wherever a consumer reads it, and still matched raw by a rule or a rate.
+static const std::string AK_SECRET = "ak-secret-action-canary-5d1e";
+static Value akSecretOpts() { return fhMap({{"apikey", Value(AK_SECRET)}}); }
+static Value akSecret() { return fhMap({{"$action", Value(AK_SECRET)}, {"id", Value("e1")}}); }
+
+template <typename M>
+static bool akKeysHoldSecret(const M& ops) {
+  for (const auto& kv : ops) if (kv.first.find(AK_SECRET) != std::string::npos) return true;
+  return false;
+}
+template <typename M>
+static bool akKeysHavePrefix(const M& ops, const std::string& prefix) {
+  for (const auto& kv : ops) if (0 == kv.first.rfind(prefix, 0)) return true;
+  return false;
+}
+
+static void actionKeys_rbacRecordCleansTheAction() {
+  if (!have({"rbac"})) return;
+  auto f = std::make_shared<RbacFeature>();
+  auto h = fhMakeOpts(akSecretOpts(), nullptr, {FF(f, fhMap({
+      {"rules", fhMap({{"episode.load:" + AK_SECRET, Value("secret")}})}, {"permissions", vlist()}}))});
+  ASSERT_EQ(fhErrCode(h->op(akLoad(akSecret())).err), std::string("rbac_denied"),
+            "expected the raw rule to decide");
+  Value got = getp(f->last, "action");
+  ASSERT_TRUE(got.is_string() && !got.as_string().empty(), "expected last.action to be set");
+  ASSERT_TRUE(got.is_string() && got.as_string().find(AK_SECRET) == std::string::npos,
+              "expected last.action to be masked");
+}
+
+static void actionKeys_metricsBucketCleansTheAction() {
+  if (!have({"metrics"})) return;
+  auto f = std::make_shared<MetricsFeature>();
+  auto h = fhMakeOpts(akSecretOpts(), nullptr, {FF(f, Value::undef())});
+  h->op(akLoad(akSecret()));
+  ASSERT_TRUE(akKeysHavePrefix(f->ops, "episode.load:"), "expected the call filed as an action");
+  ASSERT_FALSE(akKeysHoldSecret(f->ops), "expected no bucket to name the secret");
+}
+
+static void actionKeys_costBucketCleansTheAction() {
+  if (!have({"cost"})) return;
+  auto f = std::make_shared<CostFeature>();
+  auto h = fhMakeOpts(akSecretOpts(), nullptr, {FF(f, fhMap({
+      {"rates", fhMap({{"episode.load:" + AK_SECRET, Value(7)}})}}))});
+  h->op(akLoad(akSecret()));
+  ASSERT_EQ(f->total.amount, 7.0, "expected the raw rate to decide");
+  ASSERT_TRUE(akKeysHavePrefix(f->ops, "episode.load:"), "expected the call filed as an action");
+  ASSERT_FALSE(akKeysHoldSecret(f->ops), "expected no bucket to name the secret");
+}
+
+// With `action` a sensitive key name, a plain action is masked where a
+// consumer reads it, and the raw rule still decides.
+static void actionKeys_sensitiveKeyMasksTheAction() {
+  if (!have({"rbac", "metrics", "cost"})) return;
+  Value opts = fhMap({{"clean", fhMap({{"keys", Value("action")}})}});
+  const std::string masked = "episode.load:[redacted]";
+
+  auto rf = std::make_shared<RbacFeature>();
+  auto rh = fhMakeOpts(opts, nullptr, {FF(rf, fhMap({
+      {"rules", fhMap({{"episode.load:audio", Value("audio")}})},
+      {"permissions", vlist({Value("audio")})}}))});
+  ASSERT_TRUE(rh->op(akLoad(akAudio())).ok, "expected the raw rule to admit");
+  ASSERT_EQ_VAL(getp(rf->last, "action"), Value("[redacted]"), "expected last.action to be the mask");
+
+  auto mf = std::make_shared<MetricsFeature>();
+  auto mh = fhMakeOpts(opts, nullptr, {FF(mf, Value::undef())});
+  mh->op(akLoad(akAudio()));
+  ASSERT_EQ(mf->ops[masked].count, 1, "expected metrics to file under the mask");
+
+  auto cf = std::make_shared<CostFeature>();
+  auto ch = fhMakeOpts(opts, nullptr, {FF(cf, fhMap({{"rates", fhMap({{"episode.load:audio", Value(5)}})}}))});
+  ch->op(akLoad(akAudio()));
+  ASSERT_EQ(cf->ops[masked].calls, 1, "expected cost to file under the mask");
+  ASSERT_EQ(cf->ops[masked].amount, 5.0, "expected the raw rate to decide");
+}
+
 static void actionKeys_costActionFallsBackToOperationRate() {
   if (!have({"cost"})) return;
   auto f = std::make_shared<CostFeature>();
@@ -1088,6 +1164,10 @@ int main() {
   T_RUN(actionKeys_auditRecordNamesAction);
   T_RUN(actionKeys_costPricedApart);
   T_RUN(actionKeys_costActionFallsBackToOperationRate);
+  T_RUN(actionKeys_rbacRecordCleansTheAction);
+  T_RUN(actionKeys_metricsBucketCleansTheAction);
+  T_RUN(actionKeys_costBucketCleansTheAction);
+  T_RUN(actionKeys_sensitiveKeyMasksTheAction);
   T_RUN(audit_oneRecordPerOpSinkActor);
   T_RUN(audit_defaultActorAnonymous);
   T_RUN(audit_injectedClock);

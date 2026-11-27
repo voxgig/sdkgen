@@ -23,6 +23,7 @@ import static JAVAPACKAGE.sdktest.FeatureHarness.fhErrCode;
 import static JAVAPACKAGE.sdktest.FeatureHarness.fhF;
 import static JAVAPACKAGE.sdktest.FeatureHarness.fhHasFeature;
 import static JAVAPACKAGE.sdktest.FeatureHarness.fhMake;
+import static JAVAPACKAGE.sdktest.FeatureHarness.fhMakeWith;
 import static JAVAPACKAGE.sdktest.FeatureHarness.fhMap;
 import static JAVAPACKAGE.sdktest.FeatureHarness.fhOp;
 import static JAVAPACKAGE.sdktest.FeatureHarness.fhResponse;
@@ -756,6 +757,77 @@ public class FeatureTest {
     h.op(fhOp("load").entity("episode").reqmatch(akAudio()));
     assertEquals(1, f.ops.get("episode.load:audio").calls);
     assertEquals(2.0, f.ops.get("episode.load:audio").amount);
+  }
+
+  // The caller's action can carry a registered secret; what a consumer reads
+  // is cleaned, while a rule or rate still names the raw action.
+  static final String AK_SECRET = "SECRETACTION9";
+
+  static Map<String, Object> akSecret() {
+    return fhMap("$action", AK_SECRET, "id", "e1");
+  }
+
+  static void akNoSecret(String what, Iterable<String> keys) {
+    for (String key : keys) {
+      assertFalse(key.contains(AK_SECRET), what + " names the secret: " + key);
+    }
+  }
+
+  @Test
+  public void actionKeys_rbacCleansTheRecordedAction() {
+    assumeFeatures("rbac");
+    RbacFeature f = new RbacFeature();
+    FhHarness h = fhMakeWith(fhMap("apikey", AK_SECRET), null, fhF(f, fhMap(
+        "rules", fhMap("episode.load:" + AK_SECRET, "audio"),
+        "permissions", akList())));
+    assertEquals("rbac_denied",
+        fhErrCode(h.op(fhOp("load").entity("episode").reqmatch(akSecret())).err));
+    assertFalse(String.valueOf(f.last.get("action")).contains(AK_SECRET),
+        "the recorded action is the secret: " + f.last.get("action"));
+    assertEquals("[redacted]", f.last.get("action"));
+  }
+
+  @Test
+  public void actionKeys_metricsCleansTheBucketName() {
+    assumeFeatures("metrics");
+    MetricsFeature f = new MetricsFeature();
+    FhHarness h = fhMakeWith(fhMap("apikey", AK_SECRET), null, fhF(f, null));
+    h.op(fhOp("load").entity("episode").reqmatch(akSecret()));
+    h.op(fhOp("load").entity("episode").reqmatch(akAudio()));
+    akNoSecret("metrics.ops", f.ops.keySet());
+    assertEquals(1, f.ops.get("episode.load:[redacted]").count);
+    assertEquals(1, f.ops.get("episode.load:audio").count);
+  }
+
+  @Test
+  public void actionKeys_costCleansTheBucketName() {
+    assumeFeatures("cost");
+    CostFeature f = new CostFeature();
+    FhHarness h = fhMakeWith(fhMap("apikey", AK_SECRET), null, fhF(f, fhMap(
+        "rates", fhMap("episode.load:" + AK_SECRET, 7, "episode.load", 1))));
+    h.op(fhOp("load").entity("episode").reqmatch(akSecret()));
+    h.op(fhOp("load").entity("episode").reqmatch(akAudio()));
+    akNoSecret("cost.ops", f.ops.keySet());
+    assertEquals(7.0, f.ops.get("episode.load:[redacted]").amount);
+    assertEquals(1.0, f.ops.get("episode.load:audio").amount);
+  }
+
+  @Test
+  public void actionKeys_actionAsSensitiveKeyIsMasked() {
+    assumeFeatures("rbac", "metrics", "cost");
+    RbacFeature rbac = new RbacFeature();
+    MetricsFeature metrics = new MetricsFeature();
+    CostFeature cost = new CostFeature();
+    FhHarness h = fhMakeWith(fhMap("clean", fhMap("keys", "action")), null,
+        fhF(rbac, fhMap("rules", fhMap("episode.load:audio", "audio"),
+            "permissions", akList("audio"))),
+        fhF(metrics, null),
+        fhF(cost, fhMap("rates", fhMap("episode.load:audio", 5))));
+    FhOpResult res = h.op(fhOp("load").entity("episode").reqmatch(akAudio()));
+    assertTrue(res.ok, "expected the raw action's rule to grant: " + res.err);
+    assertEquals("[redacted]", rbac.last.get("action"));
+    assertEquals(1, metrics.ops.get("episode.load:[redacted]").count);
+    assertEquals(5.0, cost.ops.get("episode.load:[redacted]").amount);
   }
 
   // --- metrics --------------------------------------------------------------------

@@ -84,7 +84,7 @@ class RbacFeature extends BaseFeature {
     if (null != action) {
       last.action = action
     }
-    client._rbac.last = last
+    client._rbac.last = ctx.utility.clean(ctx, last)
   }
 
 

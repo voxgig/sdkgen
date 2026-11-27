@@ -160,6 +160,15 @@ pub fn op_keys(ctx: anytype) []const []const u8 {
     return A().dupe([]const u8, &.{ base, name, "*" }) catch unreachable;
 }
 
+// The key a call is filed under where a consumer reads it: the first of
+// `op_keys`, with the action cleaned.
+pub fn op_file_key(ctx: anytype) []const u8 {
+    const keys = op_keys(ctx);
+    const action = op_action(ctx) orelse return keys[0];
+    const cleaned = get_str(ctx.util().clean(ctx, jo(&.{.{ "action", vstr(action) }})), "action") orelse action;
+    return std.fmt.allocPrint(A(), "{s}:{s}", .{ keys[1], cleaned }) catch keys[0];
+}
+
 // Whether a comma-separated allow option names the item: whole names, any case.
 pub fn allow_list_has(names: Value, item: []const u8) bool {
     const list: []const u8 = switch (names) {

@@ -224,7 +224,7 @@ defmodule ProjectName.Feature.Cost do
         true ->
           S.delprop(ctx, "_cost_pending")
           call = %{
-            key: hd(H.op_keys(ctx)),
+            key: H.op_file_key(ctx),
             entity: entity_of(ctx),
             op: opname_of(ctx),
             action: H.op_action(ctx)

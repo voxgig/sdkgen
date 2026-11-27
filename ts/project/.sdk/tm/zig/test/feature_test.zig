@@ -968,6 +968,101 @@ test "feature action-keys: cost prices an action at its operation's rate" {
     try testing.expect(audio.calls == 1 and audio.amount == 2);
 }
 
+// A caller's action can hold a registered secret: what a consumer reads is
+// cleaned, while rules and rates still match the raw action.
+const AK_SECRET = "ak-secret-0123456789";
+
+fn akSecretClient(feats: []const fh.FeatSpec) *fh.FhHarness {
+    const hh = fh.fh_make(null, feats);
+    hh.utility.clean_add(hh.rootctx, AK_SECRET);
+    return hh;
+}
+
+fn akSecretLoad() fh.FhOpSpec {
+    return akLoad(h.jo(&.{ .{ "$action", h.vstr(AK_SECRET) }, .{ "id", h.vstr("e1") } }));
+}
+
+fn noKeyHolds(map: anytype, needle: []const u8) bool {
+    var it = map.keyIterator();
+    while (it.next()) |k| {
+        if (std.mem.indexOf(u8, k.*, needle) != null) return false;
+    }
+    return true;
+}
+
+test "feature action-keys: rbac cleans the action on its record" {
+    if (!fh.fh_present(&.{"rbac"})) return;
+    const f = sdk.RbacFeature.make();
+    const rf: *sdk.RbacFeature = @ptrCast(@alignCast(f.ptr));
+    const hh = akSecretClient(&.{.{ .feat = f, .options = h.jo(&.{
+        .{ "rules", h.jo(&.{.{ "episode.load:" ++ AK_SECRET, h.vstr("audio") }}) },
+        .{ "permissions", h.olist() },
+    }) }});
+    try testing.expectEqualStrings("rbac_denied", fh.fh_err_code(hh.op(akSecretLoad()).err));
+    const masked = hh.utility.clean_str(hh.rootctx, AK_SECRET);
+    try testing.expect(h.veq(h.getp(rf.last, "action"), h.vstr(masked)));
+    try testing.expect(std.mem.indexOf(u8, h.stringify(rf.last), AK_SECRET) == null);
+}
+
+test "feature action-keys: metrics files an action under its cleaned name" {
+    if (!fh.fh_present(&.{"metrics"})) return;
+    const f = sdk.MetricsFeature.make();
+    const mf: *sdk.MetricsFeature = @ptrCast(@alignCast(f.ptr));
+    const hh = akSecretClient(&.{.{ .feat = f, .options = vnull() }});
+    _ = hh.op(akSecretLoad());
+    _ = hh.op(akLoad(akAudio()));
+    try testing.expect(mf.total.count == 2);
+    try testing.expect(noKeyHolds(mf.ops, AK_SECRET));
+    try testing.expect((mf.ops.get("episode.load:audio") orelse unreachable).count == 1);
+}
+
+test "feature action-keys: cost attributes an action under its cleaned name" {
+    if (!fh.fh_present(&.{"cost"})) return;
+    const f = sdk.CostFeature.make();
+    const cf: *sdk.CostFeature = @ptrCast(@alignCast(f.ptr));
+    const hh = akSecretClient(&.{.{ .feat = f, .options = h.jo(&.{
+        .{ "rates", h.jo(&.{
+            .{ "episode.load:" ++ AK_SECRET, h.vnum(7) },
+            .{ "episode.load:audio", h.vnum(5) },
+        }) },
+    }) }});
+    _ = hh.op(akSecretLoad());
+    _ = hh.op(akLoad(akAudio()));
+    try testing.expect(cf.track.total.amount == 12);
+    try testing.expect(noKeyHolds(cf.track.ops, AK_SECRET));
+    const audio = cf.track.ops.get("episode.load:audio") orelse unreachable;
+    try testing.expect(audio.calls == 1 and audio.amount == 5);
+}
+
+// With `action` a sensitive key name, even a plain action is masked where a
+// consumer reads it.
+test "feature action-keys: a sensitive action key masks a plain action" {
+    if (!fh.fh_present(&.{ "rbac", "metrics", "cost" })) return;
+    const rfeat = sdk.RbacFeature.make();
+    const rf: *sdk.RbacFeature = @ptrCast(@alignCast(rfeat.ptr));
+    const mfeat = sdk.MetricsFeature.make();
+    const mf: *sdk.MetricsFeature = @ptrCast(@alignCast(mfeat.ptr));
+    const cfeat = sdk.CostFeature.make();
+    const cf: *sdk.CostFeature = @ptrCast(@alignCast(cfeat.ptr));
+    const hh = fh.fh_make(null, &.{
+        .{ .feat = rfeat, .options = akRules(h.ja(&.{h.vstr("audio")})) },
+        .{ .feat = mfeat, .options = vnull() },
+        .{ .feat = cfeat, .options = h.jo(&.{.{ "rates", h.jo(&.{.{ "episode.load:audio", h.vnum(5) }}) }}) },
+    });
+    const keys = h.getpath(&.{ "__derived__", "clean", "keys" }, hh.rootctx.options);
+    try testing.expect(keys == .array);
+    keys.array.append(h.vstr("action")) catch unreachable;
+    const masked = h.get_str(hh.utility.clean(hh.rootctx, h.jo(&.{.{ "action", h.vstr("audio") }})), "action") orelse "";
+    try testing.expect(!std.mem.eql(u8, masked, "audio"));
+
+    try testing.expect(hh.op(akLoad(akAudio())).ok);
+    const bucket = std.fmt.allocPrint(h.A(), "episode.load:{s}", .{masked}) catch unreachable;
+    try testing.expect(h.veq(h.getp(rf.last, "action"), h.vstr(masked)));
+    try testing.expect((mf.ops.get(bucket) orelse return error.NoMetricsBucket).count == 1);
+    const cb = cf.track.ops.get(bucket) orelse return error.NoCostBucket;
+    try testing.expect(cb.calls == 1 and cb.amount == 5);
+}
+
 // =====================================================================
 // clienttrack
 // =====================================================================

@@ -71,7 +71,7 @@ pub const MetricsFeature = struct {
 
         const dur = @max(sup.fopt_now(self.options) - start, 0);
 
-        const key = h.op_keys(ctx)[0];
+        const key = h.op_file_key(ctx);
 
         bump(&self.total, ok, dur);
         const gop = self.ops.getOrPut(key) catch return;

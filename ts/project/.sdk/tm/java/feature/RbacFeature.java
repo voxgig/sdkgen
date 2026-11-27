@@ -125,6 +125,10 @@ public class RbacFeature extends BaseFeature {
     if (action != null) {
       rec.put("action", action);
     }
+    if (ctx.utility != null && ctx.utility.clean != null) {
+      Map<String, Object> cleaned = Helpers.toMapAny(ctx.utility.clean.apply(ctx, rec));
+      rec = cleaned == null ? rec : cleaned;
+    }
     this.last = rec;
   }
 }

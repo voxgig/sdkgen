@@ -40,6 +40,17 @@ object Helpers {
     return listOf("$base:$action", base, name, "*")
   }
 
+  // The key a call is filed under where a consumer reads it: the first key,
+  // with the caller's action cleaned as the `action` field of a record, so a
+  // sensitive key name masks it as a registered secret does.
+  fun opFileKey(ctx: Context): String {
+    val keys = opKeys(ctx)
+    val action = opAction(ctx) ?: return keys[0]
+    val out = toMapAny(ctx.utility?.clean?.invoke(ctx, linkedMapOf<String, Any?>("action" to action)))
+    val cleaned = out?.get("action") as? String ?: action
+    return keys[1] + ":" + cleaned
+  }
+
   // Whether a comma-separated allow option names the item: whole names, any case.
   fun allowed(names: Any?, item: String?): Boolean {
     if (names !is String || item.isNullOrEmpty()) {

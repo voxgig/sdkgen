@@ -83,6 +83,11 @@ class RbacFeature extends BaseFeature("rbac", "0.0.1", true) {
     rec.put("op", opname)
     val action = Helpers.opAction(ctx)
     if (action != null) rec.put("action", action)
-    this.last = rec
+    this.last =
+      if (ctx.utility == null || ctx.utility.clean == null) rec
+      else {
+        val out = Helpers.toMapAny(ctx.utility.clean(ctx, rec))
+        if (out == null) rec else out
+      }
   }
 }

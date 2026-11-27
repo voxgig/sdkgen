@@ -243,9 +243,8 @@ sub _finish {
   # nothing is the whole point of ordering cost inside the cache.
   return if !$done && 0 == $entry->{attempts};
 
-  my ($key) = ProjectNameUtilities::op_keys($ctx);
   $self->_commit($ctx, $entry, {
-    'key' => $key,
+    'key' => ProjectNameUtilities::op_file_key($ctx),
     'entity' => (($ctx->{op} && defined $ctx->{op}{entity} && '' ne $ctx->{op}{entity})
       ? $ctx->{op}{entity} : '_'),
     'op' => (($ctx->{op} && defined $ctx->{op}{name} && '' ne $ctx->{op}{name})

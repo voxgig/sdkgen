@@ -24,6 +24,19 @@ module ProjectNameUtilities
     action.nil? ? [base, name, "*"] : ["#{base}:#{action}", base, name, "*"]
   end
 
+  # The key a call is filed under where a consumer reads it: the first key,
+  # with the action cleaned as the `action` field of a record, so a
+  # sensitive key name masks it as well as a registered value.
+  def self.op_file_key(ctx)
+    keys = op_keys(ctx)
+    action = op_action(ctx)
+    return keys[0] if action.nil?
+    clean = ctx.utility.respond_to?(:clean) ? ctx.utility.clean : nil
+    out = clean.respond_to?(:call) ? clean.call(ctx, { "action" => action }) : nil
+    cleaned = out.is_a?(Hash) ? out["action"] : nil
+    "#{keys[1]}:#{cleaned.is_a?(String) ? cleaned : action}"
+  end
+
   def self.op_key_part(val)
     val.is_a?(String) && !val.empty? ? val : nil
   end

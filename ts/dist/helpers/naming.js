@@ -337,9 +337,9 @@ function safeVarName(name, lang) {
     return isReservedName(name, lang) ? name + '_' : name;
 }
 const PHP_SDK_METHODS = new Set([
-    'construct', '__construct', 'direct', 'get_root_ctx', 'get_utility',
-    'graphql', 'op_allowed', 'op_denied', 'options_map', 'prepare',
-    'raw_request', 'test',
+    'binary', 'construct', '__construct', 'direct', 'get_root_ctx',
+    'get_utility', 'graphql', 'op_allowed', 'op_denied', 'options_map',
+    'prepare', 'raw_request', 'test',
 ]);
 // Backing fields the generated SDK object already holds, in EVERY target that
 // caches its entity accessors in `_<name>`. php spells it `$this->_utility`

@@ -11,6 +11,7 @@ import time
 import pytest
 
 from test.feature_harness import (
+    clean_options,
     has_feature,
     make_client,
     make_clock,
@@ -758,6 +759,71 @@ class TestActionKeys:
             "rates": {"episode.load": 2, "*": 9}}}])
         h.op(entity="episode", op="load", reqmatch=self.AUDIO)
         assert h.client._cost["ops"]["episode.load:audio"] == {"calls": 1, "amount": 2}
+
+    # A sensitive key named `action` masks a plain action where it is read.
+    @pytest.mark.skipif(not has_feature("rbac"), reason="rbac not in this SDK")
+    def test_rbac_an_action_under_a_sensitive_key_is_masked_in_the_record(self):
+        h = make_client([{"name": "rbac", "options": {
+            "rules": {"episode.load:audio": "held"}, "permissions": []}}],
+            options=clean_options(keys="action"))
+        res = h.op(entity="episode", op="load", reqmatch=self.AUDIO)
+        assert res["error"].code == "rbac_denied"
+        assert h.client._rbac["last"]["action"] == "[redacted]"
+
+    @pytest.mark.skipif(not has_feature("metrics"), reason="metrics not in this SDK")
+    def test_metrics_an_action_under_a_sensitive_key_is_masked_in_the_bucket_name(self):
+        h = make_client([{"name": "metrics", "options": {}}],
+                        options=clean_options(keys="action"))
+        h.op(entity="episode", op="load", reqmatch=self.AUDIO)
+        assert list(h.client._metrics["ops"].keys()) == ["episode.load:[redacted]"]
+
+    @pytest.mark.skipif(not has_feature("cost"), reason="cost not in this SDK")
+    def test_cost_an_action_under_a_sensitive_key_is_masked_in_the_bucket_name(self):
+        h = make_client([{"name": "cost", "options": {
+            "rates": {"episode.load:audio": 5, "*": 1}}}],
+            options=clean_options(keys="action"))
+        h.op(entity="episode", op="load", reqmatch=self.AUDIO)
+        assert h.client._cost["ops"] == {
+            "episode.load:[redacted]": {"calls": 1, "amount": 5}}
+
+    # An action holding a registered secret is matched raw and read cleaned.
+    SECRET = "sk-action-secret-0123456789"
+
+    def _secret_call(self, h):
+        return h.op(entity="episode", op="load",
+                    reqmatch={"$action": self.SECRET, "id": "e1"})
+
+    @pytest.mark.skipif(not has_feature("rbac"), reason="rbac not in this SDK")
+    def test_rbac_a_secret_action_is_cleaned_in_the_record(self):
+        h = make_client([{"name": "rbac", "options": {
+            "rules": {"episode.load:" + self.SECRET: "held"}, "permissions": []}}],
+            options=clean_options(self.SECRET))
+        assert self._secret_call(h)["error"].code == "rbac_denied"
+        action = h.client._rbac["last"]["action"]
+        assert isinstance(action, str) and action != ""
+        assert self.SECRET not in action
+
+    @pytest.mark.skipif(not has_feature("metrics"), reason="metrics not in this SDK")
+    def test_metrics_a_secret_action_is_cleaned_in_the_bucket_name(self):
+        h = make_client([{"name": "metrics", "options": {}}],
+                        options=clean_options(self.SECRET))
+        self._secret_call(h)
+        keys = list(h.client._metrics["ops"].keys())
+        assert len(keys) == 1
+        assert keys[0].startswith("episode.load:")
+        assert self.SECRET not in keys[0]
+
+    @pytest.mark.skipif(not has_feature("cost"), reason="cost not in this SDK")
+    def test_cost_a_secret_action_is_cleaned_in_the_bucket_name(self):
+        h = make_client([{"name": "cost", "options": {
+            "rates": {"episode.load:" + self.SECRET: 7, "*": 1}}}],
+            options=clean_options(self.SECRET))
+        self._secret_call(h)
+        assert h.client._cost["total"]["amount"] == 7
+        keys = list(h.client._cost["ops"].keys())
+        assert len(keys) == 1
+        assert keys[0].startswith("episode.load:")
+        assert self.SECRET not in keys[0]
 
 
 # --- clienttrack ------------------------------------------------------------------

@@ -98,7 +98,7 @@ public final class RbacFeature: BaseFeature {
     if let action = opAction(ctx) {
       l.entries["action"] = .string(action)
     }
-    last = l
+    last = fclean(ctx, l)
   }
 
   private func opName(_ ctx: Context) -> String {

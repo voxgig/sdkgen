@@ -489,6 +489,17 @@
       [base name "*"]
       [(str base ":" action) base name "*"])))
 
+;; The key a call is filed under where a consumer reads it: the first key,
+;; with the caller's action cleaned as a record's `action` field, so a
+;; sensitive key name masks it as well as a registered value.
+(defn op-file-key [ctx]
+  (let [keys (op-keys ctx)
+        action (op-action ctx)]
+    (if (nil? action)
+      (first keys)
+      (let [cleaned (mget (ucall ctx :clean (vs/jm "action" action)) "action")]
+        (str (second keys) ":" (if (string? cleaned) cleaned action))))))
+
 ;; ---------------------------------------------------------------------------
 ;; Pipeline utilities. Each takes ctx; sibling steps are reached via ucall so
 ;; overrides / feature-wrapped fetchers are honoured.

@@ -203,7 +203,7 @@ class ProjectNameCostFeature < ProjectNameBaseFeature
     return if !done && 0 == entry["attempts"]
 
     _commit(ctx, entry, {
-      "key" => ProjectNameUtilities.op_keys(ctx)[0],
+      "key" => ProjectNameUtilities.op_file_key(ctx),
       "entity" => ctx.op && ctx.op.entity ? ctx.op.entity : "_",
       "op" => ctx.op && ctx.op.name ? ctx.op.name : "_",
       "action" => ProjectNameUtilities.op_action(ctx),

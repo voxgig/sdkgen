@@ -58,7 +58,7 @@ pub const RbacFeature = struct {
         h.setp(last, "allowed", h.vbool(allowed));
         h.setp(last, "op", h.vstr(opname));
         if (h.op_action(ctx)) |action| h.setp(last, "action", h.vstr(action));
-        self.last = last;
+        self.last = ctx.util().clean(ctx, last);
     }
 
     fn reject(self: *RbacFeature, ctx: *Context, req: []const u8) void {

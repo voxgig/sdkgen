@@ -91,6 +91,22 @@ defmodule ProjectName.Helpers do
     end
   end
 
+  # The key a call is filed under where a consumer reads it: the first key,
+  # with the caller's action cleaned as a record's `action` field, so a
+  # sensitive key name masks it as well as a registered value.
+  def op_file_key(ctx) do
+    keys = op_keys(ctx)
+
+    case op_action(ctx) do
+      nil ->
+        hd(keys)
+
+      action ->
+        cleaned = get_ctx_prop(ProjectName.Feature.clean(ctx, S.jm(["action", action])), "action")
+        Enum.at(keys, 1) <> ":" <> if(is_binary(cleaned), do: cleaned, else: action)
+    end
+  end
+
   defp nonempty(v) when is_binary(v) and v != "", do: v
   defp nonempty(_), do: nil
 end

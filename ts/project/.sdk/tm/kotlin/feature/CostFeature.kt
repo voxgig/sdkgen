@@ -263,7 +263,7 @@ class CostFeature : BaseFeature("cost", "0.0.1", true) {
     val entity = if ("" == ctx.op.entity) "_" else ctx.op.entity
     val opname = if ("" == ctx.op.name) "_" else ctx.op.name
 
-    commit(ctx, raw, Helpers.opKeys(ctx)[0], entity, opname, Helpers.opAction(ctx))
+    commit(ctx, raw, Helpers.opFileKey(ctx), entity, opname, Helpers.opAction(ctx))
   }
 
   // Commit one operation's spend: totals, budget, per-op and per-actor

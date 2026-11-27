@@ -375,8 +375,9 @@ let rbac_feature () : feature =
     let cl = cc ctx in
     let bucket = track_bucket cl "rbac" (fun () -> jo [("allowed", Num 0.); ("denied", Num 0.); ("last", Noval)]) in
     bump_num bucket (if allowed then "allowed" else "denied") 1.;
-    setp bucket "last" (jo ([("required", Str required); ("allowed", Bool allowed);
-                             ("op", Str ctx.c_op.op_name)] @ action_fields ctx)) in
+    setp bucket "last" ((cu ctx).u_clean ctx
+                          (jo ([("required", Str required); ("allowed", Bool allowed);
+                                ("op", Str ctx.c_op.op_name)] @ action_fields ctx))) in
   let required ctx =
     let rules = match getp !options "rules" with Map _ as m -> m | _ -> empty_map () in
     let rule_for k = match getp rules k with Noval | Null -> None | v -> Some (vstr_of v) in
@@ -598,7 +599,7 @@ let metrics_feature () : feature =
       scratch_del ctx "metrics_start";
       let dur = Float.max 0. (now_of !options -. start) in
       let m = metrics ctx in
-      let key = List.hd (op_keys ctx) in
+      let key = op_file_key ctx in
       let ops = getp m "ops" in
       let opb = match getp ops key with Map _ as b -> b
         | _ -> let b = jo [("count", Num 0.); ("ok", Num 0.); ("err", Num 0.); ("totalMs", Num 0.); ("maxMs", Num 0.)] in setp ops key b; b in
@@ -953,7 +954,7 @@ let cost_feature () : feature =
         if done_ || attempts > 0. then begin
           let entity = if ctx.c_op.op_entity <> "" then ctx.c_op.op_entity else "_" in
           let opname = if ctx.c_op.op_name <> "" then ctx.c_op.op_name else "_" in
-          commit ctx p (List.hd (op_keys ctx)) entity opname (action_fields ctx)
+          commit ctx p (op_file_key ctx) entity opname (action_fields ctx)
         end in
 
   let charge ctx url fetchdef inner =

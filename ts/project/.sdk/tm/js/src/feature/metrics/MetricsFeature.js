@@ -1,7 +1,7 @@
 
 
 const { BaseFeature } = require('../base/BaseFeature')
-const { opKeys } = require('../../utility/OpKeyUtility')
+const { opFileKey } = require('../../utility/OpKeyUtility')
 
 
 // Statistics capture. Records per-operation counters and latency for every
@@ -67,7 +67,7 @@ class MetricsFeature extends BaseFeature {
 
     const client = this._client
     const m = client._metrics
-    const key = opKeys(ctx)[0]
+    const key = opFileKey(ctx)
 
     let op = m.ops[key]
     if (null == op) {

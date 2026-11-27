@@ -75,7 +75,7 @@ func (f *MetricsFeature) record(ctx *core.Context, ok bool) {
 		dur = 0
 	}
 
-	key := utility.OpKeys(ctx)[0]
+	key := utility.OpFileKey(ctx)
 
 	op := f.Ops[key]
 	if op == nil {

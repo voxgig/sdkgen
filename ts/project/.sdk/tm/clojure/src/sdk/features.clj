@@ -861,7 +861,7 @@
                           (let [op (core/oget ctx :op)
                                 entity (if (and op (seq (core/op-entity op))) (core/op-entity op) "_")
                                 opname (if (and op (seq (core/op-name op))) (core/op-name op) "_")]
-                            (commit! ctx p {:key (first (core/op-keys ctx)) :entity entity :op opname
+                            (commit! ctx p {:key (core/op-file-key ctx) :entity entity :op opname
                                             :action (core/op-action ctx)})))))))
         charge (fn [ctx url fetchdef inner]
                  ;; A rejecting transport still costs an attempt: without this a
@@ -1094,7 +1094,7 @@
                           dur (if (nil? start) 0 (max 0 (- (now-ms fa) start)))
                           m (track-get fa "_metrics")]
                       (when m
-                        (let [key (first (core/op-keys ctx))
+                        (let [key (core/op-file-key ctx)
                               opm (or (mget (mget m "ops") key)
                                       (let [b (vs/jm "count" 0 "ok" 0 "err" 0 "totalMs" 0 "maxMs" 0)]
                                         (.put ^java.util.Map (mget m "ops") key b) b))]
@@ -1298,7 +1298,7 @@
                    (let [last (vs/jm "required" req "allowed" allowed
                                      "op" (when (core/oget ctx :op) (core/op-name (core/oget ctx :op))))]
                      (when-let [action (core/op-action ctx)] (.put ^java.util.Map last "action" action))
-                     (.put ^java.util.Map t "last" last))))
+                     (.put ^java.util.Map t "last" (core/ucall ctx :clean last)))))
         reject (fn [ctx req]
                  (track! ctx req false)
                  (let [op (core/oget ctx :op)

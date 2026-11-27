@@ -80,10 +80,11 @@ static void metrics_record(MetricsFeature* mf, Context* ctx, bool ok) {
   int64_t dur = fopt_now_call(mf->options) - start;
   if (dur < 0) dur = 0;
 
-  OpKeys keys = op_keys(ctx);
+  // ops_entry keeps its own copy of the key.
+  char* key = op_file_key(ctx);
   bump(&mf->total, ok, dur);
-  bump(ops_entry(mf, keys.items[0]), ok, dur);
-  op_keys_free(&keys);
+  bump(ops_entry(mf, key), ok, dur);
+  free(key);
 }
 
 static void metrics_pre_point(MetricsFeature* mf, Context* ctx) {

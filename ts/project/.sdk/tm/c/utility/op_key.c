@@ -52,6 +52,31 @@ OpKeys op_keys(Context* ctx) {
   return keys;
 }
 
+char* op_file_key(Context* ctx) {
+  OpKeys keys = op_keys(ctx);
+  const char* action = op_action(ctx);
+  char* out = NULL;
+  if (NULL == action) {
+    out = strdup(keys.items[0]);
+  } else {
+    // Cleaned as the field `action` of a record, so a sensitive key name
+    // masks it as well as a registered value. With an action, items[1] is
+    // `<entity>.<op>`.
+    voxgig_value* raw = v_str(action);
+    voxgig_value* rec = cmap(1, "action", raw);
+    voxgig_release(raw);
+    voxgig_value* cleaned = clean_util(ctx, rec);
+    voxgig_value* named = getp(cleaned, "action");
+    out = op_key_join(keys.items[1], ":", voxgig_is_string(named) ? voxgig_as_string(named) : action);
+    voxgig_release(named);
+    // clean_util hands back the record itself when clean is off.
+    if (cleaned != rec) voxgig_release(cleaned);
+    voxgig_release(rec);
+  }
+  op_keys_free(&keys);
+  return out;
+}
+
 void op_keys_free(OpKeys* keys) {
   for (size_t i = 0; i < keys->len; i++) {
     free(keys->items[i]);

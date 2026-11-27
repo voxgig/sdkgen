@@ -50,6 +50,26 @@ public final class Helpers {
         : List.of(base + ":" + action, base, name, "*");
   }
 
+  // The key a call is filed under where a consumer reads it: the first key,
+  // with the caller's action cleaned as the `action` field of a record, so a
+  // sensitive key name masks it as a registered secret does.
+  public static String opFileKey(Context ctx) {
+    List<String> keys = opKeys(ctx);
+    String action = opAction(ctx);
+    if (action == null) {
+      return keys.get(0);
+    }
+    if (ctx.utility != null && ctx.utility.clean != null) {
+      Map<String, Object> rec = new java.util.LinkedHashMap<>();
+      rec.put("action", action);
+      Map<String, Object> out = toMapAny(ctx.utility.clean.apply(ctx, rec));
+      if (out != null && out.get("action") instanceof String) {
+        action = (String) out.get("action");
+      }
+    }
+    return keys.get(1) + ":" + action;
+  }
+
   // Whether a comma-separated allow option names the item: whole names, any case.
   public static boolean allowed(Object names, String item) {
     if (!(names instanceof String) || null == item || item.isEmpty()) {

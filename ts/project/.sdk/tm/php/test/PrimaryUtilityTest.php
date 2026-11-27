@@ -1046,6 +1046,7 @@ class PrimaryUtilityTest extends TestCase
         return ['form' => ['form'], 'multipart' => ['multipart'], 'raw' => ['raw']];
     }
 
+    /** @dataProvider codecKinds */
     #[\PHPUnit\Framework\Attributes\DataProvider('codecKinds')]
     public function test_prepare_body_codec(string $kind): void
     {

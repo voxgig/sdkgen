@@ -9,6 +9,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::core::context::Context;
 use crate::core::error::ProjectNameError;
+use crate::utility::clean::clean_value;
 use crate::utility::voxgigstruct as vs;
 use crate::utility::voxgigstruct::Injection;
 use vs::Value;
@@ -73,6 +74,19 @@ pub fn op_keys(ctx: &Context) -> Vec<String> {
     match op_action(ctx) {
         Some(action) => vec![format!("{}:{}", base, action), base, name, "*".to_string()],
         None => vec![base, name, "*".to_string()],
+    }
+}
+
+// The key a call is filed under where a consumer reads it: the first of
+// `op_keys`, with the action cleaned.
+pub fn op_file_key(ctx: &Context) -> String {
+    let mut keys = op_keys(ctx);
+    match op_action(ctx) {
+        None => keys.swap_remove(0),
+        Some(action) => {
+            let cleaned = clean_value(ctx, &jo(vec![("action", Value::str(action.clone()))]));
+            format!("{}:{}", keys[1], get_str(&cleaned, "action").unwrap_or(action))
+        }
     }
 }
 

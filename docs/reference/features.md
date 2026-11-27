@@ -333,7 +333,11 @@ A call with no action keeps the `<entity>.<op>` name it always had; a call
 naming an action is counted under `<entity>.<op>:<action>` and no longer
 adds to `<entity>.<op>`, and `total` counts both. A consumer that wants the
 old combined figure for an operation adds the `<entity>.<op>` bucket to
-every bucket whose name starts `<entity>.<op>:`.
+every bucket whose name starts `<entity>.<op>:`. A bucket's name and the
+`rbac` record carry the action as cleaned, as a field named `action`: an
+action holding a secret the SDK masks, or any action when `clean.keys`
+names `action`, is filed and recorded under the mask, while rules and rates
+still match the action as given.
 
 An `allow.op` entry may take any of these forms. A call is admitted when
 any of its keys is in the list, so `load` and `episode.load` admit every

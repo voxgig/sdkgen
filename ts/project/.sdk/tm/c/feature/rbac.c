@@ -65,7 +65,7 @@ static void rbac_track(RbacFeature* rf, Context* ctx, const char* required, bool
   setp(last, "op", v_str(opname));
   const char* action = op_action(ctx);
   if (action) setp(last, "action", v_str(action));
-  rf->last = last;
+  rf->last = clean_util(ctx, last);
 }
 
 static void rbac_reject(RbacFeature* rf, Context* ctx, const char* required) {

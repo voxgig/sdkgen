@@ -266,7 +266,7 @@ public final class CostFeature: BaseFeature {
       opname = "_"
     }
 
-    commit(ctx, pending, opKeys(ctx)[0], entity, opname, opAction(ctx))
+    commit(ctx, pending, opFileKey(ctx), entity, opname, opAction(ctx))
   }
 
   // Commit one operation's spend: totals, budget, per-op and per-actor

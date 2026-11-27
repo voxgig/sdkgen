@@ -216,7 +216,14 @@ enum Fh {
   }
 
   static func make(_ server: FetcherFunc?, _ features: (BaseFeature, VMap?)...) -> FhHarness {
-    let client = ProjectNameSDK.testSDK(nil, nil)
+    makeWith(nil, server, features)
+  }
+
+  // makeWith also passes SDK options to the client, so a test can reach the
+  // real clean utility with a registered secret.
+  static func makeWith(_ sdkopts: VMap?, _ server: FetcherFunc?,
+                       _ features: [(BaseFeature, VMap?)]) -> FhHarness {
+    let client = ProjectNameSDK.testSDK(nil, sdkopts)
     client.features = []
 
     let utility = client.getUtility()
@@ -903,6 +910,10 @@ final class FeatureAuditTest: XCTestCase {
 }
 
 // --- action keys -------------------------------------------------------------
+
+private let actionSecret = "ACTION-SECRET-q7w8e9r0"
+private let actionMask = "[redacted]"
+
 // A custom action is `$action` in the request argument, and its keys name it:
 // `<entity>.<op>:<action>`, most specific first.
 
@@ -1007,6 +1018,78 @@ final class FeatureActionKeysTest: XCTestCase {
     XCTAssertNil(sunk[0].action)
     XCTAssertEqual(sunk[1].action, "audio")
     XCTAssertEqual(f.last?.action, "audio")
+  }
+
+  // A caller's action may hold a registered secret: what a consumer reads is
+  // cleaned, while the lookup still matches the raw action.
+  private func secretOpts() -> VMap { vm(("apikey", .string(actionSecret))) }
+  private func secretArg() -> VMap { vm(("$action", .string(actionSecret)), ("id", .string("e1"))) }
+
+  func testRbacRecordCleansTheAction() {
+    if Fh.skipWithout("rbac") { return }
+    let f = RbacFeature()
+    let h = Fh.makeWith(secretOpts(), nil, [(f, vm(
+      ("rules", .map(vm(("episode.load", .string("read")),
+        ("episode.load:" + actionSecret, .string("secret"))))),
+      ("permissions", .list([.string("read")]))))])
+    XCTAssertEqual(Fh.errCode(load(h, secretArg()).err), "rbac_denied")
+    XCTAssertEqual(f.last?.entries["action"], .string(actionMask))
+    XCTAssertEqual(f.last?.entries["required"], .string("secret"))
+    XCTAssertEqual(f.denied, 1)
+  }
+
+  func testMetricsBucketCleansTheAction() {
+    if Fh.skipWithout("metrics") { return }
+    let f = MetricsFeature()
+    let h = Fh.makeWith(secretOpts(), nil, [(f, nil)])
+    _ = load(h, secretArg())
+    _ = load(h, audioArg())
+    XCTAssertFalse(f.ops.keys.contains { $0.contains(actionSecret) })
+    XCTAssertEqual(f.ops["episode.load:" + actionMask]?.count, 1)
+    XCTAssertEqual(f.ops["episode.load:audio"]?.count, 1)
+  }
+
+  func testMetricsBucketKeepsTheActionWithCleanOff() {
+    if Fh.skipWithout("metrics") { return }
+    let f = MetricsFeature()
+    let opts = secretOpts()
+    opts.entries["clean"] = .map(vm(("active", .bool(false))))
+    let h = Fh.makeWith(opts, nil, [(f, nil)])
+    _ = load(h, secretArg())
+    XCTAssertEqual(f.ops["episode.load:" + actionSecret]?.count, 1)
+  }
+
+  func testCostBucketCleansTheAction() {
+    if Fh.skipWithout("cost") { return }
+    let f = CostFeature()
+    let h = Fh.makeWith(secretOpts(), nil, [(f, vm(
+      ("rates", .map(vm(("episode.load", .int(1)), ("episode.load:" + actionSecret, .int(7)))))))])
+    _ = load(h, secretArg())
+    _ = load(h, audioArg())
+    XCTAssertFalse(f.ops.keys.contains { $0.contains(actionSecret) })
+    XCTAssertEqual(f.ops["episode.load:" + actionMask]?.amount, 7)
+    XCTAssertEqual(f.ops["episode.load:audio"]?.amount, 1)
+    XCTAssertEqual(f.total.amount, 8)
+  }
+
+  func testSensitiveActionKeyMasksTheAction() {
+    if Fh.skipWithout("rbac", "metrics", "cost") { return }
+    let rbac = RbacFeature()
+    let metrics = MetricsFeature()
+    let cost = CostFeature()
+    let h = Fh.makeWith(vm(("clean", .map(vm(("keys", .string("action")))))), nil, [
+      (rbac, vm(
+        ("rules", .map(vm(("episode.load:audio", .string("audio"))))),
+        ("permissions", .list([.string("audio")])))),
+      (metrics, nil),
+      (cost, vm(("rates", .map(vm(("episode.load:audio", .int(5))))))),
+    ])
+    XCTAssertTrue(load(h, audioArg()).ok)
+    XCTAssertEqual(rbac.last?.entries["action"], .string(actionMask))
+    XCTAssertEqual(metrics.ops["episode.load:" + actionMask]?.count, 1)
+    XCTAssertEqual(cost.ops["episode.load:" + actionMask]?.amount, 5)
+    XCTAssertEqual(metrics.ops.count, 1)
+    XCTAssertEqual(cost.ops.count, 1)
   }
 
   func testCostActionRateFallsBackToItsOperation() {

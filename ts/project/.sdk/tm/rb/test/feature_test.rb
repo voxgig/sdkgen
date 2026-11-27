@@ -155,6 +155,19 @@ module ProjectNameFeatureHarness
       @utility.feature_hook.call(@rootctx, "PostConstruct")
     end
 
+    # Registers a secret value with the SDK's own clean configuration, as
+    # make_options registers a credential.
+    def register_secret(value)
+      @utility.clean_add.call(@rootctx, value) if clean_config
+    end
+
+    # The SDK's own clean configuration, installed as make_options does.
+    def clean_config
+      @rootctx.options["__derived__"] ||= {}
+      @rootctx.options["__derived__"]["clean"] ||=
+        ProjectNameUtilities::CleanSupport.make_config(ProjectNameSchema::OPTSPEC["clean"])
+    end
+
     def feature(name)
       @client.features.find { |f| f.get_name == name }
     end
@@ -943,6 +956,70 @@ class FeatureTest < Minitest::Test
     h = harness([fspec("cost", "rates" => { "episode.load" => 2, "*" => 9 })])
     h.op(entity: "episode", reqmatch: AUDIO)
     assert_equal({ "calls" => 1, "amount" => 2 }, h.track(:@_cost)["ops"]["episode.load:audio"])
+  end
+
+  # An action is the caller's own string, so what a consumer reads of it is
+  # cleaned; the rule or rate it names still matches the raw action.
+  SECRET_ACTION = "CANARY-ACTION-k9x2m7q4p1"
+  SECRET_REQ = { "$action" => SECRET_ACTION, "id" => "e1" }.freeze
+
+  def test_action_keys_rbac_a_secret_action_is_cleaned_in_its_record
+    skip_unless_feature("rbac")
+    h = harness([fspec("rbac", "rules" => { "episode.load:#{SECRET_ACTION}" => "never" }, "permissions" => [])])
+    h.register_secret(SECRET_ACTION)
+    assert_equal "rbac_denied", h.op(entity: "episode", reqmatch: SECRET_REQ)["error"].code
+    last = h.track(:@_rbac)["last"]
+    assert_equal "[redacted]", last["action"]
+    refute_includes JSON.generate(last), SECRET_ACTION
+  end
+
+  def test_action_keys_metrics_a_secret_action_is_cleaned_in_its_bucket_name
+    skip_unless_feature("metrics")
+    h = harness([fspec("metrics")])
+    h.register_secret(SECRET_ACTION)
+    h.op(entity: "episode", reqmatch: SECRET_REQ)
+    h.op(entity: "episode", reqmatch: AUDIO)
+    ops = h.track(:@_metrics)["ops"]
+    assert(ops.keys.none? { |k| k.include?(SECRET_ACTION) }, ops.keys.inspect)
+    assert_equal 1, ops["episode.load:[redacted]"]["count"]
+    assert_equal 1, ops["episode.load:audio"]["count"]
+  end
+
+  def test_action_keys_cost_a_secret_action_is_cleaned_in_its_bucket_name
+    skip_unless_feature("cost")
+    h = harness([fspec("cost", "rates" => { "episode.load:#{SECRET_ACTION}" => 5, "episode.load" => 1 })])
+    h.register_secret(SECRET_ACTION)
+    h.op(entity: "episode", reqmatch: SECRET_REQ)
+    h.op(entity: "episode", reqmatch: AUDIO)
+    cost = h.track(:@_cost)
+    assert(cost["ops"].keys.none? { |k| k.include?(SECRET_ACTION) }, cost["ops"].keys.inspect)
+    assert_equal({ "calls" => 1, "amount" => 5 }, cost["ops"]["episode.load:[redacted]"])
+    assert_equal({ "calls" => 1, "amount" => 1 }, cost["ops"]["episode.load:audio"])
+  end
+
+  def test_action_keys_a_sensitive_action_key_masks_the_action
+    skip_unless_feature("rbac")
+    skip_unless_feature("metrics")
+    skip_unless_feature("cost")
+    h = harness([
+      fspec("rbac", "rules" => { "episode.load:audio" => "read" }, "permissions" => ["read"]),
+      fspec("metrics"),
+      fspec("cost", "rates" => { "episode.load:audio" => 3 }),
+    ])
+    h.clean_config["keys"] << "action"
+    assert_equal true, h.op(entity: "episode", reqmatch: AUDIO)["ok"]
+    assert_equal "[redacted]", h.track(:@_rbac)["last"]["action"]
+    assert_equal ["episode.load:[redacted]"], h.track(:@_metrics)["ops"].keys
+    assert_equal({ "episode.load:[redacted]" => { "calls" => 1, "amount" => 3 } }, h.track(:@_cost)["ops"])
+  end
+
+  def test_action_keys_a_secret_action_stays_raw_with_clean_off
+    skip_unless_feature("metrics")
+    h = harness([fspec("metrics")])
+    h.register_secret(SECRET_ACTION)
+    h.rootctx.options["__derived__"]["clean"]["active"] = false
+    h.op(entity: "episode", reqmatch: SECRET_REQ)
+    assert_equal 1, h.track(:@_metrics)["ops"]["episode.load:#{SECRET_ACTION}"]["count"]
   end
 
 

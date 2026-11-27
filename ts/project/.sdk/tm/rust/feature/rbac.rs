@@ -63,7 +63,7 @@ impl RbacFeature {
         if let Some(action) = op_action(ctx) {
             setp(&last, "action", Value::str(action));
         }
-        self.last = last;
+        self.last = ctx.util().clean(ctx, &last);
     }
 
     fn reject(&mut self, ctx: &Rc<Context>, required: &str) {

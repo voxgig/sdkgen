@@ -1059,6 +1059,21 @@ inline std::vector<std::string> opKeys(const CtxPtr& ctx) {
   return {base + ":" + action, base, name, "*"};
 }
 
+// The key a call is filed under where a consumer reads it: the first op key
+// with the action cleaned, as the field `action` of a record, so a sensitive
+// key name masks it as well as a registered value.
+inline std::string opFileKey(const CtxPtr& ctx) {
+  std::vector<std::string> keys = opKeys(ctx);
+  std::string action = opAction(ctx);
+  if (action.empty()) return keys[0];
+  std::string named = action;
+  if (ctx->utility && ctx->utility->clean) {
+    Value cleaned = getp(ctx->utility->clean(ctx, vmap({{"action", Value(action)}})), "action");
+    if (cleaned.is_string()) named = cleaned.as_string();
+  }
+  return keys[1] + ":" + named;
+}
+
 // ---- SdkClient ----
 inline SdkClient::SdkClient(const Value& options_) {
   utility = std::make_shared<Utility>();

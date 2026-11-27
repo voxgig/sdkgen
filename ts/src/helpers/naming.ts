@@ -395,9 +395,9 @@ function safeVarName(name: string, lang: string): string {
 
 
 const PHP_SDK_METHODS = new Set([
-  'construct', '__construct', 'direct', 'get_root_ctx', 'get_utility',
-  'graphql', 'op_allowed', 'op_denied', 'options_map', 'prepare',
-  'raw_request', 'test',
+  'binary', 'construct', '__construct', 'direct', 'get_root_ctx',
+  'get_utility', 'graphql', 'op_allowed', 'op_denied', 'options_map',
+  'prepare', 'raw_request', 'test',
 ])
 
 // Backing fields the generated SDK object already holds, in EVERY target that

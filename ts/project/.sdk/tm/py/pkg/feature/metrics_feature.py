@@ -4,7 +4,7 @@ from __future__ import annotations
 import time
 
 from projectname_sdk.feature.base_feature import ProjectNameBaseFeature
-from projectname_sdk.utility.op_key import op_keys
+from projectname_sdk.utility.op_key import op_file_key
 
 
 # Statistics capture. Records per-operation counters and latency for every
@@ -69,7 +69,7 @@ class ProjectNameMetricsFeature(ProjectNameBaseFeature):
         dur = max(0, self._now() - start)
 
         metrics = self.client._metrics
-        key = op_keys(ctx)[0]
+        key = op_file_key(ctx)
 
         op_bucket = metrics["ops"].get(key)
         if op_bucket is None:

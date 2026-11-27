@@ -312,10 +312,12 @@ struct FhHarness {
   }
 };
 
-// fhMake — construct the harness: a test-mode client, an isolated utility
-// whose fetcher is the mock server, and the requested features initialised.
-inline std::shared_ptr<FhHarness> fhMake(FetcherFn server, std::vector<FhFeature> features) {
-  auto client = ProjectNameSDK::testSDK();
+// fhMakeOpts — construct the harness: a test-mode client made with the
+// client's own options (sdkopts), an isolated utility whose fetcher is the
+// mock server, and the requested features initialised.
+inline std::shared_ptr<FhHarness> fhMakeOpts(const Value& sdkopts, FetcherFn server,
+                                             std::vector<FhFeature> features) {
+  auto client = ProjectNameSDK::testSDK(Value::undef(), sdkopts);
   client->features.clear();
 
   UtilityPtr utility = client->getUtility();
@@ -346,6 +348,11 @@ inline std::shared_ptr<FhHarness> fhMake(FetcherFn server, std::vector<FhFeature
   h->utility = utility;
   h->rootctx = rootctx;
   return h;
+}
+
+// fhMake — fhMakeOpts with no client options.
+inline std::shared_ptr<FhHarness> fhMake(FetcherFn server, std::vector<FhFeature> features) {
+  return fhMakeOpts(Value::undef(), server, features);
 }
 
 inline std::string fhErrCode(const SdkErrorPtr& err) { return err ? err->code : ""; }

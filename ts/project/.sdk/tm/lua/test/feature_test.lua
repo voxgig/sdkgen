@@ -156,6 +156,9 @@ local function make_client(spec)
       entity = over.entity,
       reqdata = over.reqdata or {},
       reqmatch = over.reqmatch or {},
+      -- The client options a pipeline context reads: the clean registry
+      -- make_options fills lives under them.
+      options = spec.options,
     }
     function ctx:make_error(code, msg)
       return make_err(code, msg)
@@ -1122,6 +1125,98 @@ describe("feature", function()
         assert.is_nil(sunk[1].action)
         assert.are.equal("audio", sunk[2].action)
         assert.are.equal("audio", cost.last.action)
+      end)
+    end
+
+    -- An action holding a registered secret is cleaned wherever a consumer
+    -- reads it; a rule still matches the raw action.
+    local SECRET = "ACTSECRET77"
+    local SECRET_ACTION = { ["$action"] = SECRET, id = "e1" }
+
+    local function secret_options(active, keys)
+      require("utility.register")
+      local ctx = require("core.context").new({ opname = "" }, nil)
+      ctx.utility = require("core.utility_type").new()
+      ctx.options = { apikey = SECRET, clean = { active = active ~= false, keys = keys } }
+      ctx.config = { options = {} }
+      return ctx.utility.make_options(ctx)
+    end
+
+    local function keys_hold_secret(ops)
+      for k in pairs(ops) do
+        if string.find(k, SECRET, 1, true) then
+          return true
+        end
+      end
+      return false
+    end
+
+    if has_feature("rbac") then
+      it("rbac: an action holding a secret is cleaned in the record", function()
+        local opts = secret_options()
+        local h = make_client({ options = opts, features = {
+          { name = "rbac", options = {
+            rules = { ["episode.load:" .. SECRET] = "audio" }, permissions = { "audio" } } },
+        } })
+        assert.is_true(h.op({ entity = "episode", op = "load", reqmatch = SECRET_ACTION }).ok)
+        assert.are.equal(opts["__derived__"].clean.mask, h.client._rbac.last.action)
+        assert.are.equal("audio", h.client._rbac.last.required)
+        assert.are.equal(1, h.client._rbac.allowed)
+
+        local plain = make_client({ options = secret_options(false), features = {
+          { name = "rbac", options = {
+            rules = { ["episode.load:audio"] = "audio" }, permissions = { "audio" } } },
+        } })
+        assert.is_true(plain.op({ entity = "episode", op = "load", reqmatch = AUDIO }).ok)
+        assert.are.equal("audio", plain.client._rbac.last.action)
+      end)
+    end
+
+    if has_feature("metrics") then
+      it("metrics: an action holding a secret is cleaned in the bucket name", function()
+        local h = make_client({ options = secret_options(), features = { { name = "metrics" } } })
+        h.op({ entity = "episode", op = "load", reqmatch = SECRET_ACTION })
+        h.op({ entity = "episode", op = "load", reqmatch = AUDIO })
+        assert.is_false(keys_hold_secret(h.client._metrics.ops))
+        assert.are.equal(1, h.client._metrics.ops["episode.load:audio"].count)
+
+        local off = make_client({ options = secret_options(false), features = { { name = "metrics" } } })
+        off.op({ entity = "episode", op = "load", reqmatch = SECRET_ACTION })
+        assert.is_true(keys_hold_secret(off.client._metrics.ops))
+      end)
+    end
+
+    if has_feature("rbac") and has_feature("metrics") and has_feature("cost") then
+      it("an action under a sensitive key name is masked in the record and bucket names", function()
+        local opts = secret_options(true, "apikey,action")
+        local mask = opts["__derived__"].clean.mask
+        local h = make_client({ options = opts, features = {
+          { name = "rbac", options = {
+            rules = { ["episode.load:audio"] = "audio" }, permissions = { "audio" } } },
+          { name = "metrics" },
+          { name = "cost", options = { rates = { ["episode.load:audio"] = 5 } } },
+        } })
+        assert.is_true(h.op({ entity = "episode", op = "load", reqmatch = AUDIO }).ok)
+        assert.are.equal(mask, h.client._rbac.last.action)
+        assert.is_not_nil(h.client._metrics.ops["episode.load:" .. mask])
+        assert.is_nil(h.client._metrics.ops["episode.load:audio"])
+        assert.are.same({ calls = 1, amount = 5 }, h.client._cost.ops["episode.load:" .. mask])
+        assert.is_nil(h.client._cost.ops["episode.load:audio"])
+      end)
+    end
+
+    if has_feature("cost") then
+      it("cost: an action holding a secret is cleaned in the bucket name", function()
+        local h = make_client({ options = secret_options(), features = {
+          { name = "cost", options = {
+            rates = { ["episode.load:" .. SECRET] = 7, ["episode.load:audio"] = 5 } } },
+        } })
+        h.op({ entity = "episode", op = "load", reqmatch = SECRET_ACTION })
+        h.op({ entity = "episode", op = "load", reqmatch = AUDIO })
+        local cost = h.client._cost
+        assert.is_false(keys_hold_secret(cost.ops))
+        assert.are.equal(12, cost.total.amount)
+        assert.are.same({ calls = 1, amount = 5 }, cost.ops["episode.load:audio"])
       end)
     end
   end)

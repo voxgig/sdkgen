@@ -261,7 +261,7 @@ function CostFeature:_finish(ctx, done)
   end
 
   self:_commit(ctx, pending, {
-    key = helpers.op_keys(ctx)[1],
+    key = helpers.op_file_key(ctx),
     entity = entity,
     op = opname,
     action = helpers.op_action(ctx),

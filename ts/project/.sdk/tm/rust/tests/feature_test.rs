@@ -6,7 +6,7 @@ use std::rc::Rc;
 
 use common::*;
 
-use RUSTCRATE::core::helpers::{get_bool, get_str, getp, ja, jo, vfn};
+use RUSTCRATE::core::helpers::{get_bool, get_str, getp, getpath, ja, jo, vfn};
 use RUSTCRATE::feature::audit::AuditFeature;
 use RUSTCRATE::feature::cache::CacheFeature;
 use RUSTCRATE::feature::clienttrack::ClienttrackFeature;
@@ -1614,6 +1614,114 @@ fn feature_action_keys_cost_action_falls_back_to_operation_rate() {
     let t = fb.track.borrow();
     let audio = t.ops.get("episode.load:audio").map(|b| (b.calls, b.amount));
     assert_eq!(audio, Some((1, 2.0)));
+}
+
+// A caller's action can hold a registered secret: what a consumer reads is
+// cleaned, while rules and rates still match the raw action.
+const AK_SECRET: &str = "ak-secret-0123456789";
+
+fn ak_secret_client(features: Vec<(FeatureRef, Value)>) -> FhHarness {
+    let h = fh_make(None, features);
+    h.utility.clean_add(&h.rootctx, AK_SECRET);
+    h
+}
+
+fn ak_secret_load() -> FhOpSpec {
+    ak_load(jo(vec![("$action", Value::str(AK_SECRET)), ("id", Value::str("e1"))]))
+}
+
+#[test]
+fn feature_action_keys_rbac_record_is_cleaned() {
+    if !fh_present(&["rbac"]) {
+        return;
+    }
+    let f = Rc::new(RefCell::new(RbacFeature::new()));
+    let rule = format!("episode.load:{}", AK_SECRET);
+    let h = ak_secret_client(vec![(
+        fr(&f),
+        ak_rbac(vec![(rule.as_str(), Value::str("audio"))], vec![]),
+    )]);
+    let res = h.op(ak_secret_load());
+    assert_eq!(fh_err_code(&res.err), "rbac_denied", "a raw-action rule decides");
+    let action = getp(&f.borrow().last, "action");
+    assert_eq!(action, Value::str(h.utility.clean_str(&h.rootctx, AK_SECRET)));
+    assert!(!vs::stringify(&f.borrow().last, None, false).contains(AK_SECRET));
+}
+
+#[test]
+fn feature_action_keys_metrics_bucket_is_cleaned() {
+    if !fh_present(&["metrics"]) {
+        return;
+    }
+    let f = Rc::new(RefCell::new(MetricsFeature::new()));
+    let h = ak_secret_client(vec![(fr(&f), Value::Noval)]);
+    h.op(ak_secret_load());
+    h.op(ak_load(ak_audio()));
+    let fb = f.borrow();
+    assert_eq!(fb.total.count, 2);
+    assert!(fb.ops.keys().all(|k| !k.contains(AK_SECRET)), "{:?}", fb.ops.keys());
+    assert_eq!(fb.ops.get("episode.load:audio").map(|b| b.count), Some(1));
+}
+
+#[test]
+fn feature_action_keys_cost_bucket_is_cleaned() {
+    if !fh_present(&["cost"]) {
+        return;
+    }
+    let f = Rc::new(RefCell::new(CostFeature::new()));
+    let rule = format!("episode.load:{}", AK_SECRET);
+    let h = ak_secret_client(vec![(
+        fr(&f),
+        jo(vec![(
+            "rates",
+            jo(vec![(rule.as_str(), Value::Num(7.0)), ("episode.load:audio", Value::Num(5.0))]),
+        )]),
+    )]);
+    h.op(ak_secret_load());
+    h.op(ak_load(ak_audio()));
+    let fb = f.borrow();
+    let t = fb.track.borrow();
+    assert_eq!(t.amount, 12.0, "a raw-action rate prices the call");
+    assert!(t.ops.keys().all(|k| !k.contains(AK_SECRET)), "{:?}", t.ops.keys());
+    let audio = t.ops.get("episode.load:audio").map(|b| (b.calls, b.amount));
+    assert_eq!(audio, Some((1, 5.0)));
+}
+
+// With `action` a sensitive key name, even a plain action is masked where a
+// consumer reads it.
+#[test]
+fn feature_action_keys_sensitive_action_key_is_masked() {
+    if !fh_present(&["rbac", "metrics", "cost"]) {
+        return;
+    }
+    let rf = Rc::new(RefCell::new(RbacFeature::new()));
+    let mf = Rc::new(RefCell::new(MetricsFeature::new()));
+    let cf = Rc::new(RefCell::new(CostFeature::new()));
+    let h = fh_make(
+        None,
+        vec![
+            (fr(&rf), ak_rbac(vec![("episode.load:audio", Value::str("audio"))], vec![Value::str("audio")])),
+            (fr(&mf), Value::Noval),
+            (fr(&cf), jo(vec![("rates", jo(vec![("episode.load:audio", Value::Num(5.0))]))])),
+        ],
+    );
+    let options = h.rootctx.options.borrow().clone();
+    if let Value::List(keys) = getpath(&["__derived__", "clean", "keys"], &options) {
+        keys.borrow_mut().push(Value::str("action"));
+    }
+    let masked = get_str(
+        &h.utility.clean(&h.rootctx, &jo(vec![("action", Value::str("audio"))])),
+        "action",
+    )
+    .unwrap_or_default();
+    assert_ne!(masked, "audio", "the harness made `action` a sensitive key");
+    assert!(h.op(ak_load(ak_audio())).ok, "a raw-action rule decides");
+    let bucket = format!("episode.load:{}", masked);
+    assert_eq!(getp(&rf.borrow().last, "action"), Value::str(masked.clone()));
+    assert_eq!(mf.borrow().ops.get(&bucket).map(|b| b.count), Some(1));
+    let cfb = cf.borrow();
+    let t = cfb.track.borrow();
+    assert_eq!(t.ops.get(&bucket).map(|b| (b.calls, b.amount)), Some((1, 5.0)));
 }
 
 // --- clienttrack ----------------------------------------------------------------

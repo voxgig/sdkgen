@@ -42,6 +42,7 @@ import KOTLINPACKAGE.sdktest.FeatureHarness.fhErrCode
 import KOTLINPACKAGE.sdktest.FeatureHarness.fhF
 import KOTLINPACKAGE.sdktest.FeatureHarness.fhHasFeature
 import KOTLINPACKAGE.sdktest.FeatureHarness.fhMake
+import KOTLINPACKAGE.sdktest.FeatureHarness.fhMakeWith
 import KOTLINPACKAGE.sdktest.FeatureHarness.fhMap
 import KOTLINPACKAGE.sdktest.FeatureHarness.fhOp
 import KOTLINPACKAGE.sdktest.FeatureHarness.fhResponse
@@ -689,6 +690,75 @@ class FeatureTest {
     h.op(fhOp("load").entity("episode").reqmatch(akAudio()))
     assertEquals(1, f.ops["episode.load:audio"]!!.calls)
     assertEquals(2.0, f.ops["episode.load:audio"]!!.amount)
+  }
+
+  // The caller's action can carry a registered secret; what a consumer reads
+  // is cleaned, while a rule or rate still names the raw action.
+  private val akSecretValue = "SECRETACTION9"
+
+  private fun akSecret(): MutableMap<String, Any?> = fhMap("\$action", akSecretValue, "id", "e1")
+
+  private fun akNoSecret(what: String, keys: Iterable<String>) {
+    for (key in keys) {
+      assertFalse(key.contains(akSecretValue), "$what names the secret: $key")
+    }
+  }
+
+  @Test
+  fun actionKeys_rbacCleansTheRecordedAction() {
+    assumeFeatures("rbac")
+    val f = RbacFeature()
+    val h = fhMakeWith(fhMap("apikey", akSecretValue), null, fhF(f, fhMap(
+      "rules", fhMap("episode.load:" + akSecretValue, "audio"),
+      "permissions", mutableListOf<Any?>())))
+    assertEquals("rbac_denied",
+      fhErrCode(h.op(fhOp("load").entity("episode").reqmatch(akSecret())).err))
+    assertFalse(f.last!!["action"].toString().contains(akSecretValue),
+      "the recorded action is the secret: " + f.last!!["action"])
+    assertEquals("[redacted]", f.last!!["action"])
+  }
+
+  @Test
+  fun actionKeys_metricsCleansTheBucketName() {
+    assumeFeatures("metrics")
+    val f = MetricsFeature()
+    val h = fhMakeWith(fhMap("apikey", akSecretValue), null, fhF(f, null))
+    h.op(fhOp("load").entity("episode").reqmatch(akSecret()))
+    h.op(fhOp("load").entity("episode").reqmatch(akAudio()))
+    akNoSecret("metrics.ops", f.ops.keys)
+    assertEquals(1, f.ops["episode.load:[redacted]"]!!.count)
+    assertEquals(1, f.ops["episode.load:audio"]!!.count)
+  }
+
+  @Test
+  fun actionKeys_costCleansTheBucketName() {
+    assumeFeatures("cost")
+    val f = CostFeature()
+    val h = fhMakeWith(fhMap("apikey", akSecretValue), null, fhF(f, fhMap(
+      "rates", fhMap("episode.load:" + akSecretValue, 7, "episode.load", 1))))
+    h.op(fhOp("load").entity("episode").reqmatch(akSecret()))
+    h.op(fhOp("load").entity("episode").reqmatch(akAudio()))
+    akNoSecret("cost.ops", f.ops.keys)
+    assertEquals(7.0, f.ops["episode.load:[redacted]"]!!.amount)
+    assertEquals(1.0, f.ops["episode.load:audio"]!!.amount)
+  }
+
+  @Test
+  fun actionKeys_actionAsSensitiveKeyIsMasked() {
+    assumeFeatures("rbac", "metrics", "cost")
+    val rbac = RbacFeature()
+    val metrics = MetricsFeature()
+    val cost = CostFeature()
+    val h = fhMakeWith(fhMap("clean", fhMap("keys", "action")), null,
+      fhF(rbac, fhMap("rules", fhMap("episode.load:audio", "audio"),
+        "permissions", mutableListOf<Any?>("audio"))),
+      fhF(metrics, null),
+      fhF(cost, fhMap("rates", fhMap("episode.load:audio", 5))))
+    val res = h.op(fhOp("load").entity("episode").reqmatch(akAudio()))
+    assertTrue(res.ok, "expected the raw action's rule to grant: " + res.err)
+    assertEquals("[redacted]", rbac.last!!["action"])
+    assertEquals(1, metrics.ops["episode.load:[redacted]"]!!.count)
+    assertEquals(5.0, cost.ops["episode.load:[redacted]"]!!.amount)
   }
 
   // --- metrics --------------------------------------------------------------------

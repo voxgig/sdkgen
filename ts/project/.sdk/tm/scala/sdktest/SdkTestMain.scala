@@ -240,8 +240,12 @@ object SdkTestMain {
     }
   }
 
-  def fhMake(server: FetcherFn, features: FhFeature*): FhHarness = {
-    val client = ProjectNameSDK.testSDK()
+  def fhMake(server: FetcherFn, features: FhFeature*): FhHarness = fhMakeWith(null, server, features: _*)
+
+  // fhMakeWith is fhMake over a client built with the given SDK options, so a
+  // test can reach the SDK's real clean with a registered secret.
+  def fhMakeWith(sdkopts: JMap[String, Object], server: FetcherFn, features: FhFeature*): FhHarness = {
+    val client = ProjectNameSDK.testSDK(null, sdkopts)
     client.features = new ArrayList[Feature]()
 
     val utility = client.getUtility()
@@ -538,6 +542,52 @@ object SdkTestMain {
       h.op(load().withReqmatch(audio()))
       eqI("actionKeys.cost.fallback.calls", 1, f.ops.get("episode.load:audio").calls)
       check("actionKeys.cost.fallback.amount", 2.0 == f.ops.get("episode.load:audio").amount, "amount " + f.ops.get("episode.load:audio").amount) }
+  }
+
+  // The caller's action can carry a registered secret; what a consumer reads
+  // is cleaned, while a rule or rate still names the raw action.
+  private def testActionKeysClean(): Unit = {
+    val secret = "SECRETACTION9"
+    def withSecret(): JMap[String, Object] = om("$action" -> secret, "id" -> "e1")
+    def audio(): JMap[String, Object] = om("$action" -> "audio", "id" -> "e1")
+    def load(): FhOpSpec = fhOp("load").withEntity("episode")
+    def noSecret(name: String, keys: java.util.Set[String]): Unit = {
+      val it = keys.iterator()
+      while (it.hasNext) { val k = it.next(); check(name, !k.contains(secret), "names the secret: " + k) }
+    }
+    { val f = new RbacFeature()
+      val h = fhMakeWith(om("apikey" -> secret), null, fhF(f, om(
+        "rules" -> om(("episode.load:" + secret) -> "audio"), "permissions" -> jl())))
+      eq("actionKeysClean.rbac.rule", "rbac_denied", fhErrCode(h.op(load().withReqmatch(withSecret())).err))
+      check("actionKeysClean.rbac.last", !String.valueOf(f.last.get("action")).contains(secret),
+        "the recorded action is the secret: " + f.last.get("action"))
+      eq("actionKeysClean.rbac.mask", "[redacted]", f.last.get("action")) }
+    { val f = new MetricsFeature()
+      val h = fhMakeWith(om("apikey" -> secret), null, fhF(f, null))
+      h.op(load().withReqmatch(withSecret())); h.op(load().withReqmatch(audio()))
+      noSecret("actionKeysClean.metrics.keys", f.ops.keySet())
+      check("actionKeysClean.metrics.mask", f.ops.get("episode.load:[redacted]") != null, "keys " + f.ops.keySet())
+      check("actionKeysClean.metrics.plain", f.ops.get("episode.load:audio") != null, "keys " + f.ops.keySet()) }
+    { val f = new CostFeature()
+      val h = fhMakeWith(om("apikey" -> secret), null, fhF(f, om(
+        "rates" -> om(("episode.load:" + secret) -> I(7), "episode.load" -> I(1)))))
+      h.op(load().withReqmatch(withSecret())); h.op(load().withReqmatch(audio()))
+      noSecret("actionKeysClean.cost.keys", f.ops.keySet())
+      val masked = f.ops.get("episode.load:[redacted]")
+      check("actionKeysClean.cost.rate", masked != null && 7.0 == masked.amount, "keys " + f.ops.keySet())
+      val plain = f.ops.get("episode.load:audio")
+      check("actionKeysClean.cost.plain", plain != null && 1.0 == plain.amount, "keys " + f.ops.keySet()) }
+    { val rbac = new RbacFeature(); val metrics = new MetricsFeature(); val cost = new CostFeature()
+      val h = fhMakeWith(om("clean" -> om("keys" -> "action")), null,
+        fhF(rbac, om("rules" -> om("episode.load:audio" -> "audio"), "permissions" -> jl("audio"))),
+        fhF(metrics, null),
+        fhF(cost, om("rates" -> om("episode.load:audio" -> I(5)))))
+      val r = h.op(load().withReqmatch(audio()))
+      check("actionKeysClean.sensitive.rule", r.ok, "expected the raw action's rule to grant: " + r.err)
+      eq("actionKeysClean.sensitive.rbac", "[redacted]", rbac.last.get("action"))
+      check("actionKeysClean.sensitive.metrics", metrics.ops.get("episode.load:[redacted]") != null, "keys " + metrics.ops.keySet())
+      val c = cost.ops.get("episode.load:[redacted]")
+      check("actionKeysClean.sensitive.cost", c != null && 5.0 == c.amount, "keys " + cost.ops.keySet()) }
   }
 
   private def testAllowAction(): Unit = {
@@ -1148,7 +1198,7 @@ object SdkTestMain {
     val suites: Seq[(String, () => Unit)] = Seq(
       "netsim" -> testNetsim, "retry" -> testRetry, "timeout" -> testTimeout,
       "ratelimit" -> testRatelimit, "cache" -> testCache, "idempotency" -> testIdempotency,
-      "rbac" -> testRbac, "actionKeys" -> testActionKeys, "allowAction" -> testAllowAction,
+      "rbac" -> testRbac, "actionKeys" -> testActionKeys, "actionKeysClean" -> testActionKeysClean, "allowAction" -> testAllowAction,
       "metrics" -> testMetrics, "telemetry" -> testTelemetry,
       "debug" -> testDebug, "audit" -> testAudit, "clienttrack" -> testClienttrack,
       "paging" -> testPaging, "streaming" -> testStreaming, "proxy" -> testProxy,

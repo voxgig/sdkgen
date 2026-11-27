@@ -97,7 +97,7 @@ function MetricsFeature:_record(ctx, ok)
 
   local client = self.client
   local m = client._metrics
-  local key = helpers.op_keys(ctx)[1]
+  local key = helpers.op_file_key(ctx)
 
   local op = m.ops[key]
   if op == nil then

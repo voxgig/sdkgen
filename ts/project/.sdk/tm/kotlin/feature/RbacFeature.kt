@@ -100,6 +100,6 @@ class RbacFeature : BaseFeature("rbac", "0.0.1", true) {
     if (action != null) {
       rec["action"] = action
     }
-    this.last = rec
+    this.last = Helpers.toMapAny(ctx.utility?.clean?.invoke(ctx, rec)) ?: rec
   }
 }

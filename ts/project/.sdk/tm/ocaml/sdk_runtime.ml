@@ -607,6 +607,18 @@ let ctx_to_value (ctx : ctx) : value =
       ("meta", ctx.c_meta) ] in
   match ctx.c_utility with Some u -> u.u_clean ctx record | None -> clean_util ctx record
 
+(* The key a call is filed under where a consumer reads it: the first key,
+   with the caller's action cleaned as a record's `action` field, so a
+   sensitive key name masks it as well as a registered value. *)
+let op_file_key (ctx : ctx) : string =
+  match op_action ctx, op_keys ctx with
+  | Some a, _ :: base :: _ ->
+    let record = jo [("action", Str a)] in
+    let out = match ctx.c_utility with Some u -> u.u_clean ctx record | None -> clean_util ctx record in
+    base ^ ":" ^ (match getp out "action" with Str s -> s | _ -> a)
+  | _, first :: _ -> first
+  | _, [] -> "_._"
+
 (* The client's own serialisation: its name and mode, never its options. *)
 let client_to_value (client : sdk_client) : value =
   jo [("name", Str "ProjectName"); ("mode", Str client.cl_mode)]

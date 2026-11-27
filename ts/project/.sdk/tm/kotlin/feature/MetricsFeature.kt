@@ -65,7 +65,7 @@ class MetricsFeature : BaseFeature("metrics", "0.0.1", true) {
       dur = 0
     }
 
-    val key = Helpers.opKeys(ctx)[0]
+    val key = Helpers.opFileKey(ctx)
 
     var op = this.ops[key]
     if (op == null) {

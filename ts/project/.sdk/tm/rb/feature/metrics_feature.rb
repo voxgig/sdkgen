@@ -66,7 +66,7 @@ class ProjectNameMetricsFeature < ProjectNameBaseFeature
 
     m = @client.instance_variable_get(:@_metrics)
     return if m.nil?
-    key = ProjectNameUtilities.op_keys(ctx)[0]
+    key = ProjectNameUtilities.op_file_key(ctx)
 
     op = m["ops"][key]
     if op.nil?

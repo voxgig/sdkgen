@@ -191,8 +191,9 @@ class CodecTest extends TestCase
     private function multipart(array $arrived): array
     {
         $type = (string)($arrived['headers']['content-type'] ?? '');
-        $this->assertMatchesRegularExpression('/boundary=([^;]+)/', $type);
-        preg_match('/boundary=([^;]+)/', $type, $m);
+        // preg_match rather than assertMatchesRegularExpression, which
+        // PHPUnit 8 does not have.
+        $this->assertSame(1, preg_match('/boundary=([^;]+)/', $type, $m), $type);
         $boundary = $m[1];
         $text = $arrived['body'];
         $this->assertStringEndsWith("--{$boundary}--\r\n", $text, 'the body does not close');
@@ -255,6 +256,9 @@ class CodecTest extends TestCase
         $this->assertNotEmpty(self::cases(), 'no form, multipart or raw point was found');
     }
 
+    // Both spellings: PHPUnit 8 and 9 read the annotation, later ones the
+    // attribute.
+    /** @dataProvider cases */
     #[DataProvider('cases')]
     public function test_codec(string $kind, string $accessor, string $opname, array $point): void
     {

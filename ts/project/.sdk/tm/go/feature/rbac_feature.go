@@ -102,7 +102,7 @@ func (f *RbacFeature) track(ctx *core.Context, required string, allowed bool) {
 	if action := utility.OpAction(ctx); "" != action {
 		last["action"] = action
 	}
-	f.Last = last
+	f.Last = fclean(ctx, last)
 }
 
 func (f *RbacFeature) opname(ctx *core.Context) string {

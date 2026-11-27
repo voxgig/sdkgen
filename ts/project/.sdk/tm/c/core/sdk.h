@@ -668,6 +668,10 @@ typedef struct {
 } OpKeys;
 OpKeys op_keys(Context* ctx);
 void op_keys_free(OpKeys* keys);
+
+// The key a call is filed under where a consumer reads it: the first op key
+// with the action cleaned. Malloc'd; the caller frees it.
+char* op_file_key(Context* ctx);
 Spec* make_spec_util(Context* ctx, PNError** err);
 char* make_url_util(Context* ctx, PNError** err); // malloc'd
 voxgig_value* param_util(Context* ctx, voxgig_value* paramdef);

@@ -83,7 +83,7 @@ defmodule ProjectName.Feature.Metrics do
       dur = max(0, F.now(f) - start)
 
       metrics = S.getprop(S.getprop(f, "client"), "_metrics")
-      key = hd(H.op_keys(ctx))
+      key = H.op_file_key(ctx)
 
       ops = S.getprop(metrics, "ops")
       op_bucket = S.getprop(ops, key)

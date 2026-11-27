@@ -88,7 +88,7 @@ class ProjectNameRbacFeature(ProjectNameBaseFeature):
         action = op_action(ctx)
         if action is not None:
             last["action"] = action
-        track["last"] = last
+        track["last"] = ctx.utility.clean(ctx, last)
 
     def _opname(self, ctx):
         name = "?"

@@ -170,6 +170,22 @@ sub recording_server {
     return undef;
   }
 
+  # Registers a secret value with the SDK's own clean configuration, as
+  # make_options registers a credential.
+  sub register_secret {
+    my ($self, $value) = @_;
+    my $cfg = $self->clean_config;
+    $self->{utility}{clean_add}->($self->{rootctx}, $value);
+    return $cfg;
+  }
+
+  # The SDK's own clean configuration, installed as make_options does.
+  sub clean_config {
+    my ($self) = @_;
+    return $self->{client}{options}{__derived__}{clean}
+      ||= ProjectNameCleanSupport::make_config(ProjectNameSchema::optspec()->{clean});
+  }
+
   sub track {
     my ($self, $key) = @_;
     return $self->{client}{$key};
@@ -980,6 +996,74 @@ else { note('feature "audit" not present in this SDK') }
       is_deeply($h->track('_cost')->{ops}{'episode.load:audio'}, { 'calls' => 1, 'amount' => 2 },
         'action-keys cost: an action with no rate of its own takes its operation\'s');
     }
+  }
+
+  # An action is the caller's own string, so what a consumer reads of it is
+  # cleaned; the rule or rate it names still matches the raw action.
+  my $SECRET = 'CANARY-ACTION-k9x2m7q4p1';
+  my $SECRET_REQ = { '$action' => $SECRET, 'id' => 'e1' };
+
+  if (has_feature('rbac')) {
+    my $h = harness([fspec('rbac', 'rules' => { "episode.load:$SECRET" => 'never' }, 'permissions' => [])]);
+    $h->register_secret($SECRET);
+    is($h->op('entity' => 'episode', 'reqmatch' => $SECRET_REQ)->{error}{code}, 'rbac_denied',
+      'action-keys rbac: a rule keyed on a secret action still decides');
+    my $last = $h->track('_rbac')->{last};
+    is($last->{action}, '[redacted]', 'action-keys rbac: a secret action is cleaned in its record');
+    ok(!grep({ defined $_ && !ref $_ && index($_, $SECRET) >= 0 } values %$last),
+      'action-keys rbac: the record holds no secret');
+  }
+
+  if (has_feature('metrics')) {
+    {
+      my $h = harness([fspec('metrics')]);
+      $h->register_secret($SECRET);
+      $h->op('entity' => 'episode', 'reqmatch' => $SECRET_REQ);
+      $h->op('entity' => 'episode', 'reqmatch' => $AUDIO);
+      my $ops = $h->track('_metrics')->{ops};
+      ok(!grep({ index($_, $SECRET) >= 0 } keys %$ops),
+        'action-keys metrics: no bucket name holds a secret action: ' . join(', ', sort keys %$ops));
+      is($ops->{'episode.load:[redacted]'}{count}, 1, 'action-keys metrics: the secret action is filed cleaned');
+      is($ops->{'episode.load:audio'}{count}, 1, 'action-keys metrics: a plain action is filed as before');
+    }
+
+    {
+      my $h = harness([fspec('metrics')]);
+      $h->register_secret($SECRET)->{active} = 0;
+      $h->op('entity' => 'episode', 'reqmatch' => $SECRET_REQ);
+      is($h->track('_metrics')->{ops}{"episode.load:$SECRET"}{count}, 1,
+        'action-keys metrics: with clean off the action stays raw');
+    }
+  }
+
+  if (has_feature('rbac') && has_feature('metrics') && has_feature('cost')) {
+    my $h = harness([
+      fspec('rbac', 'rules' => { 'episode.load:audio' => 'read' }, 'permissions' => ['read']),
+      fspec('metrics'),
+      fspec('cost', 'rates' => { 'episode.load:audio' => 3 }),
+    ]);
+    push @{ $h->clean_config->{keys} }, 'action';
+    ok($h->op('entity' => 'episode', 'reqmatch' => $AUDIO)->{ok},
+      'action-keys: a sensitive action key leaves the rule matching');
+    is($h->track('_rbac')->{last}{action}, '[redacted]', 'action-keys rbac: a sensitive action key masks the record');
+    is_deeply([keys %{ $h->track('_metrics')->{ops} }], ['episode.load:[redacted]'],
+      'action-keys metrics: a sensitive action key masks the bucket name');
+    is_deeply($h->track('_cost')->{ops}, { 'episode.load:[redacted]' => { 'calls' => 1, 'amount' => 3 } },
+      'action-keys cost: a sensitive action key masks the bucket name');
+  }
+
+  if (has_feature('cost')) {
+    my $h = harness([fspec('cost', 'rates' => { "episode.load:$SECRET" => 5, 'episode.load' => 1 })]);
+    $h->register_secret($SECRET);
+    $h->op('entity' => 'episode', 'reqmatch' => $SECRET_REQ);
+    $h->op('entity' => 'episode', 'reqmatch' => $AUDIO);
+    my $ops = $h->track('_cost')->{ops};
+    ok(!grep({ index($_, $SECRET) >= 0 } keys %$ops),
+      'action-keys cost: no bucket name holds a secret action: ' . join(', ', sort keys %$ops));
+    is_deeply($ops->{'episode.load:[redacted]'}, { 'calls' => 1, 'amount' => 5 },
+      'action-keys cost: a rate keyed on a secret action still prices it, filed cleaned');
+    is_deeply($ops->{'episode.load:audio'}, { 'calls' => 1, 'amount' => 1 },
+      'action-keys cost: a plain action is filed as before');
   }
 }
 

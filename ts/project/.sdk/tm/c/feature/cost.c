@@ -436,14 +436,15 @@ static void cost_finish(CostFeature* cf, Context* ctx, bool done) {
     if (!voxgig_is_number(an) || 0 == (int64_t)voxgig_as_double(an)) return;
   }
 
-  OpKeys keys = op_keys(ctx);
+  // cost_map_entry keeps its own copy of the key.
+  char* key = op_file_key(ctx);
   CostCall call;
-  call.key = keys.items[0];
+  call.key = key;
   call.entity = (ctx->op && ctx->op->entity[0] != '\0') ? ctx->op->entity : "_";
   call.op = (ctx->op && ctx->op->name[0] != '\0') ? ctx->op->name : "_";
   call.action = op_action(ctx);
   cost_commit(cf->track, cf->options, ctx, pending, call);
-  op_keys_free(&keys);
+  free(key);
 }
 
 static const char* cost_name(Feature* f) { return ((CostFeature*)f)->name; }

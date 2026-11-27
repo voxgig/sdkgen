@@ -354,6 +354,67 @@ let () =
         check_vstr "action sink" (getp (List.nth !sunk 1) "action") "audio";
         check_vstr "last" (getp (getp c "last") "action") "audio");
 
+  (* An action holding a registered secret is cleaned wherever a consumer
+     reads it; a rule still matches the raw action. *)
+  let secret = "ACTSECRET77" in
+  let secret_action () = jo [("$action", Str secret); ("id", Str "e1")] in
+  let secret_options ?(keys = Noval) active =
+    let cl = Sdk_client.test () in
+    let ctx = cl.cl_utility.u_make_context
+        { (Sdk_runtime.default_ctxspec ()) with cs_opname = Some "load" } cl.cl_rootctx in
+    let cleanopts = jo [("active", Bool active)] in
+    (match keys with Str _ -> setp cleanopts "keys" keys | _ -> ());
+    ctx.c_options <- jo [("apikey", Str secret); ("clean", cleanopts)];
+    ctx.c_config <- jo [("options", empty_map ())];
+    cl.cl_utility.u_make_options ctx in
+  let key_names v = match v with Map m -> List.map fst m.entries | _ -> [] in
+  let holds_secret ops = List.exists (fun k -> contains k secret) (key_names ops) in
+  if has_feature "rbac" then
+    test "action-keys.rbac_secret_action_cleaned" (fun () ->
+        let opts = secret_options true in
+        let h = make_client ~options:opts [("rbac", jo [
+            ("rules", jo [("episode.load:" ^ secret, Str "audio")]);
+            ("permissions", ja [Str "audio"])])] in
+        check "raw rule decides" (episode h (secret_action ())).or_ok;
+        let last = getp (track h "rbac") "last" in
+        check_vstr "masked" (getp last "action") (vs_str (getpath_s opts "__derived__.clean.mask"));
+        check_vstr "required" (getp last "required") "audio";
+        let plain = make_client ~options:(secret_options false) [("rbac", jo [
+            ("rules", jo [("episode.load:audio", Str "audio")]); ("permissions", ja [Str "audio"])])] in
+        check "plain ok" (episode plain (audio ())).or_ok;
+        check_vstr "plain action" (getp (getp (track plain "rbac") "last") "action") "audio");
+  if has_feature "metrics" then
+    test "action-keys.metrics_secret_action_cleaned" (fun () ->
+        let h = make_client ~options:(secret_options true) [("metrics", empty_map ())] in
+        ignore (episode h (secret_action ())); ignore (episode h (audio ()));
+        let ops = getp (track h "metrics") "ops" in
+        check "no secret key" (not (holds_secret ops));
+        check_vnum "plain name" (getp (getp ops "episode.load:audio") "count") 1.;
+        let off = make_client ~options:(secret_options false) [("metrics", empty_map ())] in
+        ignore (episode off (secret_action ()));
+        check "clean off" (holds_secret (getp (track off "metrics") "ops")));
+  if has_feature "cost" then
+    test "action-keys.cost_secret_action_cleaned" (fun () ->
+        let h = make_client ~options:(secret_options true) [("cost", jo [
+            ("rates", jo [("episode.load:" ^ secret, Num 7.); ("episode.load:audio", Num 5.)])])] in
+        ignore (episode h (secret_action ())); ignore (episode h (audio ()));
+        let c = track h "cost" in
+        check "no secret key" (not (holds_secret (getp c "ops")));
+        check_vnum "raw rate decides" (getpath_s c "total.amount") 12.;
+        check_vnum "plain name" (getp (getp (getp c "ops") "episode.load:audio") "amount") 5.);
+  if has_feature "rbac" && has_feature "metrics" && has_feature "cost" then
+    test "action-keys.sensitive_action_key_masked" (fun () ->
+        let opts = secret_options ~keys:(Str "apikey,action") true in
+        let mask = vs_str (getpath_s opts "__derived__.clean.mask") in
+        let h = make_client ~options:opts [
+            ("rbac", jo [("rules", jo [("episode.load:audio", Str "audio")]); ("permissions", ja [Str "audio"])]);
+            ("metrics", empty_map ());
+            ("cost", jo [("rates", jo [("episode.load:audio", Num 5.)])])] in
+        check "raw rule decides" (episode h (audio ())).or_ok;
+        check_vstr "rbac masked" (getp (getp (track h "rbac") "last") "action") mask;
+        check "metrics name" (key_names (getp (track h "metrics") "ops") = ["episode.load:" ^ mask]);
+        check "cost name" (key_names (getp (track h "cost") "ops") = ["episode.load:" ^ mask]));
+
   (* ---------------- metrics ---------------- *)
   if fh_present "metrics" then begin
     test "metrics.counts_ok_err_per_op" (fun () ->

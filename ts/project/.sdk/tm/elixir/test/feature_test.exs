@@ -813,6 +813,95 @@ defmodule ProjectName.FeatureTest do
     end
   end
 
+  # An action holding a registered secret is cleaned wherever a consumer reads
+  # it; a rule still matches the raw action.
+  @action_secret "ACTSECRET77"
+
+  defp secret_options(clean \\ true, keys \\ nil) do
+    ctx = ProjectName.Context.new(S.jm(["opname", "load", "ctrl", S.jm([])]),
+      ProjectName.get_root_ctx(ProjectName.test()))
+    cleanopts = S.jm(["active", clean])
+    if keys != nil, do: S.setprop(cleanopts, "keys", keys)
+    S.setprop(ctx, "options", S.jm(["apikey", @action_secret, "clean", cleanopts]))
+    S.setprop(ctx, "config", S.jm(["options", S.jm([])]))
+    ProjectName.Utility.make_options(ctx)
+  end
+
+  defp secret_action, do: S.jm(["$action", @action_secret, "id", "e1"])
+
+  defp keys_hold_secret(ops), do: Enum.any?(S.keysof(ops), &String.contains?(&1, @action_secret))
+
+  test "action-keys rbac: an action holding a secret is cleaned in the record" do
+    if has?("rbac") do
+      opts = secret_options()
+
+      h =
+        harness([fspec("rbac", %{
+          "rules" => %{("episode.load:" <> @action_secret) => "audio"},
+          "permissions" => ["audio"]})], %{options: opts})
+
+      assert episode(h, secret_action()).ok == true
+      last = S.getprop(track(h, "_rbac"), "last")
+      assert S.getprop(last, "action") == S.getpath(opts, "__derived__.clean.mask")
+      assert S.getprop(last, "required") == "audio"
+      assert S.getprop(track(h, "_rbac"), "allowed") == 1
+
+      plain = harness([fspec("rbac", %{"rules" => %{"episode.load:audio" => "audio"},
+        "permissions" => ["audio"]})], %{options: secret_options(false)})
+      assert episode(plain, audio()).ok == true
+      assert S.getprop(S.getprop(track(plain, "_rbac"), "last"), "action") == "audio"
+    end
+  end
+
+  test "action-keys metrics: an action holding a secret is cleaned in the bucket name" do
+    if has?("metrics") do
+      h = harness([fspec("metrics")], %{options: secret_options()})
+      episode(h, secret_action())
+      episode(h, audio())
+      ops = S.getprop(track(h, "_metrics"), "ops")
+      assert not keys_hold_secret(ops)
+      assert S.getprop(S.getprop(ops, "episode.load:audio"), "count") == 1
+
+      off = harness([fspec("metrics")], %{options: secret_options(false)})
+      episode(off, secret_action())
+      assert keys_hold_secret(S.getprop(track(off, "_metrics"), "ops"))
+    end
+  end
+
+  test "action-keys: an action under a sensitive key name is masked in the record and bucket names" do
+    if has?("rbac") and has?("metrics") and has?("cost") do
+      opts = secret_options(true, "apikey,action")
+      mask = S.getpath(opts, "__derived__.clean.mask")
+
+      h =
+        harness([
+          fspec("rbac", %{"rules" => %{"episode.load:audio" => "audio"}, "permissions" => ["audio"]}),
+          fspec("metrics"),
+          fspec("cost", %{"rates" => %{"episode.load:audio" => 5}})
+        ], %{options: opts})
+
+      assert episode(h, audio()).ok == true
+      assert S.getprop(S.getprop(track(h, "_rbac"), "last"), "action") == mask
+      assert S.keysof(S.getprop(track(h, "_metrics"), "ops")) == ["episode.load:" <> mask]
+      assert S.keysof(S.getprop(track(h, "_cost"), "ops")) == ["episode.load:" <> mask]
+      assert S.getpath(track(h, "_cost"), "total.amount") == 5
+    end
+  end
+
+  test "action-keys cost: an action holding a secret is cleaned in the bucket name" do
+    if has?("cost") do
+      rates = %{("episode.load:" <> @action_secret) => 7, "episode.load:audio" => 5}
+      h = harness([fspec("cost", %{"rates" => rates})], %{options: secret_options()})
+      episode(h, secret_action())
+      episode(h, audio())
+      cost = track(h, "_cost")
+      ops = S.getprop(cost, "ops")
+      assert not keys_hold_secret(ops)
+      assert S.getpath(cost, "total.amount") == 12
+      assert S.getprop(S.getprop(ops, "episode.load:audio"), "amount") == 5
+    end
+  end
+
   # === clienttrack ===
 
   test "clienttrack stable client id unique request ids and ua" do

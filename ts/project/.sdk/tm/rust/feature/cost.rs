@@ -5,7 +5,9 @@ use std::rc::Rc;
 
 use crate::core::context::Context;
 use crate::core::error::ProjectNameError;
-use crate::core::helpers::{call_vfn, get_f64, getp, getpath, jo, op_action, op_keys, setp};
+use crate::core::helpers::{
+    call_vfn, get_f64, getp, getpath, jo, op_action, op_file_key, op_keys, setp,
+};
 use crate::core::types::{Feature, FetcherFn, OutVal};
 use crate::feature::support::*;
 use crate::utility::voxgigstruct::Value;
@@ -447,7 +449,7 @@ impl CostFeature {
         let call = {
             let op = ctx.op.borrow();
             CostCall {
-                key: op_keys(ctx).swap_remove(0),
+                key: op_file_key(ctx),
                 entity: op.entity.clone(),
                 op: op.name.clone(),
                 action: op_action(ctx),

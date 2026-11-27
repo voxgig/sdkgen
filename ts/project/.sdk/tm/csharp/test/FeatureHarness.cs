@@ -363,7 +363,15 @@ internal static class Fh
     public static FhHarness Make(FetcherFunc? server,
         params (BaseFeature f, Dictionary<string, object?>? options)[] features)
     {
-        var client = ProjectNameSDK.TestSDK(null, null);
+        return MakeWith(null, server, features);
+    }
+
+    // MakeWith also passes SDK options to the client, so a test can reach the
+    // real clean utility with a registered secret.
+    public static FhHarness MakeWith(Dictionary<string, object?>? sdkopts, FetcherFunc? server,
+        params (BaseFeature f, Dictionary<string, object?>? options)[] features)
+    {
+        var client = ProjectNameSDK.TestSDK(null, sdkopts);
         client.Features = new List<BaseFeature>();
 
         var utility = client.GetUtility();

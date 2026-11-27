@@ -108,7 +108,8 @@ defmodule ProjectName.Feature.Rbac do
 
     op = S.getprop(ctx, "op")
     opname = if op != nil, do: S.getprop(op, "name"), else: nil
-    S.setprop(t, "last", S.jm(["required", required, "allowed", allowed, "op", opname] ++ action_kv(ctx)))
+    S.setprop(t, "last",
+      Feature.clean(ctx, S.jm(["required", required, "allowed", allowed, "op", opname] ++ action_kv(ctx))))
     nil
   end
 

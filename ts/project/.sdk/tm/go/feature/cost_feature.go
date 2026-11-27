@@ -202,7 +202,7 @@ func (f *CostFeature) finish(ctx *core.Context, done bool) {
 	}
 
 	call := costCall{
-		key:    utility.OpKeys(ctx)[0],
+		key:    utility.OpFileKey(ctx),
 		entity: "_",
 		op:     "_",
 		action: utility.OpAction(ctx),

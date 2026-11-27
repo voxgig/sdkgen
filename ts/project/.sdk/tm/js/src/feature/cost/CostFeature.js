@@ -1,7 +1,7 @@
 
 
 const { BaseFeature } = require('../base/BaseFeature')
-const { opAction, opKeys } = require('../../utility/OpKeyUtility')
+const { opAction, opFileKey, opKeys } = require('../../utility/OpKeyUtility')
 
 
 // Cost tracking and spend budget. Uses BOTH seams, which is the point of
@@ -224,7 +224,7 @@ class CostFeature extends BaseFeature {
     }
 
     this._commit(ctx, pending, {
-      key: opKeys(ctx)[0],
+      key: opFileKey(ctx),
       entity: (ctx.op && ctx.op.entity) || '_',
       op: (ctx.op && ctx.op.name) || '_',
       action: opAction(ctx),

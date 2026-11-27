@@ -232,7 +232,7 @@ class CostFeature extends BaseFeature("cost", "0.0.1", true) {
       if (ctx.op.name != null && !"".equals(ctx.op.name)) opname = ctx.op.name
     }
 
-    commit(ctx, pending, Helpers.opKeys(ctx).get(0), entity, opname, Helpers.opAction(ctx))
+    commit(ctx, pending, Helpers.opFileKey(ctx), entity, opname, Helpers.opAction(ctx))
   }
 
   // Commit one operation's spend: totals, budget, per-op and per-actor

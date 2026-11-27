@@ -114,12 +114,12 @@ function RbacFeature:_track(ctx, required, allowed)
   else
     client._rbac.denied = client._rbac.denied + 1
   end
-  client._rbac.last = {
+  client._rbac.last = ctx.utility.clean(ctx, {
     required = required,
     allowed = allowed,
     op = ctx.op ~= nil and ctx.op.name or nil,
     action = helpers.op_action(ctx),
-  }
+  })
 end
 
 

@@ -73,7 +73,7 @@ public final class MetricsFeature: BaseFeature {
       dur = 0
     }
 
-    let key = opKeys(ctx)[0]
+    let key = opFileKey(ctx)
 
     let op: MetricsBucket
     if let existing = ops[key] {

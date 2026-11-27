@@ -41,4 +41,18 @@ sub op_keys {
   return defined $action ? ("$base:$action", $base, $name, '*') : ($base, $name, '*');
 }
 
+# The key a call is filed under where a consumer reads it: the first key,
+# with the action cleaned as the `action` field of a record, so a sensitive
+# key name masks it as well as a registered value.
+sub op_file_key {
+  my ($ctx) = @_;
+  my @keys = op_keys($ctx);
+  my $action = op_action($ctx);
+  return $keys[0] unless defined $action;
+  my $clean = $ctx->{utility} ? $ctx->{utility}{clean} : undef;
+  my $out = ref $clean eq 'CODE' ? $clean->($ctx, { 'action' => $action }) : undef;
+  my $cleaned = ref $out eq 'HASH' ? $out->{action} : undef;
+  return $keys[1] . ':' . ((defined $cleaned && !ref $cleaned) ? $cleaned : $action);
+}
+
 1;

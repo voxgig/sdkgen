@@ -5,7 +5,7 @@ from __future__ import annotations
 from projectname_sdk.utility.voxgig_struct import voxgig_struct as vs
 
 from projectname_sdk.feature.base_feature import ProjectNameBaseFeature
-from projectname_sdk.utility.op_key import op_action, op_keys
+from projectname_sdk.utility.op_key import op_action, op_file_key, op_keys
 
 
 # Cost tracking and spend budget. Uses BOTH seams, which is the point of the
@@ -210,7 +210,7 @@ class ProjectNameCostFeature(ProjectNameBaseFeature):
             return
 
         self._commit(ctx, pending, {
-            "key": op_keys(ctx)[0],
+            "key": op_file_key(ctx),
             "entity": (ctx.op.entity if ctx.op is not None else None) or "_",
             "op": (ctx.op.name if ctx.op is not None else None) or "_",
             "action": op_action(ctx),

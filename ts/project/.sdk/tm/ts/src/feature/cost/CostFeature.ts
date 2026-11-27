@@ -3,7 +3,7 @@ import type { Context, FeatureOptions } from '../../types'
 import type { ProjectNameSDK } from '../../ProjectNameSDK'
 
 import { BaseFeature } from '../base/BaseFeature'
-import { opAction, opKeys } from '../../utility/OpKeyUtility'
+import { opAction, opFileKey, opKeys } from '../../utility/OpKeyUtility'
 
 
 class CostFeature extends BaseFeature {
@@ -175,7 +175,7 @@ class CostFeature extends BaseFeature {
     }
 
     this._commit(ctx, pending, {
-      key: opKeys(ctx)[0],
+      key: opFileKey(ctx),
       entity: (ctx.op && ctx.op.entity) || '_',
       op: (ctx.op && ctx.op.name) || '_',
       action: opAction(ctx),

@@ -8501,6 +8501,10 @@ const FEATURE_SUITE_ABORT_TESTS = 8
 // the lane, so none of its tests may skip.
 const FEATURE_SUITE_ACTION_KEY_TESTS = 6
 
+// Its sibling makes a secret the action and reads what rbac, metrics and cost
+// then expose, so none of its tests may skip either.
+const FEATURE_SUITE_ACTION_KEY_CLEAN_TESTS = 5
+
 // How many tests a TAP subtest block ran without skipping.
 function tapRan(out: string, name: string): number {
   const lines = out.split('\n')
@@ -8821,6 +8825,9 @@ describe('the feature suite runs from a generated SDK', () => {
         lane.target + ': not every abort test ran in the generated feature suite:\n' + tail(ran.out))
       strictEqual(tapRan(ran.out, 'action-keys'), FEATURE_SUITE_ACTION_KEY_TESTS,
         lane.target + ': not every action-key test ran in the generated feature suite:\n' +
+        tail(ran.out))
+      strictEqual(tapRan(ran.out, 'action-keys-clean'), FEATURE_SUITE_ACTION_KEY_CLEAN_TESTS,
+        lane.target + ': not every test of a cleaned action ran in the generated feature suite:\n' +
         tail(ran.out))
     })
   }

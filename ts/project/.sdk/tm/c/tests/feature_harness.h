@@ -186,8 +186,11 @@ typedef struct {
 // fh_make: a real (test-mode) client, an isolated utility whose fetcher is the
 // mock server, and the requested features initialised (in order) against it.
 // Fires PostConstruct once wiring is complete.
-FH FhHarness fh_make(Fetcher* server, FhFeat* feats, size_t nfeats) {
-  ProjectNameSDK* client = test_sdk(NULL, NULL);
+// fh_make_opts: fh_make with the client's own options (sdkopts), so a test can
+// reach what make_options does with them, such as registering a secret.
+FH FhHarness fh_make_opts(voxgig_value* sdkopts, Fetcher* server, FhFeat* feats,
+                          size_t nfeats) {
+  ProjectNameSDK* client = test_sdk(NULL, sdkopts);
   client->features_len = 0; // clear the config-driven features
 
   Utility* utility = sdk_get_utility(client);
@@ -220,6 +223,10 @@ FH FhHarness fh_make(Fetcher* server, FhFeat* feats, size_t nfeats) {
   h.rootctx = rootctx;
   h.base = "http://api.test";
   return h;
+}
+
+FH FhHarness fh_make(Fetcher* server, FhFeat* feats, size_t nfeats) {
+  return fh_make_opts(NULL, server, feats, nfeats);
 }
 
 typedef struct {

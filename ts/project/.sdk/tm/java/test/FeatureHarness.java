@@ -379,7 +379,14 @@ public final class FeatureHarness {
   // utility whose fetcher is the mock server, and the requested features
   // initialised against it. Fires PostConstruct once wiring is complete.
   public static FhHarness fhMake(Utility.FetcherFn server, FhFeature... features) {
-    ProjectNameSDK client = ProjectNameSDK.testSDK();
+    return fhMakeWith(null, server, features);
+  }
+
+  // fhMakeWith is fhMake over a client built with the given SDK options, so a
+  // test can reach the SDK's real clean with a registered secret.
+  public static FhHarness fhMakeWith(Map<String, Object> sdkopts, Utility.FetcherFn server,
+      FhFeature... features) {
+    ProjectNameSDK client = ProjectNameSDK.testSDK(null, sdkopts);
     client.features = new ArrayList<>();
 
     Utility utility = client.getUtility();

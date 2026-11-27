@@ -82,7 +82,7 @@ public class MetricsFeature extends BaseFeature {
       dur = 0;
     }
 
-    String key = Helpers.opKeys(ctx).get(0);
+    String key = Helpers.opFileKey(ctx);
 
     MetricsBucket op = this.ops.get(key);
     if (op == null) {

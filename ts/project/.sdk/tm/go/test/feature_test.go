@@ -1199,6 +1199,99 @@ func TestFeatureActionKeys(t *testing.T) {
 			t.Errorf("expected episode.load:audio 1/2, got %+v", b)
 		}
 	})
+
+	// An action holding a registered secret is matched raw and read cleaned.
+	const secret = "sk-action-secret-0123456789"
+	secretCall := func(h *fhHarness) fhOpResult {
+		h.utility.CleanAdd(h.rootctx, secret)
+		return h.op(fhOpSpec{entity: "episode", op: "load",
+			reqmatch: map[string]any{"$action": secret, "id": "e1"}})
+	}
+
+	// A sensitive key named `action` masks a plain action where it is read.
+	actionKey := map[string]any{"clean": map[string]any{"keys": "action"}}
+
+	t.Run("rbac-an-action-under-a-sensitive-key-is-masked-in-the-record", func(t *testing.T) {
+		fhSkipWithout(t, "rbac")
+		f := feat.NewRbacFeature()
+		h := fhMakeWith(actionKey, nil, fhF(f, map[string]any{
+			"rules": map[string]any{"episode.load:audio": "held"}, "permissions": []any{}}))
+		if res := h.op(fhOpSpec{entity: "episode", op: "load", reqmatch: audio()}); fhErrCode(res.err) != "rbac_denied" {
+			t.Errorf("expected the raw action rule to refuse, got %v", res.err)
+		}
+		if f.Last["action"] != "[redacted]" {
+			t.Errorf("expected the masked action, got %v", f.Last)
+		}
+	})
+
+	t.Run("metrics-an-action-under-a-sensitive-key-is-masked-in-the-bucket-name", func(t *testing.T) {
+		fhSkipWithout(t, "metrics")
+		f := feat.NewMetricsFeature()
+		h := fhMakeWith(actionKey, nil, fhF(f, nil))
+		h.op(fhOpSpec{entity: "episode", op: "load", reqmatch: audio()})
+		if b := f.Ops["episode.load:[redacted]"]; b == nil || b.Count != 1 || 1 != len(f.Ops) {
+			t.Errorf("expected only episode.load:[redacted], got %v", f.Ops)
+		}
+	})
+
+	t.Run("cost-an-action-under-a-sensitive-key-is-masked-in-the-bucket-name", func(t *testing.T) {
+		fhSkipWithout(t, "cost")
+		f := feat.NewCostFeature()
+		h := fhMakeWith(actionKey, nil, fhF(f, map[string]any{
+			"rates": map[string]any{"episode.load:audio": 5, "*": 1}}))
+		h.op(fhOpSpec{entity: "episode", op: "load", reqmatch: audio()})
+		if b := f.Ops["episode.load:[redacted]"]; b == nil || b.Calls != 1 || b.Amount != 5 || 1 != len(f.Ops) {
+			t.Errorf("expected only episode.load:[redacted] 1/5, got %v", f.Ops)
+		}
+	})
+
+	t.Run("rbac-a-secret-action-is-cleaned-in-the-record", func(t *testing.T) {
+		fhSkipWithout(t, "rbac")
+		f := feat.NewRbacFeature()
+		h := fhMake(nil, fhF(f, map[string]any{
+			"rules": map[string]any{"episode.load:" + secret: "held"}, "permissions": []any{}}))
+		if res := secretCall(h); fhErrCode(res.err) != "rbac_denied" {
+			t.Errorf("expected the raw action rule to refuse, got %v", res.err)
+		}
+		action, _ := f.Last["action"].(string)
+		if "" == action || strings.Contains(action, secret) {
+			t.Errorf("expected a masked action, got %v", f.Last)
+		}
+	})
+
+	t.Run("metrics-a-secret-action-is-cleaned-in-the-bucket-name", func(t *testing.T) {
+		fhSkipWithout(t, "metrics")
+		f := feat.NewMetricsFeature()
+		h := fhMake(nil, fhF(f, nil))
+		secretCall(h)
+		if 1 != len(f.Ops) {
+			t.Errorf("expected one bucket, got %v", f.Ops)
+		}
+		for key := range f.Ops {
+			if strings.Contains(key, secret) || !strings.HasPrefix(key, "episode.load:") {
+				t.Errorf("expected a cleaned bucket name, got %q", key)
+			}
+		}
+	})
+
+	t.Run("cost-a-secret-action-is-cleaned-in-the-bucket-name", func(t *testing.T) {
+		fhSkipWithout(t, "cost")
+		f := feat.NewCostFeature()
+		h := fhMake(nil, fhF(f, map[string]any{
+			"rates": map[string]any{"episode.load:" + secret: 7, "*": 1}}))
+		secretCall(h)
+		if f.Total.Amount != 7 {
+			t.Errorf("expected the raw action rate 7, got %v", f.Total.Amount)
+		}
+		if 1 != len(f.Ops) {
+			t.Errorf("expected one bucket, got %v", f.Ops)
+		}
+		for key := range f.Ops {
+			if strings.Contains(key, secret) || !strings.HasPrefix(key, "episode.load:") {
+				t.Errorf("expected a cleaned bucket name, got %q", key)
+			}
+		}
+	})
 }
 
 // --- clienttrack ----------------------------------------------------------------

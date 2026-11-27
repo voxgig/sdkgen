@@ -87,7 +87,7 @@ class ProjectNameRbacFeature < ProjectNameBaseFeature
     }
     action = ProjectNameUtilities.op_action(ctx)
     last["action"] = action unless action.nil?
-    track["last"] = last
+    track["last"] = ctx.utility.clean.call(ctx, last)
   end
 
   def _opname(ctx)

@@ -97,7 +97,7 @@ private:
     map_put(rec, "op", Value(opname));
     std::string action = opAction(ctx);
     if (!action.empty()) map_put(rec, "action", Value(action));
-    last = rec;
+    last = ctx->utility->clean(ctx, rec);
   }
 };
 

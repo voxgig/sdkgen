@@ -302,7 +302,7 @@ public class CostFeature : BaseFeature
             opname = "_";
         }
 
-        Commit(ctx, pending, SdkUtility.OpKeys(ctx)[0], entity, opname, SdkUtility.OpAction(ctx));
+        Commit(ctx, pending, SdkUtility.OpFileKey(ctx), entity, opname, SdkUtility.OpAction(ctx));
     }
 
     // Commit one operation's spend: totals, budget, per-op and per-actor

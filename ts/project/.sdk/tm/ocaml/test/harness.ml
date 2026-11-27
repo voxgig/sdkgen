@@ -77,8 +77,11 @@ type harness = {
   h_rootctx : ctx;
 }
 
+(* `options`, when given, are client options from make_options: the clean
+   registry it fills lives under them, and every op context reads them. *)
 let make_client ?(server : server option) ?(mode = "test") ?(base = "http://api.test")
-    ?(headers : (string * value) list = []) (features : (string * value) list) : harness =
+    ?(headers : (string * value) list = []) ?(options = Noval)
+    (features : (string * value) list) : harness =
   let hheaders = empty_map () in
   List.iter (fun (k, v) -> setp hheaders k v) headers;
   let srv = match server with Some s -> s | None -> default_server () in
@@ -95,6 +98,7 @@ let make_client ?(server : server option) ?(mode = "test") ?(base = "http://api.
                  cl_utility = utility; cl_rootctx = None; cl_track = empty_map () } in
   let rootctx = make_context_impl { (default_ctxspec ()) with cs_client = Some client; cs_utility = Some utility } None in
   rootctx.c_op <- new_operation (jo [("name", Str "root"); ("entity", Str "_")]);
+  (match options with Map _ -> rootctx.c_options <- options | _ -> ());
   client.cl_rootctx <- Some rootctx;
   List.iter (fun (name, opts) ->
       (* `netsim` is a test-only network simulator implemented in

@@ -195,7 +195,7 @@ pub const CostFeature = struct {
         const opname0 = ctx.op.name;
 
         commit(self.track, self.options, ctx, pending, .{
-            .key = h.op_keys(ctx)[0],
+            .key = h.op_file_key(ctx),
             .entity = if (entity0.len == 0) "_" else entity0,
             .op = if (opname0.len == 0) "_" else opname0,
             .action = h.op_action(ctx),

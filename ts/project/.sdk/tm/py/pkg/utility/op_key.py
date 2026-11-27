@@ -30,3 +30,19 @@ def op_keys(ctx):
     if action is None:
         return [base, name, "*"]
     return [base + ":" + action, base, name, "*"]
+
+
+# The name a call is filed under where a consumer reads it: the first key,
+# with the action cleaned.
+def op_file_key(ctx):
+    keys = op_keys(ctx)
+    action = op_action(ctx)
+    if action is None:
+        return keys[0]
+    utility = getattr(ctx, "utility", None)
+    clean = getattr(utility, "clean", None)
+    if callable(clean):
+        out = clean(ctx, {"action": action})
+        if isinstance(out, dict) and isinstance(out.get("action"), str):
+            action = out["action"]
+    return keys[1] + ":" + action

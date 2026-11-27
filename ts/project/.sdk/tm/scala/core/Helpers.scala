@@ -39,6 +39,22 @@ object Helpers {
     else JList.of(base + ":" + action, base, name, "*")
   }
 
+  // The key a call is filed under where a consumer reads it: the first key,
+  // with the caller's action cleaned as the `action` field of a record, so a
+  // sensitive key name masks it as a registered secret does.
+  def opFileKey(ctx: Context): String = {
+    val keys = opKeys(ctx)
+    var action = opAction(ctx)
+    if (action == null) return keys.get(0)
+    if (ctx.utility != null && ctx.utility.clean != null) {
+      val rec = new LinkedHashMap[String, Object]()
+      rec.put("action", action)
+      val out = toMapAny(ctx.utility.clean(ctx, rec))
+      if (out != null) out.get("action") match { case s: String => action = s; case _ => }
+    }
+    keys.get(1) + ":" + action
+  }
+
   // Whether a comma-separated allow option names the item: whole names, any case.
   def allowed(names: Object, item: String): Boolean = names match {
     case list: String if null != item && item.nonEmpty =>

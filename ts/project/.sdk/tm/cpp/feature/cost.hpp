@@ -180,7 +180,7 @@ private:
     if (!done && 0 == p.attempts) return;
 
     Call call;
-    call.key = opKeys(ctx)[0];
+    call.key = opFileKey(ctx);
     if (ctx->op) {
       if (!ctx->op->entity.empty()) call.entity = ctx->op->entity;
       if (!ctx->op->name.empty()) call.op = ctx->op->name;

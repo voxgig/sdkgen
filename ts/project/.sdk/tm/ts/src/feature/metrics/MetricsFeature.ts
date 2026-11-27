@@ -3,7 +3,7 @@ import type { Context, FeatureOptions } from '../../types'
 import type { ProjectNameSDK } from '../../ProjectNameSDK'
 
 import { BaseFeature } from '../base/BaseFeature'
-import { opKeys } from '../../utility/OpKeyUtility'
+import { opFileKey } from '../../utility/OpKeyUtility'
 
 
 class MetricsFeature extends BaseFeature {
@@ -62,7 +62,7 @@ class MetricsFeature extends BaseFeature {
 
     const client: any = this._client
     const m = client._metrics
-    const key = opKeys(ctx)[0]
+    const key = opFileKey(ctx)
 
     let op = m.ops[key]
     if (null == op) {

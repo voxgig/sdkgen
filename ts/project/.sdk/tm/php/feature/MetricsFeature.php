@@ -91,7 +91,7 @@ class ProjectNameMetricsFeature extends ProjectNameBaseFeature
         unset($this->starts[$ctx]);
 
         $client = $this->client;
-        $key = ProjectNameOpKey::keys($ctx)[0];
+        $key = ProjectNameOpKey::fileKey($ctx);
 
         if (!isset($client->_metrics['ops'][$key])) {
             $client->_metrics['ops'][$key] =

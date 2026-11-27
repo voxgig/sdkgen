@@ -98,12 +98,17 @@
                                                   (str "request: " (core/oget result :status) ": " (core/oget result :status-text)))))
         (when (nil? (core/oget result :err)) (core/oset! result :ok true))))))
 
-(defn make-harness [feature-specs & {:keys [server base headers] :or {base "http://api.test"}}]
+;; `options`, when given, are client options from make-options: the clean
+;; registry it fills lives under them.
+(defn make-harness [feature-specs & {:keys [server base headers options] :or {base "http://api.test"}}]
   (let [headers (or headers (vs/jm))
         utility (core/make-utility)
         _ (core/oset! utility :fetcher (or server (default-server)))
+        opts (if (vs/ismap options)
+               (doto ^java.util.Map options (.put "feature" (vs/jm)))
+               (vs/jm "base" base "headers" headers "feature" (vs/jm)))
         client {:features (atom []) :mode (atom "test") :store (atom {})
-                :options (atom (vs/jm "base" base "headers" headers "feature" (vs/jm)))}
+                :options (atom opts)}
         rootctx (core/make-context (vs/jm "client" client "utility" utility "options" (deref (:options client))) nil)]
     (doseq [fs feature-specs]
       (let [name (get fs "name")]
@@ -476,7 +481,64 @@
                         (t/is-eq (mget (mget ops "episode.load:audio") "amount") 5 "action amount")
                         (t/is-true (not (.containsKey ^java.util.Map (nth @sunk 0) "action")) "plain sink")
                         (t/is-eq (mget (nth @sunk 1) "action") "audio" "action sink")
-                        (t/is-eq (mget (mget cost "last") "action") "audio" "last"))))))
+                        (t/is-eq (mget (mget cost "last") "action") "audio" "last")))))
+
+      ;; An action holding a registered secret is cleaned wherever a consumer
+      ;; reads it; a rule still matches the raw action.
+      (let [secret "ACTSECRET77"
+            secret-action #(vs/jm "$action" secret "id" "e1")
+            secret-options (fn [active & [keys]]
+                             (let [ctx (core/make-context (vs/jm "utility" (core/make-utility)) nil)
+                                   cleanopts (vs/jm "active" active)]
+                               (when keys (.put ^java.util.Map cleanopts "keys" keys))
+                               (core/oset! ctx :options (vs/jm "apikey" secret "clean" cleanopts))
+                               (core/oset! ctx :config (vs/jm "options" (vs/jm)))
+                               (core/u-make-options ctx)))
+            holds-secret? (fn [ops] (boolean (some #(str/includes? (str %) secret) (vs/keysof ops))))]
+        (check "action-keys rbac: an action holding a secret is cleaned in the record" "rbac"
+               (fn [] (let [opts (secret-options true)
+                            h (make-harness [(fspec "rbac" "rules" (vs/jm (str "episode.load:" secret) "audio")
+                                                    "permissions" (vs/jt "audio"))] :options opts)]
+                        (t/is-eq (get (episode h (secret-action)) "ok") true "raw rule decides")
+                        (let [last (mget (h-track h "_rbac") "last")]
+                          (t/is-eq (mget last "action") (vs/getpath opts "__derived__.clean.mask") "masked")
+                          (t/is-eq (mget last "required") "audio" "required"))
+                        (t/is-eq (mget (h-track h "_rbac") "allowed") 1 "allowed")
+                        (let [plain (make-harness [(fspec "rbac" "rules" (vs/jm "episode.load:audio" "audio")
+                                                          "permissions" (vs/jt "audio"))] :options (secret-options false))]
+                          (t/is-eq (get (episode plain (audio)) "ok") true "plain ok")
+                          (t/is-eq (mget (mget (h-track plain "_rbac") "last") "action") "audio" "plain action")))))
+        (check "action-keys metrics: an action holding a secret is cleaned in the bucket name" "metrics"
+               (fn [] (let [h (make-harness [(fspec "metrics")] :options (secret-options true))]
+                        (episode h (secret-action)) (episode h (audio))
+                        (let [ops (mget (h-track h "_metrics") "ops")]
+                          (t/is-false (holds-secret? ops) "no secret key")
+                          (t/is-eq (mget (mget ops "episode.load:audio") "count") 1 "plain name"))
+                        (let [off (make-harness [(fspec "metrics")] :options (secret-options false))]
+                          (episode off (secret-action))
+                          (t/is-true (holds-secret? (mget (h-track off "_metrics") "ops")) "clean off")))))
+        (check "action-keys: an action under a sensitive key name is masked in the record and bucket names" "rbac"
+               (fn [] (when (and (present? "metrics") (present? "cost"))
+                        (let [opts (secret-options true "apikey,action")
+                              mask (vs/getpath opts "__derived__.clean.mask")
+                              h (make-harness [(fspec "rbac" "rules" (vs/jm "episode.load:audio" "audio")
+                                                      "permissions" (vs/jt "audio"))
+                                               (fspec "metrics")
+                                               (fspec "cost" "rates" (vs/jm "episode.load:audio" 5))]
+                                              :options opts)]
+                          (t/is-eq (get (episode h (audio)) "ok") true "raw rule decides")
+                          (t/is-eq (mget (mget (h-track h "_rbac") "last") "action") mask "rbac masked")
+                          (t/is-eq (vec (vs/keysof (mget (h-track h "_metrics") "ops"))) [(str "episode.load:" mask)] "metrics name")
+                          (t/is-eq (vec (vs/keysof (mget (h-track h "_cost") "ops"))) [(str "episode.load:" mask)] "cost name")))))
+        (check "action-keys cost: an action holding a secret is cleaned in the bucket name" "cost"
+               (fn [] (let [h (make-harness [(fspec "cost" "rates" (vs/jm (str "episode.load:" secret) 7 "episode.load:audio" 5))]
+                                            :options (secret-options true))]
+                        (episode h (secret-action)) (episode h (audio))
+                        (let [cost (h-track h "_cost")
+                              ops (mget cost "ops")]
+                          (t/is-false (holds-secret? ops) "no secret key")
+                          (t/is-eq (mget (mget cost "total") "amount") 12 "raw rate decides")
+                          (t/is-eq (mget (mget ops "episode.load:audio") "amount") 5 "plain name")))))))
 
     ;; ---- metrics ----
     (check "metrics-counts-ok-err" "metrics"

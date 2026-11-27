@@ -236,7 +236,7 @@ class ProjectNameCostFeature extends ProjectNameBaseFeature
         }
 
         $this->_commit($ctx, $entry, [
-            'key' => ProjectNameOpKey::keys($ctx)[0],
+            'key' => ProjectNameOpKey::fileKey($ctx),
             'entity' => $ctx->op->entity !== '' ? $ctx->op->entity : '_',
             'op' => $ctx->op->name !== '' ? $ctx->op->name : '_',
             'action' => ProjectNameOpKey::action($ctx),

@@ -86,7 +86,7 @@ public class MetricsFeature : BaseFeature
             dur = 0;
         }
 
-        var key = SdkUtility.OpKeys(ctx)[0];
+        var key = SdkUtility.OpFileKey(ctx);
 
         if (!Ops.TryGetValue(key, out var op))
         {

@@ -113,7 +113,12 @@ type fhHarness struct {
 // utility whose fetcher is the mock server, and the requested features
 // initialised against it. Fires PostConstruct once wiring is complete.
 func fhMake(server sdk.FetcherFunc, features ...fhFeature) *fhHarness {
-	client := sdk.TestSDK(nil, nil)
+	return fhMakeWith(nil, server, features...)
+}
+
+// fhMakeWith is fhMake over a client built with the given SDK options.
+func fhMakeWith(sdkopts map[string]any, server sdk.FetcherFunc, features ...fhFeature) *fhHarness {
+	client := sdk.TestSDK(nil, sdkopts)
 	client.Features = []sdk.Feature{}
 
 	utility := client.GetUtility()

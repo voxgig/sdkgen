@@ -76,7 +76,7 @@ private:
     long long dur = fopt::foptNow(options)() - start;
     if (dur < 0) dur = 0;
 
-    MetricsBucket& op = ops[opKeys(ctx)[0]];
+    MetricsBucket& op = ops[opFileKey(ctx)];
 
     bump(total, ok, dur);
     bump(op, ok, dur);

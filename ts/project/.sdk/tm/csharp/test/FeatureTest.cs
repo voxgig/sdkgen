@@ -1158,6 +1158,111 @@ public class FeatureActionKeysTest
         Assert.Equal("audio", f.Last!.Action);
     }
 
+    // A caller's action may hold a registered secret: what a consumer reads
+    // is cleaned, while the lookup still matches the raw action.
+    private const string Secret = "ACTION-SECRET-q7w8e9r0";
+    private const string Mask = "[redacted]";
+
+    private static Dictionary<string, object?> SecretOpts() => new() { ["apikey"] = Secret };
+
+    private static Dictionary<string, object?> SecretArg() =>
+        new() { ["$action"] = Secret, ["id"] = "e1" };
+
+    [Fact]
+    public void RbacRecordCleansTheAction()
+    {
+        if (Fh.SkipWithout("rbac")) return;
+        var f = new RbacFeature();
+        var h = Fh.MakeWith(SecretOpts(), null, (f, new Dictionary<string, object?>
+        {
+            ["rules"] = new Dictionary<string, object?>
+            {
+                ["episode.load"] = "read",
+                ["episode.load:" + Secret] = "secret",
+            },
+            ["permissions"] = new List<object?> { "read" },
+        }));
+        Assert.Equal("rbac_denied", Fh.ErrCode(Load(h, SecretArg()).Err));
+        Assert.Equal(Mask, f.Last!["action"]);
+        Assert.Equal("secret", f.Last!["required"]);
+        Assert.Equal(1, f.Denied);
+    }
+
+    [Fact]
+    public void MetricsBucketCleansTheAction()
+    {
+        if (Fh.SkipWithout("metrics")) return;
+        var f = new MetricsFeature();
+        var h = Fh.MakeWith(SecretOpts(), null, (f, null));
+        Load(h, SecretArg());
+        Load(h, Audio());
+        Assert.DoesNotContain(f.Ops.Keys, k => k.Contains(Secret));
+        Assert.Equal(1, f.Ops["episode.load:" + Mask].Count);
+        Assert.Equal(1, f.Ops["episode.load:audio"].Count);
+    }
+
+    [Fact]
+    public void MetricsBucketKeepsTheActionWithCleanOff()
+    {
+        if (Fh.SkipWithout("metrics")) return;
+        var f = new MetricsFeature();
+        var opts = SecretOpts();
+        opts["clean"] = new Dictionary<string, object?> { ["active"] = false };
+        var h = Fh.MakeWith(opts, null, (f, null));
+        Load(h, SecretArg());
+        Assert.Equal(1, f.Ops["episode.load:" + Secret].Count);
+    }
+
+    [Fact]
+    public void CostBucketCleansTheAction()
+    {
+        if (Fh.SkipWithout("cost")) return;
+        var f = new CostFeature();
+        var h = Fh.MakeWith(SecretOpts(), null, (f, new Dictionary<string, object?>
+        {
+            ["rates"] = new Dictionary<string, object?>
+            {
+                ["episode.load"] = 1,
+                ["episode.load:" + Secret] = 7,
+            },
+        }));
+        Load(h, SecretArg());
+        Load(h, Audio());
+        Assert.DoesNotContain(f.Ops.Keys, k => k.Contains(Secret));
+        Assert.Equal(7.0, f.Ops["episode.load:" + Mask].Amount);
+        Assert.Equal(1.0, f.Ops["episode.load:audio"].Amount);
+        Assert.Equal(8.0, f.Total.Amount);
+    }
+
+    [Fact]
+    public void SensitiveActionKeyMasksTheAction()
+    {
+        if (Fh.SkipWithout("rbac", "metrics", "cost")) return;
+        var rbac = new RbacFeature();
+        var metrics = new MetricsFeature();
+        var cost = new CostFeature();
+        var h = Fh.MakeWith(new Dictionary<string, object?>
+        {
+            ["clean"] = new Dictionary<string, object?> { ["keys"] = "action" },
+        }, null,
+            (rbac, new Dictionary<string, object?>
+            {
+                ["rules"] = new Dictionary<string, object?> { ["episode.load:audio"] = "audio" },
+                ["permissions"] = new List<object?> { "audio" },
+            }),
+            (metrics, null),
+            (cost, new Dictionary<string, object?>
+            {
+                ["rates"] = new Dictionary<string, object?> { ["episode.load:audio"] = 5 },
+            }));
+        Assert.True(Load(h, Audio()).Ok);
+        Assert.Equal(Mask, rbac.Last!["action"]);
+        Assert.Equal(1, metrics.Ops["episode.load:" + Mask].Count);
+        Assert.Equal(5.0, cost.Ops["episode.load:" + Mask].Amount);
+        Assert.Single(metrics.Ops);
+        Assert.Single(cost.Ops);
+    }
+
     [Fact]
     public void CostActionRateFallsBackToItsOperation()
     {

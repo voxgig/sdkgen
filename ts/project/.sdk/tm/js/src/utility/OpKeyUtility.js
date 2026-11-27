@@ -20,7 +20,23 @@ function opKeys(ctx) {
 }
 
 
+
+// The name a call is filed under for a consumer to read: its first key, with
+// the caller's action cleaned as the field `action` of a record, so a key name
+// masks it as well as a registered value.
+function opFileKey(ctx) {
+  const action = opAction(ctx)
+  const keys = opKeys(ctx)
+  if (null == action) {
+    return keys[0]
+  }
+  const cleaned = ctx.utility.clean(ctx, { action })?.action
+  return keys[1] + ':' + ('string' === typeof cleaned ? cleaned : action)
+}
+
+
 module.exports = {
   opAction,
+  opFileKey,
   opKeys,
 }

@@ -42,3 +42,21 @@ func OpKeys(ctx *core.Context) []string {
 	}
 	return []string{base, name, "*"}
 }
+
+// OpFileKey is the name a call is filed under where a consumer reads it: the
+// first key, with the action cleaned.
+func OpFileKey(ctx *core.Context) string {
+	keys := OpKeys(ctx)
+	action := OpAction(ctx)
+	if "" == action {
+		return keys[0]
+	}
+	if ctx.Utility != nil && ctx.Utility.Clean != nil {
+		if out, ok := ctx.Utility.Clean(ctx, map[string]any{"action": action}).(map[string]any); ok {
+			if cleaned, ok := out["action"].(string); ok {
+				action = cleaned
+			}
+		}
+	}
+	return keys[1] + ":" + action
+}

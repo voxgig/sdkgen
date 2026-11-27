@@ -113,7 +113,7 @@ public class RbacFeature : BaseFeature
         {
             Denied++;
         }
-        Last = new Dictionary<string, object?>
+        var last = new Dictionary<string, object?>
         {
             ["required"] = required,
             ["allowed"] = allowed,
@@ -122,8 +122,9 @@ public class RbacFeature : BaseFeature
         var action = SdkUtility.OpAction(ctx);
         if (action != null)
         {
-            Last["action"] = action;
+            last["action"] = action;
         }
+        Last = Fclean(ctx, last);
     }
 
     private static string OpName(Context ctx)

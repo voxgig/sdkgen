@@ -93,7 +93,7 @@ sub _record {
 
   my $m = $self->{client}{_metrics};
   return unless $m;
-  my ($key) = ProjectNameUtilities::op_keys($ctx);
+  my $key = ProjectNameUtilities::op_file_key($ctx);
 
   my $op = $m->{ops}{$key};
   if (!$op) {

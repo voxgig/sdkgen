@@ -173,7 +173,8 @@ defmodule ProjectName.FeatureHarness do
 
     rootctx = mk_ctx(client, utility, mk_op("root", "_"), nil, nil)
 
-    h = %{client: client, utility: utility, rootctx: rootctx, base: base, headers: headers}
+    h = %{client: client, utility: utility, rootctx: rootctx, base: base, headers: headers,
+          options: Map.get(opts, :options)}
 
     Enum.each(feature_specs, fn fspec ->
       name = S.getprop(fspec, "name")
@@ -254,6 +255,8 @@ defmodule ProjectName.FeatureHarness do
   # Run one op through the mini pipeline. opts is a keyword/map:
   #   op:, entity:, method:, path:, query:(node), headers:(node), body:, ctrl:(node),
   #   reqmatch:(node), reqdata:(node)
+  # FH.new's opts may carry :options, the client options every op context reads
+  # (the clean registry that make_options fills lives under them).
   def op(h, opts \\ %{}) do
     opname = Map.get(opts, :op, "load")
     entity = Map.get(opts, :entity, "widget")
@@ -261,6 +264,7 @@ defmodule ProjectName.FeatureHarness do
     ctrl = Control.new(Map.get(opts, :ctrl) || S.jm([]))
 
     ctx = mk_ctx(h.client, h.utility, mk_op(opname, entity), mk_entity(entity), ctrl)
+    if S.ismap(h.options), do: S.setprop(ctx, "options", h.options)
     S.setprop(ctx, "reqmatch", Map.get(opts, :reqmatch) || S.jm([]))
     S.setprop(ctx, "reqdata", Map.get(opts, :reqdata) || S.jm([]))
 

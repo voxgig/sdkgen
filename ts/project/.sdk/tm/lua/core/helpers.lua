@@ -173,4 +173,19 @@ function helpers.op_keys(ctx)
 end
 
 
+-- The key a call is filed under where a consumer reads it: the first key,
+-- with the caller's action cleaned as a record's `action` field, so a
+-- sensitive key name masks it as well as a registered value.
+function helpers.op_file_key(ctx)
+  local keys = helpers.op_keys(ctx)
+  local action = helpers.op_action(ctx)
+  if action == nil then
+    return keys[1]
+  end
+  local out = ctx.utility.clean(ctx, { action = action })
+  local cleaned = type(out) == "table" and out.action or nil
+  return keys[2] .. ":" .. (type(cleaned) == "string" and cleaned or action)
+end
+
+
 return helpers

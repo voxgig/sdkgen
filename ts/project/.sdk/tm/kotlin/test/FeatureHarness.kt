@@ -299,8 +299,17 @@ object FeatureHarness {
   }
 
   // fhMake constructs the harness.
-  fun fhMake(server: FetcherFn?, vararg features: FhFeature): FhHarness {
-    val client = ProjectNameSDK.testSDK()
+  fun fhMake(server: FetcherFn?, vararg features: FhFeature): FhHarness =
+    fhMakeWith(null, server, *features)
+
+  // fhMakeWith is fhMake over a client built with the given SDK options, so a
+  // test can reach the SDK's real clean with a registered secret.
+  fun fhMakeWith(
+    sdkopts: MutableMap<String, Any?>?,
+    server: FetcherFn?,
+    vararg features: FhFeature,
+  ): FhHarness {
+    val client = ProjectNameSDK.testSDK(null, sdkopts)
     client.features = mutableListOf()
 
     val utility = client.getUtility()

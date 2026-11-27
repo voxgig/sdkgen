@@ -114,7 +114,7 @@ sub _track {
   };
   my $action = ProjectNameUtilities::op_action($ctx);
   $last->{action} = $action if defined $action;
-  $track->{last} = $last;
+  $track->{last} = $ctx->{utility}{clean}->($ctx, $last);
   return;
 }
 

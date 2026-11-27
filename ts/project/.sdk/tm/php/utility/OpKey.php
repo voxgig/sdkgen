@@ -28,4 +28,20 @@ class ProjectNameOpKey
         $action = self::action($ctx);
         return null === $action ? [$base, $name, '*'] : [$base . ':' . $action, $base, $name, '*'];
     }
+
+    // The key a call is filed under where a consumer reads it: the first key,
+    // with the action cleaned as the `action` field of a record, so a
+    // sensitive key name masks it as well as a registered value.
+    public static function fileKey(ProjectNameContext $ctx): string
+    {
+        $keys = self::keys($ctx);
+        $action = self::action($ctx);
+        if (null === $action) {
+            return $keys[0];
+        }
+        $clean = $ctx->utility->clean ?? null;
+        $out = is_callable($clean) ? $clean($ctx, ['action' => $action]) : null;
+        $cleaned = is_array($out) ? ($out['action'] ?? null) : null;
+        return $keys[1] . ':' . (is_string($cleaned) ? $cleaned : $action);
+    }
 }
