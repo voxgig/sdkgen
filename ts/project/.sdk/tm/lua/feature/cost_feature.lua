@@ -4,12 +4,14 @@
 -- the feature: money is spent per HTTP ATTEMPT (a retried call is charged
 -- again, because the upstream API charges it again), but it is owed by an
 -- OPERATION. So the transport wrap prices each attempt, and PreDone
--- attributes the running total to `<entity>.<op>` and to the caller
+-- attributes the running total to `<entity>.<op>` (with `:<action>` for a
+-- custom action) and to the caller
 -- (`ctrl.actor`, the same actor the audit feature records).
 --
 -- The price of an attempt comes from the first source that answers:
 -- a response header (`header` x `perUnit`), the rate table (`rates`, keyed
--- '<entity>.<op>' / '<op>' / '*'), then the flat `unit`. A body figure
+-- '<entity>.<op>:<action>' / '<entity>.<op>' / '<op>' / '*'), then the flat
+-- `unit`. A body figure
 -- (`path` x `perUnit`, e.g. "usage.total_tokens") is read at PreDone
 -- instead, from the already-parsed result. A body figure describes the
 -- whole call, so it REPLACES the per-attempt estimate rather than adding
@@ -26,6 +28,7 @@
 
 local BaseFeature = require("feature.base_feature")
 local vs = require("utility.struct.struct")
+local helpers = require("core.helpers")
 
 local CostFeature = {}
 CostFeature.__index = CostFeature
@@ -187,7 +190,7 @@ function CostFeature:_charge(ctx, fullurl, fetchdef, inner)
   -- and could run past an onBudget = "deny" ceiling indefinitely. `piped`
   -- is set by PrePoint, so its absence is the signal.
   if not pending.piped then
-    self:_commit(ctx, pending, "_", "direct")
+    self:_commit(ctx, pending, { key = "_.direct", entity = "_", op = "direct" })
     self.pending[ctx] = nil
   end
 
@@ -257,14 +260,20 @@ function CostFeature:_finish(ctx, done)
     end
   end
 
-  self:_commit(ctx, pending, entity, opname)
+  self:_commit(ctx, pending, {
+    key = helpers.op_keys(ctx)[1],
+    entity = entity,
+    op = opname,
+    action = helpers.op_action(ctx),
+  })
 end
 
 
 -- Commit one operation's spend: totals, budget, per-op and per-actor
 -- attribution, and the record. Shared by _finish and the raw-request path
 -- in _charge, which has no PreDone to reach.
-function CostFeature:_commit(ctx, pending, entity, opname)
+-- `call` names what the spend is filed under: its key, entity, op and action.
+function CostFeature:_commit(ctx, pending, call)
   local cost = self.client._cost
 
   local amount = pending.amount
@@ -297,14 +306,15 @@ function CostFeature:_commit(ctx, pending, entity, opname)
   end
 
   cost.total.calls = cost.total.calls + 1
-  self:_bump(cost.ops, entity .. "." .. opname, amount)
+  self:_bump(cost.ops, call.key, amount)
   self:_bump(cost.actors, actor, amount)
 
   self.seq = self.seq + 1
   local record = ctx.utility.clean(ctx, {
     seq = self.seq,
-    entity = entity,
-    op = opname,
+    entity = call.entity,
+    op = call.op,
+    action = call.action,
     actor = actor,
     amount = amount,
     currency = cost.currency,
@@ -345,36 +355,13 @@ function CostFeature:_price(ctx, res)
 end
 
 
--- The rate table uses the same lookup grammar as rbac's rules:
--- '<entity>.<op>', then '<op>', then '*'.
+-- The rate table is keyed as rbac's rules are.
 function CostFeature:_rate(ctx)
   local rates = self.options["rates"] or {}
-
-  local entity = ""
-  if ctx.entity ~= nil then
-    if type(ctx.entity.get_name) == "function" then
-      entity = ctx.entity:get_name()
-    elseif type(ctx.entity.name) == "string" then
-      entity = ctx.entity.name
+  for _, key in ipairs(helpers.op_keys(ctx)) do
+    if type(rates[key]) == "number" then
+      return rates[key]
     end
-  end
-  if entity == "" and ctx.op ~= nil and type(ctx.op.entity) == "string" then
-    entity = ctx.op.entity
-  end
-
-  local opname = ""
-  if ctx.op ~= nil and type(ctx.op.name) == "string" then
-    opname = ctx.op.name
-  end
-
-  if type(rates[entity .. "." .. opname]) == "number" then
-    return rates[entity .. "." .. opname]
-  end
-  if type(rates[opname]) == "number" then
-    return rates[opname]
-  end
-  if type(rates["*"]) == "number" then
-    return rates["*"]
   end
   return nil
 end

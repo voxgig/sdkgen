@@ -89,6 +89,39 @@ let () =
       | (_, Some e) -> check_str "code" e.err_code "point_op_allow"
       | _ -> failwith "expected error");
 
+  test "make_point.allow_names_action" (fun () ->
+      let cl = client () in
+      let plain = jo [("method", Str "GET"); ("parts", ja [Str "episode"; Str "{id}"]);
+                      ("select", jo [("exist", ja [Str "id"])])] in
+      let audio = jo [("method", Str "GET"); ("parts", ja [Str "episode"; Str "{id}"; Str "audio"]);
+                      ("select", jo [("exist", ja [Str "id"]); ("$action", Str "audio")])] in
+      let point allow reqmatch =
+        let ctx = mk_ctx cl "load" in
+        ctx.c_op <- new_operation (jo [("name", Str "load"); ("entity", Str "episode");
+                                       ("input", Str "match"); ("points", ja [plain; audio])]);
+        ctx.c_options <- jo [("allow", jo [("op", Str allow)])];
+        ctx.c_reqmatch <- reqmatch;
+        ctx.c_match <- empty_map ();
+        match cl.cl_utility.u_make_point ctx with
+        | (_, Some e) -> `Err e.err_code
+        | (p, None) -> `Point p in
+      let a () = jo [("$action", Str "audio"); ("id", Str "e1")] in
+      let r () = jo [("id", Str "e1")] in
+      let is_point name want got = match got with
+        | `Point p -> check name (p == want)
+        | `Err c -> failwith (name ^ ": " ^ c) in
+      let is_err name got = match got with
+        | `Err c -> check_str name c "point_op_allow"
+        | `Point _ -> failwith (name ^ ": expected point_op_allow") in
+      is_point "action named" audio (point "episode.load:audio" (a ()));
+      is_err "plain refused" (point "episode.load:audio" (r ()));
+      is_point "any case" audio (point "Episode.Load:AUDIO" (a ()));
+      is_err "other action" (point "episode.load:video" (a ()));
+      is_point "operation admits action" audio (point "episode.load" (a ()));
+      is_point "op admits action" audio (point "load" (a ()));
+      is_point "op admits plain" plain (point "load" (r ()));
+      is_err "other op" (point "list" (r ())));
+
   test "make_point.rejects_no_endpoints" (fun () ->
       let cl = client () in
       let ctx = mk_ctx cl "load" in

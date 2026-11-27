@@ -1,7 +1,8 @@
 -- ProjectName SDK metrics feature
 --
 -- Statistics capture. Records per-operation counters and latency for
--- every call: totals plus a breakdown keyed by `<entity>.<op>`. Timing
+-- every call: totals plus a breakdown keyed by `<entity>.<op>`, or
+-- `<entity>.<op>:<action>` for a custom action. Timing
 -- starts at endpoint resolution (PrePoint) and stops when the call
 -- completes (PreDone) or fails unexpectedly (PreUnexpected). Each
 -- operation is recorded exactly once: the start marker is consumed on the
@@ -10,6 +11,7 @@
 -- tests.
 
 local BaseFeature = require("feature.base_feature")
+local helpers = require("core.helpers")
 
 local MetricsFeature = {}
 MetricsFeature.__index = MetricsFeature
@@ -95,8 +97,7 @@ function MetricsFeature:_record(ctx, ok)
 
   local client = self.client
   local m = client._metrics
-  local key = ((ctx.op ~= nil and ctx.op.entity) or "_") .. "." ..
-    ((ctx.op ~= nil and ctx.op.name) or "_")
+  local key = helpers.op_keys(ctx)[1]
 
   local op = m.ops[key]
   if op == nil then

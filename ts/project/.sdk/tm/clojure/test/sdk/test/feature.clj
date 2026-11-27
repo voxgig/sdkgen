@@ -122,11 +122,12 @@
 (defn h-track [h k] (core/client-track (:client h) k))
 (defn h-feature [h name] (first (filter (fn [f] (= (core/feature-get-name f) name)) @(:features (:client h)))))
 
-(defn h-op [h & {:keys [opname entity method path query headers body ctrl]
+(defn h-op [h & {:keys [opname entity method path query headers body ctrl reqmatch reqdata]
                  :or {opname "load" entity "widget"}}]
   (let [utility (:utility h) rootctx (:rootctx h)
         method (or method (default-method opname))
-        ctx (core/make-context (vs/jm "opname" opname "entity" (fake-entity entity) "ctrl" (or ctrl (vs/jm))) rootctx)]
+        ctx (core/make-context (vs/jm "opname" opname "entity" (fake-entity entity) "ctrl" (or ctrl (vs/jm))
+                                      "reqmatch" reqmatch "reqdata" reqdata) rootctx)]
     (core/feature-hook ctx "PostConstructEntity")
     (try
       (core/feature-hook ctx "PrePoint")
@@ -421,6 +422,61 @@
                     (t/is-eq (get (h-op allow) "ok") true "allow")
                     (let [deny (make-harness [(fspec "rbac" "deny" true "permissions" (vs/jt))])]
                       (t/is-eq (rcode (h-op deny)) "rbac_denied" "deny")))))
+
+    ;; ---- action keys ----
+    ;; A custom action is `$action` in the request argument, and its keys name
+    ;; it: `<entity>.<op>:<action>`, most specific first.
+    (let [audio #(vs/jm "$action" "audio" "id" "e1")
+          record #(vs/jm "id" "e1")
+          episode (fn [h req] (h-op h :entity "episode" :reqmatch req))]
+      (check "action-keys rbac: the record is granted and the action refused" "rbac"
+             (fn [] (let [[server calls] (recording-server nil)
+                          h (make-harness [(fspec "rbac" "rules" (vs/jm "episode.load" "read" "episode.load:audio" "audio")
+                                                  "permissions" (vs/jt "read"))] :server server)]
+                      (t/is-eq (get (episode h (record)) "ok") true "record ok")
+                      (let [res (episode h (audio))]
+                        (t/is-eq (rcode res) "rbac_denied" "action denied")
+                        (t/is-true (str/includes? (str (:msg (get res "error"))) "operation \"load:audio\"") "message"))
+                      (t/is-eq (count @calls) 1 "one call")
+                      (t/is-eq (mget (mget (h-track h "_rbac") "last") "action") "audio" "last action"))))
+      (check "action-keys rbac: the action is granted and the record refused" "rbac"
+             (fn [] (let [h (make-harness [(fspec "rbac" "rules" (vs/jm "episode.load" "read" "episode.load:audio" "audio")
+                                                  "permissions" (vs/jt "audio"))])]
+                      (t/is-eq (rcode (episode h (record))) "rbac_denied" "record denied")
+                      (t/is-eq (get (episode h (audio)) "ok") true "action ok"))))
+      (check "action-keys rbac: with no action rule an action falls back to its operation" "rbac"
+             (fn [] (let [h (make-harness [(fspec "rbac" "rules" (vs/jm "episode.load" "read") "permissions" (vs/jt))])]
+                      (t/is-eq (rcode (episode h (audio))) "rbac_denied" "fallback"))))
+      (check "action-keys metrics: an action is counted apart from its operation" "metrics"
+             (fn [] (let [h (make-harness [(fspec "metrics")])]
+                      (episode h (record)) (episode h (audio)) (episode h (audio))
+                      (let [m (h-track h "_metrics")]
+                        (t/is-eq (mget (mget m "total") "count") 3 "total")
+                        (t/is-eq (mget (mget (mget m "ops") "episode.load") "count") 1 "plain")
+                        (t/is-eq (mget (mget (mget m "ops") "episode.load:audio") "count") 2 "action")))))
+      (check "action-keys audit: a record names its action, and a plain one has none" "audit"
+             (fn [] (let [h (make-harness [(fspec "audit")])]
+                      (episode h (record)) (episode h (audio))
+                      (let [recs (mget (h-track h "_audit") "records")]
+                        (t/is-true (not (.containsKey ^java.util.Map (vs/getelem recs 0) "action")) "plain has no action")
+                        (t/is-eq (mget (vs/getelem recs 0) "op") "load" "plain op")
+                        (t/is-eq (mget (vs/getelem recs 1) "action") "audio" "action")
+                        (t/is-eq (mget (vs/getelem recs 1) "op") "load" "action op")))))
+      (check "action-keys cost: an action is priced and attributed apart from its operation" "cost"
+             (fn [] (let [sunk (atom [])
+                          h (make-harness [(fspec "cost" "rates" (vs/jm "episode.load" 1 "episode.load:audio" 5)
+                                                  "sink" (fn [r] (swap! sunk conj r)))])]
+                      (episode h (record)) (episode h (audio))
+                      (let [cost (h-track h "_cost")
+                            ops (mget cost "ops")]
+                        (t/is-eq (mget (mget cost "total") "amount") 6 "total")
+                        (t/is-eq (mget (mget ops "episode.load") "calls") 1 "plain calls")
+                        (t/is-eq (mget (mget ops "episode.load") "amount") 1 "plain amount")
+                        (t/is-eq (mget (mget ops "episode.load:audio") "calls") 1 "action calls")
+                        (t/is-eq (mget (mget ops "episode.load:audio") "amount") 5 "action amount")
+                        (t/is-true (not (.containsKey ^java.util.Map (nth @sunk 0) "action")) "plain sink")
+                        (t/is-eq (mget (nth @sunk 1) "action") "audio" "action sink")
+                        (t/is-eq (mget (mget cost "last") "action") "audio" "last"))))))
 
     ;; ---- metrics ----
     (check "metrics-counts-ok-err" "metrics"

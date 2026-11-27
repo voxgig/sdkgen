@@ -121,6 +121,9 @@ let make_client ?(server : server option) ?(mode = "test") ?(base = "http://api.
 let feature (h : harness) (name : string) : feature option =
   List.find_opt (fun f -> f.f_name = name) h.h_client.cl_features
 
+(* Which request argument an operation reads, as the generated Context decides. *)
+let op_input op = match op with "create" | "update" | "patch" -> "data" | _ -> "match"
+
 let default_method op = match op with "create" -> "POST" | "update" | "patch" -> "PATCH" | "remove" -> "DELETE" | _ -> "GET"
 
 let build_url (sp : spec) : string =
@@ -153,14 +156,17 @@ let populate_result (ctx : ctx) (response : value) (fetch_err : sdk_error option
 
 let op (h : harness) ?(op = "load") ?(entity = "widget") ?(method_ : string option)
     ?(path : string option) ?(query : value option) ?(headers : (string * value) list option)
-    ?(body = Noval) ?(ctrl = Noval) () : op_result =
+    ?(body = Noval) ?(ctrl = Noval) ?(reqmatch = Noval) ?(reqdata = Noval) () : op_result =
   let opname = op in
   let meth = match method_ with Some m -> m | None -> default_method opname in
   let ctrl_map = match ctrl with Map _ as m -> m | _ -> empty_map () in
   let ctx = make_context_impl
       { (default_ctxspec ()) with cs_client = Some h.h_client; cs_utility = Some h.h_utility; cs_ctrl = Some ctrl_map }
       (Some h.h_rootctx) in
-  ctx.c_op <- new_operation (jo [("name", Str opname); ("entity", Str entity)]);
+  ctx.c_op <- new_operation (jo [("name", Str opname); ("entity", Str entity);
+                                 ("input", Str (op_input opname))]);
+  (match reqmatch with Map _ -> ctx.c_reqmatch <- reqmatch | _ -> ());
+  (match reqdata with Map _ -> ctx.c_reqdata <- reqdata | _ -> ());
   feature_hook_util ctx "PostConstructEntity";
   let finish_err (err : sdk_error) =
     ctx.c_ctrl.ctrl_err <- Some err;

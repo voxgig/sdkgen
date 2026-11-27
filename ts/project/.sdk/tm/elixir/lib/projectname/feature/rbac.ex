@@ -5,13 +5,15 @@
 # against the permissions the client holds; a disallowed call is
 # short-circuited with an `rbac_denied` error placed in ctx.out["point"]
 # (the pipeline's make_point surfaces it) and never touches the network.
-# Required permissions come from `rules` (keyed by `<entity>.<op>`, `<op>`,
-# or `*`); the default when no rule matches is controlled by `deny`
+# Required permissions come from `rules` (keyed by `<entity>.<op>:<action>`,
+# `<entity>.<op>`, `<op>`, or `*`, most specific first); the default when no
+# rule matches is controlled by `deny`
 # (default: allow when unspecified). Held permissions are the `permissions`
 # list (a `*` grants everything).
 
 defmodule ProjectName.Feature.Rbac do
   alias Voxgig.Struct, as: S
+  alias ProjectName.Helpers, as: H
   alias ProjectName.{Feature, Context}
 
   def new do
@@ -73,36 +75,7 @@ defmodule ProjectName.Feature.Rbac do
   defp required(f, ctx) do
     rules = S.getprop(Feature.opts(f), "rules")
     rules = if S.ismap(rules), do: rules, else: S.jm([])
-
-    entity = entity_of(ctx)
-    opname = opname_of(ctx)
-    key = entity <> "." <> opname
-
-    cond do
-      S.getprop(rules, key) != nil -> S.getprop(rules, key)
-      S.getprop(rules, opname) != nil -> S.getprop(rules, opname)
-      S.getprop(rules, "*") != nil -> S.getprop(rules, "*")
-      true -> nil
-    end
-  end
-
-  defp entity_of(ctx) do
-    name = Context.entity_name(S.getprop(ctx, "entity"))
-    name = if name == "_", do: "", else: name
-
-    if name == "" do
-      op = S.getprop(ctx, "op")
-      oe = if op != nil, do: S.getprop(op, "entity"), else: nil
-      if is_binary(oe), do: oe, else: ""
-    else
-      name
-    end
-  end
-
-  defp opname_of(ctx) do
-    op = S.getprop(ctx, "op")
-    nm = if op != nil, do: S.getprop(op, "name"), else: nil
-    if is_binary(nm), do: nm, else: ""
+    Enum.find_value(H.op_keys(ctx), &S.getprop(rules, &1))
   end
 
   defp reject(f, ctx, required) do
@@ -111,6 +84,8 @@ defmodule ProjectName.Feature.Rbac do
     op = S.getprop(ctx, "op")
     nm = if op != nil, do: S.getprop(op, "name"), else: nil
     opname = if is_binary(nm) and nm != "", do: nm, else: "?"
+    action = H.op_action(ctx)
+    opname = if action == nil, do: opname, else: opname <> ":" <> action
 
     err =
       Context.make_error(
@@ -133,7 +108,14 @@ defmodule ProjectName.Feature.Rbac do
 
     op = S.getprop(ctx, "op")
     opname = if op != nil, do: S.getprop(op, "name"), else: nil
-    S.setprop(t, "last", S.jm(["required", required, "allowed", allowed, "op", opname]))
+    S.setprop(t, "last", S.jm(["required", required, "allowed", allowed, "op", opname] ++ action_kv(ctx)))
     nil
+  end
+
+  defp action_kv(ctx) do
+    case H.op_action(ctx) do
+      nil -> []
+      action -> ["action", action]
+    end
   end
 end

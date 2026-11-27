@@ -458,6 +458,28 @@
 
 (defn entity-get-name [ent] (when (and ent (:get-name ent)) ((:get-name ent))))
 
+;; The custom action a call names: `$action` in its own request argument,
+;; never in a response.
+(defn op-action [ctx]
+  (let [req (oget ctx (if (= "data" (op-input (oget ctx :op))) :reqdata :reqmatch))
+        action (mget req "$action")]
+    (when (and (string? action) (not= "" action)) action)))
+
+;; The keys an operation is looked up and filed by, most specific first:
+;; `<entity>.<op>:<action>`, `<entity>.<op>`, `<op>`, `*`.
+(defn op-keys [ctx]
+  (let [op (oget ctx :op)
+        nonempty (fn [v] (when (and (string? v) (not= "" v)) v))
+        name (or (nonempty (op-name op)) "_")
+        base (str (or (nonempty (op-entity op))
+                      (nonempty (entity-get-name (oget ctx :entity)))
+                      "_")
+                  "." name)
+        action (op-action ctx)]
+    (if (nil? action)
+      [base name "*"]
+      [(str base ":" action) base name "*"])))
+
 ;; ---------------------------------------------------------------------------
 ;; Pipeline utilities. Each takes ctx; sibling steps are reached via ucall so
 ;; overrides / feature-wrapped fetchers are honoured.
@@ -1283,10 +1305,12 @@
             options (oget ctx :options)
             allow-op (vs/getpath options "allow.op")]
         (cond
-          (not (allowed? allow-op (op-name op)))
-          [nil (ctx-error ctx "point_op_allow"
-                          (str "Operation \"" (op-name op) "\" not allowed by SDK option allow.op value: \""
-                               (if (string? allow-op) allow-op "") "\""))]
+          (not (some #(allowed? allow-op %) (op-keys ctx)))
+          (let [action (op-action ctx)]
+            [nil (ctx-error ctx "point_op_allow"
+                            (str "Operation \"" (op-name op) (when action (str ":" action))
+                                 "\" not allowed by SDK option allow.op value: \""
+                                 (if (string? allow-op) allow-op "") "\""))])
           (zero? (vs/size (op-points op)))
           [nil (ctx-error ctx "point_no_points"
                           (str "Operation \"" (op-name op) "\" has no endpoint definitions."))]

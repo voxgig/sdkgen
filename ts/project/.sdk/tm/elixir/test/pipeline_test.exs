@@ -108,6 +108,39 @@ defmodule ProjectName.PipelineTest do
     assert err.code == "point_op_allow"
   end
 
+  test "make_point: an allow list entry may name an action: <entity>.<op>:<action>" do
+    plain = H.deep(%{"method" => "GET", "parts" => ["episode", "{id}"], "select" => %{"exist" => ["id"]}})
+
+    audio =
+      H.deep(%{"method" => "GET", "parts" => ["episode", "{id}", "audio"],
+        "select" => %{"exist" => ["id"], "$action" => "audio"}})
+
+    point = fn allow, reqmatch ->
+      ctx = make_ctx(client())
+      op = S.getprop(ctx, "op")
+      S.setprop(op, "name", "load")
+      S.setprop(op, "entity", "episode")
+      S.setprop(op, "input", "match")
+      S.setprop(op, "points", S.jt([plain, audio]))
+      S.setprop(ctx, "options", S.jm(["allow", S.jm(["op", allow])]))
+      S.setprop(ctx, "reqmatch", H.deep(reqmatch))
+      S.setprop(ctx, "match", S.jm([]))
+      {out, err} = Utility.make_point(ctx)
+      if err != nil, do: err.code, else: out
+    end
+
+    a = %{"$action" => "audio", "id" => "e1"}
+    r = %{"id" => "e1"}
+    assert point.("episode.load:audio", a) == audio
+    assert point.("episode.load:audio", r) == "point_op_allow"
+    assert point.("Episode.Load:AUDIO", a) == audio
+    assert point.("episode.load:video", a) == "point_op_allow"
+    assert point.("episode.load", a) == audio
+    assert point.("load", a) == audio
+    assert point.("load", r) == plain
+    assert point.("list", r) == "point_op_allow"
+  end
+
   test "make_point rejects an operation with no endpoints" do
     ctx = make_ctx(client())
     S.setprop(S.getprop(ctx, "op"), "points", S.jt([]))

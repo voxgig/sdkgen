@@ -36,6 +36,32 @@ let allow_list_has (names : value) (item : string) : bool =
       (String.split_on_char ',' list)
   | _ -> false
 
+(* The custom action a call names: `$action` in its own request argument,
+   never in a response. *)
+let op_action (ctx : ctx) : string option =
+  let req = if ctx.c_op.op_input = "data" then ctx.c_reqdata else ctx.c_reqmatch in
+  match getp req "$action" with
+  | Str a when a <> "" -> Some a
+  | _ -> None
+
+(* The keys an operation is looked up and filed by, most specific first:
+   `<entity>.<op>:<action>`, `<entity>.<op>`, `<op>`, `*`. *)
+let op_keys (ctx : ctx) : string list =
+  let name = if ctx.c_op.op_name <> "" then ctx.c_op.op_name else "_" in
+  let entity =
+    if ctx.c_op.op_entity <> "" then ctx.c_op.op_entity
+    else match ctx.c_entity with
+      | Some e when e.e_name <> "" -> e.e_name
+      | _ -> "_" in
+  let base = entity ^ "." ^ name in
+  match op_action ctx with
+  | Some a -> [base ^ ":" ^ a; base; name; "*"]
+  | None -> [base; name; "*"]
+
+(* The record fields that name a call's action: none for a plain call. *)
+let action_fields (ctx : ctx) : (string * value) list =
+  match op_action ctx with Some a -> [("action", Str a)] | None -> []
+
 let str_replace_all (s : string) (find : string) (repl : string) : string =
   if find = "" then s
   else begin
@@ -1283,9 +1309,11 @@ let make_point_util (ctx : ctx) : (value * sdk_error option) =
     let op = ctx.c_op in
     let options = ctx.c_options in
     let allow_op = match getpath_s options "allow.op" with Str s -> s | _ -> "" in
-    if not (allow_list_has (getpath_s options "allow.op") op.op_name) then
+    if not (List.exists (allow_list_has (getpath_s options "allow.op")) (op_keys ctx)) then
+      let action = match op_action ctx with Some a -> ":" ^ a | None -> "" in
       (Noval, Some (ctx_make_error ctx "point_op_allow"
-        ("Operation \"" ^ op.op_name ^ "\" not allowed by SDK option allow.op value: \"" ^ allow_op ^ "\"")))
+        ("Operation \"" ^ op.op_name ^ action ^
+         "\" not allowed by SDK option allow.op value: \"" ^ allow_op ^ "\"")))
     else begin
       let points = match op.op_points with List r -> !r | _ -> [] in
       let reqselector, selector =

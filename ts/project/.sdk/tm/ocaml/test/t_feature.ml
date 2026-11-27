@@ -280,6 +280,80 @@ let () =
         check "ok" (op h ~op:"load" ()).or_ok)
   end;
 
+  (* ---------------- action keys ---------------- *)
+  (* A custom action is `$action` in the request argument, and its keys name
+     it: `<entity>.<op>:<action>`, most specific first. *)
+  let audio () = jo [("$action", Str "audio"); ("id", Str "e1")] in
+  let record () = jo [("id", Str "e1")] in
+  let episode h req = op h ~entity:"episode" ~op:"load" ~reqmatch:req () in
+  let has_key v k = match v with Map m -> omap_has m k | _ -> false in
+  let err_msg (r : op_result) = match r.or_error with Some e -> e.err_msg | None -> "" in
+  let contains s sub =
+    let n = String.length sub in
+    let rec at i = i + n <= String.length s && (String.sub s i n = sub || at (i + 1)) in
+    at 0 in
+  if has_feature "rbac" then begin
+    test "action-keys.rbac_record_granted_action_refused" (fun () ->
+        let srv, calls = recording_server () in
+        let h = make_client ~server:srv [("rbac", jo [
+            ("rules", jo [("episode.load", Str "read"); ("episode.load:audio", Str "audio")]);
+            ("permissions", ja [Str "read"])])] in
+        check "record ok" (episode h (record ())).or_ok;
+        let r = episode h (audio ()) in
+        check_str "code" (err_code r) "rbac_denied";
+        check "message" (contains (err_msg r) "operation \"load:audio\"");
+        check_int "calls" (List.length !calls) 1;
+        check_vstr "last action" (getp (getp (track h "rbac") "last") "action") "audio");
+    test "action-keys.rbac_action_granted_record_refused" (fun () ->
+        let h = make_client [("rbac", jo [
+            ("rules", jo [("episode.load", Str "read"); ("episode.load:audio", Str "audio")]);
+            ("permissions", ja [Str "audio"])])] in
+        check_str "record" (err_code (episode h (record ()))) "rbac_denied";
+        check "action ok" (episode h (audio ())).or_ok);
+    test "action-keys.rbac_action_falls_back_to_operation" (fun () ->
+        let h = make_client [("rbac", jo [
+            ("rules", jo [("episode.load", Str "read")]); ("permissions", empty_list ())])] in
+        check_str "fallback" (err_code (episode h (audio ()))) "rbac_denied")
+  end;
+  if has_feature "metrics" then
+    test "action-keys.metrics_action_counted_apart" (fun () ->
+        let h = make_client [("metrics", empty_map ())] in
+        ignore (episode h (record ())); ignore (episode h (audio ())); ignore (episode h (audio ()));
+        let m = track h "metrics" in
+        check_vnum "total" (getpath_s m "total.count") 3.;
+        check_vnum "plain" (getp (getp (getp m "ops") "episode.load") "count") 1.;
+        check_vnum "action" (getp (getp (getp m "ops") "episode.load:audio") "count") 2.);
+  if has_feature "audit" then
+    test "action-keys.audit_record_names_action" (fun () ->
+        let h = make_client [("audit", empty_map ())] in
+        ignore (episode h (record ())); ignore (episode h (audio ()));
+        match getp (track h "audit") "records" with
+        | List r ->
+          let r0 = List.nth !r 0 and r1 = List.nth !r 1 in
+          check "plain has no action" (not (has_key r0 "action"));
+          check_vstr "plain op" (getp r0 "op") "load";
+          check_vstr "action" (getp r1 "action") "audio";
+          check_vstr "action op" (getp r1 "op") "load"
+        | _ -> failwith "no records");
+  if has_feature "cost" then
+    test "action-keys.cost_action_priced_apart" (fun () ->
+        let sunk = ref [] in
+        let sink = vfunc1 (fun v -> sunk := !sunk @ [v]; Noval) in
+        let h = make_client [("cost", jo [
+            ("rates", jo [("episode.load", Num 1.); ("episode.load:audio", Num 5.)]);
+            ("sink", sink)])] in
+        ignore (episode h (record ())); ignore (episode h (audio ()));
+        let c = track h "cost" in
+        let ops = getp c "ops" in
+        check_vnum "total" (getpath_s c "total.amount") 6.;
+        check_vnum "plain calls" (getp (getp ops "episode.load") "calls") 1.;
+        check_vnum "plain amount" (getp (getp ops "episode.load") "amount") 1.;
+        check_vnum "action calls" (getp (getp ops "episode.load:audio") "calls") 1.;
+        check_vnum "action amount" (getp (getp ops "episode.load:audio") "amount") 5.;
+        check "plain sink" (not (has_key (List.nth !sunk 0) "action"));
+        check_vstr "action sink" (getp (List.nth !sunk 1) "action") "audio";
+        check_vstr "last" (getp (getp c "last") "action") "audio");
+
   (* ---------------- metrics ---------------- *)
   if fh_present "metrics" then begin
     test "metrics.counts_ok_err_per_op" (fun () ->

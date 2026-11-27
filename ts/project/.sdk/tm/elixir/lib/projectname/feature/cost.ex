@@ -4,12 +4,14 @@
 # feature: money is spent per HTTP ATTEMPT (a retried call is charged again,
 # because the upstream API charges it again), but it is owed by an OPERATION.
 # So the transport wrap prices each attempt, and PreDone attributes the
-# running total to `<entity>.<op>` and to the caller (`ctrl.actor`, the same
+# running total to `<entity>.<op>` (with `:<action>` for a custom action) and
+# to the caller (`ctrl.actor`, the same
 # actor the audit feature records).
 #
 # The price of an attempt comes from the first source that answers: a
 # response header (`header` x `perUnit`), the rate table (`rates`, keyed
-# `<entity>.<op>` / `<op>` / `*`), then the flat `unit`. A body figure
+# `<entity>.<op>:<action>` / `<entity>.<op>` / `<op>` / `*`), then the flat
+# `unit`. A body figure
 # (`path` x `perUnit`, e.g. "usage.total_tokens") is read at PreDone instead,
 # from the already-parsed result. A body figure describes the whole call, so
 # it REPLACES the per-attempt estimate rather than adding to it.
@@ -165,7 +167,7 @@ defmodule ProjectName.Feature.Cost do
     # run past an onBudget = "deny" ceiling indefinitely. `piped` is set by
     # PrePoint, so its absence is the signal.
     if S.getprop(pending, "piped") != true do
-      commit(f, ctx, pending, "_", "direct", opts)
+      commit(f, ctx, pending, %{key: "_.direct", entity: "_", op: "direct", action: nil}, opts)
       S.delprop(ctx, "_cost_pending")
     end
 
@@ -221,7 +223,14 @@ defmodule ProjectName.Feature.Cost do
 
         true ->
           S.delprop(ctx, "_cost_pending")
-          commit(f, ctx, pending, entity_of(ctx), opname_of(ctx), Feature.opts(f))
+          call = %{
+            key: hd(H.op_keys(ctx)),
+            entity: entity_of(ctx),
+            op: opname_of(ctx),
+            action: H.op_action(ctx)
+          }
+
+          commit(f, ctx, pending, call, Feature.opts(f))
       end
     end
   end
@@ -229,7 +238,8 @@ defmodule ProjectName.Feature.Cost do
   # Commit one operation's spend: totals, budget, per-op and per-actor
   # attribution, and the record. Shared by finish and the raw-request path in
   # charge, which has no PreDone to reach.
-  defp commit(f, ctx, pending, entity, opname, opts) do
+  # `call` names what the spend is filed under: its key, entity, op and action.
+  defp commit(f, ctx, pending, call, opts) do
     cost = S.getprop(S.getprop(f, "client"), "_cost")
     total = S.getprop(cost, "total")
 
@@ -254,7 +264,7 @@ defmodule ProjectName.Feature.Cost do
     actor = if actor == nil, do: "anonymous", else: actor
 
     S.setprop(total, "calls", S.getprop(total, "calls") + 1)
-    bump(S.getprop(cost, "ops"), entity <> "." <> opname, amount)
+    bump(S.getprop(cost, "ops"), call.key, amount)
     bump(S.getprop(cost, "actors"), to_string(actor), amount)
 
     seq = H.or_(S.getprop(f, "seq"), 0) + 1
@@ -263,14 +273,14 @@ defmodule ProjectName.Feature.Cost do
     record =
       Feature.clean(ctx, S.jm([
         "seq", seq,
-        "entity", entity,
-        "op", opname,
+        "entity", call.entity,
+        "op", call.op,
         "actor", actor,
         "amount", amount,
         "currency", S.getprop(cost, "currency"),
         "source", source,
         "attempts", S.getprop(pending, "attempts")
-      ]))
+      ] ++ if(call.action == nil, do: [], else: ["action", call.action])))
 
     S.setprop(cost, "last", record)
 
@@ -317,16 +327,12 @@ defmodule ProjectName.Feature.Cost do
     end
   end
 
-  # The rate table uses the same lookup grammar as rbac's rules:
-  # `<entity>.<op>`, then `<op>`, then `*`.
+  # The rate table is keyed as rbac's rules are.
   defp rate_for(ctx, opts) do
     rates = S.getprop(opts, "rates")
     rates = if S.ismap(rates), do: rates, else: S.jm([])
 
-    entity = entity_of(ctx)
-    opname = opname_of(ctx)
-
-    Enum.find_value([entity <> "." <> opname, opname, "*"], fn key ->
+    Enum.find_value(H.op_keys(ctx), fn key ->
       v = S.getprop(rates, key)
       if is_number(v) and not is_boolean(v), do: v
     end)

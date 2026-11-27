@@ -375,19 +375,16 @@ let rbac_feature () : feature =
     let cl = cc ctx in
     let bucket = track_bucket cl "rbac" (fun () -> jo [("allowed", Num 0.); ("denied", Num 0.); ("last", Noval)]) in
     bump_num bucket (if allowed then "allowed" else "denied") 1.;
-    setp bucket "last" (jo [("required", Str required); ("allowed", Bool allowed);
-                            ("op", Str ctx.c_op.op_name)]) in
+    setp bucket "last" (jo ([("required", Str required); ("allowed", Bool allowed);
+                             ("op", Str ctx.c_op.op_name)] @ action_fields ctx)) in
   let required ctx =
     let rules = match getp !options "rules" with Map _ as m -> m | _ -> empty_map () in
-    let entity = match ctx.c_entity with Some e -> e.e_name | None -> (if ctx.c_op.op_entity <> "" then ctx.c_op.op_entity else "") in
-    let opname = ctx.c_op.op_name in
     let rule_for k = match getp rules k with Noval | Null -> None | v -> Some (vstr_of v) in
-    (match rule_for (entity ^ "." ^ opname) with Some v -> Some v
-     | None -> (match rule_for opname with Some v -> Some v
-       | None -> (match rule_for "*" with Some v -> Some v | None -> None))) in
+    List.find_map rule_for (op_keys ctx) in
   let reject ctx req =
     track ctx req false;
     let opname = if ctx.c_op.op_name <> "" && ctx.c_op.op_name <> "_" then ctx.c_op.op_name else "?" in
+    let opname = match op_action ctx with Some a -> opname ^ ":" ^ a | None -> opname in
     let err = ctx_make_error ctx "rbac_denied"
         ("Permission \"" ^ req ^ "\" required for operation \"" ^ opname ^ "\"") in
     Hashtbl.replace ctx.c_out "point" (OErr err) in
@@ -601,7 +598,7 @@ let metrics_feature () : feature =
       scratch_del ctx "metrics_start";
       let dur = Float.max 0. (now_of !options -. start) in
       let m = metrics ctx in
-      let key = ctx.c_op.op_entity ^ "." ^ ctx.c_op.op_name in
+      let key = List.hd (op_keys ctx) in
       let ops = getp m "ops" in
       let opb = match getp ops key with Map _ as b -> b
         | _ -> let b = jo [("count", Num 0.); ("ok", Num 0.); ("err", Num 0.); ("totalMs", Num 0.); ("maxMs", Num 0.)] in setp ops key b; b in
@@ -774,13 +771,13 @@ let audit_feature () : feature =
       let actor = match ctx.c_ctrl.ctrl_actor with
         | Noval | Null -> (match getp !options "actor" with Noval | Null -> Str "anonymous" | a -> a)
         | a -> a in
-      let record = (cu ctx).u_clean ctx (jo [
+      let record = (cu ctx).u_clean ctx (jo ([
         ("seq", vint_of !seq); ("ts", Num (now_of !options)); ("actor", actor);
         ("entity", Str (if ctx.c_op.op_entity <> "" then ctx.c_op.op_entity else "_"));
         ("op", Str (if ctx.c_op.op_name <> "" then ctx.c_op.op_name else "_"));
         ("outcome", Str outcome);
         ("status", (match ctx.c_result with Some r -> vint_of r.rt_status | None -> Noval));
-        ("correlationId", Str ctx.c_id) ]) in
+        ("correlationId", Str ctx.c_id) ] @ action_fields ctx)) in
       let records = getp (audit ctx) "records" in
       (match records with List r -> r := !r @ [record] | _ -> ());
       let mx = opt_int !options "max" ~default:1000 in
@@ -853,20 +850,11 @@ let cost_feature () : feature =
           | Some n -> Some (n *. per_unit (), "header")
           | None -> None) in
 
-  (* Same lookup grammar as rbac's rules: '<entity>.<op>', then '<op>',
-     then '*'. *)
+  (* Keyed as rbac's rules are. *)
   let price_rate ctx =
     let rates = match getp !options "rates" with Map _ as m -> m | _ -> empty_map () in
-    let entity = match ctx.c_entity with
-      | Some e -> e.e_name
-      | None -> ctx.c_op.op_entity in
-    let opname = ctx.c_op.op_name in
-    let pick k = match getp rates k with Num n -> Some n | _ -> None in
-    match pick (entity ^ "." ^ opname) with
-    | Some n -> Some (n, "table")
-    | None -> (match pick opname with
-        | Some n -> Some (n, "table")
-        | None -> (match pick "*" with Some n -> Some (n, "table") | None -> None)) in
+    let pick k = match getp rates k with Num n -> Some (n, "table") | _ -> None in
+    List.find_map pick (op_keys ctx) in
 
   let price ctx res =
     match price_header res with
@@ -914,7 +902,8 @@ let cost_feature () : feature =
     bump_num b "calls" 1.;
     bump_num b "amount" amount in
 
-  let commit ctx p entity opname =
+  (* `key` files the spend; `action` is named on the record when there is one. *)
+  let commit ctx p key entity opname action =
     let rec_ = record ctx in
     let amount = ref (match getp p "amount" with Num n -> n | _ -> 0.) in
     let reported = ref (match getp p "reported" with Num n -> n | _ -> 0.) in
@@ -935,15 +924,15 @@ let cost_feature () : feature =
       | _ -> opt_str !options "actor" ~default:"anonymous" in
 
     bump_num (getp rec_ "total") "calls" 1.;
-    bump (getp rec_ "ops") (entity ^ "." ^ opname) !amount;
+    bump (getp rec_ "ops") key !amount;
     bump (getp rec_ "actors") actor !amount;
 
     incr seq;
     let last = (cu ctx).u_clean ctx
-        (jo [("seq", Num (float_of_int !seq)); ("entity", Str entity); ("op", Str opname);
-             ("actor", Str actor); ("amount", Num !amount);
-             ("currency", getp rec_ "currency"); ("source", Str !source);
-             ("attempts", getp p "attempts")]) in
+        (jo ([("seq", Num (float_of_int !seq)); ("entity", Str entity); ("op", Str opname);
+              ("actor", Str actor); ("amount", Num !amount);
+              ("currency", getp rec_ "currency"); ("source", Str !source);
+              ("attempts", getp p "attempts")] @ action)) in
     setp rec_ "last" last;
     (match getp !options "sink" with Func _ as fn -> (try ignore (call_vfn fn last) with _ -> ()) | _ -> ()) in
 
@@ -964,7 +953,7 @@ let cost_feature () : feature =
         if done_ || attempts > 0. then begin
           let entity = if ctx.c_op.op_entity <> "" then ctx.c_op.op_entity else "_" in
           let opname = if ctx.c_op.op_name <> "" then ctx.c_op.op_name else "_" in
-          commit ctx p entity opname
+          commit ctx p (List.hd (op_keys ctx)) entity opname (action_fields ctx)
         end in
 
   let charge ctx url fetchdef inner =
@@ -985,7 +974,7 @@ let cost_feature () : feature =
        or never. `piped` is set by PrePoint, so its absence is the signal. *)
     if getp p "piped" <> Bool true then begin
       Hashtbl.remove pending ctx.c_id;
-      commit ctx p "_" "direct"
+      commit ctx p "_.direct" "_" "direct" []
     end;
     (res, err) in
 

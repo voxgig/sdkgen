@@ -1052,10 +1052,13 @@ defmodule ProjectName.Utility do
       npoints = S.size(points)
 
       cond do
-        not allowed?(allow_op, opname) ->
+        not Enum.any?(H.op_keys(ctx), &allowed?(allow_op, &1)) ->
+          action = H.op_action(ctx)
+
           {nil,
            Context.make_error(ctx, "point_op_allow",
-             "Operation \"" <> opname <> "\" not allowed by SDK option allow.op value: \"" <>
+             "Operation \"" <> opname <> if(action == nil, do: "", else: ":" <> action) <>
+               "\" not allowed by SDK option allow.op value: \"" <>
                H.str_or(allow_op, "") <> "\"")}
 
         npoints == 0 ->

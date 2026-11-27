@@ -783,16 +783,11 @@
                            (let [v (header-of (vs/getprop res "headers") name)
                                  n (to-num v)]
                              (when (number? n) [(* n (per-unit)) "header"])))))
-        ;; Same lookup grammar as rbac's rules: '<entity>.<op>', then '<op>',
-        ;; then '*'.
+        ;; Keyed as rbac's rules are.
         price-rate (fn [ctx]
                      (let [rates (let [r (opt fa "rates")] (if (vs/ismap r) r (vs/jm)))
-                           op (core/oget ctx :op)
-                           ent (or (when-let [e (core/oget ctx :entity)] (core/entity-get-name e))
-                                   (when op (core/op-entity op)) "")
-                           opname (if op (core/op-name op) "")
                            pick (fn [k] (let [v (vs/getprop rates k)] (when (number? v) v)))]
-                       (when-let [n (or (pick (str ent "." opname)) (pick opname) (pick "*"))]
+                       (when-let [n (some pick (core/op-keys ctx))]
                          [n "table"])))
         price (fn [ctx res]
                 (or (price-header res)
@@ -828,7 +823,8 @@
                                        (.put ^java.util.Map bucket key m) m)))]
                          (bump! b "calls" 1)
                          (bump! b "amount" amount)))
-        commit! (fn [ctx p entity opname]
+        ;; `call` names what the spend is filed under: its key, entity, op and action.
+        commit! (fn [ctx p call]
                   (let [rec (record!)
                         body (price-body ctx)
                         amount (if (some? body) body (or (mget p "amount") 0))
@@ -839,13 +835,14 @@
                                   (opt fa "actor") "anonymous")]
                     (spend! rec amount reported estimated)
                     (bump! (mget rec "total") "calls" 1)
-                    (bump-bucket! (mget rec "ops") (str entity "." opname) amount)
+                    (bump-bucket! (mget rec "ops") (:key call) amount)
                     (bump-bucket! (mget rec "actors") (str actor) amount)
                     (swap! fa update :seq (fnil inc 0))
-                    (let [last (core/ucall ctx :clean
-                                           (vs/jm "seq" (:seq @fa) "entity" entity "op" opname "actor" (str actor)
-                                                  "amount" amount "currency" (mget rec "currency")
-                                                  "source" source "attempts" (mget p "attempts")))]
+                    (let [entry (vs/jm "seq" (:seq @fa) "entity" (:entity call) "op" (:op call) "actor" (str actor)
+                                       "amount" amount "currency" (mget rec "currency")
+                                       "source" source "attempts" (mget p "attempts"))
+                          _ (when-let [action (:action call)] (.put ^java.util.Map entry "action" action))
+                          last (core/ucall ctx :clean entry)]
                       (.put ^java.util.Map rec "last" last)
                       (let [sink (opt fa "sink")]
                         (when (fn? sink) (try (sink last) (catch Throwable _ nil)))))))
@@ -864,7 +861,8 @@
                           (let [op (core/oget ctx :op)
                                 entity (if (and op (seq (core/op-entity op))) (core/op-entity op) "_")
                                 opname (if (and op (seq (core/op-name op))) (core/op-name op) "_")]
-                            (commit! ctx p entity opname)))))))
+                            (commit! ctx p {:key (first (core/op-keys ctx)) :entity entity :op opname
+                                            :action (core/op-action ctx)})))))))
         charge (fn [ctx url fetchdef inner]
                  ;; A rejecting transport still costs an attempt: without this a
                  ;; run of connection-level failures under retry would be
@@ -883,7 +881,7 @@
                    ;; PrePoint, so its absence is the signal.
                    (when (not= true (mget p "piped"))
                      (swap! fa update :pending dissoc (core/oget ctx :id))
-                     (commit! ctx p "_" "direct"))
+                     (commit! ctx p {:key "_.direct" :entity "_" :op "direct"}))
                    [res err]))]
     (swap! fa assoc :pending {} :seq 0)
     (swap! fa assoc
@@ -1096,8 +1094,7 @@
                           dur (if (nil? start) 0 (max 0 (- (now-ms fa) start)))
                           m (track-get fa "_metrics")]
                       (when m
-                        (let [op (core/oget ctx :op)
-                              key (str (if op (core/op-entity op) "_") "." (if op (core/op-name op) "_"))
+                        (let [key (first (core/op-keys ctx))
                               opm (or (mget (mget m "ops") key)
                                       (let [b (vs/jm "count" 0 "ok" 0 "err" 0 "totalMs" 0 "maxMs" 0)]
                                         (.put ^java.util.Map (mget m "ops") key b) b))]
@@ -1212,11 +1209,12 @@
                  (swap! fa update :seq inc)
                  (let [op (core/oget ctx :op)
                        result (core/oget ctx :result)
-                       record (core/ucall ctx :clean
-                                          (vs/jm "seq" (:seq @fa) "ts" (now-ms fa) "actor" (actor ctx)
-                                                 "entity" (if op (core/op-entity op) "_") "op" (if op (core/op-name op) "_")
-                                                 "outcome" outcome "status" (when result (core/oget result :status))
-                                                 "correlationId" (core/oget ctx :id)))
+                       entry (vs/jm "seq" (:seq @fa) "ts" (now-ms fa) "actor" (actor ctx)
+                                    "entity" (if op (core/op-entity op) "_") "op" (if op (core/op-name op) "_")
+                                    "outcome" outcome "status" (when result (core/oget result :status))
+                                    "correlationId" (core/oget ctx :id))
+                       _ (when-let [action (core/op-action ctx)] (.put ^java.util.Map entry "action" action))
+                       record (core/ucall ctx :clean entry)
                        track (track-ensure! fa "_audit" (vs/jm "records" (vs/jt)))
                        recs (mget track "records")
                        max (opt fa "max" 1000)]
@@ -1292,26 +1290,20 @@
 (defn rbac-feature []
   (let [fa (new-feature "rbac" false "0.0.1")
         required (fn [ctx]
-                   (let [rules (or (opt fa "rules") (vs/jm))
-                         entity (cond (and (core/oget ctx :entity) (core/entity-get-name (core/oget ctx :entity)))
-                                      (core/entity-get-name (core/oget ctx :entity))
-                                      (core/oget ctx :op) (core/op-entity (core/oget ctx :op))
-                                      :else "")
-                         opname (if (core/oget ctx :op) (core/op-name (core/oget ctx :op)) "")]
-                     (cond
-                       (some? (mget rules (str entity "." opname))) (mget rules (str entity "." opname))
-                       (some? (mget rules opname)) (mget rules opname)
-                       (some? (mget rules "*")) (mget rules "*")
-                       :else nil)))
+                   (let [rules (or (opt fa "rules") (vs/jm))]
+                     (some #(mget rules %) (core/op-keys ctx))))
         track! (fn [ctx req allowed]
                  (let [t (track-ensure! fa "_rbac" (vs/jm "allowed" 0 "denied" 0 "last" nil))]
                    (.put ^java.util.Map t (if allowed "allowed" "denied") (inc (long (mget t (if allowed "allowed" "denied")))))
-                   (.put ^java.util.Map t "last" (vs/jm "required" req "allowed" allowed
-                                                        "op" (when (core/oget ctx :op) (core/op-name (core/oget ctx :op)))))))
+                   (let [last (vs/jm "required" req "allowed" allowed
+                                     "op" (when (core/oget ctx :op) (core/op-name (core/oget ctx :op))))]
+                     (when-let [action (core/op-action ctx)] (.put ^java.util.Map last "action" action))
+                     (.put ^java.util.Map t "last" last))))
         reject (fn [ctx req]
                  (track! ctx req false)
                  (let [op (core/oget ctx :op)
                        opname (if (and op (seq (core/op-name op))) (core/op-name op) "?")
+                       opname (if-let [action (core/op-action ctx)] (str opname ":" action) opname)
                        err (core/ctx-error ctx "rbac_denied" (str "Permission \"" req "\" required for operation \"" opname "\""))]
                    ;; Short-circuit endpoint resolution; make_point surfaces this
                    ;; error before any network use.

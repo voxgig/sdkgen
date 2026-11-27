@@ -115,6 +115,34 @@ describe("pipeline", function()
       assert.are.equal("point_op_allow", err.code)
     end)
 
+    it("an allow list entry may name an action: <entity>.<op>:<action>", function()
+      local plain = { method = "GET", parts = { "episode", "{id}" },
+        select = { exist = { "id" } } }
+      local audio = { method = "GET", parts = { "episode", "{id}", "audio" },
+        select = { exist = { "id" }, ["$action"] = "audio" } }
+      local function point(allow, reqmatch)
+        local ctx = base_ctx({
+          op = Operation.new({ name = "load", entity = "episode", input = "match",
+            points = { plain, audio } }),
+          options = { allow = { op = allow } },
+        })
+        ctx.reqmatch = reqmatch
+        ctx.match = {}
+        local out, err = ctx.utility.make_point(ctx)
+        return err ~= nil and err.code or out
+      end
+      local AUDIO = { ["$action"] = "audio", id = "e1" }
+      local RECORD = { id = "e1" }
+      assert.are.equal(audio, point("episode.load:audio", AUDIO))
+      assert.are.equal("point_op_allow", point("episode.load:audio", RECORD))
+      assert.are.equal(audio, point("Episode.Load:AUDIO", AUDIO))
+      assert.are.equal("point_op_allow", point("episode.load:video", AUDIO))
+      assert.are.equal(audio, point("episode.load", AUDIO))
+      assert.are.equal(audio, point("load", AUDIO))
+      assert.are.equal(plain, point("load", RECORD))
+      assert.are.equal("point_op_allow", point("list", RECORD))
+    end)
+
     it("make_point rejects an operation with no endpoints", function()
       local ctx = base_ctx({ op = Operation.new({ name = "load" }) })
       local _, err = ctx.utility.make_point(ctx)

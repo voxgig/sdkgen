@@ -96,6 +96,15 @@ local function recording_server(reply)
 end
 
 
+-- Which request argument an operation reads, as the generated Context decides.
+local function op_input(opname)
+  if opname == "create" or opname == "update" or opname == "patch" then
+    return "data"
+  end
+  return "match"
+end
+
+
 local function default_method(opname)
   if opname == "create" then return "POST" end
   if opname == "update" or opname == "patch" then return "PATCH" end
@@ -145,6 +154,8 @@ local function make_client(spec)
       meta = {},
       op = over.op,
       entity = over.entity,
+      reqdata = over.reqdata or {},
+      reqmatch = over.reqmatch or {},
     }
     function ctx:make_error(code, msg)
       return make_err(code, msg)
@@ -262,9 +273,11 @@ local function make_client(spec)
     local method = o.method or default_method(opname)
 
     local ctx = make_ctx({
-      op = { name = opname, entity = entity },
+      op = { name = opname, entity = entity, input = op_input(opname) },
       entity = { name = entity },
       ctrl = o.ctrl or {},
+      reqdata = o.reqdata,
+      reqmatch = o.reqmatch,
     })
 
     feature_hook(ctx, "PostConstructEntity")
@@ -1021,6 +1034,97 @@ describe("feature", function()
       assert.is_nil(h.client._audit)
     end)
   end) end
+
+
+  -- action keys ---------------------------------------------------------
+  -- A custom action is `$action` in the request argument, and its keys name
+  -- it: `<entity>.<op>:<action>`, most specific first.
+  describe("action-keys", function()
+    local AUDIO = { ["$action"] = "audio", id = "e1" }
+    local RECORD = { id = "e1" }
+
+    if has_feature("rbac") then
+      it("rbac: the record is granted and the action refused", function()
+        local rec = recording_server()
+        local h = make_client({ features = {
+          { name = "rbac", options = {
+            rules = { ["episode.load"] = "read", ["episode.load:audio"] = "audio" },
+            permissions = { "read" } } },
+        }, server = rec.server })
+        assert.is_true(h.op({ entity = "episode", op = "load", reqmatch = RECORD }).ok)
+        local res = h.op({ entity = "episode", op = "load", reqmatch = AUDIO })
+        assert.are.equal("rbac_denied", res.error.code)
+        assert.is_truthy(string.find(res.error.msg, 'operation "load:audio"', 1, true))
+        assert.are.equal(1, #rec.calls)
+        assert.are.equal("audio", h.client._rbac.last.action)
+      end)
+
+      it("rbac: the action is granted and the record refused", function()
+        local h = make_client({ features = {
+          { name = "rbac", options = {
+            rules = { ["episode.load"] = "read", ["episode.load:audio"] = "audio" },
+            permissions = { "audio" } } },
+        } })
+        assert.are.equal("rbac_denied",
+          h.op({ entity = "episode", op = "load", reqmatch = RECORD }).error.code)
+        assert.is_true(h.op({ entity = "episode", op = "load", reqmatch = AUDIO }).ok)
+      end)
+
+      it("rbac: with no action rule an action falls back to its operation", function()
+        local h = make_client({ features = {
+          { name = "rbac", options = {
+            rules = { ["episode.load"] = "read" }, permissions = {} } },
+        } })
+        assert.are.equal("rbac_denied",
+          h.op({ entity = "episode", op = "load", reqmatch = AUDIO }).error.code)
+      end)
+    end
+
+    if has_feature("metrics") then
+      it("metrics: an action is counted apart from its operation", function()
+        local h = make_client({ features = { { name = "metrics" } } })
+        h.op({ entity = "episode", op = "load", reqmatch = RECORD })
+        h.op({ entity = "episode", op = "load", reqmatch = AUDIO })
+        h.op({ entity = "episode", op = "load", reqmatch = AUDIO })
+        assert.are.equal(3, h.client._metrics.total.count)
+        assert.are.equal(1, h.client._metrics.ops["episode.load"].count)
+        assert.are.equal(2, h.client._metrics.ops["episode.load:audio"].count)
+      end)
+    end
+
+    if has_feature("audit") then
+      it("audit: a record names its action, and a plain one has none", function()
+        local h = make_client({ features = { { name = "audit" } } })
+        h.op({ entity = "episode", op = "load", reqmatch = RECORD })
+        h.op({ entity = "episode", op = "load", reqmatch = AUDIO })
+        local recs = h.client._audit.records
+        assert.is_nil(recs[1].action)
+        assert.are.equal("load", recs[1].op)
+        assert.are.equal("audio", recs[2].action)
+        assert.are.equal("load", recs[2].op)
+      end)
+    end
+
+    if has_feature("cost") then
+      it("cost: an action is priced and attributed apart from its operation", function()
+        local sunk = {}
+        local h = make_client({ features = {
+          { name = "cost", options = {
+            rates = { ["episode.load"] = 1, ["episode.load:audio"] = 5 },
+            sink = function(r) table.insert(sunk, r) end } },
+        } })
+        h.op({ entity = "episode", op = "load", reqmatch = RECORD })
+        h.op({ entity = "episode", op = "load", reqmatch = AUDIO })
+        local cost = h.client._cost
+        assert.are.equal(6, cost.total.amount)
+        assert.are.same({ calls = 1, amount = 1 }, cost.ops["episode.load"])
+        assert.are.same({ calls = 1, amount = 5 }, cost.ops["episode.load:audio"])
+        assert.is_nil(sunk[1].action)
+        assert.are.equal("audio", sunk[2].action)
+        assert.are.equal("audio", cost.last.action)
+      end)
+    end
+  end)
 
 
   -- clienttrack -------------------------------------------------------------
