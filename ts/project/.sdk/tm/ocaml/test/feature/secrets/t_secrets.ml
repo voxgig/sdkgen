@@ -213,14 +213,28 @@ let placed_of (r : recorder) (i : int) : value =
   | Some c -> placed_cred_of (getp c "fetchdef")
   | None -> Noval
 
-(* A header credential carries the SPEC's prefix, which a TEMPLATE cannot
- * know - so assert on the CREDENTIAL and let the prefix be whatever this
- * SDK's API declares. A query parameter and a cookie carry no prefix at all,
- * which the bare equality already covers. *)
-let credential_is (header : value) (token : string) : bool =
+(* The header value prepare_auth writes for a token, in the form the DEFAULT
+ * client's auth gives: under Basic the token is the key half of the encoded
+ * pair, and a prefix is space-joined. *)
+let credential ?(secret = "") (token : string) : string =
+  let opts = (Sdk_client.test ()).cl_options in
+  let value = match getpath_s opts "auth.basic" with
+    | Bool true -> base64_encode (token ^ ":" ^ secret)
+    | _ -> token in
+  match getpath_s opts "auth.prefix" with
+  | Str p when p <> "" -> p ^ " " ^ value
+  | _ -> value
+
+let credential_is ?(secret = "") (header : value) (token : string) : bool =
   match header with
-  | Str s -> s = token || Sdk_features.ends_with s (" " ^ token)
+  | Str s -> s = credential ~secret token
   | _ -> false
+
+(* What prepare_auth placed: the header form, or the bare value in a query
+ * parameter or a cookie. *)
+let placed_is (placed : value) (token : string) : bool =
+  if Sdk_prepare_auth.cred_where = "header" then credential_is placed token
+  else placed = Str token
 
 let absent (header : value) : bool = is_nullish header
 
@@ -351,7 +365,7 @@ let () =
          what the generated prepare_auth placed - in the bag this API's
          scheme names, which for an apiKey-in-query SDK is the query string
          and not a header. *)
-      check "carries OPTKEY01" (credential_is (placed_of r 0) "OPTKEY01"));
+      check "carries OPTKEY01" (placed_is (placed_of r 0) "OPTKEY01"));
 
   test "inactive.no_apikey_no_header" (fun () ->
       let (r, fetch) = recorder () in
@@ -592,6 +606,14 @@ let () =
       check "options.auth survives as a present null"
         (getprop_raw client.cl_options "auth" = Null));
 
+  test "chain.a_resolved_key_is_placed_as_prepare_auth_places_it" (fun () ->
+      let (r, fetch) = recorder () in
+      let client = live ~sdkopts:[("secret", Str "PASS01")] fetch
+          [("providers", ja [working "CHAINKEY05"])] in
+      check "ok" (res_ok (direct client));
+      check "carries CHAINKEY05, the secret kept"
+        (credential_is ~secret:"PASS01" (auth_of r 0) "CHAINKEY05"));
+
   test "auth.null_suppresses_an_explicit_apikey_too" (fun () ->
       let (r, fetch) = recorder () in
       let client = live ~sdkopts:[("auth", Null); ("apikey", Str "OPTKEY01")] fetch
@@ -709,6 +731,19 @@ let () =
       check_int "two purchases" (List.length (token_calls r)) 2;
       check_int "two API calls: the refusal and the retry" (List.length (api_calls r)) 2;
       check "the retry carries the fresh token" (credential_is (auth_of r 1) "ACCESS2"));
+
+  test "exchange.a_token_bought_on_a_refusal_is_placed_as_prepare_auth_places_it" (fun () ->
+      let (r, fetch) = recorder () in
+      token_server r (fun token ->
+          if credential_is ~secret:"PASS01" (Str token) "ACCESS1" then 401 else 200);
+      let client = live ~sdkopts:[("secret", Str "PASS01")] fetch
+          [refresh_chain "R1"; ("name", Str "refresh_token"); xchg []] in
+      check "ok" (res_ok (direct client));
+      check_int "two API calls: the refusal and the retry" (List.length (api_calls r)) 2;
+      check "the first carries ACCESS1, the secret kept"
+        (credential_is ~secret:"PASS01" (auth_of r 0) "ACCESS1");
+      check "the retry carries ACCESS2, the secret kept"
+        (credential_is ~secret:"PASS01" (auth_of r 1) "ACCESS2"));
 
   test "exchange.a_second_refusal_surfaces_rather_than_spinning" (fun () ->
       let (r, fetch) = recorder () in
@@ -943,6 +978,42 @@ let () =
       check_vnum "one (fake) purchase, tracked" (getp (track_get client "secrets") "buys") 1.);
 
   ()
+
+(* Off by the config where it declares no auth, else by `auth: null`: either
+ * way the feature places no credential, buys no token and retries nothing. *)
+let () =
+  Testutil.test "secrets.auth_off.places_no_credential_and_buys_no_token" (fun () ->
+      let off = if places_credential then [("auth", Null)] else [] in
+      let secrets = ["OFFKEY01"; "OFFKEY02"; "OFFREFRESH01"; "ACCESS01"] in
+      let carries (c : value) : bool =
+        match getp (getp c "fetchdef") "headers" with
+        | Map _ as h ->
+          not (absent (Sdk_features.header_ci h credheader))
+          || List.exists (fun k -> match getp h k with
+              | Str v -> List.exists (contains v) secrets
+              | _ -> false) (keysof h)
+        | _ -> false in
+      let sent = ref [] and bought = ref 0 in
+      let refresh = ("providers", ja [memory ~name:"refresh" [("REFRESH_TOKEN", Str "OFFREFRESH01")]]) in
+      List.iter (fun (what, sdkopts, fopts, status) ->
+          let (r, fetch) = recorder () in
+          r.reply <- Some (fun _ url _ ->
+              if is_token url then ok200 (jo [("access_token", Str "ACCESS01")])
+              else status_res status (jo [("id", Str "r01")]));
+          let client = live ~sdkopts:(sdkopts @ off) fetch fopts in
+          ignore (direct client);
+          check_int (what ^ ": one request, not retried") (List.length (api_calls r)) 1;
+          check_int (what ^ ": no token bought") (List.length (token_calls r)) 0;
+          check (what ^ ": no credential sent") (not (List.exists carries (api_calls r)));
+          sent := !sent @ api_calls r;
+          bought := !bought + List.length (token_calls r))
+        [ ("a key the chain resolves", [], [("providers", ja [working "OFFKEY01"])], 200);
+          ("an explicit apikey", [("apikey", Str "OFFKEY02")], [], 200);
+          ("a refusal", [], [refresh; ("name", Str "refresh_token");
+                             ("exchange", jo [("active", Bool true)])], 401) ];
+      Printf.printf "secrets: auth off by %s: %d request(s), %d credential(s), %d token(s)\n"
+        (if places_credential then "option" else "config")
+        (List.length !sent) (List.length (List.filter carries !sent)) !bought)
 
 (* Printed from EXECUTIONS, for the generator's lane. *)
 let () = Printf.printf "feature.secrets: ran %d check(s)\n" !ran

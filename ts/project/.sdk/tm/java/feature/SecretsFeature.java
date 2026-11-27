@@ -8,6 +8,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -84,6 +85,11 @@ public class SecretsFeature extends BaseFeature {
   // client clones for optionsMap). READ ONLY: this feature never writes it.
   private Map<String, Object> liveopts;
 
+  // What prepareAuth was generated from: the config declares auth only
+  // where it places a credential, and Basic only where it composes one.
+  private boolean declared;
+  private boolean basic;
+
   private String secretname = "apikey";
   private boolean cache = true;
   private Sekreto sek;
@@ -152,6 +158,11 @@ public class SecretsFeature extends BaseFeature {
     this.rootctx = ctx;
     this.liveopts = ctx.options == null ? new LinkedHashMap<>() : ctx.options;
     this.active = true;
+
+    Object configopts = ctx.config == null ? null : ctx.config.get("options");
+    Object authdecl = configopts instanceof Map ? ((Map<?, ?>) configopts).get("auth") : null;
+    this.declared = authdecl instanceof Map;
+    this.basic = this.declared && Boolean.TRUE.equals(((Map<?, ?>) authdecl).get("basic"));
 
     this.secretname = FeatureOptions.foptStr(options, "name", "apikey");
     this.cache = FeatureOptions.foptBool(options, "cache", true);
@@ -388,11 +399,17 @@ public class SecretsFeature extends BaseFeature {
     }
   }
 
+  // prepareAuth's decision: auth the config declares, not suppressed by
+  // `auth: null`.
+  private boolean authon() {
+    return this.declared && this.liveopts.get("auth") != null;
+  }
+
   // resolveonce resolves once, reporting whether a credential came out of
   // it. That boolean is the whole of what resolve() needs to tell a
   // cacheable HIT from a miss it must not keep.
   private boolean resolveonce() {
-    if (this.sek == null) {
+    if (this.sek == null || !authon()) {
       return false;
     }
 
@@ -438,17 +455,6 @@ public class SecretsFeature extends BaseFeature {
       return true;
     }
 
-    // `auth: null` is the documented way to send NO credential, and a
-    // purchase is a credential-bearing call: the refresh token goes to the
-    // token endpoint in the request body. withrefresh honours suppression
-    // for the RETRY, but it runs after this - by then the refresh token has
-    // already left the process, and no later check can call it back. The
-    // suppression has to be honoured here, before the first purchase, or it
-    // only ever half-held.
-    if (this.liveopts.get("auth") == null) {
-      return false;
-    }
-
     buy();
 
     return true;
@@ -465,12 +471,9 @@ public class SecretsFeature extends BaseFeature {
   private Object withrefresh(Context ctx, String url, Map<String, Object> fetchdef,
       Utility.FetcherFn inner) {
 
-    // `auth: null` is the documented way to send NO credential, and
-    // prepareAuth honours it by removing the header. A refusal of a
-    // deliberately unauthenticated request is not an expired token and
-    // cannot be fixed by buying one - retrying would transmit exactly the
-    // credential the caller suppressed.
-    if (this.liveopts.get("auth") == null) {
+    // A refusal of an unauthenticated request is not an expired token, and
+    // retrying would transmit the credential that auth off withholds.
+    if (!authon()) {
       return inner.fetch(ctx, url, fetchdef);
     }
 
@@ -549,7 +552,7 @@ public class SecretsFeature extends BaseFeature {
     // The options map is FROZEN after construction (this feature never
     // writes it), so the raw read is safe on any thread.
     Object rawauth = this.liveopts.get("auth");
-    if (!(rawauth instanceof Map)) {
+    if (!authon() || !(rawauth instanceof Map)) {
       headers.remove("authorization");
       return;
     }
@@ -559,15 +562,28 @@ public class SecretsFeature extends BaseFeature {
     String name = nameRaw instanceof String && !"".equals(nameRaw)
         ? ((String) nameRaw).toLowerCase(java.util.Locale.ROOT) : "authorization";
 
+    String value = this.basic && Boolean.TRUE.equals(((Map<String, Object>) rawauth).get("basic"))
+        ? pair(token) : token;
+
     Object prefixRaw = ((Map<String, Object>) rawauth).get("prefix");
     String prefix = prefixRaw instanceof String ? (String) prefixRaw : "";
 
     if ("".equals(prefix)) {
-      headers.put(name, token);
+      headers.put(name, value);
     }
     else {
-      headers.put(name, prefix + " " + token);
+      headers.put(name, prefix + " " + value);
     }
+  }
+
+  // Under Basic the token is the key half, as apikey is: prepareAuth's pair.
+  private String pair(String token) {
+    Object secret = this.liveopts.get("secret");
+    String pair = Base64.getEncoder().encodeToString(
+        (token + ":" + (secret instanceof String ? (String) secret : ""))
+            .getBytes(StandardCharsets.UTF_8));
+    register(pair);
+    return pair;
   }
 
   // buy an access token with the refresh token. Concurrent callers share

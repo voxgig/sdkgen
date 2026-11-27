@@ -196,10 +196,14 @@ static Value secretsOpts(const Value& providers, const Value& more = Value::unde
 }
 
 // The header prepareAuth would build for this client and token: the model
-// decides the prefix, so it is read off the live options rather than assumed.
-static std::string expectAuth(SdkClient* client, const std::string& token) {
+// decides the prefix and Basic, so both are read off the live options rather
+// than assumed. Under Basic the token is the key half of the encoded pair.
+static std::string expectAuth(SdkClient* client, const std::string& token,
+                              const std::string& secret = "") {
   std::string prefix = as_str(Struct::getpath(client->options, {"auth", "prefix"}));
-  return prefix.empty() ? token : prefix + " " + token;
+  std::string value = is_true(Struct::getpath(client->options, {"auth", "basic"}))
+    ? util::cleanBase64(token + ":" + secret) : token;
+  return prefix.empty() ? value : prefix + " " + value;
 }
 
 static Value direct(std::shared_ptr<ProjectNameSDK> client) {
@@ -298,8 +302,17 @@ static void t_auth_null_suppresses() {
   ASSERT_EQ(rec->api, 1, "auth null: the op still proceeds");
   ASSERT_FALSE(rec->hasAuth(0), "auth null: NO header even though the chain resolved");
   auto f = SecretsFeature::of(client.get());
-  if (f) ASSERT_EQ(f->credential(), std::string("CHAINKEY"),
-                   "auth null: the chain still resolved (suppression is at the header)");
+  if (f) ASSERT_EQ(f->credential(), std::string(""), "auth null: nothing is resolved");
+}
+
+static void t_resolved_key_paired() {
+  auto rec = std::make_shared<Rec>();
+  auto client = liveClient(rec, secretsOpts(vlist({memoryProvider("APIKEY", "CHAINKEY5")})),
+                           vmap({{"secret", Value(std::string("PASS01"))}}));
+  Value res = direct(client);
+  ASSERT_TRUE(okOf(res), "paired: direct failed: " + errOf(res));
+  ASSERT_EQ(rec->auth(0), expectAuth(client.get(), "CHAINKEY5", "PASS01"),
+            "paired: a resolved key is placed as prepareAuth places it, the secret kept");
 }
 
 static void t_custom_provider_verbatim() {
@@ -653,6 +666,21 @@ static void t_exchange_401_rebuys_and_retries() {
   ASSERT_EQ(rec->auth(3), expectAuth(client.get(), "ACCESS02"), "401: the retry carries the NEW token");
 }
 
+static void t_exchange_retry_paired() {
+  auto rec = std::make_shared<Rec>();
+  rec->script = {401, 200};
+  auto client = liveClient(rec, secretsOpts(vlist({memoryProvider("APIKEY", "REFRESH1")}),
+                                            vmap({{"exchange", exchangeOn()}})),
+                           vmap({{"secret", Value(std::string("PASS01"))}}));
+  direct(client);
+  ASSERT_EQ(rec->api, 2, "paired 401: retried once");
+  // calls: token, api(401), token, api(200)
+  ASSERT_EQ(rec->auth(1), expectAuth(client.get(), "ACCESS01", "PASS01"),
+            "paired 401: the first attempt kept the secret");
+  ASSERT_EQ(rec->auth(3), expectAuth(client.get(), "ACCESS02", "PASS01"),
+            "paired 401: a token bought on a refusal is placed as prepareAuth places it");
+}
+
 static void t_exchange_retry_once_not_loop() {
   auto rec = std::make_shared<Rec>();
   rec->script = {401, 401, 401};
@@ -758,6 +786,7 @@ static void t_exchange_auth_null_suppresses() {
   Value res = direct(client);
   ASSERT_FALSE(okOf(res), "auth null exchange: the 401 comes back");
   ASSERT_EQ(rec->api, 1, "auth null exchange: no retry for a deliberately unauthenticated request");
+  ASSERT_EQ(rec->token, 0, "auth null exchange: no token is bought");
   ASSERT_FALSE(rec->hasAuth(rec->calls.size() - 1), "auth null exchange: no header");
 }
 
@@ -997,12 +1026,73 @@ static void t_exchange_redirect_refused() {
   redirectSystemFetch();
 }
 
+// ---- auth off ----------------------------------------------------------------
+
+// Off by the config where it declares no auth, else by `auth: null`: either
+// way the feature places no credential, buys no token and retries nothing.
+static bool carries(const Rec& rec, size_t i) {
+  static const std::vector<std::string> SECRETS = {"OFFKEY01", "OFFKEY02", "OFFREFRESH01", "ACCESS01"};
+  if (rec.hasAuth(i)) return true;
+  Value headers = getp(getp(rec.calls[i], "fetchdef"), "headers");
+  if (!headers.is_map()) return false;
+  for (const auto& kv : *headers.as_map()) {
+    std::string v = as_str(kv.second);
+    for (const auto& secret : SECRETS) {
+      if (contains(v, secret)) return true;
+    }
+  }
+  return false;
+}
+
+static void t_auth_off() {
+  bool declared = getp(getp(sharedConfig(), Value("options")), Value("auth")).is_map();
+  int sent = 0;
+  int credentials = 0;
+  int bought = 0;
+
+  for (int scenario = 0; scenario < 3; scenario++) {
+    auto rec = std::make_shared<Rec>();
+    Value fopts = secretsOpts(Value::undef());
+    Value extra = vmap();
+    if (0 == scenario) {
+      fopts = secretsOpts(vlist({memoryProvider("APIKEY", "OFFKEY01")}));
+    } else if (1 == scenario) {
+      map_put(extra, "apikey", Value(std::string("OFFKEY02")));
+    } else {
+      rec->script = {401};
+      fopts = secretsOpts(vlist({memoryProvider("APIKEY", "OFFREFRESH01")}),
+                          vmap({{"exchange", exchangeOn()}}));
+    }
+    if (declared) map_put(extra, "auth", Value(nullptr));
+
+    auto client = liveClient(rec, fopts, extra);
+    direct(client);
+
+    ASSERT_EQ(rec->api, 1, "auth off: one request, not retried");
+    ASSERT_EQ(rec->token, 0, "auth off: no token bought");
+    ASSERT_FALSE(carries(*rec, rec->calls.size() - 1), "auth off: no credential sent");
+    auto f = SecretsFeature::of(client.get());
+    ASSERT_TRUE(nullptr != f, "auth off: the feature is installed");
+    if (f) ASSERT_EQ(f->credential(), std::string(""), "auth off: nothing resolved");
+
+    for (size_t i = 0; i < rec->calls.size(); i++) {
+      if (!contains(rec->url(i), rec->tokenpath) && carries(*rec, i)) credentials++;
+    }
+    sent += rec->api;
+    bought += rec->token;
+  }
+
+  std::printf("secrets: auth off by %s: %d request(s), %d credential(s), %d token(s)\n",
+              declared ? "option" : "config", sent, credentials, bought);
+}
+
 int main() {
   // Read from the config, never from a probe: an SDK whose config declares no
   // auth places no credential, and these tests assert on the one it places.
   if (!getp(getp(sharedConfig(), Value("options")), Value("auth")).is_map()) {
     std::cout << "  SKIP [secrets]: this SDK's config declares no auth, so it places no credential\n";
-    return 0;
+    RUN(t_auth_off);
+    return sdktest::summary("secrets_test");
   }
 
   RUN(t_inactive_apikey_as_before);
@@ -1011,6 +1101,7 @@ int main() {
   RUN(t_omitted_apikey_defers);
   RUN(t_empty_apikey_defers);
   RUN(t_auth_null_suppresses);
+  RUN(t_resolved_key_paired);
   RUN(t_custom_provider_verbatim);
   RUN(t_miss_everywhere_no_header);
   RUN(t_provider_error_fails_direct);
@@ -1030,6 +1121,7 @@ int main() {
   RUN(t_exchange_explicit_refresh_wins);
   RUN(t_exchange_one_purchase_many_requests);
   RUN(t_exchange_401_rebuys_and_retries);
+  RUN(t_exchange_retry_paired);
   RUN(t_exchange_retry_once_not_loop);
   RUN(t_exchange_other_status_not_expiry);
   RUN(t_exchange_statuses_configurable);
@@ -1041,6 +1133,7 @@ int main() {
   RUN(t_exchange_auth_null_suppresses);
   RUN(t_exchange_test_mode_buys_nothing);
   RUN(t_exchange_redirect_refused);
+  RUN(t_auth_off);
 
   std::printf("secrets: ran %d case(s)\n", CASES);
   return sdktest::summary("secrets_test");

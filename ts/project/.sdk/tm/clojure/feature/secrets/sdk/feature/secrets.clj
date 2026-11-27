@@ -169,6 +169,22 @@
   (let [o (liveopts fa)] (when (vs/ismap o) (vs/getprop o "auth"))))
 
 
+;; u-prepare-auth's decision: auth the config declares, not suppressed by
+;; `auth: nil`.
+(defn- authon? [fa]
+  (and (st fa :declared) (some? (auth-of fa))))
+
+
+;; Under Basic the token is the key half, as apikey is: u-prepare-auth's pair.
+(defn- pair! [fa token]
+  (let [secret (vs/getprop (liveopts fa) "secret")
+        joined (.encodeToString (java.util.Base64/getEncoder)
+                                (.getBytes (str token ":" (if (string? secret) secret ""))
+                                           "UTF-8"))]
+    (register! fa joined)
+    joined))
+
+
 ;; The resolved credential ("" when none). Callers and tests read it here
 ;; rather than from the options map, which this feature never mutates.
 (defn credential [fa] (or (st fa :cred) ""))
@@ -284,7 +300,7 @@
 ;; boolean is the whole of what resolve! needs to tell a cacheable HIT from
 ;; a miss it must not keep.
 (defn- resolve-once [fa]
-  (if-let [s (st fa :sek)]
+  (if-let [s (and (authon? fa) (st fa :sek))]
     ;; tryget: nil for a MISS, THROWS for a provider ERROR.
     (let [found (sekreto/tryget s (st fa :secretname))]
       (register! fa found)
@@ -312,16 +328,6 @@
             (swap! fa assoc :cred apikey)
             (cond
               (seq apikey) true
-
-              ;; `auth: nil` is the documented way to send NO credential,
-              ;; and a purchase is a credential-bearing call: the refresh
-              ;; token goes to the token endpoint in the request body.
-              ;; with-refresh honours suppression for the RETRY, but it runs
-              ;; after this - by then the refresh token has already left the
-              ;; process, and no later check can call it back. The
-              ;; suppression has to be honoured here, before the first
-              ;; purchase, or it only ever half-held.
-              (nil? (auth-of fa)) false
 
               :else
               ;; No starting access token: buy one now. A failure here is a
@@ -377,16 +383,18 @@
             name (if (and (string? given) (not= "" given))
                    (.toLowerCase ^String given java.util.Locale/ROOT)
                    core/HEADER-AUTH)]
-        (if (nil? (auth-of fa))
+        (if (not (authon? fa))
           ;; Suppressed auth means NO header, the same answer u-prepare-auth
-          ;; gives. Reached defensively - nothing calls this with auth
-          ;; suppressed - but this is the function that writes the
-          ;; credential, so it is where the rule has to hold.
+          ;; gives.
           (vs/delprop headers name)
-          (let [prefix (let [p (vs/getpath (liveopts fa) "auth.prefix")]
+          (let [value (if (and (st fa :basic)
+                               (= true (vs/getpath (liveopts fa) "auth.basic")))
+                        (pair! fa token)
+                        token)
+                prefix (let [p (vs/getpath (liveopts fa) "auth.prefix")]
                          (if (string? p) p ""))]
             (.put ^java.util.Map headers name
-                  (if (= "" prefix) token (str prefix " " token)))))))))
+                  (if (= "" prefix) value (str prefix " " value)))))))))
 
 
 (defn- spent? [fa res]
@@ -400,11 +408,9 @@
 ;; Buy a token and try the request again when the API says the current one
 ;; is spent.
 (defn- with-refresh [fa ctx url fetchdef inner]
-  ;; `auth: nil` is the documented way to send NO credential. A refusal of
-  ;; a deliberately unauthenticated request is not an expired token and
-  ;; cannot be fixed by buying one - retrying would transmit exactly the
-  ;; credential the caller withheld.
-  (if (nil? (auth-of fa))
+  ;; A refusal of an unauthenticated request is not an expired token, and
+  ;; retrying would transmit the credential that auth off withholds.
+  (if (not (authon? fa))
     (inner ctx url fetchdef)
     (let [max (:retries (st fa :exchange))]
       (loop [attempt 0]
@@ -479,6 +485,13 @@
            :liveopts (core/oget ctx :options)
            :active (= true (vs/getprop options "active")))
 
+    ;; What u-prepare-auth was generated from: the config declares auth only
+    ;; where it places a credential, and Basic only where it composes one.
+    (let [declared (vs/getpath (core/oget ctx :config) "options.auth")]
+      (swap! fa assoc
+             :declared (vs/ismap declared)
+             :basic (and (vs/ismap declared) (= true (vs/getprop declared "basic")))))
+
     (when (st fa :active)
       (let [secretname (sopt options "name" "apikey")
             cache (not= false (vs/getprop options "cache"))
@@ -541,7 +554,7 @@
   ([] (secrets-feature nil))
   ([plugins]
    (let [fa (atom {:name "secrets" :active false :version "0.1.0" :_options nil
-                   :client nil :options (vs/jm) :liveopts nil
+                   :client nil :options (vs/jm) :liveopts nil :declared false :basic false
                    :plugins (vec (or plugins []))
                    :secretname "apikey" :cache true :sek nil
                    :exchange nil :refresh "" :cred "" :initerr nil :resolved false

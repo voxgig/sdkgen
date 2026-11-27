@@ -501,6 +501,7 @@ end
 
 
 return {
+  base64 = base64,
   clean = clean_util,
   clean_add = clean_add_util,
   clean_add_sensitive = clean_add_sensitive_util,

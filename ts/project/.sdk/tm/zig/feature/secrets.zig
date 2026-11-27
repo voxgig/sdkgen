@@ -126,6 +126,11 @@ pub const State = struct {
     rootctx: ?*Context = null,
     liveopts: Value = .{ .null = {} },
 
+    /// What prepare_auth was generated from: the config declares auth only
+    /// where it places a credential, and Basic only where it composes one.
+    declared: bool = false,
+    basic: bool = false,
+
     secretname: []const u8 = "apikey",
     cache: bool = true,
     exchange: ?Exchange = null,
@@ -247,6 +252,13 @@ pub const SecretsFeature = struct {
         const st = self.state;
         st.rootctx = ctx;
         st.liveopts = ctx.options;
+
+        const declared = h.getpath(&.{ "options", "auth" }, ctx.config);
+        st.declared = declared == .object;
+        st.basic = st.declared and switch (h.getp(declared, "basic")) {
+            .bool => |b| b,
+            else => false,
+        };
 
         // Wrap the transport FIRST. The fail-closed gate needs the seam
         // whenever the feature is active - hooks cannot fail an operation
@@ -565,6 +577,7 @@ fn resolve(st: *State, ctx: *Context) E!void {
 
 fn resolve_once(st: *State, ctx: *Context) E!void {
     const s = st.sek orelse return;
+    if (!auth_on(st)) return;
 
     const found = s.trysecret(st.secretname) catch
         return ctx.fail(ERRCODE, "secrets: out of memory");
@@ -619,12 +632,9 @@ fn resolve_once(st: *State, ctx: *Context) E!void {
 // prepare_auth builds it, from the same options.auth name and prefix, so
 // the two cannot drift.
 fn with_refresh(st: *State, ctx: *Context, url: []const u8, fetchdef: Value, inner: Fetcher) E!Value {
-    // `auth: null` is the documented way to send NO credential, and
-    // prepare_auth honours it by removing the header. A refusal of a
-    // deliberately unauthenticated request is not an expired token and
-    // cannot be fixed by buying one - retrying would transmit exactly the
-    // credential the caller suppressed.
-    if (!auth_active(st.liveopts)) return inner.invoke(ctx, url, fetchdef);
+    // A refusal of an unauthenticated request is not an expired token, and
+    // retrying would transmit the credential that auth off withholds.
+    if (!auth_on(st)) return inner.invoke(ctx, url, fetchdef);
 
     const max = if (st.exchange) |x| x.retries else 0;
     var attempt: i64 = 0;
@@ -682,6 +692,26 @@ fn auth_active(options: Value) bool {
     };
 }
 
+// prepare_auth's decision: auth the config declares, not suppressed by
+// `auth: null`.
+fn auth_on(st: *State) bool {
+    return st.declared and auth_active(st.liveopts);
+}
+
+// Under Basic the token is the key half, as apikey is: prepare_auth's pair.
+fn pair(st: *State, token: []const u8) []const u8 {
+    const secret: []const u8 = switch (h.getp(st.liveopts, "secret")) {
+        .string => |s| s,
+        else => "",
+    };
+    const text = std.fmt.allocPrint(h.A(), "{s}:{s}", .{ token, secret }) catch return token;
+    const enc = std.base64.standard.Encoder;
+    const buf = h.A().alloc(u8, enc.calcSize(text.len)) catch return token;
+    const out = enc.encode(buf, text);
+    if (st.rootctx) |ctx| ctx.util().clean_add(ctx, out);
+    return out;
+}
+
 fn reauth(st: *State, fetchdef: Value, token: []const u8) void {
     const headers = h.getp(fetchdef, "headers");
     if (headers != .object) return;
@@ -693,13 +723,16 @@ fn reauth(st: *State, fetchdef: Value, token: []const u8) void {
     };
 
     // Suppressed auth means NO header, the same answer prepare_auth gives.
-    // Reached defensively - with_refresh does not retry at all when auth is
-    // suppressed - but this is the function that writes the credential, so
-    // it is where the rule has to hold.
-    if (!auth_active(st.liveopts)) {
+    if (!auth_on(st)) {
         h.del_prop(headers, h.vstr(name));
         return;
     }
+
+    const basic = st.basic and switch (h.getpath(&.{ "auth", "basic" }, st.liveopts)) {
+        .bool => |b| b,
+        else => false,
+    };
+    const value = if (basic) pair(st, token) else token;
 
     const prefix: []const u8 = switch (h.getpath(&.{ "auth", "prefix" }, st.liveopts)) {
         .string => |s| s,
@@ -708,9 +741,9 @@ fn reauth(st: *State, fetchdef: Value, token: []const u8) void {
 
     // Empty prefix (a raw apiKey credential) must not add a leading space.
     if (0 == prefix.len) {
-        h.setp(headers, name, h.vstr(token));
+        h.setp(headers, name, h.vstr(value));
     } else {
-        h.setp(headers, name, h.vstr(std.fmt.allocPrint(h.A(), "{s} {s}", .{ prefix, token }) catch token));
+        h.setp(headers, name, h.vstr(std.fmt.allocPrint(h.A(), "{s} {s}", .{ prefix, value }) catch value));
     }
 }
 

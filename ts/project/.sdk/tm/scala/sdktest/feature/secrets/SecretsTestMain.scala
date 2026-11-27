@@ -28,7 +28,8 @@
 // This file lives in the `feature/` container on purpose: it is per-feature
 // source, and travels with the feature.
 
-import java.util.{ArrayList, LinkedHashMap, List => JList, Map => JMap}
+import java.nio.charset.StandardCharsets
+import java.util.{ArrayList, Base64, LinkedHashMap, List => JList, Map => JMap}
 import java.util.function.{BiFunction, Supplier}
 
 import scala.collection.mutable.ListBuffer
@@ -68,22 +69,28 @@ object SecretsTestMain {
   private def eqi(name: String, exp: Int, act: Int): Unit =
     check(name, exp == act, "expected " + exp + ", got " + act)
 
-  // The credential header carries the SPEC's credential prefix, which a
-  // TEMPLATE cannot know: an OpenAPI `http`/`bearer` scheme gives `Bearer
-  // <token>`, an apiKey scheme the raw token. So assert on the CREDENTIAL and
-  // let the prefix be whatever this SDK's API declares - pinning the whole
-  // header value passes only for a prefix-less API, and this file ships to
-  // every project that selects the feature.
-  // HTTP Basic carries base64(key:secret) instead, and scala ships this suite
-  // untrimmed, so it also runs for a Basic API.
-  private def credentialIs(name: String, header: String, token: String): Unit = {
-    val got = if (header == null) "" else header
-    val basic = got.startsWith("Basic ") && (try {
-      new String(java.util.Base64.getDecoder.decode(got.substring(6)), "UTF-8").startsWith(token + ":")
-    } catch { case _: IllegalArgumentException => false })
-    check(name, got == token || got.endsWith(" " + token) || basic,
-      "expected the " + CREDHEADER + " header to carry " + token + ", got \"" + got + "\"")
+  // The form prepareAuth writes, from the DEFAULT client's auth: under Basic
+  // the token is the key half of the encoded pair, and a prefix is
+  // space-joined.
+  private lazy val CREDFORM: (String, Boolean) =
+    ProjectNameSDK.testSDK(null, null).optionsMap().get("auth") match {
+      case auth: JMap[_, _] =>
+        (auth.get("prefix") match { case s: String => s; case _ => "" },
+          java.lang.Boolean.TRUE == auth.get("basic"))
+      case _ => ("", false)
+    }
+
+  // The header value prepareAuth writes for a token.
+  private def credential(token: String, secret: String): String = {
+    val value =
+      if (CREDFORM._2) Base64.getEncoder.encodeToString((token + ":" + secret).getBytes(StandardCharsets.UTF_8))
+      else token
+    if ("" == CREDFORM._1) value else CREDFORM._1 + " " + value
   }
+
+  private def credentialIs(name: String, header: String, token: String, secret: String = ""): Unit =
+    eqs(name, credential(token, secret), if (header == null) "" else header,
+      "the " + CREDHEADER + " header carries " + token)
 
   // ---- the recording transport --------------------------------------------
   //
@@ -115,6 +122,7 @@ object SecretsTestMain {
           case s: String => s
           case _ => ""
         })
+        call.put("values", headers.values().toArray.map(v => String.valueOf(v)).mkString("\n"))
         call.put("body", fetchdef.get("body") match { case s: String => s; case _ => "" })
         call.put("redirect", fetchdef.get("redirect"))
         calls.add(call)
@@ -394,6 +402,16 @@ object SecretsTestMain {
     eqs("chain.omitted.state", "CHAINKEY02", secretsFeatureOf(client).credential())
     eqs("chain.omitted.optionsfrozen", "",
       client.optionsMap().get("apikey") match { case s: String => s; case _ => "" })
+  }
+
+  private def testResolvedKeyPaired(): Unit = {
+    val w = new Wire()
+    val client = secretsClient(w,
+      "secret" -> "PASS01",
+      "feature" -> secretsOpts(memchain("APIKEY" -> "CHAINKEY05")))
+
+    check("chain.paired.drive", driveOneCall(client, w), "no entity op reached the transport")
+    if (w.api().nonEmpty) credentialIs("chain.paired", w.authof(w.api().head), "CHAINKEY05", "PASS01")
   }
 
   private def testCustomProvider(): Unit = {
@@ -907,6 +925,21 @@ object SecretsTestMain {
       "the caller sees the successful retry, got " + res)
   }
 
+  private def testExchangeRetryPaired(): Unit = {
+    val w = new Wire()
+    w.apistatus = List(401, 200)
+
+    val client = secretsClient(w, "secret" -> "PASS01",
+      "allow" -> jmap("op" -> "direct"), "feature" -> exchangeOpts())
+    client.direct(jmap("path" -> "/thing"))
+
+    eqi("exchange.paired.retried", 2, w.api().length)
+    if (2 <= w.api().length) {
+      credentialIs("exchange.paired.first", w.authof(w.api()(0)), "ACCESS01", "PASS01")
+      credentialIs("exchange.paired.retry", w.authof(w.api()(1)), "ACCESS02", "PASS01")
+    }
+  }
+
   private def testExchangeOnePurchaseManyRequests(): Unit = {
     val w = new Wire()
     val client = secretsClient(w, "allow" -> jmap("op" -> "direct"), "feature" -> exchangeOpts())
@@ -1115,18 +1148,61 @@ object SecretsTestMain {
     eqs("exchange.testmode.token", "test-access_token", secretsFeatureOf(client).credential())
   }
 
+  // Off by the config where it declares no auth, else by `auth: null`: either
+  // way the feature places no credential, buys no token and retries nothing.
+  private def testAuthOff(declared: Boolean): Unit = {
+    val secrets = List("OFFKEY01", "OFFKEY02", "OFFREFRESH01", "ACCESS01")
+    def carries(call: JMap[String, Object]): Boolean = {
+      val values = String.valueOf(call.get("values"))
+      java.lang.Boolean.TRUE == call.get("has") || secrets.exists(s => values.contains(s))
+    }
+    val sent = ListBuffer.empty[JMap[String, Object]]
+    var bought = 0
+
+    val scenarios: List[(String, List[(String, Object)], List[Int])] = List(
+      ("a key the chain resolves",
+        List("feature" -> secretsOpts(memchain("APIKEY" -> "OFFKEY01"))), List(200)),
+      ("an explicit apikey",
+        List("apikey" -> "OFFKEY02", "feature" -> secretsOpts(jlist())), List(200)),
+      ("a refusal", List("feature" -> secretsOpts(memchain("REFRESH_TOKEN" -> "OFFREFRESH01"),
+        "name" -> "refresh_token", "exchange" -> jmap("active" -> java.lang.Boolean.TRUE))), List(401)),
+    )
+
+    for ((what, opts, statuses) <- scenarios) {
+      val w = new Wire()
+      w.apistatus = statuses
+      val off: List[(String, Object)] = if (declared) List("auth" -> null) else Nil
+      val client = secretsClient(w, (("allow" -> jmap("op" -> "direct")) :: opts ++ off)*)
+
+      client.direct(jmap("path" -> "/thing"))
+
+      eqi("authoff.noretry: " + what, 1, w.api().length)
+      eqi("authoff.nobuy: " + what, 0, w.token().length)
+      check("authoff.nocred: " + what, w.api().nonEmpty && !carries(w.api().head),
+        "a credential was sent with auth off: " + w.report())
+      eqs("authoff.unresolved: " + what, "", secretsFeatureOf(client).credential())
+
+      sent ++= w.api()
+      bought += w.token().length
+    }
+
+    println("secrets: auth off by " + (if (declared) "option" else "config") + ": " +
+      sent.length + " request(s), " + sent.count(carries) + " credential(s), " +
+      bought + " token(s)")
+  }
+
   // =========================================================================
 
   def main(args: Array[String]): Unit = {
     // Read from the config, never from a probe: an SDK whose config declares
     // no auth places no credential, and these tests assert on the one it places.
-    if (!SCALAPACKAGE.core.Config.sharedConfig().get("options").asInstanceOf[JMap[String, Object]]
-      .containsKey("auth")) {
+    val declared = SCALAPACKAGE.core.Config.sharedConfig().get("options").asInstanceOf[JMap[String, Object]]
+      .containsKey("auth")
+    if (!declared) {
       println("SKIP secrets: this SDK's config declares no auth, so it places no credential")
-      return
     }
 
-    val cases: List[(String, () => Unit)] = List(
+    val placing: List[(String, () => Unit)] = List(
       "inactive" -> testInactive,
       "optionWins" -> testOptionWins,
       "omittedDefers" -> testOmittedDefers,
@@ -1153,7 +1229,11 @@ object SecretsTestMain {
       "exchangeNoRefresh" -> testExchangeNoRefresh,
       "exchangeRedirectRefused" -> testExchangeRedirectRefused,
       "exchangeTestMode" -> testExchangeTestMode,
+      "resolvedKeyPaired" -> testResolvedKeyPaired,
+      "exchangeRetryPaired" -> testExchangeRetryPaired,
     )
+    val cases: List[(String, () => Unit)] =
+      (if (declared) placing else Nil) :+ ("authOff" -> (() => testAuthOff(declared)))
 
     for ((name, body) <- cases) {
       try body()

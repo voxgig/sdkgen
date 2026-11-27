@@ -78,6 +78,7 @@ internal class WireCall
     public string Url = "";
     public string Auth = "";
     public bool HasAuth;
+    public string Values = "";
     public string Body = "";
     public object? Redirect;
 }
@@ -106,11 +107,14 @@ internal class Wire
             var call = new WireCall { Url = url };
 
             if (fetchdef.TryGetValue("headers", out var hraw) &&
-                hraw is Dictionary<string, object?> headers &&
-                headers.TryGetValue(SecretsFeatureTest.CredHeader, out var auth))
+                hraw is Dictionary<string, object?> headers)
             {
-                call.HasAuth = true;
-                call.Auth = auth as string ?? "";
+                if (headers.TryGetValue(SecretsFeatureTest.CredHeader, out var auth))
+                {
+                    call.HasAuth = true;
+                    call.Auth = auth as string ?? "";
+                }
+                call.Values = string.Join("\n", headers.Values);
             }
             if (fetchdef.TryGetValue("body", out var braw) && braw is string body)
             {
@@ -197,8 +201,7 @@ public class SecretsFeatureTest
     private static bool SkippedWithoutAuth(
         [System.Runtime.CompilerServices.CallerMemberName] string test = "")
     {
-        if (SdkConfig.SharedConfig()["options"] is Dictionary<string, object?> options &&
-            options.ContainsKey("auth"))
+        if (DeclaresAuth())
         {
             return false;
         }
@@ -206,17 +209,25 @@ public class SecretsFeatureTest
         return true;
     }
 
-    // The credential header carries the SPEC's credential prefix, which a
-    // TEMPLATE cannot know: an OpenAPI `http`/`bearer` scheme gives
-    // `Bearer <token>`, an apiKey scheme the raw token. So assert on the
-    // CREDENTIAL and let the prefix be whatever this SDK's API declares -
-    // pinning the whole header value passes only for a prefix-less API, and
-    // this file ships to every project that selects the feature.
-    private static void CredentialIs(string header, string token)
+    private static bool DeclaresAuth() =>
+        SdkConfig.SharedConfig()["options"] is Dictionary<string, object?> options &&
+        options.ContainsKey("auth");
+
+    // The header value PrepareAuth writes for a token, in the form the
+    // DEFAULT client's auth gives: under Basic the token is the key half of
+    // the encoded pair, and a prefix is space-joined.
+    private static string Credential(string token, string secret)
     {
-        var got = header ?? "";
-        Assert.True(got == token || got.EndsWith(" " + token),
-            "expected the " + CredHeader + " header to carry " + token + ", got: " + got);
+        var auth = StructUtils.GetProp(ProjectNameSDK.TestSDK(null, null).OptionsMap(), "auth");
+        var prefix = StructUtils.GetProp(auth, "prefix") as string ?? "";
+        var value = true.Equals(StructUtils.GetProp(auth, "basic"))
+            ? Convert.ToBase64String(Encoding.UTF8.GetBytes(token + ":" + secret)) : token;
+        return "" == prefix ? value : prefix + " " + value;
+    }
+
+    private static void CredentialIs(string header, string token, string secret = "")
+    {
+        Assert.Equal(Credential(token, secret), header);
     }
 
     // Construct the client and ADOPT the feature via `extend` ONLY when the
@@ -509,6 +520,30 @@ public class SecretsFeatureTest
             // the transport; the shared options map is never written, which
             // is what keeps every concurrent operation's raw read safe.
             Assert.Equal("", StructUtils.GetProp(client.OptionsMap(), "apikey") as string ?? "");
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(EnvPrefix + "APIKEY", null);
+        }
+    }
+
+    [Fact]
+    public void AResolvedKeyIsPlacedAsPrepareAuthPlacesItTheSecretKept()
+    {
+        if (SkippedWithoutAuth()) return;
+
+        Environment.SetEnvironmentVariable(EnvPrefix + "APIKEY", "ENVKEY04");
+        try
+        {
+            var w = new Wire();
+            var client = SecretsClient(w, new Dictionary<string, object?>
+            {
+                ["secret"] = "PASS01",
+                ["feature"] = SecretsOpts(null),
+            });
+
+            DriveEntityOp(client, w);
+            CredentialIs(w.Api()[0].Auth, "ENVKEY04", "PASS01");
         }
         finally
         {
@@ -1409,6 +1444,34 @@ public class SecretsFeatureTest
     }
 
     [Fact]
+    public void ATokenBoughtOnARefusalIsPlacedAsPrepareAuthPlacesIt()
+    {
+        if (SkippedWithoutAuth()) return;
+
+        Environment.SetEnvironmentVariable(EnvPrefix + "REFRESH_TOKEN", "REFRESH01");
+        try
+        {
+            var w = new Wire { ApiStatus = new List<int> { 401, 200 } };
+            var client = SecretsClient(w, new Dictionary<string, object?>
+            {
+                ["secret"] = "PASS01",
+                ["feature"] = ExchangeOpts(null),
+            });
+
+            client.Direct(new Dictionary<string, object?> { ["path"] = "/thing" });
+
+            Assert.True(2 == w.Api().Count,
+                "expected the request to be retried exactly once, got " + w.Api().Count);
+            CredentialIs(w.Api()[0].Auth, "ACCESS01", "PASS01");
+            CredentialIs(w.Api()[1].Auth, "ACCESS02", "PASS01");
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(EnvPrefix + "REFRESH_TOKEN", null);
+        }
+    }
+
+    [Fact]
     public void AnExplicitExchangeRefreshWinsOverTheChain()
     {
         if (SkippedWithoutAuth()) return;
@@ -2074,5 +2137,69 @@ public class SecretsFeatureTest
         {
             CredentialIs(call.Auth, "FRESH01");
         }
+    }
+
+    // --- auth off -------------------------------------------------------
+    //
+    // Off by the config where it declares no auth, else by `auth: null`:
+    // either way the feature places no credential, buys no token and
+    // retries nothing.
+
+    [Fact]
+    public void AuthOffPlacesNoCredentialAndBuysNoToken()
+    {
+        var declared = DeclaresAuth();
+        var secrets = new[] { "OFFKEY01", "OFFKEY02", "OFFREFRESH01", "ACCESS01" };
+        bool Carries(WireCall call) => call.HasAuth || secrets.Any(call.Values.Contains);
+        var sent = new List<WireCall>();
+        var bought = 0;
+
+        var scenarios = new (string What, string Env, string Value, Dictionary<string, object?> Opts, int Status)[]
+        {
+            ("a key the chain resolves", "APIKEY", "OFFKEY01",
+                new Dictionary<string, object?> { ["feature"] = SecretsOpts(null) }, 200),
+            ("an explicit apikey", "", "",
+                new Dictionary<string, object?> { ["apikey"] = "OFFKEY02", ["feature"] = SecretsOpts(null) }, 200),
+            ("a refusal", "REFRESH_TOKEN", "OFFREFRESH01",
+                new Dictionary<string, object?> { ["feature"] = ExchangeOpts(null) }, 401),
+        };
+
+        foreach (var (what, env, value, opts, status) in scenarios)
+        {
+            if ("" != env)
+            {
+                Environment.SetEnvironmentVariable(EnvPrefix + env, value);
+            }
+            try
+            {
+                var w = new Wire { ApiStatus = new List<int> { status } };
+                if (declared)
+                {
+                    opts["auth"] = null;
+                }
+                var client = SecretsClient(w, opts);
+
+                client.Direct(new Dictionary<string, object?> { ["path"] = "/thing" });
+
+                Assert.True(1 == w.Api().Count, what + ": a request was retried with auth off");
+                Assert.True(0 == w.Token().Count, what + ": a token was bought with auth off");
+                Assert.False(Carries(w.Api()[0]), what + ": a credential was sent with auth off: " + w.Report());
+                Assert.Equal("", SecretsOf(client)!.Credential());
+
+                sent.AddRange(w.Api());
+                bought += w.Token().Count;
+            }
+            finally
+            {
+                if ("" != env)
+                {
+                    Environment.SetEnvironmentVariable(EnvPrefix + env, null);
+                }
+            }
+        }
+
+        Console.WriteLine("secrets: auth off by " + (declared ? "option" : "config") + ": " +
+            sent.Count + " request(s), " + sent.Count(Carries) + " credential(s), " +
+            bought + " token(s)");
     }
 }

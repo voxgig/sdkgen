@@ -1,6 +1,7 @@
 # ProjectName SDK secrets feature
 
 from __future__ import annotations
+import base64
 import json
 import urllib.error
 import urllib.request
@@ -90,6 +91,8 @@ class ProjectNameSecretsFeature(ProjectNameBaseFeature):
         self.active = True
 
         self._client = None
+        self._declared = False
+        self._basic = False
         self._sekreto = None
         self._secretname = "apikey"
         self._resolved = False
@@ -108,6 +111,13 @@ class ProjectNameSecretsFeature(ProjectNameBaseFeature):
         fopts = fopts if isinstance(fopts, dict) else {}
 
         self._client = client
+
+        # What prepare_auth was generated from: the config declares auth only
+        # where it places a credential, and Basic only where it composes one.
+        configopts = vs.getprop(ctx.config, "options")
+        declared = vs.getprop(configopts, "auth") if isinstance(configopts, dict) else None
+        self._declared = isinstance(declared, dict)
+        self._basic = self._declared and declared.get("basic") is True
 
         name = fopts.get("name")
         self._secretname = name if isinstance(name, str) and "" != name \
@@ -199,6 +209,11 @@ class ProjectNameSecretsFeature(ProjectNameBaseFeature):
     def sekreto(self):
         return self._sekreto
 
+    # prepare_auth's decision: auth the config declares, not suppressed by
+    # `auth: None`.
+    def _authon(self):
+        return self._declared and self._client.options.get("auth") is not None
+
     # Every value this feature resolves or buys is a secret the SDK handles,
     # and none arrives under an option key the intake registration saw.
     def _register(self, value):
@@ -233,7 +248,7 @@ class ProjectNameSecretsFeature(ProjectNameBaseFeature):
     # bool is the whole of what resolve() needs to tell a cacheable HIT
     # from a miss it must not retain.
     def _resolve_once(self):
-        if self._sekreto is None:
+        if self._sekreto is None or not self._authon():
             return False
 
         # Miss-vs-error: `try_` answers None for "no store has it" and
@@ -276,16 +291,6 @@ class ProjectNameSecretsFeature(ProjectNameBaseFeature):
             # stale the API answers 401 and the transport wrapper buys
             # another, which is the same path expiry takes anyway.
             return True
-
-        # `auth: None` is the documented way to send NO credential, and a
-        # purchase is a credential-bearing call: the refresh token goes to
-        # the token endpoint in the request body. _with_refresh honours
-        # suppression for the RETRY, but it runs after this - by then the
-        # refresh token has already left the process, and no later check
-        # can call it back. The suppression has to be honoured here, before
-        # the first purchase, or it only ever half-held.
-        if self._client.options_map().get("auth") is None:
-            return False
 
         self._client.options["apikey"] = self._buy()
 
@@ -395,12 +400,9 @@ class ProjectNameSecretsFeature(ProjectNameBaseFeature):
         x = self._exchange
         max_retries = 0 if x is None else x["retries"]
 
-        # `auth: None` is the documented way to send NO credential, and
-        # prepare_auth honours it by removing the header. A refusal of a
-        # deliberately unauthenticated request is not an expired token and
-        # cannot be fixed by buying one - retrying would transmit exactly
-        # the credential the caller suppressed.
-        if self._client.options_map().get("auth") is None:
+        # A refusal of an unauthenticated request is not an expired token,
+        # and retrying would transmit the credential that auth off withholds.
+        if not self._authon():
             return inner(ctx, url, fetchdef)
 
         attempt = 0
@@ -451,13 +453,9 @@ class ProjectNameSecretsFeature(ProjectNameBaseFeature):
                 not isinstance(fetchdef.get("headers"), dict):
             return
 
-        auth = self._client.options_map().get("auth")
+        auth = self._client.options.get("auth")
 
-        # Suppressed auth means NO header, the same answer prepare_auth
-        # gives. Reached defensively - _with_refresh does not retry at all
-        # when auth is None - but this is the function that writes the
-        # credential, so it is where the rule has to hold.
-        if auth is None:
+        if not self._authon():
             fetchdef["headers"].pop("authorization", None)
             return
 
@@ -466,9 +464,22 @@ class ProjectNameSecretsFeature(ProjectNameBaseFeature):
         name = name.lower() if isinstance(name, str) and "" != name \
             else "authorization"
 
+        value = token
+        if self._basic and isinstance(auth, dict) and auth.get("basic") is True:
+            value = self._pair(token)
+
         prefix = auth.get("prefix") if isinstance(auth, dict) else None
         fetchdef["headers"][name] = \
-            prefix + " " + token if prefix else token
+            prefix + " " + value if prefix else value
+
+    # Under Basic the token is the key half, as apikey is: prepare_auth's pair.
+    def _pair(self, token):
+        secret = self._client.options.get("secret")
+        pair = base64.b64encode(
+            (str(token) + ":" + ("" if secret is None else str(secret))).encode("utf-8")
+        ).decode("ascii")
+        self._register(pair)
+        return pair
 
 
 class _NoRedirect(urllib.request.HTTPRedirectHandler):

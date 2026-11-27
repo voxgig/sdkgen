@@ -1,5 +1,6 @@
 package KOTLINPACKAGE.feature
 
+import java.util.Base64
 import java.util.concurrent.locks.ReentrantLock
 import java.util.function.BiFunction
 import java.util.function.Supplier
@@ -91,6 +92,11 @@ class SecretsFeature : BaseFeature("secrets", "0.1.0", true) {
   // SdkClient holds). READ ONLY: this feature never writes to it.
   private var liveopts: MutableMap<String, Any?> = linkedMapOf()
 
+  // What prepareAuth was generated from: the config declares auth only
+  // where it places a credential, and Basic only where it composes one.
+  private var declared: Boolean = false
+  private var basic: Boolean = false
+
   private var secretname: String = "apikey"
   private var cache: Boolean = true
   private var sek: Sekreto? = null
@@ -162,6 +168,10 @@ class SecretsFeature : BaseFeature("secrets", "0.1.0", true) {
     this.fopts = options
     this.liveopts = ctx.options ?: linkedMapOf()
     this.active = FeatureOptions.foptBool(options, "active", false)
+
+    val authdecl = (ctx.config?.get("options") as? Map<*, *>)?.get("auth") as? Map<*, *>
+    this.declared = null != authdecl
+    this.basic = true == authdecl?.get("basic")
 
     if (!this.active) {
       return
@@ -353,11 +363,18 @@ class SecretsFeature : BaseFeature("secrets", "0.1.0", true) {
     }
   }
 
+  // prepareAuth's decision: auth the config declares, not suppressed by
+  // `auth: null`.
+  private fun authon(): Boolean = this.declared && null != this.liveopts["auth"]
+
   // Resolve once, reporting whether a credential came out of it. That
   // boolean is the whole of what resolve() needs to tell a cacheable HIT
   // from a miss it must not keep.
   private fun resolveonce(): Boolean {
     val s = this.sek ?: return false
+    if (!authon()) {
+      return false
+    }
 
     // A provider ERROR throws out of here and fails the op (via the
     // transport gate); only a MISS (null) falls through.
@@ -398,17 +415,6 @@ class SecretsFeature : BaseFeature("secrets", "0.1.0", true) {
       // API answers with an expiry status and the transport wrapper buys
       // another, which is the same path expiry takes anyway.
       return true
-    }
-
-    // `auth: null` is the documented way to send NO credential, and a
-    // purchase is a credential-bearing call: the refresh token goes to the
-    // token endpoint in the request body. withrefresh honours suppression
-    // for the RETRY, but it runs after this - by then the refresh token has
-    // already left the process, and no later check can call it back. The
-    // suppression has to be honoured here, before the first purchase, or it
-    // only ever half-held.
-    if (null == this.liveopts["auth"]) {
-      return false
     }
 
     buy()
@@ -465,12 +471,9 @@ class SecretsFeature : BaseFeature("secrets", "0.1.0", true) {
     fetchdef: MutableMap<String, Any?>,
     inner: FetcherFn,
   ): Any? {
-    // `auth: null` is the documented way to send NO credential, and
-    // prepareAuth honours it by removing the header. A refusal of a
-    // deliberately unauthenticated request is not an expired token and
-    // cannot be fixed by buying one - retrying would transmit exactly the
-    // credential the caller suppressed.
-    if (null == this.liveopts["auth"]) {
+    // A refusal of an unauthenticated request is not an expired token, and
+    // retrying would transmit the credential that auth off withholds.
+    if (!authon()) {
       return inner(ctx, url, fetchdef)
     }
 
@@ -538,7 +541,7 @@ class SecretsFeature : BaseFeature("secrets", "0.1.0", true) {
     // construction (this feature never writes it), so the raw read is safe
     // on any thread.
     val auth = this.liveopts["auth"]
-    if (auth !is Map<*, *>) {
+    if (!authon() || auth !is Map<*, *>) {
       headers.remove("authorization")
       return
     }
@@ -548,9 +551,19 @@ class SecretsFeature : BaseFeature("secrets", "0.1.0", true) {
     val name =
       if (rawname is String && "" != rawname) rawname.lowercase() else "authorization"
 
+    val value = if (this.basic && true == auth["basic"]) pair(token) else token
+
     val prefix = auth["prefix"]
     headers[name] =
-      if (prefix is String && "" != prefix) "$prefix $token" else token
+      if (prefix is String && "" != prefix) "$prefix $value" else value
+  }
+
+  // Under Basic the token is the key half, as apikey is: prepareAuth's pair.
+  private fun pair(token: String): String {
+    val secret = this.liveopts["secret"] as? String ?: ""
+    val pair = Base64.getEncoder().encodeToString("$token:$secret".toByteArray(Charsets.UTF_8))
+    register(pair)
+    return pair
   }
 
   // buy an access token with the refresh token. Concurrent callers share the

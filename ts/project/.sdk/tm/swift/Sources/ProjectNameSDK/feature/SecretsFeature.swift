@@ -78,6 +78,11 @@ public final class SecretsFeature: BaseFeature {
   // the client holds). READ ONLY: this feature never writes to it.
   private var liveopts: VMap = VMap()
 
+  // What prepareAuth was generated from: the config declares auth only
+  // where it places a credential, and Basic only where it composes one.
+  private var declared = false
+  private var basic = false
+
   private var secretname = "apikey"
   private var cache = true
   private var sek: Sekreto?
@@ -170,6 +175,10 @@ public final class SecretsFeature: BaseFeature {
     fopts = options
     liveopts = ctx.options ?? VMap()
     active = foptBool(options, "active", false)
+
+    let authdecl = gp(gp(ctx.config, "options"), "auth").asMap
+    declared = nil != authdecl
+    basic = true == gp(authdecl, "basic").asBool
 
     if !active {
       return
@@ -355,8 +364,14 @@ public final class SecretsFeature: BaseFeature {
     }
   }
 
+  // prepareAuth's decision: auth the config declares, not suppressed by
+  // `auth: null`.
+  private func authon() -> Bool {
+    return declared && !isNil(gp(liveopts, "auth"))
+  }
+
   private func resolveonce() throws {
-    guard let s = sek else {
+    guard let s = sek, authon() else {
       return
     }
 
@@ -439,12 +454,9 @@ public final class SecretsFeature: BaseFeature {
   // request left, and it carries the token that just failed.
   private func withrefresh(_ ctx: Context, _ url: String, _ fetchdef: VMap,
                            _ inner: FetcherFunc) throws -> Value {
-    // `auth: null` is the documented way to send NO credential, and
-    // prepareAuth honours it by removing the header. A refusal of a
-    // deliberately unauthenticated request is not an expired token and
-    // cannot be fixed by buying one - retrying would transmit exactly the
-    // credential the caller suppressed.
-    if isNil(gp(liveopts, "auth")) {
+    // A refusal of an unauthenticated request is not an expired token, and
+    // retrying would transmit the credential that auth off withholds.
+    if !authon() {
       return try inner(ctx, url, fetchdef)
     }
 
@@ -521,7 +533,7 @@ public final class SecretsFeature: BaseFeature {
     // where the rule has to hold. The options map is FROZEN after
     // construction (this feature never writes it), so the raw read is safe
     // on any thread.
-    guard let auth = gp(liveopts, "auth").asMap else {
+    guard authon(), let auth = gp(liveopts, "auth").asMap else {
       headers.entries.removeValue(forKey: "authorization")
       return
     }
@@ -530,10 +542,20 @@ public final class SecretsFeature: BaseFeature {
     let rawname = gp(auth, "name").asString ?? ""
     let name = "" == rawname ? "authorization" : rawname.lowercased()
 
+    let value = basic && true == gp(auth, "basic").asBool ? pair(token) : token
+
     let prefix = gp(auth, "prefix").asString ?? ""
     // Empty prefix (raw apiKey credential) must not add a leading space -
     // prepareAuth's rule, repeated here because this is the other writer.
-    headers.entries[name] = .string("" == prefix ? token : prefix + " " + token)
+    headers.entries[name] = .string("" == prefix ? value : prefix + " " + value)
+  }
+
+  // Under Basic the token is the key half, as apikey is: prepareAuth's pair.
+  private func pair(_ token: String) -> String {
+    let secret = gp(liveopts, "secret").asString ?? ""
+    let pair = Data((token + ":" + secret).utf8).base64EncodedString()
+    register(pair)
+    return pair
   }
 
   // buy an access token with the refresh token. Concurrent callers share the

@@ -23,6 +23,7 @@
 # trims it, along with the feature source and the vendored library, for a
 # project whose model does not select `secrets`.
 
+import base64
 import json
 import os
 import http.server
@@ -42,9 +43,9 @@ ENVPREFIX = "PROJECTENV_TEST_SECRETS_"
 
 # Read from the config, never from a probe: an SDK whose config declares no
 # auth places no credential, and these tests assert on the one it places.
-pytestmark = pytest.mark.skipif(
-    "auth" not in shared_config().get("options", {}),
-    reason="this SDK's config declares no auth, so it places no credential")
+NOAUTH = "auth" not in shared_config().get("options", {})
+placing = pytest.mark.skipif(
+    NOAUTH, reason="this SDK's config declares no auth, so it places no credential")
 
 
 def cred_header():
@@ -59,6 +60,27 @@ def cred_header():
 
 
 CREDHEADER = cred_header()
+
+
+def cred_form():
+    """The form prepare_auth writes, from the DEFAULT client's auth: under
+    Basic the token is the key half of the encoded pair, and a prefix is
+    space-joined."""
+    sdk = ProjectNameSDK({"base": "http://localhost:8080"})
+    auth = sdk.options_map().get("auth") or {}
+    prefix = auth.get("prefix")
+    return (prefix if isinstance(prefix, str) else "", auth.get("basic") is True)
+
+
+CREDFORM = cred_form()
+
+
+def credential(token, secret=""):
+    """The header value prepare_auth writes for a token."""
+    value = token
+    if CREDFORM[1]:
+        value = base64.b64encode((token + ":" + secret).encode("utf-8")).decode("ascii")
+    return value if "" == CREDFORM[0] else CREDFORM[0] + " " + value
 
 
 def secrets_sdk(sdkopts):
@@ -98,6 +120,38 @@ class RecordingTransport:
                 "json": lambda: {}, "body": "{}"}, None
 
 
+class StubFetch:
+    """A live-mode system.fetch answering the token endpoint and the API, the
+    API by a script of statuses whose last repeats. Each call keeps a copy
+    of its headers, since a retry rewrites them in place."""
+
+    def __init__(self, statuses=None):
+        self.calls = []
+        self.statuses = statuses or [200]
+        self.tokens = ["ACCESS01", "ACCESS02", "ACCESS03"]
+        self.issued = 0
+        self.apicalls = 0
+
+    def __call__(self, url, fetchdef):
+        self.calls.append({"url": url, "headers": dict(fetchdef.get("headers") or {})})
+        if url.endswith("/auth/token"):
+            token = self.tokens[min(self.issued, len(self.tokens) - 1)]
+            self.issued += 1
+            return {"status": 200, "statusText": "OK", "headers": {},
+                    "json": lambda: {"access_token": token}, "body": ""}, None
+        status = self.statuses[min(self.apicalls, len(self.statuses) - 1)]
+        self.apicalls += 1
+        return {"status": status, "statusText": "X", "headers": {},
+                "json": lambda: {"ok": status < 400}, "body": "{}"}, None
+
+    def api(self):
+        return [c for c in self.calls if not c["url"].endswith("/auth/token")]
+
+    def token(self):
+        return [c for c in self.calls if c["url"].endswith("/auth/token")]
+
+
+@placing
 class TestSecrets(unittest.TestCase):
 
     def setUp(self):
@@ -143,15 +197,9 @@ class TestSecrets(unittest.TestCase):
         self.assertIsNone(err)
         return transport.calls[-1]["fetchdef"].get("headers") or {}
 
-    def assert_credential(self, headers, token):
-        # The credential header carries the SPEC's credential prefix (if
-        # any), which a TEMPLATE cannot know - assert on the CREDENTIAL and
-        # let the prefix be whatever this SDK's API declares.
-        got = str(headers.get(CREDHEADER) or "")
-        self.assertTrue(
-            got == token or got.endswith(" " + token),
-            "expected the %s header to carry %s, got: %r"
-            % (CREDHEADER, token, got))
+    def assert_credential(self, headers, token, secret=""):
+        self.assertEqual(credential(token, secret), headers.get(CREDHEADER),
+                         "expected the %s header to carry %s" % (CREDHEADER, token))
 
     # --- the chain ---
 
@@ -175,6 +223,15 @@ class TestSecrets(unittest.TestCase):
 
         headers = self._send(sdk, transport)
         self.assert_credential(headers, "ENVKEY01")
+
+    def test_a_resolved_key_is_placed_as_prepare_auth_places_it(self):
+        os.environ[ENVPREFIX + "APIKEY"] = "ENVKEY03"
+        opts = {"secret": "PASS01"}
+        opts.update(envchain())
+        sdk, transport = self._sdk(opts)
+
+        headers = self._send(sdk, transport)
+        self.assert_credential(headers, "ENVKEY03", "PASS01")
 
     def test_custom_provider_supplies_the_credential(self):
         # A custom provider is a MAP of callables (the exact parallel of
@@ -347,6 +404,7 @@ class _TokenEndpoint(http.server.BaseHTTPRequestHandler):
         pass
 
 
+@placing
 class TestSecretsReviewPins(unittest.TestCase):
 
     def test_exchange_uses_the_raw_fallback_and_marshals_the_body(self):
@@ -506,6 +564,31 @@ class TestSecretsReviewPins(unittest.TestCase):
                 srv.shutdown()
                 srv.server_close()
 
+    def test_a_token_bought_on_a_refusal_is_placed_as_prepare_auth_places_it(self):
+        os.environ[ENVPREFIX + "REFRESH_TOKEN"] = "REFRESH01"
+        try:
+            stub = StubFetch([401, 200])
+            sdk = secrets_sdk({
+                "base": "http://exchange.test/api",
+                "secret": "PASS01",
+                "system": {"fetch": stub},
+                "feature": {"secrets": {
+                    "active": True,
+                    "name": "refresh_token",
+                    "providers": [{"kind": "env", "prefix": ENVPREFIX}],
+                    "exchange": {"active": True},
+                }},
+            })
+
+            sdk.direct({"path": "/thing"})
+
+            api = stub.api()
+            self.assertEqual(2, len(api), "expected the request to be retried")
+            self.assertEqual(credential("ACCESS01", "PASS01"), api[0]["headers"].get(CREDHEADER))
+            self.assertEqual(credential("ACCESS02", "PASS01"), api[1]["headers"].get(CREDHEADER))
+        finally:
+            os.environ.pop(ENVPREFIX + "REFRESH_TOKEN", None)
+
     def test_a_supplied_fetch_is_asked_not_to_follow_the_exchange(self):
         calls = []
 
@@ -582,8 +665,75 @@ class TestSecretsReviewPins(unittest.TestCase):
         return transport.calls[-1]["fetchdef"].get("headers") or {}
 
     def assert_credential(self, headers, token):
-        got = str(headers.get(CREDHEADER) or "")
-        self.assertTrue(
-            got == token or got.endswith(" " + token),
-            "expected the %s header to carry %s, got: %r"
-            % (CREDHEADER, token, got))
+        self.assertEqual(credential(token), headers.get(CREDHEADER),
+                         "expected the %s header to carry %s" % (CREDHEADER, token))
+
+
+# Off by the config where it declares no auth, else by `auth: None`: either
+# way the feature places no credential, buys no token and retries nothing.
+AUTHOFF = ("config", {}) if NOAUTH else ("option", {"auth": None})
+
+
+class TestSecretsAuthOff(unittest.TestCase):
+
+    SECRETS = ["OFFKEY01", "OFFKEY02", "OFFREFRESH01", "ACCESS01"]
+    sent = []
+    bought = 0
+
+    def setUp(self):
+        os.environ.pop(ENVPREFIX + "APIKEY", None)
+        os.environ.pop(ENVPREFIX + "REFRESH_TOKEN", None)
+
+    tearDown = setUp
+
+    @classmethod
+    def tearDownClass(cls):
+        print("secrets: auth off by %s: %d request(s), %d credential(s), %d token(s)"
+              % (AUTHOFF[0], len(cls.sent),
+                 len([c for c in cls.sent if cls.carries(c)]), cls.bought))
+
+    @classmethod
+    def carries(cls, call):
+        """The header prepare_auth writes, or any header holding a secret."""
+        headers = call["headers"]
+        return CREDHEADER in headers or any(
+            secret in str(value) for value in headers.values() for secret in cls.SECRETS)
+
+    def _offsdk(self, stub, sdkopts, fopts):
+        opts = {"base": "http://authoff.test/api", "system": {"fetch": stub}}
+        opts.update(sdkopts)
+        opts.update(AUTHOFF[1])
+        secrets = {"active": True, "providers": [{"kind": "env", "prefix": ENVPREFIX}]}
+        secrets.update(fopts)
+        opts["feature"] = {"secrets": secrets}
+        sdk = secrets_sdk(opts)
+        sdk.direct({"path": "/thing"})
+        TestSecretsAuthOff.sent.extend(stub.api())
+        TestSecretsAuthOff.bought += len(stub.token())
+        return sdk
+
+    def test_a_key_the_chain_resolves_is_not_placed(self):
+        os.environ[ENVPREFIX + "APIKEY"] = "OFFKEY01"
+        stub = StubFetch()
+        sdk = self._offsdk(stub, {}, {})
+
+        self.assertEqual(1, len(stub.api()))
+        self.assertFalse(self.carries(stub.api()[0]), "a credential was sent with auth off")
+        self.assertEqual("", sdk.options.get("apikey"),
+                         "the resolved key was placed where prepare_auth reads it")
+
+    def test_an_explicit_apikey_is_not_placed(self):
+        stub = StubFetch()
+        self._offsdk(stub, {"apikey": "OFFKEY02"}, {})
+
+        self.assertEqual(1, len(stub.api()))
+        self.assertFalse(self.carries(stub.api()[0]), "a credential was sent with auth off")
+
+    def test_a_refusal_buys_no_token_and_is_not_retried(self):
+        os.environ[ENVPREFIX + "REFRESH_TOKEN"] = "OFFREFRESH01"
+        stub = StubFetch([401])
+        self._offsdk(stub, {}, {"name": "refresh_token", "exchange": {"active": True}})
+
+        self.assertEqual(0, len(stub.token()), "a token was bought with auth off")
+        self.assertEqual(1, len(stub.api()), "a refusal was retried with auth off")
+        self.assertFalse(self.carries(stub.api()[0]), "a credential was sent with auth off")

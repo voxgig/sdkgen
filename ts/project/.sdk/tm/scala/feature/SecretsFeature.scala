@@ -1,6 +1,7 @@
 package SCALAPACKAGE.feature
 
-import java.util.{LinkedHashMap, List => JList, Map => JMap}
+import java.nio.charset.StandardCharsets
+import java.util.{Base64, LinkedHashMap, List => JList, Map => JMap}
 import java.util.function.{BiFunction, Supplier}
 
 import scala.collection.immutable.ListMap
@@ -78,6 +79,11 @@ class SecretsFeature extends BaseFeature("secrets", "0.1.0", true) {
   // writes it - see the class note.
   private var liveopts: JMap[String, Object] = null
 
+  // What prepareAuth was generated from: the config declares auth only
+  // where it places a credential, and Basic only where it composes one.
+  private var declared: Boolean = false
+  private var basic: Boolean = false
+
   private var secretname: String = "apikey"
   private var docache: Boolean = true
   private var sek: Sekreto = null
@@ -135,6 +141,18 @@ class SecretsFeature extends BaseFeature("secrets", "0.1.0", true) {
     this.client = ctx.client
     this.liveopts = ctx.options
     this.active = FeatureOptions.foptBool(options, "active", false)
+
+    val configopts = if (ctx.config == null) null else ctx.config.get("options")
+    val authdecl = configopts match {
+      case m: JMap[_, _] => m.get("auth")
+      case _ => null
+    }
+    authdecl match {
+      case m: JMap[_, _] =>
+        this.declared = true
+        this.basic = java.lang.Boolean.TRUE == m.get("basic")
+      case _ =>
+    }
 
     if (!this.active) return
 
@@ -293,11 +311,16 @@ class SecretsFeature extends BaseFeature("secrets", "0.1.0", true) {
     }
   }
 
+  // prepareAuth's decision: auth the config declares, not suppressed by
+  // `auth: null`.
+  private def authon(): Boolean =
+    this.declared && this.liveopts != null && this.liveopts.get("auth") != null
+
   // Resolve once, reporting whether a credential came out of it. That
   // boolean is the whole of what resolve() needs to tell a cacheable HIT
   // from a miss it must not keep.
   private def resolveonce(): Boolean = {
-    if (this.sek == null) return false
+    if (this.sek == null || !authon()) return false
 
     // tryget returns None for a MISS and RAISES for an ERROR. That is the
     // whole miss-vs-error rule, and it is sekreto's, not this feature's.
@@ -327,15 +350,6 @@ class SecretsFeature extends BaseFeature("secrets", "0.1.0", true) {
     // the same path expiry takes anyway.
     if ("" != this.cred) return true
 
-    // `auth: null` is the documented way to send NO credential, and a
-    // purchase is a credential-bearing call: the refresh token goes to the
-    // token endpoint in the request body. withrefresh honours suppression
-    // for the RETRY, but it runs after this - by then the refresh token has
-    // already left the process, and no later check can call it back. The
-    // suppression has to be honoured here, before the first purchase, or it
-    // only ever half-held.
-    if (this.liveopts == null || this.liveopts.get("auth") == null) return false
-
     buyonce()
 
     true
@@ -355,12 +369,9 @@ class SecretsFeature extends BaseFeature("secrets", "0.1.0", true) {
     fetchdef: JMap[String, Object],
     inner: FetcherFn,
   ): Object = {
-    // `auth: null` is the documented way to send NO credential, and
-    // prepareAuth honours it by removing the header. A refusal of a
-    // deliberately unauthenticated request is not an expired token and
-    // cannot be fixed by buying one - retrying would transmit exactly the
-    // credential the caller suppressed.
-    if (this.liveopts == null || this.liveopts.get("auth") == null) {
+    // A refusal of an unauthenticated request is not an expired token, and
+    // retrying would transmit the credential that auth off withholds.
+    if (!authon()) {
       return inner(ctx, url, fetchdef)
     }
 
@@ -423,7 +434,7 @@ class SecretsFeature extends BaseFeature("secrets", "0.1.0", true) {
     // Reached defensively on the exchange path - withrefresh does not retry
     // at all when auth is null - but this is the function that writes the
     // credential, so it is where the rule has to hold.
-    val rawauth = if (this.liveopts == null) null else this.liveopts.get("auth")
+    val rawauth = if (!authon()) null else this.liveopts.get("auth")
     rawauth match {
       case authmap: JMap[_, _] =>
         // The header prepareAuth wrote: auth.name, lower-cased.
@@ -431,14 +442,27 @@ class SecretsFeature extends BaseFeature("secrets", "0.1.0", true) {
           case s: String if s.nonEmpty => s.toLowerCase(java.util.Locale.ROOT)
           case _ => "authorization"
         }
+        val value =
+          if (this.basic && java.lang.Boolean.TRUE == authmap.get("basic")) pair(token) else token
         val prefix = authmap.asInstanceOf[JMap[String, Object]].get("prefix") match {
           case s: String => s
           case _ => ""
         }
-        if ("" == prefix) headers.put(name, token)
-        else headers.put(name, prefix + " " + token)
+        if ("" == prefix) headers.put(name, value)
+        else headers.put(name, prefix + " " + value)
       case _ => headers.remove("authorization")
     }
+  }
+
+  // Under Basic the token is the key half, as apikey is: prepareAuth's pair.
+  private def pair(token: String): String = {
+    val secret = this.liveopts.get("secret") match {
+      case s: String => s
+      case _ => ""
+    }
+    val pair = Base64.getEncoder.encodeToString((token + ":" + secret).getBytes(StandardCharsets.UTF_8))
+    register(pair)
+    pair
   }
 
   // ---- the access-token exchange -----------------------------------------

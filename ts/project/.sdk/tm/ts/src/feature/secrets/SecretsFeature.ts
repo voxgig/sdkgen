@@ -15,6 +15,8 @@ class SecretsFeature extends BaseFeature {
   name = 'secrets'
 
   _client: any
+  _declared: boolean = false
+  _basic: boolean = false
   _sekreto?: Sekreto
   _secretname: string = 'apikey'
   _resolving?: Promise<void>
@@ -30,6 +32,13 @@ class SecretsFeature extends BaseFeature {
     const options = ctx.options
 
     this._client = client
+
+    // What PrepareAuth was generated from: the config declares auth only
+    // where it places a credential, and Basic only where it composes one.
+    const declared = ctx.config?.options?.auth
+    this._declared = null != declared
+    this._basic = true === declared?.basic
+
     this._secretname = 'string' === typeof (fopts as any).name &&
       '' !== (fopts as any).name ? (fopts as any).name : 'apikey'
 
@@ -89,6 +98,12 @@ class SecretsFeature extends BaseFeature {
   }
 
 
+  // PrepareAuth's decision: auth the config declares, not suppressed by `auth: null`.
+  _authon(): boolean {
+    return this._declared && null != this._client._options.auth
+  }
+
+
   _register(value: any): void {
     const ctx = this._client._rootctx
     if (null != ctx && null != ctx.utility && 'function' === typeof ctx.utility.cleanAdd) {
@@ -127,7 +142,7 @@ class SecretsFeature extends BaseFeature {
   // boolean is the whole of what resolve() needs to tell a cacheable HIT
   // from a miss it must not retain.
   private async _resolveonce(): Promise<boolean> {
-    if (null == this._sekreto) {
+    if (null == this._sekreto || !this._authon()) {
       return false
     }
 
@@ -156,10 +171,6 @@ class SecretsFeature extends BaseFeature {
       // API answers 401 and the transport wrapper buys another, which is
       // the same path expiry takes anyway.
       return true
-    }
-
-    if (null == this._client.options().auth) {
-      return false
     }
 
     this._client._options.apikey = await this._buy()
@@ -249,7 +260,7 @@ class SecretsFeature extends BaseFeature {
     const x = this._exchange
     const max = null == x ? 0 : x.retries
 
-    if (null == this._client.options().auth) {
+    if (!this._authon()) {
       return inner(ctx, url, fetchdef)
     }
 
@@ -305,23 +316,29 @@ class SecretsFeature extends BaseFeature {
       return
     }
 
-    const auth = this._client.options().auth
-
-    // Suppressed auth means NO header, the same answer prepareAuth gives.
-    // Reached defensively - _withRefresh does not retry at all when auth
-    // is null - but this is the function that writes the credential, so
-    // it is where the rule has to hold.
-    if (null == auth) {
+    if (!this._authon()) {
       delete fetchdef.headers.authorization
       return
     }
+
+    const auth = this._client._options.auth
 
     // The header prepareAuth wrote: auth.name, lower-cased.
     const name = "string" === typeof auth.name && "" !== auth.name ?
       auth.name.toLowerCase() : "authorization"
 
+    const value = this._basic && true === auth.basic ? this._pair(token) : token
     const prefix = auth.prefix
-    fetchdef.headers[name] = prefix ? prefix + " " + token : token
+    fetchdef.headers[name] = prefix ? prefix + " " + value : value
+  }
+
+
+  // Under Basic the token is the key half, as apikey is: prepareAuth's pair.
+  _pair(this: any, token: string): string {
+    const secret = this._client._options.secret
+    const pair = Buffer.from(token + ":" + (null == secret ? "" : secret)).toString("base64")
+    this._register(pair)
+    return pair
   }
 }
 

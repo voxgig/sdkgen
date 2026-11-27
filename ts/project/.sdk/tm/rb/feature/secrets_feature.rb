@@ -65,6 +65,8 @@ class ProjectNameSecretsFeature < ProjectNameBaseFeature
     @client = nil
     @options = {}
     @liveopts = {}
+    @declared = false
+    @basic = false
 
     @secretname = "apikey"
     @cache = true
@@ -101,6 +103,12 @@ class ProjectNameSecretsFeature < ProjectNameBaseFeature
     @options = options.is_a?(Hash) ? options : {}
     @liveopts = ctx.options.is_a?(Hash) ? ctx.options : {}
     @active = @options["active"] == true
+
+    # What prepare_auth was generated from: the config declares auth only
+    # where it places a credential, and Basic only where it composes one.
+    declared = VoxgigStruct.getpath(ctx.config, "options.auth")
+    @declared = declared.is_a?(Hash)
+    @basic = @declared && declared["basic"] == true
 
     return unless @active
 
@@ -261,6 +269,12 @@ class ProjectNameSecretsFeature < ProjectNameBaseFeature
 
   private
 
+  # prepare_auth's decision: auth the config declares, not suppressed by
+  # `auth: nil`.
+  def _authon
+    @declared && !@liveopts["auth"].nil?
+  end
+
   # Every value this feature resolves or buys is a secret the SDK handles,
   # and none arrives under an option key the intake registration saw.
   def _register(value)
@@ -274,7 +288,7 @@ class ProjectNameSecretsFeature < ProjectNameBaseFeature
   # boolean is the whole of what resolve needs to tell a cacheable HIT from
   # a miss it must not keep.
   def _resolve_once
-    return false if @sekreto.nil?
+    return false if @sekreto.nil? || !_authon
 
     # Miss-vs-error: `try` answers nil for "no store has it" and RAISES for
     # "a store could not answer" - only the miss falls through.
@@ -311,15 +325,6 @@ class ProjectNameSecretsFeature < ProjectNameBaseFeature
     # is the same path expiry takes anyway.
     return true unless apikey.nil? || apikey.empty?
 
-    # `auth: nil` is the documented way to send NO credential, and a
-    # purchase is a credential-bearing call: the refresh token goes to the
-    # token endpoint in the request body. _with_refresh honours suppression
-    # for the RETRY, but it runs after this - by then the refresh token has
-    # already left the process, and no later check can call it back. The
-    # suppression has to be honoured here, before the first purchase, or it
-    # only ever half-held.
-    return false if @liveopts["auth"].nil?
-
     _buy
 
     true
@@ -332,12 +337,9 @@ class ProjectNameSecretsFeature < ProjectNameBaseFeature
   # because the header was built by the synchronous prepare_auth before
   # this request left, and it carries the token that just failed.
   def _with_refresh(ctx, url, fetchdef, inner)
-    # `auth: nil` is the documented way to send NO credential, and
-    # prepare_auth honours it by removing the header. A refusal of a
-    # deliberately unauthenticated request is not an expired token and
-    # cannot be fixed by buying one - retrying would transmit exactly the
-    # credential the caller suppressed.
-    return inner.call(ctx, url, fetchdef) if @liveopts["auth"].nil?
+    # A refusal of an unauthenticated request is not an expired token, and
+    # retrying would transmit the credential that auth off withholds.
+    return inner.call(ctx, url, fetchdef) unless _authon
 
     max = @exchange["retries"]
     attempt = 0
@@ -525,16 +527,26 @@ class ProjectNameSecretsFeature < ProjectNameBaseFeature
     name = name.is_a?(String) && !name.empty? ? name.downcase : "authorization"
 
     # Suppressed auth means NO header, the same answer prepare_auth gives.
-    if @liveopts["auth"].nil? || token.nil? || token.empty?
+    if !_authon || token.nil? || token.empty?
       headers.delete(name)
       return
     end
+
+    value = @basic && VoxgigStruct.getpath(@liveopts, "auth.basic") == true ? _pair(token) : token
 
     prefix = VoxgigStruct.getpath(@liveopts, "auth.prefix")
     prefix = "" unless prefix.is_a?(String)
 
     # Empty prefix (raw apiKey credential) must not add a leading space.
-    headers[name] = prefix.empty? ? token : "#{prefix} #{token}"
+    headers[name] = prefix.empty? ? value : "#{prefix} #{value}"
+  end
+
+  # Under Basic the token is the key half, as apikey is: prepare_auth's pair.
+  def _pair(token)
+    secret = @liveopts["secret"]
+    pair = ["#{token}:#{secret.is_a?(String) ? secret : ""}"].pack("m0")
+    _register(pair)
+    pair
   end
 
   # The plugin DEFINITIONS the model selected for this feature, emitted by

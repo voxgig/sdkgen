@@ -53,6 +53,7 @@ use warnings;
 
 use File::Basename ();
 use Cwd ();
+use MIME::Base64 ();
 use Scalar::Util ();
 
 my $__dir;
@@ -96,6 +97,8 @@ sub new {
   # The LIVE options map (root ctx options, which IS the client's options
   # hash). Read for `auth` and the explicit apikey; never written.
   $self->{liveopts} = {};
+  $self->{declared} = 0;
+  $self->{basic} = 0;
 
   $self->{secretname} = 'apikey';
   $self->{cache} = 1;
@@ -134,6 +137,12 @@ sub init {
   $self->{options} = Voxgig::Struct::ismap($options) ? $options : {};
   $self->{active} = ProjectNameHelpers::is_true($self->{options}{active});
   $self->{liveopts} = Voxgig::Struct::ismap($ctx->{options}) ? $ctx->{options} : {};
+
+  # What prepare_auth was generated from: the config declares auth only
+  # where it places a credential, and Basic only where it composes one.
+  my $declared = ProjectNameHelpers::gpath($ctx->{config}, 'options.auth');
+  $self->{declared} = Voxgig::Struct::ismap($declared) ? 1 : 0;
+  $self->{basic} = $self->{declared} && ProjectNameHelpers::is_true($declared->{basic}) ? 1 : 0;
 
   return unless $self->{active};
 
@@ -294,6 +303,14 @@ sub sekreto {
 }
 
 
+# prepare_auth's decision: auth the config declares, not suppressed by
+# `auth => undef`.
+sub _authon {
+  my ($self) = @_;
+  return $self->{declared} && defined ProjectNameHelpers::gp($self->{liveopts}, 'auth');
+}
+
+
 # The resolved credential (empty when none) - the state the transport
 # injects. Tests and callers read it here rather than from the options
 # map, which this feature never mutates.
@@ -363,7 +380,7 @@ sub resolve {
 sub _resolve_once {
   my ($self) = @_;
 
-  return (undef, 0) unless defined $self->{sek};
+  return (undef, 0) unless defined $self->{sek} && $self->_authon();
 
   # sekreto's miss-vs-error rule, inherited: `try` returns undef on a MISS
   # and dies on a provider ERROR.
@@ -400,16 +417,6 @@ sub _resolve_once {
   # the same path expiry takes anyway.
   return (undef, 1) if '' ne $self->{cred};
 
-  # `auth => undef` is the documented way to send NO credential, and a
-  # purchase is a credential-bearing call: the refresh token goes to the
-  # token endpoint in the request body. _with_refresh honours suppression
-  # for the RETRY, but it runs after this - by then the refresh token has
-  # already left the process, and no later check can call it back. The
-  # suppression has to be honoured here, before the first purchase, or it
-  # only ever half-held.
-  return (undef, 0)
-    if !defined ProjectNameHelpers::gp($self->{liveopts}, 'auth');
-
   my ($token, $err) = $self->_buy();
   return ($err, 0) if defined $err;
 
@@ -429,13 +436,9 @@ sub _resolve_once {
 sub _with_refresh {
   my ($self, $ctx, $url, $fetchdef, $inner) = @_;
 
-  # `auth => undef` is the documented way to send NO credential, and
-  # prepare_auth honours it by removing the header. A refusal of a
-  # deliberately unauthenticated request is not an expired token and
-  # cannot be fixed by buying one - retrying would transmit exactly the
-  # credential the caller suppressed.
-  return $inner->($ctx, $url, $fetchdef)
-    if !defined ProjectNameHelpers::gp($self->{liveopts}, 'auth');
+  # A refusal of an unauthenticated request is not an expired token, and
+  # retrying would transmit the credential that auth off withholds.
+  return $inner->($ctx, $url, $fetchdef) if !$self->_authon();
 
   my $max = $self->{exchange}{retries};
   my $attempt = 0;
@@ -498,23 +501,38 @@ sub _reauth {
   my $headers = $fetchdef->{headers};
   return unless Voxgig::Struct::ismap($headers);
 
-  # Suppressed auth means NO header, the same answer prepare_auth gives
-  # (utility/prepare_auth.pm). Reached defensively on the exchange path -
-  # _with_refresh does not retry at all when auth is suppressed - but this
-  # is the function that writes the credential, so it is where the rule
-  # has to hold.
-  if (!defined ProjectNameHelpers::gp($self->{liveopts}, 'auth')) {
+  # Suppressed auth means NO header, the same answer prepare_auth gives.
+  if (!$self->_authon()) {
     delete $headers->{'authorization'};
     return;
   }
+
+  # The header prepare_auth wrote: auth.name, lower-cased.
+  my $name = ProjectNameHelpers::gpath($self->{liveopts}, 'auth.name');
+  $name = (defined $name && !ref $name && '' ne $name) ? lc($name) : 'authorization';
+
+  my $value = ($self->{basic}
+    && ProjectNameHelpers::is_true(ProjectNameHelpers::gpath($self->{liveopts}, 'auth.basic')))
+    ? $self->_pair($token) : "$token";
 
   my $prefix = ProjectNameHelpers::gpath($self->{liveopts}, 'auth.prefix');
   $prefix = '' unless defined $prefix && !ref $prefix;
 
   # Empty prefix (raw apiKey credential) must not add a leading space.
-  $headers->{'authorization'} = ('' eq $prefix) ? "$token" : "$prefix $token";
+  $headers->{$name} = ('' eq $prefix) ? $value : "$prefix $value";
 
   return;
+}
+
+
+# Under Basic the token is the key half, as apikey is: prepare_auth's pair.
+sub _pair {
+  my ($self, $token) = @_;
+  my $secret = ProjectNameHelpers::gp($self->{liveopts}, 'secret');
+  $secret = '' unless defined $secret && !ref $secret;
+  my $pair = MIME::Base64::encode_base64("$token:$secret", '');
+  $self->_register($pair);
+  return $pair;
 }
 
 

@@ -163,16 +163,40 @@ static const char* call_auth(Rec* r, int i, bool* present) {
   return get_str(headers, cred_header());
 }
 
-// The credential header carries the SPEC's credential prefix (if any), which
-// a TEMPLATE cannot know (a bearer scheme gives `Bearer <token>`, an apiKey
-// scheme the raw token). So assert on the CREDENTIAL and let the prefix be
-// whatever this SDK's API declares.
-static bool credential_is(const char* header, const char* token) {
+// The header value prepare_auth writes for a token, in the form the DEFAULT
+// client's auth gives: under Basic the token is the key half of the encoded
+// pair, and a prefix is space-joined.
+static bool paired_is(const char* header, const char* token, const char* secret) {
   if (NULL == header) return false;
-  size_t hl = strlen(header);
-  size_t tl = strlen(token);
-  if (0 == strcmp(header, token)) return true;
-  return hl > tl + 1 && ' ' == header[hl - tl - 1] && 0 == strcmp(header + hl - tl, token);
+  voxgig_value* auth = getp(sdk_options_map(test_sdk(NULL, NULL)), "auth");
+  const char* prefix = get_str(auth, "prefix");
+  bool basic = false;
+  get_bool(auth, "basic", &basic);
+
+  char* value = NULL;
+  if (basic) {
+    size_t n = strlen(token) + 1 + strlen(secret) + 1;
+    char* pair = (char*)malloc(n);
+    snprintf(pair, n, "%s:%s", token, secret);
+    value = clean_base64(pair);
+    free(pair);
+  } else {
+    value = strdup(token);
+  }
+
+  bool same;
+  if (NULL == prefix || '\0' == prefix[0]) {
+    same = 0 == strcmp(header, value);
+  } else {
+    size_t pl = strlen(prefix);
+    same = 0 == strncmp(header, prefix, pl) && ' ' == header[pl] && 0 == strcmp(header + pl + 1, value);
+  }
+  free(value);
+  return same;
+}
+
+static bool credential_is(const char* header, const char* token) {
+  return paired_is(header, token, "");
 }
 
 // ---- a LIVE client ----------------------------------------------------------
@@ -322,6 +346,15 @@ static void t_empty_apikey_defers(void) {
                              cmap(1, "apikey", v_str("")));
   direct(sdk);
   CHECK(credential_is(call_auth(r, 0, NULL), "CHAIN01"), "active: an explicitly EMPTY apikey also defers");
+}
+
+static void t_resolved_key_paired(void) {
+  Rec* r = rec_new();
+  ProjectNameSDK* sdk = live(r, providers1(memory(NULL, "APIKEY", "CHAIN05")),
+                             cmap(1, "secret", v_str("PASS01")));
+  direct(sdk);
+  CHECK(paired_is(call_auth(r, 0, NULL), "CHAIN05", "PASS01"),
+        "active: a resolved key is placed as prepare_auth places it, the secret kept");
 }
 
 static void t_auth_null_suppresses(void) {
@@ -658,6 +691,19 @@ static void t_exchange_401_rebuys_and_retries(void) {
   CHECK(credential_is(call_auth(r, 3, NULL), "ACCESS02"), "401: the retry carried the fresh token, rebuilt from auth.prefix");
 }
 
+static void t_exchange_retry_paired(void) {
+  Rec* r = rec_new();
+  r->script[0] = 401;
+  ProjectNameSDK* sdk = live(r, exchange_opts(refresh_store(), v_undef()),
+                             cmap(1, "secret", v_str("PASS01")));
+  direct(sdk);
+  CHECK_INT_EQ(r->api, 2, "paired 401: the request was tried again once");
+  // calls: 0 token, 1 api(401), 2 token, 3 api(200)
+  CHECK(paired_is(call_auth(r, 1, NULL), "ACCESS01", "PASS01"), "paired 401: the first attempt kept the secret");
+  CHECK(paired_is(call_auth(r, 3, NULL), "ACCESS02", "PASS01"),
+        "paired 401: a token bought on a refusal is placed as prepare_auth places it");
+}
+
 static void t_exchange_retry_once_not_loop(void) {
   Rec* r = rec_new();
   r->script[0] = 401;
@@ -757,6 +803,7 @@ static void t_exchange_auth_null_suppresses(void) {
   voxgig_value* res = direct(sdk);
   CHECK(!res_ok(res), "auth null + exchange: the refusal stands");
   CHECK_INT_EQ(r->api, 1, "auth null + exchange: a refusal of a deliberately unauthenticated request is not retried");
+  CHECK_INT_EQ(r->token, 0, "auth null + exchange: no token is bought");
   bool present = true;
   call_auth(r, r->token, &present); // the first API call follows any purchase
   CHECK(!present, "auth null + exchange: no credential on the wire, refusal or not");
@@ -964,12 +1011,75 @@ static void t_exchange_redirect_refused(void) {
 
 #endif
 
+// ---- auth off ----------------------------------------------------------------
+
+// Off by the config where it declares no auth, else by `auth: null`: either
+// way the feature places no credential, buys no token and retries nothing.
+static bool carries(Rec* r, int i) {
+  static const char* SECRETS[] = {"OFFKEY01", "OFFKEY02", "OFFREFRESH01", "ACCESS01", NULL};
+  bool present = false;
+  call_auth(r, i, &present);
+  if (present) return true;
+  voxgig_value* headers = getp(call_fetchdef(r, i), "headers");
+  if (!voxgig_is_map(headers)) return false;
+  voxgig_map* m = voxgig_as_map(headers);
+  for (size_t k = 0; k < m->len; k++) {
+    voxgig_value* v = m->entries[k].value;
+    if (!voxgig_is_string(v)) continue;
+    for (int s = 0; NULL != SECRETS[s]; s++) {
+      if (NULL != strstr(voxgig_as_string(v), SECRETS[s])) return true;
+    }
+  }
+  return false;
+}
+
+static void t_auth_off(void) {
+  bool declared = voxgig_is_map(getpath2(shared_config(), "options", "auth"));
+  int sent = 0;
+  int credentials = 0;
+  int bought = 0;
+
+  for (int scenario = 0; scenario < 3; scenario++) {
+    Rec* r = rec_new();
+    voxgig_value* fopts = v_map();
+    voxgig_value* extra = v_map();
+    if (0 == scenario) {
+      fopts = providers1(memory(NULL, "APIKEY", "OFFKEY01"));
+    } else if (1 == scenario) {
+      setp(extra, "apikey", v_str("OFFKEY02"));
+    } else {
+      r->script[0] = 401;
+      fopts = exchange_opts(clist(1, memory(NULL, "APIKEY", "OFFREFRESH01")), v_undef());
+    }
+    if (declared) setp(extra, "auth", voxgig_new_null());
+
+    ProjectNameSDK* sdk = live(r, fopts, extra);
+    direct(sdk);
+
+    CHECK_INT_EQ(r->api, 1, "auth off: one request, not retried");
+    CHECK_INT_EQ(r->token, 0, "auth off: no token bought");
+    CHECK(!carries(r, r->token), "auth off: no credential sent");
+    CHECK_STR_EQ(feature_secrets_credential(sdk_feature_secrets(sdk)), "", "auth off: nothing resolved");
+
+    for (int i = 0; i < r->api + r->token; i++) {
+      const char* url = get_str(voxgig_getelem(r->calls, v_int(i), voxgig_new_undef()), "url");
+      if (NULL != url && NULL == strstr(url, r->tokenpath) && carries(r, i)) credentials++;
+    }
+    sent += r->api;
+    bought += r->token;
+  }
+
+  printf("secrets: auth off by %s: %d request(s), %d credential(s), %d token(s)\n",
+         declared ? "option" : "config", sent, credentials, bought);
+}
+
 int main(void) {
   // Read from the config, never from a probe: an SDK whose config declares no
   // auth places no credential, and these tests assert on the one it places.
   if (!voxgig_is_map(getpath2(shared_config(), "options", "auth"))) {
     printf("SKIP [secrets]: this SDK's config declares no auth, so it places no credential\n");
-    return 0;
+    RUN(t_auth_off);
+    TEST_SUMMARY("secrets");
   }
 
   RUN(t_inactive_apikey_as_before);
@@ -977,6 +1087,7 @@ int main(void) {
   RUN(t_apikey_wins_over_chain);
   RUN(t_omitted_apikey_defers);
   RUN(t_empty_apikey_defers);
+  RUN(t_resolved_key_paired);
   RUN(t_auth_null_suppresses);
   RUN(t_custom_provider_verbatim);
   RUN(t_miss_everywhere_no_header);
@@ -996,6 +1107,7 @@ int main(void) {
   RUN(t_exchange_explicit_refresh_wins);
   RUN(t_exchange_one_purchase_many_requests);
   RUN(t_exchange_401_rebuys_and_retries);
+  RUN(t_exchange_retry_paired);
   RUN(t_exchange_retry_once_not_loop);
   RUN(t_exchange_other_status_not_expiry);
   RUN(t_exchange_statuses_configurable);
@@ -1008,6 +1120,7 @@ int main(void) {
   RUN(t_exchange_off_leaves_feature_as_before);
   RUN(t_exchange_test_mode_buys_nothing);
   RUN(t_exchange_redirect_refused);
+  RUN(t_auth_off);
 
   // The generator's runtime lane reads this line: a suite that RAN fewer
   // cases than it declares was trimmed, not passed.

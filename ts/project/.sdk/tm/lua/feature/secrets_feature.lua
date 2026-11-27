@@ -64,6 +64,7 @@ local helpers = require("core.helpers")
 local BaseFeature = require("feature.base_feature")
 local sekreto = require("feature.secrets.sekreto")
 local tls = require("utility.tls")
+local base64 = require("utility.clean").base64
 
 
 local SecretsFeature = {}
@@ -139,6 +140,11 @@ function SecretsFeature.new()
   -- read for `apikey` and for the `auth` suppression, never written.
   self._liveopts = nil
 
+  -- What prepare_auth was generated from: the config declares auth only
+  -- where it places a credential, and Basic only where it composes one.
+  self._declared = false
+  self._basic = false
+
   self._secretname = "apikey"
   self._cache = true
   self._sek = nil
@@ -179,6 +185,10 @@ function SecretsFeature:init(ctx, options)
   self._liveopts = ctx.options or {}
   self._rootctx = ctx
   self.active = (self.options["active"] == true)
+
+  local declared = vs.getpath(ctx.config, "options.auth")
+  self._declared = type(declared) == "table"
+  self._basic = self._declared and declared["basic"] == true
 
   if not self.active then
     return
@@ -363,8 +373,15 @@ function SecretsFeature:_resolve()
 end
 
 
+-- prepare_auth's decision: auth the config declares, not suppressed by
+-- clearing `options.auth`.
+function SecretsFeature:_authon()
+  return self._declared and type(self._liveopts["auth"]) == "table"
+end
+
+
 function SecretsFeature:_resolve_once()
-  if self._sek == nil then
+  if self._sek == nil or not self:_authon() then
     return nil
   end
 
@@ -450,12 +467,9 @@ end
 -- fetchdef, because the header was built before this request left and it
 -- carries the token that just failed.
 function SecretsFeature:_with_refresh(ctx, fullurl, fetchdef, inner)
-  -- A suppressed `auth` is the documented way to send NO credential, and
-  -- prepare_auth honours it by removing the header. A refusal of a
-  -- deliberately unauthenticated request is not an expired token and
-  -- cannot be fixed by buying one - retrying would transmit exactly the
-  -- credential the caller suppressed.
-  if self._liveopts["auth"] == nil then
+  -- A refusal of an unauthenticated request is not an expired token, and
+  -- retrying would transmit the credential that auth off withholds.
+  if not self:_authon() then
     return inner(ctx, fullurl, fetchdef)
   end
 
@@ -527,11 +541,11 @@ function SecretsFeature:_reauth(fetchdef, token)
   -- stores no nil, and validate then fills the default), so the only
   -- expressible suppression is clearing `client.options.auth` after
   -- construction; this is the live table, so it is honoured here too.
-  local auth = self._liveopts["auth"]
-  if type(auth) ~= "table" then
+  if not self:_authon() then
     headers["authorization"] = nil
     return
   end
+  local auth = self._liveopts["auth"]
 
   -- The header prepare_auth writes: auth.name, lower-cased.
   local name = auth["name"]
@@ -540,16 +554,33 @@ function SecretsFeature:_reauth(fetchdef, token)
   end
   name = string.lower(name)
 
+  local value = token
+  if self._basic and auth["basic"] == true then
+    value = self:_pair(token)
+  end
+
   local prefix = auth["prefix"]
   if type(prefix) ~= "string" then
     prefix = ""
   end
 
   if prefix == "" then
-    headers[name] = token
+    headers[name] = value
   else
-    headers[name] = prefix .. " " .. token
+    headers[name] = prefix .. " " .. value
   end
+end
+
+
+-- Under Basic the token is the key half, as apikey is: prepare_auth's pair.
+function SecretsFeature:_pair(token)
+  local secret = self._liveopts["secret"]
+  if type(secret) ~= "string" then
+    secret = ""
+  end
+  local pair = base64(token .. ":" .. secret)
+  self:_register(pair)
+  return pair
 end
 
 

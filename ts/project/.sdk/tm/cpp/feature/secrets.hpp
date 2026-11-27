@@ -205,6 +205,12 @@ public:
     // read for `apikey` and `auth`, never written.
     liveopts_ = (nullptr != client && client->options.is_map()) ? client->options : ctx->options;
 
+    // What prepareAuth was generated from: the config declares auth only
+    // where it places a credential, and Basic only where it composes one.
+    Value declared = Struct::getpath(ctx->config, {"options", "auth"});
+    declared_ = declared.is_map();
+    basic_ = declared_ && is_true(mapget(declared, "basic"));
+
     // WRAP FIRST. The fail-closed gate needs the seam whatever happens
     // below - a chain that fails to build must still refuse to send - so
     // the wrapper is installed before anything here can fail, and the
@@ -399,6 +405,8 @@ public:
 
 private:
   Value liveopts_ = Value::undef();
+  bool declared_ = false;
+  bool basic_ = false;
   std::string secretname_ = "apikey";
   bool cache_ = true;
 
@@ -515,13 +523,39 @@ private:
 
     if (cred_.empty()) return;
 
+    std::string value = cred_;
+    if (basic_ && is_true(Struct::getpath(liveopts_, {"auth", "basic"}))) {
+      value = pair(cred_);
+    }
+
     std::string prefix = as_str(Struct::getpath(liveopts_, {"auth", "prefix"}));
-    map_put(headers, name,
-            Value(prefix.empty() ? cred_ : prefix + " " + cred_));
+    map_put(headers, name, Value(prefix.empty() ? value : prefix + " " + value));
   }
 
+  // prepareAuth's decision: suppressed where the config declares no auth,
+  // or where `auth` is null.
   bool authSuppressed() const {
-    return is_nullish(mapget(liveopts_, "auth"));
+    return !declared_ || is_nullish(mapget(liveopts_, "auth"));
+  }
+
+  // Under Basic the token is the key half, as apikey is: prepareAuth's pair.
+  std::string pair(const std::string& token) {
+    static const char* ALPHABET =
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    std::string in = token + ":" + as_str(mapget(liveopts_, "secret"));
+    std::string out;
+    out.reserve(((in.size() + 2) / 3) * 4);
+    for (size_t i = 0; i < in.size(); i += 3) {
+      unsigned int v = static_cast<unsigned char>(in[i]) << 16;
+      if (i + 1 < in.size()) v |= static_cast<unsigned int>(static_cast<unsigned char>(in[i + 1])) << 8;
+      if (i + 2 < in.size()) v |= static_cast<unsigned int>(static_cast<unsigned char>(in[i + 2]));
+      out += ALPHABET[(v >> 18) & 0x3f];
+      out += ALPHABET[(v >> 12) & 0x3f];
+      out += (i + 1 < in.size()) ? ALPHABET[(v >> 6) & 0x3f] : '=';
+      out += (i + 2 < in.size()) ? ALPHABET[v & 0x3f] : '=';
+    }
+    registerSecret(out);
+    return out;
   }
 
   // ---- the exchange -----------------------------------------------------------
@@ -638,7 +672,7 @@ private:
   // Answers the provider's own message, or "". Called under mu_.
   std::string resolve() {
     if (cache_ && resolved_) return "";
-    if (!sek_) return "";
+    if (!sek_ || authSuppressed()) return "";
 
     std::optional<std::string> found;
     try {
@@ -720,9 +754,8 @@ private:
 
     if (!exchange_) return inner(ctx, url, fetchdef);
 
-    // `auth: null` is a deliberately unauthenticated request: a refusal of
-    // it is not an expired token and cannot be fixed by buying one -
-    // retrying would transmit exactly the credential the caller suppressed.
+    // A refusal of an unauthenticated request is not an expired token, and
+    // retrying would transmit the credential that auth off withholds.
     if (suppressed) return inner(ctx, url, fetchdef);
 
     int max = exchange_->retries;

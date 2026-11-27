@@ -52,6 +52,13 @@ let secretsCredHeader: String = {
   return "" == name ? "authorization" : name.lowercased()
 }()
 
+// The form prepareAuth writes, from the DEFAULT client's auth: under Basic the
+// token is the key half of the encoded pair, and a prefix is space-joined.
+let secretsCredForm: (prefix: String, basic: Bool) = {
+  let auth = gp(ProjectNameSDK.testSDK(nil, nil).optionsMap(), "auth")
+  return (gp(auth, "prefix").asString ?? "", true == gp(auth, "basic").asBool)
+}()
+
 // -------------------------------------------------------------------
 // The recording transport: system.fetch for a LIVE client, scripting one
 // status per API call (the last repeating) and a token endpoint for the
@@ -64,6 +71,7 @@ final class SecretsWire {
     let hasAuth: Bool
     let body: String
     let redirect: String
+    var values: String = ""
   }
 
   private let lock = NSLock()
@@ -97,15 +105,20 @@ final class SecretsWire {
     // make every earlier record show the newest token.
     var auth = ""
     var hasAuth = false
+    var values: [String] = []
     if let headers = gp(fetchdef, "headers").asMap {
-      for (k, v) in headers.entries where k.lowercased() == secretsCredHeader {
-        hasAuth = true
-        auth = v.asString ?? stringify(v)
+      for (k, v) in headers.entries {
+        if k.lowercased() == secretsCredHeader {
+          hasAuth = true
+          auth = v.asString ?? stringify(v)
+        }
+        values.append(v.asString ?? stringify(v))
       }
     }
     let body = gp(fetchdef, "body").asString ?? ""
     let redirect = gp(fetchdef, "redirect").asString ?? ""
-    recorded.append(Call(url: url, auth: auth, hasAuth: hasAuth, body: body, redirect: redirect))
+    recorded.append(Call(url: url, auth: auth, hasAuth: hasAuth, body: body, redirect: redirect,
+                         values: values.joined(separator: "\n")))
 
     if url.hasSuffix("/" + tokenpath) {
       if issued >= tokenok {
@@ -186,15 +199,17 @@ final class SecretsFeatureTest: XCTestCase {
   // -------------------------------------------------------------------
   // Support.
 
-  // The credential header carries the SPEC's credential prefix, which a
-  // TEMPLATE cannot know: an OpenAPI `http`/`bearer` scheme gives
-  // `Bearer <token>`, an apiKey scheme the raw token. So assert on the
-  // CREDENTIAL and let the prefix be whatever this SDK's API declares.
-  private func credentialIs(_ header: String, _ token: String,
+  // The header value prepareAuth writes for a token.
+  private func credential(_ token: String, _ secret: String = "") -> String {
+    let value = secretsCredForm.basic
+      ? Data((token + ":" + secret).utf8).base64EncodedString() : token
+    return "" == secretsCredForm.prefix ? value : secretsCredForm.prefix + " " + value
+  }
+
+  private func credentialIs(_ header: String, _ token: String, _ secret: String = "",
                             file: StaticString = #filePath, line: UInt = #line) {
-    XCTAssertTrue(header == token || header.hasSuffix(" " + token),
-      "expected the \(secretsCredHeader) header to carry \(token), got: \"\(header)\"",
-      file: file, line: line)
+    XCTAssertEqual(credential(token, secret), header,
+      "expected the \(secretsCredHeader) header to carry \(token)", file: file, line: line)
   }
 
   private func secretsOf(_ client: ProjectNameSDK) -> SecretsFeature? {
@@ -336,9 +351,11 @@ final class SecretsFeatureTest: XCTestCase {
 
   // Read from the config, never from a probe: an SDK whose config declares no
   // auth places no credential, and these tests assert on the one it places.
+  // The auth-off test asserts it places none.
   override func setUpWithError() throws {
     try super.setUpWithError()
-    guard nil != gp(SdkConfig.sharedConfig(), "options").asMap?.entries["auth"] else {
+    guard nil != gp(SdkConfig.sharedConfig(), "options").asMap?.entries["auth"]
+      || name.contains("testAuthOff") else {
       throw XCTSkip("this SDK's config declares no auth, so it places no credential")
     }
   }
@@ -420,6 +437,20 @@ final class SecretsFeatureTest: XCTestCase {
 
     driveEntityOp(client, w)
     credentialIs(w.api()[0].auth, "CHAINKEY03")
+  }
+
+  func testAResolvedKeyIsPlacedAsPrepareAuthPlacesItTheSecretKept() {
+    let w = SecretsWire()
+    let client = secretsClient(w, [
+      ("secret", .string("PASS01")),
+      ("feature", chainOpts(working("CHAINKEY05"))),
+    ])
+
+    driveEntityOp(client, w)
+    XCTAssertFalse(w.api().isEmpty, "no request reached the wire")
+    if !w.api().isEmpty {
+      credentialIs(w.api()[0].auth, "CHAINKEY05", "PASS01")
+    }
   }
 
   func testCustomProviderObjectsAreAcceptedVerbatim() {
@@ -924,6 +955,23 @@ final class SecretsFeatureTest: XCTestCase {
     credentialIs(w.api()[1].auth, "ACCESS02")
   }
 
+  func testATokenBoughtOnARefusalIsPlacedAsPrepareAuthPlacesIt() {
+    let w = SecretsWire()
+    w.apistatus = [401, 200]
+    let client = secretsClient(w, [
+      ("secret", .string("PASS01")),
+      ("feature", chainOpts(working("REFRESH01"), [exchangeOn()])),
+    ])
+
+    _ = client.direct(vm(("path", .string("/thing"))))
+
+    XCTAssertEqual(2, w.api().count, "expected the refused request to be retried once: " + w.wire())
+    if 2 == w.api().count {
+      credentialIs(w.api()[0].auth, "ACCESS01", "PASS01")
+      credentialIs(w.api()[1].auth, "ACCESS02", "PASS01")
+    }
+  }
+
   func testAnExplicitApikeyIsTheStartingAccessTokenWhenExchanging() {
     // With the exchange on, `apikey` is an access token the caller already
     // holds: it is SPENT first, and the API decides whether it is stale.
@@ -997,11 +1045,8 @@ final class SecretsFeatureTest: XCTestCase {
     XCTAssertEqual(.bool(false), res.entries["ok"])
     XCTAssertEqual(1, w.api().count, "a suppressed-auth 401 must not be retried: " + w.wire())
     XCTAssertFalse(w.api()[0].hasAuth, "auth null must keep the header off, got: " + w.api()[0].auth)
-    // Resolution still ran once (the chain was consulted and the access
-    // token bought, as go's resolveonce does whatever `auth` says); what
-    // the suppression forbids is the REBUY after the refusal.
-    XCTAssertEqual(1, w.token().count,
-      "a suppressed-auth 401 must not buy another token: " + w.wire())
+    XCTAssertEqual(0, w.token().count,
+      "a suppressed-auth request must buy no token: " + w.wire())
   }
 
   func testExchangeInTestModeBuysNothing() {
@@ -1200,5 +1245,50 @@ final class SecretsFeatureTest: XCTestCase {
     XCTAssertEqual([], after, "a request followed a refused exchange")
     XCTAssertEqual([], allowed, "a redirect was not a failed exchange")
     XCTAssertEqual(answers.count, refused)
+  }
+
+  // ===================================================================
+  // Off by the config where it declares no auth, else by `auth: null`:
+  // either way the feature places no credential, buys no token and retries
+  // nothing.
+
+  func testAuthOffPlacesNoCredentialAndBuysNoToken() {
+    let declared = nil != gp(SdkConfig.sharedConfig(), "options").asMap?.entries["auth"]
+    let secrets = ["OFFKEY01", "OFFKEY02", "OFFREFRESH01", "ACCESS01"]
+    let carries = { (call: SecretsWire.Call) -> Bool in
+      call.hasAuth || secrets.contains { call.values.contains($0) }
+    }
+    var sent: [SecretsWire.Call] = []
+    var bought = 0
+
+    let scenarios: [(String, [(String, Value)], Int)] = [
+      ("a key the chain resolves", [("feature", chainOpts(working("OFFKEY01")))], 200),
+      ("an explicit apikey", [("apikey", .string("OFFKEY02")),
+        ("feature", .map(vm(("secrets", .map(vm(("active", .bool(true))))))))], 200),
+      ("a refusal", [("feature", chainOpts(working("OFFREFRESH01"), [exchangeOn()]))], 401),
+    ]
+
+    let off: [(String, Value)] = declared ? [("auth", .null)] : []
+
+    for (what, opts, status) in scenarios {
+      let w = SecretsWire()
+      w.apistatus = [status]
+      let client = secretsClient(w, opts + off)
+
+      _ = client.direct(vm(("path", .string("/thing"))))
+
+      XCTAssertEqual(1, w.api().count, what + ": a request was retried with auth off: " + w.wire())
+      XCTAssertEqual(0, w.token().count, what + ": a token was bought with auth off: " + w.wire())
+      XCTAssertFalse(w.api().first.map(carries) ?? true,
+        what + ": a credential was sent with auth off: " + w.wire())
+      XCTAssertEqual("", secretsOf(client)?.credential(),
+        what + ": the feature resolved a credential with auth off")
+
+      sent += w.api()
+      bought += w.token().count
+    }
+
+    print("secrets: auth off by \(declared ? "option" : "config"): \(sent.count) request(s), " +
+      "\(sent.filter(carries).count) credential(s), \(bought) token(s)")
   }
 }

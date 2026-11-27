@@ -38,6 +38,7 @@
 local sdk = require("project-name-_sdk")
 local SecretsFeature = require("feature.secrets_feature")
 local sekreto = require("feature.secrets.sekreto")
+local base64 = require("utility.clean").base64
 
 
 -- The header the credential travels in: the DEFAULT client's auth.name,
@@ -50,6 +51,17 @@ local CREDHEADER = (function()
     return string.lower(name)
   end
   return "authorization"
+end)()
+
+
+-- The form prepare_auth writes, from the DEFAULT client's auth: under Basic
+-- the token is the key half of the encoded pair, and a prefix is
+-- space-joined.
+local CREDFORM = (function()
+  local auth = sdk.test(nil, nil):options_map().auth
+  auth = type(auth) == "table" and auth or {}
+  local prefix = type(auth.prefix) == "string" and auth.prefix or ""
+  return { prefix = prefix, basic = auth.basic == true }
 end)()
 
 
@@ -78,8 +90,10 @@ local function make_wire(script)
   w.fetch = function(url, fetchdef)
     local headers = type(fetchdef) == "table" and fetchdef.headers or {}
     local auth = headers[CREDHEADER]
+    local values = {}
+    for _, v in pairs(headers) do values[#values + 1] = tostring(v) end
     w.calls[#w.calls + 1] = {
-      url = url, auth = auth, has = auth ~= nil,
+      url = url, auth = auth, has = auth ~= nil, values = table.concat(values, "\n"),
       body = fetchdef.body, method = fetchdef.method, redirect = fetchdef.redirect,
     }
 
@@ -126,14 +140,22 @@ end
 -- ---------------------------------------------------------------------
 -- Support.
 
--- The credential header carries the SPEC's credential prefix (if any),
--- which a TEMPLATE cannot know - so assert on the CREDENTIAL and let the
--- prefix be whatever this SDK's API declares.
-local function assert_credential(header, token)
-  local ok = header == token
-    or (type(header) == "string" and header:sub(-(#token + 1)) == " " .. token)
-  assert.is_true(ok, "expected the " .. CREDHEADER .. " header to carry " ..
-    token .. ", got: " .. tostring(header))
+-- The header value prepare_auth writes for a token.
+local function credential(token, secret)
+  local value = token
+  if CREDFORM.basic then
+    value = base64(token .. ":" .. (secret or ""))
+  end
+  if CREDFORM.prefix == "" then
+    return value
+  end
+  return CREDFORM.prefix .. " " .. value
+end
+
+
+local function assert_credential(header, token, secret)
+  assert.are.equal(credential(token, secret), header,
+    "expected the " .. CREDHEADER .. " header to carry " .. token)
 end
 
 
@@ -340,6 +362,17 @@ describe("secrets", function()
       assert.are.equal("CHAIN02", secrets_feature_of(client):credential())
       assert.are.equal("", client:options_map().apikey,
         "the options map must stay unwritten")
+    end)
+
+    it("a resolved key is placed as prepare_auth places it, the secret kept", function()
+      local w = make_wire()
+      local client = secrets_client(w, {
+        secret = "PASS01",
+        feature = chain({ memory("CHAIN05") }),
+      })
+
+      drive_entity_op(client, w)
+      assert_credential(w.api()[1].auth, "CHAIN05", "PASS01")
     end)
 
     it("custom provider objects are accepted verbatim", function()
@@ -822,6 +855,17 @@ describe("secrets", function()
       assert.are.equal(2, #w.token())
     end)
 
+    it("a token bought on a refusal is placed as prepare_auth places it", function()
+      local w = make_wire({ apistatus = { 401, 200 } })
+      local client = exchange_client(w, nil, { secret = "PASS01" })
+      local res = client:direct({ path = "/probe" })
+      assert.is_true(res.ok, tostring(res.err))
+
+      assert.are.equal(2, #w.api(), "expected the refused request and one retry")
+      assert_credential(w.api()[1].auth, "ACCESS01", "PASS01")
+      assert_credential(w.api()[2].auth, "ACCESS02", "PASS01")
+    end)
+
     it("a second refusal surfaces rather than spinning", function()
       local w = make_wire({ apistatus = { 401 } })
       local client = exchange_client(w)
@@ -989,5 +1033,64 @@ describe("secrets", function()
       assert.are.equal("test-access_token", sf:credential())
       assert.are.equal(0, #w.token(), "test mode must not reach the token endpoint")
     end)
+  end)
+end)
+
+
+-- Off by the config where it declares no auth, else by clearing
+-- `options.auth` after construction, the suppression Lua can express:
+-- either way the feature places no credential, buys no token and retries
+-- nothing.
+describe("secrets with auth off", function()
+
+  it("places no credential and buys no token", function()
+    local declared = nil ~= (require("config_shared")().options or {}).auth
+    local by = declared and "option" or "config"
+    local secrets = { "OFFKEY01", "OFFKEY02", "OFFREFRESH01", "ACCESS01" }
+    local function carries(call)
+      if call.has then return true end
+      for _, secret in ipairs(secrets) do
+        if call.values:find(secret, 1, true) then return true end
+      end
+      return false
+    end
+    local sent, bought = {}, 0
+
+    local refresh = { kind = "memory", values = { REFRESH_TOKEN = "OFFREFRESH01" } }
+    local scenarios = {
+      { "a key the chain resolves", {}, chain({ memory("OFFKEY01") }), { 200 } },
+      { "an explicit apikey", { apikey = "OFFKEY02" }, chain({}), { 200 } },
+      { "a refusal", {},
+        chain({ refresh }, { name = "refresh_token", exchange = { active = true } }), { 401 } },
+    }
+
+    for _, scenario in ipairs(scenarios) do
+      local what, sdkopts, feature, statuses = table.unpack(scenario)
+      local w = make_wire({ apistatus = statuses })
+      local opts = { feature = feature }
+      for k, v in pairs(sdkopts) do opts[k] = v end
+      local client = secrets_client(w, opts)
+      if declared then
+        client.options.auth = nil
+      end
+
+      client:direct({ path = "/probe" })
+
+      assert.are.equal(1, #w.api(), what .. ": a request was retried with auth off")
+      assert.are.equal(0, #w.token(), what .. ": a token was bought with auth off")
+      assert.is_false(carries(w.api()[1]), what .. ": a credential was sent with auth off")
+      assert.is_nil(secrets_feature_of(client):credential(),
+        what .. ": the feature resolved a credential with auth off")
+
+      for _, call in ipairs(w.api()) do sent[#sent + 1] = call end
+      bought = bought + #w.token()
+    end
+
+    local carried = 0
+    for _, call in ipairs(sent) do
+      if carries(call) then carried = carried + 1 end
+    end
+    print("\nsecrets: auth off by " .. by .. ": " .. #sent .. " request(s), " ..
+      carried .. " credential(s), " .. bought .. " token(s)")
   end)
 end)
