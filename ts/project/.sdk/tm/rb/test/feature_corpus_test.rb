@@ -125,8 +125,9 @@ class FeatureCorpusTest < Minitest::Test
     out.sort_by { |o| [safe.fetch(o["op"], 2), o["key"]] }
   end
 
-  def invoke(client, op, ctrl)
-    client.public_send(op["accessor"]).public_send(op["op"], {}, ctrl)
+  def invoke(client, op, ctrl, action = nil)
+    client.public_send(op["accessor"]).public_send(
+      op["op"], action.nil? ? {} : { "$action" => action }, ctrl)
   end
 
   # Pick operations by DRIVING them: an op is usable when it completes
@@ -319,7 +320,7 @@ class FeatureCorpusTest < Minitest::Test
             wanterr = step["err"]
 
             begin
-              invoke(client, op, ctrl)
+              invoke(client, op, ctrl, step["action"])
               assert_nil wanterr, "#{label}: #{step['op']} was expected to fail, and did not"
             rescue Minitest::Assertion
               raise

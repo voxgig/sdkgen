@@ -4,6 +4,7 @@ declare(strict_types=1);
 // ProjectName SDK audit feature
 
 require_once __DIR__ . '/BaseFeature.php';
+require_once __DIR__ . '/../utility/OpKey.php';
 
 // Audit trail. Emits one structured record per operation — who (actor),
 // what (entity + op), the outcome, and a correlation id — suitable for
@@ -86,7 +87,7 @@ class ProjectNameAuditFeature extends ProjectNameBaseFeature
             : ($this->options['actor'] ?? null);
         $actor = (is_string($actor) && $actor !== '') ? $actor : 'anonymous';
 
-        $record = ($ctx->utility->clean)($ctx, [
+        $entry = [
             'seq' => $this->seq,
             'ts' => $this->_now(),
             'actor' => $actor,
@@ -95,7 +96,12 @@ class ProjectNameAuditFeature extends ProjectNameBaseFeature
             'outcome' => $outcome,
             'status' => $ctx->result !== null ? $ctx->result->status : null,
             'correlationId' => $ctx->id,
-        ]);
+        ];
+        $action = ProjectNameOpKey::action($ctx);
+        if (null !== $action) {
+            $entry['action'] = $action;
+        }
+        $record = ($ctx->utility->clean)($ctx, $entry);
 
         $client = $this->client;
         $client->_audit['records'][] = $record;

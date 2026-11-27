@@ -6,6 +6,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../core/Helpers.php';
 require_once __DIR__ . '/Param.php';
 require_once __DIR__ . '/PrepareMethod.php';
+require_once __DIR__ . '/OpKey.php';
 
 class ProjectNameMakePoint
 {
@@ -42,10 +43,16 @@ class ProjectNameMakePoint
         $options = $ctx->options;
 
         $allow_op = \Voxgig\Struct\Struct::getpath($options, 'allow.op');
-        if (!ProjectNamePrepareMethod::allowed($allow_op, $op->name)) {
+        $admitted = false;
+        foreach (ProjectNameOpKey::keys($ctx) as $key) {
+            $admitted = $admitted || ProjectNamePrepareMethod::allowed($allow_op, $key);
+        }
+        if (!$admitted) {
             $shown = is_string($allow_op) ? $allow_op : '';
+            $action = ProjectNameOpKey::action($ctx);
+            $named = null === $action ? $op->name : $op->name . ':' . $action;
             return [null, $ctx->make_error('point_op_allow',
-                "Operation \"{$op->name}\" not allowed by SDK option allow.op value: \"{$shown}\"")];
+                "Operation \"{$named}\" not allowed by SDK option allow.op value: \"{$shown}\"")];
         }
 
         if (empty($op->points)) {

@@ -14,6 +14,7 @@ require(Cwd::abs_path("$__dir/../core/helpers.pm"));
 require(Cwd::abs_path("$__dir/../core/error.pm"));
 require(Cwd::abs_path("$__dir/prepare_method.pm"));
 require(Cwd::abs_path("$__dir/param.pm"));
+require(Cwd::abs_path("$__dir/op_key.pm"));
 
 package ProjectNameUtilities;
 
@@ -88,11 +89,14 @@ $REGISTRY{make_point} = sub {
   my $options = $ctx->{options};
 
   my $allow_op = ProjectNameHelpers::gpath($options, 'allow.op');
-  my $allow_ok = ProjectNameUtilities::allowed($allow_op, $op->{name});
+  my $allow_ok = grep { ProjectNameUtilities::allowed($allow_op, $_) }
+    ProjectNameUtilities::op_keys($ctx);
   $allow_op = '' unless defined $allow_op && !ref $allow_op;
   unless ($allow_ok) {
+    my $action = ProjectNameUtilities::op_action($ctx);
+    my $named = defined $action ? "$op->{name}:$action" : $op->{name};
     return (undef, $ctx->make_error('point_op_allow',
-      "Operation \"$op->{name}\" not allowed by SDK option allow.op value: \"$allow_op\""));
+      "Operation \"$named\" not allowed by SDK option allow.op value: \"$allow_op\""));
   }
 
   if (!@{ $op->{points} }) {

@@ -1,7 +1,8 @@
 # ProjectName SDK metrics feature
 #
 # Statistics capture. Records per-operation counters and latency for every
-# call: totals plus a breakdown keyed by "<entity>.<op>". Timing starts at
+# call: totals plus a breakdown keyed by "<entity>.<op>", or
+# "<entity>.<op>:<action>" for a custom action. Timing starts at
 # endpoint resolution (PrePoint) and stops when the call returns (PreDone)
 # or fails (PreUnexpected) - exactly once per operation. The clock is
 # injectable ("now", ms) for deterministic tests.
@@ -18,6 +19,7 @@ BEGIN { $__dir = File::Basename::dirname(Cwd::abs_path(__FILE__)) }
 require(Cwd::abs_path("$__dir/../lib/Voxgig/Struct.pm"));
 require(Cwd::abs_path("$__dir/../core/helpers.pm"));
 require(Cwd::abs_path("$__dir/base_feature.pm"));
+require(Cwd::abs_path("$__dir/../utility/op_key.pm"));
 
 package ProjectNameMetricsFeature;
 
@@ -91,8 +93,7 @@ sub _record {
 
   my $m = $self->{client}{_metrics};
   return unless $m;
-  my $key = ($ctx->{op} ? $ctx->{op}{entity} : '_') . '.'
-    . ($ctx->{op} ? $ctx->{op}{name} : '_');
+  my ($key) = ProjectNameUtilities::op_keys($ctx);
 
   my $op = $m->{ops}{$key};
   if (!$op) {

@@ -109,6 +109,41 @@ sub is_sdk_error {
 }
 
 {
+  my $plain = { 'method' => 'GET', 'parts' => ['episode', '{id}'], 'select' => { 'exist' => ['id'] } };
+  my $audio = { 'method' => 'GET', 'parts' => ['episode', '{id}', 'audio'],
+    'select' => { 'exist' => ['id'], '$action' => 'audio' } };
+  my $point = sub {
+    my ($allow, $reqmatch) = @_;
+    my $ctx = make_ctx();
+    $ctx->{op} = ProjectNameOperation->new({
+      'name' => 'load', 'entity' => 'episode', 'input' => 'match', 'points' => [$plain, $audio] });
+    $ctx->{options} = { 'allow' => { 'op' => $allow } };
+    $ctx->{reqmatch} = $reqmatch;
+    $ctx->{match} = {};
+    my ($out, $err) = $utility->{make_point}->($ctx);
+    return defined $err ? $err->{code} : $out;
+  };
+  my $AUDIO = { '$action' => 'audio', 'id' => 'e1' };
+  my $RECORD = { 'id' => 'e1' };
+  is($point->('episode.load:audio', $AUDIO), $audio, 'an allow list entry may name an action');
+  is($point->('episode.load:audio', $RECORD), 'point_op_allow', 'an action entry does not admit its operation');
+  is($point->('Episode.Load:AUDIO', $AUDIO), $audio, 'an action entry matches in any case');
+  is($point->('episode.load:video', $AUDIO), 'point_op_allow', 'another action entry does not admit');
+  is($point->('episode.load', $AUDIO), $audio, 'an operation entry admits its actions');
+  is($point->('load', $AUDIO), $audio, 'an op-name entry admits its actions');
+  is($point->('load', $RECORD), $plain, 'an op-name entry admits the operation');
+  is($point->('list', $RECORD), 'point_op_allow', 'another op-name entry does not admit');
+
+  my $ctx = make_ctx();
+  $ctx->{op} = ProjectNameOperation->new({
+    'name' => 'load', 'entity' => 'episode', 'input' => 'match', 'points' => [{ 'parts' => ['a'] }] });
+  $ctx->{options} = { 'allow' => { 'op' => 'list' } };
+  $ctx->{reqmatch} = { '$action' => 'audio' };
+  my (undef, $err) = $utility->{make_point}->($ctx);
+  like($err->{msg}, qr/Operation "load:audio"/, 'an allow-list refusal names the action');
+}
+
+{
   my $ctx = make_ctx();
   $ctx->{op}{points} = [];
   my (undef, $err) = $utility->{make_point}->($ctx);

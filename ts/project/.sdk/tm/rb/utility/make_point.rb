@@ -4,6 +4,7 @@ require_relative '../core/helpers'
 require_relative '../core/error'
 require_relative 'param'
 require_relative 'prepare_method'
+require_relative 'op_key'
 module ProjectNameUtilities
   # The path parameters of a point that neither the call nor the entity gives
   # a value for, looked up as prepare_params looks them up.
@@ -31,9 +32,10 @@ module ProjectNameUtilities
     options = ctx.options
 
     allow_op = VoxgigStruct.getpath(options, "allow.op")
-    unless ProjectNameUtilities.allowed(allow_op, op.name)
+    unless ProjectNameUtilities.op_keys(ctx).any? { |key| ProjectNameUtilities.allowed(allow_op, key) }
+      action = ProjectNameUtilities.op_action(ctx)
       return nil, ctx.make_error("point_op_allow",
-        "Operation \"#{op.name}\" not allowed by SDK option allow.op value: \"#{allow_op}\"")
+        "Operation \"#{op.name}#{action.nil? ? '' : ':' + action}\" not allowed by SDK option allow.op value: \"#{allow_op}\"")
     end
 
     if op.points.empty?

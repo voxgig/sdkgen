@@ -148,6 +148,43 @@ class PipelineTest < Minitest::Test
   end
 
 
+  def test_make_point_an_allow_list_entry_may_name_an_action
+    plain = { "method" => "GET", "parts" => ["episode", "{id}"], "select" => { "exist" => ["id"] } }
+    audio = { "method" => "GET", "parts" => ["episode", "{id}", "audio"],
+              "select" => { "exist" => ["id"], "$action" => "audio" } }
+    point = ->(allow, reqmatch) {
+      ctx = make_ctx
+      ctx.op = ProjectNameOperation.new({
+        "name" => "load", "entity" => "episode", "input" => "match", "points" => [plain, audio] })
+      ctx.options = { "allow" => { "op" => allow } }
+      ctx.reqmatch = reqmatch
+      ctx.match = {}
+      out, err = @utility.make_point.call(ctx)
+      err.nil? ? out : err.code
+    }
+    audio_req = { "$action" => "audio", "id" => "e1" }
+    record_req = { "id" => "e1" }
+    assert_same audio, point.call("episode.load:audio", audio_req)
+    assert_equal "point_op_allow", point.call("episode.load:audio", record_req)
+    assert_same audio, point.call("Episode.Load:AUDIO", audio_req)
+    assert_equal "point_op_allow", point.call("episode.load:video", audio_req)
+    assert_same audio, point.call("episode.load", audio_req)
+    assert_same audio, point.call("load", audio_req)
+    assert_same plain, point.call("load", record_req)
+    assert_equal "point_op_allow", point.call("list", record_req)
+  end
+
+  def test_make_point_an_action_refusal_names_the_action
+    ctx = make_ctx
+    ctx.op = ProjectNameOperation.new({ "name" => "load", "entity" => "episode", "input" => "match",
+                                        "points" => [{ "parts" => ["a"] }] })
+    ctx.options = { "allow" => { "op" => "list" } }
+    ctx.reqmatch = { "$action" => "audio" }
+    _, err = @utility.make_point.call(ctx)
+    assert_includes err.message, "Operation \"load:audio\""
+  end
+
+
   # === make_spec ===
 
   def test_make_spec_short_circuits_a_feature_supplied_spec

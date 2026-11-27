@@ -271,6 +271,8 @@ class FtHarness
             'client' => $this->client,
             'utility' => $utility,
             'entity' => new FtEntity($entity),
+            'reqmatch' => $o['reqmatch'] ?? [],
+            'reqdata' => $o['reqdata'] ?? [],
         ], $this->rootctx);
 
         $ctrl = new FtCtrl();
@@ -1036,6 +1038,121 @@ class FeatureTest extends TestCase
         $rec = $h->client->_audit['records'][0];
         $this->assertSame('anonymous', $rec['actor']);
         $this->assertEquals(42, $rec['ts']);
+    }
+
+
+    // --- action keys ----------------------------------------------------------
+    // A custom action is `$action` in the request argument, and its keys name
+    // it: `<entity>.<op>:<action>`, most specific first.
+
+    private const AUDIO = ['$action' => 'audio', 'id' => 'e1'];
+    private const RECORD = ['id' => 'e1'];
+    private const ACTION_RULES = ['episode.load' => 'read', 'episode.load:audio' => 'audio'];
+
+    public function test_action_keys_rbac_the_record_is_granted_and_the_action_refused(): void
+    {
+        $this->needs('rbac');
+        $rec = new FtRecorder();
+        $h = new FtHarness([
+            ['name' => 'rbac', 'options' => ['rules' => self::ACTION_RULES, 'permissions' => ['read']]],
+        ], $rec->server());
+        $this->assertTrue($h->op(['entity' => 'episode', 'reqmatch' => self::RECORD])['ok']);
+        $res = $h->op(['entity' => 'episode', 'reqmatch' => self::AUDIO]);
+        $this->assertSame('rbac_denied', self::code($res['err']));
+        $this->assertStringContainsString('operation "load:audio"', $res['err']->getMessage());
+        $this->assertCount(1, $rec->calls);
+        $this->assertSame('audio', $h->client->_rbac['last']['action']);
+    }
+
+    public function test_action_keys_rbac_the_action_is_granted_and_the_record_refused(): void
+    {
+        $this->needs('rbac');
+        $h = new FtHarness([
+            ['name' => 'rbac', 'options' => ['rules' => self::ACTION_RULES, 'permissions' => ['audio']]],
+        ]);
+        $this->assertSame('rbac_denied',
+            self::code($h->op(['entity' => 'episode', 'reqmatch' => self::RECORD])['err']));
+        $this->assertArrayNotHasKey('action', $h->client->_rbac['last']);
+        $this->assertTrue($h->op(['entity' => 'episode', 'reqmatch' => self::AUDIO])['ok']);
+    }
+
+    public function test_action_keys_rbac_with_no_action_rule_an_action_falls_back_to_its_operation(): void
+    {
+        $this->needs('rbac');
+        $h = new FtHarness([
+            ['name' => 'rbac', 'options' => ['rules' => ['episode.load' => 'read'], 'permissions' => []]],
+        ]);
+        $this->assertSame('rbac_denied',
+            self::code($h->op(['entity' => 'episode', 'reqmatch' => self::AUDIO])['err']));
+    }
+
+    public function test_action_keys_rbac_a_data_op_reads_its_action_from_reqdata(): void
+    {
+        $this->needs('rbac');
+        $h = new FtHarness([
+            ['name' => 'rbac', 'options' => ['rules' => ['episode.create:upload' => 'write'], 'permissions' => []]],
+        ]);
+        $upload = ['$action' => 'upload'];
+        $this->assertSame('rbac_denied',
+            self::code($h->op(['op' => 'create', 'entity' => 'episode', 'reqdata' => $upload])['err']));
+        $this->assertTrue($h->op(['op' => 'create', 'entity' => 'episode', 'reqmatch' => $upload])['ok']);
+    }
+
+    public function test_action_keys_metrics_an_action_is_counted_apart_from_its_operation(): void
+    {
+        $this->needs('metrics');
+        $h = new FtHarness([['name' => 'metrics', 'options' => []]]);
+        $h->op(['entity' => 'episode', 'reqmatch' => self::RECORD]);
+        $h->op(['entity' => 'episode', 'reqmatch' => self::AUDIO]);
+        $h->op(['entity' => 'episode', 'reqmatch' => self::AUDIO]);
+        $m = $h->client->_metrics;
+        $this->assertSame(3, $m['total']['count']);
+        $this->assertSame(1, $m['ops']['episode.load']['count']);
+        $this->assertSame(2, $m['ops']['episode.load:audio']['count']);
+    }
+
+    public function test_action_keys_audit_a_record_names_its_action_and_a_plain_one_has_none(): void
+    {
+        $this->needs('audit');
+        $h = new FtHarness([['name' => 'audit', 'options' => []]]);
+        $h->op(['entity' => 'episode', 'reqmatch' => self::RECORD]);
+        $h->op(['entity' => 'episode', 'reqmatch' => self::AUDIO]);
+        $recs = $h->client->_audit['records'];
+        $this->assertArrayNotHasKey('action', $recs[0]);
+        $this->assertSame('load', $recs[0]['op']);
+        $this->assertSame('audio', $recs[1]['action']);
+        $this->assertSame('load', $recs[1]['op']);
+    }
+
+    public function test_action_keys_cost_an_action_is_priced_and_attributed_apart_from_its_operation(): void
+    {
+        $this->needs('cost');
+        $sink = [];
+        $h = new FtHarness([
+            ['name' => 'cost', 'options' => [
+                'rates' => ['episode.load' => 1, 'episode.load:audio' => 5],
+                'sink' => function ($r) use (&$sink) { $sink[] = $r; },
+            ]],
+        ]);
+        $h->op(['entity' => 'episode', 'reqmatch' => self::RECORD]);
+        $h->op(['entity' => 'episode', 'reqmatch' => self::AUDIO]);
+        $cost = $h->client->_cost;
+        $this->assertEquals(6, $cost['total']['amount']);
+        $this->assertEquals(['calls' => 1, 'amount' => 1], $cost['ops']['episode.load']);
+        $this->assertEquals(['calls' => 1, 'amount' => 5], $cost['ops']['episode.load:audio']);
+        $this->assertArrayNotHasKey('action', $sink[0]);
+        $this->assertSame('audio', $sink[1]['action']);
+        $this->assertSame('audio', $cost['last']['action']);
+    }
+
+    public function test_action_keys_cost_an_action_with_no_rate_of_its_own_takes_its_operations(): void
+    {
+        $this->needs('cost');
+        $h = new FtHarness([
+            ['name' => 'cost', 'options' => ['rates' => ['episode.load' => 2, '*' => 9]]],
+        ]);
+        $h->op(['entity' => 'episode', 'reqmatch' => self::AUDIO]);
+        $this->assertEquals(['calls' => 1, 'amount' => 2], $h->client->_cost['ops']['episode.load:audio']);
     }
 
 

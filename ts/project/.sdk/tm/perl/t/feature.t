@@ -187,6 +187,8 @@ sub recording_server {
       'opname' => $opname,
       'entity' => HarnessFakeEntity->new($entity),
       'ctrl' => ($args{ctrl} || {}),
+      'reqmatch' => ($args{reqmatch} || {}),
+      'reqdata' => ($args{reqdata} || {}),
     }, $self->{rootctx});
 
     $self->fire($ctx, 'PostConstructEntity');
@@ -881,6 +883,105 @@ if (has_feature('audit')) {
   }
 }
 else { note('feature "audit" not present in this SDK') }
+
+
+# === action keys ===
+# A custom action is "$action" in the request argument, and its keys name
+# it: "<entity>.<op>:<action>", most specific first.
+
+{
+  my $AUDIO = { '$action' => 'audio', 'id' => 'e1' };
+  my $RECORD = { 'id' => 'e1' };
+  my $RULES = { 'episode.load' => 'read', 'episode.load:audio' => 'audio' };
+
+  if (has_feature('rbac')) {
+    {
+      my ($server, $calls) = recording_server();
+      my $h = harness([fspec('rbac', 'rules' => $RULES, 'permissions' => ['read'])],
+        server => $server);
+      ok($h->op('entity' => 'episode', 'reqmatch' => $RECORD)->{ok},
+        'action-keys rbac: the record is granted');
+      my $res = $h->op('entity' => 'episode', 'reqmatch' => $AUDIO);
+      is($res->{error}{code}, 'rbac_denied', 'action-keys rbac: the action is refused');
+      like($res->{error}{msg}, qr/operation "load:audio"/, 'action-keys rbac: the refusal names the action');
+      is(scalar @$calls, 1, 'action-keys rbac: the refused action sends nothing');
+      is($h->track('_rbac')->{last}{action}, 'audio', 'action-keys rbac: last names the action');
+    }
+
+    {
+      my $h = harness([fspec('rbac', 'rules' => $RULES, 'permissions' => ['audio'])]);
+      is($h->op('entity' => 'episode', 'reqmatch' => $RECORD)->{error}{code}, 'rbac_denied',
+        'action-keys rbac: the record is refused');
+      ok(!exists $h->track('_rbac')->{last}{action}, 'action-keys rbac: a plain last has no action');
+      ok($h->op('entity' => 'episode', 'reqmatch' => $AUDIO)->{ok},
+        'action-keys rbac: the action is granted');
+    }
+
+    {
+      my $h = harness([fspec('rbac', 'rules' => { 'episode.load' => 'read' }, 'permissions' => [])]);
+      is($h->op('entity' => 'episode', 'reqmatch' => $AUDIO)->{error}{code}, 'rbac_denied',
+        'action-keys rbac: with no action rule an action falls back to its operation');
+    }
+
+    {
+      my $h = harness([fspec('rbac', 'rules' => { 'episode.create:upload' => 'write' }, 'permissions' => [])]);
+      my $upload = { '$action' => 'upload' };
+      is($h->op('opname' => 'create', 'entity' => 'episode', 'reqdata' => $upload)->{error}{code},
+        'rbac_denied', 'action-keys rbac: a data op reads its action from reqdata');
+      ok($h->op('opname' => 'create', 'entity' => 'episode', 'reqmatch' => $upload)->{ok},
+        'action-keys rbac: a data op ignores reqmatch');
+    }
+  }
+
+  if (has_feature('metrics')) {
+    my $h = harness([fspec('metrics')]);
+    $h->op('entity' => 'episode', 'reqmatch' => $RECORD);
+    $h->op('entity' => 'episode', 'reqmatch' => $AUDIO);
+    $h->op('entity' => 'episode', 'reqmatch' => $AUDIO);
+    my $m = $h->track('_metrics');
+    is($m->{total}{count}, 3, 'action-keys metrics: total counts both');
+    is($m->{ops}{'episode.load'}{count}, 1, 'action-keys metrics: the operation');
+    is($m->{ops}{'episode.load:audio'}{count}, 2, 'action-keys metrics: the action apart');
+  }
+
+  if (has_feature('audit')) {
+    my $h = harness([fspec('audit')]);
+    $h->op('entity' => 'episode', 'reqmatch' => $RECORD);
+    $h->op('entity' => 'episode', 'reqmatch' => $AUDIO);
+    my $recs = $h->track('_audit')->{records};
+    ok(!exists $recs->[0]{action}, 'action-keys audit: a plain record has no action');
+    is($recs->[0]{op}, 'load', 'action-keys audit: plain op');
+    is($recs->[1]{action}, 'audio', 'action-keys audit: a record names its action');
+    is($recs->[1]{op}, 'load', 'action-keys audit: action op');
+  }
+
+  if (has_feature('cost')) {
+    {
+      my $sink = [];
+      my $h = harness([fspec('cost',
+        'rates' => { 'episode.load' => 1, 'episode.load:audio' => 5 },
+        'sink' => sub { push @$sink, $_[0] })]);
+      $h->op('entity' => 'episode', 'reqmatch' => $RECORD);
+      $h->op('entity' => 'episode', 'reqmatch' => $AUDIO);
+      my $cost = $h->track('_cost');
+      is($cost->{total}{amount}, 6, 'action-keys cost: total');
+      is_deeply($cost->{ops}{'episode.load'}, { 'calls' => 1, 'amount' => 1 },
+        'action-keys cost: the operation');
+      is_deeply($cost->{ops}{'episode.load:audio'}, { 'calls' => 1, 'amount' => 5 },
+        'action-keys cost: the action apart');
+      ok(!exists $sink->[0]{action}, 'action-keys cost: a plain record has no action');
+      is($sink->[1]{action}, 'audio', 'action-keys cost: a record names its action');
+      is($cost->{last}{action}, 'audio', 'action-keys cost: last names the action');
+    }
+
+    {
+      my $h = harness([fspec('cost', 'rates' => { 'episode.load' => 2, '*' => 9 })]);
+      $h->op('entity' => 'episode', 'reqmatch' => $AUDIO);
+      is_deeply($h->track('_cost')->{ops}{'episode.load:audio'}, { 'calls' => 1, 'amount' => 2 },
+        'action-keys cost: an action with no rate of its own takes its operation\'s');
+    }
+  }
+}
 
 
 # === clienttrack ===

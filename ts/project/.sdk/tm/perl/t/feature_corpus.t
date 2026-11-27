@@ -162,11 +162,11 @@ sub candidates {
 
 
 sub invoke {
-  my ($client, $op, $ctrl) = @_;
+  my ($client, $op, $ctrl, $action) = @_;
   my $acc = $op->{accessor};
   my $fn  = $op->{op};
   my $ent = $client->$acc();
-  return $ent->$fn({}, $ctrl);
+  return $ent->$fn(defined $action ? { '$action' => $action } : {}, $ctrl);
 }
 
 
@@ -369,7 +369,7 @@ for my $name (sort keys %{ $CORPUS->{feature} || {} }) {
         my $ctrl = $step->{ctrl} || {};
         my $wanterr = $step->{err};
 
-        my $ok = eval { invoke($client, $op, $ctrl); 1 };
+        my $ok = eval { invoke($client, $op, $ctrl, $step->{action}); 1 };
         my $err = $@;
 
         if (!defined $wanterr) {

@@ -166,13 +166,15 @@ module ProjectNameFeatureHarness
     # Run one operation through the mini pipeline (mirrors the generated
     # entity op fragment: hook, short-circuit, make*, hook, ...).
     def op(opname: "load", entity: "widget", method: nil, path: nil, query: nil,
-           headers: nil, body: nil, ctrl: nil)
+           headers: nil, body: nil, ctrl: nil, reqmatch: nil, reqdata: nil)
       method ||= ProjectNameFeatureHarness.default_method(opname)
 
       ctx = @utility.make_context.call({
         "opname" => opname,
         "entity" => FakeEntity.new(entity),
         "ctrl" => ctrl || {},
+        "reqmatch" => reqmatch || {},
+        "reqdata" => reqdata || {},
       }, @rootctx)
 
       fire(ctx, "PostConstructEntity")
@@ -850,6 +852,97 @@ class FeatureTest < Minitest::Test
     recs = h.track(:@_audit)["records"]
     assert_equal 2, recs.length
     assert_equal [2, 3], recs.map { |r| r["seq"] }
+  end
+
+
+  # === action keys ===
+  # A custom action is "$action" in the request argument, and its keys name
+  # it: "<entity>.<op>:<action>", most specific first.
+
+  AUDIO = { "$action" => "audio", "id" => "e1" }.freeze
+  RECORD = { "id" => "e1" }.freeze
+  ACTION_RULES = { "episode.load" => "read", "episode.load:audio" => "audio" }.freeze
+
+  def test_action_keys_rbac_the_record_is_granted_and_the_action_refused
+    skip_unless_feature("rbac")
+    server, calls = H.recording_server
+    h = harness([fspec("rbac", "rules" => ACTION_RULES, "permissions" => ["read"])], server: server)
+    assert_equal true, h.op(entity: "episode", reqmatch: RECORD)["ok"]
+    res = h.op(entity: "episode", reqmatch: AUDIO)
+    assert_equal "rbac_denied", res["error"].code
+    assert_includes res["error"].message, "operation \"load:audio\""
+    assert_equal 1, calls.length
+    assert_equal "audio", h.track(:@_rbac)["last"]["action"]
+  end
+
+  def test_action_keys_rbac_the_action_is_granted_and_the_record_refused
+    skip_unless_feature("rbac")
+    h = harness([fspec("rbac", "rules" => ACTION_RULES, "permissions" => ["audio"])])
+    assert_equal "rbac_denied", h.op(entity: "episode", reqmatch: RECORD)["error"].code
+    refute h.track(:@_rbac)["last"].key?("action")
+    assert_equal true, h.op(entity: "episode", reqmatch: AUDIO)["ok"]
+  end
+
+  def test_action_keys_rbac_with_no_action_rule_an_action_falls_back_to_its_operation
+    skip_unless_feature("rbac")
+    h = harness([fspec("rbac", "rules" => { "episode.load" => "read" }, "permissions" => [])])
+    assert_equal "rbac_denied", h.op(entity: "episode", reqmatch: AUDIO)["error"].code
+  end
+
+  def test_action_keys_rbac_a_data_op_reads_its_action_from_reqdata
+    skip_unless_feature("rbac")
+    h = harness([fspec("rbac", "rules" => { "episode.create:upload" => "write" }, "permissions" => [])])
+    upload = { "$action" => "upload" }
+    assert_equal "rbac_denied", h.op(opname: "create", entity: "episode", reqdata: upload)["error"].code
+    assert_equal true, h.op(opname: "create", entity: "episode", reqmatch: upload)["ok"]
+  end
+
+  def test_action_keys_metrics_an_action_is_counted_apart_from_its_operation
+    skip_unless_feature("metrics")
+    h = harness([fspec("metrics")])
+    h.op(entity: "episode", reqmatch: RECORD)
+    h.op(entity: "episode", reqmatch: AUDIO)
+    h.op(entity: "episode", reqmatch: AUDIO)
+    m = h.track(:@_metrics)
+    assert_equal 3, m["total"]["count"]
+    assert_equal 1, m["ops"]["episode.load"]["count"]
+    assert_equal 2, m["ops"]["episode.load:audio"]["count"]
+  end
+
+  def test_action_keys_audit_a_record_names_its_action_and_a_plain_one_has_none
+    skip_unless_feature("audit")
+    h = harness([fspec("audit")])
+    h.op(entity: "episode", reqmatch: RECORD)
+    h.op(entity: "episode", reqmatch: AUDIO)
+    recs = h.track(:@_audit)["records"]
+    refute recs[0].key?("action")
+    assert_equal "load", recs[0]["op"]
+    assert_equal "audio", recs[1]["action"]
+    assert_equal "load", recs[1]["op"]
+  end
+
+  def test_action_keys_cost_an_action_is_priced_and_attributed_apart_from_its_operation
+    skip_unless_feature("cost")
+    sink = []
+    h = harness([fspec("cost",
+      "rates" => { "episode.load" => 1, "episode.load:audio" => 5 },
+      "sink" => ->(r) { sink << r })])
+    h.op(entity: "episode", reqmatch: RECORD)
+    h.op(entity: "episode", reqmatch: AUDIO)
+    cost = h.track(:@_cost)
+    assert_equal 6, cost["total"]["amount"]
+    assert_equal({ "calls" => 1, "amount" => 1 }, cost["ops"]["episode.load"])
+    assert_equal({ "calls" => 1, "amount" => 5 }, cost["ops"]["episode.load:audio"])
+    refute sink[0].key?("action")
+    assert_equal "audio", sink[1]["action"]
+    assert_equal "audio", cost["last"]["action"]
+  end
+
+  def test_action_keys_cost_an_action_with_no_rate_of_its_own_takes_its_operations
+    skip_unless_feature("cost")
+    h = harness([fspec("cost", "rates" => { "episode.load" => 2, "*" => 9 })])
+    h.op(entity: "episode", reqmatch: AUDIO)
+    assert_equal({ "calls" => 1, "amount" => 2 }, h.track(:@_cost)["ops"]["episode.load:audio"])
   end
 
 
