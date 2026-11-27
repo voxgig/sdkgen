@@ -86,6 +86,69 @@ function entityActions(entity: any): { op: string, action: string, path: string 
 }
 
 
+type BinarySlot = {
+  name: string
+  action: string
+  read?: string
+  write?: string
+}
+
+
+const SLOT_WRITERS = ['update', 'patch', 'create']
+
+
+// A slot is an action whose active points answer or take bytes; the entity's
+// own bytes, by its plain load, are the unnamed slot ''.
+function entitySlots(entity: any): BinarySlot[] {
+  const slots: Record<string, BinarySlot> = {}
+  const ops: any = (entity && entity.op) || {}
+
+  const binaryPoints = (opname: string, side: string) => each(ops[opname]?.points || [])
+    .filter((pt: any) => false !== pt?.a && true === pt?.[side]?.binary &&
+      'raw' === pt?.[side]?.kind)
+
+  for (const pt of binaryPoints('load', 'rs')) {
+    const action = null == pt.q?.['$action'] ? '' : String(pt.q['$action'])
+    slots[action] = slots[action] || { name: action, action }
+    slots[action].read = 'load'
+  }
+
+  for (const opname of SLOT_WRITERS) {
+    for (const pt of binaryPoints(opname, 'rb')) {
+      const action = null == pt.q?.['$action'] ? '' : String(pt.q['$action'])
+      if ('' === action && null == slots['']) {
+        continue
+      }
+      slots[action] = slots[action] || { name: action, action }
+      slots[action].write = slots[action].write || opname
+    }
+  }
+
+  return Object.keys(slots).sort().map((key) => slots[key])
+}
+
+
+// The body codecs a model's active points need: a request of each kind
+// besides JSON, and a raw response.
+function modelCodecs(model: any): { form: boolean, multipart: boolean, raw: boolean, slots: boolean } {
+  const out = { form: false, multipart: false, raw: false, slots: false }
+  const entities: any = getModelPath(model, `main.${KIT}.entity`, { required: false }) || {}
+  each(entities).forEach((entity: any) => {
+    if (0 < entitySlots(entity).length) {
+      out.slots = true
+    }
+    each(entity?.op || {}).forEach((op: any) => {
+      each(op?.points || []).filter((pt: any) => false !== pt?.a).forEach((pt: any) => {
+        if ('form' === pt?.rb?.kind) out.form = true
+        if ('multipart' === pt?.rb?.kind) out.multipart = true
+        if ('raw' === pt?.rs?.kind) out.raw = true
+      })
+    })
+  })
+  return out
+}
+
+
 function entityPath(entity: any): string {
   const ops: any = (entity && entity.op) || {}
 
@@ -833,6 +896,8 @@ export {
   ownPoint,
   opActions,
   entityActions,
+  entitySlots,
+  modelCodecs,
   entityPath,
   directRoute,
   opRequestShape,
@@ -854,6 +919,7 @@ export {
 }
 
 export type {
+  BinarySlot,
   DirectRoute,
   OpShapeItem,
   UngeneratedOp,

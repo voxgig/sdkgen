@@ -1,0 +1,11 @@
+declare const CODEC_DIR = "codec";
+declare const CODECS: readonly ['form', 'multipart', 'raw', 'handle'];
+type CodecName = typeof CODECS[number];
+declare const CODEC_TIERS: readonly ['none', 'encoded', 'streamed', 'resumable'];
+type CodecTier = typeof CODEC_TIERS[number];
+declare function codecTier(target: any): CodecTier;
+declare function atTier(target: any, tier: CodecTier): boolean;
+declare function codecsUsed(model: any): Record<CodecName, boolean>;
+declare function codecExcludes(model: any): RegExp[];
+export type { CodecName, CodecTier, };
+export { CODECS, CODEC_DIR, CODEC_TIERS, atTier, codecExcludes, codecTier, codecsUsed, };

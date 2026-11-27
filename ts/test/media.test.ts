@@ -47,6 +47,12 @@ const PIPES: Record<string, any> = {
 }
 
 
+const CODECS: Record<string, any> = {
+  ts: loadTs('ts/src/utility/codec/MultipartCodec.ts'),
+  js: require(Path.join(TM, 'js', 'src', 'utility', 'codec', 'MultipartCodec.js')),
+}
+
+
 const TRANSFORM = { req: '`reqdata`', res: '`body`' }
 
 const CATAAS = {
@@ -127,6 +133,8 @@ function call(lang: string, opname: string, pt: any, args: any, headers: any = D
     utility: {
       struct,
       transformRequest: pipe.transformRequest,
+      codec: { multipart: CODECS[lang].encodeMultipart },
+      multipartBoundary: () => 'B',
       makeUrl: () => 'https://api.test/cat/c1',
       makeError: (_c: any, err: any) => { throw err },
     },
@@ -294,12 +302,14 @@ describe('media: every other body is JSON, as before', () => {
       deepStrictEqual(def.headers, { 'content-type': 'application/merge-patch+json' })
     })
 
-    test(lang + ': a multipart body stays JSON for now', () => {
+    test(lang + ': a multipart body is encoded, not sent as JSON', () => {
       const def = call(lang, 'create', point('create', {
         rb: { kind: 'multipart', media: 'multipart/form-data', fields: [{ name: 'file', binary: true }] },
       }), { id: 'c1', name: 'Tom' })
-      deepStrictEqual(JSON.parse(def.body), { id: 'c1', name: 'Tom' })
-      deepStrictEqual(def.headers, { 'content-type': 'application/json' })
+      strictEqual(def.headers['content-type'], 'multipart/form-data; boundary=B')
+      strictEqual(Buffer.from(def.body).toString(),
+        '--B\r\nContent-Disposition: form-data; name="id"\r\n\r\nc1\r\n' +
+        '--B\r\nContent-Disposition: form-data; name="name"\r\n\r\nTom\r\n--B--\r\n')
     })
 
     test(lang + ': a request with no point sets neither header', () => {

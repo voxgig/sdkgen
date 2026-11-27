@@ -1699,7 +1699,7 @@ describe('feature:action-keys', () => {
   // `audio` action point.
   function pointFor(allow: string, reqmatch: any): any {
     const shims: Record<string, any> = { '../types': {} }
-    for (const name of ['ParamUtility', 'PrepareMethodUtility', 'OpKeyUtility']) {
+    for (const name of ['ParamUtility', 'PrepareMethodUtility', 'OpKeyUtility', 'MediaUtility', 'BinaryUtility']) {
       shims['./' + name] = sandboxLoad(Path.join(UTILITY_DIR, name + '.ts'), shims)
     }
     const { makePoint } = sandboxLoad(Path.join(UTILITY_DIR, 'MakePointUtility.ts'), shims)

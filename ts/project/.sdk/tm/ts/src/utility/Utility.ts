@@ -1,6 +1,7 @@
 
 
 import { clean, cleanAdd, cleanSecret } from './CleanUtility'
+import { CODEC } from './codec'
 import { cleanExplain, done } from './DoneUtility'
 import { makeError } from './MakeErrorUtility'
 import { featureAdd } from './FeatureAddUtility'
@@ -71,6 +72,10 @@ class Utility {
   resultHeaders = resultHeaders
   transformRequest = transformRequest
   transformResponse = transformResponse
+
+  // The body codecs this SDK was generated with; see codec/index.
+  codec: Record<string, any> = CODEC
+  multipartBoundary: (ctx: any) => string = CODEC.multipartBoundary
 
   struct = new StructUtility()
 }

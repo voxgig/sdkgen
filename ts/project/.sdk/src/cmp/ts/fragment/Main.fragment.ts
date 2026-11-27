@@ -9,6 +9,7 @@ import { Utility } from './utility/Utility'
 import { unreadableBody } from './utility/ResultBodyUtility'
 import { abortError } from './utility/MakeRequestUtility'
 import { allowed } from './utility/PrepareMethodUtility'
+import { BinarySource, binary } from './utility/BinaryUtility'
 
 
 import { BaseFeature } from './feature/base/BaseFeature'
@@ -32,6 +33,9 @@ class ProjectNameSDK {
   _features: Feature[]
   _rootctx: Context
   // #SecretsField
+
+  // Builds the file sources a binary field or a raw body takes.
+  binary = binary
 
   constructor(options?: any) {
 
@@ -372,9 +376,11 @@ export {
   // #SecretsExport
 
   BaseFeature,
+  BinarySource,
   ProjectNameEntityBase,
 
   ProjectNameSDK,
+  binary,
   SDK,
 }
 

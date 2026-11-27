@@ -259,6 +259,7 @@ sent, and the start of the body, with credentials masked:
 | `response_content_type` | A body that is not JSON and is not labelled as JSON. |
 | `response_json_invalid` | A body labelled as JSON, or not labelled at all, that does not parse. |
 | `request_status` | An HTTP failure; its message also describes a body that is not JSON. |
+| `response_too_large` | A raw text body, which an operation that declares one returns as `$body`, longer than the `maxBuffer` client option. |
 
 `direct()` returns the same error as `err`, with `ok` set to `false`. The
 Rust, C and Zig SDKs return a plain value from `direct()`, so there `err`

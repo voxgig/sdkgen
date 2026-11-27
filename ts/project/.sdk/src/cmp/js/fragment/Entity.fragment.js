@@ -3,6 +3,8 @@ const { inspect } = require('node:util')
 
 const { ProjectNameEntityBase } = require('../ProjectNameEntityBase')
 
+// #BinaryImport
+
 
 // TODO: needs Entity superclass
 class EntyClass extends ProjectNameEntityBase {
@@ -18,6 +20,8 @@ class EntyClass extends ProjectNameEntityBase {
   make() {
     return new EntyClass(this._client, this.entopts())
   }
+
+  // #BinarySlot
 
 
   // #LoadOp

@@ -255,6 +255,95 @@ describe('PrimaryUtility', async () => {
   })
 
 
+  // A codec section a project's corpus has not pulled yet is skipped, as is one
+  // for a codec this SDK was generated without: its model has no such point.
+  async function runcodec(t, name, kind, codec, subject) {
+    const section = spec[name]?.[kind]
+    if (null == section) {
+      return t.skip(`this project's test.json has no ${name}.${kind} section`)
+    }
+    if (null != codec && 'function' !== typeof utility.codec?.[codec]) {
+      return t.skip(`this SDK was generated without a ${codec} codec`)
+    }
+    ok(Array.isArray(section.set) && 0 < section.set.length,
+      `test corpus section '${name}.${kind}' is EMPTY`)
+    return runset(section, subject)
+  }
+
+
+  // `source$` is a source built by binary.bytes, `bytes$` bytes; both latin1.
+  function sourced(val) {
+    if (null == val || 'object' !== typeof val) return val
+    if (Array.isArray(val)) return val.map(sourced)
+    if ('string' === typeof val.source$) {
+      const data = Buffer.from(val.source$, 'latin1')
+      return client.binary.bytes(true === val.blob ?
+        new Blob([data], { type: val.type || '' }) : new Uint8Array(data),
+      { name: val.name, type: val.type })
+    }
+    if ('string' === typeof val.bytes$) return new Uint8Array(Buffer.from(val.bytes$, 'latin1'))
+    return Object.fromEntries(Object.keys(val).map((k) => [k, sourced(val[k])]))
+  }
+
+
+  async function latin1(body) {
+    return null == body || 'string' === typeof body ? body : body instanceof Blob ?
+      Buffer.from(await body.arrayBuffer()).toString('latin1') :
+      Buffer.from(body).toString('latin1')
+  }
+
+
+  for (const kind of ['form', 'multipart', 'raw']) {
+    test('body-' + kind, async (t) => {
+      const boundary = utility.multipartBoundary
+      utility.multipartBoundary = () => 'BOUNDARY'
+      try {
+        await runcodec(t, 'prepareBody', kind, 'raw' === kind ? null : kind, async (ctx) => {
+          fixctx(ctx)
+          ctx.reqdata = sourced(ctx.reqdata)
+          ctx.reqmatch = sourced(ctx.reqmatch)
+          ctx.spec = { headers: {} }
+          const body = await latin1(utility.prepareBody(ctx))
+          const type = ctx.spec.headers['content-type']
+          return null == type ? { body } : { type, body }
+        })
+      }
+      finally {
+        utility.multipartBoundary = boundary
+      }
+    })
+  }
+
+
+  test('resbody-raw', async (t) => {
+    await runcodec(t, 'resultBody', 'raw', 'raw', async (ctx) => {
+      ctx.response.body = sourced(ctx.response.body)
+      await utility.resultBody(ctx)
+      const transfer = ctx.ctrl?.transfer
+      if (null != transfer?.bytes) transfer.bytes = await latin1(transfer.bytes)
+      return ctx.result
+    })
+  })
+
+
+  test('fetchdef-encoded', async (t) => {
+    await runcodec(t, 'makeFetchDef', 'encoded', null, async (ctx) => {
+      ctx.spec.body = sourced(ctx.spec.body)
+      ctx.utility = Object.assign(Object.create(utility), { makeUrl: () => ctx.spec.url })
+      const fetchdef = utility.makeFetchDef(ctx)
+      return { ...fetchdef, body: await latin1(fetchdef.body) }
+    })
+  })
+
+
+  test('clean-binary', async (t) => {
+    await runcodec(t, 'clean', 'binary', null, (cctx, val) => {
+      const ctx = sourced(cctx)
+      return utility.clean(ctx, 'spec$' === val ? ctx.spec : sourced(val))
+    })
+  })
+
+
   // An accepted delete answers 202 with an empty body, which is no body.
   test('resbody-empty', async () => {
     const read = async (res) => {

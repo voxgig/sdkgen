@@ -102,6 +102,9 @@ main: kit: target: &: {
   surface:  *'' | string
   consumes: *'' | string
 
+  # How far the target moves bodies that are not JSON, in tier order.
+  codec: tier: *'none' | 'encoded' | 'streamed' | 'resumable'
+
   module: {
     name: string
 
@@ -325,6 +328,8 @@ main: kit: optspec: {
       '`$OPEN`': true
     }
   }
+
+  maxBuffer: 16777216
 
   # Redaction of everything the SDK emits (ADR-003); numbers are strings.
   clean: {

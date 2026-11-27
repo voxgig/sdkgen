@@ -13,6 +13,8 @@ exports.opNeedsAction = opNeedsAction;
 exports.ownPoint = ownPoint;
 exports.opActions = opActions;
 exports.entityActions = entityActions;
+exports.entitySlots = entitySlots;
+exports.modelCodecs = modelCodecs;
 exports.entityPath = entityPath;
 exports.directRoute = directRoute;
 exports.opRequestShape = opRequestShape;
@@ -86,6 +88,54 @@ function entityActions(entity) {
     const out = [];
     (0, jostraca_1.each)(entity && entity.op).forEach((op) => {
         opActions(op).forEach((a) => out.push({ op: op.name, ...a }));
+    });
+    return out;
+}
+const SLOT_WRITERS = ['update', 'patch', 'create'];
+// A slot is an action whose active points answer or take bytes; the entity's
+// own bytes, by its plain load, are the unnamed slot ''.
+function entitySlots(entity) {
+    const slots = {};
+    const ops = (entity && entity.op) || {};
+    const binaryPoints = (opname, side) => (0, jostraca_1.each)(ops[opname]?.points || [])
+        .filter((pt) => false !== pt?.a && true === pt?.[side]?.binary &&
+        'raw' === pt?.[side]?.kind);
+    for (const pt of binaryPoints('load', 'rs')) {
+        const action = null == pt.q?.['$action'] ? '' : String(pt.q['$action']);
+        slots[action] = slots[action] || { name: action, action };
+        slots[action].read = 'load';
+    }
+    for (const opname of SLOT_WRITERS) {
+        for (const pt of binaryPoints(opname, 'rb')) {
+            const action = null == pt.q?.['$action'] ? '' : String(pt.q['$action']);
+            if ('' === action && null == slots['']) {
+                continue;
+            }
+            slots[action] = slots[action] || { name: action, action };
+            slots[action].write = slots[action].write || opname;
+        }
+    }
+    return Object.keys(slots).sort().map((key) => slots[key]);
+}
+// The body codecs a model's active points need: a request of each kind
+// besides JSON, and a raw response.
+function modelCodecs(model) {
+    const out = { form: false, multipart: false, raw: false, slots: false };
+    const entities = (0, apidef_1.getModelPath)(model, `main.${apidef_1.KIT}.entity`, { required: false }) || {};
+    (0, jostraca_1.each)(entities).forEach((entity) => {
+        if (0 < entitySlots(entity).length) {
+            out.slots = true;
+        }
+        (0, jostraca_1.each)(entity?.op || {}).forEach((op) => {
+            (0, jostraca_1.each)(op?.points || []).filter((pt) => false !== pt?.a).forEach((pt) => {
+                if ('form' === pt?.rb?.kind)
+                    out.form = true;
+                if ('multipart' === pt?.rb?.kind)
+                    out.multipart = true;
+                if ('raw' === pt?.rs?.kind)
+                    out.raw = true;
+            });
+        });
     });
     return out;
 }

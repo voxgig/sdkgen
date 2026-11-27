@@ -6,6 +6,7 @@ const { Utility } = require('./utility/Utility')
 const { unreadableBody } = require('./utility/ResultBodyUtility')
 const { abortError } = require('./utility/MakeRequestUtility')
 const { allowed } = require('./utility/PrepareMethodUtility')
+const { BinarySource, binary } = require('./utility/BinaryUtility')
 const { ProjectNameEntityBase } = require('./ProjectNameEntityBase')
 
 
@@ -23,6 +24,9 @@ class ProjectNameSDK {
   _features
   _rootctx
   // #SecretsField
+
+  // Builds the file sources a binary field or a raw body takes.
+  binary = binary
 
   constructor(options) {
 
@@ -381,9 +385,11 @@ module.exports = {
   // #SecretsExport
 
   BaseFeature,
+  BinarySource,
   ProjectNameEntityBase,
 
   ProjectNameSDK,
   SDK,
+  binary,
 }
 

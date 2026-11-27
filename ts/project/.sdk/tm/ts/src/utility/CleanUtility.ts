@@ -166,9 +166,20 @@ function binaryBodies(ctx: any, cfg: CleanConfig): BinaryBody[] {
 
   const body = ctx?.point?.body
   if ('raw' === body?.kind && true === body.binary) {
+    const raw = ctx.sources?.[RAW_BODY] ?? ctx.reqdata?.[RAW_BODY]
     bodies.push({
-      live: [ctx.spec?.body, ctx.reqdata?.[RAW_BODY]].filter(known),
+      live: [ctx.spec?.body, raw, raw?.data].filter(known),
       type: 'string' === typeof body.media ? body.media : undefined,
+      sized: true,
+    })
+  }
+
+  // An encoded multipart body, and a form body that carries a file.
+  const files = Array.isArray(body?.fields) && body.fields.some((f: any) => true === f?.binary)
+  if ('multipart' === body?.kind || ('form' === body?.kind && files)) {
+    bodies.push({
+      live: [ctx.spec?.body].filter(known),
+      type: headerValue(ctx.spec?.headers, 'content-type') || undefined,
       sized: true,
     })
   }

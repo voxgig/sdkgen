@@ -4,7 +4,7 @@ import * as Path from 'node:path'
 import {
   cmp, each, camelify, names,
   File, Content, Folder, Fragment, Line, FeatureHook, Slot,
-  entityClassName, entityCollection,
+  entityClassName, entityCollection, entitySlots,
 } from '@voxgig/sdkgen'
 
 import {
@@ -33,6 +33,18 @@ const Entity = cmp(function Entity(props: any) {
 
   const ff = Path.normalize(__dirname + '/../../../src/cmp/js/fragment/')
 
+  // The entity's binary slots, by name; '' is its own bytes, reached with no name.
+  const slots = entitySlots(entity)
+  const slotDefs = Object.fromEntries(slots.map((slot: any) => [slot.name, {
+    action: slot.action,
+    ...(null == slot.read ? {} : { read: slot.read }),
+    ...(null == slot.write ? {} : { write: slot.write }),
+  }]))
+  const named = slots.map((slot: any) => slot.name).filter((name: string) => '' !== name)
+  const slotDoc = 0 === named.length ? '' :
+    '@param {' + named.map((name: string) => JSON.stringify(name)).join(' | ') + '} ' +
+    (named.length < slots.length ? '[slot]' : 'slot')
+
   Folder({ name: 'src/entity' }, () => {
 
     File({ name: cls + '.' + target.ext }, () => {
@@ -58,6 +70,22 @@ const Entity = cmp(function Entity(props: any) {
           // Class token decoupled from the EntityName data-type token in
           // Entity.fragment.js so the class can be renamed independently.
           EntyClass: cls,
+
+          '#BinaryImport': ({ indent }: any) => 0 === slots.length ? undefined :
+            Content({ indent }, `const { BinaryHandle } = require('../utility/codec/HandleCodec')
+
+const BINARY_SLOTS = ${JSON.stringify(slotDefs, null, 2)}
+`),
+
+          '#BinarySlot': ({ indent }: any) => 0 === slots.length ? undefined :
+            Content({ indent }, `/**
+ * An entity's bytes never enter its data: they are reached by slot.${'' === slotDoc ? '' : '\n * ' + slotDoc}
+ * @returns {BinaryHandle}
+ */
+binary(${'' === slotDoc ? '' : 'slot'}) {
+  return new BinaryHandle(this, BINARY_SLOTS${'' === slotDoc ? '' : ', slot'})
+}
+`),
 
           '#Feature-Hook': ({ name, indent }: any) =>
             Content({ indent }, `

@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonKey, canonScalarKey, File, isAuthActive, entityIdField, entityOps, bodyNote, entityClassName, entityCollection, matchExampleItems, requestExampleItems, featureDocs, fact, clientOptions, requiredItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, codecTier, canonKey, canonScalarKey, File, isAuthActive, entityIdField, entityOps, bodyNote, entityClassName, entityCollection, matchExampleItems, requestExampleItems, featureDocs, fact, clientOptions, requiredItems } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -330,6 +330,7 @@ ${updateLines}    # ${'patch' === opname ? 'Only the fields to change' : 'Fields
 
           if ('create' === opname || 'update' === opname || 'patch' === opname) {
             const note = bodyNote(ent.op[opname], {
+              tier: codecTier(target),
               values: 'a byte string, a character string, sent as UTF-8, or a filehandle',
               once: 'a filehandle',
             })

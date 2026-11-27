@@ -1,3 +1,4 @@
+const { bytesRefused, liftSources } = require('./BinaryUtility')
 const { paramValue } = require('./ParamUtility')
 const { allowed } = require('./PrepareMethodUtility')
 const { opAction, opKeys } = require('./OpKeyUtility')
@@ -71,7 +72,18 @@ function unfilled(ctx, point) {
 }
 
 
+// Once the point is known, a body of bytes it answers is refused and the
+// sources its binary fields carry are lifted out of the data.
 function makePoint(ctx) {
+  const point = selectPoint(ctx)
+  if (point instanceof Error) {
+    return point
+  }
+  return bytesRefused(ctx) ?? liftSources(ctx) ?? point
+}
+
+
+function selectPoint(ctx) {
   if (ctx.out.point) {
     return ctx.point = ctx.out.point
   }

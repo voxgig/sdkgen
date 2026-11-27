@@ -37,17 +37,25 @@ function codeList(types: string[]): string {
 
 
 // The reference note for a body that is not JSON. `values` names what the
-// target accepts as `$body`, `once` the stream among them, which is read in
-// full before the request is sent, and `binary: false` a target without bytes.
-function bodyNote(op: any, target: { values: string, once?: string, binary?: boolean }): string {
+// target accepts as `$body`, `once` the stream among them, `binary: false` a
+// target without bytes, `tier` its codec tier, and `source` how a caller
+// builds a file part.
+function bodyNote(op: any, target: {
+  values: string, once?: string, binary?: boolean, tier?: string, source?: string
+}): string {
   const rb = opRequestBody(op)
   if (null == rb || 'string' !== typeof rb.media) {
     return ''
   }
 
+  const encodes = ENCODING_TIERS.includes(String(target.tier))
+
   if ('raw' !== rb.kind) {
-    return 'Declares a `' + rb.media + '` body, which this SDK does not encode yet: ' +
-      'it sends the data as JSON.\n\n'
+    if (!encodes) {
+      return 'Declares a `' + rb.media + '` body, which this SDK does not encode yet: ' +
+        'it sends the data as JSON.\n\n'
+    }
+    return encodedNote(rb, target)
   }
 
   if (true === rb.binary && false === target.binary) {
@@ -56,7 +64,7 @@ function bodyNote(op: any, target: { values: string, once?: string, binary?: boo
 
   const others = (Array.isArray(rb.alternatives) ? rb.alternatives : [])
     .map((alt: any) => alt?.media).filter((m: any) => 'string' === typeof m)
-  const encoded = opBodies(op).filter((b: any) => 'raw' !== b.kind)
+  const encoded = encodes ? [] : opBodies(op).filter((b: any) => 'raw' !== b.kind)
     .map((b: any) => b.media).filter((m: any) => 'string' === typeof m)
 
   return 'Sends its body unencoded, as `' + rb.media + '`: pass it as `' + RAW_BODY +
@@ -67,6 +75,22 @@ function bodyNote(op: any, target: { values: string, once?: string, binary?: boo
       ': a `content-type` header option that is not JSON replaces the declared one.' : '') +
     (0 < encoded.length ? ' Its other endpoints declare ' + codeList(encoded) +
       ' bodies, which this SDK sends as JSON.' : '') +
+    '\n\n'
+}
+
+
+const ENCODING_TIERS = ['encoded', 'streamed', 'resumable']
+
+
+function encodedNote(rb: any, target: { source?: string }): string {
+  const fields: any[] = Array.isArray(rb.fields) ? rb.fields : []
+  const files = fields.filter((f: any) => true === f?.binary).map((f: any) => String(f.name))
+  const how = 'form' === rb.kind ? 'form-encoded' : 'as multipart parts'
+  return 'Sends its data ' + how + ', as `' + rb.media + '`.' +
+    (0 < files.length ? ' ' + (1 === files.length ? 'The field ' : 'The fields ') +
+      codeList(files) + ' ' + (1 === files.length ? 'carries' : 'carry') +
+      ' a file: pass ' + (target.source ?? 'a binary source') +
+      ', or bytes; a string there is sent as its content, never read as a path.' : '') +
     '\n\n'
 }
 

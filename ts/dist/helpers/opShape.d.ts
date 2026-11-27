@@ -17,6 +17,19 @@ declare function entityActions(entity: any): {
     action: string;
     path: string;
 }[];
+type BinarySlot = {
+    name: string;
+    action: string;
+    read?: string;
+    write?: string;
+};
+declare function entitySlots(entity: any): BinarySlot[];
+declare function modelCodecs(model: any): {
+    form: boolean;
+    multipart: boolean;
+    raw: boolean;
+    slots: boolean;
+};
 declare function entityPath(entity: any): string;
 type DirectRoute = {
     path: string;
@@ -63,5 +76,5 @@ declare function pickExampleEntity(entity: any): {
 };
 declare function entityDataIdField(ent: any): string | null;
 declare function entityRecordIdField(ent: any): string;
-export { CANON_OP_ORDER, OP_SUFFIX, bodyFieldNames, deriveEntityNames, entityCollection, opTypeName, opParams, selectablePoints, pointRequires, opReachable, opNeedsAction, ownPoint, opActions, entityActions, entityPath, directRoute, opRequestShape, entityIdField, entityDataIdField, entityRecordIdField, entityOps, introOps, generatedOps, invalidRequest, entityPrimaryOp, pickExampleEntity, entityClassName, entityConstructorName, entityTypeCollisions, warnEntityTypeCollisions, ungeneratedOps, warnUngeneratedOps, };
-export type { DirectRoute, OpShapeItem, UngeneratedOp, };
+export { CANON_OP_ORDER, OP_SUFFIX, bodyFieldNames, deriveEntityNames, entityCollection, opTypeName, opParams, selectablePoints, pointRequires, opReachable, opNeedsAction, ownPoint, opActions, entityActions, entitySlots, modelCodecs, entityPath, directRoute, opRequestShape, entityIdField, entityDataIdField, entityRecordIdField, entityOps, introOps, generatedOps, invalidRequest, entityPrimaryOp, pickExampleEntity, entityClassName, entityConstructorName, entityTypeCollisions, warnEntityTypeCollisions, ungeneratedOps, warnUngeneratedOps, };
+export type { BinarySlot, DirectRoute, OpShapeItem, UngeneratedOp, };

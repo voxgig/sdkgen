@@ -49,6 +49,7 @@ import {
 } from './nonjsonprobes'
 import { HOOK_KINDS, HOOK_PROBES, hookCounts } from './hookprobes'
 import { LOAD_LIVE, LOAD_PROBES, loadOutcomes } from './loadprobes'
+import { CODEC_MODEL } from './codeccases'
 
 
 // A list requiring a Lua keyword and `__proto__`, which an object literal must compute.
@@ -12011,4 +12012,106 @@ describe('probes driven through a generated SDK', () => {
       })
     }
   }
+})
+
+
+// A target that encodes bodies ships a suite that drives every form,
+// multipart and raw point through a real entity operation against a local
+// listener, and prints `codec: ran N case(s), F failed`. Adding a target is
+// a row here and its tier in its model.
+type CodecLane = {
+  target: string
+  runner: string
+  needs: string
+  prepare?: (sdkroot: string) => string | null
+  command: () => { bin: string, args: string[], env?: NodeJS.ProcessEnv } | null
+}
+
+const CODEC_LINE = /codec: ran (\d+) case\(s\), (\d+) failed/
+
+const CODEC_LANES: CodecLane[] = [
+  {
+    target: 'ts',
+    runner: 'test/codec.test.ts',
+    needs: 'the local typescript (run `npm install`)',
+    prepare: (sdkroot) => {
+      linkDeps(sdkroot)
+      const src = tsc(sdkroot, 'src')
+      if (!src.ok) return 'generated src does not compile:\n' + tail(src.out)
+      const suite = tsc(sdkroot, 'test')
+      return suite.ok ? null : 'the generated test suite does not compile:\n' + tail(suite.out)
+    },
+    command: () => Fs.existsSync(TSC) ? {
+      bin: process.execPath,
+      args: ['--test', '--test-reporter=tap', Path.join('dist-test', 'codec.test.js')],
+      env: nestedTestEnv(),
+    } : null,
+  },
+  {
+    target: 'js',
+    runner: 'test/codec.test.js',
+    needs: 'node',
+    prepare: (sdkroot) => {
+      linkDeps(sdkroot)
+      return null
+    },
+    command: () => ({
+      bin: process.execPath,
+      args: ['--test', '--test-reporter=tap', Path.join('test', 'codec.test.js')],
+      env: nestedTestEnv(),
+    }),
+  },
+]
+
+
+describe('the body codecs run from a generated SDK', () => {
+
+  let tmp = ''
+
+  before(() => {
+    tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-codec-'))
+  })
+
+  after(() => {
+    if ('' !== tmp) Fs.rmSync(tmp, { recursive: true, force: true })
+  })
+
+  for (const lane of CODEC_LANES) {
+    test(lane.target + ': codec lane: every body point round-trips through a listener', async (t) => {
+      const sdkroot = Path.join(tmp, lane.target)
+      const files = await generateTo(lane.target, sdkroot, CODEC_MODEL)
+
+      ok(null != files[lane.runner], 'the codec suite was not generated into the SDK: expected ' +
+        lane.runner + ' among ' + Object.keys(files).length + ' files')
+
+      const cmd = lane.command()
+      if (null == cmd) {
+        return t.skip('no usable ' + lane.target + ' toolchain here (' + lane.needs + ')')
+      }
+
+      const notready = null == lane.prepare ? null : lane.prepare(sdkroot)
+      ok(null == notready, lane.target + ': ' + notready)
+
+      const ran = run(cmd.bin, cmd.args, sdkroot, cmd.env)
+      if (ran.unlaunchable) {
+        return t.skip(lane.target + ': the toolchain could not be started here: ' + tail(ran.out, 3))
+      }
+
+      ok(ran.ok, 'the codec suite FAILED against the generated ' + lane.target + ' SDK:\n' +
+        tail(ran.out, 60))
+      const line = ran.out.match(CODEC_LINE)
+      ok(null != line, 'the ' + lane.target + ' codec suite did not report what it ran:\n' +
+        tail(ran.out))
+      ok(0 < Number(line![1]), 'the ' + lane.target + ' codec suite ran nothing')
+      strictEqual(Number(line![2]), 0, 'the ' + lane.target + ' codec suite reported failures')
+    })
+  }
+
+  test('a model without body codecs ships no codec source and no codec suite', async () => {
+    for (const target of ['ts', 'js']) {
+      const files = await generateTo(target, Path.join(tmp, 'plain-' + target))
+      deepStrictEqual(Object.keys(files).filter((f) => /codec/i.test(f)),
+        ['src/utility/codec/index.' + target], target + ' ships codec source it does not use')
+    }
+  })
 })
