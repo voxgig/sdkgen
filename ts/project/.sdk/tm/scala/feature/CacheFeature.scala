@@ -166,7 +166,7 @@ class CacheFeature extends BaseFeature("cache", "0.0.1", true) {
     val it = this.store.entrySet().iterator()
     while (it.hasNext) {
       val e = it.next()
-      if (CacheFeature.under(e.getValue.scope, path) || CacheFeature.under(e.getValue.scope, collection)) {
+      if (CacheFeature.under(e.getValue.scope, path) || e.getValue.scope == collection) {
         dropped.add(e.getKey)
       }
     }

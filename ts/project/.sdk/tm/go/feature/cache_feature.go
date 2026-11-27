@@ -160,7 +160,7 @@ func (f *CacheFeature) invalidate(url string) {
 	path := cacheScope(url)
 	collection := cacheParent(path)
 	for key, entry := range f.store {
-		if cacheUnder(entry.scope, path) || cacheUnder(entry.scope, collection) {
+		if cacheUnder(entry.scope, path) || entry.scope == collection {
 			f.drop(key)
 		}
 	}

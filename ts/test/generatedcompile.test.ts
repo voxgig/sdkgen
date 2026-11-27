@@ -5435,6 +5435,22 @@ const CORPUS_FIXTURE: { feature: Record<string, any> } = {
             out: { hit: 0, miss: 2 },
           },
           {
+            name: 'a write to one collection keeps another collection\'s entry',
+            feature: [{ name: 'cache', active: true, ttl: 10000 }],
+            op: [{ op: '#OTHER' }, { op: '#WRITE' }, { op: '#OTHER' }],
+            out: { hit: 1, miss: 1 },
+          },
+          {
+            name: 'an update to an item drops the item\'s list',
+            feature: [{ name: 'cache', active: true, ttl: 10000 }],
+            op: [
+              { op: '#READ' },
+              { op: '#ITEM', args: { id: 'corpus-item' } },
+              { op: '#READ' },
+            ],
+            out: { hit: 0, miss: 2 },
+          },
+          {
             name: 'a response marked no-store is not stored',
             feature: [{ name: 'cache', active: true, ttl: 10000 }],
             res: [{ status: 200, headers: { 'Cache-Control': 'no-store' }, body: {} }],

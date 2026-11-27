@@ -804,7 +804,7 @@ fn feature_cache_a_write_drops_its_collection() {
     let (server, calls) = fh_recorder(None);
     let f = Rc::new(RefCell::new(CacheFeature::new()));
     let h = fh_make(Some(server), vec![(fr(&f), jo(vec![("ttl", Value::Num(10000.0))]))]);
-    let paths = ["/w/1", "/w", "/w/1/part", "/other/1"];
+    let paths = ["/w/1", "/w", "/w/1/part", "/other/1", "/w/2"];
     for p in paths {
         fh_cache_load(&h, p, Value::Noval);
     }
@@ -817,8 +817,8 @@ fn feature_cache_a_write_drops_its_collection() {
     for p in paths {
         fh_cache_load(&h, p, Value::Noval);
     }
-    assert_eq!(calls.borrow().len(), 8, "expected the collection refetched and /other cached");
-    assert_eq!(f.borrow().track.borrow().hit, 1, "expected /other served from cache");
+    assert_eq!(calls.borrow().len(), 9, "expected the collection refetched and /other cached");
+    assert_eq!(f.borrow().track.borrow().hit, 2, "expected /other served from cache");
 }
 
 #[test]

@@ -512,12 +512,12 @@ test "feature cache: a write drops its collection" {
     const f = sdk.CacheFeature.make();
     const cf: *sdk.CacheFeature = @ptrCast(@alignCast(f.ptr));
     const hh = fh.fh_make(rec.fetcher(), &.{.{ .feat = f, .options = h.jo(&.{.{ "ttl", h.vnum(10000) }}) }});
-    const paths = [_][]const u8{ "/w/1", "/w", "/w/1/part", "/other/1" };
+    const paths = [_][]const u8{ "/w/1", "/w", "/w/1/part", "/other/1", "/w/2" };
     for (paths) |p| _ = hh.op(.{ .op = "load", .path = p });
     _ = hh.op(.{ .op = "update", .method = "PUT", .path = "/w/1" });
     for (paths) |p| _ = hh.op(.{ .op = "load", .path = p });
-    try testing.expect(rec.count() == 8);
-    try testing.expect(cf.track.hit == 1);
+    try testing.expect(rec.count() == 9);
+    try testing.expect(cf.track.hit == 2);
 }
 
 test "feature cache: Cache-Control prevents storing" {

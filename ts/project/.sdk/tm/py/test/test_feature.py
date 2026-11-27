@@ -383,14 +383,14 @@ class TestCacheFeature:
         server, calls = recording_server()
         h = make_client([{"name": "cache", "options": {"ttl": 10000}}],
                         server=server)
-        paths = ["/w/1", "/w", "/w/1/part", "/other/1"]
+        paths = ["/w/1", "/w", "/w/1/part", "/other/1", "/w/2"]
         for path in paths:
             h.op(op="load", path=path)
         h.op(op="update", method="PUT", path="/w/1")
         for path in paths:
             h.op(op="load", path=path)
-        assert len(calls) == 8
-        assert h.client._cache["hit"] == 1
+        assert len(calls) == 9
+        assert h.client._cache["hit"] == 2
 
     def test_cache_control_prevents_storing(self):
         for control in ["no-store", "private", "No-Cache", "max-age=60, private"]:

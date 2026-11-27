@@ -437,11 +437,11 @@ object SdkTestMain {
       eqI("cache.sameHeaders", 2, rec.calls.size()) }
     { val rec = new FhRecorder(); val f = new CacheFeature()
       val h = fhMake((c, u, fd) => rec.fetch(c, u, fd), fhF(f, om("ttl" -> I(10000))))
-      val paths = Seq("/w/1", "/w", "/w/1/part", "/other/1")
+      val paths = Seq("/w/1", "/w", "/w/1/part", "/other/1", "/w/2")
       paths.foreach(p => h.op(fhOp("load").withPath(p)))
       h.op(fhOp("update").withMethod("PUT").withPath("/w/1"))
       paths.foreach(p => h.op(fhOp("load").withPath(p)))
-      eqI("cache.writeDrops", 8, rec.calls.size()); eqI("cache.writeKeepsOther", 1, f.hit) }
+      eqI("cache.writeDrops", 9, rec.calls.size()); eqI("cache.writeKeepsOther", 2, f.hit) }
     for (control <- Seq("no-store", "private", "No-Cache", "max-age=60, private")) {
       val rec = new FhRecorder()
       rec.reply = (n, fd) => fhResponse(200, om("ok" -> B(true)), om("Cache-Control" -> control))

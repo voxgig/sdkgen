@@ -1,7 +1,10 @@
 // Response caching for safe (read) requests, per client (mirrors
 // feature/cache.rs): see the features reference for the key, the write
-// invalidation and the Cache-Control rules. C has no HMAC in its standard
-// library, so the header digest is SipHash-2-4 under a random per-client key.
+// invalidation and the Cache-Control rules.
+
+// C has no HMAC: SipHash-2-4 under a random per-client key separates header
+// sets within one store without holding a header value. It is not a
+// cryptographic commitment.
 
 #include "sdk.h"
 
@@ -98,7 +101,7 @@ static uint64_t sip_le64(const uint8_t* p) {
   return v;
 }
 
-static uint64_t siphash24(const uint8_t key[16], const uint8_t* in, size_t len) {
+uint64_t feature_cache_siphash24(const uint8_t key[16], const uint8_t* in, size_t len) {
   uint64_t k0 = sip_le64(key), k1 = sip_le64(key + 8);
   uint64_t v0 = 0x736f6d6570736575ULL ^ k0, v1 = 0x646f72616e646f6dULL ^ k1;
   uint64_t v2 = 0x6c7967656e657261ULL ^ k0, v3 = 0x7465646279746573ULL ^ k1;
@@ -188,7 +191,7 @@ static char* digest(const uint8_t secret[16], voxgig_value* headers) {
   }
   free(pairs);
   char* hex = (char*)malloc(17);
-  snprintf(hex, 17, "%016llx", (unsigned long long)siphash24(secret, (const uint8_t*)text, at));
+  snprintf(hex, 17, "%016llx", (unsigned long long)feature_cache_siphash24(secret, (const uint8_t*)text, at));
   free(text);
   return hex;
 }
@@ -238,7 +241,7 @@ static void invalidate(CacheTrack* t, const char* url) {
   voxgig_map* store = voxgig_as_map(t->store);
   for (size_t i = store->len; i > 0; i--) {
     const char* scope = get_str(store->entries[i - 1].value, "scope");
-    if (scope && (scope_under(scope, path) || scope_under(scope, collection))) {
+    if (scope && (scope_under(scope, path) || strcmp(scope, collection) == 0)) {
       char* key = strdup(store->entries[i - 1].key);
       drop_entry(t, key);
       free(key);

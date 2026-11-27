@@ -16,7 +16,8 @@ main: kit: feature: cache: {
       ttl: 5000
       # maximum cached entries in this client's store (oldest evicted)
       max: 256
-      # cacheable request methods; any other but GET and HEAD is a write
+      # cacheable request methods; any other but GET and HEAD is a write, which
+      # drops its own path, everything under it and its parent path's entry
       methods: ['GET']
     }
   }

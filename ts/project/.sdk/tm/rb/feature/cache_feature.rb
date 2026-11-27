@@ -106,7 +106,7 @@ class ProjectNameCacheFeature < ProjectNameBaseFeature
     path = self.class.scope(url)
     collection = self.class.parent(path)
     @store.delete_if do |_k, e|
-      self.class.under(e["scope"], path) || self.class.under(e["scope"], collection)
+      self.class.under(e["scope"], path) || e["scope"] == collection
     end
   end
 

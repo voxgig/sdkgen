@@ -185,7 +185,7 @@ public class CacheFeature extends BaseFeature {
   private void invalidate(String url) {
     String path = scope(url);
     String collection = parent(path);
-    this.store.values().removeIf((e) -> under(e.scope, path) || under(e.scope, collection));
+    this.store.values().removeIf((e) -> under(e.scope, path) || e.scope.equals(collection));
   }
 
   // The configured ttl capped by the response's Cache-Control; zero when the

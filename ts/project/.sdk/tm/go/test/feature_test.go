@@ -662,7 +662,7 @@ func TestFeatureCache(t *testing.T) {
 	t.Run("a-write-drops-its-collection", func(t *testing.T) {
 		rec := &fhRecorder{}
 		h := fhMake(rec.fetch, fhF(feat.NewCacheFeature(), map[string]any{"ttl": 10000}))
-		paths := []string{"/w/1", "/w", "/w/1/part", "/other/1"}
+		paths := []string{"/w/1", "/w", "/w/1/part", "/other/1", "/w/2"}
 		for _, p := range paths {
 			h.op(fhOpSpec{op: "load", path: p})
 		}
@@ -670,7 +670,7 @@ func TestFeatureCache(t *testing.T) {
 		for _, p := range paths {
 			h.op(fhOpSpec{op: "load", path: p})
 		}
-		if len(rec.calls) != 8 {
+		if len(rec.calls) != 9 {
 			t.Errorf("expected the collection refetched and /other cached: %d calls", len(rec.calls))
 		}
 	})

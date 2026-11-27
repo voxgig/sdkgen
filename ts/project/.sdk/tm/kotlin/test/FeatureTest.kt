@@ -471,7 +471,7 @@ class FeatureTest {
     val rec = FhRecorder()
     val f = CacheFeature()
     val h = fhMake(rec::fetch, fhF(f, fhMap("ttl", 10000)))
-    val paths = listOf("/w/1", "/w", "/w/1/part", "/other/1")
+    val paths = listOf("/w/1", "/w", "/w/1/part", "/other/1", "/w/2")
     for (p in paths) {
       h.op(fhOp("load").path(p))
     }
@@ -479,8 +479,8 @@ class FeatureTest {
     for (p in paths) {
       h.op(fhOp("load").path(p))
     }
-    assertEquals(8, rec.calls.size, "expected the collection refetched and /other cached")
-    assertEquals(1, f.hit, "expected /other served from cache")
+    assertEquals(9, rec.calls.size, "expected the collection refetched and /other cached")
+    assertEquals(2, f.hit, "expected /other served from cache")
   }
 
   @Test

@@ -227,7 +227,7 @@ fn invalidate(track: *CacheTrack, url: []const u8) void {
     var it = track.store.iterator();
     while (it.next()) |kv| {
         const scope = kv.value_ptr.scope;
-        if (scopeUnder(scope, path) or scopeUnder(scope, collection)) {
+        if (scopeUnder(scope, path) or std.mem.eql(u8, scope, collection)) {
             dropped.append(h.A(), kv.key_ptr.*) catch {};
         }
     }

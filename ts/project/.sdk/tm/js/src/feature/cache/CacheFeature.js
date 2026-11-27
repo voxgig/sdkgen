@@ -115,7 +115,7 @@ class CacheFeature extends BaseFeature {
     const path = urlScope(url)
     const collection = urlParent(path)
     for (const [key, entry] of this._store) {
-      if (scopeUnder(entry.scope, path) || scopeUnder(entry.scope, collection)) {
+      if (scopeUnder(entry.scope, path) || entry.scope === collection) {
         this._store.delete(key)
       }
     }

@@ -226,10 +226,10 @@ tm/clojure/src/feature/timeout/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/validate/.gitkeep e3b0c44298fc
 tm/clojure/src/sdk/client.clj 7cc4c29b77f7
 tm/clojure/src/sdk/core.clj 920c89fc2457
-tm/clojure/src/sdk/features.clj 52383c72eed5
+tm/clojure/src/sdk/features.clj 158cb1d025ed
 tm/clojure/src/voxgig/struct.clj 007fea2d9426
 tm/clojure/test/sdk/test/concurrency.clj a9bfd623695b
-tm/clojure/test/sdk/test/feature.clj 889886b26a0d
+tm/clojure/test/sdk/test/feature.clj b8de47e57c2a
 tm/clojure/test/sdk/test/feature/secrets.clj bda002c19167
 tm/clojure/test/sdk/test/netsim.clj 2e797c353a8b
 tm/clojure/test/sdk/test/omni.clj cabff67d9640
@@ -490,7 +490,7 @@ tm/elixir/src/feature/README.md 7a6d4b091ddd
 tm/elixir/src/feature/base/.gitkeep e3b0c44298fc
 tm/elixir/src/feature/test/.gitkeep e3b0c44298fc
 tm/elixir/test/concurrency_test.exs bbac080182cb
-tm/elixir/test/feature_test.exs 0776a15cb6a3
+tm/elixir/test/feature_test.exs 28352889ebec
 tm/elixir/test/netsim_test.exs d9459f10a6c7
 tm/elixir/test/omni_smoke_test.exs d79d4e7faab8
 tm/elixir/test/pipeline_test.exs 910701219185
@@ -566,7 +566,7 @@ tm/go/src/feature/base/.gitkeep e3b0c44298fc
 tm/go/src/feature/test/.gitkeep e3b0c44298fc
 tm/go/test/concurrency_test.go 99c5e9de0fa7
 tm/go/test/custom_utility_test.go eaa31da36d92
-tm/go/test/feature_corpus_test.go cf78569c52a0
+tm/go/test/feature_corpus_test.go ff1aeac86fae
 tm/go/test/feature_harness_test.go 3be4a16626d6
 tm/go/test/netsim_test.go 30f992e9d5c0
 tm/go/test/omni/omni.go bbcf2b9f6e21
@@ -708,7 +708,7 @@ tm/java/src/feature/test/.gitkeep e3b0c44298fc
 tm/java/test/ConcurrencyTest.java a8f187138c32
 tm/java/test/CustomUtilityTest.java 92703abdc486
 tm/java/test/ExistsTest.java 6b1f749bac90
-tm/java/test/FeatureCorpusTest.java 792db980c950
+tm/java/test/FeatureCorpusTest.java 0a7ed9a00927
 tm/java/test/FeatureHarness.java c3fef6278d9a
 tm/java/test/NetsimTest.java 9969f77c3cb3
 tm/java/test/OmniResolver.java 54333ccce204
@@ -858,7 +858,7 @@ tm/js/test/README.md e621bcce9282
 tm/js/test/definition-runner.js 159cbf5d1b8b
 tm/js/test/exists.test.js ba7655664d5c
 tm/js/test/feature.test.js 4e764071c3d0
-tm/js/test/feature/Corpus.test.js b3d2ed38b63f
+tm/js/test/feature/Corpus.test.js 2319b8c3b861
 tm/js/test/feature/harness.js 863ebec3d3af
 tm/js/test/live-contract.js 348bc8916e69
 tm/js/test/live-entity.js 65f42e90b65d
@@ -1032,7 +1032,7 @@ tm/lua/src/feature/README.md 74fc01b8a34f
 tm/lua/src/feature/base/.gitkeep e3b0c44298fc
 tm/lua/src/feature/test/.gitkeep e3b0c44298fc
 tm/lua/test/extend_test.lua 35b3bac8ebbd
-tm/lua/test/feature_test.lua 3c92426d0b74
+tm/lua/test/feature_test.lua e48237318d0a
 tm/lua/test/netsim_test.lua 1b5b020902a3
 tm/lua/test/omni.lua a726441f6dff
 tm/lua/test/omni_smoke_test.lua f889b585f462
@@ -1120,7 +1120,7 @@ src/cmp/ocaml/fragment/RunOp.fragment.ml fe471fb75caa
 src/cmp/ocaml/tsconfig.json 720a3f229019
 src/cmp/ocaml/utility_ocaml.ts 41c5dce373e6
 tm/ocaml/Makefile 9cd7fa6d512e
-tm/ocaml/sdk_features.ml 30aca7ea3452
+tm/ocaml/sdk_features.ml 2a0d2fed374e
 tm/ocaml/sdk_helpers.ml 24933d1c5031
 tm/ocaml/sdk_json.ml 7514a4177ebb
 tm/ocaml/sdk_runtime.ml c5bd39002de3
@@ -1135,7 +1135,7 @@ tm/ocaml/test/omni_resolver.ml d4b483a5a08d
 tm/ocaml/test/omni_smoke_test.ml 3045df404dfa
 tm/ocaml/test/primary_utility_test.ml ee5eb57408a8
 tm/ocaml/test/struct_corpus.ml 594f9fc91102
-tm/ocaml/test/t_feature.ml 44e435ee0611
+tm/ocaml/test/t_feature.ml 0cdbcbe07e35
 tm/ocaml/test/t_main.ml a468eae08da5
 tm/ocaml/test/t_pipeline.ml 135b82d775d0
 tm/ocaml/test/testutil.ml d06c690245b6
@@ -1200,8 +1200,8 @@ tm/perl/lib/Voxgig/Struct.pm d05692fc7f71
 tm/perl/src/feature/README.md 74fc01b8a34f
 tm/perl/src/feature/base/.gitkeep e3b0c44298fc
 tm/perl/src/feature/test/.gitkeep e3b0c44298fc
-tm/perl/t/feature.t 498ee50448eb
-tm/perl/t/feature_corpus.t 7a9f659c3587
+tm/perl/t/feature.t fd6a3005ebd2
+tm/perl/t/feature_corpus.t e94df54cfef5
 tm/perl/t/netsim.t e5829249c5e9
 tm/perl/t/omni.pm e41879005117
 tm/perl/t/omni_smoke.t 5b5284fad82f
@@ -1304,8 +1304,8 @@ tm/php/feature/TestFeature.php d07f7174a250
 tm/php/src/feature/README.md 74fc01b8a34f
 tm/php/src/feature/base/.gitkeep e3b0c44298fc
 tm/php/src/feature/test/.gitkeep e3b0c44298fc
-tm/php/test/FeatureCorpusTest.php 8fa3820eb596
-tm/php/test/FeatureTest.php dd6433cab388
+tm/php/test/FeatureCorpusTest.php a1e6a0c8689f
+tm/php/test/FeatureTest.php 0454baf97dc4
 tm/php/test/NetsimTest.php fac241d6b75a
 tm/php/test/Omni.php ae0461d4f350
 tm/php/test/OmniSmokeTest.php cad939a73897
@@ -1450,8 +1450,8 @@ tm/py/test/omni.py a0c2cbc9c182
 tm/py/test/runner.py 7964af9c58d8
 tm/py/test/sdk-test-control.json ea9bf9046c8a
 tm/py/test/test_concurrency.py 884ffdf859a2
-tm/py/test/test_feature.py 251f02b0c646
-tm/py/test/test_feature_corpus.py b70635e5e29d
+tm/py/test/test_feature.py d7dbf6f78aea
+tm/py/test/test_feature_corpus.py c873436d73dc
 tm/py/test/test_netsim.py 1583f97d2c84
 tm/py/test/test_omni_smoke.py abeaa5fc717b
 tm/py/test/test_pipeline.py e6b2539fab2c
@@ -1540,8 +1540,8 @@ tm/rb/src/feature/README.md 74fc01b8a34f
 tm/rb/src/feature/base/.gitkeep e3b0c44298fc
 tm/rb/src/feature/test/.gitkeep e3b0c44298fc
 tm/rb/test/concurrency_test.rb 8d49fd7a63bc
-tm/rb/test/feature_corpus_test.rb fcb9d39e8f75
-tm/rb/test/feature_test.rb afeabdff14a1
+tm/rb/test/feature_corpus_test.rb 0e391c451d61
+tm/rb/test/feature_test.rb 7535a0b8f950
 tm/rb/test/netsim_test.rb bc7d9265bec9
 tm/rb/test/omni.rb a43cb54f434a
 tm/rb/test/omni_smoke_test.rb b39afea20e26
@@ -1764,7 +1764,7 @@ tm/scala/core/Types.scala 0210b2e93427
 tm/scala/core/Utility.scala c81acfe25798
 tm/scala/feature/AuditFeature.scala 25d0799b1b72
 tm/scala/feature/BaseFeature.scala 0c6439fca620
-tm/scala/feature/CacheFeature.scala a4af60d131e6
+tm/scala/feature/CacheFeature.scala cdc8effe0062
 tm/scala/feature/ClienttrackFeature.scala a25ea3610993
 tm/scala/feature/CostFeature.scala f2777eba14cd
 tm/scala/feature/DebugFeature.scala f5dfb38ae865
@@ -1822,7 +1822,7 @@ tm/scala/sdktest/ConcurrencyTest.scala f27840bb67d8
 tm/scala/sdktest/OmniResolver.scala 2bbd5639ca7c
 tm/scala/sdktest/OmniSmoke.scala 5c22c83fb51f
 tm/scala/sdktest/PrimaryCorpus.scala 5027deb5208b
-tm/scala/sdktest/SdkTestMain.scala 91ab2822e6d7
+tm/scala/sdktest/SdkTestMain.scala 8e0a46a5f9f6
 tm/scala/sdktest/SdkTestSupport.scala 9a0a70dcb153
 tm/scala/sdktest/ServerVariableTest.scala 0c041b23fd44
 tm/scala/sdktest/StructCorpus.scala c6453791202c
@@ -2077,7 +2077,7 @@ tm/ts/test/README.md 087d364e7b4f
 tm/ts/test/definition-runner.ts 586faea432cb
 tm/ts/test/exists.test.ts 0b0e94cf2d76
 tm/ts/test/feature.test.ts 712f87836ed1
-tm/ts/test/feature/Corpus.test.ts af3deedec89f
+tm/ts/test/feature/Corpus.test.ts b025878046d9
 tm/ts/test/feature/harness.ts 4989033b7298
 tm/ts/test/live-contract.ts 54ee4d2e6fe6
 tm/ts/test/live-entity.ts 8746be16e63b
@@ -2157,7 +2157,7 @@ tm/zig/core/types.zig 06a853449e9c
 tm/zig/core/utility.zig 24ed207697cd
 tm/zig/feature/audit.zig 83a49d77a34a
 tm/zig/feature/base.zig ca0fa806bb43
-tm/zig/feature/cache.zig 5b570b321469
+tm/zig/feature/cache.zig 104a4d60495a
 tm/zig/feature/clienttrack.zig c83ed2b08d81
 tm/zig/feature/cost.zig 2c3882a47898
 tm/zig/feature/debug.zig b2098ff40efa
@@ -2233,7 +2233,7 @@ tm/zig/src/feature/test/.gitkeep e3b0c44298fc
 tm/zig/src/feature/timeout/.gitkeep e3b0c44298fc
 tm/zig/src/feature/validate/.gitkeep e3b0c44298fc
 tm/zig/test/feature/secrets/secrets_test.zig 055dca65cd4b
-tm/zig/test/feature_test.zig 55222746c2bc
+tm/zig/test/feature_test.zig 7721c03893f9
 tm/zig/test/fh.zig 4a248b2bc6b7
 tm/zig/test/gotcha_test.zig d235341e8986
 tm/zig/test/omniresolver.zig d7def53f0590

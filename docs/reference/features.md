@@ -524,15 +524,18 @@ uses a keyed hash it does have:
 
 A request whose method is neither GET nor HEAD, and is not listed in
 `methods`, is a write. It passes through to the transport, and afterwards,
-whether or not it succeeded, the cache drops every entry under the same
-entity collection. Take the URL path the write was sent to, and the same
-path with its last segment removed. An entry is dropped when its path
-equals either of those, or lies under either. A `PUT /planet/p1` drops `/planet/p1`,
-`/planet`, `/planet/p1/moon` and every other `/planet/...` entry. Entries
-on another host, or under another collection, stay. A query string plays
-no part in the match. A write to a top-level collection, such as
-`POST /planet`, has the root as its parent path, so it drops every entry
-for that host.
+whether or not it succeeded, the cache drops two kinds of entry, matched
+on the URL path with any query string ignored:
+
+- every entry whose path is the path the write was sent to, or lies under it;
+- every entry whose path is exactly that path's parent, the
+  collection listing the write has made stale.
+
+Nothing else is dropped, and in particular nothing else under the parent.
+A `PUT /planet/p1` drops `/planet/p1`, `/planet/p1/moon` and every
+`/planet` listing, but keeps `/planet/p2` and anything under `/moon`. A
+`POST /planet` drops every `/planet` listing, everything under `/planet`
+and the exact root listing, and keeps the other collections.
 
 ### `Cache-Control`
 
@@ -544,8 +547,9 @@ The response's `Cache-Control` header is read before anything is stored:
   than `ttl`. It never extends `ttl`.
 
 `Expires`, `ETag` and conditional revalidation are out of scope: the cache
-does not read `Expires`, does not send `If-None-Match`, and treats
-`no-cache` as `no-store` rather than asking the server again.
+does not read `Expires` and does not send `If-None-Match`. A `no-cache`
+response may be stored only if it is checked with the server again before
+reuse, and since that check is out of scope, the cache does not store it.
 
 **Notes.** `client._cache` counts `hit`, `miss` and `bypass` (a request
 that was cacheable by method but whose response was not stored).
@@ -559,7 +563,7 @@ tenant its own client, or send the tenant as a header.
 **Migration.** Before this release the key was the method and URL alone,
 no response header was read, and a write left the store untouched. A
 repeat of a GET with different headers now goes to the network, a write
-drops its collection's entries, and a response marked `no-store` or with
+drops its own entries and its parent listing, and a response marked `no-store` or with
 a short `max-age` is cached for less time or not at all. A consumer that
 relied on a shared entry across credentials gets one entry per credential.
 

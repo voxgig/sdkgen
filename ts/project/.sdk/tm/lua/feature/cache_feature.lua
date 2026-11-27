@@ -2,8 +2,11 @@
 --
 -- Response caching for safe (read) requests, per client: see the features
 -- reference for the key, the write invalidation and the Cache-Control
--- rules. Lua has no HMAC, so the header digest is SipHash-2-4 under a
--- random per-client key.
+-- rules.
+
+-- Lua has no HMAC: SipHash-2-4 under a random per-client key separates
+-- header sets within one store without holding a header value. It is not a
+-- cryptographic commitment.
 
 local BaseFeature = require("feature.base_feature")
 local media = require("utility.media")
@@ -62,6 +65,9 @@ end
 
 -- The system's random source where it has one; otherwise math.random, which
 -- is not a cryptographic generator.
+CacheFeature._siphash24 = siphash24
+
+
 local function cache_secret()
   local f = io.open("/dev/urandom", "rb")
   local bytes = f and f:read(16) or ""
@@ -277,7 +283,7 @@ function CacheFeature:_invalidate(url)
   local collection = url_parent(path)
   local dropped = {}
   for key, entry in pairs(self.store) do
-    if scope_under(entry.scope, path) or scope_under(entry.scope, collection) then
+    if scope_under(entry.scope, path) or entry.scope == collection then
       table.insert(dropped, key)
     end
   end

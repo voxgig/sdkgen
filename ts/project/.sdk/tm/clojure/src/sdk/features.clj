@@ -559,7 +559,7 @@
                                (fn [store]
                                  (into {} (remove (fn [[_ e]] (let [scope (mget e "scope")]
                                                                 (or (cache-under? scope path)
-                                                                    (cache-under? scope collection))))
+                                                                    (= scope collection))))
                                                   store))))))
         through (fn [ctx url fetchdef inner]
                   (let [method (str/upper-case (str (or (and (vs/ismap fetchdef) (vs/getprop fetchdef "method")) "GET")))

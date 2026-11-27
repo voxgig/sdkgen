@@ -159,9 +159,25 @@ def _candidates(client):
     return out
 
 
-def _invoke(client, op, ctrl):
+def _invoke(client, op, ctrl, args=None):
     ent = getattr(client, op["accessor"])()
-    return getattr(ent, op["op"])({}, ctrl)
+    return getattr(ent, op["op"])(dict(args or {}), ctrl)
+
+
+ITEM_ARGS = {"id": "corpus-item"}
+
+
+def _usable_item(accessor):
+    """A write of one entity (#ITEM) that completes when driven with ITEM_ARGS."""
+    for cand in _candidates(_client({})):
+        if cand["accessor"] != accessor or cand["op"] not in ("update", "patch", "remove"):
+            continue
+        try:
+            _invoke(_client({}), cand, {}, ITEM_ARGS)
+        except Exception:
+            continue
+        return cand
+    return None
 
 
 def _usable_ops(want):
@@ -208,8 +224,8 @@ def _usable_pair():
 
 
 def _step(client, op, step, ctrl):
-    """One step: it may wait before its call, and may add request headers
-    for its call."""
+    """One step: it may wait before its call, may add request headers for
+    its call, and may pass `args` as the operation's first argument."""
     if step.get("wait") is not None:
         time.sleep(step["wait"] / 1000.0)
     options = client._rootctx.options
@@ -217,7 +233,7 @@ def _step(client, op, step, ctrl):
     if step.get("headers") is not None:
         options["headers"] = dict(prior or {}, **step["headers"])
     try:
-        return _invoke(client, op, ctrl)
+        return _invoke(client, op, ctrl, step.get("args"))
     finally:
         if step.get("headers") is not None:
             if prior is None:
@@ -362,6 +378,10 @@ class TestFeatureCorpus:
         if pair is not None:
             by_key[pair["read"]["key"]] = pair["read"]
             by_key[pair["write"]["key"]] = pair["write"]
+            pair["item"] = _usable_item(pair["read"]["accessor"])
+            if pair["item"] is not None:
+                by_key[pair["item"]["key"]] = pair["item"]
+            pair["other"] = next((o for o in ops if o["accessor"] != pair["read"]["accessor"]), None)
 
         ran = 0
         failed = []
@@ -373,10 +393,16 @@ class TestFeatureCorpus:
                     raw.get("name"), need, len(ops)))
                 continue
 
-            paired = re.search(r"#(READ|WRITE)\b", json.dumps(raw)) is not None
+            paired = re.search(r"#(READ|WRITE|ITEM|OTHER)\b", json.dumps(raw)) is not None
             if paired and pair is None:
                 print('skip "{}": needs a read and a write of one entity, this SDK offers none'.format(
                     raw.get("name")))
+                continue
+            lacking = next((tok for tok, role in (("#ITEM", "item"), ("#OTHER", "other"))
+                            if paired and pair[role] is None
+                            and re.search(tok + r"\b", json.dumps(raw))), None)
+            if lacking is not None:
+                print('skip "{}": needs {}, which this SDK cannot drive'.format(raw.get("name"), lacking))
                 continue
 
             missing = _missing_feature(raw, have)
@@ -391,6 +417,9 @@ class TestFeatureCorpus:
             if paired:
                 tokens["#READ"] = pair["read"]["key"]
                 tokens["#WRITE"] = pair["write"]["key"]
+                for tok, role in (("#ITEM", "item"), ("#OTHER", "other")):
+                    if pair[role] is not None:
+                        tokens[tok] = pair[role]["key"]
             kase = _resolve(raw, tokens)
             label = kase.get("name")
             ran += 1

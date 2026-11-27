@@ -657,12 +657,12 @@ if (has_feature('cache')) {
   {
     my ($server, $calls) = recording_server();
     my $h = harness([fspec('cache', 'ttl' => 10000)], server => $server);
-    my @paths = ('/w/1', '/w', '/w/1/part', '/other/1');
+    my @paths = ('/w/1', '/w', '/w/1/part', '/other/1', '/w/2');
     $h->op('path' => $_) for @paths;
     $h->op('opname' => 'update', 'method' => 'PUT', 'path' => '/w/1');
     $h->op('path' => $_) for @paths;
-    is(scalar @$calls, 8, 'cache write drops its collection');
-    is($h->track('_cache')->{hit}, 1, 'cache write keeps another entity');
+    is(scalar @$calls, 9, 'cache write drops its collection');
+    is($h->track('_cache')->{hit}, 2, 'cache write keeps another entity');
   }
 
   for my $control ('no-store', 'private', 'No-Cache', 'max-age=60, private') {

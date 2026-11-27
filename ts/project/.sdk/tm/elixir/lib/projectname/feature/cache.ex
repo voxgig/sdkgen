@@ -130,7 +130,7 @@ defmodule ProjectName.Feature.Cache do
     H.entries(store)
     |> Enum.filter(fn {_k, e} ->
       entry = S.getprop(e, "scope")
-      under?(entry, path) or under?(entry, collection)
+      under?(entry, path) or entry == collection
     end)
     |> Enum.each(fn {k, _e} -> S.delprop(store, k) end)
   end

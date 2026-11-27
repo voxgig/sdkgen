@@ -474,12 +474,12 @@ defmodule ProjectName.FeatureTest do
     if has?("cache") do
       {server, calls} = FH.recording_server()
       h = harness([fspec("cache", %{"ttl" => 10000})], %{server: server})
-      paths = ["/w/1", "/w", "/w/1/part", "/other/1"]
+      paths = ["/w/1", "/w", "/w/1/part", "/other/1", "/w/2"]
       Enum.each(paths, fn p -> FH.op(h, %{path: p}) end)
       FH.op(h, %{op: "update", method: "PUT", path: "/w/1"})
       Enum.each(paths, fn p -> FH.op(h, %{path: p}) end)
-      assert S.size(calls) == 8
-      assert S.getprop(track(h, "_cache"), "hit") == 1
+      assert S.size(calls) == 9
+      assert S.getprop(track(h, "_cache"), "hit") == 2
     end
   end
 

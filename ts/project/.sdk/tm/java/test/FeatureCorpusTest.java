@@ -203,9 +203,14 @@ public class FeatureCorpusTest {
 
   private static Object invoke(ProjectNameSDK client, Op op, Map<String, Object> ctrl)
       throws Exception {
+    return invoke(client, op, ctrl, new LinkedHashMap<String, Object>());
+  }
+
+  private static Object invoke(ProjectNameSDK client, Op op, Map<String, Object> ctrl,
+      Map<String, Object> args) throws Exception {
     Object ent = op.accessor.invoke(client, new Object[] {null});
     try {
-      return op.call.invoke(ent, new LinkedHashMap<String, Object>(), ctrl);
+      return op.call.invoke(ent, new LinkedHashMap<String, Object>(args), ctrl);
     }
     catch (java.lang.reflect.InvocationTargetException ite) {
       // Unwrap: a reflective call reports the SDK's error as its cause, and a
@@ -270,14 +275,40 @@ public class FeatureCorpusTest {
     return null;
   }
 
-  /** One step: it may wait before its call, and may add request headers for its call. */
+  private static final Map<String, Object> ITEM_ARGS = Map.of("id", "corpus-item");
+
+  private static String entityOf(Op op) {
+    return op.key.substring(0, op.key.indexOf('.'));
+  }
+
+  /** A write of one entity (#ITEM) that completes when driven with ITEM_ARGS. */
+  private static Op usableItem(String entity) {
+    for (Op cand : candidates(buildClient(Map.of()))) {
+      String opname = cand.key.substring(cand.key.indexOf('.') + 1);
+      if (!entity.equals(entityOf(cand)) || !List.of("update", "patch", "remove").contains(opname)) {
+        continue;
+      }
+      try {
+        invoke(buildClient(Map.of()), cand, new LinkedHashMap<>(), ITEM_ARGS);
+      }
+      catch (Exception e) {
+        continue;
+      }
+      return cand;
+    }
+    return null;
+  }
+
+  /** One step: it may wait, may add request headers, and may pass `args` as the first argument. */
   private static Object step(ProjectNameSDK client, Op op, Map<String, Object> step,
       Map<String, Object> ctrl) throws Exception {
     if (step.get("wait") instanceof Number) {
       Thread.sleep(((Number) step.get("wait")).longValue());
     }
+    Map<String, Object> args = step.get("args") instanceof Map
+        ? (Map<String, Object>) step.get("args") : new LinkedHashMap<>();
     if (!(step.get("headers") instanceof Map)) {
-      return invoke(client, op, ctrl);
+      return invoke(client, op, ctrl, args);
     }
     Map<String, Object> options = client.getRootCtx().options;
     boolean had = options.containsKey("headers");
@@ -289,7 +320,7 @@ public class FeatureCorpusTest {
     merged.putAll((Map<String, Object>) step.get("headers"));
     options.put("headers", merged);
     try {
-      return invoke(client, op, ctrl);
+      return invoke(client, op, ctrl, args);
     }
     finally {
       if (had) {
@@ -514,6 +545,17 @@ public class FeatureCorpusTest {
           byKey.put(o.key, o);
         }
       }
+      Op item = null == pair ? null : usableItem(entityOf(pair.get("read")));
+      if (null != item) {
+        byKey.put(item.key, item);
+      }
+      Op other = null;
+      for (Op o : null == pair ? List.<Op>of() : ops) {
+        if (!entityOf(o).equals(entityOf(pair.get("read")))) {
+          other = o;
+          break;
+        }
+      }
 
       int ran = 0;
       for (Object rawCase : cases) {
@@ -526,11 +568,24 @@ public class FeatureCorpusTest {
           continue;
         }
 
-        boolean paired = java.util.regex.Pattern.compile("#(READ|WRITE)\\b")
+        boolean paired = java.util.regex.Pattern.compile("#(READ|WRITE|ITEM|OTHER)\\b")
             .matcher(String.valueOf(rawCase)).find();
         if (paired && null == pair) {
           System.err.println(String.format(
               "skip \"%s\": needs a read and a write of one entity, this SDK offers none", rawName));
+          continue;
+        }
+
+        String lacking = null;
+        if (paired && null == item && String.valueOf(rawCase).matches("(?s).*#ITEM\\b.*")) {
+          lacking = "#ITEM";
+        }
+        else if (paired && null == other && String.valueOf(rawCase).matches("(?s).*#OTHER\\b.*")) {
+          lacking = "#OTHER";
+        }
+        if (null != lacking) {
+          System.err.println(String.format(
+              "skip \"%s\": needs %s, which this SDK cannot drive", rawName, lacking));
           continue;
         }
 
@@ -549,6 +604,12 @@ public class FeatureCorpusTest {
         if (paired) {
           tokens.put("#READ", pair.get("read").key);
           tokens.put("#WRITE", pair.get("write").key);
+          if (null != item) {
+            tokens.put("#ITEM", item.key);
+          }
+          if (null != other) {
+            tokens.put("#OTHER", other.key);
+          }
         }
         Map<String, Object> kase = (Map<String, Object>) resolve(rawCase, tokens);
         String label = String.valueOf(kase.get("name"));

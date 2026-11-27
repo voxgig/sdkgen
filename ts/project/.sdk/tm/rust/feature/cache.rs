@@ -30,8 +30,9 @@ pub struct CacheEntry {
 pub struct CacheTrack {
     store: HashMap<String, CacheEntry>,
     order: Vec<String>,
-    // The standard library has no HMAC; its SipHash, under random keys per
-    // client, is the keyed hash the header digest uses.
+    // No HMAC in std: SipHash under this client's random keys separates
+    // header sets within one store without holding a header value. It is not
+    // a cryptographic commitment.
     secret: RandomState,
 
     // Activity tracking (mirrors the ts client._cache record).
@@ -192,7 +193,7 @@ fn invalidate(t: &mut CacheTrack, url: &str) {
     let dropped: Vec<String> = t
         .store
         .iter()
-        .filter(|(_, e)| scope_under(&e.scope, &path) || scope_under(&e.scope, &collection))
+        .filter(|(_, e)| scope_under(&e.scope, &path) || e.scope == collection)
         .map(|(k, _)| k.clone())
         .collect();
     for key in dropped {

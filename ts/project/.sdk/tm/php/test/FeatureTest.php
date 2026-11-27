@@ -784,7 +784,7 @@ class FeatureTest extends TestCase
         $h = new FtHarness([
             ['name' => 'cache', 'options' => ['ttl' => 10000]],
         ], $rec->server());
-        $paths = ['/w/1', '/w', '/w/1/part', '/other/1'];
+        $paths = ['/w/1', '/w', '/w/1/part', '/other/1', '/w/2'];
         foreach ($paths as $p) {
             $h->op(['op' => 'load', 'path' => $p]);
         }
@@ -792,8 +792,8 @@ class FeatureTest extends TestCase
         foreach ($paths as $p) {
             $h->op(['op' => 'load', 'path' => $p]);
         }
-        $this->assertCount(8, $rec->calls);
-        $this->assertSame(1, $h->client->_cache['hit']);
+        $this->assertCount(9, $rec->calls);
+        $this->assertSame(2, $h->client->_cache['hit']);
     }
 
     public function test_cache_control_prevents_storing(): void

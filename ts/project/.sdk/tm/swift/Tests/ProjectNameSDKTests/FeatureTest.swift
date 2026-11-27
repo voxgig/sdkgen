@@ -619,12 +619,12 @@ final class FeatureCacheTest: XCTestCase {
     let rec = FhRecorder()
     let f = CacheFeature()
     let h = Fh.make(rec.fetch, (f, vm(("ttl", .int(10000)))))
-    let paths = ["/w/1", "/w", "/w/1/part", "/other/1"]
+    let paths = ["/w/1", "/w", "/w/1/part", "/other/1", "/w/2"]
     for p in paths { _ = h.op(FhOpSpec(op: "load", path: p)) }
     _ = h.op(FhOpSpec(op: "update", method: "PUT", path: "/w/1"))
     for p in paths { _ = h.op(FhOpSpec(op: "load", path: p)) }
-    XCTAssertEqual(rec.calls.count, 8)
-    XCTAssertEqual(f.hit, 1)
+    XCTAssertEqual(rec.calls.count, 9)
+    XCTAssertEqual(f.hit, 2)
   }
 
   func testCacheControlPreventsStoring() {

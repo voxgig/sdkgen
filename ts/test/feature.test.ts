@@ -397,22 +397,42 @@ describe('feature:cache', () => {
     ok(a !== b, 'two clients digested the same headers to the same key: ' + a)
   })
 
-  test('a write drops the entries of its entity collection', async () => {
+  test('a write drops its own subtree and its parent listing, and nothing else', async () => {
     const rec = recordingServer()
     const h = makeClient({
       features: [{ name: 'cache', options: { ttl: 10000 } }],
       server: rec.server,
     })
-    for (const path of ['/w/1', '/w', '/w/1/part', '/other/1']) {
+    const paths = ['/w/1', '/w/1/part', '/w', '/w?page=2', '/w/2', '/other/1', '/']
+    for (const path of paths) {
       await h.op({ op: 'load', path })
     }
-    strictEqual(rec.calls.length, 4)
+    strictEqual(rec.calls.length, 7)
     await h.op({ op: 'update', method: 'PUT', path: '/w/1' })
-    strictEqual(rec.calls.length, 5)
-    for (const path of ['/w/1', '/w', '/w/1/part', '/other/1']) {
+    strictEqual(rec.calls.length, 8)
+    for (const path of paths) {
       await h.op({ op: 'load', path })
     }
-    strictEqual(rec.calls.length, 8, 'the collection refetched, the other entity stayed cached')
+    strictEqual(rec.calls.length, 12, 'the item, its subtree and its list refetched; the sibling, ' +
+      'the other collection and the root stayed cached')
+    strictEqual(h.client._cache.hit, 3)
+  })
+
+  test('a write to a collection keeps a sibling collection and drops the root listing', async () => {
+    const rec = recordingServer()
+    const h = makeClient({
+      features: [{ name: 'cache', options: { ttl: 10000 } }],
+      server: rec.server,
+    })
+    const paths = ['/w', '/w?page=2', '/w/1', '/other', '/']
+    for (const path of paths) {
+      await h.op({ op: 'load', path })
+    }
+    await h.op({ op: 'create', path: '/w' })
+    for (const path of paths) {
+      await h.op({ op: 'load', path })
+    }
+    strictEqual(rec.calls.length, 5 + 1 + 4, 'only /other stayed cached')
     strictEqual(h.client._cache.hit, 1)
   })
 

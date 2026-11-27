@@ -262,8 +262,9 @@ let ratelimit_feature () : feature =
 (* cache                                                               *)
 (* ------------------------------------------------------------------ *)
 
-(* OCaml's standard library has no HMAC; this is HMAC-MD5 built over Digest,
-   which is the keyed hash the header digest uses. *)
+(* No HMAC in the stdlib: HMAC-MD5 over Digest separates header sets within
+   one client's store without holding a header value. It is not a
+   cryptographic commitment. *)
 let cache_hmac (key : string) (msg : string) : string =
   let key = if String.length key > 64 then Digest.string key else key in
   let key = key ^ String.make (64 - String.length key) '\000' in
@@ -381,7 +382,7 @@ let cache_feature () : feature =
     let collection = cache_parent path in
     store := List.filter (fun (_, e) ->
         let scope = vstr_of (getp e "scope") in
-        not (cache_under scope path || cache_under scope collection)) !store in
+        not (cache_under scope path || scope = collection)) !store in
   let through ctx url fetchdef inner =
     let meth = match getp fetchdef "method" with Str s -> string_upper s | _ -> "GET" in
     let methods = List.map string_upper (opt_str_list !options "methods" ~default:["GET"]) in

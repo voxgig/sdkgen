@@ -625,12 +625,12 @@ class FeatureTest < Minitest::Test
     skip_unless_feature("cache")
     server, calls = H.recording_server
     h = harness([fspec("cache", "ttl" => 10000)], server: server)
-    paths = ["/w/1", "/w", "/w/1/part", "/other/1"]
+    paths = ["/w/1", "/w", "/w/1/part", "/other/1", "/w/2"]
     paths.each { |p| h.op(path: p) }
     h.op(opname: "update", method: "PUT", path: "/w/1")
     paths.each { |p| h.op(path: p) }
-    assert_equal 8, calls.length
-    assert_equal 1, h.track(:@_cache)["hit"]
+    assert_equal 9, calls.length
+    assert_equal 2, h.track(:@_cache)["hit"]
   end
 
   def test_cache_control_prevents_storing

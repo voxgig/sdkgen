@@ -169,12 +169,31 @@ class FeatureCorpusTest extends TestCase
         return $out;
     }
 
-    private static function invoke($client, array $op, array $ctrl)
+    private static function invoke($client, array $op, array $ctrl, array $args = [])
     {
         $acc = $op['accessor'];
         $ent = $client->$acc();
         $fn = $op['op'];
-        return $ent->$fn([], $ctrl);
+        return $ent->$fn($args, $ctrl);
+    }
+
+    private const ITEM_ARGS = ['id' => 'corpus-item'];
+
+    /** A write of one entity (#ITEM) that completes when driven with ITEM_ARGS. */
+    private static function usableItem(string $accessor): ?array
+    {
+        foreach (self::candidates(self::buildClient([])) as $cand) {
+            if ($cand['accessor'] !== $accessor || !in_array($cand['op'], ['update', 'patch', 'remove'], true)) {
+                continue;
+            }
+            try {
+                self::invoke(self::buildClient([]), $cand, [], self::ITEM_ARGS);
+            } catch (\Throwable $e) {
+                continue;
+            }
+            return $cand;
+        }
+        return null;
     }
 
     /**
@@ -226,19 +245,20 @@ class FeatureCorpusTest extends TestCase
         return null;
     }
 
-    /** One step: it may wait before its call, and may add request headers for its call. */
+    /** One step: it may wait, may add request headers, and may pass `args` as the first argument. */
     private static function step($client, array $op, array $step, array $ctrl)
     {
         if (isset($step['wait'])) {
             usleep((int)($step['wait'] * 1000));
         }
+        $args = is_array($step['args'] ?? null) ? $step['args'] : [];
         if (!isset($step['headers'])) {
-            return self::invoke($client, $op, $ctrl);
+            return self::invoke($client, $op, $ctrl, $args);
         }
         $prior = $client->options;
         $client->options['headers'] = array_merge($prior['headers'] ?? [], $step['headers']);
         try {
-            return self::invoke($client, $op, $ctrl);
+            return self::invoke($client, $op, $ctrl, $args);
         } finally {
             $client->options = $prior;
         }
@@ -435,6 +455,17 @@ class FeatureCorpusTest extends TestCase
             foreach ($pair ?? [] as $o) {
                 $byKey[$o['key']] = $o;
             }
+            $item = null === $pair ? null : self::usableItem($pair['read']['accessor']);
+            if (null !== $item) {
+                $byKey[$item['key']] = $item;
+            }
+            $other = null;
+            foreach (null === $pair ? [] : $ops as $o) {
+                if ($o['accessor'] !== $pair['read']['accessor']) {
+                    $other = $o;
+                    break;
+                }
+            }
 
             $ran = 0;
             foreach ($cases as $raw) {
@@ -445,11 +476,24 @@ class FeatureCorpusTest extends TestCase
                     continue;
                 }
 
-                $paired = 1 === preg_match('/#(READ|WRITE)\b/', json_encode($raw));
+                $paired = 1 === preg_match('/#(READ|WRITE|ITEM|OTHER)\b/', json_encode($raw));
                 if ($paired && null === $pair) {
                     fwrite(STDERR, sprintf(
                         "skip \"%s\": needs a read and a write of one entity, this SDK offers none\n",
                         $raw['name'] ?? ''));
+                    continue;
+                }
+
+                $lacking = null;
+                foreach (['#ITEM' => $item, '#OTHER' => $other] as $tok => $found) {
+                    if ($paired && null === $found && 1 === preg_match('/' . $tok . '\b/', json_encode($raw))) {
+                        $lacking = $tok;
+                        break;
+                    }
+                }
+                if (null !== $lacking) {
+                    fwrite(STDERR, sprintf("skip \"%s\": needs %s, which this SDK cannot drive\n",
+                        $raw['name'] ?? '', $lacking));
                     continue;
                 }
 
@@ -468,6 +512,12 @@ class FeatureCorpusTest extends TestCase
                 if ($paired) {
                     $tokens['#READ'] = $pair['read']['key'];
                     $tokens['#WRITE'] = $pair['write']['key'];
+                    if (null !== $item) {
+                        $tokens['#ITEM'] = $item['key'];
+                    }
+                    if (null !== $other) {
+                        $tokens['#OTHER'] = $other['key'];
+                    }
                 }
                 $kase = self::resolve($raw, $tokens);
                 $label = (string)($kase['name'] ?? '');

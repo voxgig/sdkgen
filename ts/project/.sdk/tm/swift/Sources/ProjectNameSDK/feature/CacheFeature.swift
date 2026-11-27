@@ -1,7 +1,8 @@
 // Response caching for safe (read) requests, per client: see the features
 // reference for the key, the write invalidation and the Cache-Control rules.
-// The header digest is the standard library's keyed Hasher over a random
-// per-client salt: Foundation on Linux has no HMAC.
+// Foundation on Linux has no HMAC: the seeded Hasher over a random per-client
+// salt separates header sets within one store without holding a header value.
+// It is not a cryptographic commitment.
 
 import Foundation
 
@@ -158,7 +159,7 @@ public final class CacheFeature: BaseFeature {
     let path = CacheFeature.scope(url)
     let collection = CacheFeature.parent(path)
     for (key, entry) in store
-      where CacheFeature.under(entry.scope, path) || CacheFeature.under(entry.scope, collection) {
+      where CacheFeature.under(entry.scope, path) || entry.scope == collection {
       drop(key)
     }
   }

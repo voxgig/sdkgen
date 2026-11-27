@@ -719,6 +719,31 @@ describe("feature", function()
       assert.are.equal(2, #rec.calls)
     end)
 
+    -- The reference vectors of the SipHash paper: key 00..0f, message 00..len-1.
+    it("matches the SipHash reference vectors", function()
+      local CacheFeature = require("feature.cache_feature")
+      local bytes = {}
+      for i = 0, 63 do bytes[#bytes + 1] = string.char(i) end
+      local msg = table.concat(bytes)
+      local key = string.sub(msg, 1, 16)
+      for _, v in ipairs({
+        { 0, "726fdb47dd0e0e31" },
+        { 1, "74f839c593dc67fd" },
+        { 2, "0d6c8009d9a94f5a" },
+        { 3, "85676696d7fb7e2d" },
+        { 4, "cf2794e0277187b7" },
+        { 5, "18765564cd99a68d" },
+        { 6, "cbc9466e58fee3ce" },
+        { 7, "ab0200f58b01d137" },
+        { 8, "93f5f5799a932462" },
+        { 15, "a129ca6149be45e5" },
+        { 16, "3f2acc7f57c29bdb" },
+        { 63, "958a324ceb064572" },
+      }) do
+        assert.are.equal(v[2], string.format("%016x", CacheFeature._siphash24(key, string.sub(msg, 1, v[1]))))
+      end
+    end)
+
     it("keys on the request headers", function()
       local rec = recording_server()
       local h = make_client({ features = {
@@ -736,12 +761,12 @@ describe("feature", function()
       local h = make_client({ features = {
         { name = "cache", options = { ttl = 10000 } },
       }, server = rec.server })
-      local paths = { "/w/1", "/w", "/w/1/part", "/other/1" }
+      local paths = { "/w/1", "/w", "/w/1/part", "/other/1", "/w/2" }
       for _, p in ipairs(paths) do h.op({ op = "load", path = p }) end
       h.op({ op = "update", method = "PUT", path = "/w/1" })
       for _, p in ipairs(paths) do h.op({ op = "load", path = p }) end
-      assert.are.equal(8, #rec.calls)
-      assert.are.equal(1, h.client._cache.hit)
+      assert.are.equal(9, #rec.calls)
+      assert.are.equal(2, h.client._cache.hit)
     end)
 
     it("does not store what Cache-Control forbids", function()

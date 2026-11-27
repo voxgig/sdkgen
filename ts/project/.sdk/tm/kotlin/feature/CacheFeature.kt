@@ -155,7 +155,7 @@ class CacheFeature : BaseFeature("cache", "0.0.1", true) {
   private fun invalidate(url: String) {
     val path = scope(url)
     val collection = parent(path)
-    val dropped = this.store.filterValues { under(it.scope, path) || under(it.scope, collection) }.keys.toList()
+    val dropped = this.store.filterValues { under(it.scope, path) || it.scope == collection }.keys.toList()
     for (key in dropped) {
       drop(key)
     }

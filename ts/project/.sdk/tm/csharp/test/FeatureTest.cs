@@ -592,7 +592,7 @@ public class FeatureCacheTest
         var rec = new FhRecorder();
         var f = new CacheFeature();
         var h = Fh.Make(rec.Fetch, (f, new Dictionary<string, object?> { ["ttl"] = 10000 }));
-        var paths = new[] { "/w/1", "/w", "/w/1/part", "/other/1" };
+        var paths = new[] { "/w/1", "/w", "/w/1/part", "/other/1", "/w/2" };
         foreach (var p in paths)
         {
             h.Op(new FhOpSpec { Op = "load", Path = p });
@@ -602,8 +602,8 @@ public class FeatureCacheTest
         {
             h.Op(new FhOpSpec { Op = "load", Path = p });
         }
-        Assert.Equal(8, rec.Calls.Count);
-        Assert.Equal(1, f.Hit);
+        Assert.Equal(9, rec.Calls.Count);
+        Assert.Equal(2, f.Hit);
     }
 
     [Fact]

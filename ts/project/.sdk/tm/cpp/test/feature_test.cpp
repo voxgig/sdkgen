@@ -430,6 +430,20 @@ static void cache_inactiveDoesNotWrap() {
   ASSERT_EQ((int)rec->calls.size(), 2, "expected 2 calls");
 }
 
+// The reference vectors of the SipHash paper: key 00..0f, message 00..len-1.
+static void cache_siphashMatchesTheReferenceVectors() {
+  if (!have({"cache"})) return;
+  const std::vector<std::pair<size_t, uint64_t>> vectors = {{0, 0x726fdb47dd0e0e31ULL}, {1, 0x74f839c593dc67fdULL}, {2, 0x0d6c8009d9a94f5aULL}, {3, 0x85676696d7fb7e2dULL}, {4, 0xcf2794e0277187b7ULL}, {5, 0x18765564cd99a68dULL}, {6, 0xcbc9466e58fee3ceULL}, {7, 0xab0200f58b01d137ULL}, {8, 0x93f5f5799a932462ULL}, {15, 0xa129ca6149be45e5ULL}, {16, 0x3f2acc7f57c29bdbULL}, {63, 0x958a324ceb064572ULL}};
+  uint8_t key[16];
+  for (int i = 0; i < 16; i++) key[i] = static_cast<uint8_t>(i);
+  std::string msg;
+  for (int i = 0; i < 64; i++) msg.push_back(static_cast<char>(i));
+  for (const auto& v : vectors) {
+    ASSERT_TRUE(CacheFeature::siphash24(key, msg.substr(0, v.first)) == v.second,
+                "siphash reference vector " + std::to_string(v.first));
+  }
+}
+
 static void cache_keysOnRequestHeaders() {
   if (!have({"cache"})) return;
   auto rec = std::make_shared<FhRecorder>();
@@ -448,12 +462,12 @@ static void cache_aWriteDropsItsCollection() {
   FetcherFn server = [rec](CtxPtr c, const std::string& u, const Value& fd) { return rec->fetch(c, u, fd); };
   auto f = std::make_shared<CacheFeature>();
   auto h = fhMake(server, {FF(f, fhMap({{"ttl", Value(10000)}}))});
-  const char* paths[] = {"/w/1", "/w", "/w/1/part", "/other/1"};
+  const char* paths[] = {"/w/1", "/w", "/w/1/part", "/other/1", "/w/2"};
   for (const char* p : paths) h->op(fhOp("load").setPath(p));
   h->op(fhOp("update").setMethod("PUT").setPath("/w/1"));
   for (const char* p : paths) h->op(fhOp("load").setPath(p));
-  ASSERT_EQ((int)rec->calls.size(), 8, "expected the collection refetched and /other cached");
-  ASSERT_EQ(f->hit, 1, "expected /other served from cache");
+  ASSERT_EQ((int)rec->calls.size(), 9, "expected the collection refetched and /other cached");
+  ASSERT_EQ(f->hit, 2, "expected /other served from cache");
 }
 
 static void cache_cacheControlPreventsStoring() {
@@ -1018,6 +1032,7 @@ int main() {
   T_RUN(cache_aWriteDropsItsCollection);
   T_RUN(cache_cacheControlPreventsStoring);
   T_RUN(cache_maxAgeCapsTheTtl);
+  T_RUN(cache_siphashMatchesTheReferenceVectors);
 
   T_RUN(idempotency_addsKeyToMutatingOps);
   T_RUN(idempotency_addsKeyByHttpMethod);

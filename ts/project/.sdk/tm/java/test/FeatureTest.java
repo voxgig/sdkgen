@@ -505,7 +505,7 @@ public class FeatureTest {
     FhRecorder rec = new FhRecorder();
     CacheFeature f = new CacheFeature();
     FhHarness h = fhMake(rec::fetch, fhF(f, fhMap("ttl", 10000)));
-    String[] paths = {"/w/1", "/w", "/w/1/part", "/other/1"};
+    String[] paths = {"/w/1", "/w", "/w/1/part", "/other/1", "/w/2"};
     for (String p : paths) {
       h.op(fhOp("load").path(p));
     }
@@ -513,8 +513,8 @@ public class FeatureTest {
     for (String p : paths) {
       h.op(fhOp("load").path(p));
     }
-    assertEquals(8, rec.calls.size(), "expected the collection refetched and /other cached");
-    assertEquals(1, f.hit, "expected /other served from cache");
+    assertEquals(9, rec.calls.size(), "expected the collection refetched and /other cached");
+    assertEquals(2, f.hit, "expected /other served from cache");
   }
 
   @Test

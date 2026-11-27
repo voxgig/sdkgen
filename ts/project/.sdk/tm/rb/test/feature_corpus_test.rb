@@ -125,8 +125,24 @@ class FeatureCorpusTest < Minitest::Test
     out.sort_by { |o| [safe.fetch(o["op"], 2), o["key"]] }
   end
 
-  def invoke(client, op, ctrl)
-    client.public_send(op["accessor"]).public_send(op["op"], {}, ctrl)
+  def invoke(client, op, ctrl, args = nil)
+    client.public_send(op["accessor"]).public_send(op["op"], (args || {}).dup, ctrl)
+  end
+
+  ITEM_ARGS = { "id" => "corpus-item" }.freeze
+
+  # A write of one entity (#ITEM) that completes when driven with ITEM_ARGS.
+  def usable_item(accessor)
+    candidates(build_client({})).each do |cand|
+      next unless cand["accessor"] == accessor && %w[update patch remove].include?(cand["op"])
+      begin
+        invoke(build_client({}), cand, {}, ITEM_ARGS)
+      rescue StandardError
+        next
+      end
+      return cand
+    end
+    nil
   end
 
   # Pick operations by DRIVING them: an op is usable when it completes
@@ -169,17 +185,17 @@ class FeatureCorpusTest < Minitest::Test
     nil
   end
 
-  # One step: it may wait before its call, and may add request headers for
-  # its call.
+  # One step: it may wait before its call, may add request headers for its
+  # call, and may pass `args` as the operation's first argument.
   def step_call(client, op, step, ctrl)
     sleep(step["wait"] / 1000.0) unless step["wait"].nil?
-    return invoke(client, op, ctrl) if step["headers"].nil?
+    return invoke(client, op, ctrl, step["args"]) if step["headers"].nil?
     options = client.options
     had = options.key?("headers")
     prior = options["headers"]
     options["headers"] = (prior || {}).merge(step["headers"])
     begin
-      invoke(client, op, ctrl)
+      invoke(client, op, ctrl, step["args"])
     ensure
       if had
         options["headers"] = prior
@@ -330,6 +346,9 @@ class FeatureCorpusTest < Minitest::Test
       by_key = ops.each_with_object({}) { |o, h| h[o["key"]] = o }
       pair = usable_pair
       pair&.each_value { |o| by_key[o["key"]] = o }
+      item = pair && usable_item(pair["read"]["accessor"])
+      by_key[item["key"]] = item unless item.nil?
+      other = pair && ops.find { |o| o["accessor"] != pair["read"]["accessor"] }
 
       ran = 0
       cases.each do |raw|
@@ -339,9 +358,16 @@ class FeatureCorpusTest < Minitest::Test
           next
         end
 
-        paired = JSON.generate(raw).match?(/#(READ|WRITE)\b/)
+        paired = JSON.generate(raw).match?(/#(READ|WRITE|ITEM|OTHER)\b/)
         if paired && pair.nil?
           puts "skip \"#{raw['name']}\": needs a read and a write of one entity, this SDK offers none"
+          next
+        end
+        lacking = [["#ITEM", item], ["#OTHER", other]].find do |tok, op|
+          paired && op.nil? && JSON.generate(raw).match?(/#{tok}\b/)
+        end
+        unless lacking.nil?
+          puts "skip \"#{raw['name']}\": needs #{lacking[0]}, which this SDK cannot drive"
           next
         end
 
@@ -357,6 +383,8 @@ class FeatureCorpusTest < Minitest::Test
         if paired
           tokens["#READ"] = pair["read"]["key"]
           tokens["#WRITE"] = pair["write"]["key"]
+          tokens["#ITEM"] = item["key"] unless item.nil?
+          tokens["#OTHER"] = other["key"] unless other.nil?
         end
         kase = resolve(raw, tokens)
         label = kase["name"].to_s

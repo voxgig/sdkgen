@@ -136,7 +136,7 @@ sub _invalidate {
   my $collection = _cache_parent($path);
   for my $key (keys %{ $self->{store} }) {
     my $scope = $self->{store}{$key}{scope};
-    $self->_drop($key) if _cache_under($scope, $path) || _cache_under($scope, $collection);
+    $self->_drop($key) if _cache_under($scope, $path) || $scope eq $collection;
   }
   return;
 }

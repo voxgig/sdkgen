@@ -1,8 +1,9 @@
 // ProjectName SDK — cache feature (mirrors java feature/CacheFeature.java).
 // Response caching for safe (read) requests, per client: see the features
 // reference for the key, the write invalidation and the Cache-Control rules.
-// The standard library has no HMAC, so the header digest is SipHash-2-4 under
-// a random per-client key.
+// No HMAC in std: SipHash-2-4 under a random per-client key separates header
+// sets within one store without holding a header value. It is not a
+// cryptographic commitment.
 
 #ifndef SDK_FEATURE_CACHE_HPP
 #define SDK_FEATURE_CACHE_HPP
@@ -35,6 +36,46 @@ public:
   int bypass = 0;
 
   CacheFeature() : BaseFeature("cache", "0.0.1", true) {}
+
+  static uint64_t le64(const uint8_t* p) {
+    uint64_t v = 0;
+    for (int i = 7; i >= 0; i--) v = (v << 8) | p[i];
+    return v;
+  }
+
+  static uint64_t rotl(uint64_t x, int b) { return (x << b) | (x >> (64 - b)); }
+
+  static void sipround(uint64_t& v0, uint64_t& v1, uint64_t& v2, uint64_t& v3) {
+    v0 += v1; v1 = rotl(v1, 13); v1 ^= v0; v0 = rotl(v0, 32);
+    v2 += v3; v3 = rotl(v3, 16); v3 ^= v2;
+    v0 += v3; v3 = rotl(v3, 21); v3 ^= v0;
+    v2 += v1; v1 = rotl(v1, 17); v1 ^= v2; v2 = rotl(v2, 32);
+  }
+
+  static uint64_t siphash24(const uint8_t key[16], const std::string& in) {
+    const uint8_t* p = reinterpret_cast<const uint8_t*>(in.data());
+    size_t len = in.size();
+    uint64_t k0 = le64(key), k1 = le64(key + 8);
+    uint64_t v0 = 0x736f6d6570736575ULL ^ k0, v1 = 0x646f72616e646f6dULL ^ k1;
+    uint64_t v2 = 0x6c7967656e657261ULL ^ k0, v3 = 0x7465646279746573ULL ^ k1;
+    size_t full = len - (len % 8);
+    for (size_t i = 0; i < full; i += 8) {
+      uint64_t m = le64(p + i);
+      v3 ^= m;
+      sipround(v0, v1, v2, v3);
+      sipround(v0, v1, v2, v3);
+      v0 ^= m;
+    }
+    uint64_t b = static_cast<uint64_t>(len) << 56;
+    for (size_t i = 0; i < len % 8; i++) b |= static_cast<uint64_t>(p[full + i]) << (8 * i);
+    v3 ^= b;
+    sipround(v0, v1, v2, v3);
+    sipround(v0, v1, v2, v3);
+    v0 ^= b;
+    v2 ^= 0xff;
+    for (int i = 0; i < 4; i++) sipround(v0, v1, v2, v3);
+    return v0 ^ v1 ^ v2 ^ v3;
+  }
 
   void init(CtxPtr ctx, const Value& options_) override {
     client = ctx->client;
@@ -148,46 +189,6 @@ private:
     return res;
   }
 
-  static uint64_t le64(const uint8_t* p) {
-    uint64_t v = 0;
-    for (int i = 7; i >= 0; i--) v = (v << 8) | p[i];
-    return v;
-  }
-
-  static uint64_t rotl(uint64_t x, int b) { return (x << b) | (x >> (64 - b)); }
-
-  static void sipround(uint64_t& v0, uint64_t& v1, uint64_t& v2, uint64_t& v3) {
-    v0 += v1; v1 = rotl(v1, 13); v1 ^= v0; v0 = rotl(v0, 32);
-    v2 += v3; v3 = rotl(v3, 16); v3 ^= v2;
-    v0 += v3; v3 = rotl(v3, 21); v3 ^= v0;
-    v2 += v1; v1 = rotl(v1, 17); v1 ^= v2; v2 = rotl(v2, 32);
-  }
-
-  static uint64_t siphash24(const uint8_t key[16], const std::string& in) {
-    const uint8_t* p = reinterpret_cast<const uint8_t*>(in.data());
-    size_t len = in.size();
-    uint64_t k0 = le64(key), k1 = le64(key + 8);
-    uint64_t v0 = 0x736f6d6570736575ULL ^ k0, v1 = 0x646f72616e646f6dULL ^ k1;
-    uint64_t v2 = 0x6c7967656e657261ULL ^ k0, v3 = 0x7465646279746573ULL ^ k1;
-    size_t full = len - (len % 8);
-    for (size_t i = 0; i < full; i += 8) {
-      uint64_t m = le64(p + i);
-      v3 ^= m;
-      sipround(v0, v1, v2, v3);
-      sipround(v0, v1, v2, v3);
-      v0 ^= m;
-    }
-    uint64_t b = static_cast<uint64_t>(len) << 56;
-    for (size_t i = 0; i < len % 8; i++) b |= static_cast<uint64_t>(p[full + i]) << (8 * i);
-    v3 ^= b;
-    sipround(v0, v1, v2, v3);
-    sipround(v0, v1, v2, v3);
-    v0 ^= b;
-    v2 ^= 0xff;
-    for (int i = 0; i < 4; i++) sipround(v0, v1, v2, v3);
-    return v0 ^ v1 ^ v2 ^ v3;
-  }
-
   static std::string lower(std::string s) {
     for (auto& c : s) c = static_cast<char>(std::tolower((unsigned char)c));
     return s;
@@ -233,7 +234,7 @@ private:
     std::string collection = urlParent(path);
     std::vector<std::string> dropped;
     for (const auto& kv : store) {
-      if (under(kv.second.scope, path) || under(kv.second.scope, collection)) dropped.push_back(kv.first);
+      if (under(kv.second.scope, path) || kv.second.scope == collection) dropped.push_back(kv.first);
     }
     for (const auto& key : dropped) drop(key);
   }

@@ -376,12 +376,12 @@
     (check "cache-a-write-drops-its-collection" "cache"
            (fn [] (let [[server calls] (recording-server nil)
                         h (make-harness [(fspec "cache" "ttl" 10000)] :server server)
-                        paths ["/w/1" "/w" "/w/1/part" "/other/1"]]
+                        paths ["/w/1" "/w" "/w/1/part" "/other/1" "/w/2"]]
                     (doseq [p paths] (h-op h :path p))
                     (h-op h :opname "update" :method "PUT" :path "/w/1")
                     (doseq [p paths] (h-op h :path p))
-                    (t/is-eq (count @calls) 8 "the collection refetched")
-                    (t/is-eq (mget (h-track h "_cache") "hit") 1 "the other entity stayed cached"))))
+                    (t/is-eq (count @calls) 9 "the collection refetched")
+                    (t/is-eq (mget (h-track h "_cache") "hit") 2 "the other entity stayed cached"))))
     (check "cache-control-prevents-storing" "cache"
            (fn [] (doseq [control ["no-store" "private" "No-Cache" "max-age=60, private"]]
                     (let [[server calls] (recording-server

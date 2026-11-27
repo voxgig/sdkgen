@@ -106,7 +106,7 @@ class ProjectNameCacheFeature(ProjectNameBaseFeature):
         path = url_scope(url)
         collection = url_parent(path)
         for key in [k for k, e in self.store.items()
-                    if scope_under(e["scope"], path) or scope_under(e["scope"], collection)]:
+                    if scope_under(e["scope"], path) or e["scope"] == collection]:
             del self.store[key]
 
     # A body the transport could not read as JSON passes through, for the operation to report.

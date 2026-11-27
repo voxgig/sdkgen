@@ -126,7 +126,7 @@ class ProjectNameCacheFeature extends ProjectNameBaseFeature
         $path = self::scope($url);
         $collection = self::parent($path);
         foreach ($this->store as $key => $entry) {
-            if (self::under($entry['scope'], $path) || self::under($entry['scope'], $collection)) {
+            if (self::under($entry['scope'], $path) || $entry['scope'] === $collection) {
                 unset($this->store[$key]);
             }
         }

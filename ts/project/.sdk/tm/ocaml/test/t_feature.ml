@@ -227,12 +227,12 @@ let () =
     test "cache.write_drops_collection" (fun () ->
         let (srv, calls) = recording_server () in
         let h = make_client ~server:srv [("cache", jo [("ttl", Num 10000.)])] in
-        let paths = ["/w/1"; "/w"; "/w/1/part"; "/other/1"] in
+        let paths = ["/w/1"; "/w"; "/w/1/part"; "/other/1"; "/w/2"] in
         List.iter (fun p -> ignore (op h ~op:"load" ~path:p ())) paths;
         ignore (op h ~op:"update" ~method_:"PUT" ~path:"/w/1" ());
         List.iter (fun p -> ignore (op h ~op:"load" ~path:p ())) paths;
-        check_int "calls" (List.length !calls) 8;
-        check_vnum "hit" (getp (track h "cache") "hit") 1.);
+        check_int "calls" (List.length !calls) 9;
+        check_vnum "hit" (getp (track h "cache") "hit") 2.);
     test "cache.control_prevents_storing" (fun () ->
         List.iter (fun control ->
             let (srv, calls) = recording_server

@@ -125,8 +125,8 @@ const WRITE_OPS = ['create', 'update', 'patch', 'remove']
 
 
 // A read and a write of one entity (#READ, #WRITE), each driven as usableOps
-// drives an op.
-async function usablePair(): Promise<{ read: OpRef, write: OpRef } | undefined> {
+// drives an op; #ITEM is a write of the same entity driven with ITEM_ARGS.
+async function usablePair(): Promise<{ read: OpRef, write: OpRef, item?: OpRef } | undefined> {
   const found: Record<string, { read?: OpRef, write?: OpRef }> = {}
   for (const cand of candidates(makeClient({}))) {
     const role: 'read' | 'write' | '' = READ_OPS.includes(cand.op) ? 'read' : WRITE_OPS.includes(cand.op) ? 'write' : ''
@@ -138,14 +138,30 @@ async function usablePair(): Promise<{ read: OpRef, write: OpRef } | undefined> 
     catch (e) { continue }
     seen[role] = cand
     if (null != seen.read && null != seen.write) {
-      return { read: seen.read, write: seen.write }
+      return { read: seen.read, write: seen.write, item: await usableItem(cand.entity) }
     }
   }
   return undefined
 }
 
 
-// A step may wait before its call, and may add request headers for its call.
+const ITEM_ARGS = { id: 'corpus-item' }
+
+async function usableItem(entity: string): Promise<OpRef | undefined> {
+  for (const cand of candidates(makeClient({}))) {
+    if (entity !== cand.entity || !['update', 'patch', 'remove'].includes(cand.op)) { continue }
+    try {
+      await makeClient({})[cand.accessor]()[cand.op]({ ...ITEM_ARGS }, {})
+      return cand
+    }
+    catch (e) { continue }
+  }
+  return undefined
+}
+
+
+// A step may wait before its call, may add request headers for its call, and
+// may pass `args` as the operation's first argument.
 async function runStep(client: any, ref: OpRef, step: any) {
   if (null != step.wait) {
     await new Promise((resolve) => setTimeout(resolve, step.wait))
@@ -156,7 +172,7 @@ async function runStep(client: any, ref: OpRef, step: any) {
     options.headers = { ...(prior || {}), ...step.headers }
   }
   try {
-    await client[ref.accessor]()[ref.op]({}, step.ctrl || {})
+    await client[ref.accessor]()[ref.op]({ ...(step.args || {}) }, step.ctrl || {})
   }
   finally {
     options.headers = prior
@@ -232,7 +248,7 @@ describe('FeatureCorpus', () => {
   let corpus: any
   let ops: OpRef[] = []
   let byKey: Record<string, OpRef> = {}
-  let pair: { read: OpRef, write: OpRef } | undefined
+  let pair: { read: OpRef, write: OpRef, item?: OpRef } | undefined
 
 
   before(async () => {
@@ -241,7 +257,9 @@ describe('FeatureCorpus', () => {
     byKey = {}
     for (const o of ops) { byKey[o.key] = o }
     pair = await usablePair()
-    for (const o of pair ? [pair.read, pair.write] : []) { byKey[o.key] = o }
+    for (const o of pair ? [pair.read, pair.write, pair.item] : []) {
+      if (null != o) { byKey[o.key] = o }
+    }
   })
 
 
@@ -292,9 +310,18 @@ describe('FeatureCorpus', () => {
           continue
         }
 
-        const paired = /#(READ|WRITE)\b/.test(JSON.stringify(raw))
+        const paired = /#(READ|WRITE|ITEM|OTHER)\b/.test(JSON.stringify(raw))
         if (paired && null == pair) {
           t.diagnostic(`skip "${raw.name}": needs a read and a write of one entity, this SDK offers none`)
+          continue
+        }
+        const other = null == pair ? undefined :
+          ops.find((o) => o.entity !== pair!.read.entity)
+        const needed: [string, OpRef | undefined][] = [['#ITEM', pair?.item], ['#OTHER', other]]
+        const lacking = needed
+          .find(([tok, op]) => null == op && new RegExp(tok + '\\b').test(JSON.stringify(raw)))
+        if (null != lacking) {
+          t.diagnostic(`skip "${raw.name}": needs ${lacking[0]}, which this SDK cannot drive`)
           continue
         }
 
@@ -310,6 +337,8 @@ describe('FeatureCorpus', () => {
         if (paired && null != pair) {
           tokens['#READ'] = pair.read.key
           tokens['#WRITE'] = pair.write.key
+          if (null != pair.item) { tokens['#ITEM'] = pair.item.key }
+          if (null != other) { tokens['#OTHER'] = other.key }
         }
 
         const kase = resolve(raw, tokens)

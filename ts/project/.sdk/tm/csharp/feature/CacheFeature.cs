@@ -175,7 +175,7 @@ public class CacheFeature : BaseFeature
     {
         var path = UrlScope(url);
         var collection = UrlParent(path);
-        foreach (var key in _store.Where(kv => Under(kv.Value.Scope, path) || Under(kv.Value.Scope, collection))
+        foreach (var key in _store.Where(kv => Under(kv.Value.Scope, path) || kv.Value.Scope == collection)
             .Select(kv => kv.Key).ToList())
         {
             Drop(key);
