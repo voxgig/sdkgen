@@ -1,0 +1,35 @@
+{
+  "show": {
+    "studio": {
+      "id": "studio",
+      "name": "Studio Hour",
+      "author": "The Studio",
+      "language": "en",
+      "artwork": { "seed": 7, "width": 32, "height": 32 }
+    },
+    "quiet": {
+      "id": "quiet",
+      "name": "Quiet Hour",
+      "author": "Nobody Yet"
+    }
+  },
+  "episode": {
+    "pilot": {
+      "id": "pilot",
+      "show_id": "studio",
+      "title": "Pilot",
+      "number": 1,
+      "state": "published",
+      "audio": { "seed": 1, "size": 1048620 },
+      "transcript": "WEBVTT\n\n00:00.000 --> 00:02.000\nWelcome to the studio.\n"
+    },
+    "longform": {
+      "id": "longform",
+      "show_id": "studio",
+      "title": "The Long One",
+      "number": 2,
+      "state": "draft",
+      "audio": { "seed": 2, "size": 16777260 }
+    }
+  }
+}

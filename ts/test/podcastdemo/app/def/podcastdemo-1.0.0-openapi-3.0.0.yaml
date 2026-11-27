@@ -1,0 +1,934 @@
+# The definition of the podcastdemo example API: a podcast studio whose
+# records carry files. It is served by ts/test/podcastdemo/app, whose
+# validate script checks every operation, status, media type and header
+# declared here against the running server.
+#
+# Two copies are kept, byte for byte: the app's own under
+# ts/test/podcastdemo/app/def/, and docs/design/file-transfer-demo-def.yaml
+# beside the design it illustrates. The app's defsync test fails when they
+# differ.
+#
+# An upload session is an entity whose create, load and remove are JSON
+# operations, and whose offset read (HEAD) and append (PATCH) speak the
+# tus 1.0.0 core protocol. tus core takes the session's URL as given, so
+# opening one with a JSON create stays within it.
+#
+# It declares no vendor extension: apidef reads none, and the example must
+# generate the way a definition nobody here wrote would.
+
+openapi: 3.0.0
+info:
+  title: Podcast Studio API
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8903
+
+security:
+  - bearer: []
+
+paths:
+  /api/show:
+    get:
+      summary: List shows
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Show'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      summary: Create show
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Show'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Show'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/show/{show_id}:
+    get:
+      summary: Get show
+      parameters:
+        - $ref: '#/components/parameters/ShowId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Show'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      summary: Update show
+      parameters:
+        - $ref: '#/components/parameters/ShowId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Show'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Show'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      summary: Delete show, with its episodes and their files
+      parameters:
+        - $ref: '#/components/parameters/ShowId'
+      responses:
+        '204':
+          description: No Content
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/show/{show_id}/artwork:
+    get:
+      summary: Download the show artwork
+      parameters:
+        - $ref: '#/components/parameters/ShowId'
+        - $ref: '#/components/parameters/IfNoneMatch'
+      responses:
+        '200':
+          description: The artwork image
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+            Repr-Digest:
+              $ref: '#/components/headers/ReprDigest'
+            Content-Length:
+              $ref: '#/components/headers/ContentLength'
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+        '304':
+          description: Not Modified
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      summary: Replace the show artwork
+      parameters:
+        - $ref: '#/components/parameters/ShowId'
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          image/png:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '200':
+          description: The show, with its artwork metadata updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Show'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '412':
+          $ref: '#/components/responses/PreconditionFailed'
+        '413':
+          $ref: '#/components/responses/ContentTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+
+  /api/show/{show_id}/feed:
+    get:
+      summary: The show's RSS feed, generated from its published episodes
+      parameters:
+        - $ref: '#/components/parameters/ShowId'
+      responses:
+        '200':
+          description: The feed document
+          content:
+            application/rss+xml:
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/show/{show_id}/episode:
+    get:
+      summary: List episodes of show
+      parameters:
+        - $ref: '#/components/parameters/ShowId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Episode'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      summary: Create episode, with its audio, in one request
+      parameters:
+        - $ref: '#/components/parameters/ShowId'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - title
+                - audio
+              properties:
+                title:
+                  type: string
+                number:
+                  type: integer
+                audio:
+                  type: string
+                  format: binary
+            encoding:
+              audio:
+                contentType: audio/wav
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Episode'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '413':
+          $ref: '#/components/responses/ContentTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+
+  /api/show/{show_id}/episode/{episode_id}:
+    get:
+      summary: Get episode
+      parameters:
+        - $ref: '#/components/parameters/ShowId'
+        - $ref: '#/components/parameters/EpisodeId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Episode'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      summary: Update episode
+      parameters:
+        - $ref: '#/components/parameters/ShowId'
+        - $ref: '#/components/parameters/EpisodeId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Episode'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Episode'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      summary: Delete episode, with its files
+      parameters:
+        - $ref: '#/components/parameters/ShowId'
+        - $ref: '#/components/parameters/EpisodeId'
+      responses:
+        '204':
+          description: No Content
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/show/{show_id}/episode/{episode_id}/audio:
+    get:
+      summary: Download the episode audio, whole or in part
+      parameters:
+        - $ref: '#/components/parameters/ShowId'
+        - $ref: '#/components/parameters/EpisodeId'
+        - $ref: '#/components/parameters/Range'
+        - $ref: '#/components/parameters/IfRange'
+        - $ref: '#/components/parameters/IfNoneMatch'
+      responses:
+        '200':
+          description: The whole audio
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+            Accept-Ranges:
+              $ref: '#/components/headers/AcceptRanges'
+            Repr-Digest:
+              $ref: '#/components/headers/ReprDigest'
+            Content-Disposition:
+              $ref: '#/components/headers/ContentDisposition'
+            Content-Length:
+              $ref: '#/components/headers/ContentLength'
+          content:
+            audio/wav:
+              schema:
+                type: string
+                format: binary
+        '206':
+          description: The requested byte range
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+            Accept-Ranges:
+              $ref: '#/components/headers/AcceptRanges'
+            Repr-Digest:
+              $ref: '#/components/headers/ReprDigest'
+            Content-Range:
+              $ref: '#/components/headers/ContentRange'
+            Content-Length:
+              $ref: '#/components/headers/ContentLength'
+          content:
+            audio/wav:
+              schema:
+                type: string
+                format: binary
+        '304':
+          description: Not Modified
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '416':
+          description: Range Not Satisfiable
+          headers:
+            Content-Range:
+              $ref: '#/components/headers/ContentRange'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    head:
+      summary: Read the audio's size and validators without its bytes
+      parameters:
+        - $ref: '#/components/parameters/ShowId'
+        - $ref: '#/components/parameters/EpisodeId'
+        - $ref: '#/components/parameters/IfNoneMatch'
+      responses:
+        '200':
+          description: The headers a GET would answer with, and no body
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+            Accept-Ranges:
+              $ref: '#/components/headers/AcceptRanges'
+            Repr-Digest:
+              $ref: '#/components/headers/ReprDigest'
+            Content-Disposition:
+              $ref: '#/components/headers/ContentDisposition'
+            Content-Length:
+              $ref: '#/components/headers/ContentLength'
+        '304':
+          description: Not Modified
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+        '401':
+          description: Unauthorized, and no body
+          headers:
+            WWW-Authenticate:
+              $ref: '#/components/headers/WWWAuthenticate'
+        '404':
+          description: Not Found, and no body
+    put:
+      summary: Replace the episode audio
+      parameters:
+        - $ref: '#/components/parameters/ShowId'
+        - $ref: '#/components/parameters/EpisodeId'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/ReprDigestIn'
+      requestBody:
+        required: true
+        content:
+          audio/wav:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '200':
+          description: The episode, with its audio metadata updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Episode'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '412':
+          $ref: '#/components/responses/PreconditionFailed'
+        '413':
+          $ref: '#/components/responses/ContentTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+
+  /api/show/{show_id}/episode/{episode_id}/transcript:
+    get:
+      summary: Download the episode transcript
+      parameters:
+        - $ref: '#/components/parameters/ShowId'
+        - $ref: '#/components/parameters/EpisodeId'
+      responses:
+        '200':
+          description: The transcript
+          content:
+            text/vtt:
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      summary: Replace the episode transcript
+      parameters:
+        - $ref: '#/components/parameters/ShowId'
+        - $ref: '#/components/parameters/EpisodeId'
+      requestBody:
+        required: true
+        content:
+          text/vtt:
+            schema:
+              type: string
+      responses:
+        '200':
+          description: The episode, with its transcript metadata updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Episode'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '413':
+          $ref: '#/components/responses/ContentTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+
+  /api/show/{show_id}/episode/{episode_id}/publish:
+    post:
+      summary: Publish or withdraw an episode
+      parameters:
+        - $ref: '#/components/parameters/ShowId'
+        - $ref: '#/components/parameters/EpisodeId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - publish
+              properties:
+                publish:
+                  type: boolean
+                why:
+                  type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - ok
+                  - state
+                properties:
+                  ok:
+                    type: boolean
+                  state:
+                    type: string
+                    enum:
+                      - draft
+                      - published
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/upload:
+    post:
+      summary: Open a resumable upload of one file of one record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Upload'
+      responses:
+        '201':
+          description: Created
+          headers:
+            Location:
+              $ref: '#/components/headers/Location'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Upload'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '413':
+          $ref: '#/components/responses/ContentTooLarge'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /api/upload/{upload_id}:
+    get:
+      summary: Get upload
+      parameters:
+        - $ref: '#/components/parameters/UploadId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Upload'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    head:
+      summary: Read the offset an interrupted upload resumes from
+      parameters:
+        - $ref: '#/components/parameters/UploadId'
+        - $ref: '#/components/parameters/TusResumable'
+      responses:
+        '200':
+          description: The offset and length in headers, and no body
+          headers:
+            Tus-Resumable:
+              $ref: '#/components/headers/TusResumable'
+            Upload-Offset:
+              $ref: '#/components/headers/UploadOffset'
+            Upload-Length:
+              $ref: '#/components/headers/UploadLength'
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+        '401':
+          description: Unauthorized, and no body
+          headers:
+            WWW-Authenticate:
+              $ref: '#/components/headers/WWWAuthenticate'
+        '404':
+          description: Not Found, and no body
+        '412':
+          description: Precondition Failed, the protocol version is not supported
+          headers:
+            Tus-Version:
+              $ref: '#/components/headers/TusVersion'
+    patch:
+      summary: Append bytes to the upload at its current offset
+      parameters:
+        - $ref: '#/components/parameters/UploadId'
+        - $ref: '#/components/parameters/TusResumable'
+        - name: Upload-Offset
+          in: header
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/offset+octet-stream:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '204':
+          description: No Content
+          headers:
+            Tus-Resumable:
+              $ref: '#/components/headers/TusResumable'
+            Upload-Offset:
+              $ref: '#/components/headers/UploadOffset'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Conflict, the offset does not match
+          headers:
+            Upload-Offset:
+              $ref: '#/components/headers/UploadOffset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '412':
+          description: Precondition Failed, the protocol version is not supported
+          headers:
+            Tus-Version:
+              $ref: '#/components/headers/TusVersion'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '413':
+          $ref: '#/components/responses/ContentTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+    delete:
+      summary: Abandon the upload
+      parameters:
+        - $ref: '#/components/parameters/UploadId'
+      responses:
+        '204':
+          description: No Content
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  securitySchemes:
+    bearer:
+      type: http
+      scheme: bearer
+
+  parameters:
+    ShowId:
+      name: show_id
+      in: path
+      required: true
+      schema:
+        type: string
+    EpisodeId:
+      name: episode_id
+      in: path
+      required: true
+      schema:
+        type: string
+    UploadId:
+      name: upload_id
+      in: path
+      required: true
+      schema:
+        type: string
+    Range:
+      name: Range
+      in: header
+      required: false
+      schema:
+        type: string
+    IfRange:
+      name: If-Range
+      in: header
+      required: false
+      schema:
+        type: string
+    IfMatch:
+      name: If-Match
+      in: header
+      required: false
+      schema:
+        type: string
+    IfNoneMatch:
+      name: If-None-Match
+      in: header
+      required: false
+      schema:
+        type: string
+    ReprDigestIn:
+      name: Repr-Digest
+      in: header
+      required: false
+      schema:
+        type: string
+    TusResumable:
+      name: Tus-Resumable
+      in: header
+      required: true
+      schema:
+        type: string
+        enum:
+          - 1.0.0
+
+  headers:
+    ETag:
+      schema:
+        type: string
+    AcceptRanges:
+      schema:
+        type: string
+    ContentRange:
+      schema:
+        type: string
+    ContentLength:
+      schema:
+        type: integer
+        format: int64
+    ContentDisposition:
+      schema:
+        type: string
+    ReprDigest:
+      schema:
+        type: string
+    Location:
+      schema:
+        type: string
+    CacheControl:
+      schema:
+        type: string
+    WWWAuthenticate:
+      schema:
+        type: string
+    TusResumable:
+      schema:
+        type: string
+    TusVersion:
+      schema:
+        type: string
+    UploadOffset:
+      schema:
+        type: integer
+        format: int64
+    UploadLength:
+      schema:
+        type: integer
+        format: int64
+
+  responses:
+    BadRequest:
+      description: Bad Request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Unauthorized, the bearer credential is missing or wrong
+      headers:
+        WWW-Authenticate:
+          $ref: '#/components/headers/WWWAuthenticate'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Not Found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    PreconditionFailed:
+      description: Precondition Failed, If-Match does not match the current file
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    ContentTooLarge:
+      description: Content Too Large
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    UnsupportedMediaType:
+      description: Unsupported Media Type
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    TooManyRequests:
+      description: Too Many Requests, too many upload sessions are open
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  schemas:
+    Show:
+      type: object
+      required:
+        - id
+        - name
+        - author
+      properties:
+        id:
+          type: string
+          readOnly: true
+        name:
+          type: string
+        author:
+          type: string
+        language:
+          type: string
+        artwork:
+          allOf:
+            - $ref: '#/components/schemas/FileInfo'
+          readOnly: true
+    Episode:
+      type: object
+      required:
+        - id
+        - show_id
+        - title
+      properties:
+        id:
+          type: string
+          readOnly: true
+        show_id:
+          type: string
+        title:
+          type: string
+        number:
+          type: integer
+        state:
+          type: string
+          enum:
+            - draft
+            - published
+          readOnly: true
+        audio:
+          allOf:
+            - $ref: '#/components/schemas/FileInfo'
+          readOnly: true
+        transcript:
+          allOf:
+            - $ref: '#/components/schemas/FileInfo'
+          readOnly: true
+    Upload:
+      type: object
+      required:
+        - show_id
+        - episode_id
+        - size
+      properties:
+        id:
+          type: string
+          readOnly: true
+        show_id:
+          type: string
+        episode_id:
+          type: string
+        slot:
+          type: string
+          enum:
+            - audio
+            - transcript
+        size:
+          type: integer
+          format: int64
+          minimum: 1
+        type:
+          type: string
+        digest:
+          type: string
+        offset:
+          type: integer
+          format: int64
+          readOnly: true
+        complete:
+          type: boolean
+          readOnly: true
+        expires:
+          type: string
+          format: date-time
+          readOnly: true
+    FileInfo:
+      type: object
+      properties:
+        size:
+          type: integer
+          format: int64
+        type:
+          type: string
+        etag:
+          type: string
+        digest:
+          type: string
+        modified:
+          type: string
+          format: date-time
+    Error:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+        message:
+          type: string
