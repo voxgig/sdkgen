@@ -350,7 +350,25 @@ func cleanBinaryOf(ctx *core.Context, cfg *cleanConfig) []cleanBinary {
 			sent = ctx.Spec.Body
 		}
 		media, _ := vs.GetPath(ctx.Point, []any{"body", "media"}).(string)
-		add(media, true, sent, ctx.Reqdata[rawBodyKey])
+		raw, lifted := ctx.Sources[rawBodyKey]
+		if !lifted {
+			raw = ctx.Reqdata[rawBodyKey]
+		}
+		var data any
+		if src, ok := core.AsSource(raw); ok {
+			data = src.Data
+		}
+		add(media, true, sent, raw, data)
+	}
+	// An encoded multipart body, and a form body that carries a file.
+	if kind := vs.GetPath(ctx.Point, []any{"body", "kind"}); "multipart" == kind ||
+		("form" == kind && 0 < len(binaryNames(ctx.Point))) {
+		var sent any
+		var headers any
+		if ctx.Spec != nil {
+			sent, headers = ctx.Spec.Body, ctx.Spec.Headers
+		}
+		add(core.HeaderValue(headers, "content-type"), true, sent)
 	}
 	if response := ctx.Response; response != nil {
 		ctype := core.HeaderValue(response.Headers, "content-type")
@@ -582,7 +600,7 @@ func (c *cleaner) snapshot(val any, key string, haskey bool, depth int) any {
 	case *core.Control:
 		return c.plain(map[string]any{
 			"throw": v.Throw, "err": v.Err, "explain": v.Explain,
-			"actor": v.Actor, "paging": v.Paging,
+			"actor": v.Actor, "paging": v.Paging, "transfer": v.Transfer,
 		}, depth)
 	case core.Entity:
 		// Data() fires the GetData hook, and a hook that logs would come

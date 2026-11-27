@@ -7,6 +7,7 @@ require_relative 'core/helpers'
 
 # Load utility registration
 require_relative 'utility/register'
+require_relative 'utility/binary'
 
 # Load config and features
 require_relative 'config'
@@ -93,6 +94,11 @@ class ProjectNameSDK
 
   def get_root_ctx
     @_rootctx
+  end
+
+  # Builds the file sources a binary field or a raw body takes.
+  def binary
+    ProjectNameBinary
   end
 
   # The options and the root context both hold the credential, so the

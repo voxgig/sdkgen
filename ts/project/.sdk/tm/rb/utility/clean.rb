@@ -126,8 +126,9 @@ module ProjectNameUtilities
       cfg["keys"].any? { |k| nk.include?(k) }
     end
 
-    # The request body of a point the model marks binary, and a response
-    # body that is bytes, each with its type. A response read as text does
+    # The request body of a point the model marks binary, an encoded body
+    # that carries a file, and a response body that is bytes, each with its
+    # type. A response read as text does
     # not say how many bytes it was, so it is not sized.
     def self.binary_bodies(ctx)
       # A String shorter than the registry accepts is not told from ordinary text.
@@ -140,11 +141,29 @@ module ProjectNameUtilities
       if VoxgigStruct.getprop(body, "kind") == "raw" && VoxgigStruct.getprop(body, "binary") == true
         spec = ctx.respond_to?(:spec) ? ctx.spec : nil
         reqdata = ctx.respond_to?(:reqdata) ? ctx.reqdata : nil
+        sources = ctx.respond_to?(:sources) ? ctx.sources : nil
+        raw = sources.is_a?(Hash) ? sources[RAW_BODY] : nil
+        raw = reqdata[RAW_BODY] if raw.nil? && reqdata.is_a?(Hash)
         media = VoxgigStruct.getprop(body, "media")
         bodies << {
-          "live" => [spec.respond_to?(:body) ? spec.body : nil,
-            reqdata.is_a?(Hash) ? reqdata[RAW_BODY] : nil].select(&known),
+          "live" => [spec.respond_to?(:body) ? spec.body : nil, raw,
+            raw.respond_to?(:data) ? raw.data : nil].select(&known),
           "type" => media.is_a?(String) ? media : nil,
+          "sized" => true,
+        }
+      end
+
+      # An encoded multipart body, and a form body that carries a file.
+      kind = VoxgigStruct.getprop(body, "kind")
+      fields = VoxgigStruct.getprop(body, "fields")
+      files = fields.is_a?(Array) && fields.any? { |f| f.is_a?(Hash) && true == f["binary"] }
+      if kind == "multipart" || (kind == "form" && files)
+        spec = ctx.respond_to?(:spec) ? ctx.spec : nil
+        type = ProjectNameUtilities.header_value(spec.respond_to?(:headers) ? spec.headers : nil,
+          "content-type")
+        bodies << {
+          "live" => [spec.respond_to?(:body) ? spec.body : nil].select(&known),
+          "type" => type.empty? ? nil : type,
           "sized" => true,
         }
       end

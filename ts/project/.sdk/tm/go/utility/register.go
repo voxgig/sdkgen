@@ -1,6 +1,9 @@
 package utility
 
-import "GOMODULE/core"
+import (
+	"GOMODULE/core"
+	"GOMODULE/utility/codec"
+)
 
 func init() {
 	core.UtilityRegistrar = registerAll
@@ -41,6 +44,8 @@ func registerAll(u *core.Utility) {
 	u.ResultHeaders = resultHeadersUtil
 	u.TransformRequest = transformRequestUtil
 	u.TransformResponse = transformResponseUtil
+	u.Codec = codec.CODEC
+	u.MultipartBoundary = codec.MultipartBoundary
 }
 
 func overrideUtil(u *core.Utility, key string, val any) bool {
@@ -218,6 +223,11 @@ func overrideUtil(u *core.Utility, key string, val any) bool {
 	case "transformRequest":
 		if fn, ok := val.(func(ctx *core.Context) any); ok {
 			u.TransformRequest = fn
+			return true
+		}
+	case "multipartBoundary":
+		if fn, ok := val.(func(ctx *core.Context) string); ok {
+			u.MultipartBoundary = fn
 			return true
 		}
 	case "transformResponse":

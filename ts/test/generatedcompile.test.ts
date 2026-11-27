@@ -12151,6 +12151,55 @@ const CODEC_LANES: CodecLane[] = [
         : { bin: swift, args: ['test', '-j', '2', '--skip-build', '--filter', 'CodecTest'] }
     },
   },
+  {
+    target: 'rb',
+    runner: 'test/codec_test.rb',
+    needs: 'ruby with minitest',
+    command: () => {
+      const rb = toolchain('ruby')
+      if (null == rb || !probeOk(rb, ['-e', 'require "minitest/autorun"'])) return null
+      return { bin: rb, args: [Path.join('test', 'codec_test.rb'), '-v'], env: rubyEnv() }
+    },
+  },
+  {
+    target: 'php',
+    runner: 'test/CodecTest.php',
+    needs: 'php with phpunit (on PATH, or PHPUNIT=<path to phpunit.phar>)',
+    command: () => {
+      const php = toolchain('php')
+      if (null == php) return null
+      const phar = process.env.PHPUNIT
+      if (null != phar && '' !== phar && Fs.existsSync(phar)) {
+        return { bin: php, args: [phar, '--no-configuration', Path.join('test', 'CodecTest.php')] }
+      }
+      const phpunit = toolchain('phpunit')
+      return null == phpunit
+        ? null
+        : { bin: phpunit, args: ['--no-configuration', Path.join('test', 'CodecTest.php')] }
+    },
+  },
+  {
+    target: 'go',
+    runner: 'test/codec_test.go',
+    needs: 'go',
+    command: () => {
+      const go = toolchain('go')
+      return null == go ? null
+        : { bin: go, args: ['test', './test/', '-run', '^TestCodec$', '-v', '-count=1'] }
+    },
+  },
+  {
+    target: 'py',
+    runner: 'test/test_codec.py',
+    needs: 'python3 with pytest and requests',
+    command: () => {
+      const py = toolchain('python3') || toolchain('python')
+      if (null == py) return null
+      if (!probeOk(py, ['-c', 'import pytest, requests'])) return null
+      return { bin: py, args: ['-m', 'pytest', 'test/test_codec.py', '-q', '-s'],
+        env: pythonEnv() }
+    },
+  },
 ]
 
 

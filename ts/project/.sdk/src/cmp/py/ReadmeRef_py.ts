@@ -333,6 +333,7 @@ ${updateLines}    # ${'patch' === opname ? 'Only the fields to change' : 'Fields
               tier: codecTier(target),
               values: '`bytes`, `bytearray`, `memoryview`, a `str` or a file object',
               once: 'a file object',
+              source: 'a source made by `client.binary.bytes(data, {"name": name, "type": media_type})`',
             })
             if ('' !== note) Content(note)
           }

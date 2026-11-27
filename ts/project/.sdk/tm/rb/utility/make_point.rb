@@ -5,6 +5,7 @@ require_relative '../core/error'
 require_relative 'param'
 require_relative 'prepare_method'
 require_relative 'op_key'
+require_relative 'binary'
 module ProjectNameUtilities
   # The path parameters of a point that neither the call nor the entity gives
   # a value for, looked up as prepare_params looks them up.
@@ -17,7 +18,17 @@ module ProjectNameUtilities
     end
   end
 
+  # Once the point is known, a body of bytes it answers is refused and the
+  # sources its binary fields carry are lifted out of the data.
   MakePoint = ->(ctx) {
+    point, err = ProjectNameUtilities::SelectPoint.call(ctx)
+    return nil, err if err
+    err = ProjectNameUtilities.bytes_refused(ctx) || ProjectNameUtilities.lift_sources(ctx)
+    return nil, err if err
+    return point, nil
+  }
+
+  SelectPoint = ->(ctx) {
     if ctx.out["point"]
       preset = ctx.out["point"]
       # A feature may short-circuit endpoint resolution by placing an error

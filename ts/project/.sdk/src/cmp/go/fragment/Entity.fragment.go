@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"GOMODULE/core"
+	// #BinaryImport
 
 	vs "github.com/voxgig/struct"
 )
@@ -94,6 +95,8 @@ func (e *EntyClass) Make() core.Entity {
 	}
 	return NewEntyClass(e.client, opts)
 }
+
+// #BinarySlot
 
 func (e *EntyClass) Data(args ...any) any {
 	if len(args) > 0 && args[0] != nil {

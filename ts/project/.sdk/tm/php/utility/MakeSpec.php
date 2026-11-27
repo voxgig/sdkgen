@@ -77,6 +77,9 @@ class ProjectNameMakeSpec
             $ctx->spec->headers['content-type'] = ProjectNameGraphql::CONTENT_TYPE;
         } else {
             $ctx->spec->body = ($utility->prepare_body)($ctx);
+            if ($ctx->spec->body instanceof ProjectNameError) {
+                return [null, $ctx->spec->body];
+            }
             $ctx->spec->path = ($utility->prepare_path)($ctx);
         }
 

@@ -90,7 +90,7 @@ describe('codec tier', () => {
   test('the tier table: ts and js encode; the others do not yet', () => {
     const table = Object.fromEntries(SDK_TARGETS.map((t) => [t, codecTier(TARGETS[t])]))
     const encoded = SDK_TARGETS.filter((t) => atTier(TARGETS[t], 'encoded'))
-    deepStrictEqual(encoded, ['csharp', 'js', 'swift', 'ts'], JSON.stringify(table))
+    deepStrictEqual(encoded, ['csharp', 'go', 'js', 'php', 'py', 'rb', 'swift', 'ts'], JSON.stringify(table))
   })
 
   for (const t of SDK_TARGETS) {

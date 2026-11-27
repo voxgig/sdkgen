@@ -1098,16 +1098,18 @@ class CleanTest extends TestCase
                 $this->assertSame($desc, $explained['fetchdef']['body'] ?? null,
                     $carrier . ': the explained fetch definition');
 
-                // The request data holds what the caller gave: a stream is a
-                // stream there, and an equal string is the body wherever it
-                // sits.
+                // The sources lifted from the request data hold what the
+                // caller gave: a stream is a stream there, and an equal string
+                // is the body wherever it sits.
                 $ctx = $failed->ctx();
                 $body = $given[$carrier . '/notfound/throw'];
-                $held = ($ctx->utility->clean)($ctx, ['reqdata' => $ctx->reqdata, 'copy' => self::CONTENT]);
-                $this->assertSame(is_string($body) ? $desc : $stream, $held['reqdata']['$body'] ?? null,
+                $held = ($ctx->utility->clean)($ctx, ['sources' => $ctx->sources, 'copy' => self::CONTENT]);
+                $this->assertSame(is_string($body) ? $desc : $stream, $held['sources']['$body'] ?? null,
                     $carrier . ': the request data');
                 $this->assertSame($desc, $held['copy'] ?? null, $carrier . ': an equal string');
-                $this->assertSame($body, $ctx->reqdata['$body'] ?? null, $carrier . ': the live request data');
+                $this->assertSame($body, $ctx->sources['$body'] ?? null, $carrier . ': the live request data');
+                $this->assertArrayNotHasKey('$body', $ctx->reqdata,
+                    $carrier . ': the body is lifted out of the request data');
             }
         } finally {
             foreach ($given as $body) {

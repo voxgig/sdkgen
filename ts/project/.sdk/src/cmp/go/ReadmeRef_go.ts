@@ -354,6 +354,7 @@ fmt.Println(result.(sdk.Entity).Data())
               tier: codecTier(target),
               values: 'a `[]byte`, a `string` or an `io.Reader`',
               once: 'an `io.Reader`',
+              source: 'a source made by `client.Binary.Bytes(data, map[string]any{"name": name, "type": mediaType})`',
             })
             if ('' !== note) Content(note)
           }

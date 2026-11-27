@@ -56,6 +56,7 @@ module ProjectNameUtilities
       ctx.spec.headers['content-type'] = GRAPHQL_CONTENT_TYPE
     else
       ctx.spec.body = utility.prepare_body.call(ctx)
+      return nil, ctx.spec.body if ctx.spec.body.is_a?(ProjectNameError)
       ctx.spec.path = utility.prepare_path.call(ctx)
     end
 

@@ -35,6 +35,9 @@ type Utility struct {
 	ResultHeaders     func(ctx *Context) *Result
 	TransformRequest  func(ctx *Context) any
 	TransformResponse func(ctx *Context) any
+	// The body codecs this SDK was generated with, from the generated codec index.
+	Codec             Codec
+	MultipartBoundary func(ctx *Context) string
 	Custom            map[string]any
 }
 

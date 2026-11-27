@@ -7,6 +7,7 @@ import {
   entityClassName, entityCollection,
   inactiveFeatureExcludes,
   pluginExcludes,
+  codecExcludes,
   targetFeatures,
   TEST_CONTROL_EXCLUDE,
   TargetLicense,
@@ -31,6 +32,7 @@ import { PrepareAuth } from './PrepareAuth_py'
 import { Gitignore } from './Gitignore_py'
 import { MainEntity } from './MainEntity_py'
 import { EntityTypes } from './EntityTypes_py'
+import { CodecIndex } from './CodecIndex_py'
 
 
 const Main = cmp(async function Main(props: any) {
@@ -55,7 +57,8 @@ const Main = cmp(async function Main(props: any) {
 
   Copy({
     from: 'tm/' + target.name,
-    exclude: [/src\//, /pkg\//, TEST_CONTROL_EXCLUDE, ...inactiveFeatureExcludes(props.ctx$, target)],
+    exclude: [/src\//, /pkg\//, TEST_CONTROL_EXCLUDE, ...inactiveFeatureExcludes(props.ctx$, target),
+      ...codecExcludes(model)],
     replace: {
       ...props.ctx$.stdrep,
     }
@@ -68,6 +71,7 @@ const Main = cmp(async function Main(props: any) {
     exclude: [
       ...inactiveFeatureExcludes(props.ctx$, target, 'tm/' + target.name + '/pkg'),
       ...pluginExcludes(model),
+      ...codecExcludes(model),
     ],
     replace: {
       ...props.ctx$.stdrep,
@@ -223,6 +227,8 @@ def _has_feature(name):
       Content(``)
     })
   })
+
+  CodecIndex({ target })
 
   })
 

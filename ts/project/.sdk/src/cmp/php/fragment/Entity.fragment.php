@@ -5,6 +5,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../utility/struct/Struct.php';
 require_once __DIR__ . '/../core/Helpers.php';
+// #BinaryRequire
 
 use Voxgig\Struct\Struct;
 
@@ -49,6 +50,8 @@ class EntyClass
     {
         return $this->_name;
     }
+
+    // #BinarySlot
 
     // What print_r shows: the record, cleaned. The client and utility this
     // instance holds print every feature's state through their closures,

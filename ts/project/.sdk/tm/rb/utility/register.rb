@@ -30,6 +30,7 @@ require_relative 'result_body'
 require_relative 'result_headers'
 require_relative 'transform_request'
 require_relative 'transform_response'
+require_relative 'codec/index'
 
 ProjectNameUtility.registrar = ->(u) {
   u.clean = ProjectNameUtilities::Clean
@@ -66,4 +67,7 @@ ProjectNameUtility.registrar = ->(u) {
   u.result_headers = ProjectNameUtilities::ResultHeaders
   u.transform_request = ProjectNameUtilities::TransformRequest
   u.transform_response = ProjectNameUtilities::TransformResponse
+  # The body codecs this SDK was generated with; see codec/index.
+  u.codec = ProjectNameUtilities::CODEC
+  u.multipart_boundary = ProjectNameUtilities::CODEC["multipart_boundary"]
 }

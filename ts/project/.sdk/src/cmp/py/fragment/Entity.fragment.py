@@ -5,6 +5,7 @@ from __future__ import annotations
 from projectname_sdk.utility.voxgig_struct import voxgig_struct as vs
 from projectname_sdk.core import helpers
 # #TypeImports
+# #BinaryImport
 
 
 class EntyClass:
@@ -52,6 +53,8 @@ class EntyClass:
         for k, v in self._entopts.items():
             opts[k] = v
         return EntyClass(self._client, opts)
+
+# #BinarySlot
 
     def data_set(self, args=None):
         if args is not None:

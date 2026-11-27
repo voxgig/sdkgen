@@ -13,3 +13,6 @@ class ProjectNameControl:
         # Per-call feature inputs (audit actor, paging cursor/page).
         self.actor = opts.get("actor")
         self.paging = opts.get("paging")
+        # Set by an entity's binary handle: the slot and the direction its
+        # bytes move, and the bytes a read leaves.
+        self.transfer = opts.get("transfer")

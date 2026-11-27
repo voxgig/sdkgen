@@ -120,6 +120,25 @@ def _getonly_refusal(fullurl, method):
         "fetch_getonly_block", "[GET-ONLY GUARD] blocked " + method + " " + path)
 
 
+# A body still to be read, decoded as it arrives; closing it releases the
+# connection.
+class _StreamBody:
+    def __init__(self, resp):
+        self._resp = resp
+        self._chunks = resp.iter_content(65536)
+
+    def read(self, size=-1):
+        out = b""
+        for chunk in self._chunks:
+            out += chunk
+            if 0 <= size <= len(out):
+                break
+        return out
+
+    def close(self):
+        self._resp.close()
+
+
 def _default_http_fetch(fullurl, fetchdef, ctx=None):
     method = fetchdef.get("method", "GET")
     refused = _getonly_refusal(fullurl, method)
@@ -154,19 +173,30 @@ def _default_http_fetch(fullurl, fetchdef, ctx=None):
     if isinstance(timeout, (int, float)) and timeout > 0:
         kwargs["timeout"] = timeout
 
+    # A raw success body is left unread: the raw codec reads it to maxBuffer.
+    raw = ctx is not None and "raw" == vs.getpath(getattr(ctx, "point", None), "response.kind")
+    if raw:
+        kwargs["stream"] = True
+
     sending = _SENDING.set(ctx)
     try:
         resp = _session().request(method, fullurl, data=data, headers=req_headers, **kwargs)
+        resp_headers = {}
+        for k, v in resp.headers.items():
+            resp_headers[k.lower()] = v
+        if raw and resp.status_code < 400:
+            return {
+                "status": resp.status_code,
+                "statusText": resp.reason or "OK",
+                "headers": resp_headers,
+                "body": _StreamBody(resp),
+            }, None
         # Bytes that are not text still reach the unreadable-body error.
         body = resp.content.decode("utf-8", errors="replace")
     except Exception as e:
         return None, str(e)
     finally:
         _SENDING.reset(sending)
-
-    resp_headers = {}
-    for k, v in resp.headers.items():
-        resp_headers[k.lower()] = v
 
     json_body = None
     unreadable = False

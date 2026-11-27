@@ -8,6 +8,7 @@ from projectname_sdk.core.helpers import to_map
 from projectname_sdk.utility.param import param_value
 from projectname_sdk.utility.prepare_method import allowed
 from projectname_sdk.utility.op_key import op_action, op_keys
+from projectname_sdk.utility.binary import bytes_refused, lift_sources
 
 
 _PATH_PARAM = re.compile(r"\{([^{}/]+)\}")
@@ -57,7 +58,19 @@ def _unfilled(ctx, point):
     return missing
 
 
+# Once the point is known, a body of bytes it answers is refused and the
+# sources its binary fields carry are lifted out of the data.
 def make_point_util(ctx):
+    point, err = _select_point(ctx)
+    if err is not None:
+        return None, err
+    err = bytes_refused(ctx) or lift_sources(ctx)
+    if err is not None:
+        return None, err
+    return point, None
+
+
+def _select_point(ctx):
     pre = ctx.out.get("point")
     if pre is not None:
         # A feature hook (e.g. rbac) short-circuits endpoint resolution by

@@ -10,7 +10,8 @@ class ProjectNameUtility
                 :prepare_params, :prepare_path, :prepare_query,
                 :graphql_body, :graphql_errors,
                 :result_basic, :result_body, :result_headers,
-                :transform_request, :transform_response, :custom
+                :transform_request, :transform_response, :custom,
+                :codec, :multipart_boundary
 
   @@registrar = nil
 

@@ -7,6 +7,7 @@ require_once __DIR__ . '/../core/Helpers.php';
 require_once __DIR__ . '/Param.php';
 require_once __DIR__ . '/PrepareMethod.php';
 require_once __DIR__ . '/OpKey.php';
+require_once __DIR__ . '/Binary.php';
 
 class ProjectNameMakePoint
 {
@@ -25,7 +26,19 @@ class ProjectNameMakePoint
         return $missing;
     }
 
+    // Once the point is known, a body of bytes it answers is refused and the
+    // sources its binary fields carry are lifted out of the data.
     public static function call(ProjectNameContext $ctx): array
+    {
+        [$point, $err] = self::select($ctx);
+        if (null !== $err) {
+            return [null, $err];
+        }
+        $err = ProjectNameBinaryUtility::bytesRefused($ctx) ?? ProjectNameBinaryUtility::liftSources($ctx);
+        return null === $err ? [$point, null] : [null, $err];
+    }
+
+    private static function select(ProjectNameContext $ctx): array
     {
         if (isset($ctx->out['point'])) {
             // A PrePoint feature hook (e.g. rbac) can short-circuit endpoint

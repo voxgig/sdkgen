@@ -4,7 +4,7 @@ import * as Path from 'node:path'
 import {
   cmp, each, camelify, names,
   File, Content, Folder, Fragment, Line, FeatureHook, Slot,
-  entityClassName, entityCollection,
+  entityClassName, entityCollection, entitySlots,
 } from '@voxgig/sdkgen'
 
 import {
@@ -30,6 +30,19 @@ const Entity = cmp(function Entity(props: any) {
   }
 
   names(entrep, entity.Name, 'EntityName')
+
+  // The entity's binary slots, by name; '' is its own bytes, reached with no name.
+  const slots = entitySlots(entity)
+  const slotDefs = Object.fromEntries(slots.map((slot: any) => [slot.name, {
+    action: slot.action,
+    ...(null == slot.read ? {} : { read: slot.read }),
+    ...(null == slot.write ? {} : { write: slot.write }),
+  }]))
+  const named = slots.map((slot: any) => slot.name).filter((name: string) => '' !== name)
+  const param = 0 === named.length ? '' : named.length < slots.length ? '(slot = nil)' : '(slot)'
+  const slotDoc = 0 === named.length ? '' :
+    '  # @param slot [String] one of ' + named.map((name: string) => JSON.stringify(name)).join(', ') +
+    (named.length < slots.length ? ', or nil for its own bytes' : '') + '\n'
 
   const ff = Path.normalize(__dirname + '/../../../src/cmp/rb/fragment/')
 
@@ -66,6 +79,17 @@ const Entity = cmp(function Entity(props: any) {
             ({ name, indent }: any) =>
               `${indent}utility.feature_hook.call(ctx, "${name}")\n`,
 
+          '# #BinaryRequire': 0 === slots.length ? '' :
+            `require_relative '../utility/codec/handle_codec'`,
+
+          '# #BinarySlot': 0 === slots.length ? '' : `BINARY_SLOTS = ${rbHash(slotDefs, '  ')}.freeze
+
+  # An entity's bytes never enter its data: they are reached by slot.
+${slotDoc}  # @return [${model.const.Name}BinaryHandle]
+  def binary${param}
+    ${model.const.Name}BinaryHandle.new(self, BINARY_SLOTS${'' === param ? '' : ', slot'})
+  end`,
+
           ...opfrags,
         }
       })
@@ -74,6 +98,19 @@ const Entity = cmp(function Entity(props: any) {
   })
 })
 
+
+
+function rbHash(value: any, indent: string): string {
+  if ('object' !== typeof value || null == value) {
+    return JSON.stringify(value)
+  }
+  const keys = Object.keys(value)
+  if (0 === keys.length) {
+    return '{}'
+  }
+  return '{\n' + keys.map((key) => indent + '  ' + JSON.stringify(key) + ' => ' +
+    rbHash(value[key], indent + '  ') + ',').join('\n') + '\n' + indent + '}'
+}
 
 
 export {

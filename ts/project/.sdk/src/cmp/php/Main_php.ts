@@ -6,6 +6,7 @@ import {
   List, File, Content, Copy, Folder, Fragment, Line, FeatureHook,
   inactiveFeatureExcludes,
   pluginExcludes,
+  codecExcludes,
   targetFeatures,
   TEST_CONTROL_EXCLUDE,
   TargetLicense,
@@ -31,6 +32,7 @@ import { PrepareAuth } from './PrepareAuth_php'
 import { Gitignore } from './Gitignore_php'
 import { MainEntity } from './MainEntity_php'
 import { EntityTypes } from './EntityTypes_php'
+import { CodecIndex } from './CodecIndex_php'
 
 
 const Main = cmp(async function Main(props: any) {
@@ -54,7 +56,8 @@ const Main = cmp(async function Main(props: any) {
   Copy({
     from: 'tm/' + target.name,
     exclude: [/^src(\/|$)/, TEST_CONTROL_EXCLUDE,
-      ...inactiveFeatureExcludes(props.ctx$, target), ...pluginExcludes(model)],
+      ...inactiveFeatureExcludes(props.ctx$, target), ...pluginExcludes(model),
+      ...codecExcludes(model)],
     replace: {
       ...props.ctx$.stdrep,
     }
@@ -96,6 +99,8 @@ const Main = cmp(async function Main(props: any) {
   // itself, because nothing is open here: Main writes into the target root.
   // See PrepareAuth_php.
   PrepareAuth({ target })
+
+  CodecIndex({ target })
 
   // Generate typed models (types/<Sdk>Types.php) — classmap-autoloaded.
   EntityTypes({ target })

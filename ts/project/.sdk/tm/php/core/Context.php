@@ -37,6 +37,8 @@ class ProjectNameContext implements \JsonSerializable
     // Set by make_error as it fires PreUnexpected, which fires once per
     // operation.
     public bool $unexpected_fired = false;
+    // The values of the point's binary fields, lifted out of reqdata.
+    public ?array $sources = null;
 
     public function __construct(array $ctxmap = [], ?self $basectx = null)
     {
@@ -60,6 +62,10 @@ class ProjectNameContext implements \JsonSerializable
             }
             if (isset($ctrl_raw['paging']) && is_array($ctrl_raw['paging'])) {
                 $this->ctrl->paging = $ctrl_raw['paging'];
+            }
+            if (isset($ctrl_raw['transfer']) &&
+                (is_array($ctrl_raw['transfer']) || $ctrl_raw['transfer'] instanceof \ArrayAccess)) {
+                $this->ctrl->transfer = $ctrl_raw['transfer'];
             }
         } elseif ($basectx !== null && $basectx->ctrl !== null
             && ProjectNameHelpers::get_ctx_prop($ctxmap, "opname") === null) {

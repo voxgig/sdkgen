@@ -29,7 +29,8 @@ from projectname_sdk.core.operation import ProjectNameOperation
 from projectname_sdk.core.error import ProjectNameError
 from projectname_sdk.feature.base_feature import ProjectNameBaseFeature
 
-from test.omni import makeRunner
+from test.omni import CtxView, _enrich, makeRunner
+from projectname_sdk.core.utility_type import ProjectNameUtility
 
 
 # Resolved against test/omni.py's own directory, so the suite works from
@@ -869,3 +870,94 @@ class TestPrimaryUtility:
     def test_transform_response_basic(self):
         runsection('transformResponse',
                    lambda ctx: utility.transform_response(ctx))
+
+    # A codec section a project's corpus has not pulled yet is skipped, as is
+    # one for a codec this SDK was generated without: its model has no such
+    # point.
+    def _runcodec(self, name, kind, codec, subject):
+        section = (spec.get(name) or {}).get(kind) if isinstance(spec, dict) else None
+        if section is None:
+            pytest.skip("this project's test.json has no %s.%s section" % (name, kind))
+        if codec is not None and not callable((utility.codec or {}).get(codec)):
+            pytest.skip("this SDK was generated without a %s codec" % codec)
+        assert isinstance(section.get("set"), list) and 0 < len(section["set"]), (
+            "test corpus section '%s.%s' is EMPTY" % (name, kind))
+        return runset(section, subject)
+
+    @pytest.mark.parametrize("kind", ["form", "multipart", "raw"])
+    def test_body_codec(self, kind):
+        def subject(ctx):
+            ctx.reqdata = _sourced(ctx.reqdata)
+            ctx.reqmatch = _sourced(ctx.reqmatch)
+            ctx.spec = ProjectNameSpec({"headers": {}})
+            body = _latin1(utility.prepare_body(ctx))
+            ctype = ctx.spec.headers.get("content-type")
+            return {"body": body} if ctype is None else {"type": ctype, "body": body}
+
+        boundary = utility.multipart_boundary
+        utility.multipart_boundary = lambda _ctx: "BOUNDARY"
+        try:
+            self._runcodec("prepareBody", kind, None if "raw" == kind else kind, subject)
+        finally:
+            utility.multipart_boundary = boundary
+
+    def test_resbody_raw(self):
+        def subject(ctx):
+            ctx.response.body = _sourced(ctx.response.body)
+            utility.result_body(ctx)
+            transfer = getattr(ctx.ctrl, "transfer", None)
+            if isinstance(transfer, dict) and transfer.get("bytes") is not None:
+                transfer["bytes"] = _latin1(transfer["bytes"])
+            return None
+
+        self._runcodec("resultBody", "raw", "raw", subject)
+
+    def test_fetchdef_encoded(self):
+        def subject(ctx):
+            ctx.spec.body = _sourced(ctx.spec.body)
+            byurl = ProjectNameUtility.copy(utility)
+            byurl.make_url = lambda c: (c.spec.url, None)
+            ctx.utility = byurl
+            fetchdef = _unwrap(byurl.make_fetch_def(ctx))
+            return dict(fetchdef, body=_latin1(fetchdef.get("body")))
+
+        self._runcodec("makeFetchDef", "encoded", None, subject)
+
+    def test_clean_binary(self):
+        def subject(cctx, val):
+            if isinstance(cctx, CtxView):
+                ctx = object.__getattribute__(cctx, "_target")
+                if ctx.spec is not None:
+                    ctx.spec.body = _sourced(ctx.spec.body)
+            else:
+                ctxmap = _sourced(dict(cctx))
+                ctx = utility.make_context(ctxmap, None)
+                _enrich(ctxmap, ctx)
+                ctx.utility = utility
+            if "spec$" == val:
+                return utility.clean(ctx, {"headers": ctx.spec.headers, "body": ctx.spec.body})
+            return utility.clean(ctx, _sourced(val))
+
+        self._runcodec("clean", "binary", None, subject)
+
+
+# `source$` is a source built by binary.bytes, `bytes$` bytes; both latin1.
+# A blob source is a plain one here: the language has no blob.
+def _sourced(val):
+    if isinstance(val, list):
+        return [_sourced(v) for v in val]
+    if isinstance(val, dict) and not isinstance(val, CtxView):
+        if isinstance(val.get("source$"), str):
+            return client.binary.bytes(val["source$"].encode("latin-1"),
+                                       {"name": val.get("name"), "type": val.get("type")})
+        if isinstance(val.get("bytes$"), str):
+            return val["bytes$"].encode("latin-1")
+        return {k: _sourced(v) for k, v in val.items()}
+    return val
+
+
+def _latin1(body):
+    if isinstance(body, (bytes, bytearray, memoryview)):
+        return bytes(body).decode("latin-1")
+    return body
+

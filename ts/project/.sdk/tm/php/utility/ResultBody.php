@@ -13,6 +13,13 @@ class ProjectNameResultBody
     {
         $response = $ctx->response;
         $result = $ctx->result;
+        $raw = is_array($ctx->utility?->codec) ? ($ctx->utility->codec['raw'] ?? null) : null;
+        if ($result && $response && is_callable($raw) &&
+            'raw' === \Voxgig\Struct\Struct::getpath($ctx->point, 'response.kind') &&
+            null === $result->err && null === $response->err && $result->status < 400) {
+            $raw($ctx);
+            return $result;
+        }
         if ($result && $response && $response->json_func && $response->body) {
             $result->body = ($response->json_func)();
         }

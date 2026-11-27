@@ -722,15 +722,17 @@ class ${Name}CleanTest < Minitest::Test
       assert_equal desc, explained.dig("spec", "body"), "#{carrier}: the explain record"
       assert_equal desc, explained.dig("fetchdef", "body"), "#{carrier}: the explained fetch definition"
 
-      # The request data holds what the caller gave: an IO is a stream
-      # there, and an equal copy of the bytes is the body wherever it sits.
+      # The sources lifted from the request data hold what the caller gave:
+      # an IO is a stream there, and an equal copy of the bytes is the body
+      # wherever it sits.
       ctx = failed.ctx
       body = given["#{carrier}/notfound/throw"]
-      held = ctx.utility.clean.call(ctx, { "reqdata" => ctx.reqdata, "copy" => CONTENT.b })
-      assert_equal body.is_a?(String) ? desc : stream, held["reqdata"]["$body"],
+      held = ctx.utility.clean.call(ctx, { "sources" => ctx.sources, "copy" => CONTENT.b })
+      assert_equal body.is_a?(String) ? desc : stream, held["sources"]["$body"],
         "#{carrier}: the request data"
       assert_equal desc, held["copy"], "#{carrier}: an equal copy"
-      assert_same body, ctx.reqdata["$body"], "#{carrier}: the live request data"
+      assert_same body, ctx.sources["$body"], "#{carrier}: the live request data"
+      refute ctx.reqdata.key?("$body"), "#{carrier}: the body is lifted out of the request data"
     end
   end
 

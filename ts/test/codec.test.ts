@@ -443,4 +443,57 @@ describe('codec: core opens no file', () => {
         'swift ' + rel + ' touches a file')
     }
   })
+
+  test('no rb codec, lift or handle source reaches the filesystem', () => {
+    for (const rel of ['binary', 'prepare_body', 'make_point', 'codec/form_codec',
+      'codec/multipart_codec', 'codec/raw_codec', 'codec/handle_codec']) {
+      const src = readFileSync(Path.join(TM, 'rb', 'utility', rel + '.rb'), 'utf8')
+      ok(!/(^|[^.\w])(File|IO|Dir|Pathname|Kernel|URI)\.(open|read|new|binread|foreach)\b|require\s+['"](fileutils|pathname|open-uri)['"]/m
+        .test(src), 'rb ' + rel + ' reaches the filesystem')
+    }
+  })
+
+  test('no php codec, lift or handle source reaches the filesystem', () => {
+    for (const rel of ['Binary', 'PrepareBody', 'MakePoint', 'codec/FormCodec',
+      'codec/MultipartCodec', 'codec/RawCodec', 'codec/HandleCodec']) {
+      const src = readFileSync(Path.join(TM, 'php', 'utility', rel + '.php'), 'utf8')
+      ok(!/\b(fopen|file_get_contents|file_put_contents|readfile|file|opendir|scandir|tmpfile|tempnam|SplFileObject|SplFileInfo)\s*\(/
+        .test(src), 'php ' + rel + ' reaches the filesystem')
+    }
+  })
 })
+
+
+// Go has no module named fs: a file is reached through os, io/fs, io/ioutil
+// or path/filepath, and none of them may be imported by the core codec path.
+describe('codec: core opens no file, in go', () => {
+  test('no go codec, lift or prepareBody source imports a filesystem package', () => {
+    const files = ['core/binary.go', 'utility/binary.go', 'utility/prepare_body.go',
+      'utility/make_point.go', 'utility/codec/form_codec.go', 'utility/codec/multipart_codec.go',
+      'utility/codec/raw_codec.go', 'utility/codec/handle_codec.go']
+    for (const rel of files) {
+      const src = readFileSync(Path.join(TM, 'go', rel), 'utf8')
+      ok(!/^\s*(\w+\s+)?"(os|io\/fs|io\/ioutil|path\/filepath)"\s*$/m.test(src),
+        'go ' + rel + ' imports a filesystem package')
+    }
+  })
+})
+
+
+// Python opens a file with the open builtin, or through os, io, pathlib or
+// shutil: the core codec path names none of them.
+describe('codec: core opens no file, in py', () => {
+  test('no py codec, lift or prepare_body source opens a file', () => {
+    const files = ['core/binary.py', 'utility/binary.py', 'utility/prepare_body.py',
+      'utility/make_point.py', 'utility/codec/form_codec.py', 'utility/codec/multipart_codec.py',
+      'utility/codec/raw_codec.py', 'utility/codec/handle_codec.py']
+    for (const rel of files) {
+      const src = readFileSync(Path.join(TM, 'py', 'pkg', rel), 'utf8')
+      ok(!/^\s*(import|from)\s+(os|io|pathlib|shutil)\b/m.test(src),
+        'py ' + rel + ' imports a filesystem module')
+      ok(!/(^|[^.\w])open\(/m.test(src.replace(/def open\(/g, '')),
+        'py ' + rel + ' calls open()')
+    }
+  })
+})
+

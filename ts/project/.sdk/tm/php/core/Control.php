@@ -26,6 +26,9 @@ class ProjectNameControl
     // same reason as `$actor`.
     public mixed $paging;
 
+    // Set by an entity's binary handle: the slot and the direction its bytes move.
+    public mixed $transfer;
+
     public function __construct(array $opts = [])
     {
         $this->throw_err = $opts['throw_err'] ?? null;
@@ -33,5 +36,6 @@ class ProjectNameControl
         $this->explain = $opts['explain'] ?? null;
         $this->actor = $opts['actor'] ?? null;
         $this->paging = $opts['paging'] ?? null;
+        $this->transfer = $opts['transfer'] ?? null;
     }
 }

@@ -10,6 +10,7 @@ require_once __DIR__ . '/core/Helpers.php';
 
 // Load utility registration
 require_once __DIR__ . '/utility/Register.php';
+require_once __DIR__ . '/utility/Binary.php';
 
 // Load config and features
 require_once __DIR__ . '/config.php';
@@ -138,6 +139,12 @@ class ProjectNameSDK implements \JsonSerializable
     public function get_root_ctx()
     {
         return $this->_rootctx;
+    }
+
+    // Builds the file sources a binary field or a raw body takes.
+    public function binary(): ProjectNameBinary
+    {
+        return new ProjectNameBinary();
     }
 
     public function prepare(array $fetchargs = []): mixed

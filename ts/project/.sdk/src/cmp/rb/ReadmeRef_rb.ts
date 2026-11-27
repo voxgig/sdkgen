@@ -340,6 +340,7 @@ ${updateLines}  # ${'patch' === opname ? 'Only the fields to change' : 'Fields t
               tier: codecTier(target),
               values: 'a `String`, or an IO that responds to `read`',
               once: 'an IO',
+              source: 'a source made by `client.binary.bytes(data, { "name" => name, "type" => type })`',
             })
             if ('' !== note) Content(note)
           }

@@ -2,6 +2,7 @@
 
 require_relative '../utility/struct/voxgig_struct'
 require_relative '../core/helpers'
+# #BinaryRequire
 
 class EntyClass
   def initialize(client, entopts = nil)
@@ -33,6 +34,8 @@ class EntyClass
   def get_name
     @_name
   end
+
+  # #BinarySlot
 
   # The entity serialises and prints as its data (clean honours `to_h`),
   # never as the client it holds or the match it absorbed: a query

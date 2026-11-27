@@ -32,6 +32,7 @@ from projectname_sdk.utility.result_body import result_body_util
 from projectname_sdk.utility.result_headers import result_headers_util
 from projectname_sdk.utility.transform_request import transform_request_util
 from projectname_sdk.utility.transform_response import transform_response_util
+from projectname_sdk.utility.codec import CODEC
 
 
 def register_all(u):
@@ -69,6 +70,8 @@ def register_all(u):
     u.result_headers = result_headers_util
     u.transform_request = transform_request_util
     u.transform_response = transform_response_util
+    u.codec = CODEC
+    u.multipart_boundary = CODEC.get("multipart_boundary")
 
 
 ProjectNameUtility._registrar = register_all

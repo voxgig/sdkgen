@@ -31,8 +31,11 @@ type Context struct {
 	Reqdata  map[string]any
 	Match    map[string]any
 	Reqmatch map[string]any
-	Entity   Entity
-	Shared   map[string]any
+	// The values of the point's binary fields, lifted out of Reqdata; nil
+	// until the lift has run.
+	Sources map[string]any
+	Entity  Entity
+	Shared  map[string]any
 }
 
 func NewContext(ctxmap map[string]any, basectx *Context) *Context {
@@ -85,6 +88,7 @@ func NewContext(ctxmap map[string]any, basectx *Context) *Context {
 					ctx.Ctrl.Paging = pm
 				}
 			}
+			ctx.Ctrl.Transfer = transferOf(cm["transfer"])
 		} else if ctrl, ok := c.(*Control); ok {
 			ctx.Ctrl = ctrl
 		}
@@ -232,6 +236,18 @@ func NewContext(ctxmap map[string]any, basectx *Context) *Context {
 	ctx.Op = ctx.resolveOp(opname)
 
 	return ctx
+}
+
+func transferOf(val any) *Transfer {
+	switch tr := val.(type) {
+	case *Transfer:
+		return tr
+	case map[string]any:
+		slot, _ := tr["slot"].(string)
+		direction, _ := tr["direction"].(string)
+		return &Transfer{Slot: slot, Direction: direction}
+	}
+	return nil
 }
 
 func (ctx *Context) resolveOp(opname string) *Operation {

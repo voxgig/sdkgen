@@ -34,6 +34,7 @@ require_once __DIR__ . '/ResultBody.php';
 require_once __DIR__ . '/ResultHeaders.php';
 require_once __DIR__ . '/TransformRequest.php';
 require_once __DIR__ . '/TransformResponse.php';
+require_once __DIR__ . '/codec/Index.php';
 
 ProjectNameUtility::setRegistrar(function (ProjectNameUtility $u): void {
     $u->clean = [ProjectNameClean::class, 'call'];
@@ -70,4 +71,6 @@ ProjectNameUtility::setRegistrar(function (ProjectNameUtility $u): void {
     $u->result_headers = [ProjectNameResultHeaders::class, 'call'];
     $u->transform_request = [ProjectNameTransformRequest::class, 'call'];
     $u->transform_response = [ProjectNameTransformResponse::class, 'call'];
+    $u->codec = ProjectNameCodec::all();
+    $u->multipart_boundary = $u->codec['multipart_boundary'] ?? null;
 });

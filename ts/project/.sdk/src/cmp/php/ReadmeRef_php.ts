@@ -335,6 +335,7 @@ ${updateLines}  // ${'patch' === opname ? 'Only the fields to change' : 'Fields 
               tier: codecTier(target),
               values: 'a string or a stream resource',
               once: 'a stream resource',
+              source: "a source made by `$client->binary()->bytes($data, ['name' => $name, 'type' => $type])`",
             })
             if ('' !== note) Content(note)
           }

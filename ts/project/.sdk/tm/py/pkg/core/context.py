@@ -56,6 +56,8 @@ class ProjectNameContext:
                 self.ctrl.actor = ctrl_raw["actor"]
             if isinstance(ctrl_raw.get("paging"), dict):
                 self.ctrl.paging = ctrl_raw["paging"]
+            if isinstance(ctrl_raw.get("transfer"), dict):
+                self.ctrl.transfer = ctrl_raw["transfer"]
         elif (basectx is not None and basectx.ctrl is not None
               and get_ctx_prop(ctxmap, "opname") is None):
             self.ctrl = basectx.ctrl
@@ -129,6 +131,10 @@ class ProjectNameContext:
         self.reqdata = to_map(get_ctx_prop(ctxmap, "reqdata")) or {}
         self.match = to_map(get_ctx_prop(ctxmap, "match")) or {}
         self.reqmatch = to_map(get_ctx_prop(ctxmap, "reqmatch")) or {}
+
+        # The values of the point's binary fields, lifted out of reqdata;
+        # None until the lift has run.
+        self.sources = None
 
         # Point
         pt = get_ctx_prop(ctxmap, "point")
