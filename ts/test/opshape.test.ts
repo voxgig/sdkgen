@@ -8,7 +8,7 @@ import Path from 'node:path'
 
 import {
   opRequestShape, opTypeName, OP_SUFFIX, entityClassName, entityConstructorName, pickExampleEntity,
-  opReachable, opNeedsAction, entityOps, introOps, guardFlowSteps, ungeneratedOps, warnUngeneratedOps,
+  opReachable, opNeedsAction, opNeedsHandle, entityOps, introOps, guardFlowSteps, ungeneratedOps, warnUngeneratedOps,
   entityIdField, pointPlaceholders, requiredItems, matchArg, requestExampleItems, dataArg,
   entitySlots, modelCodecs, codecExcludes,
 } from '../dist/sdkgen.js'
@@ -629,6 +629,14 @@ describe('opReachable — the route makePoint would take', () => {
     strictEqual(opReachable({ points: [] }, []), false)
     strictEqual(opReachable(undefined, []), false)
   })
+
+  test('a point that answers bytes is not reachable by a plain call', () => {
+    const bytes = { ...pt('/artwork/{id}'), rs: { kind: 'raw', media: 'image/png', binary: true } }
+    const text = { ...pt('/feed/{id}'), rs: { kind: 'raw', media: 'application/rss+xml' } }
+    strictEqual(opReachable({ points: [bytes] }, ['id']), false)
+    strictEqual(opReachable({ points: [text] }, ['id']), true)
+    strictEqual(opReachable({ points: [bytes, pt('/artwork/{id}/meta')] }, ['id']), true)
+  })
 })
 
 
@@ -653,6 +661,21 @@ describe('opNeedsAction and entityOps', () => {
     deepStrictEqual(entityOps(ent), ['load'])
     deepStrictEqual(entityOps({ ...ent, op: { ...ent.op, list: { points: [pt('/signal/strong', 'strong')] } } }),
       ['load'])
+  })
+
+  test('an op whose every plain route answers bytes gets no plain example', () => {
+    const bytes = { ...pt('/artwork/{id}'), rs: { kind: 'raw', media: 'image/png', binary: true } }
+    const audio = { ...pt('/episode/{id}/audio', 'audio'), rs: { kind: 'raw', media: 'audio/wav', binary: true } }
+    strictEqual(opNeedsHandle({ points: [bytes] }), true)
+    strictEqual(opNeedsHandle({ points: [bytes, pt('/artwork/{id}/meta')] }), false)
+    strictEqual(opNeedsHandle({ points: [audio, pt('/episode/{id}')] }), false)
+    strictEqual(opNeedsHandle({ points: [] }), false)
+    strictEqual(opNeedsHandle({}), false)
+    const ent = {
+      name: 'artwork',
+      op: { load: { points: [bytes] }, list: { points: [pt('/artwork')] } },
+    }
+    deepStrictEqual(entityOps(ent), ['list'])
   })
 
   test('an operation outside the six the targets generate is in neither list', () => {

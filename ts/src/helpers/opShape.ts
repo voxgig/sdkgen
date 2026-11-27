@@ -240,13 +240,27 @@ function samePath(points: any[]): boolean {
 
 
 // The rule makePoint applies to a call without an action: only a point
-// without one, and one the call fills.
+// without one, one the call fills, and one that does not answer bytes.
 function opReachable(op: any, given: string[]): boolean {
   const points: any[] = op && op.points ? each(op.points) : []
   const have = new Set(given)
   const fills = (pt: any) => pointPlaceholders(pt).every((name) => have.has(name))
 
-  return points.some((pt: any) => null == (pt && pt.q && pt.q['$action']) && fills(pt))
+  return points.some((pt: any) => null == (pt && pt.q && pt.q['$action']) && fills(pt) &&
+    !answersBytes(pt))
+}
+
+
+// A point whose response is bytes is read through its slot's handle: a plain
+// call of it is refused.
+function answersBytes(pt: any): boolean {
+  return 'raw' === pt?.rs?.kind && true === pt?.rs?.binary
+}
+
+
+function opNeedsHandle(op: any): boolean {
+  const points = selectablePoints(op)
+  return 0 < points.length && points.every(answersBytes)
 }
 
 
@@ -497,14 +511,15 @@ function invalidRequest(ent: any):
 // The entity's ACTIVE op names that the bundled targets generate, in canonical
 // CRUD order. Doc generators gate an op example on this, NOT on the raw
 // `Object.keys(ent.op)`: an op outside `CANON_OP_ORDER` generates no method,
-// and an op whose every route is an action is refused without one, so a plain
-// example of either would fail.
+// an op whose every route is an action is refused without one, and so is an
+// op whose every plain route answers bytes, so a plain example of any would
+// fail.
 const CANON_OP_ORDER = ['list', 'load', 'create', 'update', 'patch', 'remove']
 
 function entityOps(ent: any): string[] {
   const ops = (ent && ent.op) || {}
   return CANON_OP_ORDER.filter((o: string) =>
-    ops[o] && ops[o].active !== false && !opNeedsAction(ops[o]))
+    ops[o] && ops[o].active !== false && !opNeedsAction(ops[o]) && !opNeedsHandle(ops[o]))
 }
 
 
@@ -892,6 +907,7 @@ export {
   selectablePoints,
   pointRequires,
   opReachable,
+  opNeedsHandle,
   opNeedsAction,
   ownPoint,
   opActions,

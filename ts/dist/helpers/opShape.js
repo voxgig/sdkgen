@@ -9,6 +9,7 @@ exports.opParams = opParams;
 exports.selectablePoints = selectablePoints;
 exports.pointRequires = pointRequires;
 exports.opReachable = opReachable;
+exports.opNeedsHandle = opNeedsHandle;
 exports.opNeedsAction = opNeedsAction;
 exports.ownPoint = ownPoint;
 exports.opActions = opActions;
@@ -207,12 +208,22 @@ function samePath(points) {
     return points.every((pt) => first === (0, pointPath_1.pointPathKey)(pt));
 }
 // The rule makePoint applies to a call without an action: only a point
-// without one, and one the call fills.
+// without one, one the call fills, and one that does not answer bytes.
 function opReachable(op, given) {
     const points = op && op.points ? (0, jostraca_1.each)(op.points) : [];
     const have = new Set(given);
     const fills = (pt) => (0, pointPath_1.pointPlaceholders)(pt).every((name) => have.has(name));
-    return points.some((pt) => null == (pt && pt.q && pt.q['$action']) && fills(pt));
+    return points.some((pt) => null == (pt && pt.q && pt.q['$action']) && fills(pt) &&
+        !answersBytes(pt));
+}
+// A point whose response is bytes is read through its slot's handle: a plain
+// call of it is refused.
+function answersBytes(pt) {
+    return 'raw' === pt?.rs?.kind && true === pt?.rs?.binary;
+}
+function opNeedsHandle(op) {
+    const points = selectablePoints(op);
+    return 0 < points.length && points.every(answersBytes);
 }
 function opNeedsAction(op) {
     const points = op && op.points ? (0, jostraca_1.each)(op.points) : [];
@@ -414,13 +425,14 @@ function invalidRequest(ent) {
 // The entity's ACTIVE op names that the bundled targets generate, in canonical
 // CRUD order. Doc generators gate an op example on this, NOT on the raw
 // `Object.keys(ent.op)`: an op outside `CANON_OP_ORDER` generates no method,
-// and an op whose every route is an action is refused without one, so a plain
-// example of either would fail.
+// an op whose every route is an action is refused without one, and so is an
+// op whose every plain route answers bytes, so a plain example of any would
+// fail.
 const CANON_OP_ORDER = ['list', 'load', 'create', 'update', 'patch', 'remove'];
 exports.CANON_OP_ORDER = CANON_OP_ORDER;
 function entityOps(ent) {
     const ops = (ent && ent.op) || {};
-    return CANON_OP_ORDER.filter((o) => ops[o] && ops[o].active !== false && !opNeedsAction(ops[o]));
+    return CANON_OP_ORDER.filter((o) => ops[o] && ops[o].active !== false && !opNeedsAction(ops[o]) && !opNeedsHandle(ops[o]));
 }
 // Unlike entityOps, keeps action-only ops: the README introductions always have.
 // None when no active entity has one.
