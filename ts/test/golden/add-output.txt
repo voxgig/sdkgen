@@ -978,7 +978,7 @@ tm/kotlin/utility/struct/Struct.kt edddf10ef0b4
 model/feature/feature-index.aontu 0351fe150e6a
 model/feature/test.aontu e0921bbb3a26
 model/sdk.aontu deb90c7d4659
-model/target/lua.aontu 9839a40f6abe
+model/target/lua.aontu fa51070a1bbb
 model/target/target-index.aontu aaceadc98c0a
 src/cmp/lua/Config_lua.ts 002ce6858c69
 src/cmp/lua/EntityOperation_lua.ts daa4641b002e
