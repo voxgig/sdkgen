@@ -1077,6 +1077,28 @@ emitted broken source reached the fleet unchallenged.
   `rust/feature/mod.rs` comes from `Main_rust`. And the shared test harness
   must not live in the file that gets dropped — go and csharp keep it in
   `feature_harness_test.go` / `FeatureHarness.cs` for exactly that reason.
+- **A table keyed by a string the CALLER supplies is not a plain object in
+  ts or js.** The cost feature's `actors` and `ops` are keyed by whatever the
+  caller names, and a key of `__proto__` reads the object's prototype, so
+  the increment that followed landed on `Object.prototype` (#510). A table
+  callers read back by key, as the features reference shows, is
+  `Object.create(null)`; one nothing reads from outside the feature is a
+  `Set` or a `Map`. The ts and js corpus runners check after every case that
+  neither shared prototype gained a property, and they DEFINE each case's
+  keys rather than assigning them, or a `__proto__` key in the fixture
+  vanishes before the assertion. The dynamic targets have no such hazard (a
+  py dict, an rb hash, a lua table and the rest keep the key as a key), so
+  this is a ts/js rule, not a parity gap.
+- **Per-call feature state lives on the CALL'S CONTEXT, never in a table on
+  the feature.** A feature lives as long as the client, so a table keyed by
+  context holds every finished call forever (#431: rb's audit Hash, perl's
+  `refaddr` map, cpp's id map). The once-per-call mark goes in `ctx.out`
+  (cpp's `out.extra`, c's `ctx_out_extra`), as go, java and py always did.
+  Removing the entry at `PreDone` is not enough: a non-2xx reaches `PreDone`
+  and then `PreUnexpected`, and the second would record the call again. An
+  address is not a key for it either, because a finished call's address is
+  reused. The "per-call feature state ends with the call" lane in
+  `generatedcompile.test.ts` runs each target's own pin.
 
 ---
 

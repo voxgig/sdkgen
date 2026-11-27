@@ -159,10 +159,15 @@ Issues: #510, #491, #427, #455, #431. Size: L.
   checkpoint. Pinned by a lane that sets the guard and runs the secrets
   suite, expecting `fetch_getonly_block`.
 - **#431.** The rb audit feature holds every context in a Hash it never
-  empties. D5: the entry is removed at the call's `PreDone`, and the same
-  check is made of every feature that keys on a context in every language
-  (audit, debug, clienttrack, telemetry). Pinned by a harness test counting
-  live contexts after a run.
+  empties. D5: the feature holds nothing of a call once it ends, and the
+  same check is made of every feature that keys on a context in every
+  language (audit, debug, clienttrack, telemetry). Pinned by a harness test
+  counting live contexts after a run. As built: the once-per-call mark is
+  kept on the call's own context (`ctx.out`), as go, java, py and c already
+  did, rather than removed at `PreDone` as first written here, because a
+  non-2xx reaches `PreDone` and then `PreUnexpected`, and an entry removed
+  at the first lets the second record the call twice; perl's `refaddr`
+  table and cpp's id map had the same leak and take the same fix.
 
 Depends on nothing. Releases as R1 with a migration note for the cache.
 
