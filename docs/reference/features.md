@@ -31,7 +31,7 @@ is no runtime to install and no service to call.
 | [`retry`](#retry) | Retries transient failures with exponential backoff, jitter, and `Retry-After` | transport |
 | [`timeout`](#timeout) | Bounds each request with a deadline and aborts the transport | transport |
 | [`ratelimit`](#ratelimit) | Keeps the client under a quota with a token bucket | transport |
-| [`cache`](#cache) | Serves safe reads from a bounded TTL cache | transport |
+| [`cache`](#cache) | Serves safe reads from a bounded per-client cache | transport |
 | [`proxy`](#proxy) | Routes outbound calls through an HTTP(S) proxy | transport |
 | [`netsim`](#netsim) | Injects latency, failures and outages for offline tests | transport |
 | [`cost`](#cost) | Prices every call, attributes the spend, and stops on a budget | transport + hooks |
@@ -468,15 +468,14 @@ Two processes each get their own bucket.
 
 ## `cache`
 
-> Response caching for safe read requests
+> Per-client response caching for safe read requests
 
 Serves a cached snapshot instead of hitting the network when the same
-method and URL was fetched within `ttl` milliseconds. Only successful
-(2xx) responses to cacheable methods are stored, keyed by method plus URL.
-The store is bounded: at `max` entries the oldest is evicted. A body that
-is not JSON is never stored: it passes through, so the operation raises
-the same `response_content_type` or `response_json_invalid` error it
-raises without the cache.
+request was answered within `ttl` milliseconds. Only successful (2xx)
+responses to cacheable methods are stored. The store is bounded: at `max`
+entries the oldest is evicted. A body that is not JSON is never stored: it
+passes through, so the operation raises the same `response_content_type`
+or `response_json_invalid` error it raises without the cache.
 
 Response bodies are one-shot streams, so a hit cannot simply replay the
 original object. The feature normalises the body on capture, which means
@@ -488,8 +487,8 @@ repeatedly.
 | Option | Default | Meaning |
 | --- | --- | --- |
 | `active` | `false` | Enable the feature. |
-| `ttl` | `5000` | Freshness window in ms. |
-| `max` | `256` | Maximum entries before eviction. |
+| `ttl` | `5000` | Freshness window in ms; a response's `max-age` can shorten it. |
+| `max` | `256` | Maximum entries in this client's store before eviction. |
 | `methods` | `['GET']` | Methods eligible for caching. |
 | `now()` | `Date.now` | Injectable clock. |
 
@@ -497,10 +496,72 @@ repeatedly.
 feature: { cache: { active: true, ttl: 30000, max: 1000 } }
 ```
 
+### The store and the key
+
+The store belongs to one client instance. Two clients never share an
+entry, and nothing is written outside the process.
+
+An entry's key is the method, the full URL, and a digest of the request
+headers. The digest covers every header, sorted by lowercased name, with
+its value. It is a keyed hash under a secret drawn at random when the
+client is built, so no header value appears in the key in plain form, and
+two clients digest the same headers differently. Two requests that differ
+only in a header, such as a tenant or a credential, never share an entry.
+
+The keyed hash is HMAC-SHA256 wherever the standard library has it: `ts`,
+`js`, `go`, `py`, `rb`, `php`, `perl`, `java`, `kotlin`, `scala`,
+`csharp`, `clojure`, `elixir` and `zig`. Where it does not, the target
+uses a keyed hash it does have:
+
+| Target | Keyed hash |
+| --- | --- |
+| `rust` | The standard library's SipHash, under the random keys of a per-client `RandomState`. |
+| `swift` | The standard library's `Hasher`, with its per-process random seed and a random per-client salt. |
+| `ocaml` | HMAC-MD5, built over the standard library's `Digest`. |
+| `c`, `cpp`, `lua` | SipHash-2-4, shipped in the feature, under a random per-client key. |
+
+### Writes invalidate
+
+A request whose method is neither GET nor HEAD, and is not listed in
+`methods`, is a write. It passes through to the transport, and afterwards,
+whether or not it succeeded, the cache drops every entry under the same
+entity collection. Take the URL path the write was sent to, and the same
+path with its last segment removed. An entry is dropped when its path
+equals either of those, or lies under either. A `PUT /planet/p1` drops `/planet/p1`,
+`/planet`, `/planet/p1/moon` and every other `/planet/...` entry. Entries
+on another host, or under another collection, stay. A query string plays
+no part in the match. A write to a top-level collection, such as
+`POST /planet`, has the root as its parent path, so it drops every entry
+for that host.
+
+### `Cache-Control`
+
+The response's `Cache-Control` header is read before anything is stored:
+
+- `no-store`, `private` and `no-cache` prevent storing. The response is
+  counted as a `bypass`.
+- `max-age=N` caps the entry's lifetime at N seconds when that is shorter
+  than `ttl`. It never extends `ttl`.
+
+`Expires`, `ETag` and conditional revalidation are out of scope: the cache
+does not read `Expires`, does not send `If-None-Match`, and treats
+`no-cache` as `no-store` rather than asking the server again.
+
 **Notes.** `client._cache` counts `hit`, `miss` and `bypass` (a request
-that was cacheable by method but whose response was not stored). This is
-a plain TTL cache: it does not read `Cache-Control` or revalidate with
-`ETag`.
+that was cacheable by method but whose response was not stored).
+
+One hazard remains. A client shared between tenants, where the tenant is
+chosen per call by something that is not a request header, such as a path
+segment the server ignores or an option never sent to the server, gets one
+entry for every tenant. The key cannot tell those calls apart. Give each
+tenant its own client, or send the tenant as a header.
+
+**Migration.** Before this release the key was the method and URL alone,
+no response header was read, and a write left the store untouched. A
+repeat of a GET with different headers now goes to the network, a write
+drops its collection's entries, and a response marked `no-store` or with
+a short `max-age` is cached for less time or not at all. A consumer that
+relied on a shared entry across credentials gets one entry per credential.
 
 ## `proxy`
 

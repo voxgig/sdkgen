@@ -200,6 +200,50 @@ class FeatureCorpusTest extends TestCase
         return $picked;
     }
 
+    private const READ_OPS = ['list', 'load'];
+    private const WRITE_OPS = ['create', 'update', 'patch', 'remove'];
+
+    /** A read and a write of one entity (#READ, #WRITE), each driven as usableOps drives an op. */
+    private static function usablePair(): ?array
+    {
+        $found = [];
+        foreach (self::candidates(self::buildClient([])) as $cand) {
+            $role = in_array($cand['op'], self::READ_OPS, true) ? 'read'
+                : (in_array($cand['op'], self::WRITE_OPS, true) ? 'write' : null);
+            if (null === $role || isset($found[$cand['accessor']][$role])) {
+                continue;
+            }
+            try {
+                self::invoke(self::buildClient([]), $cand, []);
+            } catch (\Throwable $e) {
+                continue;
+            }
+            $found[$cand['accessor']][$role] = $cand;
+            if (isset($found[$cand['accessor']]['read'], $found[$cand['accessor']]['write'])) {
+                return $found[$cand['accessor']];
+            }
+        }
+        return null;
+    }
+
+    /** One step: it may wait before its call, and may add request headers for its call. */
+    private static function step($client, array $op, array $step, array $ctrl)
+    {
+        if (isset($step['wait'])) {
+            usleep((int)($step['wait'] * 1000));
+        }
+        if (!isset($step['headers'])) {
+            return self::invoke($client, $op, $ctrl);
+        }
+        $prior = $client->options;
+        $client->options['headers'] = array_merge($prior['headers'] ?? [], $step['headers']);
+        try {
+            return self::invoke($client, $op, $ctrl);
+        } finally {
+            $client->options = $prior;
+        }
+    }
+
     /** Replace #OPn throughout a case, keys included. */
     private static function resolve($node, array $tokens)
     {
@@ -387,6 +431,10 @@ class FeatureCorpusTest extends TestCase
             foreach ($ops as $o) {
                 $byKey[$o['key']] = $o;
             }
+            $pair = self::usablePair();
+            foreach ($pair ?? [] as $o) {
+                $byKey[$o['key']] = $o;
+            }
 
             $ran = 0;
             foreach ($cases as $raw) {
@@ -394,6 +442,14 @@ class FeatureCorpusTest extends TestCase
                 if ($need > count($ops)) {
                     fwrite(STDERR, sprintf("skip \"%s\": needs %d operations, this SDK offers %d\n",
                         $raw['name'] ?? '', $need, count($ops)));
+                    continue;
+                }
+
+                $paired = 1 === preg_match('/#(READ|WRITE)\b/', json_encode($raw));
+                if ($paired && null === $pair) {
+                    fwrite(STDERR, sprintf(
+                        "skip \"%s\": needs a read and a write of one entity, this SDK offers none\n",
+                        $raw['name'] ?? ''));
                     continue;
                 }
 
@@ -408,6 +464,10 @@ class FeatureCorpusTest extends TestCase
                 $tokens = [];
                 for ($i = 0; $i < $need; $i++) {
                     $tokens['#OP' . ($i + 1)] = $ops[$i]['key'];
+                }
+                if ($paired) {
+                    $tokens['#READ'] = $pair['read']['key'];
+                    $tokens['#WRITE'] = $pair['write']['key'];
                 }
                 $kase = self::resolve($raw, $tokens);
                 $label = (string)($kase['name'] ?? '');
@@ -424,7 +484,7 @@ class FeatureCorpusTest extends TestCase
                         $wanterr = $step['err'] ?? null;
 
                         try {
-                            self::invoke($client, $op, $ctrl);
+                            self::step($client, $op, $step, $ctrl);
                             $this->assertNull($wanterr,
                                 "$label: {$step['op']} was expected to fail, and did not");
                         } catch (\PHPUnit\Framework\AssertionFailedError $e) {

@@ -20,6 +20,7 @@ use FindBin;
 use lib "$FindBin::Bin/../lib";
 use Cwd ();
 use Scalar::Util ();
+use Time::HiRes ();
 
 use ProjectNameSDK;
 
@@ -212,6 +213,42 @@ sub resolve {
 }
 
 
+# A read and a write of one entity (#READ, #WRITE), each driven as usable_ops
+# drives an op.
+sub usable_pair {
+  my %found;
+  for my $cand (candidates(build_client({}))) {
+    my $role = (grep { $_ eq $cand->{op} } qw(list load)) ? 'read'
+      : (grep { $_ eq $cand->{op} } qw(create update patch remove)) ? 'write' : undef;
+    next unless defined $role;
+    my $seen = $found{ $cand->{accessor} } ||= {};
+    next if $seen->{$role};
+    next unless eval { invoke(build_client({}), $cand, {}); 1 };
+    $seen->{$role} = $cand;
+    return $seen if $seen->{read} && $seen->{write};
+  }
+  return undef;
+}
+
+
+# One step: it may wait before its call, and may add request headers for its
+# call.
+sub step_call {
+  my ($client, $op, $step, $ctrl) = @_;
+  Time::HiRes::sleep($step->{wait} / 1000) if defined $step->{wait};
+  return invoke($client, $op, $ctrl) unless Voxgig::Struct::ismap($step->{headers});
+  my $options = $client->{options};
+  my $had = exists $options->{headers};
+  my $prior = $options->{headers};
+  $options->{headers} = { %{ $prior || {} }, %{ $step->{headers} } };
+  my $ok = eval { invoke($client, $op, $ctrl); 1 };
+  my $err = $@;
+  if ($had) { $options->{headers} = $prior } else { delete $options->{headers} }
+  die $err unless $ok;
+  return;
+}
+
+
 # The highest #OPn a case mentions.
 sub tokens_used {
   my ($kase) = @_;
@@ -304,6 +341,7 @@ sub missing_feature {
 
 
 my @ops = usable_ops(2);
+my $pair = usable_pair();
 
 # At least one operation, or every case would skip and this file would report
 # green having run nothing.
@@ -333,7 +371,7 @@ for my $name (sort keys %{ $CORPUS->{feature} || {} }) {
     next;
   }
 
-  my %by_key = map { $_->{key} => $_ } @ops;
+  my %by_key = map { $_->{key} => $_ } @ops, ($pair ? values %$pair : ());
 
   my $ran = 0;
   for my $raw (@$cases) {
@@ -341,6 +379,13 @@ for my $name (sort keys %{ $CORPUS->{feature} || {} }) {
     if ($need > scalar(@ops)) {
       diag(sprintf('skip "%s": needs %d operations, this SDK offers %d',
         $raw->{name} // '', $need, scalar(@ops)));
+      next;
+    }
+
+    my $paired = Voxgig::Struct::stringify($raw) =~ /#(READ|WRITE)\b/;
+    if ($paired && !$pair) {
+      diag(sprintf('skip "%s": needs a read and a write of one entity, this SDK offers none',
+        $raw->{name} // ''));
       next;
     }
 
@@ -354,6 +399,10 @@ for my $name (sort keys %{ $CORPUS->{feature} || {} }) {
     my %tokens;
     for my $i (0 .. $need - 1) {
       $tokens{ '#OP' . ($i + 1) } = $ops[$i]{key};
+    }
+    if ($paired) {
+      $tokens{'#READ'} = $pair->{read}{key};
+      $tokens{'#WRITE'} = $pair->{write}{key};
     }
     my $kase = resolve($raw, \%tokens);
     my $label = $kase->{name} || '';
@@ -369,7 +418,7 @@ for my $name (sort keys %{ $CORPUS->{feature} || {} }) {
         my $ctrl = $step->{ctrl} || {};
         my $wanterr = $step->{err};
 
-        my $ok = eval { invoke($client, $op, $ctrl); 1 };
+        my $ok = eval { step_call($client, $op, $step, $ctrl); 1 };
         my $err = $@;
 
         if (!defined $wanterr) {

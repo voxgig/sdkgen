@@ -1,12 +1,7 @@
 # ProjectName SDK cache feature
 #
-# Response caching for safe (read) requests. Wraps the active transport and
-# serves a fresh cached snapshot instead of hitting the network when the
-# same method+URL was fetched within "ttl" ms (default 5000). Only
-# successful (2xx) responses to cacheable methods (default: GET) are
-# stored, keyed by method+URL. The cache is bounded ("max" entries, default
-# 256, oldest evicted first) and every hit/miss/bypass is counted for
-# inspection. Replayed responses expose a re-readable "json" body.
+# Response caching for safe (read) requests, per client: see the features
+# reference for the key, the write invalidation and the Cache-Control rules.
 
 use strict;
 use warnings;
@@ -14,6 +9,7 @@ use warnings;
 use File::Basename ();
 use Cwd ();
 use Scalar::Util ();
+use Digest::SHA ();
 
 my $__dir;
 BEGIN { $__dir = File::Basename::dirname(Cwd::abs_path(__FILE__)) }
@@ -52,6 +48,7 @@ sub init {
 
   $self->{store} = {};
   $self->{order} = [];
+  $self->{secret} = _cache_secret();
 
   my $feature = $self;
   my $utility = $ctx->{utility};
@@ -70,10 +67,18 @@ sub through {
     ? uc("$fetchdef->{method}") : 'GET';
   my $methods = $self->{options}{methods} || ['GET'];
 
-  return $inner->($ctx, $url, $fetchdef)
-    unless grep { uc("$_") eq $method } @$methods;
+  unless (grep { uc("$_") eq $method } @$methods) {
+    return $inner->($ctx, $url, $fetchdef) if $method eq 'GET' || $method eq 'HEAD';
+    my @out;
+    my $done = eval { @out = $inner->($ctx, $url, $fetchdef); 1 };
+    my $failure = $@;
+    $self->_invalidate($url);
+    die $failure unless $done;
+    return @out;
+  }
 
-  my $key = "$method $url";
+  my $headers = Voxgig::Struct::ismap($fetchdef) ? $fetchdef->{headers} : undef;
+  my $key = "$method $url " . $self->_digest($headers);
   my $now = $self->_now;
   my $hit = $self->{store}{$key};
 
@@ -92,18 +97,109 @@ sub through {
 
   if (!defined $err && $self->_cacheable($res)) {
     my $snapshot = $self->_snapshot($res);
-    my $ttl = defined $self->{options}{ttl} ? $self->{options}{ttl} : 5000;
-    $self->_evict;
-    if (!exists $self->{store}{$key}) {
-      push @{ $self->{order} }, $key;
+    my $ttl = _cache_lifetime($snapshot->{headers},
+      defined $self->{options}{ttl} ? $self->{options}{ttl} : 5000);
+    if ($ttl <= 0) {
+      $self->_track('bypass');
+      return ($self->_replay($snapshot), undef);
     }
-    $self->{store}{$key} = { 'expiry' => $now + $ttl, 'snapshot' => $snapshot };
+    $self->_drop($key);
+    $self->_evict;
+    push @{ $self->{order} }, $key;
+    $self->{store}{$key} = {
+      'expiry' => $now + $ttl, 'scope' => _cache_scope($url), 'snapshot' => $snapshot };
     $self->_track('miss');
     return ($self->_replay($snapshot), undef);
   }
 
   $self->_track('bypass');
   return ($res, $err);
+}
+
+sub _digest {
+  my ($self, $headers) = @_;
+  my @pairs;
+  if (Voxgig::Struct::ismap($headers)) {
+    for my $name (keys %$headers) {
+      next unless defined $headers->{$name};
+      push @pairs, [lc($name), "$headers->{$name}"];
+    }
+  }
+  my $text = join('', map { "$_->[0]:$_->[1]\n" }
+    sort { $a->[0] cmp $b->[0] || $a->[1] cmp $b->[1] } @pairs);
+  return Digest::SHA::hmac_sha256_hex($text, $self->{secret});
+}
+
+sub _invalidate {
+  my ($self, $url) = @_;
+  my $path = _cache_scope($url);
+  my $collection = _cache_parent($path);
+  for my $key (keys %{ $self->{store} }) {
+    my $scope = $self->{store}{$key}{scope};
+    $self->_drop($key) if _cache_under($scope, $path) || _cache_under($scope, $collection);
+  }
+  return;
+}
+
+sub _drop {
+  my ($self, $key) = @_;
+  return unless exists $self->{store}{$key};
+  delete $self->{store}{$key};
+  $self->{order} = [grep { $_ ne $key } @{ $self->{order} }];
+  return;
+}
+
+# The system's random source where it has one; otherwise Perl's own rand,
+# which is not a cryptographic generator.
+sub _cache_secret {
+  my $bytes = '';
+  if (open(my $fh, '<:raw', '/dev/urandom')) {
+    read($fh, $bytes, 32);
+    close($fh);
+  }
+  $bytes .= pack('N', int(rand(4294967296))) while length($bytes) < 32;
+  return $bytes;
+}
+
+# The configured ttl capped by the response's Cache-Control; zero when the
+# response may not be stored.
+sub _cache_lifetime {
+  my ($headers, $ttl) = @_;
+  my $control = '';
+  for my $name (keys %{ $headers || {} }) {
+    $control = lc("$headers->{$name}") if lc($name) eq 'cache-control';
+  }
+  my $life = $ttl;
+  for my $part (split /,/, $control) {
+    (my $directive = $part) =~ s/^\s+|\s+$//g;
+    return 0 if grep { $_ eq $directive } ('no-store', 'private', 'no-cache');
+    if ($directive =~ /^max-age\s*=\s*"?(\d+)"?$/) {
+      $life = $1 * 1000 if $1 * 1000 < $life;
+    }
+  }
+  return $life;
+}
+
+sub _cache_scope {
+  my ($url) = @_;
+  my ($scope) = split /[?#]/, "$url", 2;
+  $scope = '' unless defined $scope;
+  $scope =~ s{/+$}{};
+  return $scope;
+}
+
+sub _cache_parent {
+  my ($scope) = @_;
+  my $scheme = index($scope, '://');
+  my $root = $scheme < 0 ? 0 : index($scope, '/', $scheme + 3);
+  return $scope if $root < 0;
+  my $cut = rindex($scope, '/');
+  return substr($scope, 0, $cut < $root ? $root : $cut);
+}
+
+sub _cache_under {
+  my ($scope, $prefix) = @_;
+  return $scope eq $prefix || index($scope, "$prefix/") == 0;
 }
 
 sub _cacheable {

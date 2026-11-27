@@ -241,6 +241,66 @@ public class FeatureCorpusTest {
     return picked;
   }
 
+  private static final List<String> READ_OPS = List.of("list", "load");
+  private static final List<String> WRITE_OPS = List.of("create", "update", "patch", "remove");
+
+  /** A read and a write of one entity (#READ, #WRITE), each driven as usableOps drives an op. */
+  private static Map<String, Op> usablePair() {
+    Map<String, Map<String, Op>> found = new LinkedHashMap<>();
+    for (Op cand : candidates(buildClient(Map.of()))) {
+      int dot = cand.key.indexOf('.');
+      String entity = cand.key.substring(0, dot);
+      String opname = cand.key.substring(dot + 1);
+      String role = READ_OPS.contains(opname) ? "read" : WRITE_OPS.contains(opname) ? "write" : null;
+      Map<String, Op> seen = found.computeIfAbsent(entity, (k) -> new LinkedHashMap<>());
+      if (null == role || seen.containsKey(role)) {
+        continue;
+      }
+      try {
+        invoke(buildClient(Map.of()), cand, new LinkedHashMap<>());
+      }
+      catch (Exception e) {
+        continue;
+      }
+      seen.put(role, cand);
+      if (seen.containsKey("read") && seen.containsKey("write")) {
+        return seen;
+      }
+    }
+    return null;
+  }
+
+  /** One step: it may wait before its call, and may add request headers for its call. */
+  private static Object step(ProjectNameSDK client, Op op, Map<String, Object> step,
+      Map<String, Object> ctrl) throws Exception {
+    if (step.get("wait") instanceof Number) {
+      Thread.sleep(((Number) step.get("wait")).longValue());
+    }
+    if (!(step.get("headers") instanceof Map)) {
+      return invoke(client, op, ctrl);
+    }
+    Map<String, Object> options = client.getRootCtx().options;
+    boolean had = options.containsKey("headers");
+    Object prior = options.get("headers");
+    Map<String, Object> merged = new LinkedHashMap<>();
+    if (prior instanceof Map) {
+      merged.putAll((Map<String, Object>) prior);
+    }
+    merged.putAll((Map<String, Object>) step.get("headers"));
+    options.put("headers", merged);
+    try {
+      return invoke(client, op, ctrl);
+    }
+    finally {
+      if (had) {
+        options.put("headers", prior);
+      }
+      else {
+        options.remove("headers");
+      }
+    }
+  }
+
   /** Replace #OPn throughout a case, keys included. */
   private static Object resolve(Object node, Map<String, String> tokens) {
     if (node instanceof String) {
@@ -448,6 +508,12 @@ public class FeatureCorpusTest {
       for (Op o : ops) {
         byKey.put(o.key, o);
       }
+      Map<String, Op> pair = usablePair();
+      if (null != pair) {
+        for (Op o : pair.values()) {
+          byKey.put(o.key, o);
+        }
+      }
 
       int ran = 0;
       for (Object rawCase : cases) {
@@ -457,6 +523,14 @@ public class FeatureCorpusTest {
         if (need > ops.size()) {
           System.err.println(String.format(
               "skip \"%s\": needs %d operations, this SDK offers %d", rawName, need, ops.size()));
+          continue;
+        }
+
+        boolean paired = java.util.regex.Pattern.compile("#(READ|WRITE)\\b")
+            .matcher(String.valueOf(rawCase)).find();
+        if (paired && null == pair) {
+          System.err.println(String.format(
+              "skip \"%s\": needs a read and a write of one entity, this SDK offers none", rawName));
           continue;
         }
 
@@ -471,6 +545,10 @@ public class FeatureCorpusTest {
         Map<String, String> tokens = new LinkedHashMap<>();
         for (int i = 0; i < need; i++) {
           tokens.put("#OP" + (i + 1), ops.get(i).key);
+        }
+        if (paired) {
+          tokens.put("#READ", pair.get("read").key);
+          tokens.put("#WRITE", pair.get("write").key);
         }
         Map<String, Object> kase = (Map<String, Object>) resolve(rawCase, tokens);
         String label = String.valueOf(kase.get("name"));
@@ -492,7 +570,7 @@ public class FeatureCorpusTest {
             Object wanterr = step.get("err");
 
             try {
-              invoke(client, op, ctrl);
+              step(client, op, step, ctrl);
               if (null != wanterr) {
                 fail(label + ": " + step.get("op") + " was expected to fail, and did not");
               }

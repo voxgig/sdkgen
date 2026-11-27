@@ -1,24 +1,23 @@
 package SCALAPACKAGE.feature
 
+import java.nio.charset.StandardCharsets
+import java.security.SecureRandom
 import java.util.{ArrayList, LinkedHashMap, List => JList, Map => JMap}
 import java.util.function.Supplier
+import javax.crypto.Mac
+import javax.crypto.spec.SecretKeySpec
 import SCALAPACKAGE.core.{Context, FetcherFn, SdkClient}
 import SCALAPACKAGE.utility.Media
 
-// Response caching for safe (read) requests. Wraps the active transport and
-// serves a fresh cached snapshot instead of hitting the network when the
-// same method+URL was fetched within `ttl` ms (default: 5000). Only
-// successful (2xx) responses to cacheable methods (default: GET) are
-// stored, keyed by method+URL. The cache is bounded (`max` entries, default
-// 256, oldest evicted first) and every hit/miss/bypass is counted. Bodies
-// are snapshotted on capture so both the current caller and later hits can
-// re-read the JSON body repeatedly.
+// Response caching for safe (read) requests, per client: see the features
+// reference for the key, the write invalidation and the Cache-Control rules.
 class CacheFeature extends BaseFeature("cache", "0.0.1", true) {
 
   private var client: SdkClient = null
   private var options: JMap[String, Object] = null
   private var store: JMap[String, CacheEntry] = null
   private var order: JList[String] = null
+  private var secret: SecretKeySpec = null
 
   // Activity tracking (mirrors the ts client._cache record).
   var hit: Int = 0
@@ -27,6 +26,7 @@ class CacheFeature extends BaseFeature("cache", "0.0.1", true) {
 
   private class CacheEntry {
     var expiry: Long = 0
+    var scope: String = ""
     var snapshot: CacheSnapshot = null
   }
 
@@ -48,6 +48,9 @@ class CacheFeature extends BaseFeature("cache", "0.0.1", true) {
 
     this.store = new LinkedHashMap[String, CacheEntry]()
     this.order = new ArrayList[String]()
+    val bytes = new Array[Byte](32)
+    new SecureRandom().nextBytes(bytes)
+    this.secret = new SecretKeySpec(bytes, "HmacSHA256")
 
     val inner: FetcherFn = ctx.utility.fetcher
 
@@ -77,10 +80,17 @@ class CacheFeature extends BaseFeature("cache", "0.0.1", true) {
       }
     }
     if (!cacheable) {
-      return inner(ctx, url, fetchdef)
+      if (CacheFeature.SafeMethods.contains(method)) {
+        return inner(ctx, url, fetchdef)
+      }
+      try {
+        return inner(ctx, url, fetchdef)
+      } finally {
+        invalidate(url)
+      }
     }
 
-    val key = method + " " + url
+    val key = method + " " + url + " " + digest(fetchdef.get("headers"))
     val now = FeatureOptions.foptNow(this.options).getAsLong()
 
     val hitEntry = this.store.get(key)
@@ -106,10 +116,16 @@ class CacheFeature extends BaseFeature("cache", "0.0.1", true) {
 
     if (storable(res)) {
       val snapshot = this.snapshot(res)
-      val ttl = FeatureOptions.foptInt(this.options, "ttl", 5000)
+      val ttl = CacheFeature.lifetime(snapshot.headers, FeatureOptions.foptInt(this.options, "ttl", 5000).toLong)
+      if (ttl <= 0) {
+        this.bypass += 1
+        return replay(snapshot)
+      }
+      drop(key)
       evict()
       val entry = new CacheEntry()
       entry.expiry = now + ttl
+      entry.scope = CacheFeature.scope(url)
       entry.snapshot = snapshot
       this.store.put(key, entry)
       this.order.add(key)
@@ -119,6 +135,48 @@ class CacheFeature extends BaseFeature("cache", "0.0.1", true) {
 
     this.bypass += 1
     res
+  }
+
+  private def digest(headers: Object): String = {
+    val pairs = new ArrayList[(String, String)]()
+    headers match {
+      case hm: JMap[_, _] =>
+        val it = hm.entrySet().iterator()
+        while (it.hasNext) {
+          val h = it.next()
+          if (h.getValue != null) {
+            pairs.add((String.valueOf(h.getKey).toLowerCase(), String.valueOf(h.getValue)))
+          }
+        }
+      case _ =>
+    }
+    val sorted = pairs.toArray(new Array[(String, String)](0)).sortBy(identity)
+    val mac = Mac.getInstance("HmacSHA256")
+    mac.init(this.secret)
+    for ((name, value) <- sorted) {
+      mac.update((name + ":" + value + "\n").getBytes(StandardCharsets.UTF_8))
+    }
+    mac.doFinal().map(b => f"$b%02x").mkString
+  }
+
+  private def invalidate(url: String): Unit = {
+    val path = CacheFeature.scope(url)
+    val collection = CacheFeature.parent(path)
+    val dropped = new ArrayList[String]()
+    val it = this.store.entrySet().iterator()
+    while (it.hasNext) {
+      val e = it.next()
+      if (CacheFeature.under(e.getValue.scope, path) || CacheFeature.under(e.getValue.scope, collection)) {
+        dropped.add(e.getKey)
+      }
+    }
+    dropped.forEach(k => drop(k))
+  }
+
+  private def drop(key: String): Unit = {
+    if (this.store.remove(key) != null) {
+      this.order.remove(key)
+    }
   }
 
   // A body the transport could not read as JSON passes through, for the operation to report.
@@ -192,4 +250,52 @@ class CacheFeature extends BaseFeature("cache", "0.0.1", true) {
       this.store.remove(oldest)
     }
   }
+}
+
+
+object CacheFeature {
+  private val SafeMethods = Set("GET", "HEAD")
+  private val Unstored = Set("no-store", "private", "no-cache")
+  private val MaxAge = "^max-age\\s*=\\s*\"?(\\d+)\"?$".r
+
+  // The configured ttl capped by the response's Cache-Control; zero when the
+  // response may not be stored.
+  private def lifetime(headers: JMap[String, Object], ttl: Long): Long = {
+    var control = ""
+    val it = headers.entrySet().iterator()
+    while (it.hasNext) {
+      val h = it.next()
+      if (h.getKey.toLowerCase() == "cache-control") {
+        control = String.valueOf(h.getValue).toLowerCase()
+      }
+    }
+    val directives = control.split(",").map(_.trim)
+    if (directives.exists(Unstored.contains)) {
+      0L
+    } else {
+      directives.foldLeft(ttl) { (life, directive) =>
+        directive match {
+          case MaxAge(secs) => secs.toLongOption.fold(life)(n => math.min(life, n * 1000))
+          case _ => life
+        }
+      }
+    }
+  }
+
+  private def scope(url: String): String = {
+    var out = url.split("[?#]", 2)(0)
+    while (out.endsWith("/")) {
+      out = out.substring(0, out.length - 1)
+    }
+    out
+  }
+
+  private def parent(scope: String): String = {
+    val scheme = scope.indexOf("://")
+    val root = if (scheme < 0) 0 else scope.indexOf('/', scheme + 3)
+    if (root < 0) scope else scope.substring(0, math.max(scope.lastIndexOf('/'), root))
+  }
+
+  private def under(scope: String, prefix: String): Boolean =
+    scope == prefix || scope.startsWith(prefix + "/")
 }

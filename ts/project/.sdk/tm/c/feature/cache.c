@@ -1,18 +1,16 @@
-// Response caching for safe (read) requests (mirrors feature/cache.rs).
-// Wraps the active transport and serves a fresh cached snapshot instead of
-// hitting the network when the same method+URL was fetched within `ttl` ms
-// (default: 5000). Only successful (2xx) responses to cacheable methods
-// (default: GET) are stored, keyed by method+URL. The cache is bounded (`max`
-// entries, default 256, oldest evicted first) and every hit/miss/bypass is
-// counted. Bodies are snapshotted on capture so both the current caller and
-// later hits can re-read the JSON body repeatedly.
+// Response caching for safe (read) requests, per client (mirrors
+// feature/cache.rs): see the features reference for the key, the write
+// invalidation and the Cache-Control rules. C has no HMAC in its standard
+// library, so the header digest is SipHash-2-4 under a random per-client key.
 
 #include "sdk.h"
 
 #include <ctype.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 typedef struct {
   // string-keyed store (voxgig_map, insertion-ordered) mapping
@@ -20,6 +18,7 @@ typedef struct {
   voxgig_value* store;
   // FIFO insertion order of keys (may contain duplicates, mirrors rust Vec).
   voxgig_value* order;
+  uint8_t secret[16];
 
   // Activity tracking (mirrors the ts client._cache record).
   int64_t hit;
@@ -84,6 +83,218 @@ static bool option_list_match(voxgig_value* options, const char* key,
       return true;
   }
   return false;
+}
+
+#define SIP_ROTL(x, b) (uint64_t)(((x) << (b)) | ((x) >> (64 - (b))))
+#define SIP_ROUND(v0, v1, v2, v3) do { \
+    v0 += v1; v1 = SIP_ROTL(v1, 13); v1 ^= v0; v0 = SIP_ROTL(v0, 32); \
+    v2 += v3; v3 = SIP_ROTL(v3, 16); v3 ^= v2; \
+    v0 += v3; v3 = SIP_ROTL(v3, 21); v3 ^= v0; \
+    v2 += v1; v1 = SIP_ROTL(v1, 17); v1 ^= v2; v2 = SIP_ROTL(v2, 32); } while (0)
+
+static uint64_t sip_le64(const uint8_t* p) {
+  uint64_t v = 0;
+  for (int i = 7; i >= 0; i--) v = (v << 8) | p[i];
+  return v;
+}
+
+static uint64_t siphash24(const uint8_t key[16], const uint8_t* in, size_t len) {
+  uint64_t k0 = sip_le64(key), k1 = sip_le64(key + 8);
+  uint64_t v0 = 0x736f6d6570736575ULL ^ k0, v1 = 0x646f72616e646f6dULL ^ k1;
+  uint64_t v2 = 0x6c7967656e657261ULL ^ k0, v3 = 0x7465646279746573ULL ^ k1;
+  size_t full = len - (len % 8);
+  for (size_t i = 0; i < full; i += 8) {
+    uint64_t m = sip_le64(in + i);
+    v3 ^= m;
+    SIP_ROUND(v0, v1, v2, v3);
+    SIP_ROUND(v0, v1, v2, v3);
+    v0 ^= m;
+  }
+  uint64_t b = ((uint64_t)len) << 56;
+  for (size_t i = 0; i < len % 8; i++) b |= ((uint64_t)in[full + i]) << (8 * i);
+  v3 ^= b;
+  SIP_ROUND(v0, v1, v2, v3);
+  SIP_ROUND(v0, v1, v2, v3);
+  v0 ^= b;
+  v2 ^= 0xff;
+  for (int i = 0; i < 4; i++) SIP_ROUND(v0, v1, v2, v3);
+  return v0 ^ v1 ^ v2 ^ v3;
+}
+
+// The system's random source where it has one; otherwise rand(), which is
+// not a cryptographic generator.
+static void cache_secret(uint8_t out[16]) {
+  size_t got = 0;
+  FILE* f = fopen("/dev/urandom", "rb");
+  if (f) {
+    got = fread(out, 1, 16, f);
+    fclose(f);
+  }
+  uint64_t mix = (uint64_t)time(NULL) ^ (uint64_t)(uintptr_t)out;
+  for (size_t i = got; i < 16; i++) out[i] = (uint8_t)((rand() ^ (int)(mix >> (i % 8 * 8))) & 0xff);
+}
+
+static char* header_text(voxgig_value* v) {
+  char b[64];
+  if (voxgig_is_string(v)) return strdup(voxgig_as_string(v));
+  if (voxgig_is_int(v)) {
+    snprintf(b, sizeof(b), "%lld", (long long)voxgig_as_int(v));
+    return strdup(b);
+  }
+  if (voxgig_is_double(v)) {
+    double d = voxgig_as_double(v);
+    if (d == (double)(long long)d) snprintf(b, sizeof(b), "%lld", (long long)d);
+    else snprintf(b, sizeof(b), "%g", d);
+    return strdup(b);
+  }
+  if (voxgig_is_bool(v)) return strdup(voxgig_as_bool(v) ? "true" : "false");
+  return NULL;
+}
+
+typedef struct {
+  char* name;
+  char* value;
+} HeaderPair;
+
+static int pair_cmp(const void* a, const void* b) {
+  const HeaderPair* x = (const HeaderPair*)a;
+  const HeaderPair* y = (const HeaderPair*)b;
+  int c = strcmp(x->name, y->name);
+  return c != 0 ? c : strcmp(x->value, y->value);
+}
+
+static char* digest(const uint8_t secret[16], voxgig_value* headers) {
+  size_t n = 0, total = 0;
+  HeaderPair* pairs = NULL;
+  if (voxgig_is_map(headers)) {
+    voxgig_map* hm = voxgig_as_map(headers);
+    pairs = (HeaderPair*)calloc(hm->len + 1, sizeof(HeaderPair));
+    for (size_t i = 0; i < hm->len; i++) {
+      char* value = header_text(hm->entries[i].value);
+      if (!value) continue;
+      pairs[n].name = str_lower(hm->entries[i].key);
+      pairs[n].value = value;
+      total += strlen(pairs[n].name) + strlen(value) + 2;
+      n++;
+    }
+    qsort(pairs, n, sizeof(HeaderPair), pair_cmp);
+  }
+  char* text = (char*)calloc(total + 1, 1);
+  size_t at = 0;
+  for (size_t i = 0; i < n; i++) {
+    at += (size_t)sprintf(text + at, "%s:%s\n", pairs[i].name, pairs[i].value);
+    free(pairs[i].name);
+    free(pairs[i].value);
+  }
+  free(pairs);
+  char* hex = (char*)malloc(17);
+  snprintf(hex, 17, "%016llx", (unsigned long long)siphash24(secret, (const uint8_t*)text, at));
+  free(text);
+  return hex;
+}
+
+static char* url_scope(const char* url) {
+  size_t n = strcspn(url, "?#");
+  while (n > 0 && url[n - 1] == '/') n--;
+  char* r = (char*)malloc(n + 1);
+  memcpy(r, url, n);
+  r[n] = '\0';
+  return r;
+}
+
+static char* url_parent(const char* scope) {
+  const char* scheme = strstr(scope, "://");
+  size_t root = 0;
+  if (scheme) {
+    const char* slash = strchr(scheme + 3, '/');
+    if (!slash) return strdup(scope);
+    root = (size_t)(slash - scope);
+  }
+  const char* last = strrchr(scope, '/');
+  size_t cut = last ? (size_t)(last - scope) : 0;
+  if (cut < root) cut = root;
+  char* r = (char*)malloc(cut + 1);
+  memcpy(r, scope, cut);
+  r[cut] = '\0';
+  return r;
+}
+
+static bool scope_under(const char* scope, const char* prefix) {
+  size_t n = strlen(prefix);
+  return strncmp(scope, prefix, n) == 0 && (scope[n] == '\0' || scope[n] == '/');
+}
+
+static void drop_entry(CacheTrack* t, const char* key) {
+  voxgig_list* order = voxgig_as_list(t->order);
+  for (size_t i = order->len; i > 0; i--) {
+    if (strcmp(voxgig_as_string(order->items[i - 1]), key) == 0) voxgig_list_erase(order, i - 1);
+  }
+  voxgig_map_erase(voxgig_as_map(t->store), key);
+}
+
+static void invalidate(CacheTrack* t, const char* url) {
+  char* path = url_scope(url);
+  char* collection = url_parent(path);
+  voxgig_map* store = voxgig_as_map(t->store);
+  for (size_t i = store->len; i > 0; i--) {
+    const char* scope = get_str(store->entries[i - 1].value, "scope");
+    if (scope && (scope_under(scope, path) || scope_under(scope, collection))) {
+      char* key = strdup(store->entries[i - 1].key);
+      drop_entry(t, key);
+      free(key);
+    }
+  }
+  free(collection);
+  free(path);
+}
+
+// The configured ttl capped by the response's Cache-Control; zero when the
+// response may not be stored.
+static int64_t lifetime(voxgig_value* headers, int64_t ttl) {
+  char* control = NULL;
+  if (voxgig_is_map(headers)) {
+    voxgig_map* hm = voxgig_as_map(headers);
+    for (size_t i = 0; i < hm->len; i++) {
+      if (strcasecmp(hm->entries[i].key, "cache-control") == 0) {
+        free(control);
+        char* raw = header_text(hm->entries[i].value);
+        control = raw ? str_lower(raw) : NULL;
+        free(raw);
+      }
+    }
+  }
+  int64_t life = ttl;
+  if (!control) return life;
+  for (char* part = control; part; ) {
+    char* comma = strchr(part, ',');
+    if (comma) *comma = '\0';
+    char* next = comma ? comma + 1 : NULL;
+    while (isspace((unsigned char)*part)) part++;
+    size_t n = strlen(part);
+    while (n > 0 && isspace((unsigned char)part[n - 1])) part[--n] = '\0';
+    if (strcmp(part, "no-store") == 0 || strcmp(part, "private") == 0 ||
+        strcmp(part, "no-cache") == 0) {
+      free(control);
+      return 0;
+    }
+    if (strncmp(part, "max-age", 7) == 0) {
+      char* v = part + 7;
+      while (isspace((unsigned char)*v)) v++;
+      if (*v != '=') { part = next; continue; }
+      v++;
+      while (isspace((unsigned char)*v)) v++;
+      if (*v == '"') v++;
+      char* end = v;
+      while (isdigit((unsigned char)*end)) end++;
+      if (end != v && end - v < 16 && (*end == '\0' || (*end == '"' && end[1] == '\0'))) {
+        int64_t secs = (int64_t)strtoll(v, NULL, 10);
+        if (secs * 1000 < life) life = secs * 1000;
+      }
+    }
+    part = next;
+  }
+  free(control);
+  return life;
 }
 
 // A body the transport could not read as JSON passes through, for the operation to report.
@@ -182,13 +393,18 @@ static voxgig_value* through(Fetcher* self, Context* ctx, const char* url,
   static const char* MDEF[] = {"GET"};
   bool cacheable = option_list_match(options, "methods", method, MDEF, 1, true);
   if (!cacheable) {
+    bool safe = strcmp(method, "GET") == 0 || strcmp(method, "HEAD") == 0;
     free(method);
-    return st->inner->fn(st->inner, ctx, url, fetchdef, err);
+    voxgig_value* passed = st->inner->fn(st->inner, ctx, url, fetchdef, err);
+    if (!safe) invalidate(track, url);
+    return passed;
   }
 
-  size_t klen = strlen(method) + 1 + strlen(url) + 1;
+  char* hdigest = digest(track->secret, getp(fetchdef, "headers"));
+  size_t klen = strlen(method) + 1 + strlen(url) + 1 + strlen(hdigest) + 1;
   char* key = (char*)malloc(klen);
-  snprintf(key, klen, "%s %s", method, url);
+  snprintf(key, klen, "%s %s %s", method, url, hdigest);
+  free(hdigest);
   free(method);
 
   int64_t now = fopt_now_call(options);
@@ -210,11 +426,21 @@ static voxgig_value* through(Fetcher* self, Context* ctx, const char* url,
 
   if (!e && storable(out) && json(out)) {
     voxgig_value* snap = snapshot(out);
-    int64_t ttl = fopt_int(options, "ttl", 5000);
+    int64_t ttl = lifetime(getp(snap, "headers"), fopt_int(options, "ttl", 5000));
+    if (ttl <= 0) {
+      track->bypass += 1;
+      free(key);
+      *err = NULL;
+      return replay(snap);
+    }
+    drop_entry(track, key);
     evict(track, options);
-    voxgig_value* newentry = cmap(2,
+    char* scope = url_scope(url);
+    voxgig_value* newentry = cmap(3,
       "expiry", v_num((double)(now + ttl)),
+      "scope", v_str(scope),
       "snap", snap);
+    free(scope);
     voxgig_map_set(voxgig_as_map(track->store), key, newentry);
     voxgig_list_push(voxgig_as_list(track->order), v_str(key));
     track->miss += 1;
@@ -244,6 +470,7 @@ static void cache_init(Feature* f, Context* ctx, voxgig_value* options) {
   st->inner = util->fetcher;
   st->options = options;
   st->track = cf->track;
+  cache_secret(cf->track->secret);
 
   Fetcher* wrapped = (Fetcher*)calloc(1, sizeof(Fetcher));
   wrapped->fn = through;

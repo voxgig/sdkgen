@@ -645,6 +645,67 @@ func TestFeatureCache(t *testing.T) {
 		}
 	})
 
+	t.Run("keys-on-request-headers", func(t *testing.T) {
+		rec := &fhRecorder{}
+		h := fhMake(rec.fetch, fhF(feat.NewCacheFeature(), map[string]any{"ttl": 10000}))
+		h.op(fhOpSpec{op: "load", path: "/w/1", headers: map[string]any{"x-tenant": "tenant-a"}})
+		h.op(fhOpSpec{op: "load", path: "/w/1", headers: map[string]any{"X-Tenant": "tenant-b"}})
+		if len(rec.calls) != 2 {
+			t.Errorf("a second tenant was served the first tenant's entry: %d calls", len(rec.calls))
+		}
+		h.op(fhOpSpec{op: "load", path: "/w/1", headers: map[string]any{"x-tenant": "tenant-b"}})
+		if len(rec.calls) != 2 {
+			t.Errorf("the same headers did not share an entry: %d calls", len(rec.calls))
+		}
+	})
+
+	t.Run("a-write-drops-its-collection", func(t *testing.T) {
+		rec := &fhRecorder{}
+		h := fhMake(rec.fetch, fhF(feat.NewCacheFeature(), map[string]any{"ttl": 10000}))
+		paths := []string{"/w/1", "/w", "/w/1/part", "/other/1"}
+		for _, p := range paths {
+			h.op(fhOpSpec{op: "load", path: p})
+		}
+		h.op(fhOpSpec{op: "update", method: "PUT", path: "/w/1"})
+		for _, p := range paths {
+			h.op(fhOpSpec{op: "load", path: p})
+		}
+		if len(rec.calls) != 8 {
+			t.Errorf("expected the collection refetched and /other cached: %d calls", len(rec.calls))
+		}
+	})
+
+	t.Run("cache-control-prevents-storing", func(t *testing.T) {
+		for _, control := range []string{"no-store", "private", "No-Cache", "max-age=60, private"} {
+			rec := &fhRecorder{reply: func(_ int, _ map[string]any) (any, error) {
+				return fhResponse(200, map[string]any{"ok": true}, map[string]any{"Cache-Control": control}), nil
+			}}
+			h := fhMake(rec.fetch, fhF(feat.NewCacheFeature(), map[string]any{"ttl": 10000}))
+			h.op(fhOpSpec{op: "load", path: "/w"})
+			h.op(fhOpSpec{op: "load", path: "/w"})
+			if len(rec.calls) != 2 {
+				t.Errorf("%s was stored: %d calls", control, len(rec.calls))
+			}
+		}
+	})
+
+	t.Run("max-age-caps-the-ttl", func(t *testing.T) {
+		clock := &fhClock{}
+		rec := &fhRecorder{reply: func(_ int, _ map[string]any) (any, error) {
+			return fhResponse(200, map[string]any{"ok": true}, map[string]any{"cache-control": "max-age=1"}), nil
+		}}
+		h := fhMake(rec.fetch, fhF(feat.NewCacheFeature(),
+			map[string]any{"ttl": 10000, "now": clock.now}))
+		h.op(fhOpSpec{op: "load", path: "/w"})
+		clock.advance(500)
+		h.op(fhOpSpec{op: "load", path: "/w"})
+		clock.advance(600)
+		h.op(fhOpSpec{op: "load", path: "/w"})
+		if len(rec.calls) != 2 {
+			t.Errorf("expected max-age=1 to expire the entry before the ttl: %d calls", len(rec.calls))
+		}
+	})
+
 	t.Run("inactive-does-not-wrap", func(t *testing.T) {
 		rec := &fhRecorder{}
 		h := fhMake(rec.fetch, fhF(feat.NewCacheFeature(), map[string]any{"active": false}))

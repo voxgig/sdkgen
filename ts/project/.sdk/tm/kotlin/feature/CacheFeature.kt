@@ -1,16 +1,17 @@
 package KOTLINPACKAGE.feature
 
+import java.security.SecureRandom
 import java.util.function.Supplier
+import javax.crypto.Mac
+import javax.crypto.spec.SecretKeySpec
 
 import KOTLINPACKAGE.core.Context
 import KOTLINPACKAGE.core.FetcherFn
 import KOTLINPACKAGE.core.SdkClient
 import KOTLINPACKAGE.utility.Media
 
-// Response caching for safe (read) requests. Wraps the active transport and
-// serves a fresh cached snapshot instead of hitting the network when the same
-// method+URL was fetched within `ttl` ms (default: 5000). Only successful
-// (2xx) responses to cacheable methods (default: GET) are stored.
+// Response caching for safe (read) requests, per client: see the features
+// reference for the key, the write invalidation and the Cache-Control rules.
 @Suppress("UNCHECKED_CAST")
 class CacheFeature : BaseFeature("cache", "0.0.1", true) {
 
@@ -18,6 +19,7 @@ class CacheFeature : BaseFeature("cache", "0.0.1", true) {
   private var options: MutableMap<String, Any?>? = null
   private var store: MutableMap<String, CacheEntry> = linkedMapOf()
   private var order: MutableList<String> = mutableListOf()
+  private var secret: SecretKeySpec? = null
 
   // Activity tracking (mirrors the ts client._cache record).
   var hit = 0
@@ -26,6 +28,7 @@ class CacheFeature : BaseFeature("cache", "0.0.1", true) {
 
   private class CacheEntry {
     var expiry: Long = 0
+    var scope: String = ""
     lateinit var snapshot: CacheSnapshot
   }
 
@@ -47,6 +50,9 @@ class CacheFeature : BaseFeature("cache", "0.0.1", true) {
 
     this.store = linkedMapOf()
     this.order = mutableListOf()
+    val key = ByteArray(32)
+    SecureRandom().nextBytes(key)
+    this.secret = SecretKeySpec(key, "HmacSHA256")
 
     val inner: FetcherFn = ctx.utility!!.fetcher
 
@@ -72,10 +78,17 @@ class CacheFeature : BaseFeature("cache", "0.0.1", true) {
       }
     }
     if (!cacheable) {
-      return inner(ctx, url, fetchdef)
+      if (method in SAFE_METHODS) {
+        return inner(ctx, url, fetchdef)
+      }
+      try {
+        return inner(ctx, url, fetchdef)
+      } finally {
+        invalidate(url)
+      }
     }
 
-    val key = "$method $url"
+    val key = "$method $url " + digest(fetchdef["headers"])
     val now = FeatureOptions.foptNow(this.options).getAsLong()
 
     val hitEntry = this.store[key]
@@ -100,10 +113,16 @@ class CacheFeature : BaseFeature("cache", "0.0.1", true) {
 
     if (storable(res)) {
       val snapshot = snapshot(res)
-      val ttl = FeatureOptions.foptInt(this.options, "ttl", 5000)
+      val ttl = lifetime(snapshot.headers, FeatureOptions.foptInt(this.options, "ttl", 5000).toLong())
+      if (ttl <= 0) {
+        this.bypass++
+        return replay(snapshot)
+      }
+      drop(key)
       evict()
       val entry = CacheEntry()
       entry.expiry = now + ttl
+      entry.scope = scope(url)
       entry.snapshot = snapshot
       this.store[key] = entry
       this.order.add(key)
@@ -113,6 +132,39 @@ class CacheFeature : BaseFeature("cache", "0.0.1", true) {
 
     this.bypass++
     return res
+  }
+
+  private fun digest(headers: Any?): String {
+    val pairs = mutableListOf<Pair<String, String>>()
+    if (headers is Map<*, *>) {
+      for ((name, value) in headers) {
+        if (value != null) {
+          pairs.add(Pair(name.toString().lowercase(), value.toString()))
+        }
+      }
+    }
+    pairs.sortWith(compareBy<Pair<String, String>> { it.first }.thenBy { it.second })
+    val mac = Mac.getInstance("HmacSHA256")
+    mac.init(this.secret)
+    for ((name, value) in pairs) {
+      mac.update("$name:$value\n".toByteArray(Charsets.UTF_8))
+    }
+    return mac.doFinal().joinToString("") { "%02x".format(it) }
+  }
+
+  private fun invalidate(url: String) {
+    val path = scope(url)
+    val collection = parent(path)
+    val dropped = this.store.filterValues { under(it.scope, path) || under(it.scope, collection) }.keys.toList()
+    for (key in dropped) {
+      drop(key)
+    }
+  }
+
+  private fun drop(key: String) {
+    if (this.store.remove(key) != null) {
+      this.order.remove(key)
+    }
   }
 
   // A body the transport could not read as JSON passes through, for the operation to report.
@@ -176,5 +228,48 @@ class CacheFeature : BaseFeature("cache", "0.0.1", true) {
       val oldest = this.order.removeAt(0)
       this.store.remove(oldest)
     }
+  }
+
+  companion object {
+    private val SAFE_METHODS = listOf("GET", "HEAD")
+    private val UNSTORED = listOf("no-store", "private", "no-cache")
+    private val MAX_AGE = Regex("^max-age\\s*=\\s*\"?(\\d+)\"?$")
+
+    // The configured ttl capped by the response's Cache-Control; zero when
+    // the response may not be stored.
+    private fun lifetime(headers: Map<String, Any?>, ttl: Long): Long {
+      var control = ""
+      for ((name, value) in headers) {
+        if (name.lowercase() == "cache-control") {
+          control = value.toString().lowercase()
+        }
+      }
+      var life = ttl
+      for (part in control.split(",")) {
+        val directive = part.trim()
+        if (directive in UNSTORED) {
+          return 0
+        }
+        val secs = MAX_AGE.matchEntire(directive)?.groupValues?.get(1)?.toLongOrNull()
+        if (secs != null) {
+          life = minOf(life, secs * 1000)
+        }
+      }
+      return life
+    }
+
+    private fun scope(url: String): String = url.split(Regex("[?#]"), 2)[0].trimEnd('/')
+
+    private fun parent(scope: String): String {
+      val scheme = scope.indexOf("://")
+      val root = if (scheme < 0) 0 else scope.indexOf('/', scheme + 3)
+      if (root < 0) {
+        return scope
+      }
+      return scope.substring(0, maxOf(scope.lastIndexOf('/'), root))
+    }
+
+    private fun under(scope: String, prefix: String): Boolean =
+      scope == prefix || scope.startsWith("$prefix/")
   }
 }

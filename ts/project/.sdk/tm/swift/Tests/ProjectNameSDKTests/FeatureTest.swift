@@ -602,6 +602,61 @@ final class FeatureCacheTest: XCTestCase {
     _ = h.op(FhOpSpec(op: "load", path: "/x"))
     XCTAssertEqual(rec.calls.count, 2)
   }
+
+  func testKeysOnRequestHeaders() {
+    if Fh.skipWithout("cache") { return }
+    let rec = FhRecorder()
+    let h = Fh.make(rec.fetch, (CacheFeature(), vm(("ttl", .int(10000)))))
+    _ = h.op(FhOpSpec(op: "load", path: "/w/1", headers: vm(("x-tenant", .string("tenant-a")))))
+    _ = h.op(FhOpSpec(op: "load", path: "/w/1", headers: vm(("X-Tenant", .string("tenant-b")))))
+    XCTAssertEqual(rec.calls.count, 2, "a second tenant was served the first tenant's entry")
+    _ = h.op(FhOpSpec(op: "load", path: "/w/1", headers: vm(("x-tenant", .string("tenant-b")))))
+    XCTAssertEqual(rec.calls.count, 2, "the same headers did not share an entry")
+  }
+
+  func testAWriteDropsItsCollection() {
+    if Fh.skipWithout("cache") { return }
+    let rec = FhRecorder()
+    let f = CacheFeature()
+    let h = Fh.make(rec.fetch, (f, vm(("ttl", .int(10000)))))
+    let paths = ["/w/1", "/w", "/w/1/part", "/other/1"]
+    for p in paths { _ = h.op(FhOpSpec(op: "load", path: p)) }
+    _ = h.op(FhOpSpec(op: "update", method: "PUT", path: "/w/1"))
+    for p in paths { _ = h.op(FhOpSpec(op: "load", path: p)) }
+    XCTAssertEqual(rec.calls.count, 8)
+    XCTAssertEqual(f.hit, 1)
+  }
+
+  func testCacheControlPreventsStoring() {
+    if Fh.skipWithout("cache") { return }
+    for control in ["no-store", "private", "No-Cache", "max-age=60, private"] {
+      let rec = FhRecorder()
+      rec.reply = { _, _ in
+        Fh.response(200, mapv(("ok", .bool(true))), vm(("Cache-Control", .string(control))))
+      }
+      let h = Fh.make(rec.fetch, (CacheFeature(), vm(("ttl", .int(10000)))))
+      _ = h.op(FhOpSpec(op: "load", path: "/w"))
+      _ = h.op(FhOpSpec(op: "load", path: "/w"))
+      XCTAssertEqual(rec.calls.count, 2, control + " was stored")
+    }
+  }
+
+  func testMaxAgeCapsTheTtl() {
+    if Fh.skipWithout("cache") { return }
+    let clock = FhClock()
+    let rec = FhRecorder()
+    rec.reply = { _, _ in
+      Fh.response(200, mapv(("ok", .bool(true))), vm(("cache-control", .string("max-age=1"))))
+    }
+    let h = Fh.make(rec.fetch, (CacheFeature(), vm(("ttl", .int(10000)), ("now", .nat(clock.now)))))
+    _ = h.op(FhOpSpec(op: "load", path: "/w"))
+    clock.advance(500)
+    _ = h.op(FhOpSpec(op: "load", path: "/w"))
+    XCTAssertEqual(rec.calls.count, 1, "expected a hit inside max-age")
+    clock.advance(600)
+    _ = h.op(FhOpSpec(op: "load", path: "/w"))
+    XCTAssertEqual(rec.calls.count, 2, "expected max-age=1 to expire the entry before the ttl")
+  }
 }
 
 // --- idempotency -------------------------------------------------------------

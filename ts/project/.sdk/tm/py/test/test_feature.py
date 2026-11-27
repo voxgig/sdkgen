@@ -367,6 +367,56 @@ class TestCacheFeature:
         assert b["ctx"].response is sent[1]
         assert h.client._cache["bypass"] == 2
 
+    def test_keys_on_the_request_headers(self):
+        server, calls = recording_server()
+        h = make_client([{"name": "cache", "options": {"ttl": 10000}}],
+                        server=server)
+        h.op(op="load", path="/w/1", headers={"x-tenant": "tenant-a"})
+        h.op(op="load", path="/w/1", headers={"X-Tenant": "tenant-b"})
+        assert len(calls) == 2
+        h.op(op="load", path="/w/1", headers={"x-tenant": "tenant-b"})
+        assert len(calls) == 2
+        cache = [f for f in h.client.features if f.name == "cache"][0]
+        assert "tenant-" not in "\n".join(cache.store.keys())
+
+    def test_a_write_drops_its_collection(self):
+        server, calls = recording_server()
+        h = make_client([{"name": "cache", "options": {"ttl": 10000}}],
+                        server=server)
+        paths = ["/w/1", "/w", "/w/1/part", "/other/1"]
+        for path in paths:
+            h.op(op="load", path=path)
+        h.op(op="update", method="PUT", path="/w/1")
+        for path in paths:
+            h.op(op="load", path=path)
+        assert len(calls) == 8
+        assert h.client._cache["hit"] == 1
+
+    def test_cache_control_prevents_storing(self):
+        for control in ["no-store", "private", "No-Cache", "max-age=60, private"]:
+            server, calls = recording_server(
+                lambda _n, _fd: make_response(200, {"ok": True}, {"Cache-Control": control}))
+            h = make_client([{"name": "cache", "options": {"ttl": 10000}}],
+                            server=server)
+            h.op(op="load", path="/w")
+            h.op(op="load", path="/w")
+            assert len(calls) == 2, control
+
+    def test_max_age_caps_the_ttl(self):
+        clock = make_clock()
+        server, calls = recording_server(
+            lambda _n, _fd: make_response(200, {"ok": True}, {"cache-control": "max-age=1"}))
+        h = make_client([{"name": "cache",
+                          "options": {"ttl": 10000, "now": clock.now}}],
+                        server=server)
+        h.op(op="load", path="/w")
+        clock.advance(500)
+        h.op(op="load", path="/w")
+        assert len(calls) == 1
+        clock.advance(600)
+        h.op(op="load", path="/w")
+        assert len(calls) == 2
+
     def test_inactive_cache_does_not_wrap(self):
         server, calls = recording_server()
         h = make_client([{"name": "cache", "options": {"active": False}}],

@@ -5241,6 +5241,11 @@ function runCorpus(t: any, lane: CorpusLane, sdkroot: string, files: Record<stri
       ' cases:\n' + tail(ran.out))
   }
 
+  const cache = ran.out.match(ranLine('cache'))!
+  strictEqual(cache[1], cache[2],
+    'the ' + lane.target + ' corpus runner skipped a cache case: ' + cache[0] +
+    '\n' + tail(ran.out))
+
   ok(SKIPPED_LINE.test(ran.out),
     'the ' + lane.target + ' corpus runner did not skip, by name, a case ' +
     'composing a feature the SDK does not generate:\n' + tail(ran.out))
@@ -5404,6 +5409,44 @@ const CORPUS_FIXTURE: { feature: Record<string, any> } = {
             feature: [{ name: 'cache', active: true, ttl: 10000 }],
             op: [{ op: '#OP1' }, { op: '#OP1' }],
             out: { hit: 1, miss: 1 },
+          },
+          {
+            name: 'a request header selects its own entry',
+            feature: [{ name: 'cache', active: true, ttl: 10000 }],
+            op: [
+              { op: '#OP1', headers: { 'x-tenant': 'tenant-a' } },
+              { op: '#OP1', headers: { 'x-tenant': 'tenant-b' } },
+            ],
+            out: { hit: 0, miss: 2 },
+          },
+          {
+            name: 'a repeat with the same headers is served from cache',
+            feature: [{ name: 'cache', active: true, ttl: 10000 }],
+            op: [
+              { op: '#OP1', headers: { 'x-tenant': 'tenant-a' } },
+              { op: '#OP1', headers: { 'x-tenant': 'tenant-a' } },
+            ],
+            out: { hit: 1, miss: 1 },
+          },
+          {
+            name: 'a write drops the cached reads of its entity',
+            feature: [{ name: 'cache', active: true, ttl: 10000 }],
+            op: [{ op: '#READ' }, { op: '#WRITE' }, { op: '#READ' }],
+            out: { hit: 0, miss: 2 },
+          },
+          {
+            name: 'a response marked no-store is not stored',
+            feature: [{ name: 'cache', active: true, ttl: 10000 }],
+            res: [{ status: 200, headers: { 'Cache-Control': 'no-store' }, body: {} }],
+            op: [{ op: '#OP1' }, { op: '#OP1' }],
+            out: { hit: 0, miss: 0, bypass: 2 },
+          },
+          {
+            name: 'max-age expires an entry before the ttl',
+            feature: [{ name: 'cache', active: true, ttl: 10000 }],
+            res: [{ status: 200, headers: { 'Cache-Control': 'max-age=1' }, body: {} }],
+            op: [{ op: '#OP1' }, { op: '#OP1' }, { op: '#OP1', wait: 1100 }],
+            out: { hit: 1, miss: 2 },
           },
         ],
       },

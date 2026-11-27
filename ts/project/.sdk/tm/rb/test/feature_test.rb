@@ -610,6 +610,58 @@ class FeatureTest < Minitest::Test
     assert_equal 3, calls.length
   end
 
+  def test_cache_keys_on_the_request_headers
+    skip_unless_feature("cache")
+    server, calls = H.recording_server
+    h = harness([fspec("cache", "ttl" => 10000)], server: server)
+    h.op(path: "/w/1", headers: { "x-tenant" => "tenant-a" })
+    h.op(path: "/w/1", headers: { "X-Tenant" => "tenant-b" })
+    assert_equal 2, calls.length
+    h.op(path: "/w/1", headers: { "x-tenant" => "tenant-b" })
+    assert_equal 2, calls.length
+  end
+
+  def test_cache_a_write_drops_its_collection
+    skip_unless_feature("cache")
+    server, calls = H.recording_server
+    h = harness([fspec("cache", "ttl" => 10000)], server: server)
+    paths = ["/w/1", "/w", "/w/1/part", "/other/1"]
+    paths.each { |p| h.op(path: p) }
+    h.op(opname: "update", method: "PUT", path: "/w/1")
+    paths.each { |p| h.op(path: p) }
+    assert_equal 8, calls.length
+    assert_equal 1, h.track(:@_cache)["hit"]
+  end
+
+  def test_cache_control_prevents_storing
+    skip_unless_feature("cache")
+    ["no-store", "private", "No-Cache", "max-age=60, private"].each do |control|
+      server, calls = H.recording_server do |_n, _fd|
+        [H.make_response(200, { "ok" => true }, { "Cache-Control" => control }), nil]
+      end
+      h = harness([fspec("cache", "ttl" => 10000)], server: server)
+      h.op(path: "/w")
+      h.op(path: "/w")
+      assert_equal 2, calls.length, control
+    end
+  end
+
+  def test_cache_max_age_caps_the_ttl
+    skip_unless_feature("cache")
+    clock = H::Clock.new
+    server, calls = H.recording_server do |_n, _fd|
+      [H.make_response(200, { "ok" => true }, { "cache-control" => "max-age=1" }), nil]
+    end
+    h = harness([fspec("cache", "ttl" => 10000, "now" => clock.now)], server: server)
+    h.op(path: "/w")
+    clock.advance(500)
+    h.op(path: "/w")
+    assert_equal 1, calls.length
+    clock.advance(600)
+    h.op(path: "/w")
+    assert_equal 2, calls.length
+  end
+
   def test_cache_inactive_does_not_wrap
     skip_unless_feature("cache")
     server, calls = H.recording_server

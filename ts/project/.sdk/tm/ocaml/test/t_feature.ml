@@ -215,7 +215,41 @@ let () =
         let (srv, calls) = recording_server () in
         let h = make_client ~server:srv [("cache", jo [("active", Bool false)])] in
         ignore (op h ~op:"load" ~path:"/x" ()); ignore (op h ~op:"load" ~path:"/x" ());
-        check_int "calls" (List.length !calls) 2)
+        check_int "calls" (List.length !calls) 2);
+    test "cache.keys_on_request_headers" (fun () ->
+        let (srv, calls) = recording_server () in
+        let h = make_client ~server:srv [("cache", jo [("ttl", Num 10000.)])] in
+        ignore (op h ~op:"load" ~path:"/w/1" ~headers:[("x-tenant", Str "tenant-a")] ());
+        ignore (op h ~op:"load" ~path:"/w/1" ~headers:[("X-Tenant", Str "tenant-b")] ());
+        check_int "tenant calls" (List.length !calls) 2;
+        ignore (op h ~op:"load" ~path:"/w/1" ~headers:[("x-tenant", Str "tenant-b")] ());
+        check_int "same headers calls" (List.length !calls) 2);
+    test "cache.write_drops_collection" (fun () ->
+        let (srv, calls) = recording_server () in
+        let h = make_client ~server:srv [("cache", jo [("ttl", Num 10000.)])] in
+        let paths = ["/w/1"; "/w"; "/w/1/part"; "/other/1"] in
+        List.iter (fun p -> ignore (op h ~op:"load" ~path:p ())) paths;
+        ignore (op h ~op:"update" ~method_:"PUT" ~path:"/w/1" ());
+        List.iter (fun p -> ignore (op h ~op:"load" ~path:p ())) paths;
+        check_int "calls" (List.length !calls) 8;
+        check_vnum "hit" (getp (track h "cache") "hit") 1.);
+    test "cache.control_prevents_storing" (fun () ->
+        List.iter (fun control ->
+            let (srv, calls) = recording_server
+                ~reply:(fun _ _ -> (make_response ~headers:[("Cache-Control", Str control)] 200 (jo [("ok", Bool true)]), None)) () in
+            let h = make_client ~server:srv [("cache", jo [("ttl", Num 10000.)])] in
+            ignore (op h ~op:"load" ~path:"/w" ()); ignore (op h ~op:"load" ~path:"/w" ());
+            check_int control (List.length !calls) 2)
+          ["no-store"; "private"; "No-Cache"; "max-age=60, private"]);
+    test "cache.max_age_caps_ttl" (fun () ->
+        let c = make_clock () in
+        let (srv, calls) = recording_server
+            ~reply:(fun _ _ -> (make_response ~headers:[("cache-control", Str "max-age=1")] 200 (jo [("ok", Bool true)]), None)) () in
+        let h = make_client ~server:srv [("cache", jo [("ttl", Num 10000.); ("now", clock_now_fn c)])] in
+        ignore (op h ~op:"load" ~path:"/w" ()); clock_advance c 500.; ignore (op h ~op:"load" ~path:"/w" ());
+        check_int "inside max-age" (List.length !calls) 1;
+        clock_advance c 600.; ignore (op h ~op:"load" ~path:"/w" ());
+        check_int "after max-age" (List.length !calls) 2)
   end;
 
   (* ---------------- idempotency ---------------- *)

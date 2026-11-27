@@ -16,6 +16,7 @@
 import json
 import os
 import re
+import time
 
 import pytest
 
@@ -183,6 +184,48 @@ def _usable_ops(want):
     return picked
 
 
+READ_OPS = ("list", "load")
+WRITE_OPS = ("create", "update", "patch", "remove")
+
+
+def _usable_pair():
+    """A read and a write of one entity (#READ, #WRITE), each driven as
+    _usable_ops drives an op."""
+    found = {}
+    for cand in _candidates(_client({})):
+        role = "read" if cand["op"] in READ_OPS else "write" if cand["op"] in WRITE_OPS else None
+        seen = found.setdefault(cand["accessor"], {})
+        if role is None or role in seen:
+            continue
+        try:
+            _invoke(_client({}), cand, {})
+        except Exception:
+            continue
+        seen[role] = cand
+        if "read" in seen and "write" in seen:
+            return seen
+    return None
+
+
+def _step(client, op, step, ctrl):
+    """One step: it may wait before its call, and may add request headers
+    for its call."""
+    if step.get("wait") is not None:
+        time.sleep(step["wait"] / 1000.0)
+    options = client._rootctx.options
+    prior = options.get("headers")
+    if step.get("headers") is not None:
+        options["headers"] = dict(prior or {}, **step["headers"])
+    try:
+        return _invoke(client, op, ctrl)
+    finally:
+        if step.get("headers") is not None:
+            if prior is None:
+                options.pop("headers", None)
+            else:
+                options["headers"] = prior
+
+
 def _resolve(node, tokens):
     """Replace #OPn throughout a case, keys included."""
     if isinstance(node, str):
@@ -315,6 +358,10 @@ class TestFeatureCorpus:
 
         ops = _usable_ops(2)
         by_key = {o["key"]: o for o in ops}
+        pair = _usable_pair()
+        if pair is not None:
+            by_key[pair["read"]["key"]] = pair["read"]
+            by_key[pair["write"]["key"]] = pair["write"]
 
         ran = 0
         failed = []
@@ -326,6 +373,12 @@ class TestFeatureCorpus:
                     raw.get("name"), need, len(ops)))
                 continue
 
+            paired = re.search(r"#(READ|WRITE)\b", json.dumps(raw)) is not None
+            if paired and pair is None:
+                print('skip "{}": needs a read and a write of one entity, this SDK offers none'.format(
+                    raw.get("name")))
+                continue
+
             missing = _missing_feature(raw, have)
             if missing is not None:
                 print('skip "{}": needs the {} feature, which this SDK does not generate'.format(
@@ -335,6 +388,9 @@ class TestFeatureCorpus:
             tokens = {}
             for i in range(need):
                 tokens["#OP{}".format(i + 1)] = ops[i]["key"]
+            if paired:
+                tokens["#READ"] = pair["read"]["key"]
+                tokens["#WRITE"] = pair["write"]["key"]
             kase = _resolve(raw, tokens)
             label = kase.get("name")
             ran += 1
@@ -350,7 +406,7 @@ class TestFeatureCorpus:
                     wanterr = step.get("err")
 
                     try:
-                        _invoke(client, op, ctrl)
+                        _step(client, op, step, ctrl)
                         assert wanterr is None, \
                             "{}: {} was expected to fail, and did not".format(label, step["op"])
                     except AssertionError:

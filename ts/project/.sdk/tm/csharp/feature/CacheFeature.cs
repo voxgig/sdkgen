@@ -1,11 +1,9 @@
-// Response caching for safe (read) requests. Wraps the active transport and
-// serves a fresh cached snapshot instead of hitting the network when the
-// same method+URL was fetched within `ttl` ms (default: 5000). Only
-// successful (2xx) responses to cacheable methods (default: GET) are
-// stored, keyed by method+URL. The cache is bounded (`max` entries, default
-// 256, oldest evicted first) and every hit/miss/bypass is counted. Bodies
-// are snapshotted on capture so both the current caller and later hits can
-// re-read the JSON body repeatedly.
+// Response caching for safe (read) requests, per client: see the features
+// reference for the key, the write invalidation and the Cache-Control rules.
+
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.RegularExpressions;
 
 using ProjectNameSdk.Util;
 
@@ -19,6 +17,11 @@ public class CacheFeature : BaseFeature
     private Dictionary<string, object?>? _options;
     private Dictionary<string, CacheEntry> _store = new();
     private List<string> _order = new();
+    private byte[] _secret = Array.Empty<byte>();
+
+    private static readonly string[] SafeMethods = { "GET", "HEAD" };
+    private static readonly string[] Unstored = { "no-store", "private", "no-cache" };
+    private static readonly Regex MaxAge = new("^max-age\\s*=\\s*\"?(\\d+)\"?$");
 
     // Activity tracking (mirrors the ts client._cache record).
     public int Hit;
@@ -28,6 +31,7 @@ public class CacheFeature : BaseFeature
     private class CacheEntry
     {
         public long Expiry;
+        public string Scope = "";
         public CacheSnapshot Snapshot = new();
     }
 
@@ -59,6 +63,7 @@ public class CacheFeature : BaseFeature
 
         _store = new Dictionary<string, CacheEntry>();
         _order = new List<string>();
+        _secret = RandomNumberGenerator.GetBytes(32);
 
         var inner = ctx.Utility!.Fetcher;
 
@@ -78,10 +83,22 @@ public class CacheFeature : BaseFeature
         var cacheable = methods.Any(x => x.ToUpperInvariant() == method);
         if (!cacheable)
         {
-            return inner(ctx, url, fetchdef);
+            if (SafeMethods.Contains(method))
+            {
+                return inner(ctx, url, fetchdef);
+            }
+            try
+            {
+                return inner(ctx, url, fetchdef);
+            }
+            finally
+            {
+                Invalidate(url);
+            }
         }
 
-        var key = method + " " + url;
+        fetchdef.TryGetValue("headers", out var headers);
+        var key = method + " " + url + " " + Digest(headers);
         var now = FoptNow(_options)();
 
         if (_store.TryGetValue(key, out var hit) && hit.Expiry > now)
@@ -111,9 +128,15 @@ public class CacheFeature : BaseFeature
         if (err == null && Storable(res))
         {
             var snapshot = Snapshot(res);
-            var ttl = FoptInt(_options, "ttl", 5000);
+            var ttl = Lifetime(snapshot.Headers, FoptInt(_options, "ttl", 5000));
+            if (ttl <= 0)
+            {
+                Bypass++;
+                return Replay(snapshot);
+            }
+            Drop(key);
             Evict();
-            _store[key] = new CacheEntry { Expiry = now + ttl, Snapshot = snapshot };
+            _store[key] = new CacheEntry { Expiry = now + ttl, Scope = UrlScope(url), Snapshot = snapshot };
             _order.Add(key);
             Miss++;
             return Replay(snapshot);
@@ -125,6 +148,97 @@ public class CacheFeature : BaseFeature
             throw err;
         }
         return res;
+    }
+
+    private string Digest(object? headers)
+    {
+        var pairs = new List<(string Name, string Value)>();
+        if (headers is IDictionary<string, object?> hm)
+        {
+            foreach (var kv in hm)
+            {
+                if (kv.Value != null)
+                {
+                    pairs.Add((kv.Key.ToLowerInvariant(), Convert.ToString(kv.Value, System.Globalization.CultureInfo.InvariantCulture) ?? ""));
+                }
+            }
+        }
+        var text = new StringBuilder();
+        foreach (var (name, value) in pairs.OrderBy(p => p.Name, StringComparer.Ordinal).ThenBy(p => p.Value, StringComparer.Ordinal))
+        {
+            text.Append(name).Append(':').Append(value).Append('\n');
+        }
+        return Convert.ToHexString(HMACSHA256.HashData(_secret, Encoding.UTF8.GetBytes(text.ToString()))).ToLowerInvariant();
+    }
+
+    private void Invalidate(string url)
+    {
+        var path = UrlScope(url);
+        var collection = UrlParent(path);
+        foreach (var key in _store.Where(kv => Under(kv.Value.Scope, path) || Under(kv.Value.Scope, collection))
+            .Select(kv => kv.Key).ToList())
+        {
+            Drop(key);
+        }
+    }
+
+    private void Drop(string key)
+    {
+        if (_store.Remove(key))
+        {
+            _order.Remove(key);
+        }
+    }
+
+    // The configured ttl capped by the response's Cache-Control; zero when the
+    // response may not be stored.
+    private static long Lifetime(Dictionary<string, object?> headers, long ttl)
+    {
+        var control = "";
+        foreach (var kv in headers)
+        {
+            if (kv.Key.ToLowerInvariant() == "cache-control")
+            {
+                control = (Convert.ToString(kv.Value) ?? "").ToLowerInvariant();
+            }
+        }
+        var life = ttl;
+        foreach (var part in control.Split(','))
+        {
+            var directive = part.Trim();
+            if (Unstored.Contains(directive))
+            {
+                return 0;
+            }
+            var age = MaxAge.Match(directive);
+            if (age.Success && long.TryParse(age.Groups[1].Value, out var secs))
+            {
+                life = Math.Min(life, secs * 1000);
+            }
+        }
+        return life;
+    }
+
+    private static string UrlScope(string url)
+    {
+        var cut = url.IndexOfAny(new[] { '?', '#' });
+        return (cut < 0 ? url : url[..cut]).TrimEnd('/');
+    }
+
+    private static string UrlParent(string scope)
+    {
+        var scheme = scope.IndexOf("://", StringComparison.Ordinal);
+        var root = scheme < 0 ? 0 : scope.IndexOf('/', scheme + 3);
+        if (root < 0)
+        {
+            return scope;
+        }
+        return scope[..Math.Max(scope.LastIndexOf('/'), root)];
+    }
+
+    private static bool Under(string scope, string prefix)
+    {
+        return scope == prefix || scope.StartsWith(prefix + "/", StringComparison.Ordinal);
     }
 
     // A body the transport could not read as JSON passes through, for the operation to report.

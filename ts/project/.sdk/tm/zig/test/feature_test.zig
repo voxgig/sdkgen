@@ -488,6 +488,71 @@ test "feature cache: inactive does not wrap" {
     try testing.expect(rec.count() == 2);
 }
 
+var cache_control: []const u8 = "";
+
+fn replyControl(_: i64, _: *sdk.Context, _: Value) fh.E!Value {
+    return fh.fh_response(200, h.jo(&.{.{ "ok", h.vbool(true) }}), h.jo(&.{.{ "Cache-Control", h.vstr(cache_control) }}));
+}
+
+test "feature cache: keys on request headers" {
+    if (!fh.fh_present(&.{"cache"})) return;
+    const rec = fh.Recorder.new(null);
+    const f = sdk.CacheFeature.make();
+    const hh = fh.fh_make(rec.fetcher(), &.{.{ .feat = f, .options = h.jo(&.{.{ "ttl", h.vnum(10000) }}) }});
+    _ = hh.op(.{ .op = "load", .path = "/w/1", .headers = h.jo(&.{.{ "x-tenant", h.vstr("tenant-a") }}) });
+    _ = hh.op(.{ .op = "load", .path = "/w/1", .headers = h.jo(&.{.{ "X-Tenant", h.vstr("tenant-b") }}) });
+    try testing.expect(rec.count() == 2);
+    _ = hh.op(.{ .op = "load", .path = "/w/1", .headers = h.jo(&.{.{ "x-tenant", h.vstr("tenant-b") }}) });
+    try testing.expect(rec.count() == 2);
+}
+
+test "feature cache: a write drops its collection" {
+    if (!fh.fh_present(&.{"cache"})) return;
+    const rec = fh.Recorder.new(null);
+    const f = sdk.CacheFeature.make();
+    const cf: *sdk.CacheFeature = @ptrCast(@alignCast(f.ptr));
+    const hh = fh.fh_make(rec.fetcher(), &.{.{ .feat = f, .options = h.jo(&.{.{ "ttl", h.vnum(10000) }}) }});
+    const paths = [_][]const u8{ "/w/1", "/w", "/w/1/part", "/other/1" };
+    for (paths) |p| _ = hh.op(.{ .op = "load", .path = p });
+    _ = hh.op(.{ .op = "update", .method = "PUT", .path = "/w/1" });
+    for (paths) |p| _ = hh.op(.{ .op = "load", .path = p });
+    try testing.expect(rec.count() == 8);
+    try testing.expect(cf.track.hit == 1);
+}
+
+test "feature cache: Cache-Control prevents storing" {
+    if (!fh.fh_present(&.{"cache"})) return;
+    const controls = [_][]const u8{ "no-store", "private", "No-Cache", "max-age=60, private" };
+    for (controls) |control| {
+        cache_control = control;
+        const rec = fh.Recorder.new(replyControl);
+        const f = sdk.CacheFeature.make();
+        const hh = fh.fh_make(rec.fetcher(), &.{.{ .feat = f, .options = h.jo(&.{.{ "ttl", h.vnum(10000) }}) }});
+        _ = hh.op(.{ .op = "load", .path = "/w" });
+        _ = hh.op(.{ .op = "load", .path = "/w" });
+        try testing.expect(rec.count() == 2);
+    }
+}
+
+test "feature cache: max-age caps the ttl" {
+    if (!fh.fh_present(&.{"cache"})) return;
+    cache_control = "max-age=1";
+    const clock = fh.FhClock.new();
+    const rec = fh.Recorder.new(replyControl);
+    const f = sdk.CacheFeature.make();
+    const hh = fh.fh_make(rec.fetcher(), &.{.{ .feat = f, .options = h.jo(&.{
+        .{ "ttl", h.vnum(10000) },
+        .{ "now", clock.now_fn() },
+    }) }});
+    _ = hh.op(.{ .op = "load", .path = "/w" });
+    clock.advance(500);
+    _ = hh.op(.{ .op = "load", .path = "/w" });
+    try testing.expect(rec.count() == 1);
+    clock.advance(600);
+    _ = hh.op(.{ .op = "load", .path = "/w" });
+    try testing.expect(rec.count() == 2);
+}
+
 // =====================================================================
 // idempotency
 // =====================================================================

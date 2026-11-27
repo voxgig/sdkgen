@@ -430,6 +430,65 @@ static void cache_inactiveDoesNotWrap() {
   ASSERT_EQ((int)rec->calls.size(), 2, "expected 2 calls");
 }
 
+static void cache_keysOnRequestHeaders() {
+  if (!have({"cache"})) return;
+  auto rec = std::make_shared<FhRecorder>();
+  FetcherFn server = [rec](CtxPtr c, const std::string& u, const Value& fd) { return rec->fetch(c, u, fd); };
+  auto h = fhMake(server, {FF(std::make_shared<CacheFeature>(), fhMap({{"ttl", Value(10000)}}))});
+  h->op(fhOp("load").setPath("/w/1").setHeaders(fhMap({{"x-tenant", Value("tenant-a")}})));
+  h->op(fhOp("load").setPath("/w/1").setHeaders(fhMap({{"X-Tenant", Value("tenant-b")}})));
+  ASSERT_EQ((int)rec->calls.size(), 2, "a second tenant was served the first tenant's entry");
+  h->op(fhOp("load").setPath("/w/1").setHeaders(fhMap({{"x-tenant", Value("tenant-b")}})));
+  ASSERT_EQ((int)rec->calls.size(), 2, "the same headers did not share an entry");
+}
+
+static void cache_aWriteDropsItsCollection() {
+  if (!have({"cache"})) return;
+  auto rec = std::make_shared<FhRecorder>();
+  FetcherFn server = [rec](CtxPtr c, const std::string& u, const Value& fd) { return rec->fetch(c, u, fd); };
+  auto f = std::make_shared<CacheFeature>();
+  auto h = fhMake(server, {FF(f, fhMap({{"ttl", Value(10000)}}))});
+  const char* paths[] = {"/w/1", "/w", "/w/1/part", "/other/1"};
+  for (const char* p : paths) h->op(fhOp("load").setPath(p));
+  h->op(fhOp("update").setMethod("PUT").setPath("/w/1"));
+  for (const char* p : paths) h->op(fhOp("load").setPath(p));
+  ASSERT_EQ((int)rec->calls.size(), 8, "expected the collection refetched and /other cached");
+  ASSERT_EQ(f->hit, 1, "expected /other served from cache");
+}
+
+static void cache_cacheControlPreventsStoring() {
+  if (!have({"cache"})) return;
+  for (std::string control : {"no-store", "private", "No-Cache", "max-age=60, private"}) {
+    auto rec = std::make_shared<FhRecorder>();
+    rec->reply = [control](int, const Value&) {
+      return fhResponse(200, fhMap({{"ok", Value(true)}}), fhMap({{"Cache-Control", Value(control)}}));
+    };
+    FetcherFn server = [rec](CtxPtr c, const std::string& u, const Value& fd) { return rec->fetch(c, u, fd); };
+    auto h = fhMake(server, {FF(std::make_shared<CacheFeature>(), fhMap({{"ttl", Value(10000)}}))});
+    h->op(fhOp("load").setPath("/w"));
+    h->op(fhOp("load").setPath("/w"));
+    ASSERT_EQ((int)rec->calls.size(), 2, control + " was stored");
+  }
+}
+
+static void cache_maxAgeCapsTheTtl() {
+  if (!have({"cache"})) return;
+  FhClock clock;
+  auto rec = std::make_shared<FhRecorder>();
+  rec->reply = [](int, const Value&) {
+    return fhResponse(200, fhMap({{"ok", Value(true)}}), fhMap({{"cache-control", Value("max-age=1")}}));
+  };
+  FetcherFn server = [rec](CtxPtr c, const std::string& u, const Value& fd) { return rec->fetch(c, u, fd); };
+  auto h = fhMake(server, {FF(std::make_shared<CacheFeature>(), fhMap({{"ttl", Value(10000)}, {"now", clock.nowFn()}}))});
+  h->op(fhOp("load").setPath("/w"));
+  clock.advance(500);
+  h->op(fhOp("load").setPath("/w"));
+  ASSERT_EQ((int)rec->calls.size(), 1, "expected a hit inside max-age");
+  clock.advance(600);
+  h->op(fhOp("load").setPath("/w"));
+  ASSERT_EQ((int)rec->calls.size(), 2, "expected max-age=1 to expire the entry before the ttl");
+}
+
 // ============================ idempotency ==============================
 
 static void idempotency_addsKeyToMutatingOps() {
@@ -955,6 +1014,10 @@ int main() {
   T_RUN(cache_refetchesAfterTtl);
   T_RUN(cache_evictsOldestPastMax);
   T_RUN(cache_inactiveDoesNotWrap);
+  T_RUN(cache_keysOnRequestHeaders);
+  T_RUN(cache_aWriteDropsItsCollection);
+  T_RUN(cache_cacheControlPreventsStoring);
+  T_RUN(cache_maxAgeCapsTheTtl);
 
   T_RUN(idempotency_addsKeyToMutatingOps);
   T_RUN(idempotency_addsKeyByHttpMethod);

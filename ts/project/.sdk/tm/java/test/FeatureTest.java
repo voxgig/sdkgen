@@ -488,6 +488,66 @@ public class FeatureTest {
   }
 
   @Test
+  public void cache_keysOnRequestHeaders() {
+    assumeFeatures("cache");
+    FhRecorder rec = new FhRecorder();
+    FhHarness h = fhMake(rec::fetch, fhF(new CacheFeature(), fhMap("ttl", 10000)));
+    h.op(fhOp("load").path("/w/1").headers(fhMap("x-tenant", "tenant-a")));
+    h.op(fhOp("load").path("/w/1").headers(fhMap("X-Tenant", "tenant-b")));
+    assertEquals(2, rec.calls.size(), "a second tenant was served the first tenant's entry");
+    h.op(fhOp("load").path("/w/1").headers(fhMap("x-tenant", "tenant-b")));
+    assertEquals(2, rec.calls.size(), "the same headers did not share an entry");
+  }
+
+  @Test
+  public void cache_aWriteDropsItsCollection() {
+    assumeFeatures("cache");
+    FhRecorder rec = new FhRecorder();
+    CacheFeature f = new CacheFeature();
+    FhHarness h = fhMake(rec::fetch, fhF(f, fhMap("ttl", 10000)));
+    String[] paths = {"/w/1", "/w", "/w/1/part", "/other/1"};
+    for (String p : paths) {
+      h.op(fhOp("load").path(p));
+    }
+    h.op(fhOp("update").method("PUT").path("/w/1"));
+    for (String p : paths) {
+      h.op(fhOp("load").path(p));
+    }
+    assertEquals(8, rec.calls.size(), "expected the collection refetched and /other cached");
+    assertEquals(1, f.hit, "expected /other served from cache");
+  }
+
+  @Test
+  public void cache_cacheControlPreventsStoring() {
+    assumeFeatures("cache");
+    for (String control : new String[] {"no-store", "private", "No-Cache", "max-age=60, private"}) {
+      FhRecorder rec = new FhRecorder();
+      rec.reply = (n, fetchdef) -> fhResponse(200, fhMap("ok", true), fhMap("Cache-Control", control));
+      FhHarness h = fhMake(rec::fetch, fhF(new CacheFeature(), fhMap("ttl", 10000)));
+      h.op(fhOp("load").path("/w"));
+      h.op(fhOp("load").path("/w"));
+      assertEquals(2, rec.calls.size(), control + " was stored");
+    }
+  }
+
+  @Test
+  public void cache_maxAgeCapsTheTtl() {
+    assumeFeatures("cache");
+    FhClock clock = new FhClock();
+    FhRecorder rec = new FhRecorder();
+    rec.reply = (n, fetchdef) -> fhResponse(200, fhMap("ok", true), fhMap("cache-control", "max-age=1"));
+    FhHarness h = fhMake(rec::fetch, fhF(new CacheFeature(),
+        fhMap("ttl", 10000, "now", (LongSupplier) clock::now)));
+    h.op(fhOp("load").path("/w"));
+    clock.advance(500);
+    h.op(fhOp("load").path("/w"));
+    assertEquals(1, rec.calls.size(), "expected a hit inside max-age");
+    clock.advance(600);
+    h.op(fhOp("load").path("/w"));
+    assertEquals(2, rec.calls.size(), "expected max-age=1 to expire the entry before the ttl");
+  }
+
+  @Test
   public void cache_inactiveDoesNotWrap() {
     assumeFeatures("cache");
     FhRecorder rec = new FhRecorder();

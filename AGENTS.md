@@ -410,7 +410,11 @@ Rules:
   each target's `test/feature/Corpus.test.*`. Feature cases use the ARRAY form
   of `options.feature` (position is add-order, and add-order is nesting order),
   and the tokens `#OP1`/`#OP2` for two operations the runner discovers from
-  the client — no case may name an entity. A section that runs but defers part
+  the client — no case may name an entity. `#READ`/`#WRITE` are a read and a
+  write of one entity, found the same way; a case using them skips, by name,
+  on an SDK with no such pair. A step may carry `headers` (added to the
+  client's default request headers for that call alone) and `wait`
+  (milliseconds slept before it). A section that runs but defers part
   of its subject says so with `partial:`, not `basic: pending:`. `ts`, `js`,
   `go`, `py`, `rb`, `php`, `perl` and `java` have runners; the other targets
   do not yet.

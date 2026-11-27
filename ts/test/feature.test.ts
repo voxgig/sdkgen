@@ -365,6 +365,123 @@ describe('feature:cache', () => {
     strictEqual(b.ctx.response, sent[1])
     strictEqual(h.client._cache.bypass, 2)
   })
+
+  test('a request header selects its own entry, and no header value is in the key', async () => {
+    const rec = recordingServer()
+    const h = makeClient({
+      features: [{ name: 'cache', options: { ttl: 10000 } }],
+      server: rec.server,
+    })
+    await h.op({ op: 'load', path: '/w/1', headers: { 'x-tenant': 'tenant-a' } })
+    await h.op({ op: 'load', path: '/w/1', headers: { 'X-Tenant': 'tenant-b' } })
+    strictEqual(rec.calls.length, 2, 'a second tenant was served the first tenant\'s entry')
+    await h.op({ op: 'load', path: '/w/1', headers: { 'x-tenant': 'tenant-b' } })
+    strictEqual(rec.calls.length, 2, 'the same headers, whatever their case, share an entry')
+    await h.op({ op: 'load', path: '/w/1', headers: { authorization: 'Bearer one' } })
+    await h.op({ op: 'load', path: '/w/1', headers: { authorization: 'Bearer two' } })
+    strictEqual(rec.calls.length, 4, 'a second credential was served the first one\'s entry')
+
+    const keys = [...h.feature('cache')._store.keys()].join('\n')
+    for (const secret of ['tenant-a', 'tenant-b', 'Bearer', 'x-tenant', 'authorization']) {
+      ok(!keys.includes(secret), 'the key holds ' + secret + ':\n' + keys)
+    }
+  })
+
+  test('the header digest is keyed per client', async () => {
+    const one = makeClient({ features: [{ name: 'cache', options: { ttl: 10000 } }] })
+    const two = makeClient({ features: [{ name: 'cache', options: { ttl: 10000 } }] })
+    await one.op({ op: 'load', path: '/w', headers: { 'x-tenant': 'a' } })
+    await two.op({ op: 'load', path: '/w', headers: { 'x-tenant': 'a' } })
+    const [a] = [...one.feature('cache')._store.keys()]
+    const [b] = [...two.feature('cache')._store.keys()]
+    ok(a !== b, 'two clients digested the same headers to the same key: ' + a)
+  })
+
+  test('a write drops the entries of its entity collection', async () => {
+    const rec = recordingServer()
+    const h = makeClient({
+      features: [{ name: 'cache', options: { ttl: 10000 } }],
+      server: rec.server,
+    })
+    for (const path of ['/w/1', '/w', '/w/1/part', '/other/1']) {
+      await h.op({ op: 'load', path })
+    }
+    strictEqual(rec.calls.length, 4)
+    await h.op({ op: 'update', method: 'PUT', path: '/w/1' })
+    strictEqual(rec.calls.length, 5)
+    for (const path of ['/w/1', '/w', '/w/1/part', '/other/1']) {
+      await h.op({ op: 'load', path })
+    }
+    strictEqual(rec.calls.length, 8, 'the collection refetched, the other entity stayed cached')
+    strictEqual(h.client._cache.hit, 1)
+  })
+
+  test('a failed write still drops the collection', async () => {
+    const rec = recordingServer((n) => 2 === n ? makeResponse(500, {}) : makeResponse(200, { n }))
+    const h = makeClient({
+      features: [{ name: 'cache', options: { ttl: 10000 } }],
+      server: rec.server,
+    })
+    await h.op({ op: 'load', path: '/w/1' })
+    await h.op({ op: 'remove', path: '/w/1' })
+    await h.op({ op: 'load', path: '/w/1' })
+    strictEqual(rec.calls.length, 3)
+  })
+
+  test('Cache-Control no-store, private and no-cache are not stored', async () => {
+    for (const control of ['no-store', 'private', 'No-Cache', 'max-age=60, private']) {
+      const rec = recordingServer(() => makeResponse(200, { ok: true }, { 'Cache-Control': control }))
+      const h = makeClient({
+        features: [{ name: 'cache', options: { ttl: 10000 } }],
+        server: rec.server,
+      })
+      const a = await h.op({ op: 'load', path: '/w' })
+      await h.op({ op: 'load', path: '/w' })
+      strictEqual(a.ok, true)
+      strictEqual(rec.calls.length, 2, control + ' was stored')
+      strictEqual(h.client._cache.bypass, 2, control)
+    }
+  })
+
+  test('Cache-Control max-age caps the ttl, and never extends it', async () => {
+    const clock = makeClock()
+    const rec = recordingServer(() => makeResponse(200, { ok: true }, { 'cache-control': 'max-age=1' }))
+    const h = makeClient({
+      features: [{ name: 'cache', options: { ttl: 10000, now: clock.now } }],
+      server: rec.server,
+    })
+    await h.op({ op: 'load', path: '/w' })
+    clock.advance(500)
+    await h.op({ op: 'load', path: '/w' })
+    strictEqual(rec.calls.length, 1, 'served inside max-age')
+    clock.advance(600)
+    await h.op({ op: 'load', path: '/w' })
+    strictEqual(rec.calls.length, 2, 'max-age=1 expired before the ttl')
+
+    const long = recordingServer(() => makeResponse(200, { ok: true }, { 'cache-control': 'max-age=3600' }))
+    const l = makeClient({
+      features: [{ name: 'cache', options: { ttl: 1000, now: clock.now } }],
+      server: long.server,
+    })
+    await l.op({ op: 'load', path: '/w' })
+    clock.advance(1500)
+    await l.op({ op: 'load', path: '/w' })
+    strictEqual(long.calls.length, 2, 'max-age extended the configured ttl')
+  })
+
+  test('a URL path naming an Object.prototype member is an ordinary entry', async () => {
+    const rec = recordingServer()
+    const h = makeClient({
+      features: [{ name: 'cache', options: { ttl: 10000 } }],
+      server: rec.server,
+    })
+    for (const path of ['/__proto__', '/constructor', '/__proto__', '/constructor']) {
+      await h.op({ op: 'load', path })
+    }
+    strictEqual(rec.calls.length, 2)
+    strictEqual(({} as any).expiry, undefined)
+    strictEqual(({} as any).snapshot, undefined)
+  })
 })
 
 

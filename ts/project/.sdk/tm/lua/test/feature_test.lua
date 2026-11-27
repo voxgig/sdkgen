@@ -718,6 +718,62 @@ describe("feature", function()
       h.op({ op = "load", path = "/x" })
       assert.are.equal(2, #rec.calls)
     end)
+
+    it("keys on the request headers", function()
+      local rec = recording_server()
+      local h = make_client({ features = {
+        { name = "cache", options = { ttl = 10000 } },
+      }, server = rec.server })
+      h.op({ op = "load", path = "/w/1", headers = { ["x-tenant"] = "tenant-a" } })
+      h.op({ op = "load", path = "/w/1", headers = { ["X-Tenant"] = "tenant-b" } })
+      assert.are.equal(2, #rec.calls)
+      h.op({ op = "load", path = "/w/1", headers = { ["x-tenant"] = "tenant-b" } })
+      assert.are.equal(2, #rec.calls)
+    end)
+
+    it("drops a write's collection", function()
+      local rec = recording_server()
+      local h = make_client({ features = {
+        { name = "cache", options = { ttl = 10000 } },
+      }, server = rec.server })
+      local paths = { "/w/1", "/w", "/w/1/part", "/other/1" }
+      for _, p in ipairs(paths) do h.op({ op = "load", path = p }) end
+      h.op({ op = "update", method = "PUT", path = "/w/1" })
+      for _, p in ipairs(paths) do h.op({ op = "load", path = p }) end
+      assert.are.equal(8, #rec.calls)
+      assert.are.equal(1, h.client._cache.hit)
+    end)
+
+    it("does not store what Cache-Control forbids", function()
+      for _, control in ipairs({ "no-store", "private", "No-Cache", "max-age=60, private" }) do
+        local rec = recording_server(function()
+          return make_response(200, { ok = true }, { ["Cache-Control"] = control })
+        end)
+        local h = make_client({ features = {
+          { name = "cache", options = { ttl = 10000 } },
+        }, server = rec.server })
+        h.op({ op = "load", path = "/w" })
+        h.op({ op = "load", path = "/w" })
+        assert.are.equal(2, #rec.calls, control)
+      end
+    end)
+
+    it("caps the ttl by max-age", function()
+      local clock = make_clock()
+      local rec = recording_server(function()
+        return make_response(200, { ok = true }, { ["cache-control"] = "max-age=1" })
+      end)
+      local h = make_client({ features = {
+        { name = "cache", options = { ttl = 10000, now = clock.now } },
+      }, server = rec.server })
+      h.op({ op = "load", path = "/w" })
+      clock.advance(500)
+      h.op({ op = "load", path = "/w" })
+      assert.are.equal(1, #rec.calls)
+      clock.advance(600)
+      h.op({ op = "load", path = "/w" })
+      assert.are.equal(2, #rec.calls)
+    end)
   end) end
 
 

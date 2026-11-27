@@ -147,6 +147,48 @@ class FeatureCorpusTest < Minitest::Test
     picked
   end
 
+  READ_OPS = ["list", "load"].freeze
+  WRITE_OPS = ["create", "update", "patch", "remove"].freeze
+
+  # A read and a write of one entity (#READ, #WRITE), each driven as
+  # usable_ops drives an op.
+  def usable_pair
+    found = {}
+    candidates(build_client({})).each do |cand|
+      role = READ_OPS.include?(cand["op"]) ? "read" : (WRITE_OPS.include?(cand["op"]) ? "write" : nil)
+      seen = (found[cand["accessor"]] ||= {})
+      next if role.nil? || seen.key?(role)
+      begin
+        invoke(build_client({}), cand, {})
+      rescue StandardError
+        next
+      end
+      seen[role] = cand
+      return seen if seen.key?("read") && seen.key?("write")
+    end
+    nil
+  end
+
+  # One step: it may wait before its call, and may add request headers for
+  # its call.
+  def step_call(client, op, step, ctrl)
+    sleep(step["wait"] / 1000.0) unless step["wait"].nil?
+    return invoke(client, op, ctrl) if step["headers"].nil?
+    options = client.options
+    had = options.key?("headers")
+    prior = options["headers"]
+    options["headers"] = (prior || {}).merge(step["headers"])
+    begin
+      invoke(client, op, ctrl)
+    ensure
+      if had
+        options["headers"] = prior
+      else
+        options.delete("headers")
+      end
+    end
+  end
+
   # Replace #OPn throughout a case, keys included.
   def resolve(node, tokens)
     case node
@@ -286,12 +328,20 @@ class FeatureCorpusTest < Minitest::Test
 
       ops = usable_ops(2)
       by_key = ops.each_with_object({}) { |o, h| h[o["key"]] = o }
+      pair = usable_pair
+      pair&.each_value { |o| by_key[o["key"]] = o }
 
       ran = 0
       cases.each do |raw|
         need = tokens_used(raw)
         if need > ops.length
           puts "skip \"#{raw['name']}\": needs #{need} operations, this SDK offers #{ops.length}"
+          next
+        end
+
+        paired = JSON.generate(raw).match?(/#(READ|WRITE)\b/)
+        if paired && pair.nil?
+          puts "skip \"#{raw['name']}\": needs a read and a write of one entity, this SDK offers none"
           next
         end
 
@@ -304,6 +354,10 @@ class FeatureCorpusTest < Minitest::Test
 
         tokens = {}
         need.times { |i| tokens["#OP#{i + 1}"] = ops[i]["key"] }
+        if paired
+          tokens["#READ"] = pair["read"]["key"]
+          tokens["#WRITE"] = pair["write"]["key"]
+        end
         kase = resolve(raw, tokens)
         label = kase["name"].to_s
         ran += 1
@@ -319,7 +373,7 @@ class FeatureCorpusTest < Minitest::Test
             wanterr = step["err"]
 
             begin
-              invoke(client, op, ctrl)
+              step_call(client, op, step, ctrl)
               assert_nil wanterr, "#{label}: #{step['op']} was expected to fail, and did not"
             rescue Minitest::Assertion
               raise

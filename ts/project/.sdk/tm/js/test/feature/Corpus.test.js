@@ -156,6 +156,50 @@ async function usableOps(want) {
 }
 
 
+
+const READ_OPS = ['list', 'load']
+const WRITE_OPS = ['create', 'update', 'patch', 'remove']
+
+
+// A read and a write of one entity (#READ, #WRITE), each driven as usableOps
+// drives an op.
+async function usablePair() {
+  const found = {}
+  for (const cand of candidates(makeClient({}))) {
+    const role = READ_OPS.includes(cand.op) ? 'read' : WRITE_OPS.includes(cand.op) ? 'write' : ''
+    const seen = found[cand.entity] = found[cand.entity] || {}
+    if ('' === role || null != seen[role]) { continue }
+    try {
+      await makeClient({})[cand.accessor]()[cand.op]({}, {})
+    }
+    catch (e) { continue }
+    seen[role] = cand
+    if (null != seen.read && null != seen.write) {
+      return { read: seen.read, write: seen.write }
+    }
+  }
+  return undefined
+}
+
+
+// A step may wait before its call, and may add request headers for its call.
+async function runStep(client, ref, step) {
+  if (null != step.wait) {
+    await new Promise((resolve) => setTimeout(resolve, step.wait))
+  }
+  const options = client._rootctx.options
+  const prior = options.headers
+  if (null != step.headers) {
+    options.headers = { ...(prior || {}), ...step.headers }
+  }
+  try {
+    await client[ref.accessor]()[ref.op]({}, step.ctrl || {})
+  }
+  finally {
+    options.headers = prior
+  }
+}
+
 // Replace #OP1/#OP2 throughout a case, keys included.
 function resolve(node, tokens) {
   if ('string' === typeof node) {
@@ -225,6 +269,7 @@ describe('FeatureCorpus', () => {
   let corpus
   let ops = []
   let byKey = {}
+  let pair
 
 
   before(async () => {
@@ -232,6 +277,8 @@ describe('FeatureCorpus', () => {
     ops = await usableOps(2)
     byKey = {}
     for (const o of ops) { byKey[o.key] = o }
+    pair = await usablePair()
+    for (const o of pair ? [pair.read, pair.write] : []) { byKey[o.key] = o }
   })
 
 
@@ -296,6 +343,12 @@ describe('FeatureCorpus', () => {
           continue
         }
 
+        const paired = /#(READ|WRITE)\b/.test(JSON.stringify(raw))
+        if (paired && null == pair) {
+          t.diagnostic(`skip "${raw.name}": needs a read and a write of one entity, this SDK offers none`)
+          continue
+        }
+
         const missing = missingFeature(probe, raw)
         if (null != missing) {
           t.diagnostic(`skip "${raw.name}": needs the ${missing} feature, ` +
@@ -305,6 +358,10 @@ describe('FeatureCorpus', () => {
 
         const tokens = {}
         for (let i = 0; i < need; i++) { tokens['#OP' + (i + 1)] = ops[i].key }
+        if (paired && null != pair) {
+          tokens['#READ'] = pair.read.key
+          tokens['#WRITE'] = pair.write.key
+        }
 
         const kase = resolve(raw, tokens)
         ran++
@@ -318,7 +375,7 @@ describe('FeatureCorpus', () => {
             ok(null != ref, `${kase.name}: no operation ${step.op}`)
             let err = undefined
             try {
-              await client[ref.accessor]()[ref.op]({}, step.ctrl || {})
+              await runStep(client, ref, step)
             }
             catch (e) {
               err = e

@@ -458,6 +458,67 @@ defmodule ProjectName.FeatureTest do
     end
   end
 
+  test "cache keys on the request headers" do
+    if has?("cache") do
+      {server, calls} = FH.recording_server()
+      h = harness([fspec("cache", %{"ttl" => 10000})], %{server: server})
+      FH.op(h, %{path: "/w/1", headers: S.jm(["x-tenant", "tenant-a"])})
+      FH.op(h, %{path: "/w/1", headers: S.jm(["X-Tenant", "tenant-b"])})
+      assert S.size(calls) == 2
+      FH.op(h, %{path: "/w/1", headers: S.jm(["x-tenant", "tenant-b"])})
+      assert S.size(calls) == 2
+    end
+  end
+
+  test "cache drops a write's collection" do
+    if has?("cache") do
+      {server, calls} = FH.recording_server()
+      h = harness([fspec("cache", %{"ttl" => 10000})], %{server: server})
+      paths = ["/w/1", "/w", "/w/1/part", "/other/1"]
+      Enum.each(paths, fn p -> FH.op(h, %{path: p}) end)
+      FH.op(h, %{op: "update", method: "PUT", path: "/w/1"})
+      Enum.each(paths, fn p -> FH.op(h, %{path: p}) end)
+      assert S.size(calls) == 8
+      assert S.getprop(track(h, "_cache"), "hit") == 1
+    end
+  end
+
+  test "cache does not store what Cache-Control forbids" do
+    if has?("cache") do
+      for control <- ["no-store", "private", "No-Cache", "max-age=60, private"] do
+        {server, calls} =
+          FH.recording_server(fn _n, _fd ->
+            {FH.make_response(200, S.jm(["ok", true]), S.jm(["Cache-Control", control])), nil}
+          end)
+
+        h = harness([fspec("cache", %{"ttl" => 10000})], %{server: server})
+        FH.op(h, %{path: "/w"})
+        FH.op(h, %{path: "/w"})
+        assert S.size(calls) == 2, control
+      end
+    end
+  end
+
+  test "cache caps the ttl by max-age" do
+    if has?("cache") do
+      clock = FH.make_clock()
+
+      {server, calls} =
+        FH.recording_server(fn _n, _fd ->
+          {FH.make_response(200, S.jm(["ok", true]), S.jm(["cache-control", "max-age=1"])), nil}
+        end)
+
+      h = harness([fspec("cache", %{"ttl" => 10000, "now" => FH.clock_now(clock)})], %{server: server})
+      FH.op(h, %{path: "/w"})
+      FH.clock_advance(clock, 500)
+      FH.op(h, %{path: "/w"})
+      assert S.size(calls) == 1
+      FH.clock_advance(clock, 600)
+      FH.op(h, %{path: "/w"})
+      assert S.size(calls) == 2
+    end
+  end
+
   # === idempotency ===
 
   test "idempotency adds a key to mutating ops" do

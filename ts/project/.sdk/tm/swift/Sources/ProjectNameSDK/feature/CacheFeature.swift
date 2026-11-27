@@ -1,11 +1,7 @@
-// Response caching for safe (read) requests. Wraps the active transport and
-// serves a fresh cached snapshot instead of hitting the network when the same
-// method+URL was fetched within `ttl` ms (default: 5000). Only successful
-// (2xx) responses to cacheable methods (default: GET) are stored, keyed by
-// method+URL. The cache is bounded (`max` entries, default 256, oldest evicted
-// first) and every hit/miss/bypass is counted. Bodies are snapshotted on
-// capture so both the current caller and later hits can re-read the JSON body
-// repeatedly.
+// Response caching for safe (read) requests, per client: see the features
+// reference for the key, the write invalidation and the Cache-Control rules.
+// The header digest is the standard library's keyed Hasher over a random
+// per-client salt: Foundation on Linux has no HMAC.
 
 import Foundation
 
@@ -14,6 +10,10 @@ public final class CacheFeature: BaseFeature {
   private var options: VMap?
   private var store: [String: CacheEntry] = [:]
   private var order: [String] = []
+  private var salt: [UInt8] = []
+
+  private static let safeMethods: Set<String> = ["GET", "HEAD"]
+  private static let unstored: Set<String> = ["no-store", "private", "no-cache"]
 
   // Activity tracking (mirrors the ts client._cache record).
   public var hit = 0
@@ -22,6 +22,7 @@ public final class CacheFeature: BaseFeature {
 
   private final class CacheEntry {
     var expiry: Int64 = 0
+    var scope: String = ""
     var snapshot: CacheSnapshot = CacheSnapshot()
   }
 
@@ -50,6 +51,8 @@ public final class CacheFeature: BaseFeature {
 
     store = [:]
     order = []
+    var rng = SystemRandomNumberGenerator()
+    salt = (0..<32).map { _ in UInt8.random(in: 0...255, using: &rng) }
 
     let inner = ctx.utility!.fetcher!
 
@@ -68,10 +71,14 @@ public final class CacheFeature: BaseFeature {
     let methods = foptStrList(options, "methods") ?? ["GET"]
     let cacheable = methods.contains { $0.uppercased() == method }
     if !cacheable {
+      if CacheFeature.safeMethods.contains(method) {
+        return try inner(ctx, url, fetchdef)
+      }
+      defer { invalidate(url) }
       return try inner(ctx, url, fetchdef)
     }
 
-    let key = method + " " + url
+    let key = method + " " + url + " " + digest(fetchdef.entries["headers"])
     let now = foptNow(options)()
 
     if let entry = store[key], entry.expiry > now {
@@ -95,10 +102,16 @@ public final class CacheFeature: BaseFeature {
 
     if err == nil && CacheFeature.storable(res) {
       let snap = CacheFeature.snapshot(res)
-      let ttl = foptInt(options, "ttl", 5000)
+      let ttl = CacheFeature.lifetime(snap.headers, Int64(foptInt(options, "ttl", 5000)))
+      if ttl <= 0 {
+        bypass += 1
+        return CacheFeature.replay(snap)
+      }
+      drop(key)
       evict()
       let entry = CacheEntry()
-      entry.expiry = now + Int64(ttl)
+      entry.expiry = now + ttl
+      entry.scope = CacheFeature.scope(url)
       entry.snapshot = snap
       store[key] = entry
       order.append(key)
@@ -111,6 +124,103 @@ public final class CacheFeature: BaseFeature {
       throw err
     }
     return res
+  }
+
+  private func digest(_ headers: Value?) -> String {
+    var pairs: [(String, String)] = []
+    if let hm = headers?.asMap {
+      for (k, v) in hm.entries {
+        if let text = CacheFeature.headerText(v) {
+          pairs.append((k.lowercased(), text))
+        }
+      }
+    }
+    pairs.sort { $0.0 != $1.0 ? $0.0 < $1.0 : $0.1 < $1.1 }
+    var hasher = Hasher()
+    hasher.combine(salt)
+    for (k, v) in pairs {
+      hasher.combine(k + ":" + v + "\n")
+    }
+    return String(UInt64(bitPattern: Int64(hasher.finalize())), radix: 16)
+  }
+
+  private static func headerText(_ v: Value) -> String? {
+    switch v {
+    case .noval, .null: return nil
+    case .string(let s): return s
+    case .int(let n): return String(n)
+    case .bool(let b): return String(b)
+    default: return "\(v)"
+    }
+  }
+
+  private func invalidate(_ url: String) {
+    let path = CacheFeature.scope(url)
+    let collection = CacheFeature.parent(path)
+    for (key, entry) in store
+      where CacheFeature.under(entry.scope, path) || CacheFeature.under(entry.scope, collection) {
+      drop(key)
+    }
+  }
+
+  private func drop(_ key: String) {
+    if store.removeValue(forKey: key) != nil {
+      order.removeAll { $0 == key }
+    }
+  }
+
+  // The configured ttl capped by the response's Cache-Control; zero when the
+  // response may not be stored.
+  private static func lifetime(_ headers: VMap, _ ttl: Int64) -> Int64 {
+    var control = ""
+    for (k, v) in headers.entries where k.lowercased() == "cache-control" {
+      control = (headerText(v) ?? "").lowercased()
+    }
+    var life = ttl
+    for part in control.split(separator: ",", omittingEmptySubsequences: false) {
+      let directive = part.trimmingCharacters(in: .whitespaces)
+      if unstored.contains(directive) {
+        return 0
+      }
+      if directive.hasPrefix("max-age") {
+        var value = directive.dropFirst("max-age".count).trimmingCharacters(in: .whitespaces)
+        if value.hasPrefix("=") {
+          value = value.dropFirst().trimmingCharacters(in: .whitespaces)
+            .trimmingCharacters(in: CharacterSet(charactersIn: "\""))
+          if !value.isEmpty, value.count < 16, value.allSatisfy({ $0.isASCII && $0.isNumber }),
+             let secs = Int64(value) {
+            life = min(life, secs * 1000)
+          }
+        }
+      }
+    }
+    return life
+  }
+
+  private static func scope(_ url: String) -> String {
+    var out = String(url.split(maxSplits: 1, omittingEmptySubsequences: false) { $0 == "?" || $0 == "#" }[0])
+    while out.hasSuffix("/") {
+      out.removeLast()
+    }
+    return out
+  }
+
+  private static func parent(_ scope: String) -> String {
+    let chars = Array(scope)
+    var root = 0
+    if let scheme = scope.range(of: "://") {
+      let after = scope.distance(from: scope.startIndex, to: scheme.upperBound)
+      guard let slash = chars[after...].firstIndex(of: "/") else {
+        return scope
+      }
+      root = slash
+    }
+    let cut = chars.lastIndex(of: "/") ?? 0
+    return String(chars[0..<Swift.max(cut, root)])
+  }
+
+  private static func under(_ scope: String, _ prefix: String) -> Bool {
+    return scope == prefix || scope.hasPrefix(prefix + "/")
   }
 
   // A body the transport could not read as JSON passes through, for the operation to report.

@@ -365,6 +365,39 @@
                         h (make-harness [(fspec "cache" "active" false)] :server server)]
                     (h-op h :path "/x") (h-op h :path "/x")
                     (t/is-eq (count @calls) 2 "two calls"))))
+    (check "cache-keys-on-request-headers" "cache"
+           (fn [] (let [[server calls] (recording-server nil)
+                        h (make-harness [(fspec "cache" "ttl" 10000)] :server server)]
+                    (h-op h :path "/w/1" :headers (vs/jm "x-tenant" "tenant-a"))
+                    (h-op h :path "/w/1" :headers (vs/jm "X-Tenant" "tenant-b"))
+                    (t/is-eq (count @calls) 2 "a second tenant was not served the first tenant's entry")
+                    (h-op h :path "/w/1" :headers (vs/jm "x-tenant" "tenant-b"))
+                    (t/is-eq (count @calls) 2 "the same headers share an entry"))))
+    (check "cache-a-write-drops-its-collection" "cache"
+           (fn [] (let [[server calls] (recording-server nil)
+                        h (make-harness [(fspec "cache" "ttl" 10000)] :server server)
+                        paths ["/w/1" "/w" "/w/1/part" "/other/1"]]
+                    (doseq [p paths] (h-op h :path p))
+                    (h-op h :opname "update" :method "PUT" :path "/w/1")
+                    (doseq [p paths] (h-op h :path p))
+                    (t/is-eq (count @calls) 8 "the collection refetched")
+                    (t/is-eq (mget (h-track h "_cache") "hit") 1 "the other entity stayed cached"))))
+    (check "cache-control-prevents-storing" "cache"
+           (fn [] (doseq [control ["no-store" "private" "No-Cache" "max-age=60, private"]]
+                    (let [[server calls] (recording-server
+                                          (fn [_n _fd] [(make-response 200 (vs/jm "ok" true) (vs/jm "Cache-Control" control)) nil]))
+                          h (make-harness [(fspec "cache" "ttl" 10000)] :server server)]
+                      (h-op h :path "/w") (h-op h :path "/w")
+                      (t/is-eq (count @calls) 2 (str control " was not stored"))))))
+    (check "cache-max-age-caps-the-ttl" "cache"
+           (fn [] (let [c (make-clock)
+                        [server calls] (recording-server
+                                        (fn [_n _fd] [(make-response 200 (vs/jm "ok" true) (vs/jm "cache-control" "max-age=1")) nil]))
+                        h (make-harness [(fspec "cache" "ttl" 10000 "now" (clock-now c))] :server server)]
+                    (h-op h :path "/w") (clock-advance c 500) (h-op h :path "/w")
+                    (t/is-eq (count @calls) 1 "a hit inside max-age")
+                    (clock-advance c 600) (h-op h :path "/w")
+                    (t/is-eq (count @calls) 2 "max-age expired before the ttl"))))
 
     ;; ---- idempotency ----
     (check "idempotency-adds-key-mutating" "idempotency"
