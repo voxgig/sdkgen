@@ -2051,8 +2051,9 @@ Darwin's header guard.
 - `publish.recipe` stays on by default. A target from a package, which
   declares nothing, keeps deploying through its own `publish` rule.
 - Four of the items left for later are approved as follow-ups: the secrets
-  feature following DQ11 and keeping the Basic secret, as the patch release
-  4.48.2; apidef writing a patch flow step (WP39); regenerating the
+  feature following DQ11 and keeping the Basic secret, released in 4.49.0
+  (a minor, since main also carried #534's exchange option); apidef writing a
+  patch flow step (WP39); regenerating the
   reference SDKs and the fleet (authorisation 7); and the language pack's
   R-LP2.
 
