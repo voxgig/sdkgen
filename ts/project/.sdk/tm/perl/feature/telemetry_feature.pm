@@ -61,6 +61,7 @@ sub PrePoint {
   my $span = {
     'traceId' => $self->_id('trace'),
     'spanId' => $self->_id('span'),
+    'correlationId' => $ctx->{id},
     'name' => ($ctx->{op} ? $ctx->{op}{entity} : '_') . '.'
       . ($ctx->{op} ? $ctx->{op}{name} : '_'),
     'start' => $self->_now,

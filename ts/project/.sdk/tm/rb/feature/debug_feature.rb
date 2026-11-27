@@ -49,6 +49,7 @@ class ProjectNameDebugFeature < ProjectNameBaseFeature
     end
     entry = {
       "op" => "#{ctx.op ? ctx.op.entity : '_'}.#{ctx.op ? ctx.op.name : '_'}",
+      "correlationId" => ctx.id,
       "method" => method,
       "url" => url,
       "headers" => _redact(ctx, headers),

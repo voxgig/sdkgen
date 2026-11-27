@@ -1023,6 +1023,33 @@ describe("feature", function()
   end) end
 
 
+  -- one call, one id ------------------------------------------------------
+  if has_feature("telemetry") and has_feature("debug") and has_feature("audit") then
+    it("telemetry, debug and audit carry one call's context id", function()
+      local h = make_client({ features = {
+        { name = "telemetry" }, { name = "debug" }, { name = "audit" },
+      } })
+      h.op({ op = "load" })
+      h.op({ op = "list" })
+      local function ids(recs)
+        local out = {}
+        for i, rec in ipairs(recs) do
+          out[i] = rec.correlationId
+        end
+        return out
+      end
+      local calls = ids(h.client._audit.records)
+      assert.are.equal(2, #calls)
+      for _, id in ipairs(calls) do
+        assert.is_true(type(id) == "string" and id ~= "")
+      end
+      assert.is_true(calls[1] ~= calls[2])
+      assert.are.same(calls, ids(h.client._telemetry.spans))
+      assert.are.same(calls, ids(h.client._debug.entries))
+    end)
+  end
+
+
   -- clienttrack -------------------------------------------------------------
   if has_feature("clienttrack") then describe("clienttrack", function()
 

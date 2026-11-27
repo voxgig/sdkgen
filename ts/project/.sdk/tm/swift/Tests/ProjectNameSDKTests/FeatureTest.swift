@@ -887,6 +887,30 @@ final class FeatureAuditTest: XCTestCase {
   }
 }
 
+// --- one call, one id --------------------------------------------------------
+
+final class FeatureCorrelationTest: XCTestCase {
+  func testTelemetryDebugAndAuditCarryOneCallsContextId() {
+    if Fh.skipWithout("telemetry", "debug", "audit") { return }
+    let telemetry = TelemetryFeature()
+    let debug = DebugFeature()
+    let audit = AuditFeature()
+    let h = Fh.make(nil, (telemetry, nil), (debug, nil), (audit, nil))
+    _ = h.op(FhOpSpec(op: "load"))
+    _ = h.op(FhOpSpec(op: "list"))
+    func ids(_ recs: [VMap]) -> [Value?] { recs.map { $0.entries["correlationId"] } }
+    let calls = ids(audit.records)
+    guard calls.count == 2 else {
+      XCTFail("expected one audit record per call, got \(calls.count)")
+      return
+    }
+    XCTAssertTrue(calls.allSatisfy { ($0?.asString ?? "") != "" }, "context ids: \(calls)")
+    XCTAssertNotEqual(calls[0], calls[1])
+    XCTAssertEqual(ids(telemetry.spans), calls)
+    XCTAssertEqual(ids(debug.entries), calls)
+  }
+}
+
 // --- clienttrack -------------------------------------------------------------
 
 final class FeatureClienttrackTest: XCTestCase {

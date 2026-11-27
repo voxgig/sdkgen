@@ -67,6 +67,7 @@ sub PreRequest {
   my $entry = {
     'op' => ($ctx->{op} ? $ctx->{op}{entity} : '_') . '.'
       . ($ctx->{op} ? $ctx->{op}{name} : '_'),
+    'correlationId' => $ctx->{id},
     'method' => $method,
     'url' => $url,
     'headers' => $self->_redact($ctx, $headers),

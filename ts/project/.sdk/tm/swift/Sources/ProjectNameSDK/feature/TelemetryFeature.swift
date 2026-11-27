@@ -45,6 +45,7 @@ public final class TelemetryFeature: BaseFeature {
     let span = VMap()
     span.entries["traceId"] = .string(id("trace"))
     span.entries["spanId"] = .string(id("span"))
+    span.entries["correlationId"] = .string(ctx.id)
     span.entries["name"] = .string(entity + "." + opname)
     span.entries["start"] = .int(foptNow(options)())
     ctx.out[TelemetryFeature.spanKey] = span

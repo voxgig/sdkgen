@@ -34,6 +34,7 @@ class DebugFeature : BaseFeature("debug", "0.0.1", true) {
 
     val entry = linkedMapOf<String, Any?>()
     entry["op"] = "$entity.$opname"
+    entry["correlationId"] = ctx.id
     entry["start"] = FeatureOptions.foptNow(this.options).getAsLong()
     val spec = ctx.spec
     if (spec != null) {

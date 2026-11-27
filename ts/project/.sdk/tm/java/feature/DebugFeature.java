@@ -53,6 +53,7 @@ public class DebugFeature extends BaseFeature {
 
     Map<String, Object> entry = new LinkedHashMap<>();
     entry.put("op", entity + "." + opname);
+    entry.put("correlationId", ctx.id);
     entry.put("start", FeatureOptions.foptNow(this.options).getAsLong());
     if (ctx.spec != null) {
       entry.put("method", ctx.spec.method);

@@ -455,6 +455,23 @@ describe('feature', () => {
   })
 
 
+  // --- one call, one id -----------------------------------------------------
+  if (hasFeature('telemetry') && hasFeature('debug') && hasFeature('audit')) {
+    test('telemetry, debug and audit carry one call\'s context id', async () => {
+      const h = makeClient({ features: [{ name: 'telemetry' }, { name: 'debug' }, { name: 'audit' }] })
+      await h.op({ op: 'load' })
+      await h.op({ op: 'list' })
+      const ids = (recs: any[]) => recs.map((rec: any) => rec.correlationId)
+      const calls = ids(h.client._audit.records)
+      strictEqual(calls.length, 2)
+      ok(calls.every((id: any) => 'string' === typeof id && '' !== id), JSON.stringify(calls))
+      ok(calls[0] !== calls[1])
+      deepStrictEqual(ids(h.client._telemetry.spans), calls)
+      deepStrictEqual(ids(h.client._debug.entries), calls)
+    })
+  }
+
+
   // --- clienttrack ----------------------------------------------------------
   if (hasFeature('clienttrack')) describe('clienttrack', () => {
 

@@ -108,6 +108,7 @@ impl Feature for TelemetryFeature {
         let span = Value::empty_map();
         setp(&span, "traceId", Value::str(self.id("trace")));
         setp(&span, "spanId", Value::str(self.id("span")));
+        setp(&span, "correlationId", Value::str(ctx.id.clone()));
         setp(&span, "name", Value::str(format!("{}.{}", entity, opname)));
         setp(
             &span,

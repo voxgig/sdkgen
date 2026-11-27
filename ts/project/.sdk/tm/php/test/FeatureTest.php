@@ -1039,6 +1039,28 @@ class FeatureTest extends TestCase
     }
 
 
+    // --- one call, one id -----------------------------------------------------
+
+    public function test_telemetry_debug_and_audit_carry_one_calls_context_id(): void
+    {
+        $this->needs('telemetry', 'debug', 'audit');
+        $h = new FtHarness([
+            ['name' => 'telemetry'], ['name' => 'debug'], ['name' => 'audit'],
+        ]);
+        $h->op(['op' => 'load']);
+        $h->op(['op' => 'list']);
+        $calls = array_column($h->client->_audit['records'], 'correlationId');
+        $this->assertCount(2, $calls);
+        foreach ($calls as $id) {
+            $this->assertIsString($id);
+            $this->assertNotSame('', $id);
+        }
+        $this->assertNotSame($calls[0], $calls[1]);
+        $this->assertSame($calls, array_column($h->client->_telemetry['spans'], 'correlationId'));
+        $this->assertSame($calls, array_column($h->client->_debug['entries'], 'correlationId'));
+    }
+
+
     // --- clienttrack ----------------------------------------------------------
 
     public function test_clienttrack_stable_client_id_unique_request_ids_ua(): void

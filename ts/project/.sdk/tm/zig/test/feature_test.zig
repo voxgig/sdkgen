@@ -829,6 +829,41 @@ test "feature audit: inactive records nothing" {
 }
 
 // =====================================================================
+// one call, one id
+// =====================================================================
+
+test "feature telemetry, debug and audit: carry one call's context id" {
+    if (!fh.fh_present(&.{ "telemetry", "debug", "audit" })) return;
+    const tfeat = sdk.TelemetryFeature.make();
+    const tf: *sdk.TelemetryFeature = @ptrCast(@alignCast(tfeat.ptr));
+    const dfeat = sdk.DebugFeature.make();
+    const df: *sdk.DebugFeature = @ptrCast(@alignCast(dfeat.ptr));
+    const afeat = sdk.AuditFeature.make();
+    const af: *sdk.AuditFeature = @ptrCast(@alignCast(afeat.ptr));
+    const hh = fh.fh_make(null, &.{
+        .{ .feat = tfeat, .options = vnull() },
+        .{ .feat = dfeat, .options = vnull() },
+        .{ .feat = afeat, .options = vnull() },
+    });
+    _ = hh.op(.{ .op = "load" });
+    _ = hh.op(.{ .op = "list" });
+    const calls = af.records.items;
+    try testing.expect(calls.len == 2);
+    for (calls) |rec| {
+        const id = h.get_str(rec, "correlationId") orelse "";
+        try testing.expect(id.len != 0);
+    }
+    try testing.expect(!h.veq(h.getp(calls[0], "correlationId"), h.getp(calls[1], "correlationId")));
+    try testing.expect(tf.spans.items.len == calls.len);
+    try testing.expect(df.entries.items.len == calls.len);
+    for (calls, tf.spans.items, df.entries.items) |rec, span, entry| {
+        const id = h.getp(rec, "correlationId");
+        try testing.expect(h.veq(h.getp(span, "correlationId"), id));
+        try testing.expect(h.veq(h.getp(entry, "correlationId"), id));
+    }
+}
+
+// =====================================================================
 // clienttrack
 // =====================================================================
 

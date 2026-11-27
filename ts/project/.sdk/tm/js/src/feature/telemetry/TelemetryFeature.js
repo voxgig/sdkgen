@@ -39,6 +39,7 @@ class TelemetryFeature extends BaseFeature {
     const span = {
       traceId: this._id('trace'),
       spanId: this._id('span'),
+      correlationId: ctx.id,
       name: ((ctx.op && ctx.op.entity) || '_') + '.' + ((ctx.op && ctx.op.name) || '_'),
       start: this._now(),
       end: undefined,
