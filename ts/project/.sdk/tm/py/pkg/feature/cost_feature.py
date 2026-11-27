@@ -5,18 +5,19 @@ from __future__ import annotations
 from projectname_sdk.utility.voxgig_struct import voxgig_struct as vs
 
 from projectname_sdk.feature.base_feature import ProjectNameBaseFeature
+from projectname_sdk.utility.op_key import op_action, op_keys
 
 
 # Cost tracking and spend budget. Uses BOTH seams, which is the point of the
 # feature: money is spent per HTTP ATTEMPT (a retried call is charged again,
 # because the upstream API charges it again), but it is owed by an
 # OPERATION. So the transport wrap prices each attempt, and PreDone
-# attributes the running total to `<entity>.<op>` and to the caller
+# attributes the running total to the operation's key and to the caller
 # (`ctrl.actor`, the same actor the audit feature records).
 #
 # The price of an attempt comes from the first source that answers: a
 # response header (`header` x `perUnit`), the rate table (`rates`, keyed
-# `<entity>.<op>` / `<op>` / `*`), then the flat `unit`. A body figure
+# as rbac's rules are), then the flat `unit`. A body figure
 # (`path` x `perUnit`, e.g. "usage.total_tokens") is read at PreDone
 # instead, from the already-parsed result, and describes the whole call, so
 # it REPLACES the per-attempt estimate rather than adding to it.
@@ -160,7 +161,8 @@ class ProjectNameCostFeature(ProjectNameBaseFeature):
         # commit. Their spend is committed here, or it would never be counted.
         # `piped` is set by PrePoint, so its absence is the signal.
         if not pending["piped"]:
-            self._commit(ctx, pending, "_", "direct")
+            self._commit(ctx, pending,
+                         {"key": "_.direct", "entity": "_", "op": "direct"})
             del ctx._cost_pending
 
         if threw is not None:
@@ -207,18 +209,18 @@ class ProjectNameCostFeature(ProjectNameBaseFeature):
         if not done and 0 == pending["attempts"]:
             return
 
-        entity = "_"
-        opname = "_"
-        if ctx.op is not None:
-            entity = ctx.op.entity or "_"
-            opname = ctx.op.name or "_"
-
-        self._commit(ctx, pending, entity, opname)
+        self._commit(ctx, pending, {
+            "key": op_keys(ctx)[0],
+            "entity": (ctx.op.entity if ctx.op is not None else None) or "_",
+            "op": (ctx.op.name if ctx.op is not None else None) or "_",
+            "action": op_action(ctx),
+        })
 
     # Commit one operation's spend: totals, budget, per-op and per-actor
     # attribution, and the record. Shared by _finish and the raw-request path
-    # in _charge, which has no PreDone to reach.
-    def _commit(self, ctx, pending, entity, opname):
+    # in _charge, which has no PreDone to reach. `call` names what the spend
+    # is filed under: its key, entity, op and action.
+    def _commit(self, ctx, pending, call):
         cost = self.client._cost
 
         amount = pending["amount"]
@@ -245,20 +247,23 @@ class ProjectNameCostFeature(ProjectNameBaseFeature):
             actor = "anonymous"
 
         cost["total"]["calls"] += 1
-        self._bump(cost["ops"], entity + "." + opname, amount)
+        self._bump(cost["ops"], call["key"], amount)
         self._bump(cost["actors"], actor, amount)
 
         self.seq += 1
-        record = ctx.utility.clean(ctx, {
+        entry = {
             "seq": self.seq,
-            "entity": entity,
-            "op": opname,
+            "entity": call["entity"],
+            "op": call["op"],
             "actor": actor,
             "amount": amount,
             "currency": cost["currency"],
             "source": source,
             "attempts": pending["attempts"],
-        })
+        }
+        if call.get("action") is not None:
+            entry["action"] = call["action"]
+        record = ctx.utility.clean(ctx, entry)
         cost["last"] = record
 
         sink = self.options.get("sink")
@@ -287,21 +292,13 @@ class ProjectNameCostFeature(ProjectNameBaseFeature):
 
         return 0, "none"
 
-    # The rate table uses the same lookup grammar as rbac's rules:
-    # `<entity>.<op>`, then `<op>`, then `*`.
+    # The rate table is keyed as rbac's rules are.
     def _rate(self, ctx):
         rates = self.options.get("rates")
         if not isinstance(rates, dict):
             return None
 
-        entity = ""
-        if ctx.entity is not None and getattr(ctx.entity, "name", None):
-            entity = ctx.entity.name
-        elif ctx.op is not None and ctx.op.entity:
-            entity = ctx.op.entity
-        opname = ctx.op.name if ctx.op is not None and ctx.op.name else ""
-
-        for key in (entity + "." + opname, opname, "*"):
+        for key in op_keys(ctx):
             val = rates.get(key)
             if isinstance(val, (int, float)) and not isinstance(val, bool):
                 return val

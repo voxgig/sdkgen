@@ -2,6 +2,7 @@ package feature
 
 import (
 	"GOMODULE/core"
+	"GOMODULE/utility"
 )
 
 type MetricsFeature struct {
@@ -74,13 +75,7 @@ func (f *MetricsFeature) record(ctx *core.Context, ok bool) {
 		dur = 0
 	}
 
-	entity := "_"
-	opname := "_"
-	if ctx.Op != nil {
-		entity = ctx.Op.Entity
-		opname = ctx.Op.Name
-	}
-	key := entity + "." + opname
+	key := utility.OpKeys(ctx)[0]
 
 	op := f.Ops[key]
 	if op == nil {

@@ -7,6 +7,7 @@ from projectname_sdk.utility.voxgig_struct import voxgig_struct as vs
 from projectname_sdk.core.helpers import to_map
 from projectname_sdk.utility.param import param_value
 from projectname_sdk.utility.prepare_method import allowed
+from projectname_sdk.utility.op_key import op_action, op_keys
 
 
 _PATH_PARAM = re.compile(r"\{([^{}/]+)\}")
@@ -71,9 +72,10 @@ def make_point_util(ctx):
     options = ctx.options
 
     allow_op = vs.getpath(options, "allow.op")
-    if not allowed(allow_op, op.name):
+    if not any(allowed(allow_op, key) for key in op_keys(ctx)):
+        action = op_action(ctx)
         return None, ctx.make_error("point_op_allow",
-            'Operation "' + op.name +
+            'Operation "' + op.name + ('' if action is None else ':' + action) +
             '" not allowed by SDK option allow.op value: "' + str(allow_op) + '"')
 
     if len(op.points) == 0:

@@ -19,6 +19,7 @@ import pytest
 
 from projectname_sdk import ProjectNameSDK
 from projectname_sdk.core.error import ProjectNameError
+from projectname_sdk.core.operation import ProjectNameOperation
 from projectname_sdk.core.result import ProjectNameResult
 from projectname_sdk.core.response import ProjectNameResponse
 from projectname_sdk.core.spec import ProjectNameSpec
@@ -110,6 +111,39 @@ class TestMakePointAndMakeSpec:
         out, err = client._utility.make_point(ctx)
         assert out is None
         assert err is denied
+
+    def test_an_allow_list_entry_may_name_an_action(self):
+        # `<entity>.<op>:<action>` names one action; `<entity>.<op>` and
+        # `<op>` name every action of the operation.
+        client = _client()
+        plain = {"method": "GET", "parts": ["episode", "{id}"],
+                 "select": {"exist": ["id"]}}
+        audio = {"method": "GET", "parts": ["episode", "{id}", "audio"],
+                 "select": {"exist": ["id"], "$action": "audio"}}
+
+        def point(allow, reqmatch):
+            ctx = _ctx(client, opname="load")
+            ctx.op = ProjectNameOperation({"name": "load", "entity": "episode",
+                                           "input": "match",
+                                           "points": [plain, audio]})
+            ctx.options = {"allow": {"op": allow}}
+            ctx.reqmatch = reqmatch
+            ctx.match = {}
+            out, err = client._utility.make_point(ctx)
+            return err if err is not None else out
+
+        AUDIO = {"$action": "audio", "id": "e1"}
+        RECORD = {"id": "e1"}
+        assert point("episode.load:audio", AUDIO) is audio
+        assert point("episode.load:audio", RECORD).code == "point_op_allow"
+        assert point("Episode.Load:AUDIO", AUDIO) is audio
+        refused = point("episode.load:video", AUDIO)
+        assert refused.code == "point_op_allow"
+        assert 'Operation "load:audio"' in str(refused)
+        assert point("episode.load", AUDIO) is audio
+        assert point("load", AUDIO) is audio
+        assert point("load", RECORD) is plain
+        assert point("list", RECORD).code == "point_op_allow"
 
     def test_make_spec_short_circuits_a_feature_supplied_spec(self):
         client = _client()

@@ -139,11 +139,17 @@ class _Client:
         return self.options
 
 
+# Which request argument an operation reads, as the generated operation
+# declares it.
+def op_input(op):
+    return "data" if op in ("create", "update", "patch") else "match"
+
+
 class _Op:
     def __init__(self, name, entity):
         self.name = name
         self.entity = entity
-        self.input = "match"
+        self.input = op_input(name)
         self.points = []
         self.alias = None
 
@@ -159,7 +165,8 @@ class _Entity:
 class _Ctx:
     _seq = 0
 
-    def __init__(self, client, utility, op=None, entity=None, ctrl=None):
+    def __init__(self, client, utility, op=None, entity=None, ctrl=None,
+                 reqmatch=None, reqdata=None):
         _Ctx._seq += 1
         self.id = "C" + str(_Ctx._seq)
         self.client = client
@@ -179,6 +186,8 @@ class _Ctx:
         self.response = None
         self.result = None
         self.shared = {}
+        self.reqmatch = reqmatch if reqmatch is not None else {}
+        self.reqdata = reqdata if reqdata is not None else {}
 
     def make_error(self, code, msg):
         return ProjectNameError(code, msg, self)
@@ -269,14 +278,16 @@ class Harness:
     # Run one operation through the mini pipeline (mirrors the generated
     # entity _run_op: hook, short-circuit, make*, hook, ...).
     def op(self, op="load", entity="widget", method=None, path=None,
-           query=None, headers=None, body=None, ctrl=None):
+           query=None, headers=None, body=None, ctrl=None,
+           reqmatch=None, reqdata=None):
         opname = op
         method = method or default_method(opname)
 
         ctx = _Ctx(self.client, self.utility,
                    op=_Op(opname, entity),
                    entity=_Entity(entity),
-                   ctrl=ProjectNameControl(ctrl or {}))
+                   ctrl=ProjectNameControl(ctrl or {}),
+                   reqmatch=reqmatch, reqdata=reqdata)
 
         self.feature_hook(ctx, "PostConstructEntity")
 

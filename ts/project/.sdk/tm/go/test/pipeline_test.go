@@ -338,6 +338,74 @@ func TestPipelineDoneMakeError(t *testing.T) {
 	})
 }
 
+// An allow list entry may name an action: `<entity>.<op>:<action>`.
+func TestPipelineMakePointAllowAction(t *testing.T) {
+	client, utility := plClient(t, nil)
+	plain := map[string]any{"method": "GET", "parts": []any{"episode", "{id}"},
+		"select": map[string]any{"exist": []any{"id"}}}
+	audio := map[string]any{"method": "GET", "parts": []any{"episode", "{id}", "audio"},
+		"select": map[string]any{"exist": []any{"id"}, "$action": "audio"}}
+	point := func(allow string, reqmatch map[string]any) (string, string) {
+		ctx := plCtx(client, utility, nil)
+		ctx.Op = sdk.NewOperation(map[string]any{"name": "load", "entity": "episode",
+			"input": "match", "points": []any{plain, audio}})
+		options := map[string]any{}
+		for k, v := range ctx.Options {
+			options[k] = v
+		}
+		options["allow"] = map[string]any{"op": allow}
+		ctx.Options = options
+		ctx.Reqmatch = reqmatch
+		ctx.Match = map[string]any{}
+		got, err := utility.MakePoint(ctx)
+		if err != nil {
+			if se, ok := err.(*sdk.ProjectNameError); ok {
+				return "", se.Code
+			}
+			return "", err.Error()
+		}
+		if 3 == len(got["parts"].([]any)) {
+			return "audio", ""
+		}
+		return "plain", ""
+	}
+	AUDIO := func() map[string]any { return map[string]any{"$action": "audio", "id": "e1"} }
+	RECORD := func() map[string]any { return map[string]any{"id": "e1"} }
+
+	cases := []struct {
+		allow    string
+		reqmatch map[string]any
+		point    string
+		code     string
+	}{
+		{"episode.load:audio", AUDIO(), "audio", ""},
+		{"episode.load:audio", RECORD(), "", "point_op_allow"},
+		{"Episode.Load:AUDIO", AUDIO(), "audio", ""},
+		{"episode.load:video", AUDIO(), "", "point_op_allow"},
+		{"episode.load", AUDIO(), "audio", ""},
+		{"load", AUDIO(), "audio", ""},
+		{"load", RECORD(), "plain", ""},
+		{"list", RECORD(), "", "point_op_allow"},
+	}
+	for _, c := range cases {
+		got, code := point(c.allow, c.reqmatch)
+		if got != c.point || code != c.code {
+			t.Errorf("allow %q, reqmatch %v: expected %q %q, got %q %q",
+				c.allow, c.reqmatch, c.point, c.code, got, code)
+		}
+	}
+
+	ctx := plCtx(client, utility, nil)
+	ctx.Op = sdk.NewOperation(map[string]any{"name": "load", "entity": "episode",
+		"input": "match", "points": []any{plain, audio}})
+	ctx.Options = map[string]any{"allow": map[string]any{"op": "list"}}
+	ctx.Reqmatch = AUDIO()
+	if _, err := utility.MakePoint(ctx); err == nil ||
+		!regexp.MustCompile(`Operation "load:audio" not allowed`).MatchString(err.Error()) {
+		t.Errorf("expected the refusal to name load:audio, got %v", err)
+	}
+}
+
 func TestPipelineFeatureAdd(t *testing.T) {
 	t.Run("appends-by-default", func(t *testing.T) {
 		client, utility := plClient(t, nil)

@@ -184,7 +184,7 @@ func fcCandidates(client *sdk.ProjectNameSDK) []fcOp {
 }
 
 // fcInvoke performs one operation on a client, by entity name and method.
-func fcInvoke(client *sdk.ProjectNameSDK, op fcOp, ctrl map[string]any) error {
+func fcInvoke(client *sdk.ProjectNameSDK, op fcOp, arg map[string]any, ctrl map[string]any) error {
 	cv := reflect.ValueOf(client)
 	ct := cv.Type()
 	mapType := reflect.TypeOf(map[string]any{})
@@ -208,7 +208,7 @@ func fcInvoke(client *sdk.ProjectNameSDK, op fcOp, ctrl map[string]any) error {
 			return fmt.Errorf("no method %s on entity %s", op.method, op.accessor)
 		}
 		rets := om.Call([]reflect.Value{
-			reflect.ValueOf(map[string]any{}),
+			reflect.ValueOf(arg),
 			reflect.ValueOf(ctrl),
 		})
 		if err, ok := rets[1].Interface().(error); ok && err != nil {
@@ -228,7 +228,7 @@ func fcUsableOps(want int) []fcOp {
 	probe := fcClient(map[string]any{})
 	for _, cand := range fcCandidates(probe) {
 		client := fcClient(map[string]any{})
-		if err := fcInvoke(client, cand, map[string]any{}); err != nil {
+		if err := fcInvoke(client, cand, map[string]any{}, map[string]any{}); err != nil {
 			continue
 		}
 		picked = append(picked, cand)
@@ -520,7 +520,12 @@ func TestFeatureCorpus(t *testing.T) {
 						ctrl = c
 					}
 
-					err := fcInvoke(client, op, ctrl)
+					arg := map[string]any{}
+					if action, ok := step["action"].(string); ok {
+						arg["$action"] = action
+					}
+
+					err := fcInvoke(client, op, arg, ctrl)
 					wanterr, haserr := step["err"]
 
 					if !haserr {

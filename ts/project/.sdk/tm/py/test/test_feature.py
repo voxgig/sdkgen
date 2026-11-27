@@ -670,6 +670,96 @@ class TestAuditFeature:
         assert len(h.client._audit["records"]) == 0
 
 
+# --- action keys -----------------------------------------------------------------
+# A custom action is `$action` in the request argument, and its keys name it:
+# `<entity>.<op>:<action>`, most specific first.
+class TestActionKeys:
+    AUDIO = {"$action": "audio", "id": "e1"}
+    RECORD = {"id": "e1"}
+    RULES = {"episode.load": "read", "episode.load:audio": "audio"}
+
+    @pytest.mark.skipif(not has_feature("rbac"), reason="rbac not in this SDK")
+    def test_rbac_the_record_is_granted_and_the_action_refused(self):
+        server, calls = recording_server()
+        h = make_client([{"name": "rbac", "options": {
+            "rules": self.RULES, "permissions": ["read"]}}], server=server)
+        assert h.op(entity="episode", op="load", reqmatch=self.RECORD)["ok"] is True
+        res = h.op(entity="episode", op="load", reqmatch=self.AUDIO)
+        assert res["error"].code == "rbac_denied"
+        assert 'operation "load:audio"' in str(res["error"])
+        assert len(calls) == 1
+        assert h.client._rbac["last"]["action"] == "audio"
+
+    @pytest.mark.skipif(not has_feature("rbac"), reason="rbac not in this SDK")
+    def test_rbac_the_action_is_granted_and_the_record_refused(self):
+        h = make_client([{"name": "rbac", "options": {
+            "rules": self.RULES, "permissions": ["audio"]}}])
+        assert h.op(entity="episode", op="load",
+                    reqmatch=self.RECORD)["error"].code == "rbac_denied"
+        assert h.op(entity="episode", op="load", reqmatch=self.AUDIO)["ok"] is True
+
+    @pytest.mark.skipif(not has_feature("rbac"), reason="rbac not in this SDK")
+    def test_rbac_with_no_action_rule_an_action_falls_back_to_its_operation(self):
+        h = make_client([{"name": "rbac", "options": {
+            "rules": {"episode.load": "read"}, "permissions": []}}])
+        assert h.op(entity="episode", op="load",
+                    reqmatch=self.AUDIO)["error"].code == "rbac_denied"
+
+    @pytest.mark.skipif(not has_feature("rbac"), reason="rbac not in this SDK")
+    def test_rbac_a_data_operation_reads_its_action_from_reqdata(self):
+        h = make_client([{"name": "rbac", "options": {
+            "rules": {"episode.create:upload": "write"}, "permissions": []}}])
+        upload = {"$action": "upload"}
+        assert h.op(entity="episode", op="create",
+                    reqdata=upload)["error"].code == "rbac_denied"
+        assert h.op(entity="episode", op="create", reqmatch=upload)["ok"] is True
+
+    @pytest.mark.skipif(not has_feature("metrics"), reason="metrics not in this SDK")
+    def test_metrics_an_action_is_counted_apart_from_its_operation(self):
+        h = make_client([{"name": "metrics", "options": {}}])
+        h.op(entity="episode", op="load", reqmatch=self.RECORD)
+        h.op(entity="episode", op="load", reqmatch=self.AUDIO)
+        h.op(entity="episode", op="load", reqmatch=self.AUDIO)
+        metrics = h.client._metrics
+        assert metrics["total"]["count"] == 3
+        assert metrics["ops"]["episode.load"]["count"] == 1
+        assert metrics["ops"]["episode.load:audio"]["count"] == 2
+
+    @pytest.mark.skipif(not has_feature("audit"), reason="audit not in this SDK")
+    def test_audit_a_record_names_its_action_and_a_plain_one_has_none(self):
+        h = make_client([{"name": "audit", "options": {}}])
+        h.op(entity="episode", op="load", reqmatch=self.RECORD)
+        h.op(entity="episode", op="load", reqmatch=self.AUDIO)
+        records = h.client._audit["records"]
+        assert "action" not in records[0]
+        assert records[0]["op"] == "load"
+        assert records[1]["action"] == "audio"
+        assert records[1]["op"] == "load"
+
+    @pytest.mark.skipif(not has_feature("cost"), reason="cost not in this SDK")
+    def test_cost_an_action_is_priced_and_attributed_apart_from_its_operation(self):
+        sink = []
+        h = make_client([{"name": "cost", "options": {
+            "rates": {"episode.load": 1, "episode.load:audio": 5},
+            "sink": sink.append}}])
+        h.op(entity="episode", op="load", reqmatch=self.RECORD)
+        h.op(entity="episode", op="load", reqmatch=self.AUDIO)
+        cost = h.client._cost
+        assert cost["total"]["amount"] == 6
+        assert cost["ops"]["episode.load"] == {"calls": 1, "amount": 1}
+        assert cost["ops"]["episode.load:audio"] == {"calls": 1, "amount": 5}
+        assert "action" not in sink[0]
+        assert sink[1]["action"] == "audio"
+        assert cost["last"]["action"] == "audio"
+
+    @pytest.mark.skipif(not has_feature("cost"), reason="cost not in this SDK")
+    def test_cost_an_action_with_no_rate_of_its_own_takes_its_operation_rate(self):
+        h = make_client([{"name": "cost", "options": {
+            "rates": {"episode.load": 2, "*": 9}}}])
+        h.op(entity="episode", op="load", reqmatch=self.AUDIO)
+        assert h.client._cost["ops"]["episode.load:audio"] == {"calls": 1, "amount": 2}
+
+
 # --- clienttrack ------------------------------------------------------------------
 @pytest.mark.skipif(not has_feature("clienttrack"),
                     reason="clienttrack not in this SDK")
