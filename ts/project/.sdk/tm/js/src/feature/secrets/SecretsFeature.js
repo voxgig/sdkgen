@@ -1,5 +1,6 @@
 
 const { BaseFeature } = require('../base/BaseFeature')
+const { fetcher } = require('../../utility/FetcherUtility')
 const { Sekreto, envkey } = require('./sekreto')
 
 
@@ -367,10 +368,6 @@ class SecretsFeature extends BaseFeature {
       throw new Error('secrets: no fetch implementation for the token exchange')
     }
 
-    // Deliberately NOT the SDK transport. The transport is what this
-    // feature wraps, and sending the token request back through it would
-    // recurse on the first 401 — and would route the exchange through the
-    // test mock, which knows nothing about it.
     const fetchdef = {
       method: x.method,
       headers: { 'content-type': 'application/json' },
@@ -379,7 +376,18 @@ class SecretsFeature extends BaseFeature {
       redirect: 'manual',
     }
 
-    let res = await fetch(url, fetchdef)
+    // The SDK's own transport, beneath every feature's wrapper: the wrapped
+    // one would recurse on the first 401 and reach the test mock. It applies
+    // the GET-only guard, and its refusal is the operation's error.
+    const send = async (at) => {
+      const sent = await fetcher(this._client._rootctx, at, fetchdef)
+      if (sent instanceof Error) {
+        throw sent
+      }
+      return sent
+    }
+
+    let res = await send(url)
 
     // By option alone, and only while the exchange stays on its own origin.
     let at = url
@@ -389,7 +397,7 @@ class SecretsFeature extends BaseFeature {
         break
       }
       at = next
-      res = await fetch(at, fetchdef)
+      res = await send(at)
     }
 
     const status = null == res ? 0 : res.status

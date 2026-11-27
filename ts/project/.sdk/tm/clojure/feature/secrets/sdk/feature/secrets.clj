@@ -261,6 +261,10 @@
           ;; uses to supply a transport at all; otherwise core's own raw
           ;; HTTP path, which returns the same [res err] shape.
           fetch (if (vs/isfunc sysfetch) sysfetch core/default-http-fetch)
+          ;; The SDK transport's own GET-only guard, before the raw send.
+          _ (when-not (vs/isfunc sysfetch)
+              (when-let [refused (core/getonly-refusal nil url (:method x))]
+                (core/sdk-throw refused)))
           ;; The body is MARSHALLED, never concatenated: a refresh token (or
           ;; a configured request-field name) carrying a quote, backslash or
           ;; newline must arrive as that literal value, not as broken JSON.
@@ -480,8 +484,11 @@
   ;; provider ERROR refuses the request with the provider's own message,
   ;; and never an unauthenticated send.
   (let [failed (resolve! fa)]
-    (if (some? failed)
+    (cond
+      (core/sdk-error? (core/ex->sdk failed)) [nil (core/ex->sdk failed)]
+      (some? failed)
       [nil (core/ctx-error ctx ERROR-CODE (str "secrets: " (core/err-msg failed)))]
+      :else
       (do
         (let [token (credential fa)]
           (when (seq token) (reauth! fa fetchdef token)))

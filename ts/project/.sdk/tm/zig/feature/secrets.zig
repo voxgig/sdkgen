@@ -82,6 +82,7 @@ const h = @import("../core/helpers.zig");
 const mem = @import("../core/mem.zig");
 const err = @import("../core/error.zig");
 const types = @import("../core/types.zig");
+const utility = @import("../core/utility.zig");
 const sup = @import("support.zig");
 
 // NAMED BUILD MODULES, not paths: the vendored trees under feature/secrets/
@@ -857,7 +858,11 @@ fn send(ctx: *Context, sysfetch: Value, url: []const u8, method: []const u8, bod
     }
     // No custom transport supplied - the ordinary case (make_options leaves
     // system.fetch unset, and the SDK's default transport has no HTTP
-    // client). See raw_exchange_fetch.
+    // client). See raw_exchange_fetch. The SDK transport's own GET-only
+    // guard comes first.
+    if (utility.getonly_refusal(url, h.jo(&.{.{ "method", h.vstr(method) }}))) |msg| {
+        return ctx.fail("fetch_getonly_block", msg);
+    }
     return raw_exchange_fetch(ctx, url, method, body);
 }
 

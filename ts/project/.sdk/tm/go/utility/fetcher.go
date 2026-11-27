@@ -114,7 +114,7 @@ func followRedirect(ctx *core.Context) func(req *http.Request, via []*http.Reque
 			}
 		}
 
-		return getOnlyRefusal(req.URL.String(), req.Method)
+		return GetOnlyRefusal(req.URL.String(), req.Method)
 	}
 }
 
@@ -122,7 +122,7 @@ const getOnlyEnv = "VOXGIG_GETONLY_GUARD"
 
 // A GET-only live run refuses any other method before it is sent. The error
 // names the path alone: the query can carry a credential.
-func getOnlyRefusal(fullurl string, method string) error {
+func GetOnlyRefusal(fullurl string, method string) error {
 	method = strings.ToUpper(method)
 	if os.Getenv(getOnlyEnv) != "TRUE" || method == "GET" {
 		return nil
@@ -145,7 +145,7 @@ func defaultHTTPFetch(ctx *core.Context, fullurl string, fetchdef map[string]any
 	if method == "" {
 		method = "GET"
 	}
-	if err := getOnlyRefusal(fullurl, method); err != nil {
+	if err := GetOnlyRefusal(fullurl, method); err != nil {
 		return nil, err
 	}
 

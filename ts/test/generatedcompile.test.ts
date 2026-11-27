@@ -49,6 +49,9 @@ import {
 } from './nonjsonprobes'
 import { HOOK_KINDS, HOOK_PROBES, hookCounts } from './hookprobes'
 import { LOAD_LIVE, LOAD_PROBES, loadOutcomes } from './loadprobes'
+import {
+  GETONLY_FEATURES, GETONLY_PATH, GETONLY_PROBES, getOnlyModel, getOnlyOutcome,
+} from './getonlyprobes'
 
 
 // A list requiring a Lua keyword and `__proto__`, which an object literal must compute.
@@ -11684,6 +11687,58 @@ describe('probes driven through a generated SDK', () => {
         deepStrictEqual({ dotdot: livefound.dotdot, dot: livefound.dot }, { dotdot: refused, dot: refused },
           lane.target + ' probe output:\n' + tail(live.out))
       })
+    }
+
+    // Without the guard the same probe posts to the token endpoint, so the
+    // guarded run's silence is the guard's doing.
+    if (null == lane.label) {
+      test(lane.target + ': a GET-only run refuses the secrets token exchange before it is sent',
+        async (t) => {
+          const missing = lane.ready()
+          if (null != missing) return t.skip(missing)
+          ok(null != GETONLY_PROBES[probeKey], lane.target + ': no GET-only probe')
+
+          const sdkroot = await sdkFor(lane.target, GETONLY_FEATURES, getOnlyModel(lane.target))
+          const probe = (guard: boolean) => async () => {
+            const server = await mediaServer(sdkroot)
+            try {
+              const env: NodeJS.ProcessEnv = {
+                ...nestedTestEnv(), GETONLY_BASE: 'http://127.0.0.1:' + server.port,
+              }
+              if (guard) env.VOXGIG_GETONLY_GUARD = 'TRUE'
+              else delete env.VOXGIG_GETONLY_GUARD
+              const ran = lane.exec(sdkroot, env, writer(sdkroot),
+                { name: 'getonly', source: GETONLY_PROBES })
+              const sent = Fs.readFileSync(server.log, 'utf8').split('\n')
+                .filter((line) => '' !== line).map((line) => JSON.parse(line))
+                .map((r) => r.method + ' ' + r.url.split('?')[0])
+              return { ran, sent }
+            }
+            finally {
+              server.stop()
+            }
+          }
+
+          const open = await probe(false)()
+          if (open.ran.unlaunchable) {
+            return t.skip(lane.target + ': the toolchain could not be started here: ' +
+              tail(open.ran.out, 3))
+          }
+          ok(open.ran.ok, lane.target + ': the probe failed:\n' + tail(open.ran.out, 60))
+          ok(open.sent.includes('POST ' + GETONLY_PATH),
+            lane.target + ': without the guard the probe never reached the exchange: ' +
+            JSON.stringify(open.sent) + '\n' + tail(open.ran.out))
+
+          const guarded = await probe(true)()
+          ok(guarded.ran.ok, lane.target + ': the guarded probe failed:\n' + tail(guarded.ran.out, 60))
+          deepStrictEqual(guarded.sent, [], lane.target + ': a GET-only run sent requests:\n' +
+            tail(guarded.ran.out))
+          const outcome = getOnlyOutcome(guarded.ran.out)
+          strictEqual(outcome?.code, 'fetch_getonly_block', lane.target + ' probe output:\n' +
+            tail(guarded.ran.out))
+          ok(outcome!.message.includes('[GET-ONLY GUARD] blocked POST ' + GETONLY_PATH),
+            lane.target + ' probe output:\n' + tail(guarded.ran.out))
+        })
     }
 
     // A signal is the TypeScript and JavaScript targets' own seam.

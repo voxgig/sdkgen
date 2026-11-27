@@ -52,6 +52,7 @@ require 'uri'
 
 require_relative 'base_feature'
 require_relative '../utility/struct/voxgig_struct'
+require_relative '../utility/fetcher'
 require_relative 'secrets/voxgig_sekreto'
 
 class ProjectNameSecretsFeature < ProjectNameBaseFeature
@@ -236,6 +237,7 @@ class ProjectNameSecretsFeature < ProjectNameBaseFeature
     # provider ERROR refuses the request with the provider's own message;
     # never an unauthenticated send.
     err = resolve
+    return nil, err if err.is_a?(ProjectNameError)
     unless err.nil?
       return nil, ctx.make_error("secrets_provider", err.to_s)
     end
@@ -459,7 +461,12 @@ class ProjectNameSecretsFeature < ProjectNameBaseFeature
     # No custom transport supplied - the ordinary case. make_options leaves
     # system.fetch unset, so the exchange gets its own raw HTTP path. Local
     # and minimal on purpose: see the NOT-the-SDK-transport note below.
-    fetch = ProjectNameSecretsFeature.method(:raw_exchange_fetch) unless fetch.is_a?(Proc)
+    unless fetch.is_a?(Proc)
+      # The SDK transport's own GET-only guard, before the raw send.
+      refused = ProjectNameUtilities.getonly_refusal(@ctx, url, x["method"])
+      raise refused unless refused.nil?
+      fetch = ProjectNameSecretsFeature.method(:raw_exchange_fetch)
+    end
 
     # The body is MARSHALLED, never concatenated: a refresh token (or a
     # configured request-field name) carrying a quote, backslash or newline

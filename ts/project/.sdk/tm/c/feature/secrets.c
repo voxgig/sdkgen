@@ -144,6 +144,9 @@ typedef struct {
 
   SecretsExchange* exchange;
   char* refresh;
+  // The transport's refusal of the last purchase, which the gate answers
+  // in place of a resolution error.
+  PNError* refused;
 
   SecretsTrack track;
 } SecretsFeature;
@@ -458,6 +461,8 @@ static const char* secrets_send(SecretsFeature* f, Context* ctx, voxgig_value* s
     const char* emsg = get_str(*res, "__err__");
     return NULL == emsg ? NULL : sek_strdup(f->pool, emsg);
   }
+  f->refused = getonly_refusal(ctx, url, fetchdef);
+  if (NULL != f->refused) return sek_strdup(f->pool, f->refused->msg);
   PNError* ferr = NULL;
   *res = secrets_rawfetch(ctx, url, fetchdef, &ferr);
   return NULL == ferr ? NULL :
@@ -468,6 +473,7 @@ static const char* secrets_send(SecretsFeature* f, Context* ctx, voxgig_value* s
 // pool-owned message, or NULL for success with the token in f->cred.
 static const char* secrets_buy(SecretsFeature* f, Context* ctx) {
   SecretsExchange* x = f->exchange;
+  f->refused = NULL;
 
   // TEST MODE BUYS NOTHING. The test feature replaces the transport so no
   // request leaves the process; an exchange here would be the one HTTP
@@ -655,7 +661,8 @@ static voxgig_value* secrets_fetch(Fetcher* self, Context* ctx, const char* url,
   const char* rerr = secrets_resolve(f, ctx);
   if (NULL != rerr) {
     f->track.refused++;
-    *err = context_make_error(ctx, "secrets_resolve", rerr);
+    *err = NULL != f->refused ? f->refused : context_make_error(ctx, "secrets_resolve", rerr);
+    f->refused = NULL;
     return NULL;
   }
 
@@ -701,6 +708,7 @@ static voxgig_value* secrets_fetch(Fetcher* self, Context* ctx, const char* url,
         // The purchase failed: answer with the API's own refusal rather
         // than this one. The caller asked for data, and the refusal is
         // the more useful of the two - the exchange error is a symptom.
+        f->refused = NULL;
         free(used);
         return out;
       }

@@ -2430,7 +2430,7 @@ pub fn fetcher_util(ctx: *Context, fullurl: []const u8, fetchdef: Value) E!Value
 
 // A GET-only live run refuses any other method before it is sent. The error
 // names the path alone: the query can carry a credential.
-fn getonly_refusal(fullurl: []const u8, fetchdef: Value) ?[]const u8 {
+pub fn getonly_refusal(fullurl: []const u8, fetchdef: Value) ?[]const u8 {
     const environ = mem.threaded().environ.process_environ;
     const flag = environ.getAlloc(h.A(), "VOXGIG_GETONLY_GUARD") catch return null;
     if (!std.mem.eql(u8, flag, "TRUE")) return null;

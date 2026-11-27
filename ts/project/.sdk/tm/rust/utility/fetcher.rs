@@ -35,7 +35,7 @@ const GETONLY_ENV: &str = "VOXGIG_GETONLY_GUARD";
 
 // A GET-only live run refuses any other method before it is sent. The error
 // names the path alone: the query can carry a credential.
-fn getonly_refusal(fullurl: &str, method: &str) -> Option<ProjectNameError> {
+pub(crate) fn getonly_refusal(fullurl: &str, method: &str) -> Option<ProjectNameError> {
     let method = method.to_uppercase();
     if std::env::var(GETONLY_ENV).ok().as_deref() != Some("TRUE") || method == "GET" {
         return None;

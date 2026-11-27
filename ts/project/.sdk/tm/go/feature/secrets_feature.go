@@ -15,6 +15,7 @@ import (
 	"GOMODULE/core"
 	plugin "GOMODULE/feature/secrets/plugin"
 	sekreto "GOMODULE/feature/secrets/sekreto"
+	"GOMODULE/utility"
 )
 
 type SecretsFeature struct {
@@ -493,6 +494,10 @@ func (f *SecretsFeature) buyonce() (string, error) {
 	fetch, _ := system["fetch"].(func(string, map[string]any) (map[string]any, error))
 
 	if nil == fetch {
+		// The SDK transport's own GET-only guard, before the raw send.
+		if refused := utility.GetOnlyRefusal(url, x.method); nil != refused {
+			return "", refused
+		}
 		fetch = rawExchangeFetch
 	}
 

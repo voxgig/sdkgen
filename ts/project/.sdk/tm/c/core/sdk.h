@@ -324,6 +324,9 @@ voxgig_value* fetcher_util(Fetcher* self, Context* ctx, const char* url,
 // NULL with a fetch_transport error.
 voxgig_value* http_fetch(Context* ctx, const char* url, voxgig_value* fetchdef, PNError** err);
 
+// The default transport's GET-only guard: the refusal, or NULL.
+PNError* getonly_refusal(Context* ctx, const char* fullurl, voxgig_value* fetchdef);
+
 // ===========================================================================
 // Utility bundle (mirrors core/utility_type.rs)
 // ===========================================================================

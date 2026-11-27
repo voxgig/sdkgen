@@ -65,6 +65,7 @@ local BaseFeature = require("feature.base_feature")
 local sekreto = require("feature.secrets.sekreto")
 local tls = require("utility.tls")
 local base64 = require("utility.clean").base64
+local getonly_refusal = require("utility.getonly")
 
 
 local SecretsFeature = {}
@@ -469,6 +470,9 @@ function SecretsFeature:_transport(ctx, fullurl, fetchdef, inner)
   -- settled success is free, and with `cache = false` the chain is asked
   -- once per REQUEST, which is that option's meaning.
   local refused = self:_resolve()
+  if type(refused) == "table" and refused.is_sdk_error then
+    return nil, refused
+  end
   if refused ~= nil then
     return nil, ctx:make_error("secrets_refused", sekreto.errmessage(refused))
   end
@@ -735,6 +739,11 @@ function SecretsFeature:_buy_once()
   -- one, is the raw seam beneath the transport and is honoured.
   local fetch = vs.getpath(options, "system.fetch")
   if type(fetch) ~= "function" then
+    -- The SDK transport's own GET-only guard, before the raw send.
+    local refused = getonly_refusal(url, x.method)
+    if refused ~= nil then
+      return nil, refused
+    end
     fetch = raw_exchange_fetch
   end
 

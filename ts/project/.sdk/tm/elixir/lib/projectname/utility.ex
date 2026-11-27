@@ -2631,7 +2631,7 @@ defmodule ProjectName.Utility do
 
   # A GET-only live run refuses any other method before it is sent. The error
   # names the path alone: the query can carry a credential.
-  defp getonly_refusal(ctx, fullurl, fetchdef) do
+  def getonly_refusal(ctx, fullurl, fetchdef) do
     method = H.or_(S.getprop(fetchdef, "method"), "GET") |> to_string() |> String.upcase()
 
     if System.get_env("VOXGIG_GETONLY_GUARD") == "TRUE" and method not in ["", "GET"] do

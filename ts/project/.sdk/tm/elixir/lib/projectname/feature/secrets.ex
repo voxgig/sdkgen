@@ -723,12 +723,13 @@ defmodule ProjectName.Feature.Secrets do
       # feature wraps, and sending the token request back through it would
       # recurse on the first expiry - and would route the exchange through
       # the test mock, which knows nothing about it. `options.system.fetch`
-      # is preferred when set, so a test can intercept the purchase.
+      # is preferred when set, so a test can intercept the purchase; the raw
+      # path passes the transport's own GET-only guard first.
       ask = fn at ->
         try do
           if S.isfunc(sysfetch),
             do: sysfetch.(at, fetchdef),
-            else: raw_exchange_fetch(at, fetchdef)
+            else: ProjectName.Utility.getonly_refusal(nil, at, fetchdef) || raw_exchange_fetch(at, fetchdef)
         rescue
           e -> {nil, fail(e)}
         end
@@ -908,6 +909,7 @@ defmodule ProjectName.Feature.Secrets do
   # an exception, or a plain string from the default HTTP path.
   defp aserr(e, code) do
     cond do
+      match?(%ProjectName.Error{}, e) -> e
       is_exception(e) -> fail(e)
       is_binary(e) -> err(code, e)
       true -> err(code, inspect(e))

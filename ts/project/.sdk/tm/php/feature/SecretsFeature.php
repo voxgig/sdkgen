@@ -313,6 +313,9 @@ class ProjectNameSecretsFeature extends ProjectNameBaseFeature
         // gets. A provider ERROR refuses the request with the provider's
         // own message; never an unauthenticated send.
         $err = $this->resolve();
+        if ($err instanceof ProjectNameError) {
+            return [null, $err];
+        }
         if (null !== $err) {
             return [null, $ctx->make_error('secrets_provider', $err->getMessage())];
         }
@@ -555,10 +558,10 @@ class ProjectNameSecretsFeature extends ProjectNameBaseFeature
                 'secrets: token exchange request could not be encoded');
         }
 
-        // Deliberately NOT the SDK transport. The transport is what this
-        // feature wraps, and sending the token request back through it
-        // would recurse on the first expiry - and would route the exchange
-        // through the test mock, which knows nothing about it.
+        // Deliberately NOT the wrapped transport: sending the token request
+        // back through it would recurse on the first expiry - and would
+        // route the exchange through the test mock, which knows nothing
+        // about it.
         $fetchdef = [
             'method' => $x['method'],
             'headers' => ['content-type' => 'application/json'],
@@ -580,6 +583,11 @@ class ProjectNameSecretsFeature extends ProjectNameBaseFeature
             [$res, $err] = $fetch($at, $fetchdef);
         }
 
+        // The transport's own refusal, the GET-only guard's among them, is
+        // the operation's error.
+        if ($err instanceof ProjectNameError) {
+            throw $err;
+        }
         if (null !== $err) {
             throw new \Voxgig\Sekreto\SekretoError(
                 'secrets: token exchange failed: ' . self::errtext($err) . ' from ' . $url);

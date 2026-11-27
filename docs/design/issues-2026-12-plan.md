@@ -171,6 +171,23 @@ Issues: #510, #491, #427, #455, #431. Size: L.
 
 Depends on nothing. Releases as R1 with a migration note for the cache.
 
+#### Follow-up for #455: what voxgig/sekreto needs
+
+The exchange is sdkgen's own code in all 20 targets, so every one now refuses
+the purchase with `fetch_getonly_block` before sending: ts and js send it
+through the SDK fetcher; php, perl, kotlin, scala, csharp and swift through
+the default transport, which holds the guard; go, py, rb, java, rust, c, cpp,
+zig, lua, elixir, ocaml and clojure check the transport's own guard function
+before their raw fallback. Each gate passes the refusal through as the
+operation's error. Where zig, cpp and ocaml fall back to the vendored
+sekreto HTTP client, that check runs before it. What remains is sekreto's
+own traffic: a vault provider's `httpjson.fetchjson` (POST for AWS Secrets
+Manager, Vault AppRole login and others) reads no guard. The upstream change:
+`fetchjson` in every port takes an optional `refuse(method, url)` callback
+from the Sekreto config and returns its error before opening a connection, so
+sdkgen can pass its guard without sekreto reading an SDK variable. Then
+re-vendor at the next checkpoint and have each feature pass the guard.
+
 ### WP02. The shipped features do what their reference says (T2)
 
 Issues: #503, #504, #502, #508, #425, #428, #429, #430, #422, #489, #388,

@@ -53,7 +53,7 @@ tm/c/core/operation.c fb16ed309ed9
 tm/c/core/point.c 1539404e1bcc
 tm/c/core/response.c aefbc51b1689
 tm/c/core/result.c 60bde846d061
-tm/c/core/sdk.h 251f96b760e2
+tm/c/core/sdk.h 56c64ae3a38a
 tm/c/core/spec.c cb3f60193af1
 tm/c/core/utility.c c0abea39df50
 tm/c/feature/base.c bb9766d14bfc
@@ -81,7 +81,7 @@ tm/c/utility/done.c c34b62a8b13a
 tm/c/utility/feature_add.c d77b2f280d84
 tm/c/utility/feature_hook.c 2519ac12e079
 tm/c/utility/feature_init.c c4d6683438aa
-tm/c/utility/fetcher.c 64c654987c22
+tm/c/utility/fetcher.c ecc1fb0c912b
 tm/c/utility/graphql.c a21a86e03521
 tm/c/utility/http.c 97df05f453ac
 tm/c/utility/jsonparse.c cffd3f2ac8b1
@@ -165,7 +165,7 @@ src/cmp/clojure/fragment/EntityUpdateOp.fragment.clj 0245cb72c0ee
 src/cmp/clojure/tsconfig.json 720a3f229019
 src/cmp/clojure/utility_clojure.ts fa25f9feb766
 tm/clojure/Makefile d3ac03fe6a52
-tm/clojure/feature/secrets/sdk/feature/secrets.clj 1149bd35627a
+tm/clojure/feature/secrets/sdk/feature/secrets.clj 8e73d238ec53
 tm/clojure/feature/secrets/voxgig/plugin.clj eda66525b164
 tm/clojure/feature/secrets/voxgig/plugin/capability.clj b95da92fb675
 tm/clojure/feature/secrets/voxgig/plugin/catalog.clj 0b97b9f7d05c
@@ -484,7 +484,7 @@ tm/elixir/lib/projectname/feature.ex 558cb5c8c3af
 tm/elixir/lib/projectname/feature/test.ex 3ed981b7a867
 tm/elixir/lib/projectname/helpers.ex c22f481d543d
 tm/elixir/lib/projectname/json.ex d69502568def
-tm/elixir/lib/projectname/utility.ex 5a201f3efdb9
+tm/elixir/lib/projectname/utility.ex a32250b489fe
 tm/elixir/lib/utility/struct/voxgig_struct.ex 64b7e5a83476
 tm/elixir/src/feature/README.md 7a6d4b091ddd
 tm/elixir/src/feature/base/.gitkeep e3b0c44298fc
@@ -584,7 +584,7 @@ tm/go/utility/done.go 829dd26164b3
 tm/go/utility/feature_add.go 0b62e5d1c8db
 tm/go/utility/feature_hook.go 7efab96be0c6
 tm/go/utility/feature_init.go e2d9a7381261
-tm/go/utility/fetcher.go 127daced07e2
+tm/go/utility/fetcher.go ea59fc6679ca
 tm/go/utility/graphql.go f0e6b8fef4a8
 tm/go/utility/make_context.go c30482d43cbb
 tm/go/utility/make_error.go bb6d6bf93b30
@@ -726,7 +726,7 @@ tm/java/utility/Done.java 539e95bb155a
 tm/java/utility/FeatureAdd.java 77fd1ce39d5a
 tm/java/utility/FeatureHookUtil.java c0a61e00148f
 tm/java/utility/FeatureInit.java b7ee152fc808
-tm/java/utility/Fetcher.java 584ce5e31f67
+tm/java/utility/Fetcher.java 18db01741955
 tm/java/utility/Graphql.java 375386544b43
 tm/java/utility/Json.java 319781c3f5ca
 tm/java/utility/MakeContext.java c7789b287936
@@ -1052,7 +1052,8 @@ tm/lua/utility/done.lua c1c77faea694
 tm/lua/utility/feature_add.lua f6a951686474
 tm/lua/utility/feature_hook.lua 117392b0b027
 tm/lua/utility/feature_init.lua 97c94b7fa38f
-tm/lua/utility/fetcher.lua 3896cc4e867a
+tm/lua/utility/fetcher.lua 8b49af8096a2
+tm/lua/utility/getonly.lua 084afb1950d1
 tm/lua/utility/graphql.lua cb967f03d41b
 tm/lua/utility/make_context.lua 2b847f886881
 tm/lua/utility/make_error.lua 8df4ce12604b
@@ -1668,7 +1669,7 @@ tm/rust/utility/done.rs b15d29a24839
 tm/rust/utility/feature_add.rs 17f2d1fcb7c3
 tm/rust/utility/feature_hook.rs 6d794f025b57
 tm/rust/utility/feature_init.rs 66f96bd2cf0d
-tm/rust/utility/fetcher.rs acb1a8b7389b
+tm/rust/utility/fetcher.rs 5f2f66ab3c59
 tm/rust/utility/graphql.rs 5115a012964e
 tm/rust/utility/jsonparse.rs 17f7ee7b908a
 tm/rust/utility/make_context.rs 04f34b592c9c
@@ -2153,7 +2154,7 @@ tm/zig/core/response.zig bc91112131b7
 tm/zig/core/result.zig cc300079bab2
 tm/zig/core/spec.zig 25a014ab27fa
 tm/zig/core/types.zig 06a853449e9c
-tm/zig/core/utility.zig 35fa652bc8dd
+tm/zig/core/utility.zig 83763bbd06c9
 tm/zig/feature/audit.zig 83a49d77a34a
 tm/zig/feature/base.zig ca0fa806bb43
 tm/zig/feature/cache.zig 5b570b321469
@@ -2169,7 +2170,7 @@ tm/zig/feature/proxy.zig cbe0d0918153
 tm/zig/feature/ratelimit.zig 635710bddb9a
 tm/zig/feature/rbac.zig c46b76ef1e31
 tm/zig/feature/retry.zig 684949f0d189
-tm/zig/feature/secrets.zig f27d920894c1
+tm/zig/feature/secrets.zig a2090a7b39ec
 tm/zig/feature/secrets/plugin/capability.zig 7984c09f8071
 tm/zig/feature/secrets/plugin/catalog.zig 860e5471d9c3
 tm/zig/feature/secrets/plugin/config.zig 973b702b9e21

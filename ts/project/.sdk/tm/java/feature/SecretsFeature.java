@@ -774,6 +774,11 @@ public class SecretsFeature extends BaseFeature {
     // leaves system.fetch unset, so the exchange gets its own raw HTTP
     // path: requiring a custom transport for the COMMON case would
     // reject every live token purchase before a request was made.
+    // The SDK transport's own GET-only guard, before the raw send.
+    RuntimeException refused = Fetcher.getOnlyRefusal(url, (String) fetchdef.get("method"));
+    if (refused != null) {
+      throw refused;
+    }
     return rawExchangeFetch(url, fetchdef);
   }
 

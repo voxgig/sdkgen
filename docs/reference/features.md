@@ -1232,6 +1232,14 @@ with reports no response headers, so the option takes effect there only
 with a `system.fetch` of the caller's own, and without one the exchange
 refuses as it does by default.
 
+The purchase passes the GET-only guard of the SDK's own transport, beneath
+every feature that wraps it. A GET-only live run (`VOXGIG_GETONLY_GUARD=TRUE`)
+refuses it with `fetch_getonly_block` before anything is sent, redirect hops
+included, and that refusal is the operation's error. A `system.fetch` you
+supply carries the purchase unguarded, as it carries every other request. A
+vault provider's own HTTP request is the vendored sekreto port's, which does
+not read the variable.
+
 Set `name` to the refresh secret when exchanging — `name` is what the chain
 is asked for.
 

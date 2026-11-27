@@ -10,6 +10,7 @@ import urllib.request
 from projectname_sdk.utility.voxgig_struct import voxgig_struct as vs
 from projectname_sdk.feature.base_feature import ProjectNameBaseFeature
 from projectname_sdk.feature.secrets.voxgig_sekreto import Sekreto, envkey
+from projectname_sdk.utility.fetcher import _getonly_refusal
 # The plugin DEFINITIONS the model selected for this feature, emitted by
 # config generically from the catalogue's active `plugin.def` entries.
 # Upstream sekreto's contract since the registry was retired: a kind not
@@ -345,6 +346,10 @@ class ProjectNameSecretsFeature(ProjectNameBaseFeature):
             # platform fetcher). Local and minimal on purpose: see the
             # NOT-the-SDK-transport note below.
             fetch = _raw_exchange_fetch
+            # The SDK transport's own GET-only guard, before the raw send.
+            refused = _getonly_refusal(url, x["method"])
+            if refused is not None:
+                raise refused
 
         # Deliberately NOT the SDK transport. The transport is what this
         # feature wraps, and sending the token request back through it

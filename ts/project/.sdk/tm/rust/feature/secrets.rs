@@ -848,6 +848,11 @@ fn raw_exchange_fetch(fullurl: &str, fetchdef: &Value) -> Result<Value, ProjectN
         .filter(|m| !m.is_empty())
         .unwrap_or_else(|| "POST".to_string());
 
+    // The SDK transport's own GET-only guard, before the raw send.
+    if let Some(refused) = crate::utility::fetcher::getonly_refusal(fullurl, &method) {
+        return Err(refused);
+    }
+
     let agent = exchange_agent();
     let mut req = agent.request(&method, fullurl);
 

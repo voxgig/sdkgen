@@ -334,6 +334,7 @@ sub transport {
   # provider ERROR refuses the request with the provider's own message;
   # never an unauthenticated send.
   my $err = $self->resolve();
+  return (undef, $err) if Scalar::Util::blessed($err) && $err->isa('ProjectNameError');
   if (defined $err) {
     return (undef, $ctx->make_error('secrets_resolve', $err));
   }
@@ -594,8 +595,7 @@ sub _buy_once {
   $path =~ s{\A/+}{};
   my $url = "$base/$path";
 
-  # Deliberately NOT the SDK transport. The transport is what this feature
-  # wraps, and sending the token request back through it would recurse on
+  # Deliberately NOT the wrapped transport: sending the token request back through it would recurse on
   # the first expiry - and would route the exchange through the test mock,
   # which knows nothing about it. `system.fetch` (the caller's own
   # transport seam) when supplied, else the raw HTTP fetch the utility
@@ -643,6 +643,10 @@ sub _buy_once {
   };
 
   return (undef, _trim("$@")) if !$ok;
+
+  # The transport's own refusal, the GET-only guard's among them, is the
+  # operation's error.
+  return (undef, $err) if Scalar::Util::blessed($err) && $err->isa('ProjectNameError');
 
   return (undef, 'secrets: token exchange failed: ' . _trim("$err") . " from $url")
     if defined $err;

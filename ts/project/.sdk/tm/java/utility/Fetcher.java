@@ -63,7 +63,7 @@ public final class Fetcher {
 
   // A GET-only live run refuses any other method before it is sent. The error
   // names the path alone: the query can carry a credential.
-  static SdkError getOnlyRefusal(String fullurl, String method) {
+  public static SdkError getOnlyRefusal(String fullurl, String method) {
     method = method.toUpperCase(java.util.Locale.ROOT);
     if (!"TRUE".equals(System.getenv(GETONLY_ENV)) || "GET".equals(method)) {
       return null;
