@@ -693,6 +693,42 @@
           out)
         :else (clean-string cfg (str val))))))
 
+;; clean-snapshot's walk without the masking, for a record serialised with
+;; clean off: jsonify renders neither an atom nor a keyword key.
+(defn- plain-snapshot [val depth seen]
+  (cond
+    (nil? val) nil
+    (fn? val) DROP
+    (or (string? val) (number? val) (boolean? val) (keyword? val) (symbol? val) (char? val)) val
+    (or (<= CLEAN-MAXDEPTH depth) (some #(identical? % val) seen)) CLEAN-CIRCULAR
+    (bytes? val) (vec val)
+    (instance? java.io.InputStream val) (str val)
+    :else
+    (let [seen (conj seen val)]
+      (cond
+        (entity-instance? val) (plain-snapshot (deref (:_data val)) (inc depth) seen)
+        (instance? clojure.lang.IAtom val) (plain-snapshot (deref val) (inc depth) seen)
+        (instance? Throwable val)
+        (let [out (vs/jm "message" (str (.getMessage ^Throwable val)))]
+          (when (instance? clojure.lang.IExceptionInfo val)
+            (let [d (plain-snapshot (ex-data val) (inc depth) seen)]
+              (when-not (identical? DROP d) (.put ^java.util.Map out "data" d))))
+          out)
+        (instance? java.util.Map val)
+        (let [out (vs/jm)]
+          (doseq [^java.util.Map$Entry e (.entrySet ^java.util.Map val)]
+            (let [v (plain-snapshot (.getValue e) (inc depth) seen)]
+              (when-not (identical? DROP v)
+                (.put ^java.util.Map out (keyname (.getKey e)) v))))
+          out)
+        (or (instance? java.util.Collection val) (sequential? val))
+        (let [out (vs/jt)]
+          (doseq [v (seq val)]
+            (let [c (plain-snapshot v (inc depth) seen)]
+              (.add ^java.util.List out (if (identical? DROP c) nil c))))
+          out)
+        :else (str val)))))
+
 ;; An error map is immutable, so "in place" is a cleaned copy carrying the
 ;; same metadata (the context stays reachable through err-ctx). Its own
 ;; strings stay strings: the message is what ex-info is given.
@@ -737,18 +773,24 @@
 ;; strings, so a keyword-keyed map would serialise as nulls.
 (defn err->data [e]
   (when (sdk-error? e)
-    (u-clean (err-ctx e) (into {} (map (fn [[k v]] [(keyname k) v]) e)))))
+    (let [data (into {} (map (fn [[k v]] [(keyname k) v]) e))
+          out (u-clean (err-ctx e) data)]
+      (if (identical? out data) (plain-snapshot data 0 []) out))))
 
 ;; The serialised context leaves the pipeline (a logger, an error dump), so
 ;; it is the cleaned record; the live fields stay raw for the pipeline's use.
+;; A clean that hands the record back unchanged (clean off) leaves live atoms,
+;; so the record is copied plain, as the other targets' serialisers show it.
 (defn ctx->data [ctx]
   (let [m (deref ctx)
         u (:utility m)
         clean (or (when (instance? clojure.lang.IDeref u) (:clean (deref u))) u-clean)
-        entity (:entity m)]
-    (clean ctx (vs/jm "id" (:id m) "op" (:op m) "spec" (:spec m)
-                      "entity" (when (map? entity) (entity-get-name entity))
-                      "result" (:result m) "response" (:response m) "meta" (:meta m)))))
+        entity (:entity m)
+        data (vs/jm "id" (:id m) "op" (:op m) "spec" (:spec m)
+                    "entity" (when (map? entity) (entity-get-name entity))
+                    "result" (:result m) "response" (:response m) "meta" (:meta m))
+        out (clean ctx data)]
+    (if (identical? out data) (plain-snapshot data 0 []) out)))
 
 (defmethod print-method ::context [ctx ^java.io.Writer w]
   (.write w (str "#sdk/context " (vs/jsonify (ctx->data ctx) (vs/jm "indent" 0)))))

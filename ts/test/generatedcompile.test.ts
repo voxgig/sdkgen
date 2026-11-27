@@ -6629,7 +6629,7 @@ main: kit: flow: BasicScanFlow: {
 
 // Two of the three also template the server URL on a variable the spec
 // gives no usable default, which the sweep's client must still be built with.
-const CLEAN_MODELS: { name: string, server: string, extra: string }[] = [
+const CLEAN_MODELS: { name: string, server: string, extra: string, features?: string[] }[] = [
   {
     name: 'header',
     server: 'no server variable',
@@ -6652,6 +6652,16 @@ main: kit: info: servers: [{ url: 'https://api.example.test/bot{token}', variabl
 main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'header', name: 'Authorization' }
 main: kit: info: servers: [{ url: 'http://{{base_url}}' }]
 `,
+  },
+  // No feature that records traffic: each sweep's clean-off controls must
+  // then see a body and a response through the SDK's own surfaces.
+  {
+    name: 'header',
+    server: 'test feature only',
+    extra: `
+main: kit: config: auth: { active: true, prefix: 'Bearer', in: 'header', name: 'Authorization' }
+`,
+    features: ['test'],
   },
 ]
 
@@ -7035,9 +7045,10 @@ describe('the canary sweep runs from a generated SDK', () => {
       test(lane.target + ': no credential leaves the SDK (' + auth.name + ' auth, ' +
         auth.server + ')',
         async (t) => {
-          const sdkroot = Path.join(tmp, lane.target + '-' + auth.name)
+          const sdkroot = Path.join(tmp, lane.target + '-' + auth.name +
+            (null == auth.features ? '' : '-bare'))
           const files = await generateTo(lane.target, sdkroot, auth.extra + CLEAN_BINARY,
-            CLEAN_FEATURES)
+            auth.features ?? CLEAN_FEATURES)
 
           ok(null != files[lane.runner],
             'the sweep was not generated into the SDK: expected ' + lane.runner +
