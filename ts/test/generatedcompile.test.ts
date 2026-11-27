@@ -11394,6 +11394,22 @@ function nonjsonServer(dir: string, cases: string): Promise<{ port: number, stop
 
 
 // Each target's SDK is generated once, and every probe runs beside it.
+// The exchange runs over each SDK's default transport, which some platforms
+// cannot supply: py's needs the requests module, and c's and the vendored
+// client cpp falls back to need POSIX sockets.
+function liveExchangeUnready(target: string): string | null {
+  if ('py' === target) {
+    const py = mediaPython()
+    return null == py || !probeOk(py, ['-c', 'import requests'])
+      ? 'needs Python with requests to send the exchange' : null
+  }
+  if ('win32' === process.platform && ('c' === target || 'cpp' === target)) {
+    return 'the default transport needs POSIX sockets, which windows lacks'
+  }
+  return null
+}
+
+
 describe('probes driven through a generated SDK', () => {
   let tmp = ''
   const generated = new Map<string, Promise<string>>()
@@ -11786,7 +11802,7 @@ describe('probes driven through a generated SDK', () => {
     if (null == lane.label) {
       test(lane.target + ': a GET-only run refuses the secrets token exchange before it is sent',
         async (t) => {
-          const missing = lane.ready()
+          const missing = lane.ready() || liveExchangeUnready(lane.target)
           if (null != missing) return t.skip(missing)
           ok(null != GETONLY_PROBES[probeKey], lane.target + ': no GET-only probe')
 

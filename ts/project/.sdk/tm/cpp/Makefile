@@ -10,6 +10,11 @@
 
 CXX ?= g++
 CXXFLAGS ?= -std=c++17 -O0 -g -Wall -Wextra -Wno-unused-parameter -pthread
+ifeq ($(OS),Windows_NT)
+ifneq (,$(findstring g++,$(CXX)))
+CXXFLAGS += -Wa,-mbig-obj
+endif
+endif
 
 # ---- gated feature payloads (model/feature/<name>.aontu plugin groups) --------
 #
