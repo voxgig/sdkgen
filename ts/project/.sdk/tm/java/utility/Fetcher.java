@@ -128,11 +128,13 @@ public final class Fetcher {
     // "manual" (set by the station feature's middleware under a hosts
     // policy) is answered by the 3xx, like any other response.
     boolean manual = "manual".equals(fetchdef.get("redirect"));
+    boolean raw = ctx != null && "raw".equals(
+        Struct.getprop(Struct.getprop(ctx.point, "response"), "kind"));
     String url = fullurl;
     Map<String, Object> def = fetchdef;
 
     for (int hops = 0; ; hops++) {
-      Map<String, Object> res = defaultHttpFetch(url, def);
+      Map<String, Object> res = defaultHttpFetch(url, def, raw);
       Object location = Struct.getprop(res.get("headers"), "location", null);
       if (manual || !(location instanceof String)
           || !REDIRECT_STATUS.contains(res.get("status")) || REDIRECT_MAX <= hops) {
@@ -196,6 +198,13 @@ public final class Fetcher {
   }
 
   static Map<String, Object> defaultHttpFetch(String fullurl, Map<String, Object> fetchdef) {
+    return defaultHttpFetch(fullurl, fetchdef, false);
+  }
+
+  // A raw success body is left unread, as a stream, for the bounded reader;
+  // every other body is read whole as text, as before.
+  static Map<String, Object> defaultHttpFetch(String fullurl, Map<String, Object> fetchdef,
+      boolean raw) {
     String method = fetchdef.get("method") instanceof String
         ? (String) fetchdef.get("method") : "";
     if ("".equals(method)) {
@@ -250,9 +259,11 @@ public final class Fetcher {
       }
     }
 
-    HttpResponse<String> resp;
+    HttpResponse<?> resp;
     try {
-      resp = clientFor(fetchdef).send(reqb.build(), decodedText());
+      HttpRequest req = reqb.build();
+      resp = raw ? clientFor(fetchdef).send(req, HttpResponse.BodyHandlers.ofInputStream())
+          : clientFor(fetchdef).send(req, decodedText());
     }
     catch (Exception e) {
       throw new RuntimeException("fetch: " + e.getMessage(), e);
@@ -269,7 +280,30 @@ public final class Fetcher {
       }
     }
 
-    String bodyText = resp.body() == null ? "" : resp.body();
+    String bodyText;
+    if (raw) {
+      InputStream stream = (InputStream) resp.body();
+      String encoding = String.valueOf(headers.getOrDefault("content-encoding", ""))
+          .trim().toLowerCase(Locale.ROOT);
+      if (resp.statusCode() < 300) {
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("status", resp.statusCode());
+        out.put("statusText", statusText(resp.statusCode()));
+        out.put("headers", headers);
+        out.put("body", decodedStream(stream, encoding));
+        return out;
+      }
+      try (InputStream in = stream) {
+        bodyText = new String(decodeBody(in.readAllBytes(), encoding),
+            charsetOf(String.valueOf(headers.getOrDefault("content-type", ""))));
+      }
+      catch (IOException e) {
+        throw new UncheckedIOException(e);
+      }
+    }
+    else {
+      bodyText = resp.body() == null ? "" : (String) resp.body();
+    }
     Object parsed = null;
     boolean unreadable = false;
     if (!bodyText.isBlank()) {
@@ -312,6 +346,23 @@ public final class Fetcher {
             }
           });
     };
+  }
+
+  // A compressed stream is undone as it is read, so the bound counts the
+  // body the caller gets.
+  static InputStream decodedStream(InputStream in, String encoding) {
+    try {
+      if ("gzip".equals(encoding) || "x-gzip".equals(encoding)) {
+        return new GZIPInputStream(in);
+      }
+      if ("deflate".equals(encoding)) {
+        return new InflaterInputStream(in);
+      }
+    }
+    catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
+    return in;
   }
 
   // Deflate is zlib-wrapped, or raw as some servers send it.

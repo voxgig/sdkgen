@@ -527,6 +527,34 @@ describe('codec: core opens no file', () => {
       }
     }
   })
+
+  test('no scala codec source touches a file', () => {
+    for (const rel of ['core/BinarySource.scala', 'utility/Binary.scala', 'utility/Prepare.scala',
+      'utility/Make.scala', 'utility/codec/FormCodec.scala', 'utility/codec/MultipartCodec.scala',
+      'utility/codec/RawCodec.scala', 'utility/codec/HandleCodec.scala']) {
+      const src = readFileSync(Path.join(TM, 'scala', rel), 'utf8')
+      ok(!/\bjava\.nio\.file\b|\bjava\.io\.(File|RandomAccessFile)|\b(FileInputStream|FileReader|Files|Paths)\b|\bscala\.io\.Source\b|fromFile/.test(src),
+        'scala ' + rel + ' touches a file')
+    }
+  })
+
+  test('no java or kotlin core source, lift or codec reaches the filesystem', () => {
+    const files: [string, string[]][] = [
+      ['java', ['core/Binary', 'core/BinarySource', 'utility/Sources', 'utility/PrepareBody',
+        'utility/MakePoint']],
+      ['kotlin', ['core/Binary', 'core/BinarySource', 'utility/Sources', 'utility/Prepare',
+        'utility/MakePoint']],
+    ]
+    for (const [lang, rels] of files) {
+      const ext = 'java' === lang ? '.java' : '.kt'
+      for (const rel of [...rels, 'utility/codec/FormCodec', 'utility/codec/MultipartCodec',
+        'utility/codec/RawCodec', 'utility/codec/HandleCodec']) {
+        const src = readFileSync(Path.join(TM, lang, rel + ext), 'utf8')
+        ok(!/\b(java|kotlin)\.(nio\.file|io\.path)\b|\bjava\.io\.(File|RandomAccessFile)\b|\bFile(Input|Output)Stream\b|\bFile(Reader|Writer)\b|\bFile\(/
+          .test(src), lang + ' ' + rel + ' reaches the filesystem')
+      }
+    }
+  })
 })
 
 

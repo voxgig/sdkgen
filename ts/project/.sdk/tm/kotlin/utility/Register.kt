@@ -39,5 +39,7 @@ object Register {
     u.resultHeaders = ::resultHeaders
     u.transformRequest = ::transformRequest
     u.transformResponse = ::transformResponse
+    u.codec = KOTLINPACKAGE.utility.codec.CodecIndex.codec()
+    u.multipartBoundary = KOTLINPACKAGE.utility.codec.CodecIndex.multipartBoundary()
   }
 }

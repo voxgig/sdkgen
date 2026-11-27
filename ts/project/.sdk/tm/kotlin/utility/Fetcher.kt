@@ -97,12 +97,13 @@ internal fun followRedirects(
   // "manual" (set by the station feature's middleware under a hosts
   // policy) is answered by the 3xx, like any other response.
   val manual = "manual" == fetchdef["redirect"]
+  val raw = "raw" == Struct.getprop(Struct.getprop(ctx?.point, "response", null), "kind", null)
   var url = fullurl
   var def = fetchdef
 
   var hops = 0
   while (true) {
-    val res = fetchOnce(url, def)
+    val res = fetchOnce(url, def, raw)
     val location = (res["headers"] as? Map<*, *>)?.get("location")
     val status = res["status"] as? Int
     if (manual || location !is String || status == null ||
@@ -183,7 +184,11 @@ fun defaultHttpFetch(fullurl: String, fetchdef: MutableMap<String, Any?>): Mutab
   followRedirects(null, fullurl, fetchdef)
 
 @Suppress("UNCHECKED_CAST")
-private fun fetchOnce(fullurl: String, fetchdef: MutableMap<String, Any?>): MutableMap<String, Any?> {
+// A raw success body is left unread, as a stream, for the bounded reader;
+// every other body is read whole as text, as before.
+private fun fetchOnce(
+  fullurl: String, fetchdef: MutableMap<String, Any?>, raw: Boolean,
+): MutableMap<String, Any?> {
   var method = if (fetchdef["method"] is String) fetchdef["method"] as String else ""
   if ("" == method) {
     method = "GET"
@@ -230,9 +235,11 @@ private fun fetchOnce(fullurl: String, fetchdef: MutableMap<String, Any?>): Muta
     }
   }
 
-  val resp: HttpResponse<String>
+  val resp: HttpResponse<*>
   try {
-    resp = clientFor(fetchdef).send(reqb.build(), decodedText())
+    val req = reqb.build()
+    resp = if (raw) clientFor(fetchdef).send(req, HttpResponse.BodyHandlers.ofInputStream())
+    else clientFor(fetchdef).send(req, decodedText())
   } catch (e: Exception) {
     throw RuntimeException("fetch: " + e.message, e)
   }
@@ -246,7 +253,25 @@ private fun fetchOnce(fullurl: String, fetchdef: MutableMap<String, Any?>): Muta
     }
   }
 
-  val bodyText = resp.body() ?: ""
+  val bodyText: String
+  if (raw) {
+    val stream = resp.body() as InputStream
+    val encoding = (headers["content-encoding"] as? String ?: "").trim().lowercase()
+    if (resp.statusCode() < 300) {
+      val out = linkedMapOf<String, Any?>()
+      out["status"] = resp.statusCode()
+      out["statusText"] = statusText(resp.statusCode())
+      out["headers"] = headers
+      out["body"] = decodedStream(stream, encoding)
+      return out
+    }
+    bodyText = stream.use {
+      String(decodeBody(it.readAllBytes(), encoding),
+        charsetOf(headers["content-type"] as? String ?: ""))
+    }
+  } else {
+    bodyText = resp.body() as String? ?: ""
+  }
   var jsonBody: Any? = null
   var unreadable = false
   if (bodyText.isNotBlank()) {
@@ -283,6 +308,14 @@ internal fun decodedText(): HttpResponse.BodyHandler<String> =
       }
     }
   }
+
+// A compressed stream is undone as it is read, so the bound counts the body
+// the caller gets.
+internal fun decodedStream(input: InputStream, encoding: String): InputStream = when (encoding) {
+  "gzip", "x-gzip" -> GZIPInputStream(input)
+  "deflate" -> InflaterInputStream(input)
+  else -> input
+}
 
 // Deflate is zlib-wrapped, or raw as some servers send it.
 internal fun decodeBody(bytes: ByteArray?, encoding: String): ByteArray {

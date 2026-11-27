@@ -322,6 +322,7 @@ ${updateLines}), null)
               tier: codecTier(target),
               values: 'an `Array[Byte]`, a `String` or an `InputStream`',
               once: 'an `InputStream`',
+              source: 'a source made by `BinarySource.bytes(data, name, mediaType)`',
             })
             if ('' !== note) Content(note)
           }

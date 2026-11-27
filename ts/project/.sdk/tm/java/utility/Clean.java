@@ -23,6 +23,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import JAVAPACKAGE.core.BinarySource;
 import JAVAPACKAGE.core.Context;
 import JAVAPACKAGE.core.Entity;
 import JAVAPACKAGE.core.Helpers;
@@ -409,9 +410,22 @@ final class Clean {
     if ("raw".equals(Struct.getprop(body, "kind"))
         && Boolean.TRUE.equals(Struct.getprop(body, "binary"))) {
       Object media = Struct.getprop(body, "media");
+      Object raw = ctx.sources == null ? null : ctx.sources.get(Media.RAW_BODY);
+      if (raw == null && ctx.reqdata != null) {
+        raw = ctx.reqdata.get(Media.RAW_BODY);
+      }
       addBody(bodies, cfg, media instanceof String ? (String) media : null, true,
-          ctx.spec == null ? null : ctx.spec.body,
-          ctx.reqdata == null ? null : ctx.reqdata.get(Media.RAW_BODY));
+          ctx.spec == null ? null : ctx.spec.body, raw,
+          raw instanceof BinarySource ? ((BinarySource) raw).data : null);
+    }
+
+    // An encoded multipart body, and a form body that carries a file.
+    Object kind = Struct.getprop(body, "kind");
+    if ("multipart".equals(kind) || ("form".equals(kind) && hasFile(body))) {
+      String type = Response.headerValue(ctx.spec == null ? null : ctx.spec.headers,
+          "content-type");
+      addBody(bodies, cfg, type.isEmpty() ? null : type, true,
+          ctx.spec == null ? null : ctx.spec.body);
     }
 
     if (ctx.response != null) {
@@ -422,6 +436,18 @@ final class Clean {
     }
 
     return bodies;
+  }
+
+  private static boolean hasFile(Object body) {
+    Object fields = Struct.getprop(body, "fields");
+    if (fields instanceof List) {
+      for (Object field : (List<?>) fields) {
+        if (Boolean.TRUE.equals(Struct.getprop(field, "binary"))) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   private static void addBody(List<BinaryBody> bodies, Map<String, Object> cfg, String type,
@@ -514,6 +540,10 @@ final class Clean {
 
     if (sensitive(cfg, key)) {
       return mask(cfg);
+    }
+
+    if (val instanceof BinarySource) {
+      return ((BinarySource) val).describe();
     }
 
     Object desc = describeBinary(val, bin);

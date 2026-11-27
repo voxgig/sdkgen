@@ -7,6 +7,7 @@ import {
   TEST_CONTROL_EXCLUDE,
   inactiveFeatureExcludes,
   pluginExcludes,
+  codecExcludes,
   TargetLicense,
   TargetVersion,
 } from '@voxgig/sdkgen'
@@ -32,6 +33,7 @@ import { EntityBase } from './EntityBase_kotlin'
 import { EntityTypes } from './EntityTypes_kotlin'
 import { SdkError } from './SdkError_kotlin'
 import { PrepareAuth } from './PrepareAuth_kotlin'
+import { CodecIndex } from './CodecIndex_kotlin'
 import { kotlinPackage } from './utility_kotlin'
 
 
@@ -57,7 +59,8 @@ const Main = cmp(async function Main(props: any) {
   Copy({
     from: 'tm/' + target.name,
     exclude: [/src\//, TEST_CONTROL_EXCLUDE,
-      ...inactiveFeatureExcludes(props.ctx$, target), ...pluginExcludes(model)],
+      ...inactiveFeatureExcludes(props.ctx$, target), ...pluginExcludes(model),
+      ...codecExcludes(model)],
     replace: {
       ...props.ctx$.stdrep,
       KOTLINPACKAGE: kotlinpackage,
@@ -69,6 +72,8 @@ const Main = cmp(async function Main(props: any) {
   EntityBase({ target })
 
   PrepareAuth({ target })
+
+  CodecIndex({ target })
 
   // Generate the client class and config in core/.
   Folder({ name: 'core' }, () => {

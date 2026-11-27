@@ -16,6 +16,8 @@ class EntyClass(clientIn: SdkClient, entoptsIn: MutableMap<String, Any?>?) :
     return EntyClass(this.client, opts)
   }
 
+// #BinarySlot
+
 // #LoadOp
 
 // #ListOp

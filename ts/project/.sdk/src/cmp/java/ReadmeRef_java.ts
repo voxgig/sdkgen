@@ -321,6 +321,7 @@ ${updateLines}), null);
               tier: codecTier(target),
               values: 'a `byte[]`, a `String` or an `InputStream`',
               once: 'an `InputStream`',
+              source: 'a source made by `client.binary.bytes(data, name, type)`',
             })
             if ('' !== note) Content(note)
           }

@@ -237,6 +237,129 @@ object PrimaryCorpus {
       case _           => shared
     }
 
+  // ---- body codec sections -----------------------------------------------
+
+  private val Latin1 = java.nio.charset.StandardCharsets.ISO_8859_1
+
+  // `source$` is a source built by BinarySource.bytes, `bytes$` bytes; both latin1.
+  private def sourced(o: Object): Object = o match {
+    case m: JMap[_, _] =>
+      val jm = m.asInstanceOf[JMap[String, Object]]
+      jm.get("source$") match {
+        case data: String =>
+          BinarySource.bytes(data.getBytes(Latin1), jm.get("name") match { case s: String => s; case _ => null },
+            jm.get("type") match { case s: String => s; case _ => null })
+        case _ => jm.get("bytes$") match {
+          case data: String => data.getBytes(Latin1)
+          case _ =>
+            val out = new LinkedHashMap[String, Object]()
+            jm.forEach((k, v) => out.put(k, sourced(v)))
+            out
+        }
+      }
+    case l: JList[_] =>
+      val out = new ArrayList[Object]()
+      l.forEach(v => out.add(sourced(v.asInstanceOf[Object])))
+      out
+    case other => other
+  }
+
+  private def latin1(body: Object): Value = body match {
+    case null => VNull
+    case s: String => VStr(s)
+    case b: Array[Byte] => VStr(new String(b, Latin1))
+    case other => toValue(other)
+  }
+
+  // A codec group a project's corpus has not pulled yet is skipped, as is one
+  // for a codec this SDK was generated without: its model has no such point.
+  private def runcodec(name: String, kind: String, codec: String, client: ProjectNameSDK)(
+      f: (Context, Seq[Value]) => Value): Unit = {
+    val run = sectionRun(name)
+    if (run.set(kind).isabsent) REPORT.skip(name + "." + kind, "this project's test.json has no such group")
+    else if (codec != null && null == client.getUtility().codec.get(codec))
+      REPORT.skip(name + "." + kind, "this SDK was generated without a " + codec + " codec")
+    else run.runsetargs(name + "." + kind, run.group(kind)) { args =>
+      val ctxmap = argAt(args, 0)
+      val ctx = corpusCtx(client, ctxmap)
+      val out = f(ctx, args)
+      publishCtx(ctxmap, ctx)
+      out
+    }
+  }
+
+  private def runCodecs(sdk: ProjectNameSDK): Unit = {
+    val u = sdk.getUtility()
+
+    // The boundary is fixed through the context's own registry seam.
+    for (kind <- Seq("form", "multipart", "raw")) {
+      runcodec("prepareBody", kind, if ("raw" == kind) null else kind, sdk) { (c, _) =>
+        c.utility = c.utility.copy()
+        c.utility.multipartBoundary = _ => "BOUNDARY"
+        c.reqdata = Helpers.toMapAny(sourced(c.reqdata))
+        c.reqmatch = Helpers.toMapAny(sourced(c.reqmatch))
+        c.spec = new Spec(new LinkedHashMap[String, Object]())
+        c.spec.headers = new LinkedHashMap[String, Object]()
+        val body = latin1(c.utility.prepareBody(c))
+        val out = MLinkedHashMap.empty[String, Value]
+        c.spec.headers.get("content-type") match { case t: String => out.put("type", VStr(t)); case _ => }
+        out.put("body", body)
+        VMap(out)
+      }
+    }
+
+    runcodec("resultBody", "raw", "raw", sdk) { (c, args) =>
+      vget(vget(argAt(args, 0), "ctrl"), "transfer") match {
+        case t @ VMap(_) => c.ctrl.transfer = jmap(t)
+        case _ =>
+      }
+      if (c.response != null) c.response.body = sourced(c.response.body)
+      val r = u.resultBody(c); if (r != null) c.result = r
+      if (c.ctrl.transfer != null) argAt(args, 0) match {
+        case VMap(m) =>
+          val t = MLinkedHashMap.empty[String, Value]
+          c.ctrl.transfer.forEach((k, v) => t.put(k, if ("bytes" == k) latin1(v) else toValue(v)))
+          val ctrl = MLinkedHashMap.empty[String, Value]
+          ctrl.put("transfer", VMap(t))
+          m.put("ctrl", VMap(ctrl))
+        case _ =>
+      }
+      resultValue(c.result)
+    }
+
+    runcodec("makeFetchDef", "encoded", null, sdk) { (c, _) =>
+      c.spec.body = sourced(c.spec.body)
+      val url = c.spec.url
+      c.utility = u.copy()
+      c.utility.makeUrl = _ => url
+      val fetchdef = u.makeFetchDef(c)
+      val out = toValue(fetchdef)
+      out match { case VMap(m) => m.put("body", latin1(fetchdef.get("body"))); case _ => }
+      out
+    }
+
+    // `spec$` is the context's own spec: the same live body, not a copy.
+    runcodec("clean", "binary", null, sdk) { (c, args) =>
+      c.reqdata = Helpers.toMapAny(sourced(c.reqdata))
+      if (c.spec != null) c.spec.body = sourced(c.spec.body)
+      val target: Object = argAt(args, 1) match {
+        case VStr("spec$") =>
+          val spec = new LinkedHashMap[String, Object]()
+          vget(argAt(args, 0), "spec") match {
+            case VMap(m) => m.keys.foreach {
+              case "body" => spec.put("body", c.spec.body)
+              case "headers" => spec.put("headers", c.spec.headers)
+              case k => spec.put(k, toJava(m(k)))
+            }
+            case _ =>
+          }
+          spec
+        case v => sourced(toJava(v))
+      }
+      toValue(u.clean(c, target))
+    }
+  }
+
   def run(testfile: String): Int = {
     ALL = OmniResolver.loadspec(testfile)
     PACK = OmniResolver.makeRunner(ALL)
@@ -314,6 +437,8 @@ object PrimaryCorpus {
       m.put("points", vget(in, "points") match { case l @ VList(_) => l; case _ => VList(ArrayBuffer.empty[Value]) })
       VMap(m)
     }
+
+    runCodecs(sdk)
 
     REPORT.requireran("primary")
     REPORT.finish()

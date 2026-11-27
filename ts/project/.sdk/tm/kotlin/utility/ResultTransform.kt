@@ -1,6 +1,7 @@
 package KOTLINPACKAGE.utility
 
 import KOTLINPACKAGE.core.Context
+import KOTLINPACKAGE.core.RawFn
 import KOTLINPACKAGE.core.Helpers
 import KOTLINPACKAGE.utility.struct.Struct
 
@@ -34,6 +35,14 @@ fun resultBody(ctx: Context): KOTLINPACKAGE.core.Result {
   val result = ctx.result
 
   if (result != null) {
+    @Suppress("UNCHECKED_CAST")
+    val raw = ctx.utility?.codec?.get("raw") as? RawFn
+    if (response != null && raw != null &&
+      "raw" == Struct.getprop(Struct.getprop(ctx.point, "response", null), "kind", null) &&
+      result.err == null && response.err == null && result.status < 400) {
+      raw(ctx)
+      return result
+    }
     if (response != null && response.jsonFunc != null && response.body != null) {
       result.body = response.jsonFunc!!.get()
     }

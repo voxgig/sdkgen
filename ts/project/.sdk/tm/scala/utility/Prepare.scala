@@ -222,13 +222,41 @@ object PrepareHeaders {
 object PrepareBody {
   def prepareBody(ctx: Context): Object =
     if ("data" == ctx.op.input) {
-      if (Media.isRawRequest(ctx.point)) Media.rawBody(ctx.reqdata)
-      else ctx.utility.transformRequest(ctx)
+      Binary.liftSources(ctx)
+      if (Media.isRawRequest(ctx.point)) Media.rawBody(ctx.sources)
+      else {
+        val body = ctx.utility.transformRequest(ctx)
+        Struct.getprop(Struct.getprop(ctx.point, "body"), "kind") match {
+          case kind: String if "form" == kind || "multipart" == kind => encodeBody(ctx, kind, body)
+          case _ => body
+        }
+      }
     }
     else Struct.getprop(ctx.point, "fields") match {
       case fields: JList[_] if !fields.isEmpty => matchBody(ctx, fields)
       case _ => null
     }
+
+  // The encoded body, with its content type replacing any the headers carry:
+  // a multipart boundary is the encoder's alone to choose.
+  private def encodeBody(ctx: Context, kind: String, data: Object): Object = {
+    val encode = if (ctx.utility.codec == null) null else ctx.utility.codec.get(kind)
+    val encoded = encode match {
+      case f: Function3[_, _, _, _] =>
+        f.asInstanceOf[BodyEncoder](ctx, data,
+          if (ctx.sources == null) new LinkedHashMap[String, Object]() else ctx.sources)
+      case _ =>
+        throw ctx.makeError("body_codec_missing", "This SDK was generated without a " + kind + " encoder.")
+    }
+
+    val headers = if (ctx.spec == null) null else ctx.spec.headers
+    if (headers != null) {
+      headers.keySet().removeIf(k => k != null && "content-type" == k.toLowerCase(java.util.Locale.ROOT))
+      headers.put("content-type", encoded.mediaType)
+    }
+
+    encoded.body
+  }
 
   // A list, load or remove routed to a method with a body sends the match
   // fields that body declares, never a path parameter, and never a header,

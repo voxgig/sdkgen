@@ -8,6 +8,7 @@ import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.util.Base64
 
+import KOTLINPACKAGE.core.BinarySource
 import KOTLINPACKAGE.core.Context
 import KOTLINPACKAGE.core.Entity
 import KOTLINPACKAGE.core.Helpers
@@ -305,9 +306,19 @@ private fun binaryBodies(ctx: Context?, cfg: CleanConfig): List<BinaryBody> {
 
   val body = Struct.getprop(ctx?.point, "body", null)
   if ("raw" == Struct.getprop(body, "kind", null) && true == Struct.getprop(body, "binary", null)) {
+    val raw = ctx?.sources?.get(Media.RAW_BODY) ?: ctx?.reqdata?.get(Media.RAW_BODY)
     bodies.add(BinaryBody(
-      listOf(ctx?.spec?.body, ctx?.reqdata?.get(Media.RAW_BODY)).filter(known).filterNotNull(),
+      listOf(ctx?.spec?.body, raw, (raw as? BinarySource)?.data).filter(known).filterNotNull(),
       Struct.getprop(body, "media", null) as? String, true))
+  }
+
+  // An encoded multipart body, and a form body that carries a file.
+  val kind = Struct.getprop(body, "kind", null)
+  val files = (Struct.getprop(body, "fields", null) as? List<*>)
+    ?.any { true == Struct.getprop(it, "binary", null) } ?: false
+  if ("multipart" == kind || ("form" == kind && files)) {
+    bodies.add(BinaryBody(listOf(ctx?.spec?.body).filter(known).filterNotNull(),
+      Response.headerValue(ctx?.spec?.headers, "content-type").ifEmpty { null }, true))
   }
 
   val response = ctx?.response
@@ -456,6 +467,10 @@ private fun snapshot(
 
   if (sensitiveKey(cfg, key)) {
     return cfg.mask
+  }
+
+  if (v is BinarySource) {
+    return v.describe()
   }
 
   val desc = describeBinary(v, bin)

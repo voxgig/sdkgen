@@ -1,6 +1,6 @@
 package SCALAPACKAGE.utility
 
-import SCALAPACKAGE.core.Utility
+import SCALAPACKAGE.core.{CtxFn, Utility}
 
 // Wires the utility implementations onto a Utility instance.
 object Register {
@@ -38,5 +38,10 @@ object Register {
     u.resultHeaders = (ctx) => ResultHeaders.resultHeaders(ctx)
     u.transformRequest = (ctx) => TransformRequest.transformRequest(ctx)
     u.transformResponse = (ctx) => TransformResponse.transformResponse(ctx)
+    u.codec = CodecIndex.codecs()
+    u.multipartBoundary = u.codec.get("multipartBoundary") match {
+      case f: Function1[_, _] => f.asInstanceOf[CtxFn[String]]
+      case _ => null
+    }
   }
 }

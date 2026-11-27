@@ -16,7 +16,7 @@ public final class Media {
 
   // The data key holding a raw request body. Like `$action`, it can never be
   // a declared argument name.
-  static final String RAW_BODY = "$body";
+  public static final String RAW_BODY = "$body";
 
   private Media() {}
 
@@ -102,8 +102,7 @@ public final class Media {
   // Bytes, an InputStream or a String, sent as they are. An InputStream can be
   // read once, so it is read here, before the first attempt, and a retry sends
   // the same bytes again.
-  static Object rawBody(Map<String, Object> reqdata) {
-    Object body = reqdata == null ? null : reqdata.get(RAW_BODY);
+  static Object rawBody(Object body) {
     if (body instanceof InputStream) {
       try {
         return ((InputStream) body).readAllBytes();

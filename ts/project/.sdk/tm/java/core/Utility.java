@@ -56,6 +56,16 @@ public class Utility {
   }
 
   @FunctionalInterface
+  public interface EncodeFn {
+    Map<String, Object> encode(Context ctx, Object data, Map<String, Object> sources);
+  }
+
+  @FunctionalInterface
+  public interface RawFn {
+    void read(Context ctx);
+  }
+
+  @FunctionalInterface
   public interface ParamFn {
     Object apply(Context ctx, Object paramdef);
   }
@@ -93,6 +103,9 @@ public class Utility {
   public CtxFn<Result> resultHeaders;
   public CtxFn<Object> transformRequest;
   public CtxFn<Object> transformResponse;
+  // The body codecs this SDK was generated with; see utility/codec/CodecIndex.
+  public Map<String, Object> codec = new LinkedHashMap<>();
+  public CtxFn<String> multipartBoundary;
   public Map<String, Object> custom = new LinkedHashMap<>();
 
   public Utility() {
@@ -138,6 +151,8 @@ public class Utility {
     u.resultHeaders = this.resultHeaders;
     u.transformRequest = this.transformRequest;
     u.transformResponse = this.transformResponse;
+    u.codec = new LinkedHashMap<>(this.codec);
+    u.multipartBoundary = this.multipartBoundary;
 
     u.custom = new LinkedHashMap<>(this.custom);
 

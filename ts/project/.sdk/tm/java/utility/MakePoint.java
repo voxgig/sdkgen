@@ -74,7 +74,16 @@ final class MakePoint {
     return best;
   }
 
+  // Once the point is known, a body of bytes it answers is refused and the
+  // sources its binary fields carry are lifted out of the data.
   static Map<String, Object> makePoint(Context ctx) {
+    Map<String, Object> point = selectPoint(ctx);
+    Sources.bytesRefused(ctx);
+    Sources.liftSources(ctx);
+    return point;
+  }
+
+  private static Map<String, Object> selectPoint(Context ctx) {
     Object outPoint = ctx.out.get("point");
     if (outPoint != null) {
       // A PrePoint feature hook (e.g. rbac) may short-circuit the

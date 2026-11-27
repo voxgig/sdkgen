@@ -1,6 +1,8 @@
 package KOTLINPACKAGE.utility
 
+import KOTLINPACKAGE.core.BinarySource
 import KOTLINPACKAGE.core.Context
+import KOTLINPACKAGE.core.EncodeFn
 import KOTLINPACKAGE.core.Helpers
 import KOTLINPACKAGE.utility.struct.Struct
 
@@ -123,16 +125,44 @@ internal fun callArgs(ctx: Context, kind: String): List<CallArg> {
 
 fun prepareBody(ctx: Context): Any? {
   if ("data" == ctx.op.input) {
+    Sources.liftSources(ctx)
+
     if (Media.isRawRequest(ctx.point)) {
-      return Media.rawBody(ctx.reqdata)
+      val raw = ctx.sources?.get(Media.RAW_BODY)
+      return Media.rawBody(if (raw is BinarySource) raw.data else raw)
     }
-    return ctx.utility!!.transformRequest(ctx)
+
+    val body = ctx.utility!!.transformRequest(ctx)
+
+    val kind = Struct.getprop(Struct.getprop(ctx.point, "body", null), "kind", null)
+    if ("form" == kind || "multipart" == kind) {
+      return encodeBody(ctx, kind as String, body)
+    }
+    return body
   }
   val fields = Struct.getprop(ctx.point, "fields")
   if (fields is List<*> && fields.isNotEmpty()) {
     return matchBody(ctx, fields)
   }
   return null
+}
+
+// The encoded body, with its content type replacing any the headers carry:
+// a multipart boundary is the encoder's alone to choose.
+@Suppress("UNCHECKED_CAST")
+private fun encodeBody(ctx: Context, kind: String, data: Any?): Any? {
+  val encode = ctx.utility!!.codec[kind] as? EncodeFn
+    ?: throw ctx.makeError("body_codec_missing", "This SDK was generated without a $kind encoder.")
+
+  val encoded = encode(ctx, data, ctx.sources ?: mapOf())
+
+  val headers = ctx.spec?.headers
+  if (headers != null) {
+    headers.keys.removeIf { it.lowercase() == "content-type" }
+    headers["content-type"] = encoded["type"]
+  }
+
+  return encoded["body"]
 }
 
 // A list, load or remove routed to a method with a body sends the match

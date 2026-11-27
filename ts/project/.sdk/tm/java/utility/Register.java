@@ -1,5 +1,7 @@
 package JAVAPACKAGE.utility;
 
+import java.util.Map;
+
 import JAVAPACKAGE.core.Utility;
 
 /** Wires the utility implementations onto a Utility instance. */
@@ -41,6 +43,8 @@ public final class Register {
     u.resultHeaders = ResultHeaders::resultHeaders;
     u.transformRequest = TransformRequest::transformRequest;
     u.transformResponse = TransformResponse::transformResponse;
+    u.codec = JAVAPACKAGE.utility.codec.CodecIndex.codec();
+    u.multipartBoundary = JAVAPACKAGE.utility.codec.CodecIndex.multipartBoundary();
   }
 
   /**
@@ -103,6 +107,9 @@ public final class Register {
       case "param":
         if (val instanceof Utility.ParamFn) { u.param = (Utility.ParamFn) val; return true; }
         return false;
+      case "codec":
+        if (val instanceof Map) { u.codec = (Map<String, Object>) val; return true; }
+        return false;
       default:
         break;
     }
@@ -136,6 +143,7 @@ public final class Register {
       case "resultHeaders": u.resultHeaders = (Utility.CtxFn) fn; return true;
       case "transformRequest": u.transformRequest = fn; return true;
       case "transformResponse": u.transformResponse = fn; return true;
+      case "multipartBoundary": u.multipartBoundary = (Utility.CtxFn) fn; return true;
       default: return false;
     }
   }

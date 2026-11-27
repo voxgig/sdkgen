@@ -219,10 +219,24 @@ object Clean {
     val body = Struct.getprop(ctx.point, "body")
     if ("raw" == Struct.getprop(body, "kind") &&
         java.lang.Boolean.TRUE == Struct.getprop(body, "binary")) {
-      val raw = if (ctx.reqdata == null) null else ctx.reqdata.get(Media.RawBody)
+      val lifted = if (ctx.sources == null) null else ctx.sources.get(Media.RawBody)
+      val raw = if (lifted != null) lifted else if (ctx.reqdata == null) null else ctx.reqdata.get(Media.RawBody)
+      val data = raw match { case s: BinarySource => s.data; case _ => null }
       val media = Struct.getprop(body, "media") match { case s: String => s; case _ => null }
       bodies = bodies :+ new BinaryBody(
-        List(if (ctx.spec == null) null else ctx.spec.body, raw).filter(isBody), media, true)
+        List(if (ctx.spec == null) null else ctx.spec.body, raw, data).filter(isBody), media, true)
+    }
+
+    // An encoded multipart body, and a form body that carries a file.
+    val kind = Struct.getprop(body, "kind")
+    val files = Struct.getprop(body, "fields") match {
+      case l: JList[_] => l.toArray.exists(f => java.lang.Boolean.TRUE == Struct.getprop(f, "binary"))
+      case _ => false
+    }
+    if ("multipart" == kind || ("form" == kind && files)) {
+      val sent = Response.headerValue(if (ctx.spec == null) null else ctx.spec.headers, "content-type")
+      bodies = bodies :+ new BinaryBody(
+        List(if (ctx.spec == null) null else ctx.spec.body).filter(isBody), if (sent.isEmpty) null else sent, true)
     }
 
     val response = ctx.response
@@ -354,6 +368,11 @@ object Clean {
     if (MAXDEPTH <= depth || seen.containsKey(v)) return CIRCULAR
 
     if (sensitiveKey(cfg, key)) return cfg.mask
+
+    v match {
+      case source: BinarySource => return source.describe()
+      case _ =>
+    }
 
     val desc = describeBinary(v, bin)
     if (desc != null) return desc

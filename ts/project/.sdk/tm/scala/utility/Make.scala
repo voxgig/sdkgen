@@ -122,7 +122,16 @@ object MakePoint {
       case _ => Seq.empty
     }
 
+  // Once the point is known, a body of bytes it answers is refused and the
+  // sources its binary fields carry are lifted out of the data.
   def makePoint(ctx: Context): JMap[String, Object] = {
+    val point = selectPoint(ctx)
+    Binary.bytesRefused(ctx)
+    Binary.liftSources(ctx)
+    point
+  }
+
+  private def selectPoint(ctx: Context): JMap[String, Object] = {
     val outPoint = ctx.out.get("point")
     if (outPoint != null) {
       // A PrePoint feature hook (e.g. rbac) may short-circuit by storing an

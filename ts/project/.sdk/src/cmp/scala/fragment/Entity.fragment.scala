@@ -12,6 +12,8 @@ class EntyClass(client0: SdkClient, entopts0: JMap[String, Object]) extends Enti
     new EntyClass(this.client, opts)
   }
 
+// #BinarySlot
+
 // #LoadOp
 
 // #ListOp
@@ -24,3 +26,5 @@ class EntyClass(client0: SdkClient, entopts0: JMap[String, Object]) extends Enti
 
 // #RemoveOp
 }
+
+// #BinaryTable

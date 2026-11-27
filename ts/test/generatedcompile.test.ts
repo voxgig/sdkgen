@@ -12274,6 +12274,28 @@ const CODEC_LANES: CodecLane[] = [
       return null == clj ? null : { bin: clj, args: ['-M:test', '--sdk-only'] }
     },
   },
+  {
+    target: 'scala',
+    runner: 'sdktest/CodecTest.scala',
+    needs: 'scala-cli (which resolves the Scala compiler from the network)',
+    command: () => {
+      const scalacli = toolchain('scala-cli')
+      return null == scalacli ? null
+        : { bin: scalacli, args: ['run', '.', '--main-class', 'SdkCodecTestMain'] }
+    },
+  },
+  {
+    target: 'java',
+    runner: 'test/CodecTest.java',
+    needs: 'java and maven',
+    command: () => maven(['-Dtest=CodecTest']),
+  },
+  {
+    target: 'kotlin',
+    runner: 'test/CodecTest.kt',
+    needs: 'gradle (which resolves the Kotlin plugin from the network)',
+    command: () => gradleTest('*CodecTest*'),
+  },
 ]
 
 
