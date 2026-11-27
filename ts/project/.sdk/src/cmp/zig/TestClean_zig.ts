@@ -772,7 +772,7 @@ test "clean: no credential leaves the SDK in any form" {
     const held = sdk.SDK.new(offline(h.jo(&.{
         .{ "apikey", h.vstr(CANARY_APIKEY) },
         .{ "system", h.jo(&.{.{ "fetch", Transport.make(.ok) }}) },
-    }))).options_map();
+    }))).ok.options_map();
     const heldjson = h.jsonify_compact(held);
     try testing.expectEqualStrings(CANARY_APIKEY, h.get_str(held, "apikey") orelse "");
     const heldat = std.mem.indexOf(u8, heldjson, CANARY_APIKEY) orelse heldjson.len;

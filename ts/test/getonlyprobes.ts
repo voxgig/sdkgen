@@ -505,9 +505,11 @@ test "getonly probe" {
     if (environ.getAlloc(h.A(), "GETONLY_TEST")) |_| {
         h.setp(h.getp(opts, "feature"), "test", h.jo(&.{.{ "active", h.vbool(true) }}));
     } else |_| {}
-    const client = sdk.SDK.new(opts);
-    switch (client.cat(Value{ .null = {} }).load(h.jo(&.{.{ "id", h.vstr("c1") }}), h.omap())) {
-        .ok => std.debug.print("getonly-probe: ok\n", .{}),
+    switch (sdk.SDK.new(opts)) {
+        .ok => |client| switch (client.cat(Value{ .null = {} }).load(h.jo(&.{.{ "id", h.vstr("c1") }}), h.omap())) {
+            .ok => std.debug.print("getonly-probe: ok\n", .{}),
+            .err => |e| std.debug.print("getonly-probe: {s} {s}\n", .{ e.code, e.msg }),
+        },
         .err => |e| std.debug.print("getonly-probe: {s} {s}\n", .{ e.code, e.msg }),
     }
 }

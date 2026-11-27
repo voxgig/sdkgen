@@ -2124,7 +2124,7 @@ src/cmp/zig/ReadmeTopHowto_zig.ts 28b8fe53c8c3
 src/cmp/zig/ReadmeTopQuick_zig.ts fc43379ec329
 src/cmp/zig/ReadmeTopTest_zig.ts feee7ba97c0f
 src/cmp/zig/Schema_zig.ts c55b2e5555f7
-src/cmp/zig/TestClean_zig.ts 1cf1ac1bdea1
+src/cmp/zig/TestClean_zig.ts f961da9b9ff9
 src/cmp/zig/TestDirect_zig.ts 60144692ef88
 src/cmp/zig/TestEntity_zig.ts a46e513a43a7
 src/cmp/zig/Test_zig.ts db2e195e07e2

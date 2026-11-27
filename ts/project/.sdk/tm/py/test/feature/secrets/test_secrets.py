@@ -33,6 +33,12 @@ import unittest
 
 import pytest
 
+try:
+    import requests  # noqa: F401
+    HAVE_REQUESTS = True
+except ImportError:
+    HAVE_REQUESTS = False
+
 from projectname_sdk import ProjectNameSDK
 from projectname_sdk.config import shared_config
 from projectname_sdk.features import _has_feature
@@ -47,6 +53,10 @@ ENVPREFIX = "PROJECTENV_TEST_SECRETS_"
 NOAUTH = "auth" not in shared_config().get("options", {})
 placing = pytest.mark.skipif(
     NOAUTH, reason="this SDK's config declares no auth, so it places no credential")
+
+# The exchange goes through the SDK's default transport, which needs requests.
+over_default_transport = pytest.mark.skipif(
+    not HAVE_REQUESTS, reason="the default transport needs the requests module")
 
 
 def cred_header():
@@ -449,8 +459,9 @@ if __name__ == "__main__":
 
 # ---------------------------------------------------------------------
 # Review-hardening pins (vendor-tag rollout, PR review): the exchange
-# works with ORDINARY options (no custom transport, the stdlib fallback
-# carries the purchase), and an uncached miss retracts the credential.
+# works with ORDINARY options (no custom transport: the SDK's own default
+# transport carries the purchase), and an uncached miss retracts the
+# credential.
 
 class _TokenEndpoint(http.server.BaseHTTPRequestHandler):
     refresh_seen = None
@@ -476,10 +487,11 @@ class _TokenEndpoint(http.server.BaseHTTPRequestHandler):
 @placing
 class TestSecretsReviewPins(unittest.TestCase):
 
-    def test_exchange_uses_the_raw_fallback_and_marshals_the_body(self):
+    @over_default_transport
+    def test_exchange_uses_the_default_transport_and_marshals_the_body(self):
         # A refresh token full of JSON-hostile characters must arrive at
-        # the endpoint as its literal value, through the feature's OWN
-        # raw transport - ordinary options carry no system.fetch for it.
+        # the endpoint as its literal value, through the SDK's default
+        # transport - ordinary options carry no system.fetch for it.
         tricky = 're"fresh\\to\nken'
         _TokenEndpoint.refresh_seen = None
 
@@ -489,9 +501,9 @@ class TestSecretsReviewPins(unittest.TestCase):
         try:
             # NO system.fetch anywhere: with the seam set, the purchase
             # rightly prefers it - the point of this pin is the OTHER
-            # case, ordinary options, where the feature's own stdlib
-            # fallback must carry the exchange. Only PreSpec runs, so no
-            # API call ever leaves; the one HTTP request is the purchase.
+            # case, ordinary options, where the default transport must
+            # carry the exchange. Only PreSpec runs, so no API call ever
+            # leaves; the one HTTP request is the purchase.
             sdk = secrets_sdk({
                 "base": "http://127.0.0.1:%d/api" % srv.server_port,
                 "feature": {"secrets": {
@@ -548,7 +560,8 @@ class TestSecretsReviewPins(unittest.TestCase):
             srv.shutdown()
             srv.server_close()
 
-    # Real listeners and the raw fallback transport: a stub follows nothing.
+    # Real listeners and the default transport: a stub follows nothing.
+    @over_default_transport
     def test_a_redirect_answering_the_exchange_is_a_failure(self):
         with _origins() as o:
             answers = [[307, o["away"]], [308, o["away"]], [302, o["away"]],
@@ -577,6 +590,7 @@ class TestSecretsReviewPins(unittest.TestCase):
             self.assertEqual([], allowed, "a redirect was not a failed exchange")
             self.assertEqual(len(answers), refused)
 
+    @over_default_transport
     def test_with_the_option_a_redirect_on_the_exchange_s_own_origin_is_followed(self):
         with _origins() as o:
             # Each case: the status, the Location, and the path the exchange is

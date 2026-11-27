@@ -8614,7 +8614,10 @@ const SECRETS_LANES: SecretsLane[] = [
   {
     target: 'py',
     runner: 'test/feature/secrets/test_secrets.py',
-    command: () => pytest(['test/feature/secrets/test_secrets.py', '-q', '-s']),
+    command: () => pytest(['test/feature/secrets/test_secrets.py', '-q', '-s', '-rs']),
+    // The exchange tests go over the default transport, which needs requests.
+    unrun: (out) => /SKIPPED.*the default transport needs the requests module/.test(out)
+      ? 'the exchange tests skipped: no requests module here' : null,
   },
   {
     target: 'php',
@@ -11394,9 +11397,10 @@ function nonjsonServer(dir: string, cases: string): Promise<{ port: number, stop
 
 
 // Each target's SDK is generated once, and every probe runs beside it.
-// The exchange runs over each SDK's default transport, which some platforms
-// cannot supply: py's needs the requests module, and c's and the vendored
-// client cpp falls back to need POSIX sockets.
+// The exchange runs over each SDK's default transport, which some machines
+// cannot supply: py's needs the requests module, lua's luasocket, c's and
+// the vendored client cpp falls back to POSIX sockets, and that client the
+// OpenSSL headers.
 function liveExchangeUnready(target: string): string | null {
   if ('py' === target) {
     const py = mediaPython()
@@ -11405,6 +11409,25 @@ function liveExchangeUnready(target: string): string | null {
   }
   if ('win32' === process.platform && ('c' === target || 'cpp' === target)) {
     return 'the default transport needs POSIX sockets, which windows lacks'
+  }
+  if ('lua' === target) {
+    const lua = mediaLua()
+    return null == lua || !probeOk(lua, ['-e', 'require "socket.http"'])
+      ? 'needs lua with luasocket to send the exchange' : null
+  }
+  if ('cpp' === target) {
+    const cxx = cleanCxx()
+    if (null == cxx) return null
+    const dir = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-cpp-ssl-'))
+    try {
+      const probe = Path.join(dir, 'ssl.cpp')
+      Fs.writeFileSync(probe, '#include <openssl/ssl.h>\nint main() { return 0; }\n')
+      const hdr = run(cxx, ['-fsyntax-only', probe], dir)
+      return hdr.ok ? null : 'the vendored client needs the OpenSSL development headers'
+    }
+    finally {
+      Fs.rmSync(dir, { recursive: true, force: true })
+    }
   }
   return null
 }
