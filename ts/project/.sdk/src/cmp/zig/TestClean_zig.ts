@@ -768,6 +768,18 @@ test "clean: no credential leaves the SDK in any form" {
     try testing.expect(h.getp(direct, "ok") == .bool and !h.getp(direct, "ok").bool);
     sinks.value("direct", direct);
 
+    // The clean registry holds every credential in plain form, and is no option.
+    const held = sdk.SDK.new(offline(h.jo(&.{
+        .{ "apikey", h.vstr(CANARY_APIKEY) },
+        .{ "system", h.jo(&.{.{ "fetch", Transport.make(.ok) }}) },
+    }))).options_map();
+    const heldjson = h.jsonify_compact(held);
+    try testing.expectEqualStrings(CANARY_APIKEY, h.get_str(held, "apikey") orelse "");
+    const heldat = std.mem.indexOf(u8, heldjson, CANARY_APIKEY) orelse heldjson.len;
+    const heldrest = fmt("{s}{s}", .{ heldjson[0..heldat], heldjson[@min(heldjson.len, heldat + CANARY_APIKEY.len)..] });
+    if (0 < leaks(heldrest).len) std.debug.print("clean: options_map carries {s}\\n", .{heldjson});
+    try testing.expect(0 == leaks(heldrest).len);
+
     var leaked: usize = 0;
     for (sinks.items.items) |s| {
         const found = leaks(s.text);

@@ -613,6 +613,13 @@ ${candidates(Name, entity, model)}
     assert S.getprop(direct, "ok") == false, "a transport failure should fail direct()"
     add(sinks, forms("direct", S.getprop(direct, "err")))
 
+    # The clean registry holds every credential in plain form, and is no option.
+    held = ${Name}.options_map(construct(S.jm(["apikey", @canary.apikey])))
+    heldjson = S.jsonify(held)
+    assert S.getprop(held, "apikey") == @canary.apikey
+    assert leaks(String.replace(heldjson, @canary.apikey, "", global: false)) == [],
+           "options_map carries a credential beyond the option the caller set: " <> heldjson
+
     all = sink_list(sinks)
     leaked = Enum.filter(all, fn s -> leaks(s.text) != [] end)
 
@@ -683,7 +690,7 @@ ${candidates(Name, entity, model)}
 
   test "a registered value used as a property name is masked, collisions kept" do
     cfg = ${Name}.Utility.make_clean_config(S.jm(["keys", "key,secret,token"]))
-    ctx = S.jm(["options", S.jm(["__derived__", S.jm(["clean", cfg])])])
+    ctx = S.jm(["cleancfg", cfg])
     ${Name}.Utility.clean_add_impl(ctx, "ZZVAL-abc123")
     ${Name}.Utility.clean_add_impl(ctx, "ZZVAL-xyz789")
     out = ${Name}.Utility.clean_impl(ctx, S.jm(["ZZVAL-abc123", 1, "ZZVAL-xyz789", 2, "plain", 3]))
@@ -724,7 +731,8 @@ ${candidates(Name, entity, model)}
   test "the generated config's own clean block is honoured" do
     config = S.jm(["options", S.jm(["clean", S.jm(["keys", "zzsens", "values", "CONFIG-SEEDED-1"])])])
     ctx = S.jm(["config", config, "options", S.jm(["clean", S.jm(["values", "CALLER-SEEDED-2"])])])
-    cctx = S.jm(["options", ${Name}.Utility.make_options_impl(ctx)])
+    S.setprop(ctx, "options", ${Name}.Utility.make_options_impl(ctx))
+    cctx = ctx
 
     assert ${Name}.Utility.clean_impl(cctx, "a CONFIG-SEEDED-1 b CALLER-SEEDED-2") ==
              "a " <> @mask <> " b " <> @mask
@@ -738,7 +746,7 @@ ${candidates(Name, entity, model)}
 
   test "clean_add_sensitive registers every scalar under a sensitive name, at any depth" do
     cfg = ${Name}.Utility.make_clean_config(S.jm(["keys", "key,secret,token"]))
-    ctx = S.jm(["options", S.jm(["__derived__", S.jm(["clean", cfg])])])
+    ctx = S.jm(["cleancfg", cfg])
 
     ${Name}.Utility.clean_add_sensitive(ctx, S.jm([
       "apikey", S.jm(["value", "NESTED-SECRET-1"]),

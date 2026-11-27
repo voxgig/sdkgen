@@ -141,16 +141,13 @@ local function make_clean_config(cleanopts)
 end
 
 
--- A context without options (make_error accepts a bare one) still masks by
--- the schema defaults.
+-- A context without a registry (make_error accepts a bare one) still masks
+-- by the schema defaults.
 local function clean_config(ctx)
-  if type(ctx) == "table" and type(ctx.options) == "table" then
-    local derived = ctx.options["__derived__"]
-    if type(derived) == "table" and type(derived.clean) == "table"
-      and type(derived.clean.values) == "table"
-    then
-      return derived.clean
-    end
+  if type(ctx) == "table" and type(ctx.cleancfg) == "table"
+    and type(ctx.cleancfg.values) == "table"
+  then
+    return ctx.cleancfg
   end
 
   local ok, schema = pcall(require, "schema")

@@ -200,20 +200,21 @@ function makeClient(spec: {
     },
   }
 
+  const cleancfg = cleanmod.makeCleanConfig({ ...CLEAN_DEFAULTS, ...((spec.options || {}).clean || {}) })
+
   const client: any = {
     _mode: spec.mode || 'test',
     _features: [],
     _options: {
       base, headers: spec.headers || {}, feature: {},
       ...(spec.options || {}),
-      __derived__: { clean: cleanmod.makeCleanConfig({ ...CLEAN_DEFAULTS, ...((spec.options || {}).clean || {}) }) },
     },
     options() { return this._options },
     utility() { return utility },
   }
   for (const raw of [client._options.apikey, client._options.secret]
     .concat(cleanmod.splitvalues(client._options.clean?.values))) {
-    cleanmod.cleanAdd({ options: client._options }, raw)
+    cleanmod.cleanAdd({ cleancfg }, raw)
   }
 
   function makeErr(code: string, msg: string): any {
@@ -231,6 +232,7 @@ function makeClient(spec: {
       client,
       utility,
       options: client._options,
+      cleancfg,
       out: {},
       ctrl: over.ctrl || {},
       meta: {},

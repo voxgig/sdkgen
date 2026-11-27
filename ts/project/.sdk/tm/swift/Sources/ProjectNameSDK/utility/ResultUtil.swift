@@ -134,9 +134,8 @@ func transformResponseUtil(_ ctx: Context) -> Value {
 // stays raw, so a hook can still read the header it must add to. See
 // docs/explanation/secret-redaction.md.
 
-// The derived clean block, MUTABLE after makeOptions since features register
-// values later. Carried as a native object under options.__derived__.clean,
-// which JSON.stringify prints as "<function>" rather than as the registry.
+// The clean registry, MUTABLE after makeOptions since features register
+// values later. Held on the context beside the options, never in them.
 // Nested in Utility, whose registry it is, so no entity type can collide
 // with it.
 extension Utility {
@@ -247,10 +246,10 @@ func makeCleanConfig(_ cleanopts: Value) -> Utility.CleanConfig {
   return cfg
 }
 
-// A context without options (makeError accepts a bare one) still masks by
+// A context without a registry (makeError accepts a bare one) still masks by
 // the schema defaults.
 func cleanConfigOf(_ ctx: Context) -> Utility.CleanConfig {
-  if let cfg = gpath(ctx.options, "__derived__", "clean").asNative as? Utility.CleanConfig {
+  if let cfg = ctx.cleancfg {
     return cfg
   }
   return makeCleanConfig(gp(SdkSchema.optspec, "clean"))

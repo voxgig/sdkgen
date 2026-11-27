@@ -65,6 +65,8 @@ pub struct SecretsState {
     /// The client's options, READ-ONLY. This feature never writes them -
     /// see the header note.
     options: Value,
+    /// The client's clean registry, which a resolved value joins.
+    cleancfg: Value,
     mode: String,
 
     /// What prepare_auth was generated from: the config declares auth only
@@ -95,6 +97,7 @@ impl SecretsState {
             cache: true,
             exchange: None,
             options: Value::Noval,
+            cleancfg: Value::Noval,
             mode: "live".to_string(),
             declared: false,
             basic: false,
@@ -225,6 +228,7 @@ impl Feature for SecretsFeature {
             .map(|c| c.mode.borrow().clone())
             .unwrap_or_else(|| "live".to_string());
         state.options = ctx.options.borrow().clone();
+        state.cleancfg = ctx.cleancfg.borrow().clone();
 
         let config = ctx.config.borrow().clone();
         let declared = getpath(&["options", "auth"], &config);
@@ -272,7 +276,7 @@ impl Feature for SecretsFeature {
         let mut specs: Vec<ProviderSpec> = Vec::new();
 
         if !explicit.is_empty() {
-            register(&state.options, &explicit);
+            register(&state.cleancfg, &explicit);
             match envkey(&state.secretname, "") {
                 Ok(key) => {
                     let mut values: BTreeMap<String, String> = BTreeMap::new();
@@ -465,7 +469,7 @@ fn resolve_once(state: &Rc<RefCell<SecretsState>>) -> Result<bool, ProjectNameEr
     let found = found.map_err(|err| fail(&format!("{}", err)))?;
 
     if let Some(value) = &found {
-        register(&state.borrow().options, value);
+        register(&state.borrow().cleancfg, value);
     }
 
     {
@@ -693,15 +697,15 @@ fn buy(state: &Rc<RefCell<SecretsState>>) -> Result<String, ProjectNameError> {
 
     let token = buy_once(state)?;
     state.borrow_mut().cred = token.clone();
-    register(&state.borrow().options, &token);
+    register(&state.borrow().cleancfg, &token);
 
     Ok(token)
 }
 
 // A resolved or bought value arrives under no option key the intake
-// registration saw; the options map is the client's own, Rc-shared.
-fn register(options: &Value, value: &str) {
-    crate::utility::clean::clean_add_opts(options, value);
+// registration saw; the registry is the client's own, Rc-shared.
+fn register(cleancfg: &Value, value: &str) {
+    crate::utility::clean::clean_add_cfg(cleancfg, value);
 }
 
 fn buy_once(state: &Rc<RefCell<SecretsState>>) -> Result<String, ProjectNameError> {

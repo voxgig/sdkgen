@@ -172,20 +172,13 @@ class ProjectNameClean
         }));
     }
 
-    // A context without options (make_error is reached with a bare one)
+    // A context without a registry (make_error is reached with a bare one)
     // falls back to the schema defaults, so nothing leaves raw for want of a
     // constructor.
     private static function config_of(?ProjectNameContext $ctx): \stdClass
     {
-        $derived = null;
-        if (null !== $ctx && is_array($ctx->options)) {
-            $derived = $ctx->options['__derived__']['clean'] ?? null;
-        }
-        if ($derived instanceof \stdClass) {
-            return $derived;
-        }
-        if (is_array($derived)) {
-            return (object)$derived;
+        if (null !== $ctx && $ctx->cleancfg instanceof \stdClass) {
+            return $ctx->cleancfg;
         }
         require_once __DIR__ . '/../schema.php';
         return self::config(\Voxgig\Struct\Struct::getprop(ProjectNameSchema::optspec(), 'clean'));

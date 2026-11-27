@@ -154,13 +154,7 @@ public static partial class SdkUtility
             cleanlayers.Add(cleanraw);
         }
         var cleancfg = MakeCleanConfig(StructUtils.Merge(cleanlayers));
-        var cleanctx = new Context(new Dictionary<string, object?>
-        {
-            ["options"] = new Dictionary<string, object?>
-            {
-                ["__derived__"] = new Dictionary<string, object?> { ["clean"] = cleancfg },
-            },
-        }, null);
+        var cleanctx = new Context(new Dictionary<string, object?> { ["cleancfg"] = cleancfg }, null);
         CleanAddOptions(cleanctx, opts, "clean");
         foreach (var raw in CleanSplitValues(
                 StructUtils.GetPath(cfgopts, StructUtils.Jt("clean", "values")))
@@ -352,11 +346,10 @@ public static partial class SdkUtility
             }
         }
 
-        opts["__derived__"] = new Dictionary<string, object?>
-        {
-            ["clean"] = cleancfg,
-            ["featureorder"] = featureorder,
-        };
+        opts["__derived__"] = new Dictionary<string, object?> { ["featureorder"] = featureorder };
+
+        // Beside the options, not in them: OptionsMap hands them to callers.
+        ctx.CleanCfg = cleancfg;
 
         // Again over the merged result: the config's own defaults can carry one.
         CleanAddOptions(cleanctx, opts, "clean", "__derived__");

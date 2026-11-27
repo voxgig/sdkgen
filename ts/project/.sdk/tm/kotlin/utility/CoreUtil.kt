@@ -40,7 +40,7 @@ private class BinaryBody(val live: List<Any>, val type: String?, val sized: Bool
   fun holds(v: Any): Boolean = live.any { it === v || (v is String && v == it) }
 }
 
-// The derived clean block: built by makeOptions from the raw input, grown by
+// The clean registry: built by makeOptions from the raw input, grown by
 // cleanAdd for as long as the client lives (features register later).
 class CleanConfig(
   val active: Boolean,
@@ -95,12 +95,12 @@ fun makeCleanConfig(cleanopts: Any?): CleanConfig {
   )
 }
 
-// A context without options (makeError accepts a bare one) still masks by
+// A context without a registry (makeError accepts a bare one) still masks by
 // the schema defaults.
 private fun cleanConfig(ctx: Context?): CleanConfig {
-  val derived = Helpers.toMapAny(ctx?.options?.get("__derived__"))?.get("clean")
-  if (derived is CleanConfig) {
-    return derived
+  val cfg = ctx?.cleancfg
+  if (cfg is CleanConfig) {
+    return cfg
   }
   return makeCleanConfig(Schema.optspec["clean"])
 }

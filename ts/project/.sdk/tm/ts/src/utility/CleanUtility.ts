@@ -67,7 +67,7 @@ function count(val: any, dflt: number): number {
 // A context without options (makeError accepts a bare one) still masks by
 // the schema defaults.
 function cleanConfig(ctx: any): CleanConfig {
-  const derived = ctx?.options?.__derived__?.clean
+  const derived = ctx?.cleancfg
   if (null != derived) {
     return derived
   }

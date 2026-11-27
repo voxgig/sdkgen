@@ -24,6 +24,8 @@ public class Context {
   public Map<String, Object> config;
   public Map<String, Object> entopts;
   public Map<String, Object> options;
+  // The clean registry, beside the options rather than in them.
+  public Map<String, Object> cleancfg;
   public Map<String, Operation> opmap;
   public Response response;
   public Result result;
@@ -123,6 +125,13 @@ public class Context {
     }
     if (this.options == null && basectx != null) {
       this.options = basectx.options;
+    }
+    Object cc = Helpers.getCtxProp(ctxmap, "cleancfg");
+    if (cc instanceof Map) {
+      this.cleancfg = (Map<String, Object>) cc;
+    }
+    if (this.cleancfg == null && basectx != null) {
+      this.cleancfg = basectx.cleancfg;
     }
 
     // Entity

@@ -95,6 +95,10 @@ class ProjectNameContext:
         else:
             self.options = None
 
+        # The clean registry, beside the options rather than in them.
+        cc = get_ctx_prop(ctxmap, "cleancfg")
+        self.cleancfg = cc if cc is not None else getattr(basectx, "cleancfg", None)
+
         # Entity
         e = get_ctx_prop(ctxmap, "entity")
         if e is not None:

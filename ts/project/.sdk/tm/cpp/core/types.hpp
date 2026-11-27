@@ -460,6 +460,7 @@ struct CtxSpec {
 
   Value config = Value::undef();
   Value options = Value::undef();
+  Value cleancfg = Value::undef();
   Value shared = Value::undef();
   Value meta = Value::undef();
   Value entopts = Value::undef();
@@ -511,6 +512,8 @@ public:
   Value config = Value::undef();
   Value entopts = Value::undef();
   Value options = Value::undef();
+  // The clean registry, beside the options rather than in them.
+  Value cleancfg = Value::undef();
   OpMapPtr opmap;
   ResponsePtr response;
   ResultPtr result;
@@ -633,9 +636,9 @@ public:
 
 // ---- SdkClient --------------------------------------------------------
 
-// A registration replaces the secret registry (options.__derived__.clean
-// .values) while requests copy the options: it holds this lock exclusively,
-// and every read of that slot holds it shared.
+// A registration replaces the secret registry's `values` slot while other
+// threads clean: it holds this lock exclusively, and every read of that slot
+// holds it shared.
 inline std::shared_mutex& cleanRegistryLock() {
   // winpthreads sets up a static rwlock on its first lock, failing threads
   // that race it with EINVAL; that first lock runs in this static's
@@ -814,6 +817,8 @@ inline Context::Context(const CtxSpec& cs, const CtxPtr& basectx) {
   // Options
   if (cs.options.is_map()) options = cs.options;
   if (options.is_undef() && basectx) options = basectx->options;
+  if (cs.cleancfg.is_map()) cleancfg = cs.cleancfg;
+  if (cleancfg.is_undef() && basectx) cleancfg = basectx->cleancfg;
 
   // Entity
   entity = cs.entity;
@@ -981,7 +986,6 @@ inline SdkClient::SdkClient(const Value& options_) {
 }
 
 inline Value SdkClient::optionsMap() {
-  std::shared_lock<std::shared_mutex> guard(cleanRegistryLock());
   Value out = Struct::clone(options);
   return out.is_map() ? out : vmap();
 }

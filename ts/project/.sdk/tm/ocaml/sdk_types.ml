@@ -263,6 +263,8 @@ and ctx = {
   mutable c_config : value;
   mutable c_entopts : value;
   mutable c_options : value;
+  (* The clean registry, beside the options rather than in them. *)
+  mutable c_cleancfg : value;
   (* Shared by every context of one client, so by requests on other domains:
    * a map replaced whole, never changed in place. *)
   mutable c_opmap : operation OpMap.t Atomic.t;

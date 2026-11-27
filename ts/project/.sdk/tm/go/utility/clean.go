@@ -151,15 +151,13 @@ func makeCleanConfig(cleanopts map[string]any) *cleanConfig {
 	return cfg
 }
 
-// The derived block makeOptions builds; a context without options (makeError
-// is reached with a bare one) falls back to the schema defaults, so nothing
+// The registry makeOptions builds; a context without one (makeError is
+// reached with a bare one) falls back to the schema defaults, so nothing
 // leaves raw for want of a constructor.
 func cleanConfigOf(ctx *core.Context) *cleanConfig {
-	if ctx != nil && ctx.Options != nil {
-		if derived, ok := ctx.Options["__derived__"].(map[string]any); ok {
-			if cfg, ok := derived["clean"].(*cleanConfig); ok {
-				return cfg
-			}
+	if ctx != nil {
+		if cfg, ok := ctx.CleanCfg.(*cleanConfig); ok {
+			return cfg
 		}
 	}
 	spec, _ := core.OPTSPEC["clean"].(map[string]any)

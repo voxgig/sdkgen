@@ -490,6 +490,19 @@ let () =
       let direct = Sdk_client.direct (make_sdk (List.nth scenarios 3) sinks []) (jo [("path", Str "raw")]) in
       check "a transport failure should fail direct()" (getp direct "ok" = Bool false);
       value_forms sinks "direct" direct;
+      (* The clean registry holds every credential in plain form, and is no option. *)
+      let key = canary_of "apikey" in
+      let held = client_options_map (construct (jo [("apikey", Str key)])) in
+      let heldjson = jsonify held in
+      check_vstr "options_map keeps the caller's apikey" (getp held "apikey") key;
+      let heldrest =
+        let n = String.length key and m = String.length heldjson in
+        let rec find i = if i + n > m then None else if String.sub heldjson i n = key then Some i else find (i + 1) in
+        match find 0 with
+        | Some i -> String.sub heldjson 0 i ^ String.sub heldjson (i + n) (m - i - n)
+        | None -> heldjson in
+      if leaks heldrest <> [] then
+        failwith ("options_map carries a credential beyond the option the caller set: " ^ heldjson);
       let leaked = List.filter (fun (_, text) -> leaks text <> []) !sinks in
       Printf.printf "clean: swept %d surface(s), %d leak(s)\\n%!" (List.length !sinks) (List.length leaked);
       if leaked <> [] then
@@ -553,7 +566,7 @@ let () =
 let clean_ctx () : value * ctx =
   let cfg = make_clean_config (jo [("keys", Str "key,secret,token")]) in
   let base = make_context_impl (default_ctxspec ()) None in
-  (cfg, { base with c_options = jo [("__derived__", jo [("clean", cfg)])] })
+  (cfg, { base with c_cleancfg = cfg })
 
 let () =
   test "clean.a_registered_value_used_as_a_property_name" (fun () ->
@@ -601,9 +614,10 @@ let () =
       let base = make_context_impl (default_ctxspec ()) None in
       let config = jo [("options", jo [("clean", jo [
           ("keys", Str "zzsens"); ("values", Str "CONFIG-SEEDED-1")])])] in
-      let opts = make_options_util { base with c_config = config;
-                                               c_options = jo [("clean", jo [("values", Str "CALLER-SEEDED-2")])] } in
-      let ctx = { base with c_options = opts } in
+      let cctx = { base with c_config = config;
+                             c_options = jo [("clean", jo [("values", Str "CALLER-SEEDED-2")])] } in
+      let opts = make_options_util cctx in
+      let ctx = { cctx with c_options = opts } in
       check_vstr "both seeded values are masked"
         (clean_util ctx (Str "a CONFIG-SEEDED-1 b CALLER-SEEDED-2")) ("a " ^ mask ^ " b " ^ mask);
       let out = clean_util ctx (jo [("my_zzsens", Str "x"); ("other", Str "y")]) in

@@ -39,6 +39,9 @@ class Context {
   entopts
   options
 
+  // The clean registry, which holds every registered credential in plain form.
+  cleancfg
+
   opmap
 
   response
@@ -72,6 +75,7 @@ class Context {
     this.config = getprop(ctxmap, 'config', getprop(basectx, 'config'))
     this.entopts = getprop(ctxmap, 'entopts', getprop(basectx, 'entopts'))
     this.options = getprop(ctxmap, 'options', getprop(basectx, 'options'))
+    this.cleancfg = getprop(ctxmap, 'cleancfg', getprop(basectx, 'cleancfg'))
 
     this.entity = getprop(ctxmap, 'entity', getprop(basectx, 'entity'))
     this.shared = getprop(ctxmap, 'shared', getprop(basectx, 'shared'))

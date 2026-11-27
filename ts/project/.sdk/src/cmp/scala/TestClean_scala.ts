@@ -106,6 +106,32 @@ object SdkCleanTestMain {
   private def I(n: Int): java.lang.Integer = java.lang.Integer.valueOf(n)
   private def B(b: Boolean): java.lang.Boolean = java.lang.Boolean.valueOf(b)
 
+  // Every string a value holds, private fields included, as a debugger shows them.
+  private def dump(v: Any, depth: Int = 0): String =
+    if (v == null || 12 < depth) ""
+    else v match {
+      case s: String => s
+      case m: JMap[_, _] =>
+        val out = new StringBuilder("{")
+        val it = m.entrySet().iterator()
+        while (it.hasNext) {
+          val e = it.next()
+          out.append(dump(e.getKey, depth + 1)).append('=').append(dump(e.getValue, depth + 1)).append(' ')
+        }
+        out.append('}').toString
+      case l: java.lang.Iterable[_] =>
+        val out = new StringBuilder("[")
+        val it = l.iterator()
+        while (it.hasNext) out.append(dump(it.next(), depth + 1)).append(' ')
+        out.append(']').toString
+      case _ if v.getClass.getName.startsWith("java.") || v.getClass.getName.startsWith("scala.") =>
+        String.valueOf(v)
+      case _ =>
+        v.getClass.getDeclaredFields.filter(f => !Modifier.isStatic(f.getModifiers)).map { f =>
+          try { f.trySetAccessible(); dump(f.get(v), depth + 1) } catch { case _: Exception => "" }
+        }.mkString("{", " ", "}")
+    }
+
   private def hasFeature(name: String): Boolean = {
     val fm = Helpers.toMapAny(Config.sharedConfig().get("feature"))
     fm != null && fm.get(name) != null
@@ -596,6 +622,14 @@ object SdkCleanTestMain {
     // An error's code is cleaned like its message.
     val coded = probe.getUtility().clean(probe.getRootCtx(), new SdkError("code_" + CANARY_VALUE, "coded", null))
     collect(sinks, "coded", coded)
+
+    // The clean registry holds every credential in plain form, and is no option.
+    val held = construct(om("apikey" -> CANARY_APIKEY)).optionsMap()
+    val helddump = dump(held)
+    rep.check("clean.options-apikey", CANARY_APIKEY == held.get("apikey"), "optionsMap lost the caller's apikey")
+    rep.check("clean.options-registry",
+      leaks(helddump.replaceFirst(java.util.regex.Pattern.quote(CANARY_APIKEY), "")).isEmpty,
+      "optionsMap carries a credential beyond the option the caller set: " + helddump)
 
     val all = sinks.toArray(new Array[Sink](0)).toList
     val leaked = all.map(s => (s.name, leaks(s.text))).filter(l => l._2.nonEmpty)

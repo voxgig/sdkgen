@@ -190,6 +190,33 @@ func cleanContentLeaks(text string, forms [][2]string) []string {
 
 // The default prints and the JSON form of a value: what a log line, a panic
 // message or a structured logger would carry.
+// Every string a value holds, unexported fields included, as a debugger shows them.
+func cleanDump(v reflect.Value, depth int) string {
+	if !v.IsValid() || 12 < depth {
+		return ""
+	}
+	parts := []string{}
+	switch v.Kind() {
+	case reflect.String:
+		return v.String()
+	case reflect.Ptr, reflect.Interface:
+		return cleanDump(v.Elem(), depth+1)
+	case reflect.Map:
+		for _, k := range v.MapKeys() {
+			parts = append(parts, cleanDump(k, depth+1)+"="+cleanDump(v.MapIndex(k), depth+1))
+		}
+	case reflect.Slice, reflect.Array:
+		for i := 0; i < v.Len(); i++ {
+			parts = append(parts, cleanDump(v.Index(i), depth+1))
+		}
+	case reflect.Struct:
+		for i := 0; i < v.NumField(); i++ {
+			parts = append(parts, cleanDump(v.Field(i), depth+1))
+		}
+	}
+	return "{" + strings.Join(parts, " ") + "}"
+}
+
 func cleanSurfaces(name string, val any) []cleanSink {
 	out := []cleanSink{}
 	if raw, err := json.Marshal(val); err == nil {
@@ -872,15 +899,16 @@ func TestCleanSweep(t *testing.T) {
 	// and is not changed by it.
 	cfgclean := map[string]any{"keys": "zzsens", "values": cleanCanary["config"]}
 	util := probe.GetUtility()
-	cfgopts, err := util.MakeOptions(&core.Context{
+	cfgctx := &core.Context{
 		Utility: util,
 		Config:  map[string]any{"options": map[string]any{"clean": cfgclean}},
 		Options: map[string]any{"clean": map[string]any{"values": cleanCanary["value"]}},
-	})
+	}
+	cfgopts, err := util.MakeOptions(cfgctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	cfgctx := &core.Context{Options: cfgopts}
+	cfgctx.Options = cfgopts
 	seeded, _ := util.Clean(cfgctx, "config "+cleanCanary["config"]+" caller "+cleanCanary["value"]).(string)
 	sinks = append(sinks, cleanSink{"config-clean", seeded})
 	if want := "config " + cleanMask + " caller " + cleanMask; seeded != want {
@@ -939,6 +967,14 @@ func TestCleanSweep(t *testing.T) {
 	}
 	if got, _ := fclean(featured.GetRootCtx(), "rule PLAINRULE-k7j5h3g1").(string); got != "rule PLAINRULE-k7j5h3g1" {
 		t.Errorf("an rbac rule keyed by entity and operation was registered: %q", got)
+	}
+
+	// The clean registry holds every credential in plain form, and is no option.
+	held := cleanNew(map[string]any{"apikey": cleanCanary["apikey"]}).OptionsMap()
+	helddump := cleanDump(reflect.ValueOf(held), 0)
+	if held["apikey"] != cleanCanary["apikey"] ||
+		0 < len(cleanLeaks(strings.Replace(helddump, cleanCanary["apikey"], "", 1))) {
+		t.Errorf("OptionsMap() carries a credential beyond the option the caller set: %s", helddump)
 	}
 
 	leaked := []string{}

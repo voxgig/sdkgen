@@ -910,6 +910,20 @@ int main(void) {
         "a transport failure should fail direct()");
   push_value("direct", direct);
 
+  // The clean registry holds every credential in plain form, and is no option.
+  {
+    voxgig_value* held = sdk_options_map(${ident}_sdk_new(offline(cmap(1,
+      "apikey", v_str(CANARY_APIKEY))), NULL));
+    char* heldjson = voxgig_jsonify(held, NULL);
+    CHECK_STR_EQ(header(held, "apikey"), CANARY_APIKEY, "options_map keeps the caller's apikey");
+    char* at = strstr(heldjson, CANARY_APIKEY);
+    if (at) memmove(at, at + strlen(CANARY_APIKEY), strlen(at + strlen(CANARY_APIKEY)) + 1);
+    char heldfound[4096];
+    CHECK(0 == leaks(heldjson, heldfound, sizeof(heldfound)),
+          "options_map carries a credential beyond the option the caller set");
+    if (heldfound[0]) fprintf(stderr, "options_map: [%s]\\n", heldfound);
+  }
+
   size_t nleaks = 0;
   char found[4096];
   for (size_t i = 0; i < NSINKS; i++) {

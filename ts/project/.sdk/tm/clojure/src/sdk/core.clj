@@ -354,6 +354,8 @@
         config (let [c (cprop "config")] (if (vs/ismap c) c (bget :config)))
         entopts (let [e (cprop "entopts")] (if (vs/ismap e) e (bget :entopts)))
         options (let [o (cprop "options")] (if (vs/ismap o) o (bget :options)))
+        ;; The clean registry, beside the options rather than in them.
+        cleancfg (or (cprop "cleancfg") (bget :cleancfg))
         entity (or (cprop "entity") (bget :entity))
         shared (let [s (cprop "shared")] (if (vs/ismap s) s (bget :shared)))
         opmap (or (cprop "opmap") (bget :opmap) (atom {}))
@@ -369,7 +371,8 @@
         ctx (atom {:id (str "C" (+ 10000000 (rand-int 89999999)))
                    :out (atom (vs/jm))
                    :client client :utility utility :ctrl ctrl :meta meta
-                   :config config :entopts entopts :options options :entity entity
+                   :config config :entopts entopts :options options :cleancfg cleancfg
+                   :entity entity
                    :shared shared :opmap opmap
                    :data (dmap "data") :reqdata (dmap "reqdata")
                    :match (dmap "match") :reqmatch (dmap "reqmatch")
@@ -491,8 +494,8 @@
   (let [n (try (long (Math/floor (Double/parseDouble (str v)))) (catch Exception _ nil))]
     (if (and n (<= 0 n)) n dflt)))
 
-;; The derived clean block: a java.util.Map so it lives in options.__derived__
-;; and its `values` list can be replaced after make-options - features
+;; The clean registry: a java.util.Map, held on the context as :cleancfg,
+;; whose `values` list can be replaced after make-options - features
 ;; register what they resolve later. Concurrent, so a clean or a request
 ;; copying the options reads it without the lock and sees the last put.
 (defn make-clean-config [cleanopts]
@@ -507,12 +510,11 @@
       (.put "hint" (count-opt (o "hint") 0))
       (.put "min" (max 1 (count-opt (o "min") 4))))))
 
-;; A context without options (make-error accepts a bare one) still masks by
-;; the schema defaults.
+;; A context without a registry (make-error accepts a bare one) still masks
+;; by the schema defaults.
 (defn- clean-config [ctx]
-  (let [options (when (instance? clojure.lang.IDeref ctx) (oget ctx :options))
-        derived (when (vs/ismap options) (vs/getpath options "__derived__.clean"))]
-    (if (vs/ismap derived) derived (make-clean-config (vs/getprop @optspec-parsed "clean")))))
+  (let [cfg (when (instance? clojure.lang.IDeref ctx) (oget ctx :cleancfg))]
+    (if (vs/ismap cfg) cfg (make-clean-config (vs/getprop @optspec-parsed "clean")))))
 
 ;; The encoded forms a value travels in.
 (defn- clean-forms [^String value]
@@ -1833,7 +1835,7 @@
                         (when (vs/ismap src)
                           (doseq [k (vs/keysof src)] (.put ^java.util.Map out k (vs/getprop src k)))))
                       out))
-          cleanctx (atom {:options (vs/jm "__derived__" (vs/jm "clean" cleancfg))})
+          cleanctx (atom {:cleancfg cleancfg})
           _ (clean-add-options cleanctx (omit-keys opts0 ["clean"]))
           _ (doseq [raw (concat (splitvalues (vs/getpath cfgopts "clean.values"))
                                 (splitvalues (vs/getpath opts0 "clean.values")))]
@@ -1896,10 +1898,12 @@
                 (when (some #(= % "test") names) (.add ^java.util.List order "test"))
                 (doseq [n names] (when (not= n "test") (.add ^java.util.List order n)))
                 order))
-            derived (vs/jm "clean" cleancfg "featureorder" feature-order)]
+            derived (vs/jm "featureorder" feature-order)]
         (.put ^java.util.Map opts "__derived__" derived)
+        ;; Beside the options, not in them: options-map hands them to callers.
+        (oset! ctx :cleancfg cleancfg)
         ;; Again over the merged result: the config's own defaults can carry one.
-        (clean-add-options (atom {:options opts}) (omit-keys opts ["clean" "__derived__"]))
+        (clean-add-options cleanctx (omit-keys opts ["clean" "__derived__"]))
         opts))))
 
 ;; ---------------------------------------------------------------------------

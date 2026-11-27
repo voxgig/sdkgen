@@ -903,7 +903,11 @@ emitted broken source reached the fleet unchallenged.
   pipeline's own request. The registry is filled by `make_options` (raw
   input, BEFORE validate, so the constructor's own rejection is clean),
   `prepareAuth` (the Basic composite), the `secrets` feature (resolved values,
-  bought tokens) and `proxy` (URL userinfo). `err.ctx` stays for a debugger
+  bought tokens) and `proxy` (URL userinfo). It holds every credential in
+  plain form, so it lives on the client's root context beside the options
+  (`cleancfg`, inherited by every child context), never inside them:
+  `options()` returns what the caller set, and the sweep pins that by
+  serialising it. `err.ctx` stays for a debugger
   and is out of every serialiser. A hook sees the raw spec on purpose: it must
   read the real header to add its own. Configuration is the `clean` block of
   `main.kit.optspec`, once; `active: false` is the only opt-out. The sweep

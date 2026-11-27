@@ -20,6 +20,8 @@ class Context(ctxmap: MutableMap<String, Any?>?, basectx: Context?) {
   var config: MutableMap<String, Any?>? = null
   var entopts: MutableMap<String, Any?>? = null
   var options: MutableMap<String, Any?>? = null
+  // The clean registry, beside the options rather than in them.
+  var cleancfg: Any? = null
   var opmap: MutableMap<String, Operation>? = null
   var response: Response? = null
   var result: Result? = null
@@ -116,6 +118,7 @@ class Context(ctxmap: MutableMap<String, Any?>?, basectx: Context?) {
     if (this.options == null && basectx != null) {
       this.options = basectx.options
     }
+    this.cleancfg = Helpers.getCtxProp(ctxmap, "cleancfg") ?: basectx?.cleancfg
 
     // Entity
     val e = Helpers.getCtxProp(ctxmap, "entity")

@@ -267,7 +267,7 @@ describe('redirects', () => {
         './MediaUtility': sandboxLoad(Path.join(TM, lang, 'src', 'utility', 'MediaUtility.' + lang), {}),
       })
       const ctx: any = liveCtx()
-      ctx.options = { __derived__: { clean: cleanmod.makeCleanConfig({ ...CLEAN_DEFAULTS, ...(over || {}) }) } }
+      ctx.cleancfg = cleanmod.makeCleanConfig({ ...CLEAN_DEFAULTS, ...(over || {}) })
       Object.assign(ctx.utility, cleanmod)
       cleanmod.cleanAdd(ctx, SECRET)
       return ctx

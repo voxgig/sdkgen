@@ -22,6 +22,7 @@ type Context struct {
 	Config   map[string]any
 	Entopts  map[string]any
 	Options  map[string]any
+	CleanCfg any // the clean registry, beside the options rather than in them
 	Opmap    map[string]*Operation
 	Opmu     *sync.Mutex
 	Response *Response
@@ -130,6 +131,11 @@ func NewContext(ctxmap map[string]any, basectx *Context) *Context {
 	}
 	if ctx.Options == nil && basectx != nil {
 		ctx.Options = basectx.Options
+	}
+	if cc := getCtxProp(ctxmap, "cleancfg"); cc != nil {
+		ctx.CleanCfg = cc
+	} else if basectx != nil {
+		ctx.CleanCfg = basectx.CleanCfg
 	}
 
 	// Entity

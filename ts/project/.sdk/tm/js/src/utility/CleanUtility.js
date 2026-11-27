@@ -54,7 +54,7 @@ function count(val, dflt) {
 // is reached with a bare one) falls back to the schema defaults, so nothing
 // leaves raw for want of a constructor.
 function cleanConfig(ctx) {
-  const derived = ctx?.options?.__derived__?.clean
+  const derived = ctx?.cleancfg
   if (null != derived) {
     return derived
   }

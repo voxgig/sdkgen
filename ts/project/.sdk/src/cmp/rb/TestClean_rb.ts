@@ -548,12 +548,12 @@ class ${Name}CleanTest < Minitest::Test
     # and is not changed by it.
     util = hooked.get_utility
     cfgclean = { "keys" => "zzsens", "values" => CANARY["config"] }
-    built = util.make_options.call(util.make_context.call({
+    cfgctx = util.make_context.call({
       "utility" => util,
       "config" => { "options" => { "clean" => cfgclean } },
       "options" => { "clean" => { "values" => CANARY["value"] } },
-    }, nil))
-    cfgctx = util.make_context.call({ "options" => built }, nil)
+    }, nil)
+    cfgctx.options = util.make_options.call(cfgctx)
     seeded = util.clean.call(cfgctx, "config #{CANARY['config']} caller #{CANARY['value']}")
     sinks << { "name" => "config-clean", "text" => seeded.to_s }
     assert_equal "config #{MASK} caller #{MASK}", seeded
@@ -591,6 +591,13 @@ class ${Name}CleanTest < Minitest::Test
     frecord = fclean.call(featured.get_root_ctx, "record PLAINRECORD-t5r3e1w9")
     falias = fclean.call(featured.get_root_ctx, "alias PLAINALIAS-m2n4b6v8")
     frule = fclean.call(featured.get_root_ctx, "rule PLAINRULE-k7j5h3g1")
+
+    # The clean registry holds every credential in plain form, and is no option.
+    held = construct({ "apikey" => CANARY["apikey"] }).options_map
+    heldjson = JSON.generate(held) rescue held.inspect
+    assert_equal CANARY["apikey"], held["apikey"]
+    assert_equal [], Sweep.leaks(heldjson.sub(CANARY["apikey"].to_json, "")),
+      "options_map carries a credential beyond the option the caller set: #{heldjson}"
 
     leaked = sinks
       .map { |s| [s["name"], Sweep.leaks(s["text"])] }

@@ -120,6 +120,8 @@ typedef struct {
   // The LIVE options map (root ctx options): read for `apikey` and `auth`,
   // never written.
   voxgig_value* liveopts;
+  // The client's clean registry, which a resolved value joins.
+  voxgig_value* cleancfg;
 
   // What prepare_auth was generated from: the config declares auth only
   // where it places a credential, and Basic only where it composes one.
@@ -348,7 +350,7 @@ static void secrets_reauth(SecretsFeature* f, voxgig_value* fetchdef) {
     snprintf(pair, n, "%s:%s", f->cred, secret);
     value = clean_base64(pair);
     free(pair);
-    if (NULL != value) clean_add_opts(f->liveopts, value);
+    if (NULL != value) clean_add_cfg(f->cleancfg, value);
   } else {
     value = strdup(f->cred);
   }
@@ -378,7 +380,7 @@ static void secrets_reauth(SecretsFeature* f, voxgig_value* fetchdef) {
 static void secrets_setcred(SecretsFeature* f, const char* value) {
   free(f->cred);
   f->cred = strdup(NULL == value ? "" : value);
-  if ('\0' != f->cred[0]) clean_add_opts(f->liveopts, f->cred);
+  if ('\0' != f->cred[0]) clean_add_cfg(f->cleancfg, f->cred);
 }
 
 // ---- the exchange -----------------------------------------------------------
@@ -618,7 +620,7 @@ static const char* secrets_resolve(SecretsFeature* f, Context* ctx) {
   // say whether it does.
   free(f->refresh);
   f->refresh = strdup(found ? found : "");
-  if ('\0' != f->refresh[0]) clean_add_opts(f->liveopts, f->refresh);
+  if ('\0' != f->refresh[0]) clean_add_cfg(f->cleancfg, f->refresh);
 
   if ('\0' == f->cred[0]) {
     // A starting access token supplied as the OPTION: read from the frozen
@@ -741,6 +743,7 @@ static void secrets_init(Feature* fb, Context* ctx, voxgig_value* options) {
 
   f->client = ctx->client;
   f->liveopts = ctx->options;
+  f->cleancfg = ctx->cleancfg;
 
   voxgig_value* declared = NULL == ctx->config ? NULL : getpath2(ctx->config, "options", "auth");
   f->declared = voxgig_is_map(declared);
@@ -810,7 +813,7 @@ static void secrets_init(Feature* fb, Context* ctx, voxgig_value* options) {
   } else {
     explicit = get_str(xopts, "refresh");
   }
-  if (NULL != explicit && '\0' != explicit[0]) clean_add_opts(f->liveopts, explicit);
+  if (NULL != explicit && '\0' != explicit[0]) clean_add_cfg(f->cleancfg, explicit);
 
   size_t cap = 4;
   size_t count = 0;

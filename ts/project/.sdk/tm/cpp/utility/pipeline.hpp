@@ -67,9 +67,10 @@ inline CtxPtr makeContext(const CtxSpec& cs, CtxPtr basectx) {
 // sensitive KEY name is masked whatever it holds. Inside the pipeline data
 // stays raw, so a hook can still read the header it must add to.
 //
-// The configuration is the derived clean block makeOptions builds
-// (`options.__derived__.clean`): a plain map, so the registry list inside
-// it can be replaced after construction - features register later.
+// The configuration is the clean registry makeOptions builds and holds on
+// the context beside the options (`ctx->cleancfg`): a plain map, so the
+// registry list inside it can be replaced after construction - features
+// register later.
 
 constexpr int CLEAN_MAXDEPTH = 32;
 
@@ -159,12 +160,11 @@ inline Value makeCleanConfig(const Value& cleanopts) {
   return cfg;
 }
 
-// A context without options (makeError is reached with a bare one) falls
+// A context without a registry (makeError is reached with a bare one) falls
 // back to the schema defaults, so nothing leaves raw for want of a
 // constructor.
 inline Value cleanConfig(CtxPtr ctx) {
-  Value derived = ctx ? Struct::getpath(ctx->options, {"__derived__", "clean"}) : Value::undef();
-  if (derived.is_map()) return derived;
+  if (ctx && ctx->cleancfg.is_map()) return ctx->cleancfg;
   return makeCleanConfig(getp(sharedOptspec(), "clean"));
 }
 
@@ -2260,9 +2260,11 @@ inline Value makeOptions(CtxPtr ctx) {
   for (const auto& n : featureOrder) orderList.as_list()->push_back(Value(n));
 
   Value derived = vmap();
-  map_put(derived, "clean", derivedClean);
   map_put(derived, "featureorder", orderList);
   map_put(opts, "__derived__", derived);
+
+  // Beside the options, not in them: optionsMap hands them to callers.
+  ctx->cleancfg = derivedClean;
 
   // Again over the merged result: the config's own defaults can carry one.
   cleanAddSensitiveCfg(derivedClean, optsWithout(opts, {"clean", "__derived__"}));

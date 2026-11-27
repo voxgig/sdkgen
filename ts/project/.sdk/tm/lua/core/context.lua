@@ -97,6 +97,12 @@ function Context.new(ctxmap, basectx)
     self.options = basectx.options
   end
 
+  -- The clean registry, beside the options rather than in them.
+  self.cleancfg = helpers.get_ctx_prop(ctxmap, "cleancfg")
+  if self.cleancfg == nil and basectx ~= nil then
+    self.cleancfg = basectx.cleancfg
+  end
+
   -- Entity
   local e = helpers.get_ctx_prop(ctxmap, "entity")
   if e ~= nil then

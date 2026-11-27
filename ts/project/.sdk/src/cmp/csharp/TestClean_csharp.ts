@@ -876,6 +876,15 @@ ${candidateLines}
             new ${Name}Error("code_" + CanaryValue, "coded", null));
         sinks.AddRange(FormsOf("coded", coded));
 
+        // The clean registry holds every credential in plain form, and is no option.
+        var held = Construct(new Dictionary<string, object?> { ["apikey"] = CanaryApikey }).OptionsMap();
+        var heldtext = Render(held);
+        Assert.Equal(CanaryApikey, held.GetValueOrDefault("apikey"));
+        var heldat = heldtext.IndexOf(CanaryApikey, StringComparison.Ordinal);
+        var heldrest = heldat < 0 ? heldtext : heldtext.Remove(heldat, CanaryApikey.Length);
+        Assert.True(0 == Leaks(heldrest).Count,
+            "OptionsMap carries a credential beyond the option the caller set: " + heldtext);
+
         var leaked = sinks
             .Select(s => (s.Name, Found: Leaks(s.Text)))
             .Where(s => 0 < s.Found.Count)

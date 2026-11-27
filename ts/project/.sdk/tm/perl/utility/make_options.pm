@@ -102,7 +102,7 @@ $REGISTRY{make_options} = sub {
       (Voxgig::Struct::clone(ProjectNameSchema::optspec()->{clean}),
         Voxgig::Struct::clone($cfgopts->{clean}), $opts->{clean}),
   ]));
-  my $cleanctx = { 'options' => { '__derived__' => { 'clean' => $cleancfg } } };
+  my $cleanctx = { 'cleancfg' => $cleancfg };
   my %rawscan = %$opts;
   delete $rawscan{clean};
   ProjectNameCleanSupport::add_options($cleanctx, \%rawscan);
@@ -233,10 +233,10 @@ $REGISTRY{make_options} = sub {
     }
   }
 
-  $opts->{__derived__} = {
-    'clean' => $cleancfg,
-    'featureorder' => \@featureorder,
-  };
+  $opts->{__derived__} = { 'featureorder' => \@featureorder };
+
+  # Beside the options, not in them: options_map hands them to callers.
+  $ctx->{cleancfg} = $cleancfg;
 
   # Again over the merged result: the config's own defaults can carry one.
   # The extend instances are live objects, not option data.

@@ -396,6 +396,7 @@ typedef struct CtxSpec {
   voxgig_value* config;
   voxgig_value* entopts;
   voxgig_value* options;
+  voxgig_value* cleancfg;
   Entity* entity;
   voxgig_value* shared;
   voxgig_value* data;
@@ -436,6 +437,8 @@ struct Context {
   voxgig_value* config;
   voxgig_value* entopts;
   voxgig_value* options;
+  // The clean registry, beside the options rather than in them.
+  voxgig_value* cleancfg;
   Response* response;
   SdkResult* result;
   Spec* spec;
@@ -527,15 +530,15 @@ void** feature_plugins(const char* name, size_t* n);
 voxgig_value* clean_util(Context* ctx, voxgig_value* val);
 char* clean_str(Context* ctx, const char* val); // returns malloc'd
 // Register a secret value the SDK will mask from now on, through a context
-// or straight against the options map a feature holds.
+// or straight against the clean registry a feature holds.
 void clean_add_util(Context* ctx, const char* value);
-void clean_add_opts(voxgig_value* options, const char* value);
+void clean_add_cfg(voxgig_value* cleancfg, const char* value);
 bool clean_key_util(Context* ctx, const char* key);
 bool clean_secret_util(Context* ctx, const char* key, const char* value);
-voxgig_value* clean_opts(voxgig_value* options, voxgig_value* val);
+voxgig_value* clean_cfg(voxgig_value* cleancfg, voxgig_value* val);
 voxgig_value* clean_make_config(voxgig_value* cleanopts);
 voxgig_value* clean_split_values(voxgig_value* values);
-void clean_add_sensitive_opts(voxgig_value* options, voxgig_value* val);
+void clean_add_sensitive_cfg(voxgig_value* cleancfg, voxgig_value* val);
 void clean_add_sensitive_util(Context* ctx, voxgig_value* val);
 void clean_error_util(Context* ctx, PNError* err);
 char* clean_base64(const char* in); // returns malloc'd
