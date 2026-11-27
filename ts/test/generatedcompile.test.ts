@@ -11399,8 +11399,8 @@ function nonjsonServer(dir: string, cases: string): Promise<{ port: number, stop
 // Each target's SDK is generated once, and every probe runs beside it.
 // The exchange runs over each SDK's default transport, which some machines
 // cannot supply: py's needs the requests module, lua's luasocket, c's and
-// the vendored client cpp falls back to POSIX sockets, and that client the
-// OpenSSL headers.
+// the vendored client cpp and ocaml fall back to POSIX sockets, and that
+// client the OpenSSL headers.
 function liveExchangeUnready(target: string): string | null {
   if ('py' === target) {
     const py = mediaPython()
@@ -11415,14 +11415,14 @@ function liveExchangeUnready(target: string): string | null {
     return null == lua || !probeOk(lua, ['-e', 'require "socket.http"'])
       ? 'needs lua with luasocket to send the exchange' : null
   }
-  if ('cpp' === target) {
-    const cxx = cleanCxx()
-    if (null == cxx) return null
-    const dir = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-cpp-ssl-'))
+  if ('cpp' === target || 'ocaml' === target) {
+    const cc = 'cpp' === target ? cleanCxx() : authProbeCc()
+    if (null == cc) return null
+    const dir = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-ssl-'))
     try {
-      const probe = Path.join(dir, 'ssl.cpp')
-      Fs.writeFileSync(probe, '#include <openssl/ssl.h>\nint main() { return 0; }\n')
-      const hdr = run(cxx, ['-fsyntax-only', probe], dir)
+      const probe = Path.join(dir, 'cpp' === target ? 'ssl.cpp' : 'ssl.c')
+      Fs.writeFileSync(probe, '#include <openssl/ssl.h>\nint main(void) { return 0; }\n')
+      const hdr = run(cc, ['-fsyntax-only', probe], dir)
       return hdr.ok ? null : 'the vendored client needs the OpenSSL development headers'
     }
     finally {
