@@ -12328,7 +12328,8 @@ const CODEC_LANES: CodecLane[] = [
       const built = run(toolchain('make')!, ['CC=' + cCompiler(), 'tests/codec_test.out'], sdkroot)
       return built.ok ? null : 'the generated SDK or its codec suite does not build:\n' + tail(built.out)
     },
-    command: () => null == toolchain('make') || null == cCompiler() || null == toolchain('sh') ? null
+    command: () => null == toolchain('make') || null == cCompiler() || null == toolchain('sh') ||
+      !cHasHeaders(cCompiler()!, ['sys/socket.h']) ? null
       : { bin: toolchain('sh')!, args: ['-c', './tests/codec_test.out'] },
   },
   {

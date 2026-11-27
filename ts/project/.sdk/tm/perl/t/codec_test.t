@@ -160,7 +160,8 @@ sub serve {
     print {$wr} JSON::PP->new->latin1->encode({ line => $line, headers => \%headers,
       body => $body });
     close $wr;
-    POSIX::_exit(0);
+    # Windows forks a thread, where _exit ends the whole test process.
+    $^O eq 'MSWin32' ? exit(0) : POSIX::_exit(0);
   }
   close $wr;
   close $listen;
