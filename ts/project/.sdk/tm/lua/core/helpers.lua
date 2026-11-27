@@ -130,4 +130,62 @@ function helpers.allowed(names, item)
 end
 
 
+-- The custom action a call names: `$action` in its own request argument,
+-- never in a response.
+function helpers.op_action(ctx)
+  local op = ctx ~= nil and helpers.to_map(ctx.op) or nil
+  local req
+  if op ~= nil and op.input == "data" then
+    req = helpers.to_map(ctx.reqdata)
+  elseif ctx ~= nil then
+    req = helpers.to_map(ctx.reqmatch)
+  end
+  local action = req ~= nil and req["$action"] or nil
+  if type(action) == "string" and action ~= "" then
+    return action
+  end
+  return nil
+end
+
+
+-- The keys an operation is looked up and filed by, most specific first:
+-- `<entity>.<op>:<action>`, `<entity>.<op>`, `<op>`, `*`.
+function helpers.op_keys(ctx)
+  local op = ctx ~= nil and helpers.to_map(ctx.op) or {}
+  local name = (type(op.name) == "string" and op.name ~= "") and op.name or "_"
+  local entity = (type(op.entity) == "string" and op.entity ~= "") and op.entity or nil
+  if entity == nil and ctx ~= nil and ctx.entity ~= nil then
+    if type(ctx.entity.get_name) == "function" then
+      entity = ctx.entity:get_name()
+    elseif type(ctx.entity.name) == "string" then
+      entity = ctx.entity.name
+    end
+    if entity == "" then
+      entity = nil
+    end
+  end
+  local base = (entity or "_") .. "." .. name
+  local action = helpers.op_action(ctx)
+  if action == nil then
+    return { base, name, "*" }
+  end
+  return { base .. ":" .. action, base, name, "*" }
+end
+
+
+-- The key a call is filed under where a consumer reads it: the first key,
+-- with the caller's action cleaned as a record's `action` field, so a
+-- sensitive key name masks it as well as a registered value.
+function helpers.op_file_key(ctx)
+  local keys = helpers.op_keys(ctx)
+  local action = helpers.op_action(ctx)
+  if action == nil then
+    return keys[1]
+  end
+  local out = ctx.utility.clean(ctx, { action = action })
+  local cleaned = type(out) == "table" and out.action or nil
+  return keys[2] .. ":" .. (type(cleaned) == "string" and cleaned or action)
+end
+
+
 return helpers

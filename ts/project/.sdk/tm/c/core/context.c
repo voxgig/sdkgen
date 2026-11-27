@@ -118,6 +118,8 @@ Context* context_new(CtxSpec cs, Context* basectx) {
     if (actor) { free(c->actor); c->actor = dup_str(actor); }
     voxgig_value* paging = getp(cs.ctrl, "paging");
     if (voxgig_is_map(paging)) c->paging = paging;
+    voxgig_value* transfer = getp(cs.ctrl, "transfer");
+    if (voxgig_is_map(transfer)) c->transfer = transfer;
     ctx->ctrl = c;
   } else if (cs.ctrl_obj) {
     ctx->ctrl = cs.ctrl_obj;
@@ -168,6 +170,10 @@ Context* context_new(CtxSpec cs, Context* basectx) {
   ctx->spec = cs.spec ? cs.spec : (basectx ? basectx->spec : NULL);
   ctx->result = cs.result ? cs.result : (basectx ? basectx->result : NULL);
   ctx->response = cs.response ? cs.response : (basectx ? basectx->response : NULL);
+
+  ctx->given = cs.sources;
+  ctx->ngiven = cs.nsources;
+  ctx->lifted = voxgig_new_map();
 
   // Resolve operation.
   ctx->op = resolve_op(ctx, cs.opname);

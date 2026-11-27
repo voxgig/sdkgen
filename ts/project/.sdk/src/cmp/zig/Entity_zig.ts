@@ -4,7 +4,7 @@ import * as Path from 'node:path'
 import {
   cmp, camelify,
   File, Content, Folder, Fragment,
-  entityClassName, entityCollection,
+  entityClassName, entityCollection, entitySlots,
 } from '@voxgig/sdkgen'
 
 import {
@@ -57,6 +57,16 @@ const Entity = cmp(function Entity(props: any) {
     return .{ .err = h.unsupported_op("${opname}", self.name) };
 }
 `)
+                if ('list' !== opname && 'remove' !== opname) {
+                  Content({ indent }, `
+pub fn ${opname}_with(self: *${cls}, _${arg}: Value, _ctrl: Value, _opwith: binmod.OpWith) ${ret} {
+    _ = _${arg};
+    _ = _ctrl;
+    _ = _opwith;
+    return .{ .err = h.unsupported_op("${opname}", self.name) };
+}
+`)
+                }
               } :
               ({ indent }: any) => {
                 EntityOperation({ ff, opname, indent, entity, entrep, cls })
@@ -76,6 +86,8 @@ const Entity = cmp(function Entity(props: any) {
             Content({ indent }, `self.utility.feature_hook(ctx, "${name}");`),
 
           ...opfrags,
+
+          '#BinarySlot': ({ indent }: any) => BinarySlots({ entity, cls, indent }),
         }
       })
 
@@ -83,6 +95,32 @@ const Entity = cmp(function Entity(props: any) {
   })
 })
 
+
+
+// Zig has no optional argument: the unnamed slot is `binary("")`.
+const BinarySlots = cmp(function BinarySlots(props: any) {
+  const { entity, cls, indent } = props
+  const slots = entitySlots(entity)
+  if (0 === slots.length) {
+    return
+  }
+
+  const opt = (v?: string) => null == v ? 'null' : '"' + v + '"'
+  const rows = slots.map((s: any) =>
+    `    .{ .name = ${JSON.stringify(s.name)}, .action = ${JSON.stringify(s.action)}, ` +
+    `.read = ${opt(s.read)}, .write = ${opt(s.write)} },`).join('\n')
+
+  Content({ indent }, `const handle = @import("../utility/codec/handle.zig");
+
+pub const BINARY_SLOTS = [_]handle.BinarySlot{
+${rows}
+};
+
+pub fn binary(self: *${cls}, slot: []const u8) handle.BinaryHandle(${cls}) {
+    return handle.BinaryHandle(${cls}).make(self, &BINARY_SLOTS, slot);
+}
+`)
+})
 
 
 export {

@@ -76,8 +76,7 @@ object Media {
   // Bytes, an InputStream or a String, sent as they are. An InputStream can be
   // read once, so it is read here, before the first attempt, and a retry sends
   // the same bytes again.
-  fun rawBody(reqdata: Map<String, Any?>?): Any? {
-    val body = reqdata?.get(RAW_BODY)
+  fun rawBody(body: Any?): Any? {
     return if (body is InputStream) body.readBytes() else body
   }
 }

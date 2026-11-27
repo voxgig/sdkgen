@@ -28,6 +28,8 @@ class Context(ctxmap: MutableMap<String, Any?>?, basectx: Context?) {
   var reqdata: MutableMap<String, Any?> = linkedMapOf()
   var match: MutableMap<String, Any?> = linkedMapOf()
   var reqmatch: MutableMap<String, Any?> = linkedMapOf()
+  // The values of the point's binary fields, lifted out of reqdata.
+  var sources: MutableMap<String, Any?>? = null
   var entity: Entity? = null
   var shared: MutableMap<String, Any?>? = null
 
@@ -73,6 +75,10 @@ class Context(ctxmap: MutableMap<String, Any?>?, basectx: Context?) {
         val p = cm["paging"]
         if (p is MutableMap<*, *>) {
           this.ctrl.paging = p as MutableMap<String, Any?>
+        }
+        val tr = cm["transfer"]
+        if (tr is MutableMap<*, *>) {
+          this.ctrl.transfer = tr as MutableMap<String, Any?>
         }
       } else if (cv is Control) {
         this.ctrl = cv

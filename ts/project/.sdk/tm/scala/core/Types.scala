@@ -35,3 +35,6 @@ type MakeContextFn = (JMap[String, Object], Context) => Context
 
 // param(ctx, paramdef) -> value
 type ParamFn = (Context, Object) => Object
+
+// A form or multipart encoder of the codec registry: (ctx, data, sources) -> encoded body
+type BodyEncoder = (Context, Object, JMap[String, Object]) => BodyEncoded

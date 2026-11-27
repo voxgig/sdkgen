@@ -455,6 +455,134 @@ describe('feature', () => {
   })
 
 
+  // --- action keys ----------------------------------------------------------
+  // A custom action is `$action` in the request argument, and its keys name
+  // it: `<entity>.<op>:<action>`, most specific first.
+  describe('action-keys', () => {
+    const AUDIO = { $action: 'audio', id: 'e1' }
+    const RECORD = { id: 'e1' }
+
+    test('rbac: the record is granted and the action refused', { skip: skipWithout('rbac') }, async () => {
+      const rec = recordingServer()
+      const h = makeClient({ features: [{ name: 'rbac', options: {
+        rules: { 'episode.load': 'read', 'episode.load:audio': 'audio' }, permissions: ['read'] } }],
+      server: rec.server })
+      strictEqual((await h.op({ entity: 'episode', op: 'load', reqmatch: RECORD })).ok, true)
+      const res = await h.op({ entity: 'episode', op: 'load', reqmatch: AUDIO })
+      strictEqual(res.error.code, 'rbac_denied')
+      strictEqual(rec.calls.length, 1)
+      strictEqual(h.client._rbac.last.action, 'audio')
+    })
+
+    test('rbac: the action is granted and the record refused', { skip: skipWithout('rbac') }, async () => {
+      const h = makeClient({ features: [{ name: 'rbac', options: {
+        rules: { 'episode.load': 'read', 'episode.load:audio': 'audio' }, permissions: ['audio'] } }] })
+      strictEqual((await h.op({ entity: 'episode', op: 'load', reqmatch: RECORD })).error.code, 'rbac_denied')
+      strictEqual((await h.op({ entity: 'episode', op: 'load', reqmatch: AUDIO })).ok, true)
+    })
+
+    test('rbac: with no action rule an action falls back to its operation', { skip: skipWithout('rbac') }, async () => {
+      const h = makeClient({ features: [{ name: 'rbac', options: {
+        rules: { 'episode.load': 'read' }, permissions: [] } }] })
+      strictEqual((await h.op({ entity: 'episode', op: 'load', reqmatch: AUDIO })).error.code, 'rbac_denied')
+    })
+
+    test('metrics: an action is counted apart from its operation', { skip: skipWithout('metrics') }, async () => {
+      const h = makeClient({ features: [{ name: 'metrics' }] })
+      await h.op({ entity: 'episode', op: 'load', reqmatch: RECORD })
+      await h.op({ entity: 'episode', op: 'load', reqmatch: AUDIO })
+      await h.op({ entity: 'episode', op: 'load', reqmatch: AUDIO })
+      strictEqual(h.client._metrics.total.count, 3)
+      strictEqual(h.client._metrics.ops['episode.load'].count, 1)
+      strictEqual(h.client._metrics.ops['episode.load:audio'].count, 2)
+    })
+
+    test('audit: a record names its action, and a plain one has none', { skip: skipWithout('audit') }, async () => {
+      const h = makeClient({ features: [{ name: 'audit' }] })
+      await h.op({ entity: 'episode', op: 'load', reqmatch: RECORD })
+      await h.op({ entity: 'episode', op: 'load', reqmatch: AUDIO })
+      const recs = h.client._audit.records
+      ok(!('action' in recs[0]))
+      strictEqual(recs[0].op, 'load')
+      strictEqual(recs[1].action, 'audio')
+      strictEqual(recs[1].op, 'load')
+    })
+
+    test('cost: an action is priced and attributed apart from its operation', { skip: skipWithout('cost') }, async () => {
+      const sink: any[] = []
+      const h = makeClient({ features: [{ name: 'cost', options: {
+        rates: { 'episode.load': 1, 'episode.load:audio': 5 },
+        sink: (r: any) => sink.push(r) } }] })
+      await h.op({ entity: 'episode', op: 'load', reqmatch: RECORD })
+      await h.op({ entity: 'episode', op: 'load', reqmatch: AUDIO })
+      strictEqual(h.client._cost.total.amount, 6)
+      deepStrictEqual(h.client._cost.ops['episode.load'], { calls: 1, amount: 1 })
+      deepStrictEqual(h.client._cost.ops['episode.load:audio'], { calls: 1, amount: 5 })
+      strictEqual(h.client._cost.last.action, 'audio')
+      strictEqual(sink.length, 2)
+      ok(!('action' in sink[0]))
+      strictEqual(sink[1].action, 'audio')
+    })
+  })
+
+
+  // A registered secret as the action: what a consumer reads carries it
+  // cleaned, and a rule naming the raw action still decides.
+  describe('action-keys-clean', () => {
+    const SECRET = 'act10n-s3cret-canary'
+    const SECRET_CALL = { $action: SECRET, id: 'e1' }
+    const withSecret = (h: any) => { h.utility.cleanAdd(h.rootctx, SECRET); return h }
+    const leaks = (bucket: any) => Object.keys(bucket).filter((k) => k.includes(SECRET))
+
+    test('rbac: the record carries the action cleaned', { skip: skipWithout('rbac') }, async () => {
+      const h = withSecret(makeClient({ features: [{ name: 'rbac', options: {
+        rules: { ['episode.load:' + SECRET]: 'never' }, permissions: [] } }] }))
+      strictEqual((await h.op({ entity: 'episode', op: 'load', reqmatch: SECRET_CALL })).error.code,
+        'rbac_denied')
+      strictEqual(h.client._rbac.last.action, '[redacted]')
+      ok(!JSON.stringify(h.client._rbac.last).includes(SECRET))
+    })
+
+    test('metrics: a bucket name carries the action cleaned', { skip: skipWithout('metrics') }, async () => {
+      const h = withSecret(makeClient({ features: [{ name: 'metrics' }] }))
+      await h.op({ entity: 'episode', op: 'load', reqmatch: SECRET_CALL })
+      deepStrictEqual(leaks(h.client._metrics.ops), [])
+      strictEqual(h.client._metrics.ops['episode.load:[redacted]'].count, 1)
+    })
+
+    test('cost: a bucket name carries the action cleaned, priced by the raw action', { skip: skipWithout('cost') }, async () => {
+      const h = withSecret(makeClient({ features: [{ name: 'cost', options: {
+        rates: { ['episode.load:' + SECRET]: 7, 'episode.load': 1 } } }] }))
+      await h.op({ entity: 'episode', op: 'load', reqmatch: SECRET_CALL })
+      deepStrictEqual(leaks(h.client._cost.ops), [])
+      deepStrictEqual(h.client._cost.ops['episode.load:[redacted]'], { calls: 1, amount: 7 })
+    })
+
+    test('an action under a sensitive key name is filed and recorded under the mask', {
+      skip: skipWithout('metrics') || skipWithout('cost') || skipWithout('rbac'),
+    }, async () => {
+      const h = makeClient({ options: { clean: { keys: 'action' } }, features: [
+        { name: 'metrics' },
+        { name: 'cost', options: { rates: { 'episode.load:audio': 5, 'episode.load': 1 } } },
+        { name: 'rbac', options: { rules: { 'episode.load:audio': 'audio' }, permissions: ['audio'] } },
+      ] })
+      strictEqual((await h.op({ entity: 'episode', op: 'load', reqmatch: { $action: 'audio', id: 'e1' } })).ok, true)
+      strictEqual(h.client._rbac.last.required, 'audio')
+      strictEqual(h.client._rbac.last.action, '[redacted]')
+      deepStrictEqual(Object.keys(h.client._metrics.ops), ['episode.load:[redacted]'])
+      deepStrictEqual(h.client._cost.ops['episode.load:[redacted]'], { calls: 1, amount: 5 })
+      ok(null == h.client._cost.ops['episode.load:audio'])
+    })
+
+    test('with clean off the action is kept as given', { skip: skipWithout('metrics') }, async () => {
+      const h = withSecret(makeClient({ features: [{ name: 'metrics' }] }))
+      h.client._options.__derived__.clean.active = false
+      await h.op({ entity: 'episode', op: 'load', reqmatch: SECRET_CALL })
+      strictEqual(h.client._metrics.ops['episode.load:' + SECRET].count, 1)
+    })
+  })
+
+
   // --- one call, one id -----------------------------------------------------
   if (hasFeature('telemetry') && hasFeature('debug') && hasFeature('audit')) {
     test('telemetry, debug and audit carry one call\'s context id', async () => {

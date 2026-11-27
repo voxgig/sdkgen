@@ -112,7 +112,12 @@ object SdkTestMain {
     var headers: JMap[String, Object] = null
     var body: Object = null
     var ctrl: JMap[String, Object] = null
+    var reqmatch: JMap[String, Object] = null
+    var reqdata: JMap[String, Object] = null
     def withOp(o: String): FhOpSpec = { op = o; this }
+    def withEntity(e: String): FhOpSpec = { entity = e; this }
+    def withReqmatch(m: JMap[String, Object]): FhOpSpec = { reqmatch = m; this }
+    def withReqdata(d: JMap[String, Object]): FhOpSpec = { reqdata = d; this }
     def withPath(p: String): FhOpSpec = { path = p; this }
     def withMethod(m: String): FhOpSpec = { method = m; this }
     def withHeaders(h: JMap[String, Object]): FhOpSpec = { headers = h; this }
@@ -128,6 +133,10 @@ object SdkTestMain {
     var result: Result = null
     var ctx: Context = null
   }
+
+  // Which request argument an operation reads, as the generated Context decides.
+  def fhOpInput(op: String): String =
+    if ("create" == op || "update" == op || "patch" == op) "data" else "match"
 
   def fhDefaultMethod(op: String): String = op match {
     case "create" => "POST"; case "update" | "patch" => "PATCH"; case "remove" => "DELETE"; case _ => "GET"
@@ -166,9 +175,11 @@ object SdkTestMain {
       val ctxmap = new LinkedHashMap[String, Object]()
       ctxmap.put("opname", opname)
       ctxmap.put("ctrl", ctrl)
+      ctxmap.put("reqmatch", if (o.reqmatch == null) new LinkedHashMap[String, Object]() else o.reqmatch)
+      ctxmap.put("reqdata", if (o.reqdata == null) new LinkedHashMap[String, Object]() else o.reqdata)
       val ctx = utility.makeContext(ctxmap, rootctx)
       val opdef = new LinkedHashMap[String, Object]()
-      opdef.put("entity", entity); opdef.put("name", opname)
+      opdef.put("entity", entity); opdef.put("name", opname); opdef.put("input", fhOpInput(opname))
       ctx.op = new Operation(opdef)
 
       utility.featureHook(ctx, "PostConstructEntity")
@@ -229,8 +240,12 @@ object SdkTestMain {
     }
   }
 
-  def fhMake(server: FetcherFn, features: FhFeature*): FhHarness = {
-    val client = ProjectNameSDK.testSDK()
+  def fhMake(server: FetcherFn, features: FhFeature*): FhHarness = fhMakeWith(null, server, features: _*)
+
+  // fhMakeWith is fhMake over a client built with the given SDK options, so a
+  // test can reach the SDK's real clean with a registered secret.
+  def fhMakeWith(sdkopts: JMap[String, Object], server: FetcherFn, features: FhFeature*): FhHarness = {
+    val client = ProjectNameSDK.testSDK(null, sdkopts)
     client.features = new ArrayList[Feature]()
 
     val utility = client.getUtility()
@@ -466,6 +481,142 @@ object SdkTestMain {
       eq("rbac.defaultDeny", "rbac_denied", fhErrCode(deny.op(fhOp("load")).err)) }
     { val h = fhMake(null, fhF(new RbacFeature(), om("active" -> B(false), "deny" -> B(true))))
       check("rbac.inactive", h.op(fhOp("load")).ok, "inactive rbac must not deny") }
+  }
+
+  // A custom action is `$action` in the request argument, and its keys name
+  // it: `<entity>.<op>:<action>`, most specific first.
+  private def testActionKeys(): Unit = {
+    def audio(): JMap[String, Object] = om("$action" -> "audio", "id" -> "e1")
+    def record(): JMap[String, Object] = om("id" -> "e1")
+    def load(): FhOpSpec = fhOp("load").withEntity("episode")
+    { val rec = new FhRecorder(); val f = new RbacFeature()
+      val h = fhMake((c, u, fd) => rec.fetch(c, u, fd), fhF(f, om(
+        "rules" -> om("episode.load" -> "read", "episode.load:audio" -> "audio"), "permissions" -> jl("read"))))
+      val plain = h.op(load().withReqmatch(record()))
+      check("actionKeys.rbac.record", plain.ok, "expected the record granted: " + plain.err)
+      val r = h.op(load().withReqmatch(audio()))
+      eq("actionKeys.rbac.action", "rbac_denied", fhErrCode(r.err))
+      check("actionKeys.rbac.message", r.err != null && r.err.getMessage.contains("operation \"load:audio\""),
+        "expected the action named: " + r.err)
+      eqI("actionKeys.rbac.calls", 1, rec.calls.size())
+      eq("actionKeys.rbac.last", "audio", f.last.get("action")) }
+    { val h = fhMake(null, fhF(new RbacFeature(), om(
+        "rules" -> om("episode.load" -> "read", "episode.load:audio" -> "audio"), "permissions" -> jl("audio"))))
+      eq("actionKeys.rbac.granted.record", "rbac_denied", fhErrCode(h.op(load().withReqmatch(record())).err))
+      val r = h.op(load().withReqmatch(audio()))
+      check("actionKeys.rbac.granted.action", r.ok, "expected the action granted: " + r.err) }
+    { val h = fhMake(null, fhF(new RbacFeature(), om("rules" -> om("episode.load" -> "read"), "permissions" -> jl())))
+      eq("actionKeys.rbac.fallback", "rbac_denied", fhErrCode(h.op(load().withReqmatch(audio())).err)) }
+    { val h = fhMake(null, fhF(new RbacFeature(), om("rules" -> om("episode.create:upload" -> "write"), "permissions" -> jl())))
+      eq("actionKeys.rbac.reqdata", "rbac_denied",
+        fhErrCode(h.op(fhOp("create").withEntity("episode").withReqdata(om("$action" -> "upload"))).err))
+      val r = h.op(fhOp("create").withEntity("episode").withReqmatch(om("$action" -> "upload")))
+      check("actionKeys.rbac.reqmatchIgnored", r.ok, "expected reqmatch ignored on a data op: " + r.err) }
+    { val f = new MetricsFeature()
+      val h = fhMake(null, fhF(f, null))
+      h.op(load().withReqmatch(record())); h.op(load().withReqmatch(audio())); h.op(load().withReqmatch(audio()))
+      eqI("actionKeys.metrics.total", 3, f.total.count)
+      eqI("actionKeys.metrics.record", 1, f.ops.get("episode.load").count)
+      eqI("actionKeys.metrics.action", 2, f.ops.get("episode.load:audio").count) }
+    { val f = new AuditFeature()
+      val h = fhMake(null, fhF(f, null))
+      h.op(load().withReqmatch(record())); h.op(load().withReqmatch(audio()))
+      check("actionKeys.audit.plain", !f.records.get(0).containsKey("action"), "a plain record has no action")
+      eq("actionKeys.audit.plain.op", "load", f.records.get(0).get("op"))
+      eq("actionKeys.audit.action", "audio", f.records.get(1).get("action"))
+      eq("actionKeys.audit.action.op", "load", f.records.get(1).get("op")) }
+    { val sunk = new ArrayList[CostRecord](); val f = new CostFeature()
+      val sink: Consumer[CostRecord] = (r) => sunk.add(r)
+      val h = fhMake(null, fhF(f, om("rates" -> om("episode.load" -> I(1), "episode.load:audio" -> I(5)), "sink" -> sink)))
+      h.op(load().withReqmatch(record())); h.op(load().withReqmatch(audio()))
+      check("actionKeys.cost.total", 6.0 == f.total.amount, "total " + f.total.amount)
+      eqI("actionKeys.cost.record.calls", 1, f.ops.get("episode.load").calls)
+      check("actionKeys.cost.record.amount", 1.0 == f.ops.get("episode.load").amount, "amount " + f.ops.get("episode.load").amount)
+      eqI("actionKeys.cost.action.calls", 1, f.ops.get("episode.load:audio").calls)
+      check("actionKeys.cost.action.amount", 5.0 == f.ops.get("episode.load:audio").amount, "amount " + f.ops.get("episode.load:audio").amount)
+      check("actionKeys.cost.sink.plain", sunk.get(0).action == null, "a plain record has no action")
+      eq("actionKeys.cost.sink.action", "audio", sunk.get(1).action)
+      eq("actionKeys.cost.last", "audio", f.last.action) }
+    { val f = new CostFeature()
+      val h = fhMake(null, fhF(f, om("rates" -> om("episode.load" -> I(2), "*" -> I(9)))))
+      h.op(load().withReqmatch(audio()))
+      eqI("actionKeys.cost.fallback.calls", 1, f.ops.get("episode.load:audio").calls)
+      check("actionKeys.cost.fallback.amount", 2.0 == f.ops.get("episode.load:audio").amount, "amount " + f.ops.get("episode.load:audio").amount) }
+  }
+
+  // The caller's action can carry a registered secret; what a consumer reads
+  // is cleaned, while a rule or rate still names the raw action.
+  private def testActionKeysClean(): Unit = {
+    val secret = "SECRETACTION9"
+    def withSecret(): JMap[String, Object] = om("$action" -> secret, "id" -> "e1")
+    def audio(): JMap[String, Object] = om("$action" -> "audio", "id" -> "e1")
+    def load(): FhOpSpec = fhOp("load").withEntity("episode")
+    def noSecret(name: String, keys: java.util.Set[String]): Unit = {
+      val it = keys.iterator()
+      while (it.hasNext) { val k = it.next(); check(name, !k.contains(secret), "names the secret: " + k) }
+    }
+    { val f = new RbacFeature()
+      val h = fhMakeWith(om("apikey" -> secret), null, fhF(f, om(
+        "rules" -> om(("episode.load:" + secret) -> "audio"), "permissions" -> jl())))
+      eq("actionKeysClean.rbac.rule", "rbac_denied", fhErrCode(h.op(load().withReqmatch(withSecret())).err))
+      check("actionKeysClean.rbac.last", !String.valueOf(f.last.get("action")).contains(secret),
+        "the recorded action is the secret: " + f.last.get("action"))
+      eq("actionKeysClean.rbac.mask", "[redacted]", f.last.get("action")) }
+    { val f = new MetricsFeature()
+      val h = fhMakeWith(om("apikey" -> secret), null, fhF(f, null))
+      h.op(load().withReqmatch(withSecret())); h.op(load().withReqmatch(audio()))
+      noSecret("actionKeysClean.metrics.keys", f.ops.keySet())
+      check("actionKeysClean.metrics.mask", f.ops.get("episode.load:[redacted]") != null, "keys " + f.ops.keySet())
+      check("actionKeysClean.metrics.plain", f.ops.get("episode.load:audio") != null, "keys " + f.ops.keySet()) }
+    { val f = new CostFeature()
+      val h = fhMakeWith(om("apikey" -> secret), null, fhF(f, om(
+        "rates" -> om(("episode.load:" + secret) -> I(7), "episode.load" -> I(1)))))
+      h.op(load().withReqmatch(withSecret())); h.op(load().withReqmatch(audio()))
+      noSecret("actionKeysClean.cost.keys", f.ops.keySet())
+      val masked = f.ops.get("episode.load:[redacted]")
+      check("actionKeysClean.cost.rate", masked != null && 7.0 == masked.amount, "keys " + f.ops.keySet())
+      val plain = f.ops.get("episode.load:audio")
+      check("actionKeysClean.cost.plain", plain != null && 1.0 == plain.amount, "keys " + f.ops.keySet()) }
+    { val rbac = new RbacFeature(); val metrics = new MetricsFeature(); val cost = new CostFeature()
+      val h = fhMakeWith(om("clean" -> om("keys" -> "action")), null,
+        fhF(rbac, om("rules" -> om("episode.load:audio" -> "audio"), "permissions" -> jl("audio"))),
+        fhF(metrics, null),
+        fhF(cost, om("rates" -> om("episode.load:audio" -> I(5)))))
+      val r = h.op(load().withReqmatch(audio()))
+      check("actionKeysClean.sensitive.rule", r.ok, "expected the raw action's rule to grant: " + r.err)
+      eq("actionKeysClean.sensitive.rbac", "[redacted]", rbac.last.get("action"))
+      check("actionKeysClean.sensitive.metrics", metrics.ops.get("episode.load:[redacted]") != null, "keys " + metrics.ops.keySet())
+      val c = cost.ops.get("episode.load:[redacted]")
+      check("actionKeysClean.sensitive.cost", c != null && 5.0 == c.amount, "keys " + cost.ops.keySet()) }
+  }
+
+  private def testAllowAction(): Unit = {
+    val plain = om("method" -> "GET", "parts" -> jl("episode", "{id}"), "select" -> om("exist" -> jl("id")))
+    val audio = om("method" -> "GET", "parts" -> jl("episode", "{id}", "audio"),
+      "select" -> om("exist" -> jl("id"), "$action" -> "audio"))
+    def point(allow: String, reqmatch: JMap[String, Object]): Object = {
+      val client = ProjectNameSDK.testSDK()
+      val utility = client.getUtility()
+      val ctxmap = new LinkedHashMap[String, Object]()
+      ctxmap.put("opname", "load"); ctxmap.put("client", client); ctxmap.put("utility", utility)
+      val ctx = utility.makeContext(ctxmap, client.getRootCtx())
+      ctx.op = new Operation(om("name" -> "load", "entity" -> "episode", "input" -> "match", "points" -> jl(plain, audio)))
+      ctx.options = om("allow" -> om("op" -> allow))
+      ctx.reqmatch = reqmatch
+      ctx.matchData = new LinkedHashMap[String, Object]()
+      try utility.makePoint(ctx)
+      catch { case e: SdkError => e.code }
+    }
+    val action = om("$action" -> "audio", "id" -> "e1")
+    val record = om("id" -> "e1")
+    check("allowAction.action", audio eq point("episode.load:audio", action), "expected the audio point")
+    eq("allowAction.record", "point_op_allow", point("episode.load:audio", record))
+    check("allowAction.anyCase", audio eq point("Episode.Load:AUDIO", action), "expected the audio point")
+    eq("allowAction.other", "point_op_allow", point("episode.load:video", action))
+    check("allowAction.entityOp", audio eq point("episode.load", action), "expected the audio point")
+    check("allowAction.op", audio eq point("load", action), "expected the audio point")
+    check("allowAction.op.record", plain eq point("load", record), "expected the plain point")
+    eq("allowAction.list", "point_op_allow", point("list", record))
   }
 
   private def testMetrics(): Unit = {
@@ -1069,7 +1220,8 @@ object SdkTestMain {
     val suites: Seq[(String, () => Unit)] = Seq(
       "netsim" -> testNetsim, "retry" -> testRetry, "timeout" -> testTimeout,
       "ratelimit" -> testRatelimit, "cache" -> testCache, "idempotency" -> testIdempotency,
-      "rbac" -> testRbac, "metrics" -> testMetrics, "telemetry" -> testTelemetry,
+      "rbac" -> testRbac, "actionKeys" -> testActionKeys, "actionKeysClean" -> testActionKeysClean, "allowAction" -> testAllowAction,
+      "metrics" -> testMetrics, "telemetry" -> testTelemetry,
       "debug" -> testDebug, "audit" -> testAudit, "correlation" -> testCorrelation,
       "clienttrack" -> testClienttrack,
       "paging" -> testPaging, "streaming" -> testStreaming, "proxy" -> testProxy,

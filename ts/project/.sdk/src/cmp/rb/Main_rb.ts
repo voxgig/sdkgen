@@ -6,6 +6,7 @@ import {
   List, File, Content, Copy, Folder, Fragment, Line, FeatureHook,
   inactiveFeatureExcludes,
   pluginExcludes,
+  codecExcludes,
   targetFeatures,
   TEST_CONTROL_EXCLUDE,
   TargetLicense,
@@ -30,6 +31,7 @@ import { PrepareAuth } from './PrepareAuth_rb'
 import { Gitignore } from './Gitignore_rb'
 import { MainEntity } from './MainEntity_rb'
 import { EntityTypes } from './EntityTypes_rb'
+import { CodecIndex } from './CodecIndex_rb'
 
 
 const Main = cmp(async function Main(props: any) {
@@ -54,7 +56,8 @@ const Main = cmp(async function Main(props: any) {
     // The generate-time trim: a declared feature that is off, and an inactive
     // plugin group, whose `path` entries are relative to this Copy's root.
     exclude: [/src\//, TEST_CONTROL_EXCLUDE,
-      ...inactiveFeatureExcludes(props.ctx$, target), ...pluginExcludes(model)],
+      ...inactiveFeatureExcludes(props.ctx$, target), ...pluginExcludes(model),
+      ...codecExcludes(model)],
     replace: {
       ...props.ctx$.stdrep,
     }
@@ -90,6 +93,8 @@ utility.feature_hook.call(@_rootctx, "${name}")
   })
 
   PrepareAuth({ target })
+
+  CodecIndex({ target })
 
   // Generate typed models (<Sdk>_types.rb) — required by the main SDK file.
   EntityTypes({ target })

@@ -87,6 +87,13 @@
       (when (and (zero? @ran) (not= :skipped outcome))
         (rec suite false (str "the " fname " feature suite ran no checks"))))))
 
+;; The codec suite ships only with a model whose points need a codec, so it
+;; is required by the file that shipped, as the feature suites are.
+(defn- run-codec-suite [rec]
+  (when (io/resource "sdk/test/codec_test.clj")
+    (require 'sdk.test.codec-test)
+    ((resolve 'sdk.test.codec-test/run) rec)))
+
 (defn- find-corpus-file []
   (first (filter (fn [p] (.exists (java.io.File. ^String p)))
                  ["SDKREL/.sdk/test/test.json" ".sdk/test/test.json" "../SDKREL/.sdk/test/test.json" "test/test.json"])))
@@ -118,7 +125,9 @@
     ;; The shared corpus, driven through this SDK's utilities.
     (when-not sdk-only? (primary/run-corpus rec))
     (pipeline/run rec)
-    (feature/run rec)
+    (let [ran (atom 0)]
+      (feature/run (fn [name ok? msg] (swap! ran inc) (rec name ok? msg)))
+      (println (str "feature: ran " @ran " check(s)")))
     (run-feature-suites rec)
     (netsim/run rec)
     (concurrency/run rec)
@@ -126,6 +135,7 @@
     ;; The canary sweep (generated: sdk/test/clean.clj) prints its own
     ;; `clean: swept N surface(s), M leak(s)` line, which sdkgen's lane reads.
     (clean/run rec)
+    (run-codec-suite rec)
     (let [fails (filter (complement :ok) @results)
           np (count (filter :ok @results))
           nf (count fails)]

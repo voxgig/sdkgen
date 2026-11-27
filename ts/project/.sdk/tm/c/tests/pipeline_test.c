@@ -624,6 +624,62 @@ static void test_feature_order_map_no_test_is_sorted(void) {
   CHECK_STR_EQ(buf, "cache,retry", "feature order: map no-test is sorted");
 }
 
+// =============================================================================
+// make_point: allow.op
+// =============================================================================
+
+static voxgig_value* AP_PLAIN;
+static voxgig_value* AP_AUDIO;
+
+static voxgig_value* ap_point(const char* allow, voxgig_value* reqmatch, PNError** err) {
+  pl_client(NULL);
+  Context* ctx = pl_ctx(v_map());
+  ctx->op = operation_new(cmap(4, "entity", v_str("episode"), "name", v_str("load"),
+                               "input", v_str("match"), "points", clist(2, AP_PLAIN, AP_AUDIO)));
+  ctx->options = cmap(1, "allow", cmap(1, "op", v_str(allow)));
+  ctx->reqmatch = reqmatch;
+  ctx->mtch = v_map();
+  *err = NULL;
+  return make_point_util(ctx, err);
+}
+
+static const char* ap_code(const char* allow, voxgig_value* reqmatch) {
+  PNError* err = NULL;
+  ap_point(allow, reqmatch, &err);
+  return err ? err->code : "";
+}
+
+static bool ap_is(const char* allow, voxgig_value* reqmatch, voxgig_value* want) {
+  PNError* err = NULL;
+  voxgig_value* got = ap_point(allow, reqmatch, &err);
+  return NULL == err && NULL != got && v_eq(got, want);
+}
+
+static void test_make_point_allow_entry_may_name_an_action(void) {
+  AP_PLAIN = cmap(3, "method", v_str("GET"), "parts", clist(2, v_str("episode"), v_str("{id}")),
+                  "select", cmap(1, "exist", clist(1, v_str("id"))));
+  AP_AUDIO = cmap(3, "method", v_str("GET"),
+                  "parts", clist(3, v_str("episode"), v_str("{id}"), v_str("audio")),
+                  "select", cmap(2, "exist", clist(1, v_str("id")), "$action", v_str("audio")));
+  voxgig_value* audio = cmap(2, "$action", v_str("audio"), "id", v_str("e1"));
+  voxgig_value* record = cmap(1, "id", v_str("e1"));
+
+  CHECK(ap_is("episode.load:audio", audio, AP_AUDIO), "allow episode.load:audio admits the action");
+  CHECK_STR_EQ(ap_code("episode.load:audio", record), "point_op_allow",
+               "allow episode.load:audio refuses the plain op");
+  CHECK(ap_is("Episode.Load:AUDIO", audio, AP_AUDIO), "allow matches any case");
+  CHECK_STR_EQ(ap_code("episode.load:video", audio), "point_op_allow",
+               "allow episode.load:video refuses audio");
+  CHECK(ap_is("episode.load", audio, AP_AUDIO), "allow episode.load admits its actions");
+  CHECK(ap_is("load", audio, AP_AUDIO), "allow load admits its actions");
+  CHECK(ap_is("load", record, AP_PLAIN), "allow load admits the plain op");
+  CHECK_STR_EQ(ap_code("list", record), "point_op_allow", "allow list refuses load");
+
+  PNError* err = NULL;
+  ap_point("episode.load:video", audio, &err);
+  CHECK(err && strstr(err->msg, "Operation \"load:audio\""), "allow refusal names load:audio");
+}
+
 int main(void) {
   RUN(test_make_response_guards_missing_spec_response_result);
   RUN(test_make_response_4xx_sets_result_err_and_copies_headers);
@@ -653,6 +709,7 @@ int main(void) {
   RUN(test_prepare_auth_empty_apikey_drops_credential);
   RUN(test_prepare_auth_missing_apikey_drops_credential);
   RUN(test_prepare_auth_public_api_no_auth_block_drops_credential);
+  RUN(test_make_point_allow_entry_may_name_an_action);
 
   printf("pipeline: %d unit tests run\n", TESTS);
   TEST_SUMMARY("pipeline");

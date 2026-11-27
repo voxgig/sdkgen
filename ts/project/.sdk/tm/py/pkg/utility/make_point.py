@@ -7,6 +7,8 @@ from projectname_sdk.utility.voxgig_struct import voxgig_struct as vs
 from projectname_sdk.core.helpers import to_map
 from projectname_sdk.utility.param import param_value
 from projectname_sdk.utility.prepare_method import allowed
+from projectname_sdk.utility.op_key import op_action, op_keys
+from projectname_sdk.utility.binary import bytes_refused, lift_sources
 
 
 _PATH_PARAM = re.compile(r"\{([^{}/]+)\}")
@@ -56,7 +58,19 @@ def _unfilled(ctx, point):
     return missing
 
 
+# Once the point is known, a body of bytes it answers is refused and the
+# sources its binary fields carry are lifted out of the data.
 def make_point_util(ctx):
+    point, err = _select_point(ctx)
+    if err is not None:
+        return None, err
+    err = bytes_refused(ctx) or lift_sources(ctx)
+    if err is not None:
+        return None, err
+    return point, None
+
+
+def _select_point(ctx):
     pre = ctx.out.get("point")
     if pre is not None:
         # A feature hook (e.g. rbac) short-circuits endpoint resolution by
@@ -71,9 +85,10 @@ def make_point_util(ctx):
     options = ctx.options
 
     allow_op = vs.getpath(options, "allow.op")
-    if not allowed(allow_op, op.name):
+    if not any(allowed(allow_op, key) for key in op_keys(ctx)):
+        action = op_action(ctx)
         return None, ctx.make_error("point_op_allow",
-            'Operation "' + op.name +
+            'Operation "' + op.name + ('' if action is None else ':' + action) +
             '" not allowed by SDK option allow.op value: "' + str(allow_op) + '"')
 
     if len(op.points) == 0:

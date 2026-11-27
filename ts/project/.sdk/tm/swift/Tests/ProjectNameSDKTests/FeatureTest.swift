@@ -46,6 +46,8 @@ struct FhOpSpec {
   var headers: VMap?
   var body: Value?
   var ctrl: VMap?
+  var reqmatch: VMap?
+  var reqdata: VMap?
 }
 
 struct FhOpResult {
@@ -72,6 +74,14 @@ final class FhHarness {
     }
   }
 
+  // Which request argument an operation reads, as the generated Context decides.
+  private static func opInput(_ op: String) -> String {
+    switch op {
+    case "create", "update", "patch": return "data"
+    default: return "match"
+    }
+  }
+
   private static func buildUrl(_ spec: Spec) -> String {
     let keys = spec.query.entries.filter { !isNil($0.value) }.map { $0.key }.sorted()
     let qs = keys.map {
@@ -89,7 +99,10 @@ final class FhHarness {
     let ctrl = o.ctrl ?? VMap()
 
     let ctx = utility.makeContext(["opname": opname, "ctrl": ctrl], rootctx)
-    ctx.op = Operation(vm(("entity", .string(entity)), ("name", .string(opname))))
+    ctx.op = Operation(vm(("entity", .string(entity)), ("name", .string(opname)),
+      ("input", .string(FhHarness.opInput(opname)))))
+    ctx.reqmatch = o.reqmatch ?? VMap()
+    ctx.reqdata = o.reqdata ?? VMap()
 
     utility.featureHook(ctx, "PostConstructEntity")
 
@@ -184,7 +197,9 @@ enum Fh {
     gp(SdkConfig.makeConfig(), "feature").asMap?.entries[name] != nil
   }
   static func skipWithout(_ names: String...) -> Bool {
-    names.contains { !hasFeature($0) }
+    guard let absent = names.first(where: { !hasFeature($0) }) else { return false }
+    print("skip: feature not present in this SDK: \(absent)")
+    return true
   }
   static func errCode(_ e: Error?) -> String { SdkRunner.errCode(e) }
 
@@ -201,7 +216,14 @@ enum Fh {
   }
 
   static func make(_ server: FetcherFunc?, _ features: (BaseFeature, VMap?)...) -> FhHarness {
-    let client = ProjectNameSDK.testSDK(nil, nil)
+    makeWith(nil, server, features)
+  }
+
+  // makeWith also passes SDK options to the client, so a test can reach the
+  // real clean utility with a registered secret.
+  static func makeWith(_ sdkopts: VMap?, _ server: FetcherFunc?,
+                       _ features: [(BaseFeature, VMap?)]) -> FhHarness {
+    let client = ProjectNameSDK.testSDK(nil, sdkopts)
     client.features = []
 
     let utility = client.getUtility()
@@ -884,6 +906,200 @@ final class FeatureAuditTest: XCTestCase {
     let h = Fh.make(nil, (f, vm(("active", .bool(false)))))
     _ = h.op(FhOpSpec(op: "load"))
     XCTAssertEqual(f.records.count, 0)
+  }
+}
+
+// --- action keys -------------------------------------------------------------
+
+private let actionSecret = "ACTION-SECRET-q7w8e9r0"
+private let actionMask = "[redacted]"
+
+// A custom action is `$action` in the request argument, and its keys name it:
+// `<entity>.<op>:<action>`, most specific first.
+
+final class FeatureActionKeysTest: XCTestCase {
+  private func audioArg() -> VMap { vm(("$action", .string("audio")), ("id", .string("e1"))) }
+  private func recordArg() -> VMap { vm(("id", .string("e1"))) }
+
+  private func load(_ h: FhHarness, _ reqmatch: VMap) -> FhOpResult {
+    h.op(FhOpSpec(entity: "episode", op: "load", reqmatch: reqmatch))
+  }
+
+  private func audioRules() -> Value {
+    .map(vm(("episode.load", .string("read")), ("episode.load:audio", .string("audio"))))
+  }
+
+  func testRbacRecordGrantedActionRefused() {
+    if Fh.skipWithout("rbac") { return }
+    let rec = FhRecorder()
+    let f = RbacFeature()
+    let h = Fh.make(rec.fetch, (f, vm(
+      ("rules", audioRules()),
+      ("permissions", .list([.string("read")])))))
+    XCTAssertTrue(load(h, recordArg()).ok)
+    let res = load(h, audioArg())
+    XCTAssertEqual(Fh.errCode(res.err), "rbac_denied")
+    XCTAssertTrue((res.err as? ProjectNameError)?.message.contains("operation \"load:audio\"") ?? false)
+    XCTAssertEqual(rec.calls.count, 1)
+    XCTAssertEqual(f.last?.entries["action"], .string("audio"))
+  }
+
+  func testRbacActionGrantedRecordRefused() {
+    if Fh.skipWithout("rbac") { return }
+    let f = RbacFeature()
+    let h = Fh.make(nil, (f, vm(
+      ("rules", audioRules()),
+      ("permissions", .list([.string("audio")])))))
+    XCTAssertEqual(Fh.errCode(load(h, recordArg()).err), "rbac_denied")
+    XCTAssertNil(f.last?.entries["action"])
+    XCTAssertTrue(load(h, audioArg()).ok)
+  }
+
+  func testRbacActionFallsBackToItsOperation() {
+    if Fh.skipWithout("rbac") { return }
+    let h = Fh.make(nil, (RbacFeature(), vm(
+      ("rules", .map(vm(("episode.load", .string("read"))))),
+      ("permissions", .list([])))))
+    XCTAssertEqual(Fh.errCode(load(h, audioArg()).err), "rbac_denied")
+  }
+
+  func testRbacDataOpReadsReqdataOnly() {
+    if Fh.skipWithout("rbac") { return }
+    let h = Fh.make(nil, (RbacFeature(), vm(
+      ("rules", .map(vm(("episode.create:upload", .string("write"))))),
+      ("permissions", .list([])))))
+    let upload = vm(("$action", .string("upload")))
+    XCTAssertEqual(Fh.errCode(
+      h.op(FhOpSpec(entity: "episode", op: "create", reqdata: upload)).err), "rbac_denied")
+    XCTAssertTrue(h.op(FhOpSpec(entity: "episode", op: "create", reqmatch: upload)).ok)
+  }
+
+  func testMetricsCountsActionApart() {
+    if Fh.skipWithout("metrics") { return }
+    let f = MetricsFeature()
+    let h = Fh.make(nil, (f, nil))
+    _ = load(h, recordArg())
+    _ = load(h, audioArg())
+    _ = load(h, audioArg())
+    XCTAssertEqual(f.total.count, 3)
+    XCTAssertEqual(f.ops["episode.load"]?.count, 1)
+    XCTAssertEqual(f.ops["episode.load:audio"]?.count, 2)
+  }
+
+  func testAuditRecordNamesItsAction() {
+    if Fh.skipWithout("audit") { return }
+    let f = AuditFeature()
+    let h = Fh.make(nil, (f, nil))
+    _ = load(h, recordArg())
+    _ = load(h, audioArg())
+    XCTAssertEqual(f.records.count, 2)
+    XCTAssertNil(f.records[0].entries["action"])
+    XCTAssertEqual(f.records[0].entries["op"], .string("load"))
+    XCTAssertEqual(f.records[1].entries["action"], .string("audio"))
+    XCTAssertEqual(f.records[1].entries["op"], .string("load"))
+  }
+
+  func testCostPricesActionApart() {
+    if Fh.skipWithout("cost") { return }
+    var sunk: [CostRecord] = []
+    let sink: (CostRecord) -> Void = { sunk.append($0) }
+    let f = CostFeature()
+    let h = Fh.make(nil, (f, vm(
+      ("rates", .map(vm(("episode.load", .int(1)), ("episode.load:audio", .int(5))))),
+      ("sink", .nat(sink)))))
+    _ = load(h, recordArg())
+    _ = load(h, audioArg())
+    XCTAssertEqual(f.total.amount, 6)
+    XCTAssertEqual(f.ops["episode.load"]?.calls, 1)
+    XCTAssertEqual(f.ops["episode.load"]?.amount, 1)
+    XCTAssertEqual(f.ops["episode.load:audio"]?.calls, 1)
+    XCTAssertEqual(f.ops["episode.load:audio"]?.amount, 5)
+    XCTAssertEqual(sunk.count, 2)
+    XCTAssertNil(sunk[0].action)
+    XCTAssertEqual(sunk[1].action, "audio")
+    XCTAssertEqual(f.last?.action, "audio")
+  }
+
+  // A caller's action may hold a registered secret: what a consumer reads is
+  // cleaned, while the lookup still matches the raw action.
+  private func secretOpts() -> VMap { vm(("apikey", .string(actionSecret))) }
+  private func secretArg() -> VMap { vm(("$action", .string(actionSecret)), ("id", .string("e1"))) }
+
+  func testRbacRecordCleansTheAction() {
+    if Fh.skipWithout("rbac") { return }
+    let f = RbacFeature()
+    let h = Fh.makeWith(secretOpts(), nil, [(f, vm(
+      ("rules", .map(vm(("episode.load", .string("read")),
+        ("episode.load:" + actionSecret, .string("secret"))))),
+      ("permissions", .list([.string("read")]))))])
+    XCTAssertEqual(Fh.errCode(load(h, secretArg()).err), "rbac_denied")
+    XCTAssertEqual(f.last?.entries["action"], .string(actionMask))
+    XCTAssertEqual(f.last?.entries["required"], .string("secret"))
+    XCTAssertEqual(f.denied, 1)
+  }
+
+  func testMetricsBucketCleansTheAction() {
+    if Fh.skipWithout("metrics") { return }
+    let f = MetricsFeature()
+    let h = Fh.makeWith(secretOpts(), nil, [(f, nil)])
+    _ = load(h, secretArg())
+    _ = load(h, audioArg())
+    XCTAssertFalse(f.ops.keys.contains { $0.contains(actionSecret) })
+    XCTAssertEqual(f.ops["episode.load:" + actionMask]?.count, 1)
+    XCTAssertEqual(f.ops["episode.load:audio"]?.count, 1)
+  }
+
+  func testMetricsBucketKeepsTheActionWithCleanOff() {
+    if Fh.skipWithout("metrics") { return }
+    let f = MetricsFeature()
+    let opts = secretOpts()
+    opts.entries["clean"] = .map(vm(("active", .bool(false))))
+    let h = Fh.makeWith(opts, nil, [(f, nil)])
+    _ = load(h, secretArg())
+    XCTAssertEqual(f.ops["episode.load:" + actionSecret]?.count, 1)
+  }
+
+  func testCostBucketCleansTheAction() {
+    if Fh.skipWithout("cost") { return }
+    let f = CostFeature()
+    let h = Fh.makeWith(secretOpts(), nil, [(f, vm(
+      ("rates", .map(vm(("episode.load", .int(1)), ("episode.load:" + actionSecret, .int(7)))))))])
+    _ = load(h, secretArg())
+    _ = load(h, audioArg())
+    XCTAssertFalse(f.ops.keys.contains { $0.contains(actionSecret) })
+    XCTAssertEqual(f.ops["episode.load:" + actionMask]?.amount, 7)
+    XCTAssertEqual(f.ops["episode.load:audio"]?.amount, 1)
+    XCTAssertEqual(f.total.amount, 8)
+  }
+
+  func testSensitiveActionKeyMasksTheAction() {
+    if Fh.skipWithout("rbac", "metrics", "cost") { return }
+    let rbac = RbacFeature()
+    let metrics = MetricsFeature()
+    let cost = CostFeature()
+    let h = Fh.makeWith(vm(("clean", .map(vm(("keys", .string("action")))))), nil, [
+      (rbac, vm(
+        ("rules", .map(vm(("episode.load:audio", .string("audio"))))),
+        ("permissions", .list([.string("audio")])))),
+      (metrics, nil),
+      (cost, vm(("rates", .map(vm(("episode.load:audio", .int(5))))))),
+    ])
+    XCTAssertTrue(load(h, audioArg()).ok)
+    XCTAssertEqual(rbac.last?.entries["action"], .string(actionMask))
+    XCTAssertEqual(metrics.ops["episode.load:" + actionMask]?.count, 1)
+    XCTAssertEqual(cost.ops["episode.load:" + actionMask]?.amount, 5)
+    XCTAssertEqual(metrics.ops.count, 1)
+    XCTAssertEqual(cost.ops.count, 1)
+  }
+
+  func testCostActionRateFallsBackToItsOperation() {
+    if Fh.skipWithout("cost") { return }
+    let f = CostFeature()
+    let h = Fh.make(nil, (f, vm(
+      ("rates", .map(vm(("episode.load", .int(2)), ("*", .int(9))))))))
+    _ = load(h, audioArg())
+    XCTAssertEqual(f.ops["episode.load:audio"]?.calls, 1)
+    XCTAssertEqual(f.ops["episode.load:audio"]?.amount, 2)
   }
 }
 

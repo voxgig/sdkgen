@@ -2,6 +2,7 @@
 import {
   cmp, each,
   File, Content, Copy, Folder,
+  codecExcludes,
   entityClassName,
   inactiveFeatureExcludes,
   pluginExcludes,
@@ -29,6 +30,7 @@ import { Gitignore } from './Gitignore_ocaml'
 import { MainEntity } from './MainEntity_ocaml'
 import { SdkError } from './SdkError_ocaml'
 import { PrepareAuth } from './PrepareAuth_ocaml'
+import { CodecIndex } from './CodecIndex_ocaml'
 import { entityModule, ocamlString } from './utility_ocaml'
 
 
@@ -63,7 +65,9 @@ const Main = cmp(async function Main(props: any) {
     from: 'tm/' + target.name,
     exclude: [/src\//, /\.(cmi|cmo|cmx|cma|cmxa|o|a)$/, /a\.out$/,
       /run_sdk_test$/, /run_omni_smoke$/, /run_struct_corpus$/, /run_primary_corpus$/,
-      ...containerExcludes, ...inactiveFeatureExcludes(props.ctx$, target), ...pluginExcludes(model)],
+      /run_codec_test$/,
+      ...containerExcludes, ...inactiveFeatureExcludes(props.ctx$, target), ...pluginExcludes(model),
+      ...codecExcludes(model)],
     replace: {
       ...props.ctx$.stdrep,
     }
@@ -153,6 +157,7 @@ FEATURE_LINK =
   // existing caller (the utility record, make_spec, the secrets feature's
   // re-run, the shipped suites) resolves unchanged. See PrepareAuth_ocaml.
   PrepareAuth({ target })
+  CodecIndex({ target })
 
   // per-entity accessors (twin of the go root package + rust core/sdk.rs).
   File({ name: 'sdk_client.' + target.ext }, () => {

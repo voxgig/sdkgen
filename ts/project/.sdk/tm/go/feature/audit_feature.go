@@ -2,6 +2,7 @@ package feature
 
 import (
 	"GOMODULE/core"
+	"GOMODULE/utility"
 )
 
 type AuditFeature struct {
@@ -87,6 +88,9 @@ func (f *AuditFeature) emit(ctx *core.Context, outcome string) {
 	}
 	if ctx.Result != nil {
 		record["status"] = ctx.Result.Status
+	}
+	if action := utility.OpAction(ctx); "" != action {
+		record["action"] = action
 	}
 	record = fclean(ctx, record)
 

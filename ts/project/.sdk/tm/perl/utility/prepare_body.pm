@@ -11,6 +11,7 @@ BEGIN { $__dir = File::Basename::dirname(Cwd::abs_path(__FILE__)) }
 require(Cwd::abs_path("$__dir/../lib/Voxgig/Struct.pm"));
 require(Cwd::abs_path("$__dir/../core/helpers.pm"));
 require(Cwd::abs_path("$__dir/media.pm"));
+require(Cwd::abs_path("$__dir/binary.pm"));
 
 package ProjectNameUtilities;
 
@@ -44,12 +45,43 @@ my $match_body = sub {
   return $body;
 };
 
+# The encoded body, with its content type replacing any the headers carry:
+# a multipart boundary is the encoder's alone to choose. An error is
+# answered as the body, for make_spec to raise.
+my $encode_body = sub {
+  my ($ctx, $kind, $data) = @_;
+  my $codec = $ctx->{utility}{codec};
+  my $encode = ref $codec eq 'HASH' ? $codec->{$kind} : undef;
+  return $ctx->make_error('body_codec_missing',
+    "This SDK was generated without a $kind encoder.") unless ref $encode eq 'CODE';
+
+  my ($encoded, $err) = $encode->($ctx, $data, $ctx->{sources} || {});
+  return $err if $err;
+
+  my $headers = $ctx->{spec} ? $ctx->{spec}{headers} : undef;
+  if (ref $headers eq 'HASH') {
+    delete $headers->{$_} for grep { 'content-type' eq lc $_ } keys %$headers;
+    $headers->{'content-type'} = $encoded->{type};
+  }
+  return $encoded->{body};
+};
+
 $REGISTRY{prepare_body} = sub {
   my ($ctx) = @_;
   if ('data' eq $ctx->{op}{input}) {
-    return ProjectNameUtilities::raw_body($ctx->{reqdata})
-      if ProjectNameUtilities::is_raw_request($ctx->{point});
-    return $ctx->{utility}{transform_request}->($ctx);
+    my $refused = lift_sources($ctx);
+    return $refused if $refused;
+
+    if (is_raw_request($ctx->{point})) {
+      my $raw = raw_body($ctx->{sources});
+      return is_source($raw) ? $raw->data : $raw;
+    }
+
+    my $body = $ctx->{utility}{transform_request}->($ctx);
+    my $kind = ProjectNameHelpers::gpath($ctx->{point}, 'body.kind');
+    return $encode_body->($ctx, $kind, $body)
+      if defined $kind && ('form' eq $kind || 'multipart' eq $kind);
+    return $body;
   }
   my $fields = $ctx->{point} ? ProjectNameHelpers::gp($ctx->{point}, 'fields') : undef;
   return undef unless Voxgig::Struct::islist($fields) && @$fields;

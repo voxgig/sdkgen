@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField, entityOps, bodyNote, listMatchArg, matchExampleItems, litString, requestExampleItems, entityClassName, entityCollection, featureDocs, fact, clientOptions, requiredItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, codecTier, canonToType, File, isAuthActive, entityIdField, entityOps, bodyNote, listMatchArg, matchExampleItems, litString, requestExampleItems, entityClassName, entityCollection, featureDocs, fact, clientOptions, requiredItems } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -351,8 +351,10 @@ fmt.Println(result.(sdk.Entity).Data())
 
           if ('create' === opname || 'update' === opname || 'patch' === opname) {
             const note = bodyNote(ent.op[opname], {
+              tier: codecTier(target),
               values: 'a `[]byte`, a `string` or an `io.Reader`',
               once: 'an `io.Reader`',
+              source: 'a source made by `client.Binary.Bytes(data, map[string]any{"name": name, "type": mediaType})`',
             })
             if ('' !== note) Content(note)
           }

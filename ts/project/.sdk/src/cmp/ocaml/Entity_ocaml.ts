@@ -4,6 +4,7 @@ import * as Path from 'node:path'
 import {
   cmp,
   File, Content, Fragment,
+  entitySlots,
 } from '@voxgig/sdkgen'
 
 import {
@@ -25,6 +26,10 @@ const Entity = cmp(function Entity(props: any) {
   const ops = ['load', 'list', 'create', 'update', 'patch', 'remove']
     .map((opname: string) => entityOp(opname, opnames.includes(opname), entity.name))
     .join('')
+
+  // The entity's binary slots, by name; '' is its own bytes, reached with no name.
+  const slots = entitySlots(entity)
+  const binary = 0 === slots.length ? '' : binaryAccessor(slots)
 
   File({ name: entityModule(entity.name) + '.' + target.ext }, () => {
 
@@ -56,6 +61,13 @@ exception Op_return of value
       }
     })
 
+    if (0 < slots.length) {
+      Content(`let binary_slots : (string * Handle_codec.slot_def) list = [
+${slots.map((slot: any) => `  ("${ocamlString(slot.name)}", { Handle_codec.sl_action = "${ocamlString(slot.action)}"; sl_read = ${optStr(slot.read)}; sl_write = ${optStr(slot.write)} });\n`).join('')}]
+
+`)
+    }
+
     Content(`
 let rec make (client : sdk_client) (entopts_in : value) : entity_obj =
   let entopts = match to_map entopts_in with Map _ as m -> m | _ -> empty_map () in
@@ -81,13 +93,15 @@ let rec make (client : sdk_client) (entopts_in : value) : entity_obj =
      * (which types as 'a) stands in. *)
     e_load = (fun _ _ -> failwith "op not installed");
     e_list = (fun _ _ -> failwith "op not installed");
-    e_create = (fun _ _ -> failwith "op not installed");
-    e_update = (fun _ _ -> failwith "op not installed");
-    e_patch = (fun _ _ -> failwith "op not installed");
+    e_create = (fun ?sources:_ _ _ -> failwith "op not installed");
+    e_update = (fun ?sources:_ _ _ -> failwith "op not installed");
+    e_patch = (fun ?sources:_ _ _ -> failwith "op not installed");
     e_remove = (fun _ _ -> failwith "op not installed");
     e_deleted = false;
     e_mark_deleted = (fun () -> ());
     e_stream = (fun _ _ _ -> Seq.empty);
+    e_binary = (fun slot -> raise (Sdk_error_exc (mk_error "binary_slot_unknown"
+      ("Entity \\"${ocamlString(entity.name)}\\" has no binary slot \\"" ^ Option.value slot ~default:"" ^ "\\"."))));
   } in
   let entctx = utility.u_make_context
       { (default_ctxspec ()) with cs_entity = Some ent; cs_entopts = Some entopts } (Some root) in
@@ -145,10 +159,31 @@ let rec make (client : sdk_client) (entopts_in : value) : entity_obj =
         | x :: rest -> if aborted () then Seq.Nil else Seq.Cons (x, seq_of rest) in
       seq_of raw);
   ignore run_op;
-${ops}  ent
-`)
+${ops}${0 === slots.length ? '' : '  ent.e_binary <- Handle_codec.make ent binary_slots;\n'}  ent
+${binary}`)
   })
 })
+
+
+function optStr(v: any): string {
+  return null == v ? 'None' : 'Some "' + ocamlString(String(v)) + '"'
+}
+
+
+// An entity's bytes never enter its data: they are reached by slot. The slot
+// is a string, with a constant per name; optional when the entity's own
+// bytes are a slot, and absent when they are the only one.
+function binaryAccessor(slots: any[]): string {
+  const named = slots.map((slot: any) => slot.name).filter((name: string) => '' !== name)
+  const consts = named.map((name: string) =>
+    `let slot_${ocamlVarName(name)} = "${ocamlString(name)}"\n`).join('')
+  const fn = 0 === named.length
+    ? `let binary (ent : entity_obj) : binary_handle = ent.e_binary None\n`
+    : named.length < slots.length
+      ? `let binary ?slot (ent : entity_obj) : binary_handle = ent.e_binary slot\n`
+      : `let binary (ent : entity_obj) (slot : string) : binary_handle = ent.e_binary (Some slot)\n`
+  return '\n' + consts + fn
+}
 
 
 export {

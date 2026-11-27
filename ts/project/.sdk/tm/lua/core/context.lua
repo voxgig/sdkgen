@@ -59,6 +59,9 @@ function Context.new(ctxmap, basectx)
     if type(ctrl_raw.paging) == "table" then
       self.ctrl.paging = ctrl_raw.paging
     end
+    if type(ctrl_raw.transfer) == "table" then
+      self.ctrl.transfer = ctrl_raw.transfer
+    end
   elseif basectx ~= nil and basectx.ctrl ~= nil
       and helpers.get_ctx_prop(ctxmap, "opname") == nil then
     self.ctrl = basectx.ctrl
@@ -129,6 +132,9 @@ function Context.new(ctxmap, basectx)
   self.reqdata = helpers.to_map(helpers.get_ctx_prop(ctxmap, "reqdata")) or {}
   self.match = helpers.to_map(helpers.get_ctx_prop(ctxmap, "match")) or {}
   self.reqmatch = helpers.to_map(helpers.get_ctx_prop(ctxmap, "reqmatch")) or {}
+
+  -- The values of the point's binary fields, lifted out of reqdata.
+  self.sources = helpers.to_map(helpers.get_ctx_prop(ctxmap, "sources"))
 
   -- Point
   local pt = helpers.get_ctx_prop(ctxmap, "point")

@@ -125,8 +125,8 @@ sub media_headers {
 # filehandle can be read once, so it is read here, before the first attempt,
 # and a retry sends the same bytes again.
 sub raw_body {
-  my ($reqdata) = @_;
-  my $body = ref $reqdata eq 'HASH' ? $reqdata->{$RAW_BODY} : undef;
+  my ($values) = @_;
+  my $body = ref $values eq 'HASH' ? $values->{$RAW_BODY} : undef;
   if (ref $body && Scalar::Util::openhandle($body)) {
     local $/;
     my $data = <$body>;

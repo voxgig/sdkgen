@@ -12,6 +12,7 @@ main: kit: target: perl: {
   # lives in this target's feature container (tm/perl/feature/secrets/),
   # so a feature that resolves secrets through sekreto can apply here.
   provides: { sekreto: true, schema: true }
+  codec: tier: 'encoded'
 
   # Files earlier toolchains generated that this target has RETIRED
   # (vendor-tag rollout): the struct-corpus runner (t/runner.pm is

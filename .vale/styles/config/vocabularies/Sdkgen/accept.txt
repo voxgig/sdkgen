@@ -143,3 +143,5 @@ Packagist
 Xdebug
 accessor
 accessors
+codec
+codecs

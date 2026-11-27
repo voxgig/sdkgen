@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonKey, canonScalarKey, File, isAuthActive, entityIdField, entityOps, bodyNote, matchExampleItems, requestExampleItems, featureDocs, fact, clientOptions, requiredItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, codecTier, canonKey, canonScalarKey, File, isAuthActive, entityIdField, entityOps, bodyNote, matchExampleItems, requestExampleItems, featureDocs, fact, clientOptions, requiredItems } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -347,7 +347,11 @@ Entity* result = ${evar}->vt->${opname}(${evar}, ${cmapExpr(updatePairs)}, NULL,
 
           if ('create' === opname || 'update' === opname || 'patch' === opname) {
             const note = bodyNote(ent.op[opname], {
+              tier: codecTier(target),
               values: 'a string value holding the bytes, such as `voxgig_new_string_n`',
+              source: 'a `BinaryField` beside the data, through `entity_' + opname +
+                '_with(e, data, sources, n, ctrl, &err)`, its source made by ' +
+                '`binary_bytes(data, len, name, type)`',
             })
             if ('' !== note) Content(note)
           }

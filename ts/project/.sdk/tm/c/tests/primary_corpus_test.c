@@ -452,8 +452,11 @@ static voxgig_value* s_prepare_auth(Context* c, voxgig_value* a, char** e) {
   return c->spec ? spec_to_value(c->spec) : v_undef();
 }
 static voxgig_value* s_prepare_body(Context* c, voxgig_value* a, char** e) {
-  (void)a; (void)e;
-  return prepare_body_util(c);
+  (void)a;
+  PNError* pe = NULL;
+  voxgig_value* r = prepare_body_util(c, &pe);
+  ERRSET(e, pe);
+  return r;
 }
 static voxgig_value* s_prepare_headers(Context* c, voxgig_value* a, char** e) {
   (void)a; (void)e;

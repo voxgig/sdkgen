@@ -6,6 +6,7 @@ from projectname_sdk.core.spec import ProjectNameSpec
 from projectname_sdk.core import helpers
 from projectname_sdk.utility.prepare_method import allowed
 from projectname_sdk.utility.result_body import unreadable_body
+from projectname_sdk.core.binary import BinarySource, binary
 
 # Load utility registration (populates Utility._registrar)
 from projectname_sdk.utility import register
@@ -20,6 +21,9 @@ class ProjectNameSDK:
     # `client.options` and out of `vars(client)` and every attribute dump;
     # the dict entry keeps the instance open for everything else.
     __slots__ = ("_options", "__dict__")
+
+    # Builds the file sources a binary field or a raw body takes.
+    binary = binary
 
     def __init__(self, options=None):
         self.mode = "live"

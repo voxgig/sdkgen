@@ -216,6 +216,28 @@ class FtHarness
         ($utility->feature_hook)($this->rootctx, 'PostConstruct');
     }
 
+    // Registers a secret value with the SDK's own clean configuration, as
+    // make_options registers a credential.
+    public function registerSecret(string $value): \stdClass
+    {
+        $cfg = $this->cleanConfig();
+        ($this->utility->clean_add)($this->rootctx, $value);
+        return $cfg;
+    }
+
+    // The SDK's own clean configuration, installed as make_options does.
+    public function cleanConfig(): \stdClass
+    {
+        $options = $this->rootctx->options ?? [];
+        $cfg = $options['__derived__']['clean'] ?? null;
+        if (!$cfg instanceof \stdClass) {
+            $cfg = ProjectNameClean::config(\Voxgig\Struct\Struct::getprop(ProjectNameSchema::optspec(), 'clean'));
+            $options['__derived__']['clean'] = $cfg;
+            $this->rootctx->options = $options;
+        }
+        return $cfg;
+    }
+
     public function feature(string $name): mixed
     {
         foreach ($this->client->features as $f) {
@@ -271,6 +293,8 @@ class FtHarness
             'client' => $this->client,
             'utility' => $utility,
             'entity' => new FtEntity($entity),
+            'reqmatch' => $o['reqmatch'] ?? [],
+            'reqdata' => $o['reqdata'] ?? [],
         ], $this->rootctx);
 
         $ctrl = new FtCtrl();
@@ -927,7 +951,10 @@ class FeatureTest extends TestCase
         $this->assertCount(1, $spans);
         $sent = $rec->calls[0]['fetchdef']['headers'];
         $this->assertSame($h->client->_telemetry['spans'][0]['traceId'], $sent['X-Trace-Id']);
-        $this->assertMatchesRegularExpression('/^00-.+-.+-01$/', $sent['traceparent']);
+        // preg_match rather than assertMatchesRegularExpression, which
+        // PHPUnit 8 does not have.
+        $this->assertSame(1, preg_match('/^00-.+-.+-01$/', (string) $sent['traceparent']),
+            (string) $sent['traceparent']);
     }
 
     public function test_telemetry_records_a_failed_span_on_error(): void
@@ -1036,6 +1063,204 @@ class FeatureTest extends TestCase
         $rec = $h->client->_audit['records'][0];
         $this->assertSame('anonymous', $rec['actor']);
         $this->assertEquals(42, $rec['ts']);
+    }
+
+
+    // --- action keys ----------------------------------------------------------
+    // A custom action is `$action` in the request argument, and its keys name
+    // it: `<entity>.<op>:<action>`, most specific first.
+
+    private const AUDIO = ['$action' => 'audio', 'id' => 'e1'];
+    private const RECORD = ['id' => 'e1'];
+    private const ACTION_RULES = ['episode.load' => 'read', 'episode.load:audio' => 'audio'];
+
+    public function test_action_keys_rbac_the_record_is_granted_and_the_action_refused(): void
+    {
+        $this->needs('rbac');
+        $rec = new FtRecorder();
+        $h = new FtHarness([
+            ['name' => 'rbac', 'options' => ['rules' => self::ACTION_RULES, 'permissions' => ['read']]],
+        ], $rec->server());
+        $this->assertTrue($h->op(['entity' => 'episode', 'reqmatch' => self::RECORD])['ok']);
+        $res = $h->op(['entity' => 'episode', 'reqmatch' => self::AUDIO]);
+        $this->assertSame('rbac_denied', self::code($res['err']));
+        $this->assertStringContainsString('operation "load:audio"', $res['err']->getMessage());
+        $this->assertCount(1, $rec->calls);
+        $this->assertSame('audio', $h->client->_rbac['last']['action']);
+    }
+
+    public function test_action_keys_rbac_the_action_is_granted_and_the_record_refused(): void
+    {
+        $this->needs('rbac');
+        $h = new FtHarness([
+            ['name' => 'rbac', 'options' => ['rules' => self::ACTION_RULES, 'permissions' => ['audio']]],
+        ]);
+        $this->assertSame('rbac_denied',
+            self::code($h->op(['entity' => 'episode', 'reqmatch' => self::RECORD])['err']));
+        $this->assertArrayNotHasKey('action', $h->client->_rbac['last']);
+        $this->assertTrue($h->op(['entity' => 'episode', 'reqmatch' => self::AUDIO])['ok']);
+    }
+
+    public function test_action_keys_rbac_with_no_action_rule_an_action_falls_back_to_its_operation(): void
+    {
+        $this->needs('rbac');
+        $h = new FtHarness([
+            ['name' => 'rbac', 'options' => ['rules' => ['episode.load' => 'read'], 'permissions' => []]],
+        ]);
+        $this->assertSame('rbac_denied',
+            self::code($h->op(['entity' => 'episode', 'reqmatch' => self::AUDIO])['err']));
+    }
+
+    public function test_action_keys_rbac_a_data_op_reads_its_action_from_reqdata(): void
+    {
+        $this->needs('rbac');
+        $h = new FtHarness([
+            ['name' => 'rbac', 'options' => ['rules' => ['episode.create:upload' => 'write'], 'permissions' => []]],
+        ]);
+        $upload = ['$action' => 'upload'];
+        $this->assertSame('rbac_denied',
+            self::code($h->op(['op' => 'create', 'entity' => 'episode', 'reqdata' => $upload])['err']));
+        $this->assertTrue($h->op(['op' => 'create', 'entity' => 'episode', 'reqmatch' => $upload])['ok']);
+    }
+
+    public function test_action_keys_metrics_an_action_is_counted_apart_from_its_operation(): void
+    {
+        $this->needs('metrics');
+        $h = new FtHarness([['name' => 'metrics', 'options' => []]]);
+        $h->op(['entity' => 'episode', 'reqmatch' => self::RECORD]);
+        $h->op(['entity' => 'episode', 'reqmatch' => self::AUDIO]);
+        $h->op(['entity' => 'episode', 'reqmatch' => self::AUDIO]);
+        $m = $h->client->_metrics;
+        $this->assertSame(3, $m['total']['count']);
+        $this->assertSame(1, $m['ops']['episode.load']['count']);
+        $this->assertSame(2, $m['ops']['episode.load:audio']['count']);
+    }
+
+    public function test_action_keys_audit_a_record_names_its_action_and_a_plain_one_has_none(): void
+    {
+        $this->needs('audit');
+        $h = new FtHarness([['name' => 'audit', 'options' => []]]);
+        $h->op(['entity' => 'episode', 'reqmatch' => self::RECORD]);
+        $h->op(['entity' => 'episode', 'reqmatch' => self::AUDIO]);
+        $recs = $h->client->_audit['records'];
+        $this->assertArrayNotHasKey('action', $recs[0]);
+        $this->assertSame('load', $recs[0]['op']);
+        $this->assertSame('audio', $recs[1]['action']);
+        $this->assertSame('load', $recs[1]['op']);
+    }
+
+    public function test_action_keys_cost_an_action_is_priced_and_attributed_apart_from_its_operation(): void
+    {
+        $this->needs('cost');
+        $sink = [];
+        $h = new FtHarness([
+            ['name' => 'cost', 'options' => [
+                'rates' => ['episode.load' => 1, 'episode.load:audio' => 5],
+                'sink' => function ($r) use (&$sink) { $sink[] = $r; },
+            ]],
+        ]);
+        $h->op(['entity' => 'episode', 'reqmatch' => self::RECORD]);
+        $h->op(['entity' => 'episode', 'reqmatch' => self::AUDIO]);
+        $cost = $h->client->_cost;
+        $this->assertEquals(6, $cost['total']['amount']);
+        $this->assertEquals(['calls' => 1, 'amount' => 1], $cost['ops']['episode.load']);
+        $this->assertEquals(['calls' => 1, 'amount' => 5], $cost['ops']['episode.load:audio']);
+        $this->assertArrayNotHasKey('action', $sink[0]);
+        $this->assertSame('audio', $sink[1]['action']);
+        $this->assertSame('audio', $cost['last']['action']);
+    }
+
+    public function test_action_keys_cost_an_action_with_no_rate_of_its_own_takes_its_operations(): void
+    {
+        $this->needs('cost');
+        $h = new FtHarness([
+            ['name' => 'cost', 'options' => ['rates' => ['episode.load' => 2, '*' => 9]]],
+        ]);
+        $h->op(['entity' => 'episode', 'reqmatch' => self::AUDIO]);
+        $this->assertEquals(['calls' => 1, 'amount' => 2], $h->client->_cost['ops']['episode.load:audio']);
+    }
+
+    // An action is the caller's own string, so what a consumer reads of it is
+    // cleaned; the rule or rate it names still matches the raw action.
+    private const SECRET_ACTION = 'CANARY-ACTION-k9x2m7q4p1';
+    private const SECRET_REQ = ['$action' => self::SECRET_ACTION, 'id' => 'e1'];
+
+    private static function noKeyHolds(array $map, string $secret): bool
+    {
+        foreach (array_keys($map) as $k) {
+            if (str_contains((string)$k, $secret)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public function test_action_keys_rbac_a_secret_action_is_cleaned_in_its_record(): void
+    {
+        $this->needs('rbac');
+        $h = new FtHarness([
+            ['name' => 'rbac', 'options' => [
+                'rules' => ['episode.load:' . self::SECRET_ACTION => 'never'], 'permissions' => []]],
+        ]);
+        $h->registerSecret(self::SECRET_ACTION);
+        $res = $h->op(['entity' => 'episode', 'reqmatch' => self::SECRET_REQ]);
+        $this->assertSame('rbac_denied', self::code($res['err']));
+        $last = $h->client->_rbac['last'];
+        $this->assertSame('[redacted]', $last['action']);
+        $this->assertStringNotContainsString(self::SECRET_ACTION, json_encode($last));
+    }
+
+    public function test_action_keys_metrics_a_secret_action_is_cleaned_in_its_bucket_name(): void
+    {
+        $this->needs('metrics');
+        $h = new FtHarness([['name' => 'metrics', 'options' => []]]);
+        $h->registerSecret(self::SECRET_ACTION);
+        $h->op(['entity' => 'episode', 'reqmatch' => self::SECRET_REQ]);
+        $h->op(['entity' => 'episode', 'reqmatch' => self::AUDIO]);
+        $ops = $h->client->_metrics['ops'];
+        $this->assertTrue(self::noKeyHolds($ops, self::SECRET_ACTION), implode(', ', array_keys($ops)));
+        $this->assertSame(1, $ops['episode.load:[redacted]']['count']);
+        $this->assertSame(1, $ops['episode.load:audio']['count']);
+    }
+
+    public function test_action_keys_cost_a_secret_action_is_cleaned_in_its_bucket_name(): void
+    {
+        $this->needs('cost');
+        $h = new FtHarness([
+            ['name' => 'cost', 'options' => [
+                'rates' => ['episode.load:' . self::SECRET_ACTION => 5, 'episode.load' => 1]]],
+        ]);
+        $h->registerSecret(self::SECRET_ACTION);
+        $h->op(['entity' => 'episode', 'reqmatch' => self::SECRET_REQ]);
+        $h->op(['entity' => 'episode', 'reqmatch' => self::AUDIO]);
+        $ops = $h->client->_cost['ops'];
+        $this->assertTrue(self::noKeyHolds($ops, self::SECRET_ACTION), implode(', ', array_keys($ops)));
+        $this->assertEquals(['calls' => 1, 'amount' => 5], $ops['episode.load:[redacted]']);
+        $this->assertEquals(['calls' => 1, 'amount' => 1], $ops['episode.load:audio']);
+    }
+
+    public function test_action_keys_a_sensitive_action_key_masks_the_action(): void
+    {
+        $this->needs('rbac', 'metrics', 'cost');
+        $h = new FtHarness([
+            ['name' => 'rbac', 'options' => ['rules' => ['episode.load:audio' => 'read'], 'permissions' => ['read']]],
+            ['name' => 'metrics', 'options' => []],
+            ['name' => 'cost', 'options' => ['rates' => ['episode.load:audio' => 3]]],
+        ]);
+        $h->cleanConfig()->keys[] = 'action';
+        $this->assertTrue($h->op(['entity' => 'episode', 'reqmatch' => self::AUDIO])['ok']);
+        $this->assertSame('[redacted]', $h->client->_rbac['last']['action']);
+        $this->assertSame(['episode.load:[redacted]'], array_keys($h->client->_metrics['ops']));
+        $this->assertEquals(['episode.load:[redacted]' => ['calls' => 1, 'amount' => 3]], $h->client->_cost['ops']);
+    }
+
+    public function test_action_keys_a_secret_action_stays_raw_with_clean_off(): void
+    {
+        $this->needs('metrics');
+        $h = new FtHarness([['name' => 'metrics', 'options' => []]]);
+        $h->registerSecret(self::SECRET_ACTION)->active = false;
+        $h->op(['entity' => 'episode', 'reqmatch' => self::SECRET_REQ]);
+        $this->assertSame(1, $h->client->_metrics['ops']['episode.load:' . self::SECRET_ACTION]['count']);
     }
 
 

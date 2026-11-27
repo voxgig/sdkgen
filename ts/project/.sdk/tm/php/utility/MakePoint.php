@@ -6,6 +6,8 @@ declare(strict_types=1);
 require_once __DIR__ . '/../core/Helpers.php';
 require_once __DIR__ . '/Param.php';
 require_once __DIR__ . '/PrepareMethod.php';
+require_once __DIR__ . '/OpKey.php';
+require_once __DIR__ . '/Binary.php';
 
 class ProjectNameMakePoint
 {
@@ -24,7 +26,19 @@ class ProjectNameMakePoint
         return $missing;
     }
 
+    // Once the point is known, a body of bytes it answers is refused and the
+    // sources its binary fields carry are lifted out of the data.
     public static function call(ProjectNameContext $ctx): array
+    {
+        [$point, $err] = self::select($ctx);
+        if (null !== $err) {
+            return [null, $err];
+        }
+        $err = ProjectNameBinaryUtility::bytesRefused($ctx) ?? ProjectNameBinaryUtility::liftSources($ctx);
+        return null === $err ? [$point, null] : [null, $err];
+    }
+
+    private static function select(ProjectNameContext $ctx): array
     {
         if (isset($ctx->out['point'])) {
             // A PrePoint feature hook (e.g. rbac) can short-circuit endpoint
@@ -42,10 +56,16 @@ class ProjectNameMakePoint
         $options = $ctx->options;
 
         $allow_op = \Voxgig\Struct\Struct::getpath($options, 'allow.op');
-        if (!ProjectNamePrepareMethod::allowed($allow_op, $op->name)) {
+        $admitted = false;
+        foreach (ProjectNameOpKey::keys($ctx) as $key) {
+            $admitted = $admitted || ProjectNamePrepareMethod::allowed($allow_op, $key);
+        }
+        if (!$admitted) {
             $shown = is_string($allow_op) ? $allow_op : '';
+            $action = ProjectNameOpKey::action($ctx);
+            $named = null === $action ? $op->name : $op->name . ':' . $action;
             return [null, $ctx->make_error('point_op_allow',
-                "Operation \"{$op->name}\" not allowed by SDK option allow.op value: \"{$shown}\"")];
+                "Operation \"{$named}\" not allowed by SDK option allow.op value: \"{$shown}\"")];
         }
 
         if (empty($op->points)) {

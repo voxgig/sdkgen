@@ -5,11 +5,13 @@
 # against the permissions the client holds; a disallowed call is
 # short-circuited with an "rbac_denied" error and never touches the
 # network. Required permissions come from "rules" (keyed by
-# "<entity>.<op>", "<op>", or "*"); the default when no rule matches is
+# "<entity>.<op>:<action>", "<entity>.<op>", "<op>", or "*", most specific
+# first); the default when no rule matches is
 # controlled by "deny" (default: allow when unspecified). Held permissions
 # are the "permissions" list (a "*" grants everything).
 
 require_relative 'base_feature'
+require_relative '../utility/op_key'
 
 class ProjectNameRbacFeature < ProjectNameBaseFeature
   def initialize
@@ -55,25 +57,16 @@ class ProjectNameRbacFeature < ProjectNameBaseFeature
 
   def _required(ctx)
     rules = @options["rules"] || {}
-    entity = ""
-    if ctx.entity && ctx.entity.respond_to?(:get_name)
-      entity = ctx.entity.get_name
-    elsif ctx.op
-      entity = ctx.op.entity
+    ProjectNameUtilities.op_keys(ctx).each do |key|
+      return rules[key] unless rules[key].nil?
     end
-    opname = ctx.op ? ctx.op.name : ""
-
-    return rules["#{entity}.#{opname}"] unless rules["#{entity}.#{opname}"].nil?
-    return rules[opname] unless rules[opname].nil?
-    return rules["*"] unless rules["*"].nil?
     nil
   end
 
   def _reject(ctx, required)
     _track(ctx, required, false)
-    opname = (ctx.op && !ctx.op.name.empty?) ? ctx.op.name : "?"
     err = ctx.make_error("rbac_denied",
-      "Permission \"#{required}\" required for operation \"#{opname}\"")
+      "Permission \"#{required}\" required for operation \"#{_opname(ctx)}\"")
     # Short-circuit endpoint resolution; make_point surfaces this error
     # before any network use.
     ctx.out["point"] = err
@@ -87,10 +80,19 @@ class ProjectNameRbacFeature < ProjectNameBaseFeature
       @client.instance_variable_set(:@_rbac, track)
     end
     track[allowed ? "allowed" : "denied"] += 1
-    track["last"] = {
+    last = {
       "required" => required,
       "allowed" => allowed,
       "op" => ctx.op ? ctx.op.name : nil,
     }
+    action = ProjectNameUtilities.op_action(ctx)
+    last["action"] = action unless action.nil?
+    track["last"] = ctx.utility.clean.call(ctx, last)
+  end
+
+  def _opname(ctx)
+    name = (ctx.op && !ctx.op.name.empty?) ? ctx.op.name : "?"
+    action = ProjectNameUtilities.op_action(ctx)
+    action.nil? ? name : "#{name}:#{action}"
   end
 end

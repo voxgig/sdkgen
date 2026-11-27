@@ -3,10 +3,13 @@
 // against the permissions the client holds; a disallowed call is
 // short-circuited with an `rbac_denied` error (via ctx.Out["point"], which
 // MakePoint surfaces) and never touches the network. Required permissions
-// come from `rules` (keyed by `<entity>.<op>`, `<op>`, or `*`); the default
+// come from `rules` (keyed by `<entity>.<op>:<action>`, `<entity>.<op>`, `<op>`
+// or `*`, most specific first); the default
 // when no rule matches is controlled by `deny` (default: allow when
 // unspecified). Held permissions are the `permissions` list (a `*` grants
 // everything).
+
+using ProjectNameSdk.Util;
 
 using static ProjectNameSdk.Feature.FeatureOptions;
 
@@ -78,10 +81,7 @@ public class RbacFeature : BaseFeature
             return ("", false);
         }
 
-        var entity = ctx.Entity?.GetName() ?? ctx.Op?.Entity ?? "";
-        var opname = ctx.Op?.Name ?? "";
-
-        foreach (var key in new[] { entity + "." + opname, opname, "*" })
+        foreach (var key in SdkUtility.OpKeys(ctx))
         {
             if (rules.TryGetValue(key, out var r) && r is string rs)
             {
@@ -95,9 +95,8 @@ public class RbacFeature : BaseFeature
     {
         Track(ctx, required, false);
 
-        var opname = ctx.Op?.Name ?? "?";
         var err = ctx.MakeError("rbac_denied",
-            "Permission \"" + required + "\" required for operation \"" + opname + "\"");
+            "Permission \"" + required + "\" required for operation \"" + OpName(ctx) + "\"");
 
         // Short-circuit endpoint resolution; MakePoint surfaces this error
         // before any network activity.
@@ -114,11 +113,24 @@ public class RbacFeature : BaseFeature
         {
             Denied++;
         }
-        Last = new Dictionary<string, object?>
+        var last = new Dictionary<string, object?>
         {
             ["required"] = required,
             ["allowed"] = allowed,
             ["op"] = ctx.Op?.Name ?? "",
         };
+        var action = SdkUtility.OpAction(ctx);
+        if (action != null)
+        {
+            last["action"] = action;
+        }
+        Last = Fclean(ctx, last);
+    }
+
+    private static string OpName(Context ctx)
+    {
+        var name = ctx.Op?.Name ?? "?";
+        var action = SdkUtility.OpAction(ctx);
+        return action == null ? name : name + ":" + action;
     }
 }

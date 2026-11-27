@@ -4,12 +4,14 @@
 # feature: money is spent per HTTP ATTEMPT (a retried call is charged again,
 # because the upstream API charges it again), but it is owed by an
 # OPERATION. So the transport wrap prices each attempt, and PreDone
-# attributes the running total to "<entity>.<op>" and to the caller (the
+# attributes the running total to "<entity>.<op>" (with ":<action>" for a
+# custom action) and to the caller (the
 # per-call ctrl actor, the same actor the audit feature records).
 #
 # The price of an attempt comes from the first source that answers: a
 # response header ("header" x "perUnit"), the rate table ("rates", keyed
-# "<entity>.<op>" / "<op>" / "*"), then the flat "unit". A body figure
+# "<entity>.<op>:<action>" / "<entity>.<op>" / "<op>" / "*"), then the flat
+# "unit". A body figure
 # ("path" x "perUnit", e.g. "usage.total_tokens") is read at PreDone
 # instead, from the already-parsed result, and describes the whole call, so
 # it REPLACES the per-attempt estimate rather than adding to it.
@@ -35,6 +37,7 @@ BEGIN { $__dir = File::Basename::dirname(Cwd::abs_path(__FILE__)) }
 require(Cwd::abs_path("$__dir/../lib/Voxgig/Struct.pm"));
 require(Cwd::abs_path("$__dir/../core/helpers.pm"));
 require(Cwd::abs_path("$__dir/base_feature.pm"));
+require(Cwd::abs_path("$__dir/../utility/op_key.pm"));
 
 package ProjectNameCostFeature;
 
@@ -187,7 +190,7 @@ sub charge {
   # commit. Their spend is committed here, or it would never be counted.
   # "piped" is set by PrePoint, so its absence is the signal.
   if (!$entry->{piped}) {
-    $self->_commit($ctx, $entry, '_', 'direct');
+    $self->_commit($ctx, $entry, { 'key' => '_.direct', 'entity' => '_', 'op' => 'direct' });
     delete $self->{pending}{$addr};
   }
 
@@ -240,20 +243,23 @@ sub _finish {
   # nothing is the whole point of ordering cost inside the cache.
   return if !$done && 0 == $entry->{attempts};
 
-  my $entity = ($ctx->{op} && defined $ctx->{op}{entity} && '' ne $ctx->{op}{entity})
-    ? $ctx->{op}{entity} : '_';
-  my $opname = ($ctx->{op} && defined $ctx->{op}{name} && '' ne $ctx->{op}{name})
-    ? $ctx->{op}{name} : '_';
-
-  $self->_commit($ctx, $entry, $entity, $opname);
+  $self->_commit($ctx, $entry, {
+    'key' => ProjectNameUtilities::op_file_key($ctx),
+    'entity' => (($ctx->{op} && defined $ctx->{op}{entity} && '' ne $ctx->{op}{entity})
+      ? $ctx->{op}{entity} : '_'),
+    'op' => (($ctx->{op} && defined $ctx->{op}{name} && '' ne $ctx->{op}{name})
+      ? $ctx->{op}{name} : '_'),
+    'action' => ProjectNameUtilities::op_action($ctx),
+  });
   return;
 }
 
 # Commit one operation's spend: totals, budget, per-op and per-actor
 # attribution, and the record. Shared by _finish and the raw-request path in
-# charge, which has no PreDone to reach.
+# charge, which has no PreDone to reach. `$call` names what the spend is
+# filed under: its key, entity, op and action.
 sub _commit {
-  my ($self, $ctx, $entry, $entity, $opname) = @_;
+  my ($self, $ctx, $entry, $call) = @_;
 
   my $cost = $self->{client}{_cost};
   return unless $cost;
@@ -279,20 +285,22 @@ sub _commit {
   my $actor = $self->_actor($ctx);
 
   $cost->{total}{calls} += 1;
-  $self->_bump($cost->{ops}, "$entity.$opname", $amount);
+  $self->_bump($cost->{ops}, $call->{key}, $amount);
   $self->_bump($cost->{actors}, $actor, $amount);
 
   $self->{seq} += 1;
-  my $record = $ctx->{utility}{clean}->($ctx, {
+  my $fields = {
     'seq' => $self->{seq},
-    'entity' => $entity,
-    'op' => $opname,
+    'entity' => $call->{entity},
+    'op' => $call->{op},
     'actor' => $actor,
     'amount' => $amount,
     'currency' => $cost->{currency},
     'source' => $source,
     'attempts' => $entry->{attempts},
-  });
+  };
+  $fields->{action} = $call->{action} if defined $call->{action};
+  my $record = $ctx->{utility}{clean}->($ctx, $fields);
   $cost->{last} = $record;
 
   my $sink = $self->{options}{sink};
@@ -324,23 +332,13 @@ sub _price {
   return (0, 'none');
 }
 
-# The rate table uses the same lookup grammar as rbac's rules:
-# "<entity>.<op>", then "<op>", then "*".
+# The rate table is keyed as rbac's rules are.
 sub _rate {
   my ($self, $ctx) = @_;
   my $rates = $self->{options}{rates};
   return undef unless Voxgig::Struct::ismap($rates);
 
-  my $entity = '';
-  if ($ctx->{entity} && defined $ctx->{entity}{name}) {
-    $entity = $ctx->{entity}{name};
-  }
-  elsif ($ctx->{op} && defined $ctx->{op}{entity}) {
-    $entity = $ctx->{op}{entity};
-  }
-  my $opname = ($ctx->{op} && defined $ctx->{op}{name}) ? $ctx->{op}{name} : '';
-
-  for my $key ("$entity.$opname", $opname, '*') {
+  for my $key (ProjectNameUtilities::op_keys($ctx)) {
     my $val = $rates->{$key};
     return $val
       if defined $val && !ref($val) && Scalar::Util::looks_like_number($val);

@@ -1,9 +1,12 @@
 // Statistics capture. Records per-operation counters and latency for every
-// call: totals plus a breakdown keyed by `<entity>.<op>`. Timing starts at
+// call: totals plus a breakdown keyed by `<entity>.<op>`, or
+// `<entity>.<op>:<action>` for a custom action. Timing starts at
 // endpoint resolution (PrePoint) and stops when the call returns (PreDone)
 // or fails (PreUnexpected); each operation is recorded exactly once (the
 // per-context start marker in ctx.Out is consumed on record). The clock is
 // injectable (`now`) for deterministic tests.
+
+using ProjectNameSdk.Util;
 
 using static ProjectNameSdk.Feature.FeatureOptions;
 
@@ -83,9 +86,7 @@ public class MetricsFeature : BaseFeature
             dur = 0;
         }
 
-        var entity = ctx.Op?.Entity ?? "_";
-        var opname = ctx.Op?.Name ?? "_";
-        var key = entity + "." + opname;
+        var key = SdkUtility.OpFileKey(ctx);
 
         if (!Ops.TryGetValue(key, out var op))
         {

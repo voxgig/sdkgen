@@ -65,7 +65,23 @@ func unfilledParams(ctx *core.Context, point map[string]any) []string {
 	return missing
 }
 
+// Once the point is known, a body of bytes it answers is refused and the
+// sources its binary fields carry are lifted out of the data.
 func makePointUtil(ctx *core.Context) (map[string]any, error) {
+	point, err := selectPoint(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if err := bytesRefused(ctx); err != nil {
+		return nil, err
+	}
+	if err := liftSources(ctx); err != nil {
+		return nil, err
+	}
+	return point, nil
+}
+
+func selectPoint(ctx *core.Context) (map[string]any, error) {
 	if ctx.Out["point"] != nil {
 		// A PrePoint feature hook (e.g. rbac) may short-circuit the
 		// operation by storing an error here; surface it before any
@@ -84,9 +100,20 @@ func makePointUtil(ctx *core.Context) (map[string]any, error) {
 
 	allowOpVal := vs.GetPath(options, []any{"allow", "op"})
 	allowOp, _ := allowOpVal.(string)
-	if !core.Allowed(allowOpVal, op.Name) {
+	admitted := false
+	for _, key := range OpKeys(ctx) {
+		if core.Allowed(allowOpVal, key) {
+			admitted = true
+			break
+		}
+	}
+	if !admitted {
+		opname := op.Name
+		if action := OpAction(ctx); "" != action {
+			opname += ":" + action
+		}
 		return nil, ctx.MakeError("point_op_allow",
-			"Operation \""+op.Name+
+			"Operation \""+opname+
 				"\" not allowed by SDK option allow.op value: \""+allowOp+"\"")
 	}
 

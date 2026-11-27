@@ -1,5 +1,6 @@
 // Statistics capture. Records per-operation counters and latency for every
-// call: totals plus a breakdown keyed by `<entity>.<op>`. Timing starts at
+// call: totals plus a breakdown keyed by `<entity>.<op>`, or
+// `<entity>.<op>:<action>` for a custom action. Timing starts at
 // endpoint resolution (prePoint) and stops when the call returns (preDone)
 // or fails (preUnexpected); each operation is recorded exactly once (the
 // per-context start marker in ctx.out is consumed on record). The clock is
@@ -72,9 +73,7 @@ public final class MetricsFeature: BaseFeature {
       dur = 0
     }
 
-    let entity = ctx.op?.entity ?? "_"
-    let opname = ctx.op?.name ?? "_"
-    let key = entity + "." + opname
+    let key = opFileKey(ctx)
 
     let op: MetricsBucket
     if let existing = ops[key] {

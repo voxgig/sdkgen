@@ -118,6 +118,8 @@ object FeatureHarness {
     var headersVal: MutableMap<String, Any?>? = null
     var bodyVal: Any? = null
     var ctrlVal: MutableMap<String, Any?>? = null
+    var reqmatchVal: MutableMap<String, Any?>? = null
+    var reqdataVal: MutableMap<String, Any?>? = null
 
     fun op(v: String): FhOpSpec = apply { opVal = v }
     fun entity(v: String): FhOpSpec = apply { entityVal = v }
@@ -127,6 +129,8 @@ object FeatureHarness {
     fun headers(v: MutableMap<String, Any?>): FhOpSpec = apply { headersVal = v }
     fun body(v: Any?): FhOpSpec = apply { bodyVal = v }
     fun ctrl(v: MutableMap<String, Any?>): FhOpSpec = apply { ctrlVal = v }
+    fun reqmatch(v: MutableMap<String, Any?>): FhOpSpec = apply { reqmatchVal = v }
+    fun reqdata(v: MutableMap<String, Any?>): FhOpSpec = apply { reqdataVal = v }
   }
 
   fun fhOp(op: String): FhOpSpec = FhOpSpec().op(op)
@@ -137,6 +141,11 @@ object FeatureHarness {
     var err: RuntimeException? = null
     var result: Result? = null
     var ctx: Context? = null
+  }
+
+  // Which request argument an operation reads, as the generated Context decides.
+  fun fhOpInput(op: String): String {
+    return if ("create" == op || "update" == op || "patch" == op) "data" else "match"
   }
 
   fun fhDefaultMethod(op: String): String {
@@ -188,10 +197,13 @@ object FeatureHarness {
       val ctxmap = linkedMapOf<String, Any?>()
       ctxmap["opname"] = opname
       ctxmap["ctrl"] = ctrl
+      ctxmap["reqmatch"] = o.reqmatchVal ?: linkedMapOf<String, Any?>()
+      ctxmap["reqdata"] = o.reqdataVal ?: linkedMapOf<String, Any?>()
       val ctx = utility.makeContext(ctxmap, rootctx)
       val opdef = linkedMapOf<String, Any?>()
       opdef["entity"] = entity
       opdef["name"] = opname
+      opdef["input"] = fhOpInput(opname)
       ctx.op = Operation(opdef)
 
       utility.featureHook(ctx, "PostConstructEntity")
@@ -287,8 +299,17 @@ object FeatureHarness {
   }
 
   // fhMake constructs the harness.
-  fun fhMake(server: FetcherFn?, vararg features: FhFeature): FhHarness {
-    val client = ProjectNameSDK.testSDK()
+  fun fhMake(server: FetcherFn?, vararg features: FhFeature): FhHarness =
+    fhMakeWith(null, server, *features)
+
+  // fhMakeWith is fhMake over a client built with the given SDK options, so a
+  // test can reach the SDK's real clean with a registered secret.
+  fun fhMakeWith(
+    sdkopts: MutableMap<String, Any?>?,
+    server: FetcherFn?,
+    vararg features: FhFeature,
+  ): FhHarness {
+    val client = ProjectNameSDK.testSDK(null, sdkopts)
     client.features = mutableListOf()
 
     val utility = client.getUtility()

@@ -993,6 +993,139 @@ class PrimaryUtilityTest extends TestCase
     }
 
 
+    // === Test: body codecs ===
+
+    // A codec section a project's corpus has not pulled yet is skipped, as is
+    // one for a codec this SDK was generated without: its model has no such point.
+    private function runcodec(string $name, string $kind, ?string $codec, callable $subject): void
+    {
+        $R = self::runpack();
+        $section = is_array($R['spec']) ? ($R['spec'][$name][$kind] ?? null) : null;
+        if (null === $section) {
+            $this->markTestSkipped("this project's test.json has no {$name}.{$kind} section");
+        }
+        $utility = self::client()->get_utility();
+        if (null !== $codec && !is_callable(is_array($utility->codec) ? ($utility->codec[$codec] ?? null) : null)) {
+            $this->markTestSkipped("this SDK was generated without a {$codec} codec");
+        }
+        $this->assertTrue(is_array($section['set'] ?? null) && 0 < count($section['set']),
+            "test corpus section '{$name}.{$kind}' is EMPTY");
+        $R['runset']($section, $subject);
+        $this->assertTrue(true, "corpus section '{$name}.{$kind}' completed");
+    }
+
+    private static function unlatin1(string $text): string
+    {
+        return mb_convert_encoding($text, 'ISO-8859-1', 'UTF-8');
+    }
+
+    // `source$` is a source built by binary()->bytes, `bytes$` bytes; both
+    // latin1. PHP has no platform blob, so a `blob` source is built from its bytes.
+    private static function sourced(mixed $val): mixed
+    {
+        if (!is_array($val)) {
+            return $val;
+        }
+        if (is_string($val['source$'] ?? null)) {
+            return self::client()->binary()->bytes(self::unlatin1($val['source$']),
+                ['name' => $val['name'] ?? null, 'type' => $val['type'] ?? null]);
+        }
+        if (is_string($val['bytes$'] ?? null)) {
+            return self::unlatin1($val['bytes$']);
+        }
+        return array_map([self::class, 'sourced'], $val);
+    }
+
+    private static function latin1(mixed $body): mixed
+    {
+        return is_string($body) ? mb_convert_encoding($body, 'UTF-8', 'ISO-8859-1') : $body;
+    }
+
+    public static function codecKinds(): array
+    {
+        return ['form' => ['form'], 'multipart' => ['multipart'], 'raw' => ['raw']];
+    }
+
+    /** @dataProvider codecKinds */
+    #[\PHPUnit\Framework\Attributes\DataProvider('codecKinds')]
+    public function test_prepare_body_codec(string $kind): void
+    {
+        $client = self::client();
+        $utility = $client->get_utility();
+        $utility->multipart_boundary = fn ($ctx) => 'BOUNDARY';
+
+        $this->runcodec('prepareBody', $kind, 'raw' === $kind ? null : $kind,
+            function (array $ctxmap) use ($client, $utility) {
+                $ctx = ProjectNameOmni::ctx_from_map($ctxmap, $client, $utility);
+                $ctx->reqdata = self::sourced($ctx->reqdata);
+                $ctx->reqmatch = self::sourced($ctx->reqmatch);
+                $ctx->spec = new ProjectNameSpec(['headers' => []]);
+                $body = ($utility->prepare_body)($ctx);
+                if ($body instanceof ProjectNameError) {
+                    throw $body;
+                }
+                $type = $ctx->spec->headers['content-type'] ?? null;
+                return null === $type ? ['body' => self::latin1($body)] :
+                    ['type' => $type, 'body' => self::latin1($body)];
+            });
+    }
+
+    public function test_result_body_raw(): void
+    {
+        $client = self::client();
+        $utility = $client->get_utility();
+
+        $this->runcodec('resultBody', 'raw', 'raw', function (array $ctxmap) use ($client, $utility) {
+            $ctx = ProjectNameOmni::ctx_from_map($ctxmap, $client, $utility);
+            $ctx->response->body = self::sourced($ctx->response->body);
+            ($utility->result_body)($ctx);
+            if ($ctx->result->err instanceof \Throwable) {
+                throw $ctx->result->err;
+            }
+            ProjectNameOmni::sync_ctx($ctxmap, $ctx);
+            if (isset($ctx->ctrl->transfer['bytes'])) {
+                $ctxmap['ctrl']['transfer']['bytes'] = self::latin1($ctx->ctrl->transfer['bytes']);
+            }
+            return null;
+        });
+    }
+
+    public function test_make_fetch_def_encoded(): void
+    {
+        $client = self::client();
+        $utility = $client->get_utility();
+
+        $this->runcodec('makeFetchDef', 'encoded', null, function (array $ctxmap) use ($client, $utility) {
+            $ctx = ProjectNameOmni::ctx_from_map($ctxmap, $client, $utility);
+            $ctx->spec->body = self::sourced($ctx->spec->body);
+            $own = ProjectNameUtility::copy($utility);
+            $own->make_url = fn ($c) => [$c->spec->url, null];
+            $ctx->utility = $own;
+            $fetchdef = ProjectNameOmni::unwrap(($own->make_fetch_def)($ctx));
+            $fetchdef['body'] = self::latin1($fetchdef['body'] ?? null);
+            return $fetchdef;
+        });
+    }
+
+    // `spec$` names the context's spec by the fields the corpus gives it:
+    // the rest of a spec object is its defaults, which the corpus does not write.
+    public function test_clean_binary(): void
+    {
+        $client = self::client();
+        $utility = $client->get_utility();
+
+        $this->runcodec('clean', 'binary', null, function ($ctxmap, $val) use ($client, $utility) {
+            $ctx = ProjectNameOmni::ctx_from_map(is_array($ctxmap) ? $ctxmap : [], $client, $utility);
+            if (null !== $ctx->spec) {
+                $ctx->spec->body = self::sourced($ctx->spec->body);
+            }
+            $target = 'spec$' === $val ? ['headers' => $ctx->spec->headers, 'body' => $ctx->spec->body] :
+                self::sourced($val);
+            return ($utility->clean)($ctx, $target);
+        });
+    }
+
+
     // === Test: resultHeaders-basic ===
 
     public function test_result_headers_basic(): void

@@ -14,6 +14,8 @@ type ProjectNameSDK struct {
 	utility  *Utility
 	Features []Feature
 	rootctx  *Context
+	// Builds the file sources a binary field or a raw body takes.
+	Binary BinaryMaker
 }
 
 func NewProjectNameSDK(options map[string]any) (*ProjectNameSDK, error) {

@@ -17,7 +17,7 @@ class ProjectNameContext
   attr_accessor :id, :out, :client, :utility, :ctrl, :meta, :config,
                 :entopts, :options, :entity, :shared, :opmap,
                 :data, :reqdata, :match, :reqmatch, :point,
-                :spec, :result, :response, :op, :unexpected_fired
+                :spec, :result, :response, :op, :unexpected_fired, :sources
 
   def initialize(ctxmap = {}, basectx = nil)
     ctxmap ||= {}
@@ -37,6 +37,7 @@ class ProjectNameContext
       @ctrl.explain = ctrl_raw["explain"] if ctrl_raw["explain"].is_a?(Hash)
       @ctrl.actor = ctrl_raw["actor"] if ctrl_raw.key?("actor")
       @ctrl.paging = ctrl_raw["paging"] if ctrl_raw["paging"].is_a?(Hash)
+      @ctrl.transfer = ctrl_raw["transfer"] if ctrl_raw["transfer"].is_a?(Hash)
     elsif basectx&.ctrl && ProjectNameHelpers.get_ctx_prop(ctxmap, "opname").nil?
       @ctrl = basectx.ctrl
     end
@@ -66,6 +67,8 @@ class ProjectNameContext
     @reqdata = ProjectNameHelpers.to_map(ProjectNameHelpers.get_ctx_prop(ctxmap, "reqdata")) || {}
     @match = ProjectNameHelpers.to_map(ProjectNameHelpers.get_ctx_prop(ctxmap, "match")) || {}
     @reqmatch = ProjectNameHelpers.to_map(ProjectNameHelpers.get_ctx_prop(ctxmap, "reqmatch")) || {}
+    # The values of the point's binary fields, lifted out of reqdata.
+    @sources = nil
 
     pt = ProjectNameHelpers.get_ctx_prop(ctxmap, "point")
     @point = pt.is_a?(Hash) ? pt : basectx&.point

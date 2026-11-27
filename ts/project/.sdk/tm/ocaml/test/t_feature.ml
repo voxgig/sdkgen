@@ -19,7 +19,7 @@ let () =
   test "at_least_test_feature_present" (fun () -> check "test present" (has_feature "test"));
 
   (* ---------------- netsim ---------------- *)
-  if has_feature "netsim" then begin
+  if fh_present "netsim" then begin
     test "netsim.fixed_latency_then_delegate" (fun () ->
         let c = make_clock () in
         let h = make_client [("netsim", jo [("latency", Num 250.); ("sleep", clock_sleep_fn c)])] in
@@ -67,7 +67,7 @@ let () =
   end;
 
   (* ---------------- retry ---------------- *)
-  if has_feature "retry" then begin
+  if fh_present "retry" then begin
     test "retry.transient_then_succeeds" (fun () ->
         let c = make_clock () in
         let h = make_client [
@@ -113,7 +113,7 @@ let () =
   end;
 
   (* ---------------- timeout ---------------- *)
-  if has_feature "timeout" then begin
+  if fh_present "timeout" then begin
     test "timeout.slow_times_out" (fun () ->
         let c = make_clock () in
         let h = make_client [
@@ -139,7 +139,7 @@ let () =
   end;
 
   (* ---------------- ratelimit ---------------- *)
-  if has_feature "ratelimit" then begin
+  if fh_present "ratelimit" then begin
     test "ratelimit.throttles" (fun () ->
         let c = make_clock () in
         let h = make_client [("ratelimit", jo [("rate", Num 1.); ("burst", Num 2.); ("now", clock_now_fn c); ("sleep", clock_sleep_fn c)])] in
@@ -158,7 +158,7 @@ let () =
   end;
 
   (* ---------------- cache ---------------- *)
-  if has_feature "cache" then begin
+  if fh_present "cache" then begin
     test "cache.serves_repeated_read" (fun () ->
         let (srv, calls) = recording_server () in
         let h = make_client ~server:srv [("cache", jo [("ttl", Num 10000.)])] in
@@ -219,7 +219,7 @@ let () =
   end;
 
   (* ---------------- idempotency ---------------- *)
-  if has_feature "idempotency" then begin
+  if fh_present "idempotency" then begin
     let hdr calls = getp (getp (List.nth !calls 0) "fetchdef") "headers" in
     test "idempotency.adds_key_mutating" (fun () ->
         let (srv, calls) = recording_server () in
@@ -255,7 +255,7 @@ let () =
   end;
 
   (* ---------------- rbac ---------------- *)
-  if has_feature "rbac" then begin
+  if fh_present "rbac" then begin
     test "rbac.denies_before_call" (fun () ->
         let (srv, calls) = recording_server () in
         let h = make_client ~server:srv [("rbac", jo [("rules", jo [("widget.remove", Str "admin")]); ("permissions", empty_list ())])] in
@@ -280,8 +280,143 @@ let () =
         check "ok" (op h ~op:"load" ()).or_ok)
   end;
 
+  (* ---------------- action keys ---------------- *)
+  (* A custom action is `$action` in the request argument, and its keys name
+     it: `<entity>.<op>:<action>`, most specific first. *)
+  let audio () = jo [("$action", Str "audio"); ("id", Str "e1")] in
+  let record () = jo [("id", Str "e1")] in
+  let episode h req = op h ~entity:"episode" ~op:"load" ~reqmatch:req () in
+  let has_key v k = match v with Map m -> omap_has m k | _ -> false in
+  let err_msg (r : op_result) = match r.or_error with Some e -> e.err_msg | None -> "" in
+  let contains s sub =
+    let n = String.length sub in
+    let rec at i = i + n <= String.length s && (String.sub s i n = sub || at (i + 1)) in
+    at 0 in
+  if has_feature "rbac" then begin
+    test "action-keys.rbac_record_granted_action_refused" (fun () ->
+        let srv, calls = recording_server () in
+        let h = make_client ~server:srv [("rbac", jo [
+            ("rules", jo [("episode.load", Str "read"); ("episode.load:audio", Str "audio")]);
+            ("permissions", ja [Str "read"])])] in
+        check "record ok" (episode h (record ())).or_ok;
+        let r = episode h (audio ()) in
+        check_str "code" (err_code r) "rbac_denied";
+        check "message" (contains (err_msg r) "operation \"load:audio\"");
+        check_int "calls" (List.length !calls) 1;
+        check_vstr "last action" (getp (getp (track h "rbac") "last") "action") "audio");
+    test "action-keys.rbac_action_granted_record_refused" (fun () ->
+        let h = make_client [("rbac", jo [
+            ("rules", jo [("episode.load", Str "read"); ("episode.load:audio", Str "audio")]);
+            ("permissions", ja [Str "audio"])])] in
+        check_str "record" (err_code (episode h (record ()))) "rbac_denied";
+        check "action ok" (episode h (audio ())).or_ok);
+    test "action-keys.rbac_action_falls_back_to_operation" (fun () ->
+        let h = make_client [("rbac", jo [
+            ("rules", jo [("episode.load", Str "read")]); ("permissions", empty_list ())])] in
+        check_str "fallback" (err_code (episode h (audio ()))) "rbac_denied")
+  end;
+  if has_feature "metrics" then
+    test "action-keys.metrics_action_counted_apart" (fun () ->
+        let h = make_client [("metrics", empty_map ())] in
+        ignore (episode h (record ())); ignore (episode h (audio ())); ignore (episode h (audio ()));
+        let m = track h "metrics" in
+        check_vnum "total" (getpath_s m "total.count") 3.;
+        check_vnum "plain" (getp (getp (getp m "ops") "episode.load") "count") 1.;
+        check_vnum "action" (getp (getp (getp m "ops") "episode.load:audio") "count") 2.);
+  if has_feature "audit" then
+    test "action-keys.audit_record_names_action" (fun () ->
+        let h = make_client [("audit", empty_map ())] in
+        ignore (episode h (record ())); ignore (episode h (audio ()));
+        match getp (track h "audit") "records" with
+        | List r ->
+          let r0 = List.nth !r 0 and r1 = List.nth !r 1 in
+          check "plain has no action" (not (has_key r0 "action"));
+          check_vstr "plain op" (getp r0 "op") "load";
+          check_vstr "action" (getp r1 "action") "audio";
+          check_vstr "action op" (getp r1 "op") "load"
+        | _ -> failwith "no records");
+  if has_feature "cost" then
+    test "action-keys.cost_action_priced_apart" (fun () ->
+        let sunk = ref [] in
+        let sink = vfunc1 (fun v -> sunk := !sunk @ [v]; Noval) in
+        let h = make_client [("cost", jo [
+            ("rates", jo [("episode.load", Num 1.); ("episode.load:audio", Num 5.)]);
+            ("sink", sink)])] in
+        ignore (episode h (record ())); ignore (episode h (audio ()));
+        let c = track h "cost" in
+        let ops = getp c "ops" in
+        check_vnum "total" (getpath_s c "total.amount") 6.;
+        check_vnum "plain calls" (getp (getp ops "episode.load") "calls") 1.;
+        check_vnum "plain amount" (getp (getp ops "episode.load") "amount") 1.;
+        check_vnum "action calls" (getp (getp ops "episode.load:audio") "calls") 1.;
+        check_vnum "action amount" (getp (getp ops "episode.load:audio") "amount") 5.;
+        check "plain sink" (not (has_key (List.nth !sunk 0) "action"));
+        check_vstr "action sink" (getp (List.nth !sunk 1) "action") "audio";
+        check_vstr "last" (getp (getp c "last") "action") "audio");
+
+  (* An action holding a registered secret is cleaned wherever a consumer
+     reads it; a rule still matches the raw action. *)
+  let secret = "ACTSECRET77" in
+  let secret_action () = jo [("$action", Str secret); ("id", Str "e1")] in
+  let secret_options ?(keys = Noval) active =
+    let cl = Sdk_client.test () in
+    let ctx = cl.cl_utility.u_make_context
+        { (Sdk_runtime.default_ctxspec ()) with cs_opname = Some "load" } cl.cl_rootctx in
+    let cleanopts = jo [("active", Bool active)] in
+    (match keys with Str _ -> setp cleanopts "keys" keys | _ -> ());
+    ctx.c_options <- jo [("apikey", Str secret); ("clean", cleanopts)];
+    ctx.c_config <- jo [("options", empty_map ())];
+    cl.cl_utility.u_make_options ctx in
+  let key_names v = match v with Map m -> List.map fst m.entries | _ -> [] in
+  let holds_secret ops = List.exists (fun k -> contains k secret) (key_names ops) in
+  if has_feature "rbac" then
+    test "action-keys.rbac_secret_action_cleaned" (fun () ->
+        let opts = secret_options true in
+        let h = make_client ~options:opts [("rbac", jo [
+            ("rules", jo [("episode.load:" ^ secret, Str "audio")]);
+            ("permissions", ja [Str "audio"])])] in
+        check "raw rule decides" (episode h (secret_action ())).or_ok;
+        let last = getp (track h "rbac") "last" in
+        check_vstr "masked" (getp last "action") (vs_str (getpath_s opts "__derived__.clean.mask"));
+        check_vstr "required" (getp last "required") "audio";
+        let plain = make_client ~options:(secret_options false) [("rbac", jo [
+            ("rules", jo [("episode.load:audio", Str "audio")]); ("permissions", ja [Str "audio"])])] in
+        check "plain ok" (episode plain (audio ())).or_ok;
+        check_vstr "plain action" (getp (getp (track plain "rbac") "last") "action") "audio");
+  if has_feature "metrics" then
+    test "action-keys.metrics_secret_action_cleaned" (fun () ->
+        let h = make_client ~options:(secret_options true) [("metrics", empty_map ())] in
+        ignore (episode h (secret_action ())); ignore (episode h (audio ()));
+        let ops = getp (track h "metrics") "ops" in
+        check "no secret key" (not (holds_secret ops));
+        check_vnum "plain name" (getp (getp ops "episode.load:audio") "count") 1.;
+        let off = make_client ~options:(secret_options false) [("metrics", empty_map ())] in
+        ignore (episode off (secret_action ()));
+        check "clean off" (holds_secret (getp (track off "metrics") "ops")));
+  if has_feature "cost" then
+    test "action-keys.cost_secret_action_cleaned" (fun () ->
+        let h = make_client ~options:(secret_options true) [("cost", jo [
+            ("rates", jo [("episode.load:" ^ secret, Num 7.); ("episode.load:audio", Num 5.)])])] in
+        ignore (episode h (secret_action ())); ignore (episode h (audio ()));
+        let c = track h "cost" in
+        check "no secret key" (not (holds_secret (getp c "ops")));
+        check_vnum "raw rate decides" (getpath_s c "total.amount") 12.;
+        check_vnum "plain name" (getp (getp (getp c "ops") "episode.load:audio") "amount") 5.);
+  if has_feature "rbac" && has_feature "metrics" && has_feature "cost" then
+    test "action-keys.sensitive_action_key_masked" (fun () ->
+        let opts = secret_options ~keys:(Str "apikey,action") true in
+        let mask = vs_str (getpath_s opts "__derived__.clean.mask") in
+        let h = make_client ~options:opts [
+            ("rbac", jo [("rules", jo [("episode.load:audio", Str "audio")]); ("permissions", ja [Str "audio"])]);
+            ("metrics", empty_map ());
+            ("cost", jo [("rates", jo [("episode.load:audio", Num 5.)])])] in
+        check "raw rule decides" (episode h (audio ())).or_ok;
+        check_vstr "rbac masked" (getp (getp (track h "rbac") "last") "action") mask;
+        check "metrics name" (key_names (getp (track h "metrics") "ops") = ["episode.load:" ^ mask]);
+        check "cost name" (key_names (getp (track h "cost") "ops") = ["episode.load:" ^ mask]));
+
   (* ---------------- metrics ---------------- *)
-  if has_feature "metrics" then begin
+  if fh_present "metrics" then begin
     test "metrics.counts_ok_err_per_op" (fun () ->
         let h = make_client [("netsim", jo [("failTimes", Num 1.); ("failStatus", Num 500.)]); ("metrics", empty_map ())] in
         ignore (op h ~op:"load" ()); ignore (op h ~op:"load" ()); ignore (op h ~op:"list" ());
@@ -304,7 +439,7 @@ let () =
   end;
 
   (* ---------------- telemetry ---------------- *)
-  if has_feature "telemetry" then begin
+  if fh_present "telemetry" then begin
     test "telemetry.opens_spans_propagates" (fun () ->
         let (srv, calls) = recording_server () in
         let exported = ref [] in
@@ -346,7 +481,7 @@ let () =
   end;
 
   (* ---------------- debug ---------------- *)
-  if has_feature "debug" then begin
+  if fh_present "debug" then begin
     test "debug.redacted_trace_max_onentry" (fun () ->
         let seen = ref [] in
         let h = make_client [("debug", jo [("max", Num 1.); ("onEntry", vfunc1 (fun e -> seen := !seen @ [e]; Noval))])] in
@@ -375,7 +510,7 @@ let () =
   end;
 
   (* ---------------- audit ---------------- *)
-  if has_feature "audit" then begin
+  if fh_present "audit" then begin
     test "audit.one_record_per_op" (fun () ->
         let sink = ref [] in
         let h = make_client [("netsim", jo [("failTimes", Num 1.); ("failStatus", Num 500.)]); ("audit", jo [("actor", Str "svc"); ("sink", vfunc1 (fun r -> sink := !sink @ [r]; Noval)); ("max", Num 5.)])] in
@@ -425,7 +560,7 @@ let () =
   end;
 
   (* ---------------- clienttrack ---------------- *)
-  if has_feature "clienttrack" then begin
+  if fh_present "clienttrack" then begin
     test "clienttrack.stable_id_ua" (fun () ->
         let (srv, calls) = recording_server () in
         let h = make_client ~server:srv [("clienttrack", jo [("clientName", Str "Acme"); ("clientVersion", Str "2.0.0")])] in
@@ -456,7 +591,7 @@ let () =
   end;
 
   (* ---------------- paging ---------------- *)
-  if has_feature "paging" then begin
+  if fh_present "paging" then begin
     let has s sub =
       let hl = String.length s and nl = String.length sub in
       let rec go i = if i + nl > hl then false else if String.sub s i nl = sub then true else go (i + 1) in nl = 0 || go 0 in
@@ -493,7 +628,7 @@ let () =
   end;
 
   (* ---------------- streaming ---------------- *)
-  if has_feature "streaming" then begin
+  if fh_present "streaming" then begin
     test "streaming.streams_items" (fun () ->
         let c = make_clock () in
         let (srv, _) = recording_server ~reply:(fun _ _ -> (make_response 200 (ja [Str "a"; Str "b"; Str "c"]), None)) () in
@@ -525,7 +660,7 @@ let () =
   end;
 
   (* ---------------- proxy ---------------- *)
-  if has_feature "proxy" then begin
+  if fh_present "proxy" then begin
     let fd calls = getp (List.nth !calls 0) "fetchdef" in
     test "proxy.routes_and_agent" (fun () ->
         let (srv, calls) = recording_server () in
@@ -556,7 +691,7 @@ let () =
   end;
 
   (* ---------------- composition ---------------- *)
-  if has_feature "cache" && has_feature "netsim" then
+  if fh_present "cache" && fh_present "netsim" then
     test "composition.cache_plus_netsim" (fun () ->
         let h = make_client [("netsim", jo [("failEvery", Num 2.)]); ("cache", jo [("ttl", Num 10000.)])] in
         check "1ok" (op h ~op:"load" ~path:"/w" ()).or_ok;

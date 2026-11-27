@@ -42,6 +42,10 @@ class Utility private (noregister: Boolean) {
   var transformResponse: CtxFn[Object] = null
   var custom: JMap[String, Object] = new LinkedHashMap[String, Object]()
 
+  // The body codecs this SDK was generated with; see utility/codec/CodecIndex.scala.
+  var codec: JMap[String, Object] = new LinkedHashMap[String, Object]()
+  var multipartBoundary: CtxFn[String] = null
+
   // The struct utility surface, exposed as a member so features/tests can
   // reach the struct functions through the utility object.
   val struct: SCALAPACKAGE.utility.StructUtility.type = SCALAPACKAGE.utility.StructUtility
@@ -88,6 +92,8 @@ class Utility private (noregister: Boolean) {
     u.transformRequest = this.transformRequest
     u.transformResponse = this.transformResponse
     u.custom = new LinkedHashMap[String, Object](this.custom)
+    u.codec = this.codec
+    u.multipartBoundary = this.multipartBoundary
     u
   }
 }

@@ -37,10 +37,19 @@ function loadTemplate(rel: string, shims: Record<string, any> = {}): any {
 const IMPL: [string, any][] = [
   ['ts', loadTemplate('ts/src/utility/MakePointUtility.ts', {
     '../types': {},
+    './BinaryUtility': loadTemplate('ts/src/utility/BinaryUtility.ts', {
+      '../types': {},
+      './MediaUtility': loadTemplate('ts/src/utility/MediaUtility.ts'),
+    }),
+    './OpKeyUtility': loadTemplate('ts/src/utility/OpKeyUtility.ts'),
     './ParamUtility': loadTemplate('ts/src/utility/ParamUtility.ts', { '../types': {} }),
     './PrepareMethodUtility': loadTemplate('ts/src/utility/PrepareMethodUtility.ts', { '../types': {} }),
   }).makePoint],
   ['js', loadTemplate('js/src/utility/MakePointUtility.js', {
+    './BinaryUtility': loadTemplate('js/src/utility/BinaryUtility.js', {
+      './MediaUtility': loadTemplate('js/src/utility/MediaUtility.js'),
+    }),
+    './OpKeyUtility': loadTemplate('js/src/utility/OpKeyUtility.js'),
     './ParamUtility': loadTemplate('js/src/utility/ParamUtility.js'),
     './PrepareMethodUtility': loadTemplate('js/src/utility/PrepareMethodUtility.js'),
   }).makePoint],
@@ -287,21 +296,21 @@ describe('makePoint', () => {
 
 
 // Source, so it proves the refusal is there, not that it runs. Each entry is
-// the file and the start of the function's definition.
+// the file and the start of the function that selects the point.
 describe('makePoint in every target', () => {
 
   const TEMPLATES: Record<string, [string, string]> = {
-    c: ['c/utility/make_point.c', 'voxgig_value* make_point_util('],
+    c: ['c/utility/make_point.c', 'static voxgig_value* select_point('],
     clojure: ['clojure/src/sdk/core.clj', '(defn u-make-point '],
-    cpp: ['cpp/utility/pipeline.hpp', 'inline Value makePoint('],
+    cpp: ['cpp/utility/pipeline.hpp', 'inline Value selectPoint('],
     csharp: ['csharp/utility/MakePoint.cs', 'MakePointUtil(Context ctx)'],
     elixir: ['elixir/lib/projectname/utility.ex', 'def make_point_impl('],
     go: ['go/utility/make_point.go', 'func makePointUtil('],
     java: ['java/utility/MakePoint.java', 'static Map<String, Object> makePoint('],
     js: ['js/src/utility/MakePointUtility.js', 'function makePoint('],
     kotlin: ['kotlin/utility/MakePoint.kt', 'fun makePoint('],
-    lua: ['lua/utility/make_point.lua', 'local function make_point_util('],
-    ocaml: ['ocaml/sdk_runtime.ml', 'let make_point_util '],
+    lua: ['lua/utility/make_point.lua', 'local function select_point('],
+    ocaml: ['ocaml/sdk_runtime.ml', 'and select_point '],
     perl: ['perl/utility/make_point.pm', '$REGISTRY{make_point}'],
     php: ['php/utility/MakePoint.php', 'public static function call('],
     py: ['py/pkg/utility/make_point.py', 'def make_point_util('],

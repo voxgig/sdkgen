@@ -20,13 +20,27 @@ from projectname_sdk.core.control import ProjectNameControl
 from projectname_sdk.core.error import ProjectNameError
 from projectname_sdk.core.result import ProjectNameResult
 from projectname_sdk.core.spec import ProjectNameSpec
-from projectname_sdk.utility.clean import clean_util, clean_add_util
+from projectname_sdk.utility.clean import clean_util, clean_add_util, make_clean_config
+from projectname_sdk.schema import OPTSPEC
 
 
 # True when this SDK was generated with the named feature.
 def has_feature(name):
     feature = shared_config().get("feature")
     return isinstance(feature, dict) and feature.get(name) is not None
+
+
+# Client options holding a clean configuration of their own, as make_options
+# builds it, with the given secret values registered and, where given, its
+# own sensitive key names.
+def clean_options(*secrets, keys=None):
+    cleanopts = dict(OPTSPEC.get("clean") or {})
+    if keys is not None:
+        cleanopts["keys"] = keys
+    options = {"__derived__": {"clean": make_clean_config(cleanopts)}}
+    for secret in secrets:
+        clean_add_util({"options": options}, secret)
+    return options
 
 
 # A deterministic virtual clock: `now()` advances only when `sleep(ms)` is
@@ -139,11 +153,17 @@ class _Client:
         return self.options
 
 
+# Which request argument an operation reads, as the generated operation
+# declares it.
+def op_input(op):
+    return "data" if op in ("create", "update", "patch") else "match"
+
+
 class _Op:
     def __init__(self, name, entity):
         self.name = name
         self.entity = entity
-        self.input = "match"
+        self.input = op_input(name)
         self.points = []
         self.alias = None
 
@@ -159,7 +179,8 @@ class _Entity:
 class _Ctx:
     _seq = 0
 
-    def __init__(self, client, utility, op=None, entity=None, ctrl=None):
+    def __init__(self, client, utility, op=None, entity=None, ctrl=None,
+                 reqmatch=None, reqdata=None):
         _Ctx._seq += 1
         self.id = "C" + str(_Ctx._seq)
         self.client = client
@@ -179,6 +200,8 @@ class _Ctx:
         self.response = None
         self.result = None
         self.shared = {}
+        self.reqmatch = reqmatch if reqmatch is not None else {}
+        self.reqdata = reqdata if reqdata is not None else {}
 
     def make_error(self, code, msg):
         return ProjectNameError(code, msg, self)
@@ -188,7 +211,8 @@ class _Ctx:
 # a mini operation pipeline. `features` is a list of {"name", "options"}.
 class Harness:
     def __init__(self, features, server=None, mode="test",
-                 base="http://api.test", headers=None):
+                 base="http://api.test", headers=None, options=None):
+        self.options = options
         self.base = base
         self.headers = headers or {}
         self.server = server if server is not None else default_server()
@@ -269,14 +293,18 @@ class Harness:
     # Run one operation through the mini pipeline (mirrors the generated
     # entity _run_op: hook, short-circuit, make*, hook, ...).
     def op(self, op="load", entity="widget", method=None, path=None,
-           query=None, headers=None, body=None, ctrl=None):
+           query=None, headers=None, body=None, ctrl=None,
+           reqmatch=None, reqdata=None):
         opname = op
         method = method or default_method(opname)
 
         ctx = _Ctx(self.client, self.utility,
                    op=_Op(opname, entity),
                    entity=_Entity(entity),
-                   ctrl=ProjectNameControl(ctrl or {}))
+                   ctrl=ProjectNameControl(ctrl or {}),
+                   reqmatch=reqmatch, reqdata=reqdata)
+        if self.options is not None:
+            ctx.options = self.options
 
         self.feature_hook(ctx, "PostConstructEntity")
 
@@ -341,6 +369,6 @@ class Harness:
 
 
 def make_client(features, server=None, mode="test",
-                base="http://api.test", headers=None):
+                base="http://api.test", headers=None, options=None):
     return Harness(features, server=server, mode=mode,
-                   base=base, headers=headers)
+                   base=base, headers=headers, options=options)

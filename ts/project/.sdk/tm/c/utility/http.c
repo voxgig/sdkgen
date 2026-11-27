@@ -425,6 +425,9 @@ typedef struct {
   char reason[128];
   voxgig_value* headers;
   char why[128];
+  // The bound on a success body, past which reading stops and `over` is set.
+  size_t cap;
+  int over;
 } HttpResp;
 
 static const char* too_large(HttpResp* r) {
@@ -564,7 +567,8 @@ static long long content_length(const char* s) {
 }
 
 // Decodes the chunks from raw[*at]: 1 when the body is complete, 0 when more
-// is needed, -1 when the framing is malformed, -2 past the bound.
+// is needed, -1 when the framing is malformed, -2 past the bound, -3 past
+// the success body's own bound.
 static int dechunk(HttpResp* r, size_t* at, int* trailer) {
   for (;;) {
     const char* s = r->raw.data + *at;
@@ -589,6 +593,7 @@ static int dechunk(HttpResp* r, size_t* at, int* trailer) {
       *trailer = 1;
       continue;
     }
+    if (r->cap < r->body.len + size) return -3;
     if ((size_t)HTTP_MAX_BYTES < r->body.len + size) return -2;
     if (n < line + 1 + size + 2) return 0;
     const char* data = lf + 1;
@@ -620,6 +625,7 @@ static const char* read_response(HttpConn* c, HttpResp* r, int head) {
   }
 
   if (head || 204 == r->status || 304 == r->status || r->status < 200) return NULL;
+  if (400 <= r->status) r->cap = SIZE_MAX;
 
   const char* te = get_str(r->headers, "transfer-encoding");
   const char* cl = get_str(r->headers, "content-length");
@@ -632,6 +638,10 @@ static const char* read_response(HttpConn* c, HttpResp* r, int head) {
       if (1 == done) return NULL;
       if (-1 == done) return "its chunked framing is malformed";
       if (-2 == done) return too_large(r);
+      if (-3 == done) {
+        r->over = 1;
+        return NULL;
+      }
       long n = fill(c, r, &why);
       if (n < 0) return why;
       if (0 == n) return "the response ended before its last chunk";
@@ -641,6 +651,10 @@ static const char* read_response(HttpConn* c, HttpResp* r, int head) {
   if (NULL == te && NULL != cl) {
     long long want = content_length(cl);
     if (want < 0) return "its content-length is malformed";
+    if ((unsigned long long)r->cap < (unsigned long long)want) {
+      r->over = 1;
+      return NULL;
+    }
     if ((long long)HTTP_MAX_BYTES < want) return too_large(r);
     while ((long long)(r->raw.len - from) < want) {
       long n = fill(c, r, &why);
@@ -652,6 +666,10 @@ static const char* read_response(HttpConn* c, HttpResp* r, int head) {
   }
 
   for (;;) {
+    if (r->cap < r->raw.len - from) {
+      r->over = 1;
+      return NULL;
+    }
     long n = fill(c, r, &why);
     if (n < 0) return why;
     if (0 == n) break;
@@ -1252,6 +1270,7 @@ voxgig_value* http_fetch(Context* ctx, const char* url, voxgig_value* fetchdef, 
 
   HttpResp r;
   memset(&r, 0, sizeof(r));
+  r.cap = NULL != ctx && binary_raw_response(ctx->point) ? binary_max_buffer(ctx) : SIZE_MAX;
   if (NULL == bad) bad = read_response(&c, &r, ieq(method, "HEAD"));
   if (NULL != c.tls) http_tls_close(c.tls);
   if (0 <= c.fd) close(c.fd);
@@ -1272,13 +1291,14 @@ voxgig_value* http_fetch(Context* ctx, const char* url, voxgig_value* fetchdef, 
   int valid = !blank && json_valid(text + bom, len - bom);
   voxgig_value* parsed = valid ? voxgig_parse_json(text + bom, len - bom) : voxgig_new_undef();
 
-  voxgig_value* out = cmap(6,
+  voxgig_value* out = cmap(7,
     "status", v_num((double)r.status),
     "statusText", v_str(r.reason),
     "headers", r.headers,
     "json", json_thunk(parsed),
     "body", voxgig_new_string_n(text, len),
-    "unreadable", v_bool(!blank && !valid));
+    "unreadable", v_bool(!blank && !valid),
+    "overflow", v_bool(0 != r.over));
   free(r.raw.data);
   free(r.body.data);
   return out;

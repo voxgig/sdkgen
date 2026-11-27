@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, phpEntityAccessor, entityOps, bodyNote, listMatchArg, matchExampleItems, litString, requestExampleItems, entityClassName, entityCollection, featureDocs, fact, clientOptions, requiredItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, codecTier, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, phpEntityAccessor, entityOps, bodyNote, listMatchArg, matchExampleItems, litString, requestExampleItems, entityClassName, entityCollection, featureDocs, fact, clientOptions, requiredItems } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -332,8 +332,10 @@ ${updateLines}  // ${'patch' === opname ? 'Only the fields to change' : 'Fields 
 
           if ('create' === opname || 'update' === opname || 'patch' === opname) {
             const note = bodyNote(ent.op[opname], {
+              tier: codecTier(target),
               values: 'a string or a stream resource',
               once: 'a stream resource',
+              source: "a source made by `$client->binary()->bytes($data, ['name' => $name, 'type' => $type])`",
             })
             if ('' !== note) Content(note)
           }

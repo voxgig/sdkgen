@@ -1142,13 +1142,11 @@ func TestCleanContentSweep(t *testing.T) {
 	}
 
 	// The positive half: where the body was, what describes it now is. A
-	// reader is read before the first attempt, so the spec holds its bytes
-	// and the request data the reader.
+	// reader is read before the first attempt, so the spec holds its bytes;
+	// the body is lifted out of the request data before any hook sees it.
 	bytesDesc := map[string]any{"binary$": "bytes", "size": len(cleanContent)}
-	streamDesc := map[string]any{"binary$": "stream"}
 	if "" != media {
 		bytesDesc["type"] = media
-		streamDesc["type"] = media
 	}
 	for _, carrier := range cleanCarriers {
 		failed, _ := errs[carrier.name+"/notfound/throw"].(*sdk.${Name}Error)
@@ -1164,13 +1162,11 @@ func TestCleanContentSweep(t *testing.T) {
 		if !reflect.DeepEqual(explained["body"], bytesDesc) {
 			t.Errorf("%s: the explain record: expected %v, got %v", carrier.name, bytesDesc, explained["body"])
 		}
-		want := bytesDesc
-		if carrier.reader {
-			want = streamDesc
-		}
-		logged := core.ToMapAny(reqdata[carrier.name+"/notfound/throw"])["$body"]
-		if !reflect.DeepEqual(logged, want) {
-			t.Errorf("%s: the request data: expected %v, got %v", carrier.name, want, logged)
+		logged := core.ToMapAny(reqdata[carrier.name+"/notfound/throw"])
+		if nil == logged {
+			t.Errorf("%s: the request data was not captured", carrier.name)
+		} else if body, held := logged["$body"]; held {
+			t.Errorf("%s: the request data still holds the body: %v", carrier.name, body)
 		}
 	}
 

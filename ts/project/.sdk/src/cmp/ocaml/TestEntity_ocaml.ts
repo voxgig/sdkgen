@@ -3,6 +3,7 @@ import {
   Content,
   File,
   cmp,
+  entitySlots,
   invalidRequest,
   opReachable,
 } from '@voxgig/sdkgen'
@@ -20,7 +21,9 @@ const TestEntity = cmp(function TestEntity(props: any) {
 
   const fn = ocamlVarName(entity.name)
   const hasList = opReachable(entity.op?.list, [])
-  const hasLoad = opReachable(entity.op?.load, ['id'])
+  // A plain load on a route that answers bytes is refused before it is sent.
+  const ownBytes = entitySlots(entity).some((slot: any) => '' === slot.name && null != slot.read)
+  const hasLoad = opReachable(entity.op?.load, ['id']) && !ownBytes
   const hasId = null != entity.id
   const id = entity.name + '01'
 

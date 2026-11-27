@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from projectname_sdk.feature.base_feature import ProjectNameBaseFeature
+from projectname_sdk.utility.op_key import op_action, op_keys
 
 
 # Client-side role/permission enforcement. Before an operation resolves its
@@ -10,8 +11,8 @@ from projectname_sdk.feature.base_feature import ProjectNameBaseFeature
 # against the permissions the client holds; a disallowed call is
 # short-circuited with an `rbac_denied` error placed in ctx.out["point"]
 # (the pipeline's make_point surfaces it) and never touches the network.
-# Required permissions come from `rules` (keyed by `<entity>.<op>`, `<op>`,
-# or `*`); the default when no rule matches is controlled by `deny`
+# Required permissions come from `rules` (keyed by `<entity>.<op>:<action>`,
+# `<entity>.<op>`, `<op>` or `*`, most specific first); the default when no rule matches is controlled by `deny`
 # (default: allow when unspecified). Held permissions are the `permissions`
 # list (a `*` grants everything).
 class ProjectNameRbacFeature(ProjectNameBaseFeature):
@@ -58,32 +59,16 @@ class ProjectNameRbacFeature(ProjectNameBaseFeature):
     def _required(self, ctx):
         rules = self.options.get("rules") or {}
 
-        entity = ""
-        ent = ctx.entity
-        if ent is not None and hasattr(ent, "get_name") and callable(ent.get_name):
-            entity = ent.get_name()
-        if entity == "" and ctx.op is not None and isinstance(ctx.op.entity, str):
-            entity = ctx.op.entity
-
-        opname = ""
-        if ctx.op is not None and isinstance(ctx.op.name, str):
-            opname = ctx.op.name
-
-        if rules.get(entity + "." + opname) is not None:
-            return rules[entity + "." + opname]
-        if rules.get(opname) is not None:
-            return rules[opname]
-        if rules.get("*") is not None:
-            return rules["*"]
+        for key in op_keys(ctx):
+            if rules.get(key) is not None:
+                return rules[key]
         return None
 
     def _reject(self, ctx, required):
         self._track(ctx, required, False)
-        opname = "?"
-        if ctx.op is not None and isinstance(ctx.op.name, str) and ctx.op.name != "":
-            opname = ctx.op.name
         err = ctx.make_error("rbac_denied",
-            'Permission "' + required + '" required for operation "' + opname + '"')
+            'Permission "' + required + '" required for operation "' +
+            self._opname(ctx) + '"')
         # Short-circuit endpoint resolution; the pipeline surfaces this error.
         ctx.out["point"] = err
         return err
@@ -95,8 +80,19 @@ class ProjectNameRbacFeature(ProjectNameBaseFeature):
             track = {"allowed": 0, "denied": 0, "last": None}
             client._rbac = track
         track["allowed" if allowed else "denied"] += 1
-        track["last"] = {
+        last = {
             "required": required,
             "allowed": allowed,
             "op": ctx.op.name if ctx.op is not None else None,
         }
+        action = op_action(ctx)
+        if action is not None:
+            last["action"] = action
+        track["last"] = ctx.utility.clean(ctx, last)
+
+    def _opname(self, ctx):
+        name = "?"
+        if ctx.op is not None and isinstance(ctx.op.name, str) and ctx.op.name != "":
+            name = ctx.op.name
+        action = op_action(ctx)
+        return name if action is None else name + ":" + action

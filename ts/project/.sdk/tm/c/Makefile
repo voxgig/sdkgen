@@ -80,7 +80,7 @@ endif
 # glob too and always compiles (its headers are on INC above); without its
 # kinds.mk nothing references it, so the archive member is never pulled
 # into a link.
-LIB_SRCS := $(wildcard core/*.c utility/*.c utility/struct/*.c feature/*.c feature/*/*.c entity/*.c) \
+LIB_SRCS := $(wildcard core/*.c utility/*.c utility/struct/*.c utility/codec/*.c feature/*.c feature/*/*.c entity/*.c) \
   utility/tls/$(TLS_BACKEND).c $(FEATURE_SRCS)
 LIB_OBJS := $(LIB_SRCS:.c=.o)
 

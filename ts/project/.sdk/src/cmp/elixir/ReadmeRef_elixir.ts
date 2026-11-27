@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField, entityOps, bodyNote, elixirAccessor, entityCollection, exampleVarName, matchExampleItems, requestExampleItems, featureDocs, fact, clientOptions, requiredItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, codecTier, canonToType, File, isAuthActive, entityIdField, entityOps, bodyNote, elixirAccessor, entityCollection, exampleVarName, matchExampleItems, requestExampleItems, featureDocs, fact, clientOptions, requiredItems } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -263,7 +263,9 @@ ${updateLines}  # ${'patch' === opname ? 'Only the fields to change' : 'Fields t
 
           if ('create' === opname || 'update' === opname || 'patch' === opname) {
             const note = bodyNote(ent.op[opname], {
+              tier: codecTier(target),
               values: 'a binary',
+              source: 'a source made by `' + Name + '.Binary.bytes(data, name: name, type: type)`',
             })
             if ('' !== note) Content(note)
           }

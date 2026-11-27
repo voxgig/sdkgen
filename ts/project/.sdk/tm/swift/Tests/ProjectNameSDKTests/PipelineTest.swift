@@ -39,6 +39,52 @@ final class PipelineTest: XCTestCase {
     return m
   }
 
+  // --- makePoint allow list ----------------------------------------------
+
+  func testAllowListEntryMayNameAnAction() {
+    let (client, utility) = plClient(nil)
+    let plain = vm(
+      ("method", .string("GET")),
+      ("parts", .list([.string("episode"), .string("{id}")])),
+      ("select", .map(vm(("exist", .list([.string("id")]))))))
+    let audio = vm(
+      ("method", .string("GET")),
+      ("parts", .list([.string("episode"), .string("{id}"), .string("audio")])),
+      ("select", .map(vm(("exist", .list([.string("id")])), ("$action", .string("audio"))))))
+
+    // The selected point, or the error code.
+    func point(_ allow: String, _ reqmatch: VMap) -> Any? {
+      let ctx = plCtx(client, utility, nil)
+      ctx.op = Operation(vm(
+        ("name", .string("load")),
+        ("entity", .string("episode")),
+        ("input", .string("match")),
+        ("points", .list([.map(plain), .map(audio)]))))
+      ctx.options = vm(("allow", .map(vm(("op", .string(allow))))))
+      ctx.reqmatch = reqmatch
+      ctx.match = VMap()
+      do {
+        return try utility.makePoint(ctx)
+      } catch let e as ProjectNameError {
+        return e.code
+      } catch {
+        return nil
+      }
+    }
+
+    func audioArg() -> VMap { vm(("$action", .string("audio")), ("id", .string("e1"))) }
+    func recordArg() -> VMap { vm(("id", .string("e1"))) }
+
+    XCTAssertTrue(point("episode.load:audio", audioArg()) as? VMap === audio)
+    XCTAssertEqual(point("episode.load:audio", recordArg()) as? String, "point_op_allow")
+    XCTAssertTrue(point("Episode.Load:AUDIO", audioArg()) as? VMap === audio)
+    XCTAssertEqual(point("episode.load:video", audioArg()) as? String, "point_op_allow")
+    XCTAssertTrue(point("episode.load", audioArg()) as? VMap === audio)
+    XCTAssertTrue(point("load", audioArg()) as? VMap === audio)
+    XCTAssertTrue(point("load", recordArg()) as? VMap === plain)
+    XCTAssertEqual(point("list", recordArg()) as? String, "point_op_allow")
+  }
+
   // --- feature order ------------------------------------------------------
 
   // resolveOpts runs makeOptions over an options.feature value (map or list)

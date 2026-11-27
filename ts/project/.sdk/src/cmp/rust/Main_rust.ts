@@ -3,6 +3,7 @@ import * as Path from 'node:path'
 
 import {
   cmp, each,
+  codecExcludes,
   File, Content, Copy, Folder, Fragment,
   entityClassName,
   inactiveFeatureExcludes,
@@ -35,6 +36,7 @@ import { EntityBase } from './EntityBase_rust'
 import { EntityTypes } from './EntityTypes_rust'
 import { SdkError } from './SdkError_rust'
 import { crateIdent } from './utility_rust'
+import { CodecIndex } from './CodecIndex_rust'
 
 
 const Main = cmp(async function Main(props: any) {
@@ -64,7 +66,8 @@ const Main = cmp(async function Main(props: any) {
     // The generate-time trim: a declared feature that is off, and an inactive
     // plugin group, whose `path` entries are relative to this Copy's root.
     exclude: [/src\//, TEST_CONTROL_EXCLUDE,
-      ...inactiveFeatureExcludes(props.ctx$, target), ...pluginExcludes(model)],
+      ...inactiveFeatureExcludes(props.ctx$, target), ...pluginExcludes(model),
+      ...codecExcludes(model)],
     replace: {
       ...props.ctx$.stdrep,
       RUSTCRATE: rustcrate,
@@ -72,6 +75,8 @@ const Main = cmp(async function Main(props: any) {
   })
 
   PrepareAuth({ target })
+
+  CodecIndex({ target })
 
   Folder({ name: 'core' }, () => {
 
@@ -199,7 +204,7 @@ pub mod utility;
 // Public API re-exports.
 pub use crate::core::config::{make_config, make_feature};
 pub use crate::core::context::{Context, CtxSpec, OpMap};
-pub use crate::core::control::Control;
+pub use crate::core::control::{Control, Transfer};
 pub use crate::core::error::${model.const.Name}Error;
 pub use crate::core::helpers::{
     call_json, call_vfn, getp, ja, jo, json_thunk, to_map, unsupported_op, vfn,
@@ -211,12 +216,13 @@ pub use crate::core::result::{SdkResult, StreamFn};
 pub use crate::core::sdk::{test_sdk, ${model.const.Name}SDK};
 pub use crate::core::spec::Spec;
 pub use crate::core::types::{
-    Entity, Feature, FeatureRef, FetcherFn, OutVal, ${model.const.Name}EntityBase,
+    Entity, Feature, FeatureRef, FetcherFn, OpWith, OutVal, ${model.const.Name}EntityBase,
 };
 // The trait's former name, kept so code written against it still compiles.
 pub use crate::core::types::${model.const.Name}EntityBase as ${model.const.Name}Entity;
 pub use crate::core::utility_type::Utility;
 pub use crate::feature::base::BaseFeature;
+pub use crate::utility::binary::{Binary, BinarySource, Sources};
 pub use crate::utility::jsonparse::json_parse;
 pub use crate::utility::media::bytes_value;
 pub use crate::utility::voxgigstruct::Value;

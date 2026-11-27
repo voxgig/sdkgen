@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 use crate::core::context::Context;
-use crate::core::helpers::to_int;
+use crate::core::helpers::{op_file_key, to_int};
 use crate::core::types::{Feature, OutVal};
 use crate::feature::support::*;
 use crate::utility::voxgigstruct::Value;
@@ -58,11 +58,7 @@ impl MetricsFeature {
 
         let dur = (fopt_now(&self.options)() - start).max(0);
 
-        let (entity, opname) = {
-            let op = ctx.op.borrow();
-            (op.entity.clone(), op.name.clone())
-        };
-        let key = format!("{}.{}", entity, opname);
+        let key = op_file_key(ctx);
 
         bump(&mut self.total, ok, dur);
         bump(self.ops.entry(key).or_default(), ok, dur);

@@ -7,6 +7,7 @@ class Response {
   statusText: string
   headers: any
   json: Function
+  text?: Function
   err?: Error
   body?: any
 
@@ -15,6 +16,9 @@ class Response {
     this.statusText = getprop(resmap, 'statusText', '')
     this.headers = getprop(resmap, 'headers')
     this.json = readJson(resmap)
+    if ('function' === typeof resmap?.text) {
+      this.text = resmap.text.bind(resmap)
+    }
     this.body = getprop(resmap, 'body')
     this.err = getprop(resmap, 'err')
   }

@@ -251,6 +251,39 @@ class PipelineTest extends TestCase
         $this->assertSame('rbac_denied', self::code($err));
     }
 
+    public function test_make_point_an_allow_list_entry_may_name_an_action(): void
+    {
+        $plain = ['method' => 'GET', 'parts' => ['episode', '{id}'], 'select' => ['exist' => ['id']]];
+        $audio = ['method' => 'GET', 'parts' => ['episode', '{id}', 'audio'],
+            'select' => ['exist' => ['id'], '$action' => 'audio']];
+        $point = function (string $allow, array $reqmatch) use ($plain, $audio) {
+            $ctx = self::ctx(['options' => ['allow' => ['op' => $allow]], 'reqmatch' => $reqmatch, 'match' => []]);
+            $ctx->op = new ProjectNameOperation([
+                'name' => 'load', 'entity' => 'episode', 'input' => 'match', 'points' => [$plain, $audio]]);
+            [$got, $err] = ProjectNameMakePoint::call($ctx);
+            return null === $err ? $got : self::code($err);
+        };
+        $audioReq = ['$action' => 'audio', 'id' => 'e1'];
+        $recordReq = ['id' => 'e1'];
+        $this->assertSame($audio, $point('episode.load:audio', $audioReq));
+        $this->assertSame('point_op_allow', $point('episode.load:audio', $recordReq));
+        $this->assertSame($audio, $point('Episode.Load:AUDIO', $audioReq));
+        $this->assertSame('point_op_allow', $point('episode.load:video', $audioReq));
+        $this->assertSame($audio, $point('episode.load', $audioReq));
+        $this->assertSame($audio, $point('load', $audioReq));
+        $this->assertSame($plain, $point('load', $recordReq));
+        $this->assertSame('point_op_allow', $point('list', $recordReq));
+    }
+
+    public function test_make_point_an_action_refusal_names_the_action(): void
+    {
+        $ctx = self::ctx(['options' => ['allow' => ['op' => 'list']], 'reqmatch' => ['$action' => 'audio']]);
+        $ctx->op = new ProjectNameOperation([
+            'name' => 'load', 'entity' => 'episode', 'input' => 'match', 'points' => [['parts' => ['a']]]]);
+        [, $err] = ProjectNameMakePoint::call($ctx);
+        $this->assertStringContainsString('Operation "load:audio"', $err->getMessage());
+    }
+
     public function test_make_spec_short_circuits_a_feature_supplied_spec(): void
     {
         $preset = new ProjectNameSpec(['method' => 'GET']);

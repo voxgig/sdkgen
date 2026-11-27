@@ -15,4 +15,8 @@ class Control {
   var actor: String = ""
 
   var paging: JMap[String, Object] = null
+
+  // Set by an entity's binary handle: the slot, the direction its bytes
+  // move, and the bytes a read leaves.
+  var transfer: JMap[String, Object] = null
 }

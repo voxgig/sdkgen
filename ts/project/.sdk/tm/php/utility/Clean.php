@@ -272,8 +272,9 @@ class ProjectNameClean
         return false;
     }
 
-    // The request body of a point the model marks binary, and a response
-    // body that is bytes, each with its type. A response read as text does
+    // The request body of a point the model marks binary, an encoded body
+    // that carries a file, and a response body that is bytes, each with its
+    // type. A response read as text does
     // not say how many bytes it was, so it is not sized.
     private static function binary_bodies(?ProjectNameContext $ctx): array
     {
@@ -290,9 +291,24 @@ class ProjectNameClean
         $body = $ctx->point['body'] ?? null;
         if (is_array($body) && 'raw' === ($body['kind'] ?? null) && true === ($body['binary'] ?? null)) {
             $media = $body['media'] ?? null;
+            $raw = $ctx->sources[ProjectNameMedia::RAW_BODY] ?? $ctx->reqdata[ProjectNameMedia::RAW_BODY] ?? null;
             $bodies[] = [
-                'live' => $known([$ctx->spec?->body, $ctx->reqdata[ProjectNameMedia::RAW_BODY] ?? null]),
+                'live' => $known([$ctx->spec?->body, $raw,
+                    $raw instanceof ProjectNameBinarySource ? $raw->data : null]),
                 'type' => is_string($media) ? $media : null,
+                'sized' => true,
+            ];
+        }
+
+        // An encoded multipart body, and a form body that carries a file.
+        $kind = is_array($body) ? ($body['kind'] ?? null) : null;
+        $files = is_array($body) && is_array($body['fields'] ?? null) && 0 < count(array_filter($body['fields'],
+            fn (mixed $f): bool => is_array($f) && true === ($f['binary'] ?? null)));
+        if ('multipart' === $kind || ('form' === $kind && $files)) {
+            $type = ProjectNameMedia::headerValue($ctx->spec?->headers, 'content-type');
+            $bodies[] = [
+                'live' => $known([$ctx->spec?->body]),
+                'type' => '' === $type ? null : $type,
                 'sized' => true,
             ];
         }

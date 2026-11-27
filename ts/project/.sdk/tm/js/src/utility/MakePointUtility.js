@@ -1,5 +1,7 @@
+const { bytesRefused, liftSources } = require('./BinaryUtility')
 const { paramValue } = require('./ParamUtility')
 const { allowed } = require('./PrepareMethodUtility')
+const { opAction, opKeys } = require('./OpKeyUtility')
 
 
 // The entity's OWN route among an op's points, as opposed to a
@@ -70,7 +72,18 @@ function unfilled(ctx, point) {
 }
 
 
+// Once the point is known, a body of bytes it answers is refused and the
+// sources its binary fields carry are lifted out of the data.
 function makePoint(ctx) {
+  const point = selectPoint(ctx)
+  if (point instanceof Error) {
+    return point
+  }
+  return bytesRefused(ctx) ?? liftSources(ctx) ?? point
+}
+
+
+function selectPoint(ctx) {
   if (ctx.out.point) {
     return ctx.point = ctx.out.point
   }
@@ -79,8 +92,10 @@ function makePoint(ctx) {
   const op = ctx.op
   const options = ctx.options
 
-  if (!allowed(options.allow.op, op.name)) {
+  if (!opKeys(ctx).some((key) => allowed(options.allow.op, key))) {
+    const action = opAction(ctx)
     return ctx.error('point_op_allow', 'Operation "' + op.name +
+      (null == action ? '' : ':' + action) +
       '" not allowed by SDK option allow.op value: "' + options.allow.op + '"')
   }
 

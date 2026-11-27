@@ -6,6 +6,7 @@ import {
   File, Content, Copy, Folder, Fragment,
   inactiveFeatureExcludes,
   pluginExcludes,
+  codecExcludes,
   targetFeatures,
   TEST_CONTROL_EXCLUDE,
   TargetLicense,
@@ -29,6 +30,7 @@ import { Schema } from './Schema_perl'
 import { PrepareAuth } from './PrepareAuth_perl'
 import { Gitignore } from './Gitignore_perl'
 import { MainEntity } from './MainEntity_perl'
+import { CodecIndex } from './CodecIndex_perl'
 
 
 // Feature class name: 'retry' -> 'Retry' (matches feature/*_feature.pm).
@@ -61,7 +63,8 @@ const Main = cmp(async function Main(props: any) {
   Copy({
     from: 'tm/' + target.name,
     exclude: [/src\//, TEST_CONTROL_EXCLUDE,
-      ...inactiveFeatureExcludes(props.ctx$, target), ...pluginExcludes(model)],
+      ...inactiveFeatureExcludes(props.ctx$, target), ...pluginExcludes(model),
+      ...codecExcludes(model)],
     replace: {
       ...props.ctx$.stdrep,
     }
@@ -117,6 +120,8 @@ const Main = cmp(async function Main(props: any) {
   })
 
   PrepareAuth({ target })
+
+  CodecIndex({ target })
 
   // Generate feature factory module
   File({ name: 'features.pm' }, () => {

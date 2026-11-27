@@ -36,6 +36,32 @@ let allow_list_has (names : value) (item : string) : bool =
       (String.split_on_char ',' list)
   | _ -> false
 
+(* The custom action a call names: `$action` in its own request argument,
+   never in a response. *)
+let op_action (ctx : ctx) : string option =
+  let req = if ctx.c_op.op_input = "data" then ctx.c_reqdata else ctx.c_reqmatch in
+  match getp req "$action" with
+  | Str a when a <> "" -> Some a
+  | _ -> None
+
+(* The keys an operation is looked up and filed by, most specific first:
+   `<entity>.<op>:<action>`, `<entity>.<op>`, `<op>`, `*`. *)
+let op_keys (ctx : ctx) : string list =
+  let name = if ctx.c_op.op_name <> "" then ctx.c_op.op_name else "_" in
+  let entity =
+    if ctx.c_op.op_entity <> "" then ctx.c_op.op_entity
+    else match ctx.c_entity with
+      | Some e when e.e_name <> "" -> e.e_name
+      | _ -> "_" in
+  let base = entity ^ "." ^ name in
+  match op_action ctx with
+  | Some a -> [base ^ ":" ^ a; base; name; "*"]
+  | None -> [base; name; "*"]
+
+(* The record fields that name a call's action: none for a plain call. *)
+let action_fields (ctx : ctx) : (string * value) list =
+  match op_action ctx with Some a -> [("action", Str a)] | None -> []
+
 let str_replace_all (s : string) (find : string) (repl : string) : string =
   if find = "" then s
   else begin
@@ -77,7 +103,7 @@ let header_ci (headers : value) (name : string) : value =
 
 let new_control () : control =
   { ctrl_throw = None; ctrl_err = None; ctrl_explain = Noval;
-    ctrl_actor = Noval; ctrl_paging = Noval }
+    ctrl_actor = Noval; ctrl_paging = Noval; ctrl_transfer = Noval }
 
 let new_operation (opmap : value) : operation =
   let gstr k d = match getp opmap k with Str s when s <> "" -> s | _ -> d in
@@ -157,7 +183,7 @@ let default_ctxspec () : ctxspec =
     cs_meta = None; cs_config = None; cs_entopts = None; cs_options = None;
     cs_entity = None; cs_shared = None; cs_opmap = None; cs_data = None;
     cs_reqdata = None; cs_match = None; cs_reqmatch = None; cs_point = None;
-    cs_spec = None; cs_result = None; cs_response = None }
+    cs_spec = None; cs_result = None; cs_response = None; cs_sources = None }
 
 (* Every request racing to build this Operation gets the one stored first. *)
 let rec store_op (opmap : operation OpMap.t Atomic.t) (key : string) (op : operation) : operation =
@@ -207,6 +233,7 @@ let make_context_impl (cs : ctxspec) (basectx : ctx option) : ctx =
       (match getp cr "explain" with Map _ as m -> c.ctrl_explain <- m | _ -> ());
       (match getp cr "actor" with Noval -> () | a -> c.ctrl_actor <- a);
       (match getp cr "paging" with Map _ as m -> c.ctrl_paging <- m | _ -> ());
+      (match getp cr "transfer" with Map _ as m -> c.ctrl_transfer <- m | _ -> ());
       c
     | _ -> (match basectx with
         | Some b when cs.cs_opname = None -> b.c_ctrl
@@ -252,6 +279,7 @@ let make_context_impl (cs : ctxspec) (basectx : ctx option) : ctx =
     c_data = data; c_reqdata = reqdata; c_match = mtch; c_reqmatch = reqmatch;
     c_entity = entity; c_shared = shared; c_scratch = Hashtbl.create 8;
     c_unexpected_fired = false;
+    c_given = Option.value cs.cs_sources ~default:[]; c_sources = None;
   } in
   let opname = match cs.cs_opname with Some s -> s | None -> "" in
   ctx.c_op <- resolve_op ctx opname;
@@ -434,12 +462,33 @@ let binary_bodies (ctx : ctx) (cfg : value) : binary_body list =
   let minlen = match getp cfg "min" with Num n -> int_of_float n | _ -> 4 in
   let live = List.filter_map (function Str s when minlen <= String.length s -> Some s | _ -> None) in
   let body = getp ctx.c_point "body" in
+  let spec_body = match ctx.c_spec with Some sp -> sp.sp_body | None -> Noval in
   let sent = match getp body "kind", getp body "binary" with
     | Str "raw", Bool true ->
-      let spec_body = match ctx.c_spec with Some sp -> sp.sp_body | None -> Noval in
-      [{ bin_live = live [spec_body; getp ctx.c_reqdata raw_body_key];
+      let lifted = match ctx.c_sources with
+        | Some l -> (match List.assoc_opt raw_body_key l with
+            | Some (LSource s) -> Str s.bs_data
+            | Some (LValue v) -> v
+            | None -> Noval)
+        | None -> Noval in
+      [{ bin_live = live [spec_body; lifted; getp ctx.c_reqdata raw_body_key];
          bin_type = (match getp body "media" with Str m -> Some m | _ -> None); bin_sized = true }]
     | _ -> [] in
+  (* The body is a string here, so an encoded multipart body, and a form body
+   * that carries a file, are told by the point's kind. *)
+  let files = match getp body "fields" with
+    | List r -> List.exists (fun f -> getp f "binary" = Bool true) !r
+    | _ -> false in
+  let encoded = match getp body "kind" with
+    | Str "multipart" -> true
+    | Str "form" -> files
+    | _ -> false in
+  let sent = if not encoded then sent else
+      let spec_headers = match ctx.c_spec with Some sp -> sp.sp_headers | None -> Noval in
+      sent @ [{ bin_live = live [spec_body];
+                bin_type = (match vstring (header_ci spec_headers "content-type") with
+                    | "" -> None | t -> Some t);
+                bin_sized = true }] in
   let answered = match ctx.c_response with
     | Some r ->
       let ctype = vstring (header_ci r.rs_headers "content-type") in
@@ -557,6 +606,18 @@ let ctx_to_value (ctx : ctx) : value =
            | None -> Noval));
       ("meta", ctx.c_meta) ] in
   match ctx.c_utility with Some u -> u.u_clean ctx record | None -> clean_util ctx record
+
+(* The key a call is filed under where a consumer reads it: the first key,
+   with the caller's action cleaned as a record's `action` field, so a
+   sensitive key name masks it as well as a registered value. *)
+let op_file_key (ctx : ctx) : string =
+  match op_action ctx, op_keys ctx with
+  | Some a, _ :: base :: _ ->
+    let record = jo [("action", Str a)] in
+    let out = match ctx.c_utility with Some u -> u.u_clean ctx record | None -> clean_util ctx record in
+    base ^ ":" ^ (match getp out "action" with Str s -> s | _ -> a)
+  | _, first :: _ -> first
+  | _, [] -> "_._"
 
 (* The client's own serialisation: its name and mode, never its options. *)
 let client_to_value (client : sdk_client) : value =
@@ -953,13 +1014,51 @@ let match_body (ctx : ctx) (fields : value list) : value =
       | _ -> ()) fields;
   body
 
+(* The encoded body, with its content type replacing any the headers carry:
+ * a multipart boundary is the encoder's alone to choose. *)
+let encode_body (ctx : ctx) (kind : string) (data : value) : value =
+  let u = cu ctx in
+  let encoder = if kind = "form" then u.u_codec.cd_form else u.u_codec.cd_multipart in
+  match encoder with
+  | None ->
+    raise (Body_error (mk_error "body_codec_missing"
+                         ("This SDK was generated without a " ^ kind ^ " encoder.")))
+  | Some encode ->
+    let lifted = Option.value ctx.c_sources ~default:[] in
+    match encode ctx data lifted with
+    | Error err -> raise (Body_error err)
+    | Ok (ctype, body) ->
+      (match ctx.c_spec with
+       | Some sp ->
+         List.iter (fun k ->
+             if String.lowercase_ascii k = "content-type" then ignore (delprop sp.sp_headers (Str k)))
+           (keysof sp.sp_headers);
+         setp sp.sp_headers "content-type" (Str ctype)
+       | None -> ());
+      Str body
+
+(* A refusal raises Body_error, which make_spec turns into the operation's
+ * error. *)
 let prepare_body_util (ctx : ctx) : value =
   if ctx.c_op.op_input <> "data" then
     (match getp ctx.c_point "fields" with
      | List { contents = _ :: _ as fields } -> match_body ctx fields
      | _ -> Noval)
-  else if is_raw_request ctx.c_point then raw_body ctx.c_reqdata
-  else (cu ctx).u_transform_request ctx
+  else begin
+    (match Sdk_binary.lift_sources ctx with Some err -> raise (Body_error err) | None -> ());
+    let lifted = Option.value ctx.c_sources ~default:[] in
+    if is_raw_request ctx.c_point then
+      (match List.assoc_opt raw_body_key lifted with
+       | Some (LSource s) -> Str s.bs_data
+       | Some (LValue v) -> v
+       | None -> Noval)
+    else begin
+      let body = (cu ctx).u_transform_request ctx in
+      match getp (getp ctx.c_point "body") "kind" with
+      | Str ("form" | "multipart" as kind) -> encode_body ctx kind body
+      | _ -> body
+    end
+  end
 
 (* ---- graphql (transport) -------------------------------------------------
  *
@@ -1228,6 +1327,11 @@ let unreadable_body (ctx : ctx) (status : int) (headers : value) (text : value) 
 
 let result_body_util (ctx : ctx) : unit =
   match ctx.c_response, ctx.c_result with
+  | Some response, Some result
+    when getp (getp ctx.c_point "response") "kind" = Str "raw"
+      && result.rt_err = None && response.rs_err = None && result.rt_status < 400
+      && Option.is_some (cu ctx).u_codec.cd_raw ->
+    (match (cu ctx).u_codec.cd_raw with Some read -> read ctx | None -> ())
   | Some response, Some result ->
     if is_callable response.rs_json && not (is_noval response.rs_body) then
       result.rt_body <- call_json response.rs_json;
@@ -1275,7 +1379,20 @@ let unfilled_params (ctx : ctx) (point : value) : string list =
         | _ -> None) !r
   | _ -> []
 
-let make_point_util (ctx : ctx) : (value * sdk_error option) =
+let rec make_point_util (ctx : ctx) : (value * sdk_error option) =
+  match select_point ctx with
+  | (point, None) ->
+    (* Once the point is known, a body of bytes it answers is refused and the
+     * sources its binary fields carry are lifted out of the data. *)
+    (match Sdk_binary.bytes_refused ctx with
+     | Some err -> (Noval, Some err)
+     | None ->
+       match Sdk_binary.lift_sources ctx with
+       | Some err -> (Noval, Some err)
+       | None -> (point, None))
+  | refused -> refused
+
+and select_point (ctx : ctx) : (value * sdk_error option) =
   match Hashtbl.find_opt ctx.c_out "point" with
   | Some (OErr e) -> (Noval, Some e)
   | Some (OPoint p) -> ctx.c_point <- p; (p, None)
@@ -1283,9 +1400,11 @@ let make_point_util (ctx : ctx) : (value * sdk_error option) =
     let op = ctx.c_op in
     let options = ctx.c_options in
     let allow_op = match getpath_s options "allow.op" with Str s -> s | _ -> "" in
-    if not (allow_list_has (getpath_s options "allow.op") op.op_name) then
+    if not (List.exists (allow_list_has (getpath_s options "allow.op")) (op_keys ctx)) then
+      let action = match op_action ctx with Some a -> ":" ^ a | None -> "" in
       (Noval, Some (ctx_make_error ctx "point_op_allow"
-        ("Operation \"" ^ op.op_name ^ "\" not allowed by SDK option allow.op value: \"" ^ allow_op ^ "\"")))
+        ("Operation \"" ^ op.op_name ^ action ^
+         "\" not allowed by SDK option allow.op value: \"" ^ allow_op ^ "\"")))
     else begin
       let points = match op.op_points with List r -> !r | _ -> [] in
       let reqselector, selector =
@@ -1403,6 +1522,7 @@ let make_spec_util (ctx : ctx) : (spec option * sdk_error option) =
     let prefix = match getp options "prefix" with Str s -> s | _ -> "" in
     let suffix = match getp options "suffix" with Str s -> s | _ -> "" in
     let parts = match getp ctx.c_point "parts" with List _ as l -> l | _ -> empty_list () in
+    let refused = ref None in
     let sp = new_spec (jo [("base", Str base); ("prefix", Str prefix);
                            ("parts", parts); ("suffix", Str suffix); ("step", Str "start")]) in
     ctx.c_spec <- Some sp;
@@ -1429,9 +1549,12 @@ let make_spec_util (ctx : ctx) : (spec option * sdk_error option) =
         setp sp.sp_headers "content-type" (Str graphql_content_type)
       end
       else begin
-        sp.sp_body <- u.u_prepare_body ctx;
+        sp.sp_body <- (try u.u_prepare_body ctx with Body_error err -> refused := Some err; Noval);
         sp.sp_path <- u.u_prepare_path ctx
       end;
+      match !refused with
+      | Some err -> (None, Some err)
+      | None ->
       (match ctx.c_ctrl.ctrl_explain with Map _ -> setp ctx.c_ctrl.ctrl_explain "spec" (spec_to_value sp) | _ -> ());
       (* Whatever prepare_auth sets in the query, under whichever name, is the
        * credential; a key it leaves as it was is the caller's. *)
@@ -1594,7 +1717,9 @@ let make_response_util (ctx : ctx) : (response option * sdk_error option) =
                 ignore (u.u_graphql_errors ctx);
                 ignore (u.u_transform_response ctx);
                 if result.rt_err = None then result.rt_ok <- true
-              with e ->
+              with
+              | Body_error err -> result.rt_err <- Some err
+              | e ->
                 result.rt_err <- Some (ctx_make_error ctx "response_body" (Printexc.to_string e)));
              (match ctx.c_ctrl.ctrl_explain with Map _ -> setp ctx.c_ctrl.ctrl_explain "result" (result_to_value result) | _ -> ());
              (Some response, None))))
@@ -1933,6 +2058,8 @@ let new_utility () : utility =
     u_result_headers = result_headers_util;
     u_transform_request = transform_request_util;
     u_transform_response = transform_response_util;
+    u_codec = Sdk_codec.codec ();
+    u_multipart_boundary = Sdk_codec.multipart_boundary;
   }
 
 (* register: rebind every util field (idempotent — new_utility already sets
@@ -1975,6 +2102,8 @@ let copy_utility (src : utility) : utility =
   let u = new_utility () in
   u.u_fetcher <- src.u_fetcher;
   u.u_struct <- src.u_struct;
+  u.u_codec <- src.u_codec;
+  u.u_multipart_boundary <- src.u_multipart_boundary;
   let custom = empty_map () in
   (match src.u_custom with Map _ -> List.iter (fun k -> setp custom k (getp src.u_custom k)) (keysof src.u_custom) | _ -> ());
   u.u_custom <- custom;

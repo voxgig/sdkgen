@@ -1,6 +1,7 @@
 package utility
 
 import (
+	"bufio"
 	"bytes"
 	"compress/flate"
 	"compress/gzip"
@@ -193,6 +194,37 @@ func defaultHTTPFetch(ctx *core.Context, fullurl string, fetchdef map[string]any
 	if err != nil {
 		return nil, err
 	}
+
+	headers := map[string]any{}
+	for k, vals := range resp.Header {
+		if len(vals) == 1 {
+			headers[strings.ToLower(k)] = vals[0]
+		} else {
+			headers[strings.ToLower(k)] = strings.Join(vals, ", ")
+		}
+	}
+
+	statusText := resp.Status
+	if idx := strings.Index(statusText, " "); idx >= 0 {
+		statusText = statusText[idx+1:]
+	}
+
+	// A raw success body is left unread: the raw codec reads it to maxBuffer.
+	if ctx != nil && "raw" == vs.GetPath(ctx.Point, []any{"response", "kind"}) &&
+		resp.StatusCode < 400 {
+		body, err := decodeReader(resp.Body, resp.Header.Get("Content-Encoding"))
+		if err != nil {
+			resp.Body.Close()
+			return nil, err
+		}
+		return map[string]any{
+			"status":     resp.StatusCode,
+			"statusText": statusText,
+			"headers":    headers,
+			"body":       body,
+		}, nil
+	}
+
 	defer resp.Body.Close()
 
 	bodyBytes, err := io.ReadAll(resp.Body)
@@ -204,24 +236,10 @@ func defaultHTTPFetch(ctx *core.Context, fullurl string, fetchdef map[string]any
 		return nil, err
 	}
 
-	headers := map[string]any{}
-	for k, vals := range resp.Header {
-		if len(vals) == 1 {
-			headers[strings.ToLower(k)] = vals[0]
-		} else {
-			headers[strings.ToLower(k)] = strings.Join(vals, ", ")
-		}
-	}
-
 	var jsonBody any
 	unreadable := false
 	if len(bytes.TrimSpace(bodyBytes)) > 0 {
 		unreadable = json.Unmarshal(bodyBytes, &jsonBody) != nil
-	}
-
-	statusText := resp.Status
-	if idx := strings.Index(statusText, " "); idx >= 0 {
-		statusText = statusText[idx+1:]
 	}
 
 	return map[string]any{
@@ -264,6 +282,35 @@ func decodeBody(body []byte, encoding string) ([]byte, error) {
 		return nil, fmt.Errorf("response body is not valid %s data: %w", encoding, err)
 	}
 	return out, nil
+}
+
+type readCloser struct {
+	io.Reader
+	io.Closer
+}
+
+// The decoding counterpart of decodeBody, over a body still to be read.
+func decodeReader(body io.ReadCloser, encoding string) (io.ReadCloser, error) {
+	switch strings.ToLower(strings.TrimSpace(encoding)) {
+	case "gzip", "x-gzip":
+		zr, err := gzip.NewReader(body)
+		if err != nil {
+			return nil, fmt.Errorf("response body is not valid %s data: %w", encoding, err)
+		}
+		return readCloser{zr, body}, nil
+	case "deflate":
+		buffered := bufio.NewReader(body)
+		if head, err := buffered.Peek(2); err == nil && 0x78 == head[0] &&
+			0 == (uint16(head[0])<<8|uint16(head[1]))%31 {
+			zr, err := zlib.NewReader(buffered)
+			if err != nil {
+				return nil, fmt.Errorf("response body is not valid %s data: %w", encoding, err)
+			}
+			return readCloser{zr, body}, nil
+		}
+		return readCloser{flate.NewReader(buffered), body}, nil
+	}
+	return body, nil
 }
 
 func fetcherUtil(ctx *core.Context, fullurl string, fetchdef map[string]any) (any, error) {

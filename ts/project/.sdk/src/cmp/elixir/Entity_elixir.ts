@@ -4,6 +4,7 @@ import * as Path from 'node:path'
 import {
   cmp, camelify,
   File, Folder, Fragment,
+  entitySlots,
 } from '@voxgig/sdkgen'
 
 
@@ -44,6 +45,7 @@ const Entity = cmp(function Entity(props: any) {
             EntityName: entity.Name,
             entityname: entity.name,
             '# #Aliases': aliases(props.ctx$.fs(), ff, Name, opnames),
+            '# #BinarySlot': binarySlot(Name, entity),
             ...opfrags,
           }
         })
@@ -51,6 +53,34 @@ const Entity = cmp(function Entity(props: any) {
     })
   })
 })
+
+
+// The entity's binary slots, by name; "" is its own bytes, reached with no name.
+function binarySlot(Name: string, entity: any): string {
+  const slots = entitySlots(entity)
+  if (0 === slots.length) {
+    return ''
+  }
+
+  const table = slots.map((slot: any) => '    ' + JSON.stringify(slot.name) + ' => %{' +
+    [['action', slot.action], ['read', slot.read], ['write', slot.write]]
+      .filter(([, v]) => null != v)
+      .map(([k, v]) => JSON.stringify(k) + ' => ' + JSON.stringify(v)).join(', ') + '}')
+  const named = slots.map((slot: any) => slot.name).filter((name: string) => '' !== name)
+  const param = 0 === named.length ? '' : named.length < slots.length ? ', slot \\\\ ""' : ', slot'
+
+  return `@binary_slots %{
+${table.join(',\n')}
+  }
+
+  def binary_slots, do: @binary_slots
+
+  # An entity's bytes never enter its data: they are reached by slot${0 === named.length ? '' :
+    ', one of ' + named.map((name: string) => JSON.stringify(name)).join(', ')}.
+  def binary(ent${param}),
+    do: ${Name}.BinaryHandle.new(ent, @binary_slots${'' === param ? '' : ', slot'})
+`
+}
 
 
 // Only what the emitted operations use: elixir warns on an unused alias.

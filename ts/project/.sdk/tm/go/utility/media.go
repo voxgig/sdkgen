@@ -5,6 +5,8 @@ import (
 	"strings"
 
 	vs "github.com/voxgig/struct"
+
+	"GOMODULE/core"
 )
 
 // The media types a point declares: `response` (the model's `rs`) for the
@@ -93,13 +95,16 @@ func mediaHeaders(point map[string]any, headers map[string]any) map[string]any {
 	return headers
 }
 
-// Bytes, a reader or a string, sent as they are. A reader is read here, once,
-// before the first attempt, so that a retry sends the same bytes again.
-func rawBody(reqdata map[string]any) any {
-	if nil == reqdata {
+// Bytes, a source's bytes, a reader or a string, sent as they are. A reader
+// is read once, before the first attempt, so a retry sends the same bytes.
+func rawBody(sources map[string]any) any {
+	if nil == sources {
 		return nil
 	}
-	body := reqdata[rawBodyKey]
+	body := sources[rawBodyKey]
+	if src, ok := core.AsSource(body); ok {
+		return src.Data
+	}
 	if r, ok := body.(io.Reader); ok {
 		data, err := io.ReadAll(r)
 		if err != nil {

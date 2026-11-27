@@ -85,6 +85,9 @@ public final class AuditFeature: BaseFeature {
     if let result = ctx.result {
       raw.entries["status"] = .int(Int64(result.status))
     }
+    if let action = opAction(ctx) {
+      raw.entries["action"] = .string(action)
+    }
     let record = fclean(ctx, raw)
 
     records.append(record)

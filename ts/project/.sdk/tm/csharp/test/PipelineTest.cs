@@ -86,6 +86,68 @@ public class PipelineTest
         }
     }
 
+    // --- makePoint allow list ----------------------------------------------
+
+    [Fact]
+    public void AllowListEntryMayNameAnAction()
+    {
+        var (client, utility) = PlClient(null);
+        var plain = new Dictionary<string, object?>
+        {
+            ["method"] = "GET",
+            ["parts"] = new List<object?> { "episode", "{id}" },
+            ["select"] = new Dictionary<string, object?> { ["exist"] = new List<object?> { "id" } },
+        };
+        var audio = new Dictionary<string, object?>
+        {
+            ["method"] = "GET",
+            ["parts"] = new List<object?> { "episode", "{id}", "audio" },
+            ["select"] = new Dictionary<string, object?>
+            {
+                ["exist"] = new List<object?> { "id" },
+                ["$action"] = "audio",
+            },
+        };
+
+        object? Point(string allow, Dictionary<string, object?> reqmatch)
+        {
+            var ctx = PlCtx(client, utility, null);
+            ctx.Op = new Operation(new Dictionary<string, object?>
+            {
+                ["name"] = "load",
+                ["entity"] = "episode",
+                ["input"] = "match",
+                ["points"] = new List<object?> { plain, audio },
+            });
+            ctx.Options = new Dictionary<string, object?>
+            {
+                ["allow"] = new Dictionary<string, object?> { ["op"] = allow },
+            };
+            ctx.Reqmatch = reqmatch;
+            ctx.Match = new Dictionary<string, object?>();
+            try
+            {
+                return utility.MakePoint(ctx);
+            }
+            catch (ProjectNameError err)
+            {
+                return err.Code;
+            }
+        }
+
+        Dictionary<string, object?> Audio() => new() { ["$action"] = "audio", ["id"] = "e1" };
+        Dictionary<string, object?> Record() => new() { ["id"] = "e1" };
+
+        Assert.Same(audio, Point("episode.load:audio", Audio()));
+        Assert.Equal("point_op_allow", Point("episode.load:audio", Record()));
+        Assert.Same(audio, Point("Episode.Load:AUDIO", Audio()));
+        Assert.Equal("point_op_allow", Point("episode.load:video", Audio()));
+        Assert.Same(audio, Point("episode.load", Audio()));
+        Assert.Same(audio, Point("load", Audio()));
+        Assert.Same(plain, Point("load", Record()));
+        Assert.Equal("point_op_allow", Point("list", Record()));
+    }
+
     // --- feature order ------------------------------------------------------
 
     // ResolveOpts runs makeOptions over an options.feature value (map or list)

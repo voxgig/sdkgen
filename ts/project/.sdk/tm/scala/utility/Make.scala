@@ -122,7 +122,16 @@ object MakePoint {
       case _ => Seq.empty
     }
 
+  // Once the point is known, a body of bytes it answers is refused and the
+  // sources its binary fields carry are lifted out of the data.
   def makePoint(ctx: Context): JMap[String, Object] = {
+    val point = selectPoint(ctx)
+    Binary.bytesRefused(ctx)
+    Binary.liftSources(ctx)
+    point
+  }
+
+  private def selectPoint(ctx: Context): JMap[String, Object] = {
     val outPoint = ctx.out.get("point")
     if (outPoint != null) {
       // A PrePoint feature hook (e.g. rbac) may short-circuit by storing an
@@ -139,9 +148,10 @@ object MakePoint {
 
     val allowOpRaw = Struct.getpath(options, java.util.List.of("allow", "op"))
     val allowOp = allowOpRaw match { case s: String => s; case _ => "" }
-    if (!Helpers.allowed(allowOpRaw, op.name)) {
+    if (!Helpers.opKeys(ctx).stream().anyMatch(key => Helpers.allowed(allowOpRaw, key))) {
+      val action = Helpers.opAction(ctx)
       throw ctx.makeError("point_op_allow",
-        "Operation \"" + op.name + "\" not allowed by SDK option allow.op value: \"" + allowOp + "\"")
+        "Operation \"" + op.name + (if (action == null) "" else ":" + action) + "\" not allowed by SDK option allow.op value: \"" + allowOp + "\"")
     }
 
     if (op.points.isEmpty) {

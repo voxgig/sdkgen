@@ -1,12 +1,14 @@
 # ProjectName SDK metrics feature
 #
 # Statistics capture. Records per-operation counters and latency for every
-# call: totals plus a breakdown keyed by "<entity>.<op>". Timing starts at
+# call: totals plus a breakdown keyed by "<entity>.<op>", or
+# "<entity>.<op>:<action>" for a custom action. Timing starts at
 # endpoint resolution (PrePoint) and stops when the call returns (PreDone)
 # or fails (PreUnexpected) - exactly once per operation. The clock is
 # injectable ("now", ms) for deterministic tests.
 
 require_relative 'base_feature'
+require_relative '../utility/op_key'
 
 class ProjectNameMetricsFeature < ProjectNameBaseFeature
   def initialize
@@ -64,7 +66,7 @@ class ProjectNameMetricsFeature < ProjectNameBaseFeature
 
     m = @client.instance_variable_get(:@_metrics)
     return if m.nil?
-    key = "#{ctx.op ? ctx.op.entity : '_'}.#{ctx.op ? ctx.op.name : '_'}"
+    key = ProjectNameUtilities.op_file_key(ctx)
 
     op = m["ops"][key]
     if op.nil?

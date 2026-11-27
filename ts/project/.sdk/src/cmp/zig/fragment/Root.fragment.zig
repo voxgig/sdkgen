@@ -30,6 +30,14 @@ pub const Context = context.Context;
 pub const CtxSpec = context.CtxSpec;
 pub const ProjectNameError = errmod.ProjectNameError;
 
+// A file's bytes beside the request data, and what an operation's with-form takes.
+pub const binary = @import("core/binary.zig");
+pub const BinarySource = binary.BinarySource;
+pub const SourceEntry = binary.SourceEntry;
+pub const OpWith = binary.OpWith;
+pub const Transfer = @import("core/control.zig").Transfer;
+pub const codec = @import("utility/codec/index.zig");
+
 // Internals exposed for the template test suite.
 pub const types_mod = types;
 pub const BaseFeature = @import("feature/base.zig").BaseFeature;
@@ -64,6 +72,7 @@ pub const DebugFeature = @import("feature/debug.zig").DebugFeature;
 pub const AuditFeature = @import("feature/audit.zig").AuditFeature;
 pub const ClienttrackFeature = @import("feature/clienttrack.zig").ClienttrackFeature;
 pub const RbacFeature = @import("feature/rbac.zig").RbacFeature;
+pub const CostFeature = @import("feature/cost.zig").CostFeature;
 // GATED features (model/feature/<name>.aontu `needs:`), exported ONLY when the
 // model activates them: their source reaches a named build module (the
 // vendored sekreto for `secrets`) that build.zig declares under the same

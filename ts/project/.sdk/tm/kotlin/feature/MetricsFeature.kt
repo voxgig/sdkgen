@@ -1,10 +1,12 @@
 package KOTLINPACKAGE.feature
 
 import KOTLINPACKAGE.core.Context
+import KOTLINPACKAGE.core.Helpers
 import KOTLINPACKAGE.core.SdkClient
 
 // Statistics capture. Records per-operation counters and latency for every
-// call: totals plus a breakdown keyed by `<entity>.<op>`. The clock is
+// call: totals plus a breakdown keyed by `<entity>.<op>`, or
+// `<entity>.<op>:<action>` for a custom action. The clock is
 // injectable (`now`) for deterministic tests.
 class MetricsFeature : BaseFeature("metrics", "0.0.1", true) {
 
@@ -63,9 +65,7 @@ class MetricsFeature : BaseFeature("metrics", "0.0.1", true) {
       dur = 0
     }
 
-    val entity = ctx.op.entity
-    val opname = ctx.op.name
-    val key = "$entity.$opname"
+    val key = Helpers.opFileKey(ctx)
 
     var op = this.ops[key]
     if (op == null) {

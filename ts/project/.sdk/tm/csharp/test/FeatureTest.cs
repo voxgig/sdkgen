@@ -1020,6 +1020,268 @@ public class FeatureAuditTest
     }
 }
 
+// --- action keys ----------------------------------------------------------------
+// A custom action is `$action` in the request argument, and its keys name it:
+// `<entity>.<op>:<action>`, most specific first.
+
+public class FeatureActionKeysTest
+{
+    private static Dictionary<string, object?> Audio() =>
+        new() { ["$action"] = "audio", ["id"] = "e1" };
+
+    private static Dictionary<string, object?> Record() =>
+        new() { ["id"] = "e1" };
+
+    private static FhOpResult Load(FhHarness h, Dictionary<string, object?> reqmatch) =>
+        h.Op(new FhOpSpec { Entity = "episode", Op = "load", Reqmatch = reqmatch });
+
+    private static Dictionary<string, object?> AudioRules() => new()
+    {
+        ["episode.load"] = "read",
+        ["episode.load:audio"] = "audio",
+    };
+
+    [Fact]
+    public void RbacRecordGrantedActionRefused()
+    {
+        if (Fh.SkipWithout("rbac")) return;
+        var rec = new FhRecorder();
+        var f = new RbacFeature();
+        var h = Fh.Make(rec.Fetch, (f, new Dictionary<string, object?>
+        {
+            ["rules"] = AudioRules(),
+            ["permissions"] = new List<object?> { "read" },
+        }));
+        Assert.True(Load(h, Record()).Ok);
+        var res = Load(h, Audio());
+        Assert.Equal("rbac_denied", Fh.ErrCode(res.Err));
+        Assert.Contains("operation \"load:audio\"", res.Err!.Message);
+        Assert.Single(rec.Calls);
+        Assert.Equal("audio", f.Last!["action"]);
+    }
+
+    [Fact]
+    public void RbacActionGrantedRecordRefused()
+    {
+        if (Fh.SkipWithout("rbac")) return;
+        var f = new RbacFeature();
+        var h = Fh.Make(null, (f, new Dictionary<string, object?>
+        {
+            ["rules"] = AudioRules(),
+            ["permissions"] = new List<object?> { "audio" },
+        }));
+        Assert.Equal("rbac_denied", Fh.ErrCode(Load(h, Record()).Err));
+        Assert.False(f.Last!.ContainsKey("action"));
+        Assert.True(Load(h, Audio()).Ok);
+    }
+
+    [Fact]
+    public void RbacActionFallsBackToItsOperation()
+    {
+        if (Fh.SkipWithout("rbac")) return;
+        var h = Fh.Make(null, (new RbacFeature(), new Dictionary<string, object?>
+        {
+            ["rules"] = new Dictionary<string, object?> { ["episode.load"] = "read" },
+            ["permissions"] = new List<object?>(),
+        }));
+        Assert.Equal("rbac_denied", Fh.ErrCode(Load(h, Audio()).Err));
+    }
+
+    [Fact]
+    public void RbacDataOpReadsReqdataOnly()
+    {
+        if (Fh.SkipWithout("rbac")) return;
+        var h = Fh.Make(null, (new RbacFeature(), new Dictionary<string, object?>
+        {
+            ["rules"] = new Dictionary<string, object?> { ["episode.create:upload"] = "write" },
+            ["permissions"] = new List<object?>(),
+        }));
+        var upload = new Dictionary<string, object?> { ["$action"] = "upload" };
+        Assert.Equal("rbac_denied", Fh.ErrCode(
+            h.Op(new FhOpSpec { Entity = "episode", Op = "create", Reqdata = upload }).Err));
+        Assert.True(h.Op(new FhOpSpec { Entity = "episode", Op = "create", Reqmatch = upload }).Ok);
+    }
+
+    [Fact]
+    public void MetricsCountsActionApart()
+    {
+        if (Fh.SkipWithout("metrics")) return;
+        var f = new MetricsFeature();
+        var h = Fh.Make(null, (f, null));
+        Load(h, Record());
+        Load(h, Audio());
+        Load(h, Audio());
+        Assert.Equal(3, f.Total.Count);
+        Assert.Equal(1, f.Ops["episode.load"].Count);
+        Assert.Equal(2, f.Ops["episode.load:audio"].Count);
+    }
+
+    [Fact]
+    public void AuditRecordNamesItsAction()
+    {
+        if (Fh.SkipWithout("audit")) return;
+        var f = new AuditFeature();
+        var h = Fh.Make(null, (f, null));
+        Load(h, Record());
+        Load(h, Audio());
+        Assert.False(f.Records[0].ContainsKey("action"));
+        Assert.Equal("load", f.Records[0]["op"]);
+        Assert.Equal("audio", f.Records[1]["action"]);
+        Assert.Equal("load", f.Records[1]["op"]);
+    }
+
+    [Fact]
+    public void CostPricesActionApart()
+    {
+        if (Fh.SkipWithout("cost")) return;
+        var sunk = new List<CostRecord>();
+        var f = new CostFeature();
+        var h = Fh.Make(null, (f, new Dictionary<string, object?>
+        {
+            ["rates"] = new Dictionary<string, object?>
+            {
+                ["episode.load"] = 1,
+                ["episode.load:audio"] = 5,
+            },
+            ["sink"] = (Action<CostRecord>)(r => sunk.Add(r)),
+        }));
+        Load(h, Record());
+        Load(h, Audio());
+        Assert.Equal(6.0, f.Total.Amount);
+        Assert.Equal(1, f.Ops["episode.load"].Calls);
+        Assert.Equal(1.0, f.Ops["episode.load"].Amount);
+        Assert.Equal(1, f.Ops["episode.load:audio"].Calls);
+        Assert.Equal(5.0, f.Ops["episode.load:audio"].Amount);
+        Assert.Equal(2, sunk.Count);
+        Assert.Null(sunk[0].Action);
+        Assert.Equal("audio", sunk[1].Action);
+        Assert.Equal("audio", f.Last!.Action);
+    }
+
+    // A caller's action may hold a registered secret: what a consumer reads
+    // is cleaned, while the lookup still matches the raw action.
+    private const string Secret = "ACTION-SECRET-q7w8e9r0";
+    private const string Mask = "[redacted]";
+
+    private static Dictionary<string, object?> SecretOpts() => new() { ["apikey"] = Secret };
+
+    private static Dictionary<string, object?> SecretArg() =>
+        new() { ["$action"] = Secret, ["id"] = "e1" };
+
+    [Fact]
+    public void RbacRecordCleansTheAction()
+    {
+        if (Fh.SkipWithout("rbac")) return;
+        var f = new RbacFeature();
+        var h = Fh.MakeWith(SecretOpts(), null, (f, new Dictionary<string, object?>
+        {
+            ["rules"] = new Dictionary<string, object?>
+            {
+                ["episode.load"] = "read",
+                ["episode.load:" + Secret] = "secret",
+            },
+            ["permissions"] = new List<object?> { "read" },
+        }));
+        Assert.Equal("rbac_denied", Fh.ErrCode(Load(h, SecretArg()).Err));
+        Assert.Equal(Mask, f.Last!["action"]);
+        Assert.Equal("secret", f.Last!["required"]);
+        Assert.Equal(1, f.Denied);
+    }
+
+    [Fact]
+    public void MetricsBucketCleansTheAction()
+    {
+        if (Fh.SkipWithout("metrics")) return;
+        var f = new MetricsFeature();
+        var h = Fh.MakeWith(SecretOpts(), null, (f, null));
+        Load(h, SecretArg());
+        Load(h, Audio());
+        Assert.DoesNotContain(f.Ops.Keys, k => k.Contains(Secret));
+        Assert.Equal(1, f.Ops["episode.load:" + Mask].Count);
+        Assert.Equal(1, f.Ops["episode.load:audio"].Count);
+    }
+
+    [Fact]
+    public void MetricsBucketKeepsTheActionWithCleanOff()
+    {
+        if (Fh.SkipWithout("metrics")) return;
+        var f = new MetricsFeature();
+        var opts = SecretOpts();
+        opts["clean"] = new Dictionary<string, object?> { ["active"] = false };
+        var h = Fh.MakeWith(opts, null, (f, null));
+        Load(h, SecretArg());
+        Assert.Equal(1, f.Ops["episode.load:" + Secret].Count);
+    }
+
+    [Fact]
+    public void CostBucketCleansTheAction()
+    {
+        if (Fh.SkipWithout("cost")) return;
+        var f = new CostFeature();
+        var h = Fh.MakeWith(SecretOpts(), null, (f, new Dictionary<string, object?>
+        {
+            ["rates"] = new Dictionary<string, object?>
+            {
+                ["episode.load"] = 1,
+                ["episode.load:" + Secret] = 7,
+            },
+        }));
+        Load(h, SecretArg());
+        Load(h, Audio());
+        Assert.DoesNotContain(f.Ops.Keys, k => k.Contains(Secret));
+        Assert.Equal(7.0, f.Ops["episode.load:" + Mask].Amount);
+        Assert.Equal(1.0, f.Ops["episode.load:audio"].Amount);
+        Assert.Equal(8.0, f.Total.Amount);
+    }
+
+    [Fact]
+    public void SensitiveActionKeyMasksTheAction()
+    {
+        if (Fh.SkipWithout("rbac", "metrics", "cost")) return;
+        var rbac = new RbacFeature();
+        var metrics = new MetricsFeature();
+        var cost = new CostFeature();
+        var h = Fh.MakeWith(new Dictionary<string, object?>
+        {
+            ["clean"] = new Dictionary<string, object?> { ["keys"] = "action" },
+        }, null,
+            (rbac, new Dictionary<string, object?>
+            {
+                ["rules"] = new Dictionary<string, object?> { ["episode.load:audio"] = "audio" },
+                ["permissions"] = new List<object?> { "audio" },
+            }),
+            (metrics, null),
+            (cost, new Dictionary<string, object?>
+            {
+                ["rates"] = new Dictionary<string, object?> { ["episode.load:audio"] = 5 },
+            }));
+        Assert.True(Load(h, Audio()).Ok);
+        Assert.Equal(Mask, rbac.Last!["action"]);
+        Assert.Equal(1, metrics.Ops["episode.load:" + Mask].Count);
+        Assert.Equal(5.0, cost.Ops["episode.load:" + Mask].Amount);
+        Assert.Single(metrics.Ops);
+        Assert.Single(cost.Ops);
+    }
+
+    [Fact]
+    public void CostActionRateFallsBackToItsOperation()
+    {
+        if (Fh.SkipWithout("cost")) return;
+        var f = new CostFeature();
+        var h = Fh.Make(null, (f, new Dictionary<string, object?>
+        {
+            ["rates"] = new Dictionary<string, object?>
+            {
+                ["episode.load"] = 2,
+                ["*"] = 9,
+            },
+        }));
+        Load(h, Audio());
+        Assert.Equal(1, f.Ops["episode.load:audio"].Calls);
+        Assert.Equal(2.0, f.Ops["episode.load:audio"].Amount);
+    }
+}
+
 // --- one call, one id -----------------------------------------------------------
 
 public class FeatureCorrelationTest

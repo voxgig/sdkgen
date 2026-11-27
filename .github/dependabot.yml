@@ -1,10 +1,11 @@
-# Version updates for the solardemo test fixture, and nothing else.
+# Version updates for the solardemo and podcastdemo test fixtures, and nothing
+# else.
 #
-# The fixture's exact versions carry no meaning: it is a Fastify app the doctor
-# and generate harnesses drive, and it ships nowhere. ts/package.json's `files`
-# whitelist keeps test/ out of the tarball, and the scaffold a generated SDK
-# copies is project/. Fourteen advisories accumulated in its lockfile while
-# nobody was triaging it, all fixed by `npm update` alone.
+# A fixture's exact versions carry no meaning: each is a Fastify app that ships
+# nowhere. ts/package.json's `files` whitelist keeps test/ out of the tarball,
+# and the scaffold a generated SDK copies is project/. Fourteen advisories
+# accumulated in solardemo's lockfile while nobody was triaging it, all fixed
+# by `npm update` alone.
 #
 # ts/ is deliberately absent. Its peer ranges are open-ended and chosen against
 # each other; a bot proposing the latest of each in turn would fight decisions
@@ -19,6 +20,17 @@ updates:
     # interesting, so per-dependency pull requests would be pure noise.
     groups:
       solardemo:
+        patterns:
+          - '*'
+    commit-message:
+      prefix: fixture
+    open-pull-requests-limit: 2
+  - package-ecosystem: npm
+    directory: /ts/test/podcastdemo/app
+    schedule:
+      interval: weekly
+    groups:
+      podcastdemo:
         patterns:
           - '*'
     commit-message:

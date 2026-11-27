@@ -33,6 +33,7 @@ local result_body = require("utility.result_body")
 local result_headers = require("utility.result_headers")
 local transform_request = require("utility.transform_request")
 local transform_response = require("utility.transform_response")
+local codec = require("utility.codec.index")
 
 
 local function register_all(u)
@@ -70,6 +71,12 @@ local function register_all(u)
   u.result_headers = result_headers
   u.transform_request = transform_request
   u.transform_response = transform_response
+  -- The body codecs this SDK was generated with; see codec/index.lua.
+  u.codec = {}
+  for name, fn in pairs(codec) do
+    u.codec[name] = fn
+  end
+  u.multipart_boundary = codec.multipart_boundary
 end
 
 

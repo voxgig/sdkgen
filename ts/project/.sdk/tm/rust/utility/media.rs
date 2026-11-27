@@ -43,6 +43,18 @@ pub fn is_raw_request(point: &Value) -> bool {
     text_of(&getp(&getp(point, "body"), "kind")).as_deref() == Some("raw")
 }
 
+// A form or multipart body, which its encoder has already made the wire form.
+pub fn is_encoded_request(point: &Value) -> bool {
+    matches!(
+        text_of(&getp(&getp(point, "body"), "kind")).as_deref(),
+        Some("form") | Some("multipart")
+    )
+}
+
+pub fn is_raw_response(point: &Value) -> bool {
+    text_of(&getp(&getp(point, "response"), "kind")).as_deref() == Some("raw")
+}
+
 pub fn is_json_request(point: &Value) -> bool {
     text_of(&getp(&getp(point, "body"), "kind")).as_deref() == Some("json")
 }
@@ -88,10 +100,6 @@ pub fn media_headers(point: &Value, headers: Value) -> Value {
     }
 
     headers
-}
-
-pub fn raw_body(reqdata: &Value) -> Value {
-    getp(reqdata, RAW_BODY)
 }
 
 // A struct string must be UTF-8, so a binary body is a list of byte values.

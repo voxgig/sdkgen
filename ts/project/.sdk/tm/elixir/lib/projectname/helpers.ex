@@ -63,4 +63,50 @@ defmodule ProjectName.Helpers do
 
   def str_or(v, d) when is_binary(v), do: if(v == "", do: d, else: v)
   def str_or(_, d), do: d
+
+  # The custom action a call names: `$action` in its own request argument,
+  # never in a response.
+  def op_action(ctx) do
+    op = get_ctx_prop(ctx, "op")
+    argkey = if get_ctx_prop(op, "input") == "data", do: "reqdata", else: "reqmatch"
+    action = get_ctx_prop(get_ctx_prop(ctx, argkey), "$action")
+    if is_binary(action) and action != "", do: action, else: nil
+  end
+
+  # The keys an operation is looked up and filed by, most specific first:
+  # `<entity>.<op>:<action>`, `<entity>.<op>`, `<op>`, `*`.
+  def op_keys(ctx) do
+    op = get_ctx_prop(ctx, "op")
+    name = nonempty(get_ctx_prop(op, "name")) || "_"
+
+    entity =
+      nonempty(get_ctx_prop(op, "entity")) ||
+        nonempty(get_ctx_prop(get_ctx_prop(ctx, "entity"), "_name")) || "_"
+
+    base = entity <> "." <> name
+
+    case op_action(ctx) do
+      nil -> [base, name, "*"]
+      action -> [base <> ":" <> action, base, name, "*"]
+    end
+  end
+
+  # The key a call is filed under where a consumer reads it: the first key,
+  # with the caller's action cleaned as a record's `action` field, so a
+  # sensitive key name masks it as well as a registered value.
+  def op_file_key(ctx) do
+    keys = op_keys(ctx)
+
+    case op_action(ctx) do
+      nil ->
+        hd(keys)
+
+      action ->
+        cleaned = get_ctx_prop(ProjectName.Feature.clean(ctx, S.jm(["action", action])), "action")
+        Enum.at(keys, 1) <> ":" <> if(is_binary(cleaned), do: cleaned, else: action)
+    end
+  end
+
+  defp nonempty(v) when is_binary(v) and v != "", do: v
+  defp nonempty(_), do: nil
 end

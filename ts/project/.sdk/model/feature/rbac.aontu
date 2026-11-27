@@ -14,7 +14,8 @@ main: kit: feature: rbac: {
       active: false
       # permissions the client holds ('*' grants everything)
       permissions: []
-      # required permission keyed by '<entity>.<op>', '<op>', or '*'
+      # required permission keyed by '<entity>.<op>:<action>', '<entity>.<op>',
+      # '<op>' or '*', most specific first
       rules: {}
       # deny operations that have no matching rule
       deny: false

@@ -13,4 +13,8 @@ class Control {
   var actor: String = ""
 
   var paging: MutableMap<String, Any?>? = null
+
+  // Set by an entity's binary handle: the slot, the direction its bytes move
+  // (`read` or `write`), and after a read the bytes themselves.
+  var transfer: MutableMap<String, Any?>? = null
 }

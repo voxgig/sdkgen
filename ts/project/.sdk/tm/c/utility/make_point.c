@@ -94,7 +94,7 @@ static char* join_names(voxgig_value* names) {
   return out;
 }
 
-voxgig_value* make_point_util(Context* ctx, PNError** err) {
+static voxgig_value* select_point(Context* ctx, PNError** err) {
   *err = NULL;
 
   // PrePoint short-circuit.
@@ -112,11 +112,18 @@ voxgig_value* make_point_util(Context* ctx, PNError** err) {
 
   voxgig_value* allow_op_v = getpath2(options, "allow", "op");
   const char* allow_op = voxgig_is_string(allow_op_v) ? voxgig_as_string(allow_op_v) : "";
-  if (!allow_list_has(allow_op_v, op->name)) {
+  OpKeys keys = op_keys(ctx);
+  bool admitted = false;
+  for (size_t i = 0; i < keys.len && !admitted; i++) {
+    admitted = allow_list_has(allow_op_v, keys.items[i]);
+  }
+  op_keys_free(&keys);
+  if (!admitted) {
+    const char* action = op_action(ctx);
     char buf[512];
     snprintf(buf, sizeof(buf),
-             "Operation \"%s\" not allowed by SDK option allow.op value: \"%s\"",
-             op->name, allow_op);
+             "Operation \"%s%s%s\" not allowed by SDK option allow.op value: \"%s\"",
+             op->name, action ? ":" : "", action ? action : "", allow_op);
     *err = context_make_error(ctx, "point_op_allow", buf);
     return NULL;
   }
@@ -263,4 +270,14 @@ voxgig_value* make_point_util(Context* ctx, PNError** err) {
   }
 
   return ctx->point;
+}
+
+// Once the point is known, a body of bytes it answers is refused and the
+// binary values of the call are lifted out of the data.
+voxgig_value* make_point_util(Context* ctx, PNError** err) {
+  voxgig_value* point = select_point(ctx, err);
+  if (NULL != *err) return NULL;
+  *err = binary_bytes_refused(ctx);
+  if (NULL == *err) *err = binary_lift_sources(ctx);
+  return NULL == *err ? point : NULL;
 }

@@ -5,7 +5,8 @@
 -- checked against the permissions the client holds; a disallowed call is
 -- short-circuited with an `rbac_denied` error and never touches the
 -- network. Required permissions come from `rules` (keyed by
--- `<entity>.<op>`, `<op>`, or `*`); the default when no rule matches is
+-- `<entity>.<op>:<action>`, `<entity>.<op>`, `<op>`, or `*`, most specific
+-- first); the default when no rule matches is
 -- controlled by `deny` (default: allow when unspecified). Held
 -- permissions are the `permissions` list (a `*` grants everything).
 --
@@ -14,6 +15,7 @@
 -- returns it as the operation error before any endpoint work happens.
 
 local BaseFeature = require("feature.base_feature")
+local helpers = require("core.helpers")
 
 local RbacFeature = {}
 RbacFeature.__index = RbacFeature
@@ -75,32 +77,10 @@ end
 
 function RbacFeature:_required(ctx)
   local rules = self.options["rules"] or {}
-
-  local entity = ""
-  if ctx.entity ~= nil then
-    if type(ctx.entity.get_name) == "function" then
-      entity = ctx.entity:get_name()
-    elseif type(ctx.entity.name) == "string" then
-      entity = ctx.entity.name
+  for _, key in ipairs(helpers.op_keys(ctx)) do
+    if rules[key] ~= nil then
+      return rules[key]
     end
-  end
-  if entity == "" and ctx.op ~= nil and type(ctx.op.entity) == "string" then
-    entity = ctx.op.entity
-  end
-
-  local opname = ""
-  if ctx.op ~= nil and type(ctx.op.name) == "string" then
-    opname = ctx.op.name
-  end
-
-  if rules[entity .. "." .. opname] ~= nil then
-    return rules[entity .. "." .. opname]
-  end
-  if rules[opname] ~= nil then
-    return rules[opname]
-  end
-  if rules["*"] ~= nil then
-    return rules["*"]
   end
   return nil
 end
@@ -111,6 +91,10 @@ function RbacFeature:_reject(ctx, required)
   local opname = "?"
   if ctx.op ~= nil and type(ctx.op.name) == "string" and ctx.op.name ~= "" then
     opname = ctx.op.name
+  end
+  local action = helpers.op_action(ctx)
+  if action ~= nil then
+    opname = opname .. ":" .. action
   end
   local err = ctx:make_error("rbac_denied",
     'Permission "' .. required .. '" required for operation "' .. opname .. '"')
@@ -130,11 +114,12 @@ function RbacFeature:_track(ctx, required, allowed)
   else
     client._rbac.denied = client._rbac.denied + 1
   end
-  client._rbac.last = {
+  client._rbac.last = ctx.utility.clean(ctx, {
     required = required,
     allowed = allowed,
     op = ctx.op ~= nil and ctx.op.name or nil,
-  }
+    action = helpers.op_action(ctx),
+  })
 end
 
 

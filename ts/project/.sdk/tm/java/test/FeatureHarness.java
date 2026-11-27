@@ -144,6 +144,8 @@ public final class FeatureHarness {
     public Map<String, Object> headers;
     public Object body;
     public Map<String, Object> ctrl;
+    public Map<String, Object> reqmatch;
+    public Map<String, Object> reqdata;
 
     public FhOpSpec op(String op) {
       this.op = op;
@@ -184,6 +186,16 @@ public final class FeatureHarness {
       this.ctrl = ctrl;
       return this;
     }
+
+    public FhOpSpec reqmatch(Map<String, Object> reqmatch) {
+      this.reqmatch = reqmatch;
+      return this;
+    }
+
+    public FhOpSpec reqdata(Map<String, Object> reqdata) {
+      this.reqdata = reqdata;
+      return this;
+    }
   }
 
   public static FhOpSpec fhOp(String op) {
@@ -196,6 +208,12 @@ public final class FeatureHarness {
     public RuntimeException err;
     public Result result;
     public Context ctx;
+  }
+
+  // Which request argument an operation reads, as the generated Context decides.
+  public static String fhOpInput(String op) {
+    return ("create".equals(op) || "update".equals(op) || "patch".equals(op))
+        ? "data" : "match";
   }
 
   public static String fhDefaultMethod(String op) {
@@ -255,10 +273,13 @@ public final class FeatureHarness {
       Map<String, Object> ctxmap = new LinkedHashMap<>();
       ctxmap.put("opname", opname);
       ctxmap.put("ctrl", ctrl);
+      ctxmap.put("reqmatch", o.reqmatch == null ? new LinkedHashMap<>() : o.reqmatch);
+      ctxmap.put("reqdata", o.reqdata == null ? new LinkedHashMap<>() : o.reqdata);
       Context ctx = utility.makeContext.apply(ctxmap, rootctx);
       Map<String, Object> opdef = new LinkedHashMap<>();
       opdef.put("entity", entity);
       opdef.put("name", opname);
+      opdef.put("input", fhOpInput(opname));
       ctx.op = new Operation(opdef);
 
       utility.featureHook.apply(ctx, "PostConstructEntity");
@@ -358,7 +379,14 @@ public final class FeatureHarness {
   // utility whose fetcher is the mock server, and the requested features
   // initialised against it. Fires PostConstruct once wiring is complete.
   public static FhHarness fhMake(Utility.FetcherFn server, FhFeature... features) {
-    ProjectNameSDK client = ProjectNameSDK.testSDK();
+    return fhMakeWith(null, server, features);
+  }
+
+  // fhMakeWith is fhMake over a client built with the given SDK options, so a
+  // test can reach the SDK's real clean with a registered secret.
+  public static FhHarness fhMakeWith(Map<String, Object> sdkopts, Utility.FetcherFn server,
+      FhFeature... features) {
+    ProjectNameSDK client = ProjectNameSDK.testSDK(null, sdkopts);
     client.features = new ArrayList<>();
 
     Utility utility = client.getUtility();

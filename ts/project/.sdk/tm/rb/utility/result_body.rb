@@ -1,10 +1,17 @@
 # ProjectName SDK utility: result_body
+require_relative 'struct/voxgig_struct'
 require_relative 'media'
 
 module ProjectNameUtilities
   ResultBody = ->(ctx) {
     response = ctx.response
     result = ctx.result
+    raw = ctx.utility.codec.is_a?(Hash) ? ctx.utility.codec["raw"] : nil
+    if result && response && raw && VoxgigStruct.getpath(ctx.point, "response.kind") == "raw" &&
+        result.err.nil? && response.err.nil? && result.status < 400
+      raw.call(ctx)
+      return result
+    end
     if result && response && response.json_func && response.body
       result.body = response.json_func.call
     end

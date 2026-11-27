@@ -65,6 +65,8 @@ static void audit_emit(AuditFeature* af, Context* ctx, const char* outcome) {
   if (ctx->result) {
     setp(record, "status", v_num((double)ctx->result->status));
   }
+  const char* action = op_action(ctx);
+  if (action) setp(record, "action", v_str(action));
 
   record = clean_util(ctx, record);
 

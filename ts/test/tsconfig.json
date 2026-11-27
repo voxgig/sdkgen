@@ -13,5 +13,5 @@
     "types": ["node"]
   },
   "references": [{ "path": "../src" }],
-  "exclude": ["solardemo"]
+  "exclude": ["solardemo", "podcastdemo"]
 }

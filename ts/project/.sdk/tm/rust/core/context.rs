@@ -2,7 +2,7 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use crate::core::control::Control;
+use crate::core::control::{Control, Transfer};
 use crate::core::error::ProjectNameError;
 use crate::core::helpers::{get_bool, get_str, getp, getpath, jo, rand_int, to_map};
 use crate::core::operation::Operation;
@@ -12,6 +12,7 @@ use crate::core::sdk::ProjectNameSDK;
 use crate::core::spec::Spec;
 use crate::core::types::{Entity, OutVal};
 use crate::core::utility_type::Utility;
+use crate::utility::binary::{Lifted, Sources};
 use crate::utility::voxgigstruct as vs;
 use crate::utility::voxgigstruct::Value;
 
@@ -43,6 +44,10 @@ pub struct CtxSpec {
     pub spec: Option<Rc<RefCell<Spec>>>,
     pub result: Option<Rc<RefCell<SdkResult>>>,
     pub response: Option<Rc<RefCell<Response>>>,
+    /// The sources the call passes beside its data, by field name.
+    pub sources: Option<Sources>,
+    /// The transfer record of a binary handle's call.
+    pub transfer: Option<Rc<RefCell<Transfer>>>,
 }
 
 pub struct Context {
@@ -67,6 +72,10 @@ pub struct Context {
     pub reqmatch: RefCell<Value>,
     pub entity: RefCell<Option<Rc<dyn Entity>>>,
     pub shared: RefCell<Value>,
+    // The sources the call passed, until the lift takes them.
+    pub passed: RefCell<Sources>,
+    // The values of the point's binary fields, lifted out of reqdata.
+    pub sources: RefCell<Option<Vec<(String, Lifted)>>>,
 }
 
 impl Context {
@@ -97,6 +106,14 @@ impl Context {
             }
             if let Value::Map(_) = getp(cm, "paging") {
                 c.paging = getp(cm, "paging");
+            }
+            let transfer = getp(cm, "transfer");
+            if let Value::Map(_) = transfer {
+                c.transfer = Some(Rc::new(RefCell::new(Transfer {
+                    slot: get_str(&transfer, "slot").unwrap_or_default(),
+                    direction: get_str(&transfer, "direction").unwrap_or_default(),
+                    bytes: None,
+                })));
             }
             Rc::new(RefCell::new(c))
         } else if let Some(co) = ctxspec.ctrl_obj {
@@ -222,7 +239,13 @@ impl Context {
             reqmatch: RefCell::new(reqmatch),
             entity: RefCell::new(entity),
             shared: RefCell::new(shared),
+            passed: RefCell::new(ctxspec.sources.unwrap_or_default()),
+            sources: RefCell::new(None),
         });
+
+        if let Some(transfer) = ctxspec.transfer {
+            ctx.ctrl.borrow().borrow_mut().transfer = Some(transfer);
+        }
 
         // Resolve operation.
         let opname = ctxspec.opname.unwrap_or_default();

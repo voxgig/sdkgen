@@ -12,11 +12,19 @@ public static partial class SdkUtility
 
         if (op.Input == "data")
         {
+            LiftSources(ctx);
+
             if (IsRawRequest(ctx.Point))
             {
-                return RawBodyOf(ctx.Reqdata);
+                return RawBodyOf(ctx.Sources);
             }
             var body = ctx.Utility!.TransformRequest(ctx);
+
+            var kind = StructUtils.GetProp(StructUtils.GetProp(ctx.Point, "body"), "kind") as string;
+            if ("form" == kind || "multipart" == kind)
+            {
+                return EncodeBody(ctx, kind, body);
+            }
             return body;
         }
 
@@ -26,6 +34,30 @@ public static partial class SdkUtility
         }
 
         return null;
+    }
+
+    // The encoded body, with its content type replacing any the headers carry:
+    // a multipart boundary is the encoder's alone to choose.
+    private static object EncodeBody(Context ctx, string kind, object? data)
+    {
+        if (ctx.Utility?.Codec?.GetValueOrDefault(kind) is not BodyEncoder encode)
+        {
+            throw ctx.MakeError("body_codec_missing", "This SDK was generated without a " + kind + " encoder.");
+        }
+
+        var encoded = encode(ctx, data, ctx.Sources ?? new Dictionary<string, object?>());
+
+        var headers = ctx.Spec?.Headers;
+        if (headers != null)
+        {
+            foreach (var key in headers.Keys.Where(k => "content-type" == k.ToLowerInvariant()).ToList())
+            {
+                headers.Remove(key);
+            }
+            headers["content-type"] = encoded.Type;
+        }
+
+        return encoded.Body;
     }
 
     // A list, load or remove routed to a method with a body sends the match

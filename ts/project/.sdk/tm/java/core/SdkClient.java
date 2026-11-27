@@ -20,6 +20,9 @@ public abstract class SdkClient {
   public String mode = "live";
   public List<Feature> features = new ArrayList<>();
 
+  // Builds the file sources a binary field or a raw body takes.
+  public final Binary binary = new Binary();
+
   protected Map<String, Object> options;
   protected Utility utility;
   protected Context rootctx;

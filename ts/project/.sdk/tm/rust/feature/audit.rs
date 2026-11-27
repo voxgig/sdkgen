@@ -2,7 +2,7 @@
 use std::rc::Rc;
 
 use crate::core::context::Context;
-use crate::core::helpers::{call_vfn, getp, setp};
+use crate::core::helpers::{call_vfn, getp, op_action, setp};
 use crate::core::types::{Feature, OutVal};
 use crate::feature::support::*;
 use crate::utility::voxgigstruct::Value;
@@ -78,6 +78,10 @@ impl AuditFeature {
         setp(&record, "correlationId", Value::str(ctx.id.clone()));
         if let Some(r) = ctx.result.borrow().clone() {
             setp(&record, "status", Value::Num(r.borrow().status as f64));
+        }
+
+        if let Some(action) = op_action(ctx) {
+            setp(&record, "action", Value::str(action));
         }
 
         let record = ctx.util().clean(ctx, &record);

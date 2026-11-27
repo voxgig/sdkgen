@@ -7,6 +7,7 @@ import {
   inactiveFeatureExcludes,
   entityConstructorName, entityCollection, goModule, goPackageIdent, pluginExcludes,
   targetFeatures,
+  codecExcludes,
   TEST_CONTROL_EXCLUDE,
   TargetLicense,
   TargetVersion,
@@ -33,6 +34,7 @@ import { Gitignore } from './Gitignore_go'
 import { MainEntity } from './MainEntity_go'
 import { EntityTypes } from './EntityTypes_go'
 import { PrepareAuth } from './PrepareAuth_go'
+import { CodecIndex } from './CodecIndex_go'
 
 
 const Main = cmp(async function Main(props: any) {
@@ -64,7 +66,8 @@ const Main = cmp(async function Main(props: any) {
     // The generate-time trim: a declared feature that is off, and an inactive
     // plugin group, whose `path` entries are relative to this Copy's root.
     exclude: [/src\//, /utility\/struct\/go\.mod$/, TEST_CONTROL_EXCLUDE,
-      ...inactiveFeatureExcludes(props.ctx$, target), ...pluginExcludes(model)],
+      ...inactiveFeatureExcludes(props.ctx$, target), ...pluginExcludes(model),
+      ...codecExcludes(model)],
     replace: {
       ...props.ctx$.stdrep,
       GOMODULE: gomodule,
@@ -75,6 +78,8 @@ const Main = cmp(async function Main(props: any) {
   EntityTypes({ target })
 
   PrepareAuth({ target })
+
+  CodecIndex({ target, gomodule })
 
   Folder({ name: 'core' }, () => {
 
@@ -164,6 +169,7 @@ type Response = core.Response
 type Operation = core.Operation
 type Control = core.Control
 type ${model.const.Name}Error = core.${model.const.Name}Error
+type BinarySource = core.BinarySource
 
 // BaseFeature from feature package.
 type BaseFeature = feature.BaseFeature
@@ -205,6 +211,9 @@ var NewResponse = core.NewResponse
 var NewOperation = core.NewOperation
 var MakeConfig = core.MakeConfig
 var SharedConfig = core.SharedConfig
+
+// Builds the file sources a binary field or a raw body takes.
+var Binary = core.BinaryMaker{}
 
 // No-arg convenience constructors. Go has no default-argument syntax,
 // so these aliases let callers write \`sdk.New()\` / \`sdk.Test()\`

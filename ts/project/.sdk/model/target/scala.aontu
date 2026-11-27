@@ -12,6 +12,8 @@ main: kit: target: scala: {
   # secrets through sekreto can apply here.
   provides: { sekreto: true, schema: true }
 
+  codec: tier: 'encoded'
+
   superseded: []
 
   deps: &: {

@@ -80,7 +80,7 @@ object Fetcher {
   @scala.annotation.tailrec
   private[utility] def followRedirects(ctx: Context, fullurl: String, fetchdef: JMap[String, Object],
       hops: Int = 0): JMap[String, Object] = {
-    val res = fetchOnce(fullurl, fetchdef)
+    val res = fetchOnce(ctx, fullurl, fetchdef)
     val location = res.get("headers") match {
       case h: JMap[_, _] => h.asInstanceOf[JMap[String, Object]].get("location")
       case _ => null
@@ -157,7 +157,7 @@ object Fetcher {
   def defaultHttpFetch(fullurl: String, fetchdef: JMap[String, Object]): JMap[String, Object] =
     followRedirects(null, fullurl, fetchdef)
 
-  private def fetchOnce(fullurl: String, fetchdef: JMap[String, Object]): JMap[String, Object] = {
+  private def fetchOnce(ctx: Context, fullurl: String, fetchdef: JMap[String, Object]): JMap[String, Object] = {
     var method = fetchdef.get("method") match { case s: String => s; case _ => "" }
     if ("" == method) method = "GET"
     val refused = getOnlyRefusal(fullurl, method)
@@ -200,8 +200,15 @@ object Fetcher {
       }
     }
 
-    val resp =
-      try clientFor(fetchdef).send(reqb.build(), decodedText())
+    // A raw success body is left unread for the raw codec, which reads it to
+    // maxBuffer and closes it; any other body is read as text, as ever.
+    val raw = ctx != null && "raw" == Struct.getprop(Struct.getprop(ctx.point, "response"), "kind")
+
+    val resp: HttpResponse[_ <: Object] =
+      try {
+        if (raw) clientFor(fetchdef).send(reqb.build(), HttpResponse.BodyHandlers.ofInputStream())
+        else clientFor(fetchdef).send(reqb.build(), decodedText())
+      }
       catch { case e: Exception => throw new RuntimeException("fetch: " + e.getMessage, e) }
 
     val headers = new LinkedHashMap[String, Object]()
@@ -213,7 +220,23 @@ object Fetcher {
       else headers.put(h.getKey.toLowerCase, String.join(", ", vals))
     }
 
-    val bodyText = if (resp.body() == null) "" else resp.body()
+    val encoding = resp.headers().firstValue("content-encoding").orElse("").trim.toLowerCase
+    val bodyText = resp.body() match {
+      case null => ""
+      case in: java.io.InputStream if 200 <= resp.statusCode() && resp.statusCode() < 300 =>
+        val out = new LinkedHashMap[String, Object]()
+        out.put("status", java.lang.Integer.valueOf(resp.statusCode()))
+        out.put("statusText", statusText(resp.statusCode()))
+        out.put("headers", headers)
+        out.put("body", decodedStream(in, encoding))
+        return out
+      case in: java.io.InputStream =>
+        try new String(decodeBody(in.readAllBytes(), encoding),
+          charsetOf(resp.headers().firstValue("content-type").orElse("")))
+        finally in.close()
+      case text: String => text
+      case other => String.valueOf(other)
+    }
     var unreadable = false
     val jsonBody: Object =
       if (bodyText.isBlank) null
@@ -247,6 +270,12 @@ object Fetcher {
               "response body is not valid " + encoding + " data: " + e.getMessage, e)
         })
   }
+
+  // A body read as it arrives, a gzip or deflate Content-Encoding undone.
+  private def decodedStream(in: java.io.InputStream, encoding: String): java.io.InputStream =
+    if ("gzip" == encoding || "x-gzip" == encoding) new GZIPInputStream(in)
+    else if ("deflate" == encoding) new InflaterInputStream(in)
+    else in
 
   // Deflate is zlib-wrapped, or raw as some servers send it.
   def decodeBody(bytes: Array[Byte], encoding: String): Array[Byte] = {

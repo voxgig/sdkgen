@@ -1,6 +1,7 @@
 
 
 const { BaseFeature } = require('../base/BaseFeature')
+const { opAction } = require('../../utility/OpKeyUtility')
 
 
 // Audit trail. Emits a structured record for every operation — who (actor),
@@ -55,7 +56,7 @@ class AuditFeature extends BaseFeature {
     }
     this._seen.add(ctx)
     this._seq++
-    const record = ctx.utility.clean(ctx, {
+    const entry = {
       seq: this._seq,
       ts: this._now(),
       actor: (ctx.ctrl && ctx.ctrl.actor) || this._options.actor || 'anonymous',
@@ -64,7 +65,12 @@ class AuditFeature extends BaseFeature {
       outcome,
       status: ctx.result && ctx.result.status,
       correlationId: ctx.id,
-    })
+    }
+    const action = opAction(ctx)
+    if (null != action) {
+      entry.action = action
+    }
+    const record = ctx.utility.clean(ctx, entry)
 
     const client = this._client
     const recs = client._audit.records

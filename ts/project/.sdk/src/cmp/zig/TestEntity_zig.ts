@@ -1,5 +1,5 @@
 
-import { cmp, Content, invalidRequest, opReachable } from '@voxgig/sdkgen'
+import { cmp, Content, entitySlots, invalidRequest, opReachable } from '@voxgig/sdkgen'
 
 import { zigVarName } from './utility_zig'
 
@@ -12,7 +12,23 @@ const TestEntity = cmp(function TestEntity(props: any) {
 
   // Each smoke test calls with only what it shows, so a bare call must reach
   // a route: an id for load, nothing for list.
-  if (opReachable(ops.load, ['id'])) {
+  // An entity whose own load answers bytes is read through binary(""), so
+  // the plain load is refused before any request.
+  const bytesLoad = entitySlots(entity).some((s: any) => '' === s.name && null != s.read)
+
+  if (bytesLoad && opReachable(ops.load, ['id'])) {
+    Content(`
+test "${method}_load_smoke" {
+    const testsdk = sdk.test_sdk(vnull(), vnull());
+    const e = testsdk.${method}(vnull());
+    switch (e.load(h.jo(&.{.{ "id", h.vstr("t01") }}), vnull())) {
+        .ok => try std.testing.expect(false),
+        .err => |er| try std.testing.expectEqualStrings("binary_sink_required", er.code),
+    }
+}
+`)
+  }
+  else if (opReachable(ops.load, ['id'])) {
     Content(`
 test "${method}_load_smoke" {
     const fixture = h.jo(&.{.{ "${entity.name}", h.jo(&.{.{ "t01", h.jo(&.{.{ "id", h.vstr("t01") }}) }}) }});

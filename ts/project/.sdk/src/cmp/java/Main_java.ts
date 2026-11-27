@@ -6,6 +6,7 @@ import {
   File, Content, Copy, Folder, Fragment,
   inactiveFeatureExcludes,
   pluginExcludes,
+  codecExcludes,
   targetFeatures,
   TEST_CONTROL_EXCLUDE,
   TargetLicense,
@@ -33,6 +34,7 @@ import { EntityBase } from './EntityBase_java'
 import { EntityTypes } from './EntityTypes_java'
 import { SdkError } from './SdkError_java'
 import { PrepareAuth } from './PrepareAuth_java'
+import { CodecIndex } from './CodecIndex_java'
 import { javaPackage } from './utility_java'
 
 
@@ -60,7 +62,8 @@ const Main = cmp(async function Main(props: any) {
   Copy({
     from: 'tm/' + target.name,
     exclude: [/src\//, TEST_CONTROL_EXCLUDE,
-      ...inactiveFeatureExcludes(props.ctx$, target), ...pluginExcludes(model)],
+      ...inactiveFeatureExcludes(props.ctx$, target), ...pluginExcludes(model),
+      ...codecExcludes(model)],
     replace: {
       ...props.ctx$.stdrep,
       JAVAPACKAGE: javapackage,
@@ -70,6 +73,8 @@ const Main = cmp(async function Main(props: any) {
   EntityBase({ target })
 
   PrepareAuth({ target })
+
+  CodecIndex({ target })
 
   Folder({ name: 'core' }, () => {
 

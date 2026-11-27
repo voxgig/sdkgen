@@ -16,6 +16,9 @@ abstract class SdkClient(sdkopts: MutableMap<String, Any?>?) {
   var mode: String = "live"
   var features: MutableList<Feature> = mutableListOf()
 
+  // Builds the file sources a binary field or a raw body takes.
+  val binary: Binary = Binary()
+
   protected val util: Utility = Utility()
   protected var options: MutableMap<String, Any?> = linkedMapOf()
   protected val rootctx: Context

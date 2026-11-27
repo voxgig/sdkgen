@@ -101,5 +101,22 @@ pub fn build(b: *std.Build) void {
         const clean_step = b.step("test-clean", "Run the canary sweep alone");
         clean_step.dependOn(&run_clean.step);
     }
+    // The feature suite alone, as `zig build test-feature`.
+    {
+        const feature_mod = b.createModule(.{
+            .root_source_file = b.path("test/feature_test.zig"),
+            .target = target,
+            .optimize = optimize,
+        });
+        feature_mod.addImport("voxgig-struct", struct_mod);
+        feature_mod.addImport("sdk", sdk_mod);
+        feature_mod.addImport("omni", omni_mod);
+        const feature_test = b.addTest(.{ .root_module = feature_mod });
+        const run_feature = b.addRunArtifact(feature_test);
+        run_feature.has_side_effects = true;
+        const feature_step = b.step("test-feature", "Run the feature suite alone");
+        feature_step.dependOn(&run_feature.step);
+    }
     // #FeatureTestSteps
+    // #CodecTestStep
 }

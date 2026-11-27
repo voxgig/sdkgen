@@ -37,6 +37,8 @@
 // `namespace sdk { namespace util {`.
 #include "prepare_auth.hpp"
 
+#include "binary.hpp"
+
 namespace sdk {
 namespace util {
 
@@ -283,19 +285,34 @@ inline const char* rawBodyKey();
 struct CleanBinary {
   SpecPtr spec;
   Value reqdata = Value::undef();
+  Value lifted = Value::undef();
   Value media = Value::undef();
   ResponsePtr response;
   Value type = Value::undef();
 };
 
-// The request body of a point the model marks binary, and a response body
-// that is bytes. A string shorter than the registry accepts is not told
-// from ordinary text.
+// Whether an encoded body of this point can carry a file: a multipart body,
+// and a form body with a binary field.
+inline bool cleanEncodedBinary(const Value& body) {
+  std::string kind = as_str(getp(body, "kind"));
+  if ("multipart" == kind) return true;
+  if ("form" != kind || !getp(body, "fields").is_list()) return false;
+  for (const auto& f : *getp(body, "fields").as_list()) {
+    if (is_true(getp(f, "binary"))) return true;
+  }
+  return false;
+}
+
+// The request body of a point the model marks binary, an encoded body that
+// can carry a file, and a response body that is bytes. The body is a string
+// here, so the point's kind is what tells it is bytes. A string shorter than
+// the registry accepts is not told from ordinary text.
 inline CleanBinary cleanBinaryBody(CtxPtr ctx) {
   CleanBinary bin;
   if (!ctx) return bin;
   Value body = getp(ctx->point, "body");
-  bool sent = isRawRequest(ctx->point) && is_true(getp(body, "binary"));
+  bool encoded = cleanEncodedBinary(body) && ctx->spec;
+  bool sent = encoded || (isRawRequest(ctx->point) && is_true(getp(body, "binary")));
   std::string type = ctx->response ? headerValue(ctx->response->headers, "content-type") : "";
   bool answered = ctx->response && isBinaryResponse(ctx->point, type);
   if (!sent && !answered) return bin;
@@ -308,7 +325,14 @@ inline CleanBinary cleanBinaryBody(CtxPtr ctx) {
     if (ctx->reqdata.is_map() && longEnough(ctx->reqdata.as_map()->find(rawBodyKey()))) {
       bin.reqdata = ctx->reqdata;
     }
+    if (ctx->lifted.is_map() && longEnough(ctx->lifted.as_map()->find(rawBodyKey()))) {
+      bin.lifted = ctx->lifted;
+    }
     bin.media = getp(body, "media");
+    if (encoded) {
+      std::string sentType = headerValue(ctx->spec->headers, "content-type");
+      bin.media = sentType.empty() ? Value::undef() : Value(sentType);
+    }
   }
   if (answered && longEnough(&ctx->response->body)) {
     bin.response = ctx->response;
@@ -319,9 +343,12 @@ inline CleanBinary cleanBinaryBody(CtxPtr ctx) {
 
 inline bool cleanIsRequestBody(const CleanBinary& bin, const std::string& text) {
   if (bin.spec && bin.spec->body.is_string() && bin.spec->body.as_string() == text) return true;
-  if (!bin.reqdata.is_map()) return false;
-  const Value* given = bin.reqdata.as_map()->find(rawBodyKey());
-  return nullptr != given && given->is_string() && given->as_string() == text;
+  for (const Value* held : { &bin.reqdata, &bin.lifted }) {
+    if (!held->is_map()) continue;
+    const Value* given = held->as_map()->find(rawBodyKey());
+    if (nullptr != given && given->is_string() && given->as_string() == text) return true;
+  }
+  return false;
 }
 
 inline bool cleanIsResponseBody(const CleanBinary& bin, const std::string& text) {
@@ -851,7 +878,7 @@ inline std::vector<std::string> unfilledParams(CtxPtr ctx, const Value& point) {
   return missing;
 }
 
-inline Value makePoint(CtxPtr ctx) {
+inline Value selectPoint(CtxPtr ctx) {
   // A PrePoint feature hook (e.g. rbac) may short-circuit by storing an
   // error; surface it before any endpoint resolution or network activity.
   if (ctx->out.pointError) {
@@ -867,9 +894,13 @@ inline Value makePoint(CtxPtr ctx) {
 
   Value allowOpVal = Struct::getpath(options, {"allow", "op"});
   std::string allowOp = as_str(allowOpVal);
-  if (!Helpers::allowed(allowOpVal, op->name)) {
+  std::vector<std::string> keys = opKeys(ctx);
+  if (std::none_of(keys.begin(), keys.end(),
+        [&](const std::string& key) { return Helpers::allowed(allowOpVal, key); })) {
+    std::string action = opAction(ctx);
     throw ctx->makeError("point_op_allow",
-        "Operation \"" + op->name + "\" not allowed by SDK option allow.op value: \"" + allowOp + "\"");
+        "Operation \"" + op->name + (action.empty() ? "" : ":" + action) +
+        "\" not allowed by SDK option allow.op value: \"" + allowOp + "\"");
   }
 
   if (op->points.empty()) {
@@ -1024,6 +1055,15 @@ inline Value makePoint(CtxPtr ctx) {
   }
 
   return ctx->point;
+}
+
+// Once the point is known, a body of bytes it answers is refused and the
+// binary values of the call are lifted out of the data.
+inline Value makePoint(CtxPtr ctx) {
+  Value point = selectPoint(ctx);
+  bytesRefused(ctx);
+  liftSources(ctx);
+  return point;
 }
 
 // ---- graphql ----------------------------------------------------------
@@ -1350,6 +1390,11 @@ inline ResultPtr resultBody(CtxPtr ctx) {
   ResultPtr result = ctx->result;
 
   if (result) {
+    if (response && isRawResponse(ctx->point) && ctx->utility->codec.raw && !result->err &&
+        !response->err && result->status < 400) {
+      ctx->utility->codec.raw(ctx);
+      return result;
+    }
     if (response && response->jsonFunc && !is_nullish(response->body)) {
       result->body = response->jsonFunc();
     }
@@ -1634,10 +1679,38 @@ inline Value matchBody(CtxPtr ctx, const Value& fields) {
   return body;
 }
 
+// The encoded body, with its content type replacing any the headers carry:
+// a multipart boundary is the encoder's alone to choose.
+inline Value encodeBody(CtxPtr ctx, const std::string& kind, const Value& data) {
+  const auto& encode = "form" == kind ? ctx->utility->codec.form : ctx->utility->codec.multipart;
+  if (!encode) {
+    throw ctx->makeError("body_codec_missing",
+      "This SDK was generated without a " + kind + " encoder.");
+  }
+  Utility::Encoded encoded = encode(ctx, data);
+  Value headers = ctx->spec ? ctx->spec->headers : Value::undef();
+  if (headers.is_map()) {
+    std::vector<std::string> named;
+    for (const auto& kv : *headers.as_map()) {
+      if ("content-type" == mediaLower(kv.first)) named.push_back(kv.first);
+    }
+    for (const auto& key : named) map_remove(headers, key);
+    map_put(headers, "content-type", Value(encoded.type));
+  }
+  return Value(encoded.body);
+}
+
 inline Value prepareBody(CtxPtr ctx) {
   if (ctx->op->input == "data") {
-    if (isRawRequest(ctx->point)) return rawBody(ctx->reqdata);
-    return ctx->utility->transformRequest(ctx);
+    liftSources(ctx);
+    if (isRawRequest(ctx->point)) {
+      const BinarySource* src = liftedSource(ctx, rawBodyKey());
+      return nullptr != src ? Value(src->data) : rawBody(ctx->lifted);
+    }
+    Value body = ctx->utility->transformRequest(ctx);
+    std::string kind = as_str(getp(getp(ctx->point, "body"), "kind"));
+    if ("form" == kind || "multipart" == kind) return encodeBody(ctx, kind, body);
+    return body;
   }
   Value fields = getp(ctx->point, "fields");
   if (fields.is_list() && !fields.as_list()->empty()) return matchBody(ctx, fields);
@@ -2275,6 +2348,12 @@ inline Value makeOptions(CtxPtr ctx) {
 // =======================================================================
 
 } // namespace util
+} // namespace sdk
+
+// GENERATED per model: the codecs its points use.
+#include "codec/index.hpp"
+
+namespace sdk {
 
 inline void register_all(Utility& u) {
   u.clean = util::clean;
@@ -2308,6 +2387,7 @@ inline void register_all(Utility& u) {
   u.resultHeaders = util::resultHeaders;
   u.transformRequest = util::transformRequest;
   u.transformResponse = util::transformResponse;
+  util::registerCodecs(u);
 }
 
 } // namespace sdk

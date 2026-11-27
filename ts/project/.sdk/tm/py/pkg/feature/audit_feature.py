@@ -4,6 +4,7 @@ from __future__ import annotations
 import time
 
 from projectname_sdk.feature.base_feature import ProjectNameBaseFeature
+from projectname_sdk.utility.op_key import op_action
 
 
 # Audit trail. Emits a structured record for every operation — who (actor),
@@ -67,7 +68,7 @@ class ProjectNameAuditFeature(ProjectNameBaseFeature):
         if actor is None:
             actor = "anonymous"
 
-        record = ctx.utility.clean(ctx, {
+        entry = {
             "seq": self.seq,
             "ts": self._now(),
             "actor": actor,
@@ -76,7 +77,11 @@ class ProjectNameAuditFeature(ProjectNameBaseFeature):
             "outcome": outcome,
             "status": ctx.result.status if ctx.result is not None else None,
             "correlationId": ctx.id,
-        })
+        }
+        action = op_action(ctx)
+        if action is not None:
+            entry["action"] = action
+        record = ctx.utility.clean(ctx, entry)
 
         records = self.client._audit["records"]
         records.append(record)

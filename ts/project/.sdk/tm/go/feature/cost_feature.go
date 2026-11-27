@@ -7,6 +7,7 @@ import (
 	vs "github.com/voxgig/struct"
 
 	"GOMODULE/core"
+	"GOMODULE/utility"
 )
 
 type CostFeature struct {
@@ -59,6 +60,14 @@ type costPending struct {
 }
 
 const costPendingKey = "cost_pending"
+
+// costCall names what a spend is filed under.
+type costCall struct {
+	key    string
+	entity string
+	op     string
+	action string
+}
 
 func NewCostFeature() *CostFeature {
 	return &CostFeature{
@@ -158,7 +167,7 @@ func (f *CostFeature) charge(ctx *core.Context, url string, fetchdef map[string]
 	f.Total.Attempts++
 
 	if !pending.piped {
-		f.commit(ctx, pending, "_", "direct")
+		f.commit(ctx, pending, costCall{key: "_.direct", entity: "_", op: "direct"})
 		delete(ctx.Out, costPendingKey)
 	}
 
@@ -192,17 +201,21 @@ func (f *CostFeature) finish(ctx *core.Context, done bool) {
 		return
 	}
 
-	entity := "_"
-	opname := "_"
+	call := costCall{
+		key:    utility.OpFileKey(ctx),
+		entity: "_",
+		op:     "_",
+		action: utility.OpAction(ctx),
+	}
 	if ctx.Op != nil {
-		entity = ctx.Op.Entity
-		opname = ctx.Op.Name
+		call.entity = ctx.Op.Entity
+		call.op = ctx.Op.Name
 	}
 
-	f.commit(ctx, pending, entity, opname)
+	f.commit(ctx, pending, call)
 }
 
-func (f *CostFeature) commit(ctx *core.Context, pending *costPending, entity, opname string) {
+func (f *CostFeature) commit(ctx *core.Context, pending *costPending, call costCall) {
 	amount := pending.amount
 	reported := pending.reported
 	estimated := pending.estimated
@@ -229,20 +242,24 @@ func (f *CostFeature) commit(ctx *core.Context, pending *costPending, entity, op
 	}
 
 	f.Total.Calls++
-	f.bump(f.Ops, entity+"."+opname, amount)
+	f.bump(f.Ops, call.key, amount)
 	f.bump(f.Actors, actor, amount)
 
 	f.seq++
-	record := fclean(ctx, map[string]any{
+	entry := map[string]any{
 		"seq":      f.seq,
-		"entity":   entity,
-		"op":       opname,
+		"entity":   call.entity,
+		"op":       call.op,
 		"actor":    actor,
 		"amount":   amount,
 		"currency": f.Currency,
 		"source":   source,
 		"attempts": pending.attempts,
-	})
+	}
+	if "" != call.action {
+		entry["action"] = call.action
+	}
+	record := fclean(ctx, entry)
 	f.Last = record
 
 	if sink, ok := f.options["sink"].(func(map[string]any)); ok {
@@ -272,26 +289,14 @@ func (f *CostFeature) price(ctx *core.Context, res any) (float64, string) {
 	return 0, "none"
 }
 
-// rate uses the same lookup grammar as rbac's rules: `<entity>.<op>`, then
-// `<op>`, then `*`.
+// rate is keyed as rbac's rules are.
 func (f *CostFeature) rate(ctx *core.Context) (float64, bool) {
 	rates := foptMap(f.options, "rates")
 	if rates == nil {
 		return 0, false
 	}
 
-	entity := ""
-	if ctx.Entity != nil {
-		entity = ctx.Entity.GetName()
-	} else if ctx.Op != nil {
-		entity = ctx.Op.Entity
-	}
-	opname := ""
-	if ctx.Op != nil {
-		opname = ctx.Op.Name
-	}
-
-	for _, key := range []string{entity + "." + opname, opname, "*"} {
+	for _, key := range utility.OpKeys(ctx) {
 		if v, has := rates[key]; has {
 			switch n := v.(type) {
 			case int:

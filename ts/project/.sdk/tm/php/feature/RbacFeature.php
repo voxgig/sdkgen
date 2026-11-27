@@ -4,13 +4,15 @@ declare(strict_types=1);
 // ProjectName SDK rbac feature
 
 require_once __DIR__ . '/BaseFeature.php';
+require_once __DIR__ . '/../utility/OpKey.php';
 
 // Client-side role/permission enforcement. Before an operation resolves its
 // endpoint, the required permission for that entity+operation is checked
 // against the permissions the client holds; a disallowed call is
 // short-circuited with an `rbac_denied` error and never touches the
 // network. Required permissions come from `rules` (keyed by
-// `<entity>.<op>`, `<op>`, or `*`); the default when no rule matches is
+// `<entity>.<op>:<action>`, `<entity>.<op>`, `<op>`, or `*`, most specific
+// first); the default when no rule matches is
 // controlled by `deny` (default: allow when unspecified). Held permissions
 // are the `permissions` list (a `*` grants everything).
 //
@@ -82,26 +84,10 @@ class ProjectNameRbacFeature extends ProjectNameBaseFeature
             $rules = [];
         }
 
-        $entity = '';
-        $e = $ctx->entity;
-        if (is_object($e) && method_exists($e, 'get_name')) {
-            $entity = (string)$e->get_name();
-        } elseif (is_array($e) && is_string($e['name'] ?? null)) {
-            $entity = $e['name'];
-        }
-        if ($entity === '' && $ctx->op->entity !== '_') {
-            $entity = $ctx->op->entity;
-        }
-        $opname = $ctx->op->name;
-
-        if (isset($rules[$entity . '.' . $opname])) {
-            return (string)$rules[$entity . '.' . $opname];
-        }
-        if (isset($rules[$opname])) {
-            return (string)$rules[$opname];
-        }
-        if (isset($rules['*'])) {
-            return (string)$rules['*'];
+        foreach (ProjectNameOpKey::keys($ctx) as $key) {
+            if (isset($rules[$key])) {
+                return (string)$rules[$key];
+            }
         }
         return null;
     }
@@ -110,6 +96,10 @@ class ProjectNameRbacFeature extends ProjectNameBaseFeature
     {
         $this->_track($ctx, $required, false);
         $opname = $ctx->op->name !== '' ? $ctx->op->name : '?';
+        $action = ProjectNameOpKey::action($ctx);
+        if (null !== $action) {
+            $opname .= ':' . $action;
+        }
         $err = $ctx->make_error('rbac_denied',
             "Permission \"{$required}\" required for operation \"{$opname}\"");
         // Short-circuit endpoint resolution; make_point surfaces this error
@@ -124,10 +114,15 @@ class ProjectNameRbacFeature extends ProjectNameBaseFeature
             $client->_rbac = ['allowed' => 0, 'denied' => 0, 'last' => null];
         }
         $client->_rbac[$allowed ? 'allowed' : 'denied']++;
-        $client->_rbac['last'] = [
+        $last = [
             'required' => $required,
             'allowed' => $allowed,
             'op' => $ctx->op->name,
         ];
+        $action = ProjectNameOpKey::action($ctx);
+        if (null !== $action) {
+            $last['action'] = $action;
+        }
+        $client->_rbac['last'] = ($ctx->utility->clean)($ctx, $last);
     }
 }

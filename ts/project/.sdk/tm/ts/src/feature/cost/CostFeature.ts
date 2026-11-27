@@ -3,6 +3,7 @@ import type { Context, FeatureOptions } from '../../types'
 import type { ProjectNameSDK } from '../../ProjectNameSDK'
 
 import { BaseFeature } from '../base/BaseFeature'
+import { opAction, opFileKey, opKeys } from '../../utility/OpKeyUtility'
 
 
 class CostFeature extends BaseFeature {
@@ -126,7 +127,7 @@ class CostFeature extends BaseFeature {
     cost.total.attempts++
 
     if (!pending.piped) {
-      this._commit(ctx, pending, '_', 'direct')
+      this._commit(ctx, pending, { key: '_.direct', entity: '_', op: 'direct' })
       this._pending.delete(ctx)
     }
 
@@ -173,14 +174,17 @@ class CostFeature extends BaseFeature {
       return
     }
 
-    const entity = (ctx.op && ctx.op.entity) || '_'
-    const opname = (ctx.op && ctx.op.name) || '_'
-
-    this._commit(ctx, pending, entity, opname)
+    this._commit(ctx, pending, {
+      key: opFileKey(ctx),
+      entity: (ctx.op && ctx.op.entity) || '_',
+      op: (ctx.op && ctx.op.name) || '_',
+      action: opAction(ctx),
+    })
   }
 
 
-  _commit(this: any, ctx: any, pending: any, entity: string, opname: string) {
+  // `call` names what the spend is filed under: its key, entity, op and action.
+  _commit(this: any, ctx: any, pending: any, call: any) {
     const client: any = this._client
     const cost = client._cost
 
@@ -204,20 +208,24 @@ class CostFeature extends BaseFeature {
     const actor = (ctx.ctrl && ctx.ctrl.actor) || this._options.actor || 'anonymous'
 
     cost.total.calls++
-    this._bump(cost.ops, entity + '.' + opname, amount)
+    this._bump(cost.ops, call.key, amount)
     this._bump(cost.actors, actor, amount)
 
     this._seq++
-    const record = ctx.utility.clean(ctx, {
+    const entry: any = {
       seq: this._seq,
-      entity,
-      op: opname,
+      entity: call.entity,
+      op: call.op,
       actor,
       amount,
       currency: cost.currency,
       source,
       attempts: pending.attempts,
-    })
+    }
+    if (null != call.action) {
+      entry.action = call.action
+    }
+    const record = ctx.utility.clean(ctx, entry)
     cost.last = record
 
     const sink = this._options.sink
@@ -252,21 +260,13 @@ class CostFeature extends BaseFeature {
   }
 
 
-  // The rate table uses the same lookup grammar as rbac's rules:
-  // '<entity>.<op>', then '<op>', then '*'.
+  // The rate table is keyed as rbac's rules are.
   _rate(this: any, ctx: any): number | null {
     const rates = this._options.rates || {}
-    const entity = (ctx.entity && ctx.entity.name) || (ctx.op && ctx.op.entity) || ''
-    const opname = (ctx.op && ctx.op.name) || ''
-
-    if ('number' === typeof rates[entity + '.' + opname]) {
-      return rates[entity + '.' + opname]
-    }
-    if ('number' === typeof rates[opname]) {
-      return rates[opname]
-    }
-    if ('number' === typeof rates['*']) {
-      return rates['*']
+    for (const key of opKeys(ctx)) {
+      if ('number' === typeof rates[key]) {
+        return rates[key]
+      }
     }
     return null
   }

@@ -169,12 +169,12 @@ class FeatureCorpusTest extends TestCase
         return $out;
     }
 
-    private static function invoke($client, array $op, array $ctrl)
+    private static function invoke($client, array $op, array $ctrl, mixed $action = null)
     {
         $acc = $op['accessor'];
         $ent = $client->$acc();
         $fn = $op['op'];
-        return $ent->$fn([], $ctrl);
+        return $ent->$fn(null === $action ? [] : ['$action' => $action], $ctrl);
     }
 
     /**
@@ -424,7 +424,7 @@ class FeatureCorpusTest extends TestCase
                         $wanterr = $step['err'] ?? null;
 
                         try {
-                            self::invoke($client, $op, $ctrl);
+                            self::invoke($client, $op, $ctrl, $step['action'] ?? null);
                             $this->assertNull($wanterr,
                                 "$label: {$step['op']} was expected to fail, and did not");
                         } catch (\PHPUnit\Framework\AssertionFailedError $e) {

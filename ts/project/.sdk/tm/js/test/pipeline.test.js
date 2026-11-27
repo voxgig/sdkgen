@@ -87,6 +87,23 @@ describe('pipeline:makePoint + makeSpec', () => {
     strictEqual(stdutil.makePoint(base({ op, options: { allow: { op: 'list, LOAD' } } })), point)
   })
 
+  test('an allow list entry may name an action: <entity>.<op>:<action>', () => {
+    const plain = { method: 'GET', parts: ['episode', '{id}'], select: { exist: ['id'] } }
+    const audio = { method: 'GET', parts: ['episode', '{id}', 'audio'],
+      select: { exist: ['id'], $action: 'audio' } }
+    const point = (allow, reqmatch) => stdutil.makePoint(base({
+      op: { name: 'load', entity: 'episode', input: 'match', points: [plain, audio] },
+      options: { allow: { op: allow } },
+      reqmatch, match: {},
+    }))
+    const AUDIO = { $action: 'audio', id: 'e1' }
+    strictEqual(point('episode.load:audio', AUDIO), audio)
+    strictEqual(point('episode.load:audio', { id: 'e1' }).code, 'point_op_allow')
+    strictEqual(point('episode.load:video', AUDIO).code, 'point_op_allow')
+    strictEqual(point('episode.load', AUDIO), audio)
+    strictEqual(point('load', { id: 'e1' }), plain)
+  })
+
   test('an allow list names whole methods', () => {
     const ctx = base({
       op: { name: 'update', points: [] },

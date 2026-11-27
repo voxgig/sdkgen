@@ -7,6 +7,11 @@ SdkResult* result_body_util(Context* ctx) {
   SdkResult* result = ctx->result;
 
   if (result && response) {
+    if (binary_raw_response(ctx->point) && NULL != codec_table.raw && NULL == result->err &&
+        NULL == response->err && result->status < 400) {
+      result->err = codec_table.raw(ctx);
+      return result;
+    }
     voxgig_value* json = response->json;
     voxgig_value* body = response->body;
     if (voxgig_is_func(json) && !v_is_noval(body) && !v_is_null(body)) {

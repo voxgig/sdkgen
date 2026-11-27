@@ -883,6 +883,241 @@ static void test_audit_inactive_records_nothing(void) {
 }
 
 // =============================================================================
+// action keys: a custom action is `$action` in the request argument, and its
+// keys name it, `<entity>.<op>:<action>` first.
+// =============================================================================
+
+static voxgig_value* ak_audio(void) { return cmap(2, "$action", v_str("audio"), "id", v_str("e1")); }
+static voxgig_value* ak_record(void) { return cmap(1, "id", v_str("e1")); }
+
+static FhOpSpec ak_load(voxgig_value* reqmatch) {
+  FhOpSpec o; memset(&o, 0, sizeof(o));
+  o.entity = "episode"; o.op = "load"; o.reqmatch = reqmatch;
+  return o;
+}
+
+static voxgig_value* ak_rules(void) {
+  return cmap(2, "episode.load", v_str("read"), "episode.load:audio", v_str("audio"));
+}
+
+static void test_action_keys_rbac_record_granted_action_refused(void) {
+  if (!fh_present("rbac")) return;
+  voxgig_value* calls;
+  Fetcher* srv = fh_recorder(NULL, NULL, &calls);
+  Feature* f = feature_rbac_new();
+  FhFeat feats[] = {{f, cmap(2, "rules", ak_rules(), "permissions", clist(1, v_str("read")))}};
+  FhHarness h = fh_make(srv, feats, 1);
+  CHECK(fh_op(&h, ak_load(ak_record())).ok, "action-keys rbac: record ok");
+  FhOpResult res = fh_op(&h, ak_load(ak_audio()));
+  CHECK_STR_EQ(fh_err_code(res.err), "rbac_denied", "action-keys rbac: action denied");
+  CHECK_INT_EQ(rec_count(calls), 1, "action-keys rbac: one network call");
+  CHECK_STR_EQ(get_str(getp(feature_track(f), "last"), "action"), "audio",
+               "action-keys rbac: last.action audio");
+  CHECK(res.err && res.err->msg && strstr(res.err->msg, "operation \"load:audio\""),
+        "action-keys rbac: message names load:audio");
+}
+
+static void test_action_keys_rbac_action_granted_record_refused(void) {
+  if (!fh_present("rbac")) return;
+  Feature* f = feature_rbac_new();
+  FhFeat feats[] = {{f, cmap(2, "rules", ak_rules(), "permissions", clist(1, v_str("audio")))}};
+  FhHarness h = fh_make(NULL, feats, 1);
+  CHECK_STR_EQ(fh_err_code(fh_op(&h, ak_load(ak_record())).err), "rbac_denied",
+               "action-keys rbac: record denied");
+  CHECK(v_is_noval(getp(getp(feature_track(f), "last"), "action")),
+        "action-keys rbac: a plain call's last has no action");
+  CHECK(fh_op(&h, ak_load(ak_audio())).ok, "action-keys rbac: action ok");
+}
+
+static void test_action_keys_rbac_action_falls_back_to_operation(void) {
+  if (!fh_present("rbac")) return;
+  Feature* f = feature_rbac_new();
+  FhFeat feats[] = {{f, cmap(2, "rules", cmap(1, "episode.load", v_str("read")),
+                            "permissions", v_list())}};
+  FhHarness h = fh_make(NULL, feats, 1);
+  CHECK_STR_EQ(fh_err_code(fh_op(&h, ak_load(ak_audio())).err), "rbac_denied",
+               "action-keys rbac: fallback to the operation's rule");
+}
+
+static void test_action_keys_rbac_data_op_reads_reqdata(void) {
+  if (!fh_present("rbac")) return;
+  Feature* f = feature_rbac_new();
+  FhFeat feats[] = {{f, cmap(2, "rules", cmap(1, "episode.create:upload", v_str("write")),
+                            "permissions", v_list())}};
+  FhHarness h = fh_make(NULL, feats, 1);
+  FhOpSpec o; memset(&o, 0, sizeof(o));
+  o.entity = "episode"; o.op = "create";
+  o.reqdata = cmap(1, "$action", v_str("upload"));
+  CHECK_STR_EQ(fh_err_code(fh_op(&h, o).err), "rbac_denied",
+               "action-keys rbac: data op reads reqdata");
+  o.reqdata = NULL;
+  o.reqmatch = cmap(1, "$action", v_str("upload"));
+  CHECK(fh_op(&h, o).ok, "action-keys rbac: data op ignores reqmatch");
+}
+
+static void test_action_keys_metrics_counted_apart(void) {
+  if (!fh_present("metrics")) return;
+  Feature* f = feature_metrics_new();
+  FhFeat feats[] = {{f, v_undef()}};
+  FhHarness h = fh_make(NULL, feats, 1);
+  fh_op(&h, ak_load(ak_record()));
+  fh_op(&h, ak_load(ak_audio()));
+  fh_op(&h, ak_load(ak_audio()));
+  voxgig_value* t = feature_track(f);
+  CHECK_INT_EQ(to_int(getp(getp(t, "total"), "count")), 3, "action-keys metrics: total 3");
+  CHECK_INT_EQ(to_int(getp(getp(getp(t, "ops"), "episode.load"), "count")), 1,
+               "action-keys metrics: episode.load 1");
+  CHECK_INT_EQ(to_int(getp(getp(getp(t, "ops"), "episode.load:audio"), "count")), 2,
+               "action-keys metrics: episode.load:audio 2");
+}
+
+static void test_action_keys_audit_record_names_action(void) {
+  if (!fh_present("audit")) return;
+  voxgig_value* sunk = v_list();
+  Feature* f = feature_audit_new();
+  FhFeat feats[] = {{f, cmap(1, "sink", vfn(collect_fn, sunk))}};
+  FhHarness h = fh_make(NULL, feats, 1);
+  fh_op(&h, ak_load(ak_record()));
+  fh_op(&h, ak_load(ak_audio()));
+  voxgig_value* r0 = voxgig_getelem(sunk, v_int(0), v_undef());
+  voxgig_value* r1 = voxgig_getelem(sunk, v_int(1), v_undef());
+  CHECK(voxgig_is_map(r0) && v_is_noval(getp(r0, "action")), "action-keys audit: r0 no action");
+  CHECK_STR_EQ(get_str(r0, "op"), "load", "action-keys audit: r0 op load");
+  CHECK_STR_EQ(get_str(r1, "action"), "audio", "action-keys audit: r1 action audio");
+  CHECK_STR_EQ(get_str(r1, "op"), "load", "action-keys audit: r1 op load");
+}
+
+static void test_action_keys_cost_priced_apart(void) {
+  if (!fh_present("cost")) return;
+  voxgig_value* sunk = v_list();
+  Feature* f = feature_cost_new();
+  FhFeat feats[] = {{f, cmap(2, "rates",
+                            cmap(2, "episode.load", v_num(1), "episode.load:audio", v_num(5)),
+                            "sink", vfn(collect_fn, sunk))}};
+  FhHarness h = fh_make(NULL, feats, 1);
+  fh_op(&h, ak_load(ak_record()));
+  fh_op(&h, ak_load(ak_audio()));
+  voxgig_value* t = feature_track(f);
+  voxgig_value* ops = getp(t, "ops");
+  CHECK_INT_EQ(to_int(getp(getp(t, "total"), "amount")), 6, "action-keys cost: total 6");
+  CHECK_INT_EQ(to_int(getp(getp(ops, "episode.load"), "calls")), 1, "action-keys cost: load calls 1");
+  CHECK_INT_EQ(to_int(getp(getp(ops, "episode.load"), "amount")), 1, "action-keys cost: load amount 1");
+  CHECK_INT_EQ(to_int(getp(getp(ops, "episode.load:audio"), "calls")), 1,
+               "action-keys cost: audio calls 1");
+  CHECK_INT_EQ(to_int(getp(getp(ops, "episode.load:audio"), "amount")), 5,
+               "action-keys cost: audio amount 5");
+  voxgig_value* r0 = voxgig_getelem(sunk, v_int(0), v_undef());
+  voxgig_value* r1 = voxgig_getelem(sunk, v_int(1), v_undef());
+  CHECK(voxgig_is_map(r0) && v_is_noval(getp(r0, "action")), "action-keys cost: r0 no action");
+  CHECK_STR_EQ(get_str(r1, "action"), "audio", "action-keys cost: r1 action audio");
+  CHECK_STR_EQ(get_str(getp(t, "last"), "action"), "audio", "action-keys cost: last.action");
+}
+
+// An action that holds a registered secret (the client's apikey) is cleaned
+// wherever a consumer reads it, and still matched raw by a rule or a rate.
+#define AK_SECRET "ak-secret-action-canary-5d1e"
+
+static voxgig_value* ak_secret_opts(void) { return cmap(1, "apikey", v_str(AK_SECRET)); }
+static voxgig_value* ak_secret(void) { return cmap(2, "$action", v_str(AK_SECRET), "id", v_str("e1")); }
+
+static bool ak_keys_hold_secret(voxgig_value* ops) {
+  if (!voxgig_is_map(ops)) return false;
+  voxgig_map* m = voxgig_as_map(ops);
+  for (size_t i = 0; i < m->len; i++) {
+    if (strstr(m->entries[i].key, AK_SECRET)) return true;
+  }
+  return false;
+}
+
+static bool ak_keys_have_prefix(voxgig_value* ops, const char* prefix) {
+  if (!voxgig_is_map(ops)) return false;
+  voxgig_map* m = voxgig_as_map(ops);
+  for (size_t i = 0; i < m->len; i++) {
+    if (0 == strncmp(m->entries[i].key, prefix, strlen(prefix))) return true;
+  }
+  return false;
+}
+
+static void test_action_keys_rbac_record_cleans_the_action(void) {
+  if (!fh_present("rbac")) return;
+  Feature* f = feature_rbac_new();
+  FhFeat feats[] = {{f, cmap(2, "rules", cmap(1, "episode.load:" AK_SECRET, v_str("secret")),
+                            "permissions", v_list())}};
+  FhHarness h = fh_make_opts(ak_secret_opts(), NULL, feats, 1);
+  CHECK_STR_EQ(fh_err_code(fh_op(&h, ak_load(ak_secret())).err), "rbac_denied",
+               "action-keys clean rbac: the raw rule decides");
+  const char* got = get_str(getp(feature_track(f), "last"), "action");
+  CHECK(NULL != got && '\0' != got[0], "action-keys clean rbac: last.action is set");
+  CHECK(NULL != got && NULL == strstr(got, AK_SECRET),
+        "action-keys clean rbac: last.action is masked");
+}
+
+static void test_action_keys_metrics_bucket_cleans_the_action(void) {
+  if (!fh_present("metrics")) return;
+  Feature* f = feature_metrics_new();
+  FhFeat feats[] = {{f, v_undef()}};
+  FhHarness h = fh_make_opts(ak_secret_opts(), NULL, feats, 1);
+  fh_op(&h, ak_load(ak_secret()));
+  voxgig_value* ops = getp(feature_track(f), "ops");
+  CHECK(ak_keys_have_prefix(ops, "episode.load:"), "action-keys clean metrics: filed as an action");
+  CHECK(!ak_keys_hold_secret(ops), "action-keys clean metrics: no bucket names the secret");
+}
+
+static void test_action_keys_cost_bucket_cleans_the_action(void) {
+  if (!fh_present("cost")) return;
+  Feature* f = feature_cost_new();
+  FhFeat feats[] = {{f, cmap(1, "rates", cmap(1, "episode.load:" AK_SECRET, v_num(7)))}};
+  FhHarness h = fh_make_opts(ak_secret_opts(), NULL, feats, 1);
+  fh_op(&h, ak_load(ak_secret()));
+  voxgig_value* t = feature_track(f);
+  CHECK_INT_EQ(to_int(getp(getp(t, "total"), "amount")), 7, "action-keys clean cost: the raw rate decides");
+  CHECK(ak_keys_have_prefix(getp(t, "ops"), "episode.load:"), "action-keys clean cost: filed as an action");
+  CHECK(!ak_keys_hold_secret(getp(t, "ops")), "action-keys clean cost: no bucket names the secret");
+}
+
+// With `action` a sensitive key name, a plain action is masked where a
+// consumer reads it, and the raw rule still decides.
+static void test_action_keys_sensitive_key_masks_the_action(void) {
+  if (!fh_present("rbac,metrics,cost")) return;
+  voxgig_value* opts = cmap(1, "clean", cmap(1, "keys", v_str("action")));
+  const char* masked = "episode.load:[redacted]";
+
+  Feature* rf = feature_rbac_new();
+  FhFeat rfeats[] = {{rf, cmap(2, "rules", cmap(1, "episode.load:audio", v_str("audio")),
+                              "permissions", clist(1, v_str("audio")))}};
+  FhHarness rh = fh_make_opts(opts, NULL, rfeats, 1);
+  CHECK(fh_op(&rh, ak_load(ak_audio())).ok, "action-keys sensitive rbac: the raw rule admits");
+  CHECK_STR_EQ(get_str(getp(feature_track(rf), "last"), "action"), "[redacted]",
+               "action-keys sensitive rbac: last.action is the mask");
+
+  Feature* mf = feature_metrics_new();
+  FhFeat mfeats[] = {{mf, v_undef()}};
+  FhHarness mh = fh_make_opts(opts, NULL, mfeats, 1);
+  fh_op(&mh, ak_load(ak_audio()));
+  CHECK_INT_EQ(to_int(getp(getp(getp(feature_track(mf), "ops"), masked), "count")), 1,
+               "action-keys sensitive metrics: filed under the mask");
+
+  Feature* cf = feature_cost_new();
+  FhFeat cfeats[] = {{cf, cmap(1, "rates", cmap(1, "episode.load:audio", v_num(5)))}};
+  FhHarness ch = fh_make_opts(opts, NULL, cfeats, 1);
+  fh_op(&ch, ak_load(ak_audio()));
+  voxgig_value* bucket = getp(getp(feature_track(cf), "ops"), masked);
+  CHECK_INT_EQ(to_int(getp(bucket, "calls")), 1, "action-keys sensitive cost: filed under the mask");
+  CHECK_INT_EQ(to_int(getp(bucket, "amount")), 5, "action-keys sensitive cost: the raw rate decides");
+}
+
+static void test_action_keys_cost_action_falls_back_to_operation_rate(void) {
+  if (!fh_present("cost")) return;
+  Feature* f = feature_cost_new();
+  FhFeat feats[] = {{f, cmap(1, "rates", cmap(2, "episode.load", v_num(2), "*", v_num(9)))}};
+  FhHarness h = fh_make(NULL, feats, 1);
+  fh_op(&h, ak_load(ak_audio()));
+  voxgig_value* audio = getp(getp(feature_track(f), "ops"), "episode.load:audio");
+  CHECK_INT_EQ(to_int(getp(audio, "calls")), 1, "action-keys cost fallback: calls 1");
+  CHECK_INT_EQ(to_int(getp(audio, "amount")), 2, "action-keys cost fallback: amount 2");
+}
+
+// =============================================================================
 // one call, one id
 // =============================================================================
 
@@ -1248,6 +1483,19 @@ int main(void) {
   RUN(test_audit_default_actor_anonymous);
   RUN(test_audit_injected_clock);
   RUN(test_audit_inactive_records_nothing);
+  // action keys
+  RUN(test_action_keys_rbac_record_granted_action_refused);
+  RUN(test_action_keys_rbac_action_granted_record_refused);
+  RUN(test_action_keys_rbac_action_falls_back_to_operation);
+  RUN(test_action_keys_rbac_data_op_reads_reqdata);
+  RUN(test_action_keys_metrics_counted_apart);
+  RUN(test_action_keys_audit_record_names_action);
+  RUN(test_action_keys_cost_priced_apart);
+  RUN(test_action_keys_cost_action_falls_back_to_operation_rate);
+  RUN(test_action_keys_rbac_record_cleans_the_action);
+  RUN(test_action_keys_metrics_bucket_cleans_the_action);
+  RUN(test_action_keys_cost_bucket_cleans_the_action);
+  RUN(test_action_keys_sensitive_key_masks_the_action);
   // one call, one id
   RUN(test_telemetry_debug_audit_carry_one_calls_context_id);
   // clienttrack

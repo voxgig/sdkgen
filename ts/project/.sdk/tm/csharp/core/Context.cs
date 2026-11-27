@@ -27,6 +27,8 @@ public class Context
     public Dictionary<string, object?> Reqdata = new();
     public Dictionary<string, object?> Match = new();
     public Dictionary<string, object?> Reqmatch = new();
+    // The values of the point's binary fields, lifted out of Reqdata.
+    public Dictionary<string, object?>? Sources;
     public IEntity? Entity;
     public Dictionary<string, object?>? Shared;
 
@@ -74,6 +76,10 @@ public class Context
             if (cm.TryGetValue("paging", out var p) && p is Dictionary<string, object?> pm)
             {
                 Ctrl.Paging = pm;
+            }
+            if (cm.TryGetValue("transfer", out var tr) && tr is Dictionary<string, object?> trm)
+            {
+                Ctrl.Transfer = trm;
             }
         }
         else if (rawctrl is Control ctrl)

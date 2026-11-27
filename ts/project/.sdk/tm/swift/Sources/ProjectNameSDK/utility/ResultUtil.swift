@@ -31,6 +31,17 @@ func resultBodyUtil(_ ctx: Context) -> Result {
   let result = ctx.result
 
   if let result = result {
+    if let resp = response, result.err == nil, resp.err == nil, result.status < 400,
+      gpath(ctx.point, "response", "kind").asString == "raw",
+      let readRaw = ctx.utility?.codec["raw"] as? (Context) throws -> Void
+    {
+      do {
+        try readRaw(ctx)
+      } catch {
+        result.err = error
+      }
+      return result
+    }
     if let jf = response?.jsonFunc, let resp = response, !isNil(resp.body) {
       result.body = jf()
     }
@@ -354,9 +365,21 @@ private func cleanBinaryBodiesOf(
 
   let body = gp(ctx.point, "body")
   if gp(body, "kind").asString == "raw", gp(body, "binary").asBool == true {
+    let raw = ctx.sources?.entries[rawBodyKey] ?? ctx.reqdata.entries[rawBodyKey] ?? Value.noval
+    let held: Value = (raw.asNative as? BinarySource).map { Value.nat($0.data) } ?? Value.noval
     bodies.append(Utility.CleanBinaryBody(
-      live: known([ctx.spec?.body ?? Value.noval, rawBodyOf(ctx.reqdata)]),
+      live: known([ctx.spec?.body ?? Value.noval, raw, held]),
       media: gp(body, "media").asString, sized: true))
+  }
+
+  // An encoded multipart body, and a form body that carries a file.
+  let kind = gp(body, "kind").asString
+  let files = gp(body, "fields").asList?.items.contains { gp($0, "binary").asBool == true } ?? false
+  if kind == "multipart" || (kind == "form" && files) {
+    let sent = ctx.spec.map { Response.headerValue(.map($0.headers), "content-type") } ?? ""
+    bodies.append(Utility.CleanBinaryBody(
+      live: known([ctx.spec?.body ?? Value.noval]),
+      media: sent.isEmpty ? nil : sent, sized: true))
   }
 
   if let response = ctx.response {
@@ -533,6 +556,9 @@ private func cleanNative(
   }
   if let ctx = any as? Context {
     return cleanSnapshot(cfg, bin, .map(ctx.rawRecord()), key, depth, &seen)
+  }
+  if let source = any as? BinarySource {
+    return cleanSensitiveKey(cfg, key) ? .string(cfg.mask) : .map(source.describe())
   }
   if let ent = any as? Entity {
     return .string(ent.getName())

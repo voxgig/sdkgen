@@ -4,12 +4,14 @@
 # feature: money is spent per HTTP ATTEMPT (a retried call is charged again,
 # because the upstream API charges it again), but it is owed by an
 # OPERATION. So the transport wrap prices each attempt, and PreDone
-# attributes the running total to "<entity>.<op>" and to the caller (the
+# attributes the running total to "<entity>.<op>" (with ":<action>" for a
+# custom action) and to the caller (the
 # per-call ctrl actor, the same actor the audit feature records).
 #
 # The price of an attempt comes from the first source that answers: a
 # response header ("header" x "perUnit"), the rate table ("rates", keyed
-# "<entity>.<op>" / "<op>" / "*"), then the flat "unit". A body figure
+# "<entity>.<op>:<action>" / "<entity>.<op>" / "<op>" / "*"), then the flat
+# "unit". A body figure
 # ("path" x "perUnit", e.g. "usage.total_tokens") is read at PreDone
 # instead, from the already-parsed result, and describes the whole call, so
 # it REPLACES the per-attempt estimate rather than adding to it.
@@ -24,6 +26,7 @@
 # with cost first.
 
 require_relative 'base_feature'
+require_relative '../utility/op_key'
 
 class ProjectNameCostFeature < ProjectNameBaseFeature
   def initialize
@@ -153,7 +156,7 @@ class ProjectNameCostFeature < ProjectNameBaseFeature
     # commit. Their spend is committed here, or it would never be counted.
     # "piped" is set by PrePoint, so its absence is the signal.
     unless entry["piped"]
-      _commit(ctx, entry, "_", "direct")
+      _commit(ctx, entry, { "key" => "_.direct", "entity" => "_", "op" => "direct" })
       @pending.delete(ctx)
     end
 
@@ -199,16 +202,19 @@ class ProjectNameCostFeature < ProjectNameBaseFeature
     # nothing is the whole point of ordering cost inside the cache.
     return if !done && 0 == entry["attempts"]
 
-    entity = ctx.op && ctx.op.entity ? ctx.op.entity : "_"
-    opname = ctx.op && ctx.op.name ? ctx.op.name : "_"
-
-    _commit(ctx, entry, entity, opname)
+    _commit(ctx, entry, {
+      "key" => ProjectNameUtilities.op_file_key(ctx),
+      "entity" => ctx.op && ctx.op.entity ? ctx.op.entity : "_",
+      "op" => ctx.op && ctx.op.name ? ctx.op.name : "_",
+      "action" => ProjectNameUtilities.op_action(ctx),
+    })
   end
 
   # Commit one operation's spend: totals, budget, per-op and per-actor
   # attribution, and the record. Shared by _finish and the raw-request path in
-  # charge, which has no PreDone to reach.
-  def _commit(ctx, entry, entity, opname)
+  # charge, which has no PreDone to reach. `call` names what the spend is
+  # filed under: its key, entity, op and action.
+  def _commit(ctx, entry, call)
     cost = @client.instance_variable_get(:@_cost)
     return if cost.nil?
 
@@ -233,20 +239,22 @@ class ProjectNameCostFeature < ProjectNameBaseFeature
     actor = _actor(ctx)
 
     cost["total"]["calls"] += 1
-    _bump(cost["ops"], "#{entity}.#{opname}", amount)
+    _bump(cost["ops"], call["key"], amount)
     _bump(cost["actors"], actor, amount)
 
     @seq += 1
-    record = ctx.utility.clean.call(ctx, {
+    record_entry = {
       "seq" => @seq,
-      "entity" => entity,
-      "op" => opname,
+      "entity" => call["entity"],
+      "op" => call["op"],
       "actor" => actor,
       "amount" => amount,
       "currency" => cost["currency"],
       "source" => source,
       "attempts" => entry["attempts"],
-    })
+    }
+    record_entry["action"] = call["action"] unless call["action"].nil?
+    record = ctx.utility.clean.call(ctx, record_entry)
     cost["last"] = record
 
     sink = @options["sink"]
@@ -277,22 +285,12 @@ class ProjectNameCostFeature < ProjectNameBaseFeature
     [0, "none"]
   end
 
-  # The rate table uses the same lookup grammar as rbac's rules:
-  # "<entity>.<op>", then "<op>", then "*".
+  # The rate table is keyed as rbac's rules are.
   def _rate(ctx)
     rates = @options["rates"]
     return nil unless rates.is_a?(Hash)
 
-    entity = if ctx.entity && ctx.entity.respond_to?(:name) && ctx.entity.name
-               ctx.entity.name
-             elsif ctx.op && ctx.op.entity
-               ctx.op.entity
-             else
-               ""
-             end
-    opname = ctx.op && ctx.op.name ? ctx.op.name : ""
-
-    ["#{entity}.#{opname}", opname, "*"].each do |key|
+    ProjectNameUtilities.op_keys(ctx).each do |key|
       val = rates[key]
       return val if val.is_a?(Numeric)
     end

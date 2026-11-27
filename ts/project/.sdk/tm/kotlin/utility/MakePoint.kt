@@ -58,7 +58,16 @@ private fun unfilledParams(ctx: Context, point: Map<String, Any?>?): List<String
 }
 
 @Suppress("UNCHECKED_CAST")
+// Once the point is known, a body of bytes it answers is refused and the
+// sources its binary fields carry are lifted out of the data.
 fun makePoint(ctx: Context): Map<String, Any?> {
+  val point = selectPoint(ctx)
+  Sources.bytesRefused(ctx)
+  Sources.liftSources(ctx)
+  return point
+}
+
+private fun selectPoint(ctx: Context): Map<String, Any?> {
   val outPoint = ctx.out["point"]
   if (outPoint != null) {
     // A PrePoint feature hook (e.g. rbac) may short-circuit the
@@ -78,10 +87,11 @@ fun makePoint(ctx: Context): Map<String, Any?> {
 
   val allowOpRaw = Struct.getpath(options, listOf("allow", "op"))
   val allowOp = if (allowOpRaw is String) allowOpRaw else ""
-  if (!Helpers.allowed(allowOpRaw, op.name)) {
+  if (Helpers.opKeys(ctx).none { Helpers.allowed(allowOpRaw, it) }) {
+    val action = Helpers.opAction(ctx)
     throw ctx.makeError(
       "point_op_allow",
-      "Operation \"" + op.name +
+      "Operation \"" + op.name + (if (action == null) "" else ":" + action) +
         "\" not allowed by SDK option allow.op value: \"" + allowOp + "\"",
     )
   }

@@ -11,7 +11,8 @@ function entityOp(opname: string, present: boolean, entityname: string): string 
   const field = ocamlOpField(opname)
 
   if (!present) {
-    return `  ent.${field} <- (fun _ _ ->
+    const opt = 'create' === opname || 'update' === opname || 'patch' === opname ? '?sources:_ ' : ''
+    return `  ent.${field} <- (fun ${opt}_ _ ->
       raise (Sdk_error_exc (mk_error "unsupported_op"
         "Operation \\"${ocamlString(opname)}\\" not supported by entity \\"${ocamlString(entityname)}\\".")));
 `
@@ -59,12 +60,12 @@ function entityOp(opname: string, present: boolean, entityname: string): string 
       ent);
 `
 
-  return `  ent.${field} <- (fun ${arg} ctrl ->
+  return `  ent.${field} <- (fun ${body ? '?(sources = []) ' : ''}${arg} ctrl ->
       let ${arg} = if is_nullish ${arg} then empty_map () else ${arg} in
       let ctx = utility.u_make_context
           { (default_ctxspec ()) with
             cs_opname = Some "${ocamlString(opname)}";
-            cs_ctrl = (match ctrl with Noval | Null -> None | c -> Some c);
+            cs_ctrl = (match ctrl with Noval | Null -> None | c -> Some c);${body ? '\n            cs_sources = Some sources;' : ''}
             cs_match = Some ent.e_match; cs_data = Some ent.e_data;
             ${inputField} = Some ${arg} }
           (Some entctx) in

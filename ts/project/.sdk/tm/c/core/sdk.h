@@ -146,6 +146,70 @@ voxgig_value* v_clone(voxgig_value* v);   // deep
 voxgig_value* v_share(voxgig_value* v);   // retain (shallow)
 
 // ===========================================================================
+// Binary sources (utility/binary.c)
+// ===========================================================================
+//
+// `voxgig_value` has no variant for a source or for bytes held as bytes, so
+// a source travels as a typed argument BESIDE the data (entity_create_with
+// and friends), never inside it. A string value is content, never a path.
+
+// File content a caller hands the SDK. Borrowed: data, name and type must
+// outlive the operation call that takes the source.
+typedef struct BinarySource {
+  const uint8_t* data;
+  size_t len;
+  const char* name; // NULL: none
+  const char* type; // NULL: none
+} BinarySource;
+
+// A source for a binary field of a create, update or patch. A repeated name
+// is a list of files; the name `$body` is a raw body.
+typedef struct BinaryField {
+  const char* name;
+  BinarySource source;
+} BinaryField;
+
+// The one source core builds: data and len as given (a string's bytes are
+// its UTF-8); an empty type is no type. Nothing is copied.
+BinarySource binary_bytes(const void* data, size_t len, const char* name, const char* type);
+
+// A source as it serialises: {binary$: "bytes", size, type?}, never its bytes.
+voxgig_value* binary_source_describe(const BinarySource* src);
+
+// A slot the entity component derived from the model: the action whose
+// points move its bytes ("" for the entity's own), and the operations that
+// read and write them (NULL for none).
+typedef struct BinarySlotDef {
+  const char* name;
+  const char* action;
+  const char* read;
+  const char* write;
+} BinarySlotDef;
+
+// An entity's named bytes (utility/codec/handle.c). Holds the entity,
+// borrowed; each call is one run of the entity's own operation.
+typedef struct BinaryHandle {
+  Entity* entity;
+  const char* slot;
+  const BinarySlotDef* def; // NULL: the entity has no such slot
+} BinaryHandle;
+
+// The handle of slot `slot` (NULL: the entity's own, "").
+BinaryHandle entity_binary(Entity* e, const char* slot);
+// The whole body, within maxBuffer. Malloc'd, *len bytes, owned by the
+// caller; an empty body is a zero-length buffer, NULL only with *err set.
+// `opts` may be NULL; a `range` in it needs the binary feature.
+uint8_t* binary_handle_bytes(BinaryHandle* h, voxgig_value* opts, voxgig_value* ctrl,
+                             size_t* len, PNError** err);
+// Sends the source as the slot's body; resolves to the entity.
+Entity* binary_handle_put(BinaryHandle* h, BinarySource source, voxgig_value* ctrl,
+                          PNError** err);
+// Each needs the binary feature: always an error in core.
+PNError* binary_handle_save(BinaryHandle* h);
+PNError* binary_handle_stream(BinaryHandle* h);
+PNError* binary_handle_open(BinaryHandle* h);
+
+// ===========================================================================
 // Control (mirrors core/control.rs)
 // ===========================================================================
 
@@ -156,6 +220,9 @@ typedef struct Control {
   voxgig_value* explain; // Map when supplied, else Noval
   char* actor;
   voxgig_value* paging;  // Map when supplied, else Noval
+  // A binary handle's {slot, direction}: Map when supplied, else Noval. A
+  // read leaves the body under `bytes`, a string holding them.
+  voxgig_value* transfer;
 } Control;
 
 Control* control_new(void);
@@ -240,6 +307,8 @@ struct Response {
   PNError* err;
   // Set by a transport that could not read a non-blank body as JSON.
   bool unreadable;
+  // Set by a transport that stopped reading a success body past maxBuffer.
+  bool overflow;
 };
 
 Response* response_new(voxgig_value* resmap);
@@ -328,9 +397,14 @@ voxgig_value* http_fetch(Context* ctx, const char* url, voxgig_value* fetchdef, 
 // Utility bundle (mirrors core/utility_type.rs)
 // ===========================================================================
 
+// A multipart boundary, malloc'd; the caller frees it.
+typedef char* (*BoundaryFn)(Context* ctx);
+
 struct Utility {
   Fetcher* fetcher;      // swappable
   voxgig_value* custom;  // Map of caller-supplied utility callables
+  // Swappable; NULL when this SDK was generated without a multipart encoder.
+  BoundaryFn multipart_boundary;
 };
 
 Utility* utility_new(void);
@@ -370,7 +444,26 @@ typedef struct EntityVT {
   Entity* (*update)(Entity*, voxgig_value* reqdata, voxgig_value* ctrl, PNError** err);
   Entity* (*patch)(Entity*, voxgig_value* reqdata, voxgig_value* ctrl, PNError** err);
   Entity* (*remove)(Entity*, voxgig_value* reqmatch, voxgig_value* ctrl, PNError** err);
+
+  // A create, update or patch with sources for binary fields beside the
+  // data: n of them, borrowed for the call.
+  Entity* (*create_with)(Entity*, voxgig_value* reqdata, const BinaryField* sources, size_t n,
+                         voxgig_value* ctrl, PNError** err);
+  Entity* (*update_with)(Entity*, voxgig_value* reqdata, const BinaryField* sources, size_t n,
+                         voxgig_value* ctrl, PNError** err);
+  Entity* (*patch_with)(Entity*, voxgig_value* reqdata, const BinaryField* sources, size_t n,
+                        voxgig_value* ctrl, PNError** err);
+  // The entity's binary slots, sorted by name: *n of them, NULL when none.
+  const BinarySlotDef* (*binary_slots)(Entity*, size_t* n);
 } EntityVT;
+
+// The vtable calls, NULL-safe for an entity whose vtable predates them.
+Entity* entity_create_with(Entity* e, voxgig_value* data, const BinaryField* sources, size_t n,
+                           voxgig_value* ctrl, PNError** err);
+Entity* entity_update_with(Entity* e, voxgig_value* data, const BinaryField* sources, size_t n,
+                           voxgig_value* ctrl, PNError** err);
+Entity* entity_patch_with(Entity* e, voxgig_value* data, const BinaryField* sources, size_t n,
+                          voxgig_value* ctrl, PNError** err);
 
 struct Entity {
   const EntityVT* vt;
@@ -403,6 +496,9 @@ typedef struct CtxSpec {
   Spec* spec;
   SdkResult* result;
   Response* response;
+  // The sources a create, update or patch was given: borrowed for the call.
+  const BinaryField* sources;
+  size_t nsources;
 } CtxSpec;
 
 // ctx.out staging kinds.
@@ -442,6 +538,14 @@ struct Context {
   voxgig_value* reqmatch;
   Entity* entity;
   voxgig_value* shared;
+
+  // The sources the call was given (borrowed), never inherited.
+  const BinaryField* given;
+  size_t ngiven;
+  // Set once the binary values of the point are lifted out of reqdata;
+  // `lifted` then maps each name lifted from the data to its value.
+  bool sources_lifted;
+  voxgig_value* lifted;
 };
 
 Context* context_new(CtxSpec spec, Context* basectx);
@@ -549,13 +653,32 @@ Response* make_request_util(Context* ctx, PNError** err);
 Response* make_response_util(Context* ctx, PNError** err);
 SdkResult* make_result_util(Context* ctx, PNError** err);
 voxgig_value* make_point_util(Context* ctx, PNError** err);
+
+// The custom action a call names: `$action` in its own request argument
+// (reqdata for a data op, else reqmatch), never in a response. Borrowed from
+// that request map; NULL when there is none.
+const char* op_action(Context* ctx);
+
+// The keys an operation is looked up and filed by, most specific first:
+// `<entity>.<op>:<action>`, `<entity>.<op>`, `<op>`, `*`. Each item is
+// malloc'd and owned by the OpKeys; op_keys_free releases them.
+typedef struct {
+  char* items[4];
+  size_t len;
+} OpKeys;
+OpKeys op_keys(Context* ctx);
+void op_keys_free(OpKeys* keys);
+
+// The key a call is filed under where a consumer reads it: the first op key
+// with the action cleaned. Malloc'd; the caller frees it.
+char* op_file_key(Context* ctx);
 Spec* make_spec_util(Context* ctx, PNError** err);
 char* make_url_util(Context* ctx, PNError** err); // malloc'd
 voxgig_value* param_util(Context* ctx, voxgig_value* paramdef);
 voxgig_value* param_value(Context* ctx, voxgig_value* point, const char* key);
 voxgig_value* call_args(Context* ctx, const char* kind); // list of [name, wire, val]
 Spec* prepare_auth_util(Context* ctx, PNError** err);
-voxgig_value* prepare_body_util(Context* ctx);
+voxgig_value* prepare_body_util(Context* ctx, PNError** err);
 // The caller's cookie pieces with every owned cookie removed (utility/prepare_headers.c).
 char* cookie_keep(const char* header, bool (*named)(const char* name, size_t nlen, void* ud), void* ud); // malloc'd, NULL when none
 // The media types a point declares (utility/media.c).
@@ -576,6 +699,56 @@ bool graphql_errors_util(Context* ctx);
 #define GRAPHQL_CONTENT_TYPE "application/json"
 SdkResult* result_basic_util(Context* ctx);
 SdkResult* result_body_util(Context* ctx);
+
+// ---- body codecs (utility/binary.c, utility/codec/*.c) ----------------------
+
+// An encoder: the content type in *type (malloc'd) and the body, a string
+// holding the bytes; NULL with *err set on a refusal.
+typedef voxgig_value* (*CodecEncodeFn)(Context* ctx, voxgig_value* data, char** type,
+                                       PNError** err);
+// The bounded raw read of a success response into ctx->result or the
+// transfer; an error on a refusal.
+typedef PNError* (*CodecReadFn)(Context* ctx);
+
+// The codecs this model's points use, GENERATED per model
+// (utility/codec/index.c): a codec the model does not use is NULL.
+typedef struct CodecTable {
+  CodecEncodeFn form;
+  CodecEncodeFn multipart;
+  BoundaryFn multipart_boundary;
+  CodecReadFn raw;
+} CodecTable;
+extern const CodecTable codec_table;
+
+// One value a form or multipart body carries, in wire order. The content
+// is `bytes` (len of them): borrowed from the source or the value, or owned
+// by `own` when it had to be written.
+typedef struct BodyItem {
+  const char* name;
+  bool binary;
+  const char* media;          // the field's declared media, or NULL
+  const BinarySource* source; // the given source, or NULL
+  const char* bytes;
+  size_t len;
+  char* own;
+} BodyItem;
+
+// The items of the point's body, malloc'd (*n of them); free with
+// binary_body_items_free.
+BodyItem* binary_body_items(Context* ctx, voxgig_value* data, size_t* n);
+void binary_body_items_free(BodyItem* items, size_t n);
+// A plain value as the text of a form pair or a multipart part, malloc'd.
+char* binary_item_text(voxgig_value* val, size_t* len);
+// The data keys whose values are file content, as a List of strings.
+voxgig_value* binary_names(voxgig_value* point);
+PNError* binary_lift_sources(Context* ctx);
+PNError* binary_bytes_refused(Context* ctx);
+// The client option maxBuffer, else the option spec's default.
+size_t binary_max_buffer(Context* ctx);
+// Whether a successful response to this point is read raw, to maxBuffer.
+bool binary_raw_response(voxgig_value* point);
+// The lifted value under a name (the given source wins), NULL for none.
+const BinarySource* binary_lifted_source(Context* ctx, const char* name);
 SdkResult* result_headers_util(Context* ctx);
 voxgig_value* transform_request_util(Context* ctx);
 voxgig_value* transform_response_util(Context* ctx);

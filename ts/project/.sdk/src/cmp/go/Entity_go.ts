@@ -4,7 +4,7 @@ import * as Path from 'node:path'
 import {
   cmp, each, camelify, names,
   File, Content, Folder, Fragment, Line, FeatureHook, Slot,
-  entityClassName, entityConstructorName, entityCollection, goModule
+  entityClassName, entityConstructorName, entityCollection, entitySlots, goModule
 } from '@voxgig/sdkgen'
 
 import {
@@ -35,6 +35,21 @@ const Entity = cmp(function Entity(props: any) {
   names(entrep, entity.Name, 'EntityName')
 
   const ff = Path.normalize(__dirname + '/../../../src/cmp/go/fragment/')
+
+  // The entity's binary slots, by name; '' is its own bytes, reached with no name.
+  const slots = entitySlots(entity)
+  const named = slots.map((slot: any) => slot.name).filter((name: string) => '' !== name)
+  const slotsVar = 'binarySlots' + cls
+  const slotTable = slots.map((slot: any) =>
+    `\t${JSON.stringify(slot.name)}: {Action: ${JSON.stringify(slot.action)}` +
+    (null == slot.read ? '' : `, Read: ${JSON.stringify(slot.read)}`) +
+    (null == slot.write ? '' : `, Write: ${JSON.stringify(slot.write)}`) + '},').join('\n')
+  const slotConsts = named.map((name: string) =>
+    `\t${cls}Binary${camelify(name)} = ${JSON.stringify(name)}`).join('\n')
+  const slotParam = 0 === named.length ? '' : named.length < slots.length ? 'slot ...string' :
+    'slot string'
+  const slotArg = 0 === named.length ? '""' : named.length < slots.length ?
+    'append(slot, "")[0]' : 'slot'
 
   Folder({ name: 'entity' }, () => {
 
@@ -74,6 +89,25 @@ const Entity = cmp(function Entity(props: any) {
 
           EntyClass: cls,
           NewEntyClass: ctor,
+
+          '#BinaryImport': ({ indent }: any) => 0 === slots.length ? undefined :
+            Content({ indent }, `"${gomodule}/utility/codec"
+`),
+
+          '#BinarySlot': ({ indent }: any) => 0 === slots.length ? undefined :
+            Content({ indent }, `var ${slotsVar} = map[string]codec.BinarySlot{
+${slotTable}
+}
+${0 === named.length ? '' : `
+const (
+${slotConsts}
+)
+`}
+// Binary reaches the entity's bytes by slot: they never enter its data.
+func (e *${cls}) Binary(${slotParam}) *codec.BinaryHandle {
+	return codec.NewBinaryHandle(e, ${slotsVar}, ${slotArg})
+}
+`),
 
           '#Entity-Hook': ({ name, indent }: any) =>
             Content({ indent }, `utility.FeatureHook(ctx, "${name}")`),

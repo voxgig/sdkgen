@@ -5,7 +5,9 @@ use std::rc::Rc;
 
 use crate::core::context::Context;
 use crate::core::error::ProjectNameError;
-use crate::core::helpers::{call_vfn, get_f64, getp, getpath, jo, setp};
+use crate::core::helpers::{
+    call_vfn, get_f64, getp, getpath, jo, op_action, op_file_key, op_keys, setp,
+};
 use crate::core::types::{Feature, FetcherFn, OutVal};
 use crate::feature::support::*;
 use crate::utility::voxgigstruct::Value;
@@ -105,20 +107,14 @@ fn price(options: &Value, ctx: &Rc<Context>, res: &Value) -> (f64, String) {
     (0.0, "none".to_string())
 }
 
-// The rate table uses the same lookup grammar as rbac's rules:
-// `<entity>.<op>`, then `<op>`, then `*`.
+// The rate table is keyed as rbac's rules are.
 fn rate(options: &Value, ctx: &Rc<Context>) -> Option<f64> {
     let rates = fopt_map(options, "rates");
     if !matches!(rates, Value::Map(_)) {
         return None;
     }
 
-    let (entity, opname) = {
-        let op = ctx.op.borrow();
-        (op.entity.clone(), op.name.clone())
-    };
-
-    for key in [format!("{}.{}", entity, opname), opname, "*".to_string()] {
+    for key in op_keys(ctx) {
         if let Some(n) = get_f64(&rates, &key) {
             return Some(n);
         }
@@ -222,7 +218,13 @@ fn charge(
     track.borrow_mut().attempts += 1;
 
     if !piped {
-        commit(track, options, ctx, &pending, "_", "direct");
+        let call = CostCall {
+            key: "_.direct".to_string(),
+            entity: "_".to_string(),
+            op: "direct".to_string(),
+            action: None,
+        };
+        commit(track, options, ctx, &pending, &call);
         ctx.out_take(COST_PENDING_KEY);
     } else {
         ctx.out_set(COST_PENDING_KEY, OutVal::Val(pending));
@@ -244,13 +246,20 @@ fn new_pending() -> Value {
 }
 
 
+// What the spend is filed under.
+struct CostCall {
+    key: String,
+    entity: String,
+    op: String,
+    action: Option<String>,
+}
+
 fn commit(
     track: &Rc<RefCell<CostTrack>>,
     options: &Value,
     ctx: &Rc<Context>,
     pending: &Value,
-    entity: &str,
-    opname: &str,
+    call: &CostCall,
 ) {
     let attempts = get_f64(pending, "attempts").unwrap_or(0.0);
     let mut amount = get_f64(pending, "amount").unwrap_or(0.0);
@@ -291,17 +300,20 @@ fn commit(
         t.calls += 1;
         t.seq += 1;
 
-        bump(&mut t.ops, format!("{}.{}", entity, opname), amount);
+        bump(&mut t.ops, call.key.clone(), amount);
         bump(&mut t.actors, actor.clone(), amount);
 
         setp(&record, "seq", Value::Num(t.seq as f64));
-        setp(&record, "entity", Value::str(entity.to_string()));
-        setp(&record, "op", Value::str(opname.to_string()));
+        setp(&record, "entity", Value::str(call.entity.clone()));
+        setp(&record, "op", Value::str(call.op.clone()));
         setp(&record, "actor", Value::str(actor));
         setp(&record, "amount", Value::Num(amount));
         setp(&record, "currency", Value::str(t.currency.clone()));
         setp(&record, "source", Value::str(source));
         setp(&record, "attempts", Value::Num(attempts));
+        if let Some(action) = &call.action {
+            setp(&record, "action", Value::str(action.clone()));
+        }
     }
 
     let record = ctx.util().clean(ctx, &record);
@@ -434,11 +446,16 @@ impl CostFeature {
             return;
         }
 
-        let (entity, opname) = {
+        let call = {
             let op = ctx.op.borrow();
-            (op.entity.clone(), op.name.clone())
+            CostCall {
+                key: op_file_key(ctx),
+                entity: op.entity.clone(),
+                op: op.name.clone(),
+                action: op_action(ctx),
+            }
         };
 
-        commit(&self.track, &self.options, ctx, &pending, &entity, &opname);
+        commit(&self.track, &self.options, ctx, &pending, &call);
     }
 }

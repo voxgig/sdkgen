@@ -1,5 +1,5 @@
-
-const { isRawRequest, rawBody } = require('./MediaUtility')
+const { BinarySource, liftSources } = require('./BinaryUtility')
+const { RAW_BODY, isRawRequest } = require('./MediaUtility')
 
 function prepareBody(ctx) {
   const op = ctx.op
@@ -11,8 +11,14 @@ function prepareBody(ctx) {
   let body = undefined
 
   if ('data' === op.input) {
+    const refused = liftSources(ctx)
+    if (refused) {
+      return error(ctx, refused)
+    }
+
     if (isRawRequest(ctx.point)) {
-      return rawBody(ctx.reqdata)
+      const raw = ctx.sources?.[RAW_BODY]
+      return raw instanceof BinarySource ? raw.data : raw
     }
 
     try {
@@ -21,6 +27,11 @@ function prepareBody(ctx) {
     catch (err) {
       return error(ctx, err)
     }
+
+    const kind = ctx.point?.body?.kind
+    if ('form' === kind || 'multipart' === kind) {
+      return encodeBody(ctx, kind, body)
+    }
   }
 
   else if (ctx.point && Array.isArray(ctx.point.fields) && 0 < ctx.point.fields.length) {
@@ -28,6 +39,34 @@ function prepareBody(ctx) {
   }
 
   return body
+}
+
+
+// The encoded body, with its content type replacing any the headers carry:
+// a multipart boundary is the encoder's alone to choose.
+function encodeBody(ctx, kind, data) {
+  const encode = ctx.utility.codec?.[kind]
+  if ('function' !== typeof encode) {
+    return ctx.utility.makeError(ctx, ctx.error('body_codec_missing',
+      'This SDK was generated without a ' + kind + ' encoder.'))
+  }
+
+  const encoded = encode(ctx, data, ctx.sources || {})
+  if (encoded instanceof Error) {
+    return ctx.utility.makeError(ctx, encoded)
+  }
+
+  const headers = ctx.spec?.headers
+  if (null != headers) {
+    for (const key of Object.keys(headers)) {
+      if ('content-type' === key.toLowerCase()) {
+        delete headers[key]
+      }
+    }
+    headers['content-type'] = encoded.type
+  }
+
+  return encoded.body
 }
 
 

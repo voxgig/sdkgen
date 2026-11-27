@@ -5,5 +5,7 @@ declare function bodyNote(op: any, target: {
     values: string;
     once?: string;
     binary?: boolean;
+    tier?: string;
+    source?: string;
 }): string;
 export { RAW_BODY, bodyNote, opRawBody, opRequestBody, };

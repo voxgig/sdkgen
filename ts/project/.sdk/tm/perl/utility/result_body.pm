@@ -20,6 +20,15 @@ $REGISTRY{result_body} = sub {
   my ($ctx) = @_;
   my $response = $ctx->{response};
   my $result = $ctx->{result};
+  my $codec = $ctx->{utility} ? $ctx->{utility}{codec} : undef;
+  my $raw = ref $codec eq 'HASH' ? $codec->{raw} : undef;
+  my $kind = ProjectNameHelpers::gpath($ctx->{point}, 'response.kind');
+  if ($result && $response && ref $raw eq 'CODE' && defined $kind && 'raw' eq $kind
+    && !$result->{err} && !$response->{err} && ($result->{status} // 0) < 400) {
+    my $err = $raw->($ctx);
+    $result->{err} = $err if $err;
+    return $result;
+  }
   if ($result && $response && $response->{json_func}
     && ProjectNameHelpers::rb_truthy($response->{body})) {
     $result->{body} = $response->{json_func}->();

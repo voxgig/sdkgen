@@ -41,6 +41,10 @@ public class Utility
     public Func<Context, object?> TransformResponse = null!;
     public Dictionary<string, object?> Custom = new();
 
+    // The body codecs this SDK was generated with; see utility/codec/CodecIndex.cs.
+    public Dictionary<string, object?> Codec = new();
+    public Func<Context, string>? MultipartBoundary;
+
     public Utility()
     {
         Util.SdkUtility.RegisterAll(this);
@@ -90,6 +94,8 @@ public class Utility
             TransformRequest = src.TransformRequest,
             TransformResponse = src.TransformResponse,
             Custom = new Dictionary<string, object?>(src.Custom),
+            Codec = src.Codec,
+            MultipartBoundary = src.MultipartBoundary,
         };
         return u;
     }

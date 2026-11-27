@@ -21,6 +21,7 @@ BEGIN { $__dir = File::Basename::dirname(Cwd::abs_path(__FILE__)) }
 require(Cwd::abs_path("$__dir/../lib/Voxgig/Struct.pm"));
 require(Cwd::abs_path("$__dir/../core/helpers.pm"));
 require(Cwd::abs_path("$__dir/base_feature.pm"));
+require(Cwd::abs_path("$__dir/../utility/op_key.pm"));
 
 package ProjectNameAuditFeature;
 
@@ -82,7 +83,7 @@ sub _emit {
   $self->{seen}{$addr} = 1;
   $self->{seq} += 1;
 
-  my $record = $ctx->{utility}{clean}->($ctx, {
+  my $entry = {
     'seq' => $self->{seq},
     'ts' => $self->_now,
     'actor' => $self->_actor($ctx),
@@ -91,7 +92,10 @@ sub _emit {
     'outcome' => $outcome,
     'status' => ($ctx->{result} ? $ctx->{result}{status} : undef),
     'correlationId' => $ctx->{id},
-  });
+  };
+  my $action = ProjectNameUtilities::op_action($ctx);
+  $entry->{action} = $action if defined $action;
+  my $record = $ctx->{utility}{clean}->($ctx, $entry);
 
   my $track = $self->{client}{_audit};
   if (!$track) {

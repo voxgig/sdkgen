@@ -307,7 +307,8 @@ describe('FeatureCorpus', () => {
             ok(null != ref, `${kase.name}: no operation ${step.op}`)
             let err = undefined
             try {
-              await client[ref.accessor]()[ref.op]({}, step.ctrl || {})
+              await client[ref.accessor]()[ref.op](
+                null == step.action ? {} : { $action: step.action }, step.ctrl || {})
             }
             catch (e) {
               err = e

@@ -32,6 +32,8 @@ public final class Context {
   public var reqdata: VMap = VMap()
   public var match: VMap = VMap()
   public var reqmatch: VMap = VMap()
+  // The values of the point's binary fields, lifted out of reqdata.
+  public var sources: VMap? = nil
   public var entity: Entity?
   public var shared: VMap?
 
@@ -56,6 +58,7 @@ public final class Context {
       if let e = cm.entries["explain"]?.asMap { ctrl.explain = e }
       if let a = cm.entries["actor"]?.asString { ctrl.actor = a }
       if let p = cm.entries["paging"]?.asMap { ctrl.paging = p }
+      if let tr = cm.entries["transfer"]?.asMap { ctrl.transfer = tr }
     } else if let b = basectx, ctxProp(ctxmap, "opname") == nil {
       ctrl = b.ctrl
     }

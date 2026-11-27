@@ -824,6 +824,95 @@ class PrimaryUtilityTest < Minitest::Test
   end
 
 
+  # === body codecs ===
+
+  # A codec section a project's corpus has not pulled yet is skipped, as is
+  # one for a codec this SDK was generated without: its model has no such point.
+  def runcodec(name, kind, codec, subject)
+    section = @spec.is_a?(Hash) && @spec[name].is_a?(Hash) ? @spec[name][kind] : nil
+    skip "this project's test.json has no #{name}.#{kind} section" if section.nil?
+    unless codec.nil? || (@utility.codec.is_a?(Hash) && @utility.codec[codec].respond_to?(:call))
+      skip "this SDK was generated without a #{codec} codec"
+    end
+    assert section["set"].is_a?(Array) && !section["set"].empty?,
+      "test corpus section '#{name}.#{kind}' is EMPTY"
+    @runset.call(section, subject)
+  end
+
+  def unlatin1(text)
+    text.encode(Encoding::ISO_8859_1).b
+  end
+
+  # `source$` is a source built by binary.bytes, `bytes$` bytes; both latin1.
+  # Ruby has no platform blob, so a `blob` source is built from its bytes.
+  def sourced(val)
+    return val.map { |item| sourced(item) } if val.is_a?(Array)
+    return val unless val.is_a?(Hash)
+    if val["source$"].is_a?(String)
+      return @client.binary.bytes(unlatin1(val["source$"]), { "name" => val["name"], "type" => val["type"] })
+    end
+    return unlatin1(val["bytes$"]) if val["bytes$"].is_a?(String)
+    val.each_with_object({}) { |(k, v), out| out[k] = sourced(v) }
+  end
+
+  def latin1(body)
+    return body unless body.is_a?(String) && body.encoding == Encoding::BINARY
+    body.dup.force_encoding(Encoding::ISO_8859_1).encode(Encoding::UTF_8)
+  end
+
+  %w[form multipart raw].each do |kind|
+    define_method("test_prepare_body_#{kind}") do
+      subject = lambda do |ctx|
+        ctx.utility = ProjectNameUtility.copy(ctx.utility)
+        ctx.utility.multipart_boundary = ->(_ctx) { "BOUNDARY" }
+        ctx.reqdata = sourced(ctx.reqdata)
+        ctx.reqmatch = sourced(ctx.reqmatch)
+        ctx.spec = ProjectNameSpec.new({ "headers" => {} })
+        body = @utility.prepare_body.call(ctx)
+        raise body if body.is_a?(ProjectNameError)
+        type = ctx.spec.headers["content-type"]
+        type.nil? ? { "body" => latin1(body) } : { "type" => type, "body" => latin1(body) }
+      end
+      runcodec("prepareBody", kind, "raw" == kind ? nil : kind, subject)
+    end
+  end
+
+  def test_result_body_raw
+    subject = lambda do |ctx|
+      ctx.response.body = sourced(ctx.response.body)
+      @utility.result_body.call(ctx)
+      raise ctx.result.err if ctx.result.err.is_a?(Exception)
+      transfer = ctx.ctrl.transfer
+      transfer["bytes"] = latin1(transfer["bytes"]) if transfer.is_a?(Hash) && transfer.key?("bytes")
+      ctx.result
+    end
+    runcodec("resultBody", "raw", "raw", subject)
+  end
+
+  def test_make_fetch_def_encoded
+    subject = lambda do |ctx|
+      ctx.spec.body = sourced(ctx.spec.body)
+      utility = ProjectNameUtility.copy(@utility)
+      utility.make_url = ->(c) { [c.spec.url, nil] }
+      ctx.utility = utility
+      fetchdef = unwrap(utility.make_fetch_def.call(ctx))
+      fetchdef.merge("body" => latin1(fetchdef["body"]))
+    end
+    runcodec("makeFetchDef", "encoded", nil, subject)
+  end
+
+  # `spec$` names the context's spec by the fields the corpus gives it: the
+  # rest of a spec object is its defaults, which the corpus does not write.
+  def test_clean_binary
+    subject = lambda do |ctx, val|
+      ctx.spec.body = sourced(ctx.spec.body) unless ctx.spec.nil?
+      target = "spec$" == val ? { "headers" => ctx.spec.headers, "body" => ctx.spec.body } : sourced(val)
+      ctx.utility.clean.call(ctx, target)
+    end
+    runcodec("clean", "binary", nil, subject)
+  end
+
+
   # === resultHeaders ===
 
   def test_result_headers_basic

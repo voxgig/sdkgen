@@ -1,7 +1,7 @@
-
 import { Context } from '../types'
 
-import { isRawRequest, rawBody } from './MediaUtility'
+import { BinarySource, liftSources } from './BinaryUtility'
+import { RAW_BODY, isRawRequest } from './MediaUtility'
 
 function prepareBody(ctx: Context) {
   const op = ctx.op
@@ -13,16 +13,26 @@ function prepareBody(ctx: Context) {
   let body = undefined
 
   if ('data' === op.input) {
+    const refused = liftSources(ctx)
+    if (refused) {
+      return error(ctx, refused)
+    }
+
     if (isRawRequest(ctx.point)) {
-      return rawBody(ctx.reqdata)
+      const raw = ctx.sources?.[RAW_BODY]
+      return raw instanceof BinarySource ? raw.data : raw
     }
 
     try {
       body = transformRequest(ctx)
-
     }
     catch (err) {
       return error(ctx, err)
+    }
+
+    const kind = ctx.point?.body?.kind
+    if ('form' === kind || 'multipart' === kind) {
+      return encodeBody(ctx, kind, body)
     }
   }
 
@@ -31,6 +41,34 @@ function prepareBody(ctx: Context) {
   }
 
   return body
+}
+
+
+// The encoded body, with its content type replacing any the headers carry:
+// a multipart boundary is the encoder's alone to choose.
+function encodeBody(ctx: Context, kind: string, data: any): any {
+  const encode = ctx.utility.codec?.[kind]
+  if ('function' !== typeof encode) {
+    return ctx.utility.makeError(ctx, ctx.error('body_codec_missing',
+      'This SDK was generated without a ' + kind + ' encoder.'))
+  }
+
+  const encoded = encode(ctx, data, ctx.sources || {})
+  if (encoded instanceof Error) {
+    return ctx.utility.makeError(ctx, encoded)
+  }
+
+  const headers = ctx.spec?.headers
+  if (null != headers) {
+    for (const key of Object.keys(headers)) {
+      if ('content-type' === key.toLowerCase()) {
+        delete headers[key]
+      }
+    }
+    headers['content-type'] = encoded.type
+  }
+
+  return encoded.body
 }
 
 
@@ -61,4 +99,3 @@ function matchBody(ctx: Context): Record<string, any> {
 export {
   prepareBody
 }
-

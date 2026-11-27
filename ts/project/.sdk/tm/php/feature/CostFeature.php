@@ -4,17 +4,20 @@ declare(strict_types=1);
 // ProjectName SDK cost feature
 
 require_once __DIR__ . '/BaseFeature.php';
+require_once __DIR__ . '/../utility/OpKey.php';
 
 // Cost tracking and spend budget. Uses BOTH seams, which is the point of
 // the feature: money is spent per HTTP ATTEMPT (a retried call is charged
 // again, because the upstream API charges it again), but it is owed by an
 // OPERATION. So the transport wrap prices each attempt, and PreDone
-// attributes the running total to `<entity>.<op>` and to the caller
+// attributes the running total to `<entity>.<op>` (with `:<action>` for a
+// custom action) and to the caller
 // (`ctrl->actor`, the same actor the audit feature records).
 //
 // The price of an attempt comes from the first source that answers: a
 // response header (`header` x `perUnit`), the rate table (`rates`, keyed
-// `<entity>.<op>` / `<op>` / `*`), then the flat `unit`. A body figure
+// `<entity>.<op>:<action>` / `<entity>.<op>` / `<op>` / `*`), then the flat
+// `unit`. A body figure
 // (`path` x `perUnit`, e.g. 'usage.total_tokens') is read at PreDone
 // instead, from the already-parsed result, and describes the whole call, so
 // it REPLACES the per-attempt estimate rather than adding to it.
@@ -177,7 +180,7 @@ class ProjectNameCostFeature extends ProjectNameBaseFeature
         // commit. Their spend is committed here, or it would never be counted.
         // `piped` is set by PrePoint, so its absence is the signal.
         if (!$entry['piped']) {
-            $this->_commit($ctx, $entry, '_', 'direct');
+            $this->_commit($ctx, $entry, ['key' => '_.direct', 'entity' => '_', 'op' => 'direct']);
             if ($this->pending !== null) {
                 unset($this->pending[$ctx]);
             }
@@ -232,16 +235,19 @@ class ProjectNameCostFeature extends ProjectNameBaseFeature
             return;
         }
 
-        $entity = ($ctx->op !== null && $ctx->op->entity !== '') ? $ctx->op->entity : '_';
-        $opname = ($ctx->op !== null && $ctx->op->name !== '') ? $ctx->op->name : '_';
-
-        $this->_commit($ctx, $entry, $entity, $opname);
+        $this->_commit($ctx, $entry, [
+            'key' => ProjectNameOpKey::fileKey($ctx),
+            'entity' => $ctx->op->entity !== '' ? $ctx->op->entity : '_',
+            'op' => $ctx->op->name !== '' ? $ctx->op->name : '_',
+            'action' => ProjectNameOpKey::action($ctx),
+        ]);
     }
 
     // Commit one operation's spend: totals, budget, per-op and per-actor
     // attribution, and the record. Shared by _finish and the raw-request path
-    // in _charge, which has no PreDone to reach.
-    private function _commit(ProjectNameContext $ctx, array $entry, string $entity, string $opname): void
+    // in _charge, which has no PreDone to reach. `$call` names what the spend
+    // is filed under: its key, entity, op and action.
+    private function _commit(ProjectNameContext $ctx, array $entry, array $call): void
     {
         $client = $this->client;
         $cost = $client->_cost;
@@ -271,20 +277,24 @@ class ProjectNameCostFeature extends ProjectNameBaseFeature
             : (string)($this->options['actor'] ?? 'anonymous');
 
         $cost['total']['calls']++;
-        $cost['ops'] = $this->_bump($cost['ops'], $entity . '.' . $opname, $amount);
+        $cost['ops'] = $this->_bump($cost['ops'], $call['key'], $amount);
         $cost['actors'] = $this->_bump($cost['actors'], $actor, $amount);
 
         $this->seq++;
-        $record = ($ctx->utility->clean)($ctx, [
+        $fields = [
             'seq' => $this->seq,
-            'entity' => $entity,
-            'op' => $opname,
+            'entity' => $call['entity'],
+            'op' => $call['op'],
             'actor' => $actor,
             'amount' => $amount,
             'currency' => $cost['currency'],
             'source' => $source,
             'attempts' => $entry['attempts'],
-        ]);
+        ];
+        if (null !== ($call['action'] ?? null)) {
+            $fields['action'] = $call['action'];
+        }
+        $record = ($ctx->utility->clean)($ctx, $fields);
         $cost['last'] = $record;
         $client->_cost = $cost;
 
@@ -323,8 +333,7 @@ class ProjectNameCostFeature extends ProjectNameBaseFeature
         return [0.0, 'none'];
     }
 
-    // The rate table uses the same lookup grammar as rbac's rules:
-    // `<entity>.<op>`, then `<op>`, then `*`.
+    // The rate table is keyed as rbac's rules are.
     private function _rate(ProjectNameContext $ctx): ?float
     {
         $rates = $this->options['rates'] ?? null;
@@ -332,15 +341,7 @@ class ProjectNameCostFeature extends ProjectNameBaseFeature
             return null;
         }
 
-        $entity = '';
-        if ($ctx->entity !== null && isset($ctx->entity->name)) {
-            $entity = (string)$ctx->entity->name;
-        } elseif ($ctx->op !== null) {
-            $entity = $ctx->op->entity;
-        }
-        $opname = $ctx->op !== null ? $ctx->op->name : '';
-
-        foreach ([$entity . '.' . $opname, $opname, '*'] as $key) {
+        foreach (ProjectNameOpKey::keys($ctx) as $key) {
             $val = $rates[$key] ?? null;
             if (is_numeric($val)) {
                 return (float)$val;

@@ -505,8 +505,53 @@ static void featureOrder_mapNoTestSorted() {
   ASSERT_EQ(orderJoin(opts), std::string("cache,retry"), "map no-test sorted");
 }
 
+// --- makePoint: allow.op ---------------------------------------------------
+
+static void makePoint_allowEntryMayNameAnAction() {
+  Value plain = vmap({{"method", Value("GET")}, {"parts", vlist({Value("episode"), Value("{id}")})},
+                      {"select", vmap({{"exist", vlist({Value("id")})}})}});
+  Value audio = vmap({{"method", Value("GET")},
+                      {"parts", vlist({Value("episode"), Value("{id}"), Value("audio")})},
+                      {"select", vmap({{"exist", vlist({Value("id")})}, {"$action", Value("audio")}})}});
+  auto client = plClient(Value::undef());
+  UtilityPtr utility = client->getUtility();
+  auto run = [&](const std::string& allow, const Value& reqmatch) {
+    CtxPtr ctx = plCtx(client, utility, Value::undef());
+    ctx->op = std::make_shared<Operation>(vmap({{"entity", Value("episode")}, {"name", Value("load")},
+        {"input", Value("match")}, {"points", vlist({plain, audio})}}));
+    ctx->options = vmap({{"allow", vmap({{"op", Value(allow)}})}});
+    ctx->reqmatch = reqmatch;
+    ctx->match = vmap();
+    return utility->makePoint(ctx);
+  };
+  auto point = [&](const std::string& allow, const Value& reqmatch) {
+    try { return run(allow, reqmatch); } catch (const SdkErrorPtr&) { return Value::undef(); }
+  };
+  auto code = [&](const std::string& allow, const Value& reqmatch) {
+    return errCodeOf([&]() { run(allow, reqmatch); });
+  };
+  Value AUDIO = vmap({{"$action", Value("audio")}, {"id", Value("e1")}});
+  Value RECORD = vmap({{"id", Value("e1")}});
+
+  ASSERT_EQ_VAL(point("episode.load:audio", AUDIO), audio, "allow episode.load:audio admits the action");
+  ASSERT_EQ(code("episode.load:audio", RECORD), std::string("point_op_allow"),
+            "allow episode.load:audio refuses the plain op");
+  ASSERT_EQ_VAL(point("Episode.Load:AUDIO", AUDIO), audio, "allow matches any case");
+  ASSERT_EQ(code("episode.load:video", AUDIO), std::string("point_op_allow"),
+            "allow episode.load:video refuses audio");
+  ASSERT_EQ_VAL(point("episode.load", AUDIO), audio, "allow episode.load admits its actions");
+  ASSERT_EQ_VAL(point("load", AUDIO), audio, "allow load admits its actions");
+  ASSERT_EQ_VAL(point("load", RECORD), plain, "allow load admits the plain op");
+  ASSERT_EQ(code("list", RECORD), std::string("point_op_allow"), "allow list refuses load");
+
+  std::string msg;
+  try { run("episode.load:video", AUDIO); } catch (const SdkErrorPtr& e) { msg = e->msg; }
+  ASSERT_TRUE(msg.find("Operation \"load:audio\"") != std::string::npos, "allow refusal names load:audio");
+}
+
 int main() {
   T_RUN(makeResponse_guardsMissingSpecResponseResult);
+  T_RUN(makePoint_allowEntryMayNameAnAction);
   T_RUN(makeResponse_4xxSetsResultErrAndCopiesHeaders);
   T_RUN(makeResponse_2xxParsesBodyAndMarksOk);
   T_RUN(makeResponse_recordsToCtrlExplain);

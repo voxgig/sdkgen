@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, File, isAuthActive, entityIdField, entityOps, bodyNote, javaMap, javaMapOf, matchExampleItems, javaMapItems, requestExampleItems, featureDocs, fact, clientOptions, requiredItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, codecTier, canonToType, canonKey, File, isAuthActive, entityIdField, entityOps, bodyNote, javaMap, javaMapOf, matchExampleItems, javaMapItems, requestExampleItems, featureDocs, fact, clientOptions, requiredItems } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -318,8 +318,10 @@ ${updateLines}), null);
 
           if ('create' === opname || 'update' === opname || 'patch' === opname) {
             const note = bodyNote(ent.op[opname], {
+              tier: codecTier(target),
               values: 'a `byte[]`, a `String` or an `InputStream`',
               once: 'an `InputStream`',
+              source: 'a source made by `client.binary.bytes(data, name, type)`',
             })
             if ('' !== note) Content(note)
           }

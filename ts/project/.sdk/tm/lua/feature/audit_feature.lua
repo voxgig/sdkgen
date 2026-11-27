@@ -11,6 +11,7 @@
 -- so tests stay deterministic.
 
 local BaseFeature = require("feature.base_feature")
+local helpers = require("core.helpers")
 
 local AuditFeature = {}
 AuditFeature.__index = AuditFeature
@@ -103,6 +104,7 @@ function AuditFeature:_emit(ctx, outcome)
     outcome = outcome,
     status = ctx.result ~= nil and ctx.result.status or nil,
     correlationId = ctx.id,
+    action = helpers.op_action(ctx),
   })
 
   local client = self.client

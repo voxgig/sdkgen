@@ -25,6 +25,7 @@ import {
   directDiscovery, liveFallbacks, slugKeyed, liveIdentities, BASIC_TEMPLATED, BASIC_QUERY, offFeature,
   stageAlias, CREATE_ONLY_ENTITY,
 } from './generateharness'
+import { CODEC_MODEL } from './codeccases'
 
 
 const BEARER = "main: kit: config: auth: { active: true, prefix: 'Bearer', in: 'header', name: 'Authorization' }"
@@ -458,6 +459,44 @@ describe('generate', () => {
       'generated files leak a ProjectName, PROJECTNAME, projectname, SDKREL or RELEASETAG placeholder:\n  ' +
       leaks.join('\n  '))
     deepStrictEqual(undef, [], 'direct tests that name undefined')
+  })
+
+
+  // Every target's components over form, multipart and raw points, and over
+  // entities with binary slots: none may crash or leak a placeholder, whether
+  // or not its target encodes such bodies yet.
+  test('every target generates over file points', async () => {
+    const targets = allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))
+    const leaks: string[] = []
+
+    for (const target of targets) {
+      let out: Record<string, string>
+      try {
+        out = await generate([target], undefined, CODEC_MODEL)
+      }
+      catch (err: any) {
+        fail(target + ': generation over file points threw: ' + (err && err.message))
+        return
+      }
+      for (const [path, content] of filesFor(out, target)) {
+        if (/ProjectName|PROJECTNAME|projectname|PROJECTUSERAGENT|SDKREL|RELEASETAG/.test(content) &&
+          !PLACEHOLDER_PINNED.some((re) => re.test(path))) {
+          leaks.push(path)
+        }
+      }
+    }
+
+    deepStrictEqual(leaks, [], 'generated files over file points leak a placeholder')
+
+    const ts = await generate(['ts'], undefined, CODEC_MODEL)
+    ok(ts['ts/src/entity/EpisodeEntity.ts'].includes('binary(slot: "audio")'),
+      'ts: the episode entity has no audio slot')
+    ok(ts['ts/src/entity/ArtworkEntity.ts'].includes('binary(): DemoBinaryHandle<ArtworkEntity>'),
+      'ts: the artwork entity has no unnamed slot')
+    ok(!/binary\(/.test(ts['ts/src/entity/PlanetEntity.ts']), 'ts: an entity without slots has a handle')
+    const js = await generate(['js'], undefined, CODEC_MODEL)
+    ok(js['js/src/entity/EpisodeEntity.js'].includes('@param {"audio"} slot'),
+      'js: the episode entity has no audio slot')
   })
 
 
@@ -3611,7 +3650,10 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
     ocaml: {
       file: /^ocaml\/sdk_types\.ml$/,
       decl: new RegExp('mutable e_' + OP + ' : (?<type>[^;]+);', 'g'),
-      returns: (op) => 'value -> value -> entity_obj' + ('list' === op ? ' list' : ''),
+      // A file source travels beside the data, by name: `value` has no variant for it.
+      returns: (op) => (['create', 'update', 'patch'].includes(op) ?
+        '?sources:(string * binary_source) list -> ' : '') +
+        'value -> value -> entity_obj' + ('list' === op ? ' list' : ''),
     },
     perl: {
       file: /^perl\/entity\/\w+_entity\.pm$/,
@@ -3639,7 +3681,8 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
     },
     rust: {
       file: /^rust\/entity\/\w+\.rs$/,
-      decl: new RegExp('fn ' + OP + '\\(self: &Rc<Self>[^)]*\\) -> Result<(?<type>[^,]+),', 'g'),
+      // An operation that may take sources is declared in its `_with` form.
+      decl: new RegExp('fn ' + OP + '(?:_with)?\\(self: &Rc<Self>[^)]*\\) -> Result<(?<type>[^,]+),', 'g'),
       returns: (op) => 'list' === op ? 'Vec<Rc<Self>>' : 'Rc<Self>',
     },
     scala: {

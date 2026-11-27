@@ -4,9 +4,11 @@ declare(strict_types=1);
 // ProjectName SDK metrics feature
 
 require_once __DIR__ . '/BaseFeature.php';
+require_once __DIR__ . '/../utility/OpKey.php';
 
 // Statistics capture. Records per-operation counters and latency for every
-// call: totals plus a breakdown keyed by `<entity>.<op>`. Timing starts at
+// call: totals plus a breakdown keyed by `<entity>.<op>`, or
+// `<entity>.<op>:<action>` for a custom action. Timing starts at
 // endpoint resolution (PrePoint) and stops when the call returns (PreDone)
 // or fails (PreUnexpected) — exactly once per operation (a PreDone followed
 // by an unexpected failure finds no start marker and no-ops). Aggregates
@@ -89,8 +91,7 @@ class ProjectNameMetricsFeature extends ProjectNameBaseFeature
         unset($this->starts[$ctx]);
 
         $client = $this->client;
-        $key = ($ctx->op->entity !== '' ? $ctx->op->entity : '_')
-            . '.' . ($ctx->op->name !== '' ? $ctx->op->name : '_');
+        $key = ProjectNameOpKey::fileKey($ctx);
 
         if (!isset($client->_metrics['ops'][$key])) {
             $client->_metrics['ops'][$key] =

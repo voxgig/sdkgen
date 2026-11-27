@@ -70,7 +70,8 @@ Spec* make_spec_util(Context* ctx, PNError** err) {
     setp(spec->headers, "content-type",
          voxgig_new_string(GRAPHQL_CONTENT_TYPE));
   } else {
-    spec->body = prepare_body_util(ctx);
+    spec->body = prepare_body_util(ctx, err);
+    if (*err) return NULL;
     char* path = prepare_path_util(ctx);
     spec_set_path(spec, path);
   }

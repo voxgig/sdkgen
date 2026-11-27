@@ -81,7 +81,7 @@ pub fn make_spec_util(ctx: &Rc<Context>) -> Result<Rc<RefCell<Spec>>, ProjectNam
         );
         spec.borrow_mut().headers = headers;
     } else {
-        let body = crate::utility::prepare_body::prepare_body_util(ctx);
+        let body = crate::utility::prepare_body::prepare_body_util(ctx)?;
         spec.borrow_mut().body = body;
         let path = crate::utility::prepare_path::prepare_path_util(ctx);
         spec.borrow_mut().path = path;

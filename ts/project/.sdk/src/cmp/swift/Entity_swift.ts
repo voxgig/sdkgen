@@ -1,12 +1,12 @@
 
 import * as Path from 'node:path'
 
-import { swiftTargetDir, swiftTestDir } from './utility_swift'
+import { swiftTargetDir, swiftTestDir, swiftVarName, swiftString } from './utility_swift'
 
 import {
   cmp, camelify, names,
   Content, File, Folder, Fragment,
-  entityClassName, entityCollection,
+  entityClassName, entityCollection, entitySlots,
 } from '@voxgig/sdkgen'
 
 import {
@@ -32,6 +32,8 @@ const Entity = cmp(function Entity(props: any) {
   names(entrep, entity.Name, 'EntityName')
 
   const ff = Path.normalize(__dirname + '/../../../src/cmp/swift/fragment/')
+
+  const binarySlot = binarySlotSource(cls, entitySlots(entity))
 
   // Entity files join the copied runtime under Sources/ProjectNameSDK/entity.
   Folder({ name: 'Sources' }, () => {
@@ -71,6 +73,9 @@ const Entity = cmp(function Entity(props: any) {
               // data-type token so the class can be renamed independently.
               EntyClass: cls,
 
+              '#BinarySlot': ({ indent }: any) => null == binarySlot ? undefined :
+                Content({ indent }, binarySlot),
+
               ...opfrags,
             }
           })
@@ -81,6 +86,47 @@ const Entity = cmp(function Entity(props: any) {
   })
 })
 
+
+
+// The entity's binary slots, by name; "" is its own bytes, reached with no
+// name. Built line by line: the swift type guard reads declarations that open
+// a line, and these nest in the entity class.
+function binarySlotSource(cls: string, slots: any[]): string | undefined {
+  if (0 === slots.length) return undefined
+
+  const lit = (v: any) => null == v ? 'nil' : swiftString(String(v))
+  const named = slots.map((slot: any) => slot.name).filter((name: string) => '' !== name)
+
+  const taken: string[] = []
+  const constName = (name: string) => {
+    let out = swiftVarName(name)
+    for (let i = 2; taken.includes(out); i++) out = swiftVarName(name) + i
+    taken.push(out)
+    return out
+  }
+
+  const param = 0 === named.length ? '' :
+    named.length < slots.length ? '_ slot: String? = nil' : '_ slot: String'
+
+  const lines: string[] = [
+    ...(0 === named.length ? [] : [
+      'public enum BinarySlot {',
+      ...named.map((name: string) => `  public static let ${constName(name)} = ${lit(name)}`),
+      '}',
+      '',
+    ]),
+    `private static let binarySlots: [String: BinaryHandle<${cls}>.Slot] = [`,
+    ...slots.map((slot: any) => `  ${lit(slot.name)}: (action: ${lit(slot.action)}, ` +
+      `read: ${lit(slot.read)}, write: ${lit(slot.write)}),`),
+    ']',
+    '',
+    '// An entity\'s bytes never enter its data: they are reached by slot.',
+    `public func binary(${param}) -> BinaryHandle<${cls}> {`,
+    `  return BinaryHandle<${cls}>(self, entctx, ${cls}.binarySlots${'' === param ? '' : ', slot'})`,
+    '}',
+  ]
+  return lines.join('\n') + '\n'
+}
 
 
 export {

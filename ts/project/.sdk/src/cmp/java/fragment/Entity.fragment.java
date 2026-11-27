@@ -23,6 +23,8 @@ public class EntyClass extends EntityBase {
     return new EntyClass(this.client, opts);
   }
 
+// #BinarySlot
+
 // #LoadOp
 
 // #ListOp

@@ -2,6 +2,7 @@ package SCALAPACKAGE.utility
 
 import java.util.{LinkedHashMap, Map => JMap}
 import SCALAPACKAGE.core._
+import SCALAPACKAGE.utility.struct.Struct
 
 object ResultBasic {
   def resultBasic(ctx: Context): Result = {
@@ -35,6 +36,13 @@ object ResultBody {
     val result = ctx.result
 
     if (result != null) {
+      val raw = if (ctx.utility.codec == null) null else ctx.utility.codec.get("raw")
+      if (response != null && result.err == null && response.err == null && result.status < 400 &&
+          "raw" == Struct.getprop(Struct.getprop(ctx.point, "response"), "kind") &&
+          raw.isInstanceOf[Function1[_, _]]) {
+        raw.asInstanceOf[CtxFn[Unit]](ctx)
+        return result
+      }
       if (response != null && response.jsonFunc != null && response.body != null) {
         result.body = response.jsonFunc.get()
       }

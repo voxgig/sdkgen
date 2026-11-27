@@ -1,4 +1,4 @@
-import { flowSteps, invalidRequest, opReachable, flowLoadRoute, flowLoadReadsRecord, fact } from '@voxgig/sdkgen'
+import { entitySlots, flowSteps, invalidRequest, opReachable, flowLoadRoute, flowLoadReadsRecord, fact } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -261,7 +261,9 @@ ${flowHasList ? `  T_RUN(${evar}_entity_stream);\n` : ''}${failure.tests.map((t)
 function failureTests(ProjectName: string, entity: ModelEntity, evar: string,
   method: string, hasList: boolean): { code: string, tests: string[] } {
   const tests: string[] = []
-  const bad = invalidRequest(entity)
+  const found = invalidRequest(entity)
+  const loadAnswersBytes = entitySlots(entity).some((slot: any) => '' === slot.name && null != slot.read)
+  const bad = null != found && 'load' === found.op && loadAnswersBytes ? null : found
   if (!hasList && null == bad) {
     return { code: '', tests }
   }

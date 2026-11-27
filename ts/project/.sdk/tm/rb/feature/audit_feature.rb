@@ -10,6 +10,7 @@
 # operation (emit-once).
 
 require_relative 'base_feature'
+require_relative '../utility/op_key'
 
 class ProjectNameAuditFeature < ProjectNameBaseFeature
   def initialize
@@ -58,7 +59,7 @@ class ProjectNameAuditFeature < ProjectNameBaseFeature
     @seen[ctx] = true
     @seq += 1
 
-    record = ctx.utility.clean.call(ctx, {
+    entry = {
       "seq" => @seq,
       "ts" => _now,
       "actor" => _actor(ctx),
@@ -67,7 +68,10 @@ class ProjectNameAuditFeature < ProjectNameBaseFeature
       "outcome" => outcome,
       "status" => ctx.result ? ctx.result.status : nil,
       "correlationId" => ctx.id,
-    })
+    }
+    action = ProjectNameUtilities.op_action(ctx)
+    entry["action"] = action unless action.nil?
+    record = ctx.utility.clean.call(ctx, entry)
 
     track = @client.instance_variable_get(:@_audit)
     if track.nil?

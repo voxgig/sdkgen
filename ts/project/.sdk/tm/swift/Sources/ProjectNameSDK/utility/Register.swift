@@ -37,6 +37,8 @@ func registerAll(_ u: Utility) {
   u.resultHeaders = resultHeadersUtil
   u.transformRequest = transformRequestUtil
   u.transformResponse = transformResponseUtil
+  u.codec = codecIndex()
+  u.multipartBoundary = u.codec["multipartBoundary"] as? (Context) -> String
 }
 
 func makeContextUtil(_ ctxmap: [String: Any?]?, _ basectx: Context?) -> Context {

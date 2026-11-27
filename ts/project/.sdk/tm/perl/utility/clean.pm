@@ -14,6 +14,7 @@ require(Cwd::abs_path("$__dir/../lib/Voxgig/Struct.pm"));
 require(Cwd::abs_path("$__dir/../core/helpers.pm"));
 require(Cwd::abs_path("$__dir/../schema.pm"));
 require(Cwd::abs_path("$__dir/media.pm"));
+require(Cwd::abs_path("$__dir/binary.pm"));
 
 # Everything that leaves the pipeline passes through clean: the error, the
 # explain record, the serialised context, and whatever a feature emits.
@@ -203,10 +204,26 @@ sub binary_bodies {
   if (defined $kind && 'raw' eq $kind
     && ProjectNameHelpers::is_true(ProjectNameHelpers::gp($body, 'binary'))) {
     my $media = ProjectNameHelpers::gp($body, 'media');
+    my $raw = ProjectNameHelpers::gp($ctx->{sources}, $ProjectNameUtilities::RAW_BODY)
+      // ProjectNameHelpers::gp($ctx->{reqdata}, $ProjectNameUtilities::RAW_BODY);
     push @bodies, {
-      'live' => $known->(ProjectNameHelpers::gp($ctx->{spec}, 'body'),
-        ProjectNameHelpers::gp($ctx->{reqdata}, $ProjectNameUtilities::RAW_BODY)),
+      'live' => $known->(ProjectNameHelpers::gp($ctx->{spec}, 'body'), $raw,
+        (ProjectNameUtilities::is_source($raw) ? $raw->data : undef)),
       'type' => (defined $media && !ref $media ? $media : undef),
+      'sized' => 1,
+    };
+  }
+
+  # An encoded multipart body, and a form body that carries a file.
+  my $fields = ProjectNameHelpers::gp($body, 'fields');
+  my $files = Voxgig::Struct::islist($fields)
+    && grep { ProjectNameHelpers::is_true(ProjectNameHelpers::gp($_, 'binary')) } @$fields;
+  if (defined $kind && ('multipart' eq $kind || ('form' eq $kind && $files))) {
+    my $type = ProjectNameUtilities::header_value(
+      ProjectNameHelpers::gp($ctx->{spec}, 'headers'), 'content-type');
+    push @bodies, {
+      'live' => $known->(ProjectNameHelpers::gp($ctx->{spec}, 'body')),
+      'type' => (length $type ? $type : undef),
       'sized' => 1,
     };
   }

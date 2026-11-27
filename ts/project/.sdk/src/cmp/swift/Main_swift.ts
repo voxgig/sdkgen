@@ -8,6 +8,7 @@ import {
   File, Content, Copy, Folder, Fragment,
   inactiveFeatureExcludes,
   pluginExcludes,
+  codecExcludes,
   TargetLicense,
   TargetVersion,
 } from '@voxgig/sdkgen'
@@ -33,6 +34,7 @@ import { MainEntity } from './MainEntity_swift'
 import { SdkError } from './SdkError_swift'
 import { EntityBase } from './EntityBase_swift'
 import { EntityTypes } from './EntityTypes_swift'
+import { CodecIndex } from './CodecIndex_swift'
 
 
 const Main = cmp(async function Main(props: any) {
@@ -72,7 +74,7 @@ const Main = cmp(async function Main(props: any) {
       to: swiftTargetDir(model),
       exclude: [...secretsSourceExcludes,
         ...inactiveFeatureExcludes(props.ctx$, target, 'tm/' + target.name + '/Sources/ProjectNameSDK'),
-        ...pluginExcludes(model)],
+        ...pluginExcludes(model), ...codecExcludes(model)],
       replace: {
         ...props.ctx$.stdrep,
         ProjectName: model.const.Name,
@@ -85,7 +87,8 @@ const Main = cmp(async function Main(props: any) {
       from: 'tm/' + target.name + '/Tests/ProjectNameSDKTests',
       to: swiftTestDir(model),
       exclude: [...secretsTestExcludes,
-        ...inactiveFeatureExcludes(props.ctx$, target, 'tm/' + target.name + '/Tests/ProjectNameSDKTests')],
+        ...inactiveFeatureExcludes(props.ctx$, target, 'tm/' + target.name + '/Tests/ProjectNameSDKTests'),
+        ...codecExcludes(model)],
       replace: {
         ...props.ctx$.stdrep,
         ProjectName: model.const.Name,
@@ -145,6 +148,8 @@ const Main = cmp(async function Main(props: any) {
   })
 
   PrepareAuth({ target })
+
+  CodecIndex({ target })
 
   // entity/<Name>Types.swift — documentary typed models (one struct per entity
   // + per op). Compiles with the SwiftPM target; nothing consumes it yet.

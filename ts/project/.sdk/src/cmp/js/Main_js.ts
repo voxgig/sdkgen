@@ -5,6 +5,7 @@ import {
   cmp, each, names, cmap,
   List, File, Content, Copy, Folder, Fragment, Line, FeatureHook,
   inactiveFeatureExcludes,
+  codecExcludes,
   entityClassName, entityCollection, srcFeatureExcludes, pluginExcludes,
   fact,
   stationLibrary,
@@ -28,6 +29,7 @@ import {
 import { Package } from './Package_js'
 import { Config } from './Config_js'
 import { Schema } from './Schema_js'
+import { CodecIndex } from './CodecIndex_js'
 import { Gitignore } from './Gitignore_js'
 import { MainEntity } from './MainEntity_js'
 import { SdkError } from './SdkError_js'
@@ -63,6 +65,7 @@ const Main = cmp(async function Main(props: any) {
       ...srcFeatureExcludes(model),
       ...inactiveFeatureExcludes(props.ctx$, target),
       ...pluginExcludes(model),
+      ...codecExcludes(model),
       TEST_CONTROL_EXCLUDE,
     ],
     replace: {
@@ -165,6 +168,8 @@ if (fres instanceof Promise) { await fres }
     // GENERATED, NOT COPIED. Where the credential goes is a fact about the
     // API, and tm/ can only hold one answer. See PrepareAuth_js.
     PrepareAuth({ target })
+
+    CodecIndex({ target })
 
     Schema({ target })
 

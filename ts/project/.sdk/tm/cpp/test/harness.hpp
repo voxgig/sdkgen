@@ -120,6 +120,8 @@ struct FhOpSpec {
   Value headers = Value::undef();
   Value body = Value::undef();
   Value ctrl = Value::undef();
+  Value reqmatch = Value::undef(); // the call's request argument (match ops)
+  Value reqdata = Value::undef();  // the call's request argument (data ops)
 
   FhOpSpec& setOp(const std::string& v) { op = v; return *this; }
   FhOpSpec& setEntity(const std::string& v) { entity = v; return *this; }
@@ -129,6 +131,8 @@ struct FhOpSpec {
   FhOpSpec& setHeaders(const Value& v) { headers = v; return *this; }
   FhOpSpec& setBody(const Value& v) { body = v; return *this; }
   FhOpSpec& setCtrl(const Value& v) { ctrl = v; return *this; }
+  FhOpSpec& setReqmatch(const Value& v) { reqmatch = v; return *this; }
+  FhOpSpec& setReqdata(const Value& v) { reqdata = v; return *this; }
 };
 inline FhOpSpec fhOp(const std::string& op) { FhOpSpec s; s.op = op; return s; }
 
@@ -139,6 +143,11 @@ struct FhOpResult {
   ResultPtr result;
   CtxPtr ctx;
 };
+
+// Which request argument an operation reads, as the generated Context decides.
+inline std::string fhOpInput(const std::string& op) {
+  return (op == "create" || op == "update" || op == "patch") ? "data" : "match";
+}
 
 inline std::string fhDefaultMethod(const std::string& op) {
   if (op == "create") return "POST";
@@ -226,10 +235,13 @@ struct FhHarness {
     CtxSpec cs;
     cs.setOpname(opname);
     cs.ctrlMap = ctrl;
+    cs.reqmatch = o.reqmatch;
+    cs.reqdata = o.reqdata;
     CtxPtr ctx = utility->makeContext(cs, rootctx);
     Value opdef = vmap();
     map_put(opdef, "entity", Value(entity));
     map_put(opdef, "name", Value(opname));
+    map_put(opdef, "input", Value(fhOpInput(opname)));
     ctx->op = std::make_shared<Operation>(opdef);
 
     utility->featureHook(ctx, "PostConstructEntity");
@@ -300,10 +312,12 @@ struct FhHarness {
   }
 };
 
-// fhMake — construct the harness: a test-mode client, an isolated utility
-// whose fetcher is the mock server, and the requested features initialised.
-inline std::shared_ptr<FhHarness> fhMake(FetcherFn server, std::vector<FhFeature> features) {
-  auto client = ProjectNameSDK::testSDK();
+// fhMakeOpts — construct the harness: a test-mode client made with the
+// client's own options (sdkopts), an isolated utility whose fetcher is the
+// mock server, and the requested features initialised.
+inline std::shared_ptr<FhHarness> fhMakeOpts(const Value& sdkopts, FetcherFn server,
+                                             std::vector<FhFeature> features) {
+  auto client = ProjectNameSDK::testSDK(Value::undef(), sdkopts);
   client->features.clear();
 
   UtilityPtr utility = client->getUtility();
@@ -334,6 +348,11 @@ inline std::shared_ptr<FhHarness> fhMake(FetcherFn server, std::vector<FhFeature
   h->utility = utility;
   h->rootctx = rootctx;
   return h;
+}
+
+// fhMake — fhMakeOpts with no client options.
+inline std::shared_ptr<FhHarness> fhMake(FetcherFn server, std::vector<FhFeature> features) {
+  return fhMakeOpts(Value::undef(), server, features);
 }
 
 inline std::string fhErrCode(const SdkErrorPtr& err) { return err ? err->code : ""; }

@@ -7,6 +7,7 @@ import {
   targetFeatures,
   inactiveFeatureExcludes,
   pluginExcludes,
+  codecExcludes,
   TEST_CONTROL_EXCLUDE,
   TargetLicense,
   TargetVersion,
@@ -32,6 +33,7 @@ import { MainEntity } from './MainEntity_scala'
 import { EntityBase } from './EntityBase_scala'
 import { EntityTypes } from './EntityTypes_scala'
 import { PrepareAuth } from './PrepareAuth_scala'
+import { CodecIndex } from './CodecIndex_scala'
 import { scalaPackage } from './utility_scala'
 
 
@@ -74,6 +76,7 @@ const Main = cmp(async function Main(props: any) {
       ...inactiveFeatureExcludes(props.ctx$, target),
       ...pluginExcludes(model),
       ...pluginDirExcludes,
+      ...codecExcludes(model),
     ],
     replace: {
       ...props.ctx$.stdrep,
@@ -86,6 +89,8 @@ const Main = cmp(async function Main(props: any) {
   EntityBase({ target })
 
   PrepareAuth({ target })
+
+  CodecIndex({ target })
 
   Folder({ name: 'core' }, () => {
 

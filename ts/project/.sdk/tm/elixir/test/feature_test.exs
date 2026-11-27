@@ -24,7 +24,10 @@ defmodule ProjectName.FeatureTest do
 
   defp harness(specs, opts \\ %{}), do: FH.new(specs, opts)
 
-  defp has?(name), do: FH.has_feature(name)
+  defp has?(name) do
+    FH.has_feature(name) or
+      (IO.puts(:stderr, "skip: feature not present in this SDK: " <> name) && false)
+  end
 
   defp track(h, key), do: S.getprop(h.client, key)
 
@@ -711,6 +714,191 @@ defmodule ProjectName.FeatureTest do
       assert S.size(recs) == 2
       seqs = Enum.map(0..(S.size(recs) - 1), fn i -> S.getprop(S.getelem(recs, i), "seq") end)
       assert seqs == [2, 3]
+    end
+  end
+
+  # === action keys ===
+  # A custom action is `$action` in the request argument, and its keys name
+  # it: `<entity>.<op>:<action>`, most specific first.
+
+  defp audio, do: S.jm(["$action", "audio", "id", "e1"])
+  defp record, do: S.jm(["id", "e1"])
+  defp episode(h, req), do: FH.op(h, %{entity: "episode", op: "load", reqmatch: req})
+
+  test "action-keys rbac: the record is granted and the action refused" do
+    if has?("rbac") do
+      {server, calls} = FH.recording_server()
+
+      h =
+        harness([fspec("rbac", %{
+          "rules" => %{"episode.load" => "read", "episode.load:audio" => "audio"},
+          "permissions" => ["read"]})], %{server: server})
+
+      assert episode(h, record()).ok == true
+      res = episode(h, audio())
+      assert res.error.code == "rbac_denied"
+      assert String.contains?(res.error.msg, "operation \"load:audio\"")
+      assert S.size(calls) == 1
+      assert S.getprop(S.getprop(track(h, "_rbac"), "last"), "action") == "audio"
+    end
+  end
+
+  test "action-keys rbac: the action is granted and the record refused" do
+    if has?("rbac") do
+      h =
+        harness([fspec("rbac", %{
+          "rules" => %{"episode.load" => "read", "episode.load:audio" => "audio"},
+          "permissions" => ["audio"]})])
+
+      assert episode(h, record()).error.code == "rbac_denied"
+      assert episode(h, audio()).ok == true
+    end
+  end
+
+  test "action-keys rbac: with no action rule an action falls back to its operation" do
+    if has?("rbac") do
+      h = harness([fspec("rbac", %{"rules" => %{"episode.load" => "read"}, "permissions" => []})])
+      assert episode(h, audio()).error.code == "rbac_denied"
+    end
+  end
+
+  test "action-keys metrics: an action is counted apart from its operation" do
+    if has?("metrics") do
+      h = harness([fspec("metrics")])
+      episode(h, record())
+      episode(h, audio())
+      episode(h, audio())
+      m = track(h, "_metrics")
+      assert S.getpath(m, "total.count") == 3
+      assert S.getprop(S.getprop(S.getprop(m, "ops"), "episode.load"), "count") == 1
+      assert S.getprop(S.getprop(S.getprop(m, "ops"), "episode.load:audio"), "count") == 2
+    end
+  end
+
+  test "action-keys audit: a record names its action, and a plain one has none" do
+    if has?("audit") do
+      h = harness([fspec("audit")])
+      episode(h, record())
+      episode(h, audio())
+      recs = S.getprop(track(h, "_audit"), "records")
+      assert "action" not in S.keysof(S.getelem(recs, 0))
+      assert S.getprop(S.getelem(recs, 0), "op") == "load"
+      assert S.getprop(S.getelem(recs, 1), "action") == "audio"
+      assert S.getprop(S.getelem(recs, 1), "op") == "load"
+    end
+  end
+
+  test "action-keys cost: an action is priced and attributed apart from its operation" do
+    if has?("cost") do
+      sink = S.jt([])
+      sink_fn = fn r -> S.setprop(sink, S.size(sink), r) end
+
+      h =
+        harness([fspec("cost", %{
+          "rates" => %{"episode.load" => 1, "episode.load:audio" => 5},
+          "sink" => sink_fn})])
+
+      episode(h, record())
+      episode(h, audio())
+      cost = track(h, "_cost")
+      ops = S.getprop(cost, "ops")
+      assert S.getpath(cost, "total.amount") == 6
+      assert S.getprop(S.getprop(ops, "episode.load"), "calls") == 1
+      assert S.getprop(S.getprop(ops, "episode.load"), "amount") == 1
+      assert S.getprop(S.getprop(ops, "episode.load:audio"), "calls") == 1
+      assert S.getprop(S.getprop(ops, "episode.load:audio"), "amount") == 5
+      assert "action" not in S.keysof(S.getelem(sink, 0))
+      assert S.getprop(S.getelem(sink, 1), "action") == "audio"
+      assert S.getprop(S.getprop(cost, "last"), "action") == "audio"
+    end
+  end
+
+  # An action holding a registered secret is cleaned wherever a consumer reads
+  # it; a rule still matches the raw action.
+  @action_secret "ACTSECRET77"
+
+  defp secret_options(clean \\ true, keys \\ nil) do
+    ctx = ProjectName.Context.new(S.jm(["opname", "load", "ctrl", S.jm([])]),
+      ProjectName.get_root_ctx(ProjectName.test()))
+    cleanopts = S.jm(["active", clean])
+    if keys != nil, do: S.setprop(cleanopts, "keys", keys)
+    S.setprop(ctx, "options", S.jm(["apikey", @action_secret, "clean", cleanopts]))
+    S.setprop(ctx, "config", S.jm(["options", S.jm([])]))
+    ProjectName.Utility.make_options(ctx)
+  end
+
+  defp secret_action, do: S.jm(["$action", @action_secret, "id", "e1"])
+
+  defp keys_hold_secret(ops), do: Enum.any?(S.keysof(ops), &String.contains?(&1, @action_secret))
+
+  test "action-keys rbac: an action holding a secret is cleaned in the record" do
+    if has?("rbac") do
+      opts = secret_options()
+
+      h =
+        harness([fspec("rbac", %{
+          "rules" => %{("episode.load:" <> @action_secret) => "audio"},
+          "permissions" => ["audio"]})], %{options: opts})
+
+      assert episode(h, secret_action()).ok == true
+      last = S.getprop(track(h, "_rbac"), "last")
+      assert S.getprop(last, "action") == S.getpath(opts, "__derived__.clean.mask")
+      assert S.getprop(last, "required") == "audio"
+      assert S.getprop(track(h, "_rbac"), "allowed") == 1
+
+      plain = harness([fspec("rbac", %{"rules" => %{"episode.load:audio" => "audio"},
+        "permissions" => ["audio"]})], %{options: secret_options(false)})
+      assert episode(plain, audio()).ok == true
+      assert S.getprop(S.getprop(track(plain, "_rbac"), "last"), "action") == "audio"
+    end
+  end
+
+  test "action-keys metrics: an action holding a secret is cleaned in the bucket name" do
+    if has?("metrics") do
+      h = harness([fspec("metrics")], %{options: secret_options()})
+      episode(h, secret_action())
+      episode(h, audio())
+      ops = S.getprop(track(h, "_metrics"), "ops")
+      assert not keys_hold_secret(ops)
+      assert S.getprop(S.getprop(ops, "episode.load:audio"), "count") == 1
+
+      off = harness([fspec("metrics")], %{options: secret_options(false)})
+      episode(off, secret_action())
+      assert keys_hold_secret(S.getprop(track(off, "_metrics"), "ops"))
+    end
+  end
+
+  test "action-keys: an action under a sensitive key name is masked in the record and bucket names" do
+    if has?("rbac") and has?("metrics") and has?("cost") do
+      opts = secret_options(true, "apikey,action")
+      mask = S.getpath(opts, "__derived__.clean.mask")
+
+      h =
+        harness([
+          fspec("rbac", %{"rules" => %{"episode.load:audio" => "audio"}, "permissions" => ["audio"]}),
+          fspec("metrics"),
+          fspec("cost", %{"rates" => %{"episode.load:audio" => 5}})
+        ], %{options: opts})
+
+      assert episode(h, audio()).ok == true
+      assert S.getprop(S.getprop(track(h, "_rbac"), "last"), "action") == mask
+      assert S.keysof(S.getprop(track(h, "_metrics"), "ops")) == ["episode.load:" <> mask]
+      assert S.keysof(S.getprop(track(h, "_cost"), "ops")) == ["episode.load:" <> mask]
+      assert S.getpath(track(h, "_cost"), "total.amount") == 5
+    end
+  end
+
+  test "action-keys cost: an action holding a secret is cleaned in the bucket name" do
+    if has?("cost") do
+      rates = %{("episode.load:" <> @action_secret) => 7, "episode.load:audio" => 5}
+      h = harness([fspec("cost", %{"rates" => rates})], %{options: secret_options()})
+      episode(h, secret_action())
+      episode(h, audio())
+      cost = track(h, "_cost")
+      ops = S.getprop(cost, "ops")
+      assert not keys_hold_secret(ops)
+      assert S.getpath(cost, "total.amount") == 12
+      assert S.getprop(S.getprop(ops, "episode.load:audio"), "amount") == 5
     end
   end
 

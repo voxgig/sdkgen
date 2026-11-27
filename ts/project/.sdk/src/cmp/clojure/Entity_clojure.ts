@@ -4,6 +4,7 @@ import * as Path from 'node:path'
 import {
   cmp, camelify,
   File, Folder, Fragment,
+  entitySlots,
 } from '@voxgig/sdkgen'
 
 import {
@@ -61,6 +62,8 @@ const Entity = cmp(function Entity(props: any) {
                   `${indent}(core/feature-hook ctx "${name}")\n`,
 
               ...opfrags,
+
+              '; #BinarySlot': binarySlot(entity),
             }
           })
 
@@ -69,6 +72,38 @@ const Entity = cmp(function Entity(props: any) {
     })
   })
 })
+
+
+function binarySlot(entity: any): string {
+  const slots = entitySlots(entity)
+  if (0 === slots.length) {
+    return ''
+  }
+
+  const table = slots.map((slot: any) => JSON.stringify(slot.name) + ' {' +
+    [['action', slot.action], ['read', slot.read], ['write', slot.write]]
+      .filter(([, v]) => null != v)
+      .map(([k, v]) => JSON.stringify(k) + ' ' + JSON.stringify(v)).join(' ') + '}')
+  const ops = [...new Set(slots.flatMap((slot: any) => [slot.read, slot.write]).filter(Boolean))]
+    .sort().map((op: any) => JSON.stringify(op) + ' ' + op)
+  const named = slots.map((slot: any) => slot.name).filter((name: string) => '' !== name)
+  const arities = 0 === named.length ? ['([ent] (handle/handle ent BINARY-SLOTS BINARY-OPS))'] :
+    [...(named.length < slots.length ? ['([ent] (handle/handle ent BINARY-SLOTS BINARY-OPS))'] : []),
+      '([ent slot] (handle/handle ent BINARY-SLOTS BINARY-OPS slot))']
+
+  return `(require '[sdk.codec.handle :as handle])
+
+(def BINARY-SLOTS
+  {${table.join('\n   ')}})
+
+(def ^:private BINARY-OPS {${ops.join(' ')}})
+
+(defn binary
+  "An entity's bytes never enter its data: they are reached by slot${0 === named.length ? '' :
+    ', one of ' + named.map((name: string) => JSON.stringify(name).replace(/"/g, '\\"')).join(', ')}."
+  ${arities.join('\n  ')})
+`
+}
 
 
 export {

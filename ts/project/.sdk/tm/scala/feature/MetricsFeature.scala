@@ -1,7 +1,7 @@
 package SCALAPACKAGE.feature
 
 import java.util.{LinkedHashMap, Map => JMap}
-import SCALAPACKAGE.core.{Context, SdkClient}
+import SCALAPACKAGE.core.{Context, Helpers, SdkClient}
 
 // Public per-bucket aggregate (mirrors the java static nested MetricsBucket).
 // Tests read `f.total.count`, `bucket.totalMs`, etc.
@@ -14,7 +14,8 @@ class MetricsBucket {
 }
 
 // Statistics capture. Records per-operation counters and latency for every
-// call: totals plus a breakdown keyed by `<entity>.<op>`. Timing starts at
+// call: totals plus a breakdown keyed by `<entity>.<op>`, or
+// `<entity>.<op>:<action>` for a custom action. Timing starts at
 // endpoint resolution (PrePoint) and stops when the call returns (PreDone)
 // or fails (PreUnexpected); each operation is recorded exactly once (the
 // per-context start marker in ctx.out is consumed on record). The clock is
@@ -72,13 +73,7 @@ class MetricsFeature extends BaseFeature("metrics", "0.0.1", true) {
       dur = 0
     }
 
-    var entity = "_"
-    var opname = "_"
-    if (ctx.op != null) {
-      entity = ctx.op.entity
-      opname = ctx.op.name
-    }
-    val key = entity + "." + opname
+    val key = Helpers.opFileKey(ctx)
 
     var op = this.ops.get(key)
     if (op == null) {

@@ -1,10 +1,12 @@
 
 
 const { BaseFeature } = require('../base/BaseFeature')
+const { opFileKey } = require('../../utility/OpKeyUtility')
 
 
 // Statistics capture. Records per-operation counters and latency for every
-// call: totals plus a breakdown keyed by `<entity>.<op>`. Timing starts at
+// call: totals plus a breakdown keyed by `<entity>.<op>`, or
+// `<entity>.<op>:<action>` for a custom action. Timing starts at
 // endpoint resolution (PrePoint) and stops when the call returns (PreDone)
 // or throws (PreUnexpected). Aggregates live on `client._metrics` and can be
 // read via `client.metrics()` in the generated SDK. The clock is injectable
@@ -65,7 +67,7 @@ class MetricsFeature extends BaseFeature {
 
     const client = this._client
     const m = client._metrics
-    const key = ((ctx.op && ctx.op.entity) || '_') + '.' + ((ctx.op && ctx.op.name) || '_')
+    const key = opFileKey(ctx)
 
     let op = m.ops[key]
     if (null == op) {

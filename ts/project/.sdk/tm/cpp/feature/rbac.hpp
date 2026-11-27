@@ -64,13 +64,7 @@ private:
     Value rules = fopt::foptMap(options, "rules");
     if (!rules.is_map()) return false;
 
-    std::string entity = "";
-    if (ctx->entity != nullptr) entity = ctx->entity->getName();
-    else if (ctx->op) entity = ctx->op->entity;
-    std::string opname = "";
-    if (ctx->op) opname = ctx->op->name;
-
-    for (const std::string& key : {entity + "." + opname, opname, std::string("*")}) {
+    for (const std::string& key : opKeys(ctx)) {
       Value r = getp(rules, key);
       if (r.is_string()) {
         out = r.as_string();
@@ -84,6 +78,8 @@ private:
     track(ctx, required, false);
     std::string opname = "?";
     if (ctx->op) opname = ctx->op->name;
+    std::string action = opAction(ctx);
+    if (!action.empty()) opname += ":" + action;
     auto err = ctx->makeError("rbac_denied",
         "Permission \"" + required + "\" required for operation \"" + opname + "\"");
     // Short-circuit endpoint resolution; makePoint surfaces this error.
@@ -99,7 +95,9 @@ private:
     map_put(rec, "required", Value(required));
     map_put(rec, "allowed", Value(wasAllowed));
     map_put(rec, "op", Value(opname));
-    last = rec;
+    std::string action = opAction(ctx);
+    if (!action.empty()) map_put(rec, "action", Value(action));
+    last = ctx->utility->clean(ctx, rec);
   }
 };
 

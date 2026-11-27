@@ -4,10 +4,12 @@ from __future__ import annotations
 import time
 
 from projectname_sdk.feature.base_feature import ProjectNameBaseFeature
+from projectname_sdk.utility.op_key import op_file_key
 
 
 # Statistics capture. Records per-operation counters and latency for every
-# call: totals plus a breakdown keyed by `<entity>.<op>`. Timing starts at
+# call: totals plus a breakdown keyed by `<entity>.<op>`, or
+# `<entity>.<op>:<action>` for a custom action. Timing starts at
 # endpoint resolution (PrePoint) and stops when the call returns (PreDone)
 # or fails (PreUnexpected). Aggregates live on `client._metrics`. The clock
 # is injectable (`now`) for deterministic tests.
@@ -67,9 +69,7 @@ class ProjectNameMetricsFeature(ProjectNameBaseFeature):
         dur = max(0, self._now() - start)
 
         metrics = self.client._metrics
-        key = "_"
-        if ctx.op is not None:
-            key = (ctx.op.entity or "_") + "." + (ctx.op.name or "_")
+        key = op_file_key(ctx)
 
         op_bucket = metrics["ops"].get(key)
         if op_bucket is None:

@@ -14,6 +14,7 @@
 
 (ns sdk.core
   (:require [voxgig.struct :as vs]
+            [sdk.binary :as binary]
             [sdk.schema :as schema]
             [clojure.string :as str])
   (:import [java.net URI]
@@ -118,6 +119,7 @@
 (def ^:private entityspec-parsed (delay (json-parse schema/entityspec-data)))
 
 (defn entityspec [] @entityspec-parsed)
+(defn optspec [] @optspec-parsed)
 
 ;; ---------------------------------------------------------------------------
 ;; Atom-object helpers. Every mutable "object" is an atom wrapping a map.
@@ -217,7 +219,10 @@
 (declare base-utility-map)
 
 (defn make-utility []
-  (atom (assoc (base-utility-map) :struct (vs/struct-utility) :custom (vs/jm))))
+  ;; The body codecs this SDK was generated with; see codec/index.clj.
+  (let [codec ((requiring-resolve 'sdk.codec.index/codec))]
+    (atom (assoc (base-utility-map) :struct (vs/struct-utility) :custom (vs/jm)
+                 :codec codec :multipart-boundary (get codec "multipart-boundary")))))
 
 (defn utility-copy [u]
   (let [m (deref u)]
@@ -315,6 +320,8 @@
            :json (when (vs/isfunc jf) jf)
            :body (g "body")
            :err (g "err")
+           ;; The undecoded bytes, where a transport keeps them beside the text.
+           :bytes (let [b (g "bytes")] (when (vs/isfunc b) b))
            ;; Set by a transport that could not read a non-blank body as JSON.
            :unreadable (true? (g "unreadable"))})))
 
@@ -322,7 +329,7 @@
 ;; Control (atom-map). Shared with the base context when not overridden.
 ;; ---------------------------------------------------------------------------
 
-(defn make-control [] (atom {:throw nil :err nil :explain nil :actor nil :paging nil}))
+(defn make-control [] (atom {:throw nil :err nil :explain nil :actor nil :paging nil :transfer nil}))
 
 ;; ---------------------------------------------------------------------------
 ;; Context (atom-map).
@@ -347,6 +354,8 @@
                  (when (vs/ismap (mget ctrl-raw "explain")) (oset! c :explain (mget ctrl-raw "explain")))
                  (when (contains? (into #{} (vs/keysof ctrl-raw)) "actor") (oset! c :actor (mget ctrl-raw "actor")))
                  (when (vs/ismap (mget ctrl-raw "paging")) (oset! c :paging (mget ctrl-raw "paging")))
+                 ;; Set by an entity's binary handle: the slot and the direction its bytes move.
+                 (when (vs/ismap (mget ctrl-raw "transfer")) (oset! c :transfer (mget ctrl-raw "transfer")))
                  c)
                (and (nil? (cprop "opname")) (bget :ctrl)) (bget :ctrl)
                :else (make-control))
@@ -457,6 +466,39 @@
 ;; ---------------------------------------------------------------------------
 
 (defn entity-get-name [ent] (when (and ent (:get-name ent)) ((:get-name ent))))
+
+;; The custom action a call names: `$action` in its own request argument,
+;; never in a response.
+(defn op-action [ctx]
+  (let [req (oget ctx (if (= "data" (op-input (oget ctx :op))) :reqdata :reqmatch))
+        action (mget req "$action")]
+    (when (and (string? action) (not= "" action)) action)))
+
+;; The keys an operation is looked up and filed by, most specific first:
+;; `<entity>.<op>:<action>`, `<entity>.<op>`, `<op>`, `*`.
+(defn op-keys [ctx]
+  (let [op (oget ctx :op)
+        nonempty (fn [v] (when (and (string? v) (not= "" v)) v))
+        name (or (nonempty (op-name op)) "_")
+        base (str (or (nonempty (op-entity op))
+                      (nonempty (entity-get-name (oget ctx :entity)))
+                      "_")
+                  "." name)
+        action (op-action ctx)]
+    (if (nil? action)
+      [base name "*"]
+      [(str base ":" action) base name "*"])))
+
+;; The key a call is filed under where a consumer reads it: the first key,
+;; with the caller's action cleaned as a record's `action` field, so a
+;; sensitive key name masks it as well as a registered value.
+(defn op-file-key [ctx]
+  (let [keys (op-keys ctx)
+        action (op-action ctx)]
+    (if (nil? action)
+      (first keys)
+      (let [cleaned (mget (ucall ctx :clean (vs/jm "action" action)) "action")]
+        (str (second keys) ":" (if (string? cleaned) cleaned action))))))
 
 ;; ---------------------------------------------------------------------------
 ;; Pipeline utilities. Each takes ctx; sibling steps are reached via ucall so
@@ -624,10 +666,21 @@
                   (header-value (oget response :headers) "content-type"))]
       (filterv (comp seq :live)
                [(when (and (= "raw" (mget body "kind")) (true? (mget body "binary")))
-                  {:live (live [(when (instance? clojure.lang.IDeref spec) (:body (deref spec)))
-                                (mget (oget ctx :reqdata) RAW-BODY)])
-                   :type (when (string? media) media)
-                   :sized true})
+                  (let [raw (or (get (oget ctx :sources) RAW-BODY) (mget (oget ctx :reqdata) RAW-BODY))]
+                    {:live (live [(when (instance? clojure.lang.IDeref spec) (:body (deref spec)))
+                                  raw (when (binary/source? raw) (.-data ^sdk.binary.BinarySource raw))])
+                     :type (when (string? media) media)
+                     :sized true}))
+                ;; An encoded multipart body, and a form body that carries a
+                ;; file: the point's kind decides, whatever carries the body.
+                (when (or (= "multipart" (mget body "kind"))
+                          (and (= "form" (mget body "kind"))
+                               (some #(true? (mget % "binary"))
+                                     (let [f (mget body "fields")] (if (instance? java.util.List f) f [])))))
+                  (let [ctype (when (instance? clojure.lang.IDeref spec) (header-value (:headers (deref spec)) "content-type"))]
+                    {:live (live [(when (instance? clojure.lang.IDeref spec) (:body (deref spec)))])
+                     :type (when-not (contains? #{nil ""} ctype) ctype)
+                     :sized true}))
                 (when (and (some? rtype) (binary-response? point rtype))
                   {:live (live [(oget response :body)])
                    :type (when-not (= "" rtype) rtype)
@@ -660,6 +713,7 @@
                     (mask-value cfg val)
                     (or (describe-binary val bin) (clean-string cfg val)))
     (fn? val) DROP
+    (binary/source? val) (binary/describe val)
     (or (number? val) (boolean? val) (keyword? val) (symbol? val) (char? val))
     (if (sensitive-key? cfg key) (mget cfg "mask") val)
     (or (<= CLEAN-MAXDEPTH depth) (some #(identical? % val) seen)) CLEAN-CIRCULAR
@@ -1174,11 +1228,37 @@
               (.put ^java.util.Map body name v))))
         body))))
 
+(defn- encode-body
+  "The encoded body, with its content type replacing any the headers carry:
+  a multipart boundary is the encoder's alone to choose."
+  [ctx kind data]
+  (let [encode (get (uget ctx :codec) kind)
+        encoded (if (fn? encode)
+                  (encode ctx data (or (oget ctx :sources) {}))
+                  (ctx-error ctx "body_codec_missing" (str "This SDK was generated without a " kind " encoder.")))
+        headers (some-> (oget ctx :spec) (oget :headers))]
+    (if (sdk-error? encoded)
+      encoded
+      (do (when (instance? java.util.Map headers)
+            (doseq [k (vec (.keySet ^java.util.Map headers))]
+              (when (and (string? k) (= "content-type" (str/lower-case k))) (.remove ^java.util.Map headers k)))
+            (.put ^java.util.Map headers "content-type" (get encoded "type")))
+          (get encoded "body")))))
+
 (defn u-prepare-body [ctx]
-  (cond
-    (not= "data" (op-input (oget ctx :op))) (match-body ctx)
-    (raw-request? (oget ctx :point)) (raw-body (oget ctx :reqdata))
-    :else (ucall ctx :transform-request)))
+  (if (not= "data" (op-input (oget ctx :op)))
+    (match-body ctx)
+    (let [refused (binary/lift-sources! ctx)
+          kind (vs/getprop (vs/getprop (oget ctx :point) "body") "kind")]
+      (cond
+        refused (ctx-error ctx (first refused) (second refused))
+        (= "raw" kind) (let [raw (get (oget ctx :sources) RAW-BODY)]
+                         (cond
+                           (binary/source? raw) (.-data ^sdk.binary.BinarySource raw)
+                           (instance? java.io.InputStream raw) (.readAllBytes ^java.io.InputStream raw)
+                           :else raw))
+        (#{"form" "multipart"} kind) (encode-body ctx kind (ucall ctx :transform-request))
+        :else (ucall ctx :transform-request)))))
 
 ;; ---- graphql ---------------------------------------------------------------
 ;;
@@ -1315,7 +1395,19 @@
                  (vec parts)))
       [])))
 
+(declare select-point)
+
+;; Once the point is known, a body of bytes it answers is refused and the
+;; sources its binary fields carry are lifted out of the data.
 (defn u-make-point [ctx]
+  (let [[point err] (select-point ctx)]
+    (if err
+      [nil err]
+      (if-let [[code msg] (or (binary/bytes-refused ctx) (binary/lift-sources! ctx))]
+        [nil (ctx-error ctx code msg)]
+        [point nil]))))
+
+(defn- select-point [ctx]
   (let [preset (out-get ctx "point")]
     (if (some? preset)
       (if (sdk-error? preset)
@@ -1325,10 +1417,12 @@
             options (oget ctx :options)
             allow-op (vs/getpath options "allow.op")]
         (cond
-          (not (allowed? allow-op (op-name op)))
-          [nil (ctx-error ctx "point_op_allow"
-                          (str "Operation \"" (op-name op) "\" not allowed by SDK option allow.op value: \""
-                               (if (string? allow-op) allow-op "") "\""))]
+          (not (some #(allowed? allow-op %) (op-keys ctx)))
+          (let [action (op-action ctx)]
+            [nil (ctx-error ctx "point_op_allow"
+                            (str "Operation \"" (op-name op) (when action (str ":" action))
+                                 "\" not allowed by SDK option allow.op value: \""
+                                 (if (string? allow-op) allow-op "") "\""))])
           (zero? (vs/size (op-points op)))
           [nil (ctx-error ctx "point_no_points"
                           (str "Operation \"" (op-name op) "\" has no endpoint definitions."))]
@@ -1432,6 +1526,8 @@
                   :else
                   (do (oset! ctx :point chosen) [(oget ctx :point) nil]))))))))))
 
+(declare finish-spec)
+
 (defn u-make-spec [ctx]
   (if (some? (out-get ctx "spec"))
     ;; A PreSpec feature hook (e.g. validate) may short-circuit the operation
@@ -1475,18 +1571,23 @@
               (do
                 (oset! spec :body (ucall ctx :prepare-body))
                 (oset! spec :path (ucall ctx :prepare-path))))
-            (when-let [ex (oget (oget ctx :ctrl) :explain)] (.put ^java.util.Map ex "spec" spec))
-            ;; Whatever prepare-auth sets in the query, under whichever name,
-            ;; is the credential; a key it leaves as it was is the caller's.
-            (let [query (java.util.LinkedHashMap. ^java.util.Map (or (oget spec :query) (vs/jm)))
-                  [s err] (ucall ctx :prepare-auth)]
-              (if err [nil err]
-                  (do
-                    (oset! s :authquery
-                           (vec (for [[k v] (or (oget s :query) (vs/jm))
-                                      :when (or (not (.containsKey query k)) (not= (.get query k) v))]
-                                  k)))
-                    (oset! ctx :spec s) [s nil])))))))))
+            (if (sdk-error? (oget spec :body))
+              [nil (oget spec :body)]
+              (finish-spec ctx spec))))))))
+
+(defn- finish-spec [ctx spec]
+  (when-let [ex (oget (oget ctx :ctrl) :explain)] (.put ^java.util.Map ex "spec" spec))
+  ;; Whatever prepare-auth sets in the query, under whichever name, is the
+  ;; credential; a key it leaves as it was is the caller's.
+  (let [query (java.util.LinkedHashMap. ^java.util.Map (or (oget spec :query) (vs/jm)))
+        [s err] (ucall ctx :prepare-auth)]
+    (if err [nil err]
+        (do
+          (oset! s :authquery
+                 (vec (for [[k v] (or (oget s :query) (vs/jm))
+                            :when (or (not (.containsKey query k)) (not= (.get query k) v))]
+                        k)))
+          (oset! ctx :spec s) [s nil]))))
 
 ;; A whole . or .. is a dot segment, which moves the request to another
 ;; route: the first such [key value], or nil.
@@ -1645,16 +1746,28 @@
       :else
       (ctx-error ctx "response_content_type" (str "response: expected JSON, got " ctype " (" detail ")")))))
 
+(declare json-body)
+
 (defn u-result-body [ctx]
-  (let [response (oget ctx :response) result (oget ctx :result)]
-    (when (and result response (oget response :json) (oget response :body))
-      (oset! result :body ((oget response :json))))
-    (when (and result response (oget response :unreadable))
-      (let [spec (oget ctx :spec)]
-        (oset! result :err (unreadable-body ctx (oget result :status) (oget result :headers)
-                                            (oget response :body) (when spec (oget spec :headers))
-                                            (oget result :err)))))
+  (let [response (oget ctx :response) result (oget ctx :result)
+        raw (get (uget ctx :codec) "raw")]
+    (if (and result response (fn? raw)
+             (= "raw" (vs/getprop (vs/getprop (oget ctx :point) "response") "kind"))
+             (nil? (oget result :err)) (nil? (oget response :err))
+             (number? (oget result :status)) (< (oget result :status) 400))
+      (raw ctx)
+      (json-body ctx response result))
     result))
+
+(defn- json-body [ctx response result]
+  (when (and result response (oget response :json) (oget response :body))
+    (oset! result :body ((oget response :json))))
+  (when (and result response (oget response :unreadable))
+    (let [spec (oget ctx :spec)]
+      (oset! result :err (unreadable-body ctx (oget result :status) (oget result :headers)
+                                          (oget response :body) (when spec (oget spec :headers))
+                                          (oget result :err)))))
+  result)
 
 (defn u-transform-response [ctx]
   (let [spec (oget ctx :spec) result (oget ctx :result) point (oget ctx :point)]
@@ -2025,9 +2138,8 @@
             (vs/setprop headers "user-agent" ua)))
         (let [client (if (= "manual" (vs/getprop fetchdef "redirect")) @manual-http-client @http-client)
               resp (.send ^HttpClient client (.build builder) (HttpResponse$BodyHandlers/ofByteArray))
-              body (String. ^bytes (decode-body (.body resp)
-                                                (.orElse (.firstValue (.headers resp) "content-encoding") ""))
-                            "UTF-8")
+              raw (decode-body (.body resp) (.orElse (.firstValue (.headers resp) "content-encoding") ""))
+              body (String. ^bytes raw "UTF-8")
               resp-headers (vs/jm)]
           (doseq [[k vlist] (.map (.headers resp))]
             (.put ^java.util.Map resp-headers (str/lower-case k) (str/join "," vlist)))
@@ -2035,7 +2147,7 @@
                                          [nil false]
                                          (try [(json-parse body) false] (catch Exception _ [nil true])))]
             [(vs/jm "status" (.statusCode resp) "statusText" "" "headers" resp-headers
-                    "json" (fn [] json-body) "body" body "unreadable" unreadable) nil])))
+                    "json" (fn [] json-body) "body" body "bytes" (fn [] raw) "unreadable" unreadable) nil])))
       ;; A request that got no answer fails the operation.
       (catch Throwable e
         (when (instance? InterruptedException e) (.interrupt (Thread/currentThread)))

@@ -14,6 +14,8 @@ require(Cwd::abs_path("$__dir/../core/helpers.pm"));
 require(Cwd::abs_path("$__dir/../core/error.pm"));
 require(Cwd::abs_path("$__dir/prepare_method.pm"));
 require(Cwd::abs_path("$__dir/param.pm"));
+require(Cwd::abs_path("$__dir/op_key.pm"));
+require(Cwd::abs_path("$__dir/binary.pm"));
 
 package ProjectNameUtilities;
 
@@ -70,7 +72,17 @@ sub _unfilled {
   return @missing;
 }
 
+# Once the point is known, a body of bytes it answers is refused and the
+# sources its binary fields carry are lifted out of the data.
 $REGISTRY{make_point} = sub {
+  my ($ctx) = @_;
+  my ($point, $err) = _select_point($ctx);
+  return (undef, $err) if $err;
+  $err = bytes_refused($ctx) // lift_sources($ctx);
+  return $err ? (undef, $err) : ($point, undef);
+};
+
+sub _select_point {
   my ($ctx) = @_;
 
   if ($ctx->{out}{point}) {
@@ -88,11 +100,14 @@ $REGISTRY{make_point} = sub {
   my $options = $ctx->{options};
 
   my $allow_op = ProjectNameHelpers::gpath($options, 'allow.op');
-  my $allow_ok = ProjectNameUtilities::allowed($allow_op, $op->{name});
+  my $allow_ok = grep { ProjectNameUtilities::allowed($allow_op, $_) }
+    ProjectNameUtilities::op_keys($ctx);
   $allow_op = '' unless defined $allow_op && !ref $allow_op;
   unless ($allow_ok) {
+    my $action = ProjectNameUtilities::op_action($ctx);
+    my $named = defined $action ? "$op->{name}:$action" : $op->{name};
     return (undef, $ctx->make_error('point_op_allow',
-      "Operation \"$op->{name}\" not allowed by SDK option allow.op value: \"$allow_op\""));
+      "Operation \"$named\" not allowed by SDK option allow.op value: \"$allow_op\""));
   }
 
   if (!@{ $op->{points} }) {
@@ -202,6 +217,6 @@ $REGISTRY{make_point} = sub {
   }
 
   return ($ctx->{point}, undef);
-};
+}
 
 1;

@@ -8,6 +8,8 @@
 // PreDone + PreUnexpected double-log). Timestamps use the injectable `now`
 // clock so tests stay deterministic.
 
+using ProjectNameSdk.Util;
+
 using static ProjectNameSdk.Feature.FeatureOptions;
 
 namespace ProjectNameSdk.Feature;
@@ -99,6 +101,11 @@ public class AuditFeature : BaseFeature
         if (ctx.Result != null)
         {
             record["status"] = ctx.Result.Status;
+        }
+        var action = SdkUtility.OpAction(ctx);
+        if (action != null)
+        {
+            record["action"] = action;
         }
         record = Fclean(ctx, record);
 

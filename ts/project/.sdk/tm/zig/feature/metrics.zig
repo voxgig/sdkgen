@@ -1,6 +1,7 @@
 // Statistics capture (mirrors go feature/metrics_feature.go / rust
 // feature/metrics.rs). Records per-operation counters and latency for every
-// call: totals plus a breakdown keyed by `<entity>.<op>`. Timing starts at
+// call: totals plus a breakdown keyed by the operation's first key
+// (`<entity>.<op>`, or `<entity>.<op>:<action>` for a custom action). Timing starts at
 // endpoint resolution (PrePoint) and stops when the call returns (PreDone) or
 // fails (PreUnexpected); each operation is recorded exactly once (the
 // per-context start marker in ctx.out is consumed on record). The clock is
@@ -70,9 +71,7 @@ pub const MetricsFeature = struct {
 
         const dur = @max(sup.fopt_now(self.options) - start, 0);
 
-        const entity = ctx.op.entity;
-        const opname = ctx.op.name;
-        const key = std.fmt.allocPrint(h.A(), "{s}.{s}", .{ entity, opname }) catch "";
+        const key = h.op_file_key(ctx);
 
         bump(&self.total, ok, dur);
         const gop = self.ops.getOrPut(key) catch return;

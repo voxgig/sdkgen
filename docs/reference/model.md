@@ -61,6 +61,68 @@ name of a field marked `ro`. Pinned by `ts/test/actionstrip.test.ts`, and
 through every target's own SDK by the media probe in
 `ts/test/generatedcompile.test.ts`.
 
+### Request and response bodies
+
+A point's `rb` is its request body and `rs` its success response, when either
+is not JSON alone. Each has a `kind` of `json`, `raw`, `multipart` or `form`,
+the `media` type, `binary` for a raw body of bytes, and for a multipart or
+form body the `fields`, each with `name`, `binary`, `list`, `join` and
+`media`. `configDefinition` passes them to the runtime as the point's `body`
+and `response`.
+
+A target at the `encoded` codec tier (`codec.tier`, below) sends each kind
+as declared:
+
+| `rb.kind` | Sent as |
+| --- | --- |
+| `json` | The request data, as JSON. |
+| `raw` | The `$body` of the data, as given, under the declared media type. |
+| `form` | `application/x-www-form-urlencoded` pairs. |
+| `multipart` | `multipart/form-data` parts, under a random boundary. |
+
+A form or multipart body carries the fields the point declares, in the
+declared order, then any other key of the data in code point order. A `list`
+field repeats once per item, a field with `join` sends its items joined by
+that delimiter, and an absent field sends nothing. A field marked `binary`
+carries a file. Its value is a source built by `client.binary.bytes(data,
+{ name, type })`, a platform `Blob` or `File`, bytes, or a string. A string is
+sent as its content and never read as a path. A file part names the base name
+of the source's name, or no filename when the source has none, and a media
+type holding a line break is refused. The SDK takes the values of binary
+fields out of the request data before a hook, a transform, or validation
+reads it, and refuses a source anywhere else with `binary_source_refused`.
+
+A `raw` success response is read into memory up to the client option
+`maxBuffer`. A text body comes back in the entity's data as the string under
+`$body`. A body of bytes never enters the data: the entity's binary handle
+reads it.
+
+An action whose points answer or take a binary raw body is a binary slot of
+its entity, named for the action. An entity whose own `load` answers bytes
+has an unnamed slot as well. A target at the `encoded` tier gives such an
+entity a `binary(slot)` method, whose handle has two calls: `bytes()` runs
+the slot's `load` and resolves to the body, and `put(source)` runs its
+`update`, or its `create` where that is the only writer, and resolves to the
+entity. A slot's other methods fail with `binary_feature_inactive`. A plain
+operation on a route that answers bytes is refused with
+`binary_sink_required`, whose message names the handle.
+
+Every bundled SDK target is at the `encoded` tier. In `rust`, `c`, `cpp`,
+`zig` and `ocaml` the request data cannot hold a source, so `create`,
+`update` and `patch` take the sources as an argument beside the data, and a
+name there that the point does not declare binary is refused. A target with
+no type for a file's content, such as a `Blob`, builds a source from bytes or
+a string alone.
+
+| `err.code` | Meaning |
+| --- | --- |
+| `binary_source_refused` | A source outside a binary field, or a part media type with a line break. |
+| `binary_sink_required` | A plain operation on a route that answers bytes. |
+| `binary_too_large` | A binary handle read past `maxBuffer`. |
+| `response_too_large` | A raw text body past `maxBuffer`. |
+| `binary_feature_inactive` | A binary handle method that needs the binary feature. |
+| `binary_slot_unknown`, `binary_slot_direction` | A slot the entity lacks, or a read or write the slot does not offer. |
+
 ## `.aontu` / aontu syntax primer
 
 `.aontu` is a relaxed JSON; `aontu` adds unification semantics:
@@ -323,6 +385,7 @@ files in `ts/project/.sdk/model/target/`:
 | `origname` | string | `''` | **Provenance.** The name in the SOURCE, when it differs — i.e. this was installed as `<origname>~<name>`. What makes an alias checkable. |
 | `package` | string | `''` | **Provenance.** The sdkgen package that supplied it, when the source declares a manifest. What `package update` and `package list` act on. |
 | `surface` | string | `''` | What the target is: `sdk`, `cli`, `mcp`, `data` or `seneca-provider`. The bundled `go-cli`, `go-mcp` and `py-data` declare theirs, so a project overlay that declares another word fails to compile. `''` leaves the answer to the origin for a copy or an alias of one of those three made before they declared it, makes a target that generates entities an SDK, and otherwise leaves it unknown, so the documents name the target by its title. A word this release does not know reads as unknown and fails nothing; `package check` warns about it, and notes the release that first reads a known word when `engines.sdkgen` admits older ones, which ignore the slot. |
+| `codec.tier` | string | `'none'` | How far the target has come in moving bodies that are not JSON: `none`, `encoded`, `streamed` or `resumable`. Below `encoded`, a form or multipart body is sent as JSON and the target's reference says so. `ts/test/tier.test.ts` checks that a target at `encoded` ships a codec per body kind and a suite that runs them. |
 | `consumes` | string | `''` | The origin of the target this one builds on, such as `go` for `go-cli`. Generation stops when the model has no active target from that origin. When two installed targets come from it, name one by its installed name in this target's own model file. |
 | `srcfeature` | boolean | `true` | Whether per-feature source is copied into `src/feature/`. |
 | `phase.<name>.active` | boolean | `true` | Switch a standard generation phase off (see below). |
@@ -686,13 +749,14 @@ needs editing.
 | `auth.prefix`, `auth.basic` | Credential scheme. |
 | `auth.name` | The header, query parameter or cookie that carries the credential, in the placement the API declares. Read on every request; empty means the declared name, and a different name also removes a credential under the declared one. |
 | `headers` | Extra headers sent with every request. |
-| `allow.method`, `allow.op` | Comma-separated allow-lists. A name matches whole and in any case, so `PU` never allows `PUT`. `allow.method` also governs `direct()` and `prepare()`, which send the method in upper case. |
+| `allow.method`, `allow.op` | Comma-separated allow-lists. A name matches whole and in any case, so `PU` never allows `PUT`. `allow.method` also governs `direct()` and `prepare()`, which send the method in upper case. An `allow.op` entry may be any [operation key](features.md#operation-keys): `<op>`, `<entity>.<op>`, `<entity>.<op>:<action>` or `*`. |
 | `entity` | Per-entity overrides. |
 | `extend` | Feature instances supplied at construction. |
 | `utility`, `system.fetch` | Platform seams. |
 | `test` | Offline test-mode settings. |
 | `clean` | Redaction of everything the SDK emits: `active`, `keys`, `values`, `mask`, `hint`, `min`. See [secret redaction](../explanation/secret-redaction.md). |
 | `server` | Values for a templated base URL. |
+| `maxBuffer` | The most bytes a response body read into memory may hold: a raw text body, or the bytes of a binary handle's `bytes()`. Checked against the declared length first and against the count while reading. 16 MiB. |
 
 `feature` is not declared here: it is assembled per target from each active
 feature's own `config.options` and `config.optspec`.

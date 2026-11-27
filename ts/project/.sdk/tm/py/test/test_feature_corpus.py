@@ -158,9 +158,9 @@ def _candidates(client):
     return out
 
 
-def _invoke(client, op, ctrl):
+def _invoke(client, op, ctrl, action=None):
     ent = getattr(client, op["accessor"])()
-    return getattr(ent, op["op"])({}, ctrl)
+    return getattr(ent, op["op"])({} if action is None else {"$action": action}, ctrl)
 
 
 def _usable_ops(want):
@@ -350,7 +350,7 @@ class TestFeatureCorpus:
                     wanterr = step.get("err")
 
                     try:
-                        _invoke(client, op, ctrl)
+                        _invoke(client, op, ctrl, step.get("action"))
                         assert wanterr is None, \
                             "{}: {} was expected to fail, and did not".format(label, step["op"])
                     except AssertionError:

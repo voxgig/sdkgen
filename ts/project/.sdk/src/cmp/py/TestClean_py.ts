@@ -787,12 +787,11 @@ class TestClean:
 
         # The positive half: where the body was, what describes it now is. A
         # file object is read before the first attempt, so the spec holds what
-        # was read and the request data the file object.
+        # was read; the body is lifted out of the request data before any
+        # hook sees it.
         desc = {"binary$": "bytes", "size": len(CONTENT_BYTES)}
-        stream = {"binary$": "stream"}
         if isinstance(media, str):
             desc["type"] = media
-            stream["type"] = media
         for carrier in CARRIERS:
             failed = errors.get(carrier + "/notfound/throw")
             assert failed is not None, carrier + ": the 404 scenario must raise"
@@ -800,9 +799,10 @@ class TestClean:
                 carrier + ": the raised spec: " + repr(failed.spec)
             explained = (explains.get(carrier + "/ok/explain") or {}).get("spec") or {}
             assert explained.get("body") == desc, carrier + ": the explain record: " + repr(explained)
-            want = stream if carrier.startswith("file") else desc
-            data = logged.get(carrier + "/notfound/throw") or {}
-            assert data.get("$body") == want, carrier + ": the request data: " + repr(data)
+            data = logged.get(carrier + "/notfound/throw")
+            assert isinstance(data, dict), carrier + ": the request data was not captured"
+            assert "$body" not in data, carrier + ": the request data still holds the body: " + \
+                repr(data)
 
         assert ruled == {
             "note": desc,

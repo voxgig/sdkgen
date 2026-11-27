@@ -39,6 +39,9 @@ class ProjectNameUtility
     public mixed $result_headers = null;
     public mixed $transform_request = null;
     public mixed $transform_response = null;
+    // The body codecs this SDK was generated with; see codec/Index.php.
+    public mixed $codec = null;
+    public mixed $multipart_boundary = null;
     public array $custom = [];
 
     private static mixed $registrar = null;
@@ -91,6 +94,8 @@ class ProjectNameUtility
         $u->result_headers = $src->result_headers;
         $u->transform_request = $src->transform_request;
         $u->transform_response = $src->transform_response;
+        $u->codec = $src->codec;
+        $u->multipart_boundary = $src->multipart_boundary;
         $u->custom = $src->custom;
         return $u;
     }

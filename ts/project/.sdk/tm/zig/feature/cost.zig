@@ -3,12 +3,12 @@
 // is spent per HTTP ATTEMPT (a retried call is charged again, because the
 // upstream API charges it again), but it is owed by an OPERATION. So the
 // transport wrap prices each attempt, and PreDone attributes the running
-// total to `<entity>.<op>` and to the caller (`ctrl.actor`, the same actor
+// total to the operation's first key and to the caller (`ctrl.actor`, the same actor
 // the audit feature records).
 //
 // The price of an attempt comes from the first source that answers: a
-// response header (`header` x `perUnit`), the rate table (`rates`, keyed
-// '<entity>.<op>' / '<op>' / '*'), then the flat `unit`. A body figure
+// response header (`header` x `perUnit`), the rate table (`rates`, keyed as
+// rbac's rules are), then the flat `unit`. A body figure
 // (`path` x `perUnit`, e.g. "usage.total_tokens") is read at PreDone instead,
 // from the already-parsed result. A body figure describes the whole call, so
 // it REPLACES the per-attempt estimate rather than adding to it.
@@ -193,10 +193,13 @@ pub const CostFeature = struct {
 
         const entity0 = ctx.op.entity;
         const opname0 = ctx.op.name;
-        const entity = if (entity0.len == 0) "_" else entity0;
-        const opname = if (opname0.len == 0) "_" else opname0;
 
-        commit(self.track, self.options, ctx, pending, entity, opname);
+        commit(self.track, self.options, ctx, pending, .{
+            .key = h.op_file_key(ctx),
+            .entity = if (entity0.len == 0) "_" else entity0,
+            .op = if (opname0.len == 0) "_" else opname0,
+            .action = h.op_action(ctx),
+        });
     }
 
     const vtable = Feature.VTable{
@@ -287,7 +290,7 @@ fn charge(track: *CostTrack, options: Value, ctx: *Context, url: []const u8, fet
     // could run past an onBudget = "deny" ceiling indefinitely. `piped` is set
     // by PrePoint, so its absence is the signal.
     if (!(h.get_bool(pending, "piped") orelse false)) {
-        commit(track, options, ctx, pending, "_", "direct");
+        commit(track, options, ctx, pending, .{ .key = "_.direct", .entity = "_", .op = "direct" });
         _ = ctx.out.fetchRemove(COST_PENDING_KEY);
     }
 
@@ -322,18 +325,12 @@ fn price(options: Value, ctx: *Context, res: Value) Priced {
     return .{ .amount = 0, .source = "none" };
 }
 
-// The rate table uses the same lookup grammar as rbac's rules:
-// '<entity>.<op>', then '<op>', then '*'.
+// The rate table is keyed as rbac's rules are.
 fn rate(options: Value, ctx: *Context) ?f64 {
     const rates = sup.fopt_map(options, "rates");
     if (rates != .object) return null;
 
-    const entity: []const u8 = if (ctx.entity) |e| e.get_name() else ctx.op.entity;
-    const opname = ctx.op.name;
-
-    const k0 = std.fmt.allocPrint(h.A(), "{s}.{s}", .{ entity, opname }) catch opname;
-    const keys = [_][]const u8{ k0, opname, "*" };
-    for (keys) |key| {
+    for (h.op_keys(ctx)) |key| {
         if (h.get_f64(rates, key)) |n| return n;
     }
     return null;
@@ -376,7 +373,15 @@ fn body_amount(options: Value, ctx: *Context) ?f64 {
 // Commit one operation's spend: totals, budget, per-op and per-actor
 // attribution, and the record. Shared by finish and the raw-request path in
 // charge, which has no PreDone to reach.
-fn commit(track: *CostTrack, options: Value, ctx: *Context, pending: Value, entity: []const u8, opname: []const u8) void {
+// What the spend is filed under.
+const CostCall = struct {
+    key: []const u8,
+    entity: []const u8,
+    op: []const u8,
+    action: ?[]const u8 = null,
+};
+
+fn commit(track: *CostTrack, options: Value, ctx: *Context, pending: Value, call: CostCall) void {
     var amount = h.get_f64(pending, "amount") orelse 0;
     var reported = h.get_f64(pending, "reported") orelse 0;
     var estimated = h.get_f64(pending, "estimated") orelse 0;
@@ -401,20 +406,20 @@ fn commit(track: *CostTrack, options: Value, ctx: *Context, pending: Value, enti
 
     track.total.calls += 1;
 
-    const opkey = std.fmt.allocPrint(h.A(), "{s}.{s}", .{ entity, opname }) catch opname;
-    bump(&track.ops, opkey, amount);
+    bump(&track.ops, call.key, amount);
     bump(&track.actors, actor, amount);
 
     track.seq += 1;
     const record = h.omap();
     h.setp(record, "seq", h.vnum(track.seq));
-    h.setp(record, "entity", h.vstr(entity));
-    h.setp(record, "op", h.vstr(opname));
+    h.setp(record, "entity", h.vstr(call.entity));
+    h.setp(record, "op", h.vstr(call.op));
     h.setp(record, "actor", h.vstr(actor));
     h.setp(record, "amount", h.vfloat(amount));
     h.setp(record, "currency", h.vstr(track.currency));
     h.setp(record, "source", h.vstr(source));
     h.setp(record, "attempts", h.vfloat(h.get_f64(pending, "attempts") orelse 0));
+    if (call.action) |action| h.setp(record, "action", h.vstr(action));
     const out = ctx.util().clean(ctx, record);
     track.last = out;
 

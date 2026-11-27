@@ -45,6 +45,10 @@ class ProjectNameUtility:
         self.transform_request = None
         self.transform_response = None
 
+        # The body codecs this SDK was generated with; see utility/codec.
+        self.codec = {}
+        self.multipart_boundary = None
+
         # Let the registrar fill in all functions
         if ProjectNameUtility._registrar is not None:
             ProjectNameUtility._registrar(self)
@@ -84,6 +88,8 @@ class ProjectNameUtility:
         u.result_headers = src.result_headers
         u.transform_request = src.transform_request
         u.transform_response = src.transform_response
+        u.codec = src.codec
+        u.multipart_boundary = src.multipart_boundary
         u.custom = {}
         for k, v in src.custom.items():
             u.custom[k] = v

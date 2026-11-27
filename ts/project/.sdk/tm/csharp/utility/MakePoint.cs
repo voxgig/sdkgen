@@ -73,7 +73,17 @@ public static partial class SdkUtility
         return missing;
     }
 
+    // Once the point is known, a body of bytes it answers is refused and the
+    // sources its binary fields carry are lifted out of the data.
     internal static Dictionary<string, object?>? MakePointUtil(Context ctx)
+    {
+        var point = SelectPoint(ctx);
+        BytesRefused(ctx);
+        LiftSources(ctx);
+        return point;
+    }
+
+    private static Dictionary<string, object?>? SelectPoint(Context ctx)
     {
         if (ctx.Out.TryGetValue("point", out var outPoint) && outPoint != null)
         {
@@ -96,10 +106,11 @@ public static partial class SdkUtility
 
         var allowOpVal = StructUtils.GetPath(options, StructUtils.Jt("allow", "op"));
         var allowOp = allowOpVal as string ?? "";
-        if (!global::ProjectNameSdk.Helpers.Allowed(allowOpVal, op.Name))
+        if (!OpKeys(ctx).Any(key => global::ProjectNameSdk.Helpers.Allowed(allowOpVal, key)))
         {
+            var action = OpAction(ctx);
             throw ctx.MakeError("point_op_allow",
-                "Operation \"" + op.Name +
+                "Operation \"" + op.Name + (action == null ? "" : ":" + action) +
                 "\" not allowed by SDK option allow.op value: \"" + allowOp + "\"");
         }
 

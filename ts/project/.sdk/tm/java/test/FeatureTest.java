@@ -23,6 +23,7 @@ import static JAVAPACKAGE.sdktest.FeatureHarness.fhErrCode;
 import static JAVAPACKAGE.sdktest.FeatureHarness.fhF;
 import static JAVAPACKAGE.sdktest.FeatureHarness.fhHasFeature;
 import static JAVAPACKAGE.sdktest.FeatureHarness.fhMake;
+import static JAVAPACKAGE.sdktest.FeatureHarness.fhMakeWith;
 import static JAVAPACKAGE.sdktest.FeatureHarness.fhMap;
 import static JAVAPACKAGE.sdktest.FeatureHarness.fhOp;
 import static JAVAPACKAGE.sdktest.FeatureHarness.fhResponse;
@@ -46,6 +47,7 @@ import JAVAPACKAGE.core.Context;
 import JAVAPACKAGE.feature.AuditFeature;
 import JAVAPACKAGE.feature.CacheFeature;
 import JAVAPACKAGE.feature.ClienttrackFeature;
+import JAVAPACKAGE.feature.CostFeature;
 import JAVAPACKAGE.feature.DebugFeature;
 import JAVAPACKAGE.feature.IdempotencyFeature;
 import JAVAPACKAGE.feature.MetricsFeature;
@@ -625,6 +627,207 @@ public class FeatureTest {
         "active", false, "deny", true)));
     FhOpResult res = h.op(fhOp("load"));
     assertTrue(res.ok, "inactive rbac must not deny: " + res.err);
+  }
+
+  // --- action keys ----------------------------------------------------------------
+  // A custom action is `$action` in the request argument, and its keys name
+  // it: `<entity>.<op>:<action>`, most specific first.
+
+  static Map<String, Object> akAudio() {
+    return fhMap("$action", "audio", "id", "e1");
+  }
+
+  static Map<String, Object> akRecord() {
+    return fhMap("id", "e1");
+  }
+
+  static List<Object> akList(Object... items) {
+    List<Object> out = new ArrayList<>();
+    for (Object item : items) {
+      out.add(item);
+    }
+    return out;
+  }
+
+  @Test
+  public void actionKeys_rbacGrantsRecordRefusesAction() {
+    assumeFeatures("rbac");
+    FhRecorder rec = new FhRecorder();
+    RbacFeature f = new RbacFeature();
+    FhHarness h = fhMake(rec::fetch, fhF(f, fhMap(
+        "rules", fhMap("episode.load", "read", "episode.load:audio", "audio"),
+        "permissions", akList("read"))));
+    FhOpResult plain = h.op(fhOp("load").entity("episode").reqmatch(akRecord()));
+    assertTrue(plain.ok, "expected the record granted: " + plain.err);
+    FhOpResult res = h.op(fhOp("load").entity("episode").reqmatch(akAudio()));
+    assertEquals("rbac_denied", fhErrCode(res.err));
+    assertTrue(res.err.getMessage().contains("operation \"load:audio\""),
+        "expected the action named: " + res.err.getMessage());
+    assertEquals(1, rec.calls.size(), "expected one network call");
+    assertEquals("audio", f.last.get("action"));
+  }
+
+  @Test
+  public void actionKeys_rbacGrantsActionRefusesRecord() {
+    assumeFeatures("rbac");
+    FhHarness h = fhMake(null, fhF(new RbacFeature(), fhMap(
+        "rules", fhMap("episode.load", "read", "episode.load:audio", "audio"),
+        "permissions", akList("audio"))));
+    assertEquals("rbac_denied",
+        fhErrCode(h.op(fhOp("load").entity("episode").reqmatch(akRecord())).err));
+    FhOpResult res = h.op(fhOp("load").entity("episode").reqmatch(akAudio()));
+    assertTrue(res.ok, "expected the action granted: " + res.err);
+  }
+
+  @Test
+  public void actionKeys_rbacActionFallsBackToOperation() {
+    assumeFeatures("rbac");
+    FhHarness h = fhMake(null, fhF(new RbacFeature(), fhMap(
+        "rules", fhMap("episode.load", "read"),
+        "permissions", akList())));
+    assertEquals("rbac_denied",
+        fhErrCode(h.op(fhOp("load").entity("episode").reqmatch(akAudio())).err));
+  }
+
+  @Test
+  public void actionKeys_rbacDataOpReadsReqdataOnly() {
+    assumeFeatures("rbac");
+    FhHarness h = fhMake(null, fhF(new RbacFeature(), fhMap(
+        "rules", fhMap("episode.create:upload", "write"),
+        "permissions", akList())));
+    assertEquals("rbac_denied", fhErrCode(h.op(fhOp("create").entity("episode")
+        .reqdata(fhMap("$action", "upload"))).err));
+    FhOpResult res = h.op(fhOp("create").entity("episode")
+        .reqmatch(fhMap("$action", "upload")));
+    assertTrue(res.ok, "expected reqmatch ignored on a data op: " + res.err);
+  }
+
+  @Test
+  public void actionKeys_metricsCountsActionApart() {
+    assumeFeatures("metrics");
+    MetricsFeature f = new MetricsFeature();
+    FhHarness h = fhMake(null, fhF(f, null));
+    h.op(fhOp("load").entity("episode").reqmatch(akRecord()));
+    h.op(fhOp("load").entity("episode").reqmatch(akAudio()));
+    h.op(fhOp("load").entity("episode").reqmatch(akAudio()));
+    assertEquals(3, f.total.count);
+    assertEquals(1, f.ops.get("episode.load").count);
+    assertEquals(2, f.ops.get("episode.load:audio").count);
+  }
+
+  @Test
+  public void actionKeys_auditRecordNamesAction() {
+    assumeFeatures("audit");
+    AuditFeature f = new AuditFeature();
+    FhHarness h = fhMake(null, fhF(f, null));
+    h.op(fhOp("load").entity("episode").reqmatch(akRecord()));
+    h.op(fhOp("load").entity("episode").reqmatch(akAudio()));
+    assertFalse(f.records.get(0).containsKey("action"), "a plain record has no action");
+    assertEquals("load", f.records.get(0).get("op"));
+    assertEquals("audio", f.records.get(1).get("action"));
+    assertEquals("load", f.records.get(1).get("op"));
+  }
+
+  @Test
+  public void actionKeys_costPricesActionApart() {
+    assumeFeatures("cost");
+    List<Map<String, Object>> sunk = new ArrayList<>();
+    CostFeature f = new CostFeature();
+    FhHarness h = fhMake(null, fhF(f, fhMap(
+        "rates", fhMap("episode.load", 1, "episode.load:audio", 5),
+        "sink", (Consumer<Map<String, Object>>) sunk::add)));
+    h.op(fhOp("load").entity("episode").reqmatch(akRecord()));
+    h.op(fhOp("load").entity("episode").reqmatch(akAudio()));
+    assertEquals(6.0, f.total.amount);
+    assertEquals(1, f.ops.get("episode.load").calls);
+    assertEquals(1.0, f.ops.get("episode.load").amount);
+    assertEquals(1, f.ops.get("episode.load:audio").calls);
+    assertEquals(5.0, f.ops.get("episode.load:audio").amount);
+    assertFalse(sunk.get(0).containsKey("action"), "a plain record has no action");
+    assertEquals("audio", sunk.get(1).get("action"));
+    assertEquals("audio", f.last.get("action"));
+  }
+
+  @Test
+  public void actionKeys_costActionFallsBackToOperationRate() {
+    assumeFeatures("cost");
+    CostFeature f = new CostFeature();
+    FhHarness h = fhMake(null, fhF(f, fhMap(
+        "rates", fhMap("episode.load", 2, "*", 9))));
+    h.op(fhOp("load").entity("episode").reqmatch(akAudio()));
+    assertEquals(1, f.ops.get("episode.load:audio").calls);
+    assertEquals(2.0, f.ops.get("episode.load:audio").amount);
+  }
+
+  // The caller's action can carry a registered secret; what a consumer reads
+  // is cleaned, while a rule or rate still names the raw action.
+  static final String AK_SECRET = "SECRETACTION9";
+
+  static Map<String, Object> akSecret() {
+    return fhMap("$action", AK_SECRET, "id", "e1");
+  }
+
+  static void akNoSecret(String what, Iterable<String> keys) {
+    for (String key : keys) {
+      assertFalse(key.contains(AK_SECRET), what + " names the secret: " + key);
+    }
+  }
+
+  @Test
+  public void actionKeys_rbacCleansTheRecordedAction() {
+    assumeFeatures("rbac");
+    RbacFeature f = new RbacFeature();
+    FhHarness h = fhMakeWith(fhMap("apikey", AK_SECRET), null, fhF(f, fhMap(
+        "rules", fhMap("episode.load:" + AK_SECRET, "audio"),
+        "permissions", akList())));
+    assertEquals("rbac_denied",
+        fhErrCode(h.op(fhOp("load").entity("episode").reqmatch(akSecret())).err));
+    assertFalse(String.valueOf(f.last.get("action")).contains(AK_SECRET),
+        "the recorded action is the secret: " + f.last.get("action"));
+    assertEquals("[redacted]", f.last.get("action"));
+  }
+
+  @Test
+  public void actionKeys_metricsCleansTheBucketName() {
+    assumeFeatures("metrics");
+    MetricsFeature f = new MetricsFeature();
+    FhHarness h = fhMakeWith(fhMap("apikey", AK_SECRET), null, fhF(f, null));
+    h.op(fhOp("load").entity("episode").reqmatch(akSecret()));
+    h.op(fhOp("load").entity("episode").reqmatch(akAudio()));
+    akNoSecret("metrics.ops", f.ops.keySet());
+    assertEquals(1, f.ops.get("episode.load:[redacted]").count);
+    assertEquals(1, f.ops.get("episode.load:audio").count);
+  }
+
+  @Test
+  public void actionKeys_costCleansTheBucketName() {
+    assumeFeatures("cost");
+    CostFeature f = new CostFeature();
+    FhHarness h = fhMakeWith(fhMap("apikey", AK_SECRET), null, fhF(f, fhMap(
+        "rates", fhMap("episode.load:" + AK_SECRET, 7, "episode.load", 1))));
+    h.op(fhOp("load").entity("episode").reqmatch(akSecret()));
+    h.op(fhOp("load").entity("episode").reqmatch(akAudio()));
+    akNoSecret("cost.ops", f.ops.keySet());
+    assertEquals(7.0, f.ops.get("episode.load:[redacted]").amount);
+    assertEquals(1.0, f.ops.get("episode.load:audio").amount);
+  }
+
+  @Test
+  public void actionKeys_actionAsSensitiveKeyIsMasked() {
+    assumeFeatures("rbac", "metrics", "cost");
+    RbacFeature rbac = new RbacFeature();
+    MetricsFeature metrics = new MetricsFeature();
+    CostFeature cost = new CostFeature();
+    FhHarness h = fhMakeWith(fhMap("clean", fhMap("keys", "action")), null,
+        fhF(rbac, fhMap("rules", fhMap("episode.load:audio", "audio"),
+            "permissions", akList("audio"))),
+        fhF(metrics, null),
+        fhF(cost, fhMap("rates", fhMap("episode.load:audio", 5))));
+    FhOpResult res = h.op(fhOp("load").entity("episode").reqmatch(akAudio()));
+    assertTrue(res.ok, "expected the raw action's rule to grant: " + res.err);
+    assertEquals("[redacted]", rbac.last.get("action"));
+    assertEquals(1, metrics.ops.get("episode.load:[redacted]").count);
+    assertEquals(5.0, cost.ops.get("episode.load:[redacted]").amount);
   }
 
   // --- metrics --------------------------------------------------------------------

@@ -4,7 +4,7 @@ import * as Path from 'node:path'
 import {
   cmp, camelify, names,
   File, Content, Folder, Fragment,
-  entityClassName, entityCollection,
+  entityClassName, entityCollection, entitySlots,
 } from '@voxgig/sdkgen'
 
 import {
@@ -35,6 +35,28 @@ const Entity = cmp(function Entity(props: any) {
   names(entrep, entity.Name, 'EntityName')
 
   const ff = Path.normalize(__dirname + '/../../../src/cmp/kotlin/fragment/')
+
+  // The entity's binary slots, by name; '' is its own bytes, reached with no name.
+  const slots = entitySlots(entity)
+  const handle = kotlinpackage + '.utility.codec.HandleCodec'
+  const named = slots.filter((slot: any) => '' !== slot.name)
+  const str = (v: any) => null == v ? 'null' : JSON.stringify(v).replace(/\$/g, '\\$')
+  const binarySlot = 0 === slots.length ? '' : `  // An entity's bytes never enter its data: they are reached by slot.
+  companion object {
+${named.map((slot: any) => '    const val BINARY_' +
+    slot.name.replace(/[^A-Za-z0-9]+/g, '_').toUpperCase() + ' = ' + str(slot.name) + '\n').join('')}
+    private val BINARY_SLOTS: Map<String, ${handle}.SlotDef> = mapOf(
+${slots.map((slot: any) => '      ' + str(slot.name) + ' to ' + handle + '.SlotDef(' +
+    [slot.action, slot.read, slot.write].map(str).join(', ') + ')').join(',\n')},
+    )
+  }
+${named.length < slots.length ? `
+  fun binary(): ${handle}.BinaryHandle =
+    ${handle}.BinaryHandle(this, this.entctx, BINARY_SLOTS, "")
+` : ''}${0 < named.length ? `
+  fun binary(slot: String): ${handle}.BinaryHandle =
+    ${handle}.BinaryHandle(this, this.entctx, BINARY_SLOTS, slot)
+` : ''}`
 
   // Entity classes go to the entity/ folder.
   Folder({ name: 'entity' }, () => {
@@ -70,6 +92,9 @@ const Entity = cmp(function Entity(props: any) {
           // Class tokens are decoupled from the EntityName data-type token so
           // the class can be renamed independently.
           EntyClass: cls,
+
+          '// #BinarySlot': ({ indent }: any) =>
+            '' === binarySlot ? undefined : Content({ indent }, binarySlot),
 
           '#Entity-Hook': ({ name, indent }: any) =>
             Content({ indent }, `utility.featureHook(ctx, "${name}")`),

@@ -1,6 +1,7 @@
 
 
 const { clean, cleanAdd, cleanSecret } = require('./CleanUtility')
+const { CODEC } = require('./codec')
 const { cleanExplain, done } = require('./DoneUtility')
 const { makeError } = require('./MakeErrorUtility')
 const { featureAdd } = require('./FeatureAddUtility')
@@ -71,6 +72,10 @@ class Utility {
   resultHeaders = resultHeaders
   transformRequest = transformRequest
   transformResponse = transformResponse
+
+  // The body codecs this SDK was generated with; see codec/index.
+  codec = CODEC
+  multipartBoundary = CODEC.multipartBoundary
 
   struct = new StructUtility()
 }

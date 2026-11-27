@@ -214,9 +214,19 @@ def _binary_bodies(ctx, cfg):
     body = _prop(point, "body")
     if _prop(body, "kind") == "raw" and _prop(body, "binary") is True:
         media = _prop(body, "media")
-        bodies.append({"live": known(_prop(_prop(ctx, "spec"), "body"),
-                                     _prop(_prop(ctx, "reqdata"), RAW_BODY)),
+        sources = _prop(ctx, "sources")
+        raw = sources.get(RAW_BODY) if isinstance(sources, dict) and RAW_BODY in sources \
+            else _prop(_prop(ctx, "reqdata"), RAW_BODY)
+        bodies.append({"live": known(_prop(_prop(ctx, "spec"), "body"), raw, _prop(raw, "data")),
                        "type": media if isinstance(media, str) else None, "sized": True})
+    # An encoded multipart body, and a form body that carries a file.
+    fields = _prop(body, "fields")
+    files = isinstance(fields, list) and any(_prop(f, "binary") is True for f in fields)
+    if _prop(body, "kind") == "multipart" or (_prop(body, "kind") == "form" and files):
+        spec = _prop(ctx, "spec")
+        ctype = header_value(_prop(spec, "headers"), "content-type")
+        bodies.append({"live": known(_prop(spec, "body")),
+                       "type": ctype if "" != ctype else None, "sized": True})
     response = _prop(ctx, "response")
     ctype = header_value(_prop(response, "headers"), "content-type")
     if response is not None and is_binary_response(point, ctype):

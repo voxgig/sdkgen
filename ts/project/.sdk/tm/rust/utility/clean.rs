@@ -6,6 +6,7 @@ use crate::core::error::ProjectNameError;
 use crate::core::helpers::{getp, getpath, jo, setp};
 use crate::core::response::{header_value, is_binary_response, Response};
 use crate::core::spec::Spec;
+use crate::utility::binary::Lifted;
 use crate::utility::media::{is_raw_request, RAW_BODY};
 use crate::utility::voxgigstruct as vs;
 use crate::utility::voxgigstruct::Value;
@@ -36,6 +37,7 @@ struct CleanConfig {
 struct BinaryBody {
     spec: Option<Rc<RefCell<Spec>>>,
     reqdata: Value,
+    lifted: Value,
     media: Option<String>,
     response: Option<Rc<RefCell<Response>>>,
     ctype: Option<String>,
@@ -284,7 +286,16 @@ fn node_ptr(val: &Value) -> Option<usize> {
 fn binary_body(ctx: &Context) -> Option<BinaryBody> {
     let point = ctx.point.borrow();
     let body = getp(&point, "body");
-    let sent = is_raw_request(&point) && getp(&body, "binary") == Value::Bool(true);
+    let raw = is_raw_request(&point) && getp(&body, "binary") == Value::Bool(true);
+    // An encoded multipart body, and a form body that carries a file, are a
+    // string or a list of byte values here: described by the point's kind.
+    let files = match getp(&body, "fields") {
+        Value::List(l) => l.borrow().iter().any(|f| getp(f, "binary") == Value::Bool(true)),
+        _ => false,
+    };
+    let kind = getp(&body, "kind");
+    let encoded = kind == Value::str("multipart") || (kind == Value::str("form") && files);
+    let sent = raw || encoded;
     let response = ctx.response.borrow().clone();
     let ctype = response.as_ref().map(|r| header_value(&r.borrow().headers, "content-type"));
     let answered = ctype.as_deref().map_or(false, |t| is_binary_response(&point, t));
@@ -299,21 +310,37 @@ fn binary_body(ctx: &Context) -> Option<BinaryBody> {
     };
     let spec = ctx.spec.borrow().clone().filter(|spec| sent && long(&spec.borrow().body));
     let reqdata = match &*ctx.reqdata.borrow() {
-        Value::Map(data) if sent && data.borrow().get(RAW_BODY).map_or(false, &long) => {
+        Value::Map(data) if raw && data.borrow().get(RAW_BODY).map_or(false, &long) => {
             Value::Map(data.clone())
         }
         _ => Value::Noval,
     };
+    let lifted = ctx
+        .sources
+        .borrow()
+        .iter()
+        .flatten()
+        .find_map(|(name, v)| match v {
+            Lifted::Data(d) if raw && RAW_BODY == name && long(d) => Some(d.clone()),
+            _ => None,
+        })
+        .unwrap_or(Value::Noval);
     let response = response.filter(|r| answered && long(&r.borrow().body));
-    if spec.is_none() && reqdata.is_noval() && response.is_none() {
+    if spec.is_none() && reqdata.is_noval() && lifted.is_noval() && response.is_none() {
         return None;
     }
-    let media = match getp(&body, "media") {
-        Value::Str(s) => Some(s),
-        _ => None,
+    let media = if encoded {
+        spec.as_ref()
+            .map(|s| header_value(&s.borrow().headers, "content-type"))
+            .filter(|t| !t.is_empty())
+    } else {
+        match getp(&body, "media") {
+            Value::Str(s) => Some(s),
+            _ => None,
+        }
     };
     let ctype = ctype.filter(|t| !t.is_empty());
-    Some(BinaryBody { spec, reqdata, media, response, ctype })
+    Some(BinaryBody { spec, reqdata, lifted, media, response, ctype })
 }
 
 fn is_request_body(bin: &BinaryBody, val: &Value) -> bool {
@@ -321,6 +348,9 @@ fn is_request_body(bin: &BinaryBody, val: &Value) -> bool {
         if spec.borrow().body == *val {
             return true;
         }
+    }
+    if !bin.lifted.is_noval() && bin.lifted == *val {
+        return true;
     }
     match &bin.reqdata {
         Value::Map(data) => data.borrow().get(RAW_BODY).map_or(false, |body| body == val),

@@ -711,4 +711,48 @@ public class PipelineTest {
     Object[] got = authPlaced(sdkopts, "stale");
     assertFalse((Boolean) got[1], "expected the credential dropped");
   }
+
+  // --- makePoint: allow.op ---------------------------------------------------
+
+  static Object plPoint(String allow, Map<String, Object> reqmatch,
+      List<Object> points) {
+    ProjectNameSDK client = plClient(null);
+    Utility utility = client.getUtility();
+    Context ctx = plCtx(client, utility, null);
+    ctx.op = new JAVAPACKAGE.core.Operation(fhMap(
+        "name", "load", "entity", "episode", "input", "match", "points", points));
+    ctx.options = fhMap("allow", fhMap("op", allow));
+    ctx.reqmatch = reqmatch;
+    ctx.match = new LinkedHashMap<>();
+    try {
+      return utility.makePoint.apply(ctx);
+    }
+    catch (SdkError e) {
+      return e.code;
+    }
+  }
+
+  @Test
+  public void makePoint_allowListEntryMayNameAnAction() {
+    Map<String, Object> plain = fhMap("method", "GET",
+        "parts", List.of("episode", "{id}"),
+        "select", fhMap("exist", List.of("id")));
+    Map<String, Object> audio = fhMap("method", "GET",
+        "parts", List.of("episode", "{id}", "audio"),
+        "select", fhMap("exist", List.of("id"), "$action", "audio"));
+    List<Object> points = new ArrayList<>();
+    points.add(plain);
+    points.add(audio);
+    Map<String, Object> record = fhMap("id", "e1");
+    Map<String, Object> action = fhMap("$action", "audio", "id", "e1");
+
+    assertTrue(audio == plPoint("episode.load:audio", action, points));
+    assertEquals("point_op_allow", plPoint("episode.load:audio", record, points));
+    assertTrue(audio == plPoint("Episode.Load:AUDIO", action, points));
+    assertEquals("point_op_allow", plPoint("episode.load:video", action, points));
+    assertTrue(audio == plPoint("episode.load", action, points));
+    assertTrue(audio == plPoint("load", action, points));
+    assertTrue(plain == plPoint("load", record, points));
+    assertEquals("point_op_allow", plPoint("list", record, points));
+  }
 }

@@ -50,6 +50,9 @@ class Context {
   match
   reqmatch
 
+  // The values of the point's binary fields, lifted out of reqdata.
+  sources
+
   entity
 
   // Shared persistent store.

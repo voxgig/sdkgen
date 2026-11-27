@@ -3,12 +3,12 @@
 // the feature: money is spent per HTTP ATTEMPT (a retried call is charged
 // again, because the upstream API charges it again), but it is owed by an
 // OPERATION. So the transport wrap prices each attempt, and PreDone
-// attributes the running total to `<entity>.<op>` and to the caller (the
+// attributes the running total to the call's first op key and to the caller (the
 // per-call ctrl actor, the same actor the audit feature records).
 //
 // The price of an attempt comes from the first source that answers: a
-// response header (`header` x `perUnit`), the rate table (`rates`, keyed
-// `<entity>.<op>` / `<op>` / `*`), then the flat `unit`. A body figure
+// response header (`header` x `perUnit`), the rate table (`rates`, keyed as
+// rbac's rules are), then the flat `unit`. A body figure
 // (`path` x `perUnit`, e.g. "usage.total_tokens") is read at PreDone
 // instead, from the already-parsed result, and describes the whole call, so
 // it REPLACES the per-attempt estimate rather than adding to it.
@@ -98,16 +98,13 @@ static void cost_bump(CostMap* m, const char* key, double amount) {
   b->amount += amount;
 }
 
-static char* cost_dot_join(const char* a, const char* b) {
-  size_t na = a ? strlen(a) : 0;
-  size_t nb = b ? strlen(b) : 0;
-  char* s = (char*)malloc(na + nb + 2);
-  memcpy(s, a ? a : "", na);
-  s[na] = '.';
-  memcpy(s + na + 1, b ? b : "", nb);
-  s[na + 1 + nb] = '\0';
-  return s;
-}
+// What a spend is filed under. Every string is borrowed for the commit.
+typedef struct {
+  const char* key;
+  const char* entity;
+  const char* op;
+  const char* action; // NULL for a call that names none
+} CostCall;
 
 // The model records the body figure as a dot path; getpath_c takes a
 // NULL-terminated segment array. Sized from the path itself so a long path is
@@ -116,7 +113,7 @@ static char* cost_dot_join(const char* a, const char* b) {
 // would vanish with whichever feature happened to own it.)
 // Defined below; `through` commits raw (unpipelined) calls through it.
 static void cost_commit(CostTrack* t, voxgig_value* options, Context* ctx,
-                        voxgig_value* pending, const char* entity, const char* opname);
+                        voxgig_value* pending, CostCall call);
 
 // A fresh per-operation accumulator.
 static voxgig_value* cost_new_pending(void) {
@@ -165,31 +162,21 @@ static double cost_per_unit(voxgig_value* options) {
   return fopt_num(options, "perUnit", 0.0);
 }
 
-// The rate table uses the same lookup grammar as rbac's rules:
-// `<entity>.<op>`, then `<op>`, then `*`.
+// The rate table is keyed as rbac's rules are.
 static bool cost_rate(voxgig_value* options, Context* ctx, double* out) {
   voxgig_value* rates = fopt_map(options, "rates");
   if (!v_is_map(rates)) return false;
 
-  const char* entity = ctx->op ? ctx->op->entity : "";
-  const char* opname = ctx->op ? ctx->op->name : "";
-  char* joined = cost_dot_join(entity, opname);
-
-  const char* keys[3];
-  keys[0] = joined;
-  keys[1] = opname;
-  keys[2] = "*";
-
+  OpKeys keys = op_keys(ctx);
   bool found = false;
-  for (int i = 0; i < 3 && !found; i++) {
-    voxgig_value* v = getp(rates, keys[i]);
+  for (size_t i = 0; i < keys.len && !found; i++) {
+    voxgig_value* v = getp(rates, keys.items[i]);
     if (voxgig_is_number(v)) {
       *out = voxgig_as_double(v);
       found = true;
     }
   }
-
-  free(joined);
+  op_keys_free(&keys);
   return found;
 }
 
@@ -321,7 +308,8 @@ static voxgig_value* through(Fetcher* self, Context* ctx, const char* url,
   // pipeline hooks, so there is no PrePoint to gate on and no PreDone to
   // commit. Their spend is committed here, or it would never be counted.
   if (!piped) {
-    cost_commit(track, options, ctx, pending, "_", "direct");
+    CostCall call = {"_.direct", "_", "direct", NULL};
+    cost_commit(track, options, ctx, pending, call);
     ctx_out_extra_set(ctx, COST_PENDING_KEY, v_undef());
   } else {
     ctx_out_extra_set(ctx, COST_PENDING_KEY, pending);
@@ -365,7 +353,7 @@ static void cost_pre_point(CostFeature* cf, Context* ctx) {
 // attribution, and the record. Shared by cost_finish and the raw-request path
 // in through, which has no PreDone to reach.
 static void cost_commit(CostTrack* t, voxgig_value* options, Context* ctx,
-                        voxgig_value* pending, const char* entity, const char* opname) {
+                        voxgig_value* pending, CostCall call) {
   double amount = 0.0;
   double reported = 0.0;
   double estimated = 0.0;
@@ -405,16 +393,15 @@ static void cost_commit(CostTrack* t, voxgig_value* options, Context* ctx,
   if (ctx->ctrl && ctx->ctrl->actor && ctx->ctrl->actor[0] != '\0') actor = ctx->ctrl->actor;
 
   t->calls += 1;
-  char* key = cost_dot_join(entity, opname);
-  cost_bump(&t->ops, key, amount);
-  free(key);
+  cost_bump(&t->ops, call.key, amount);
   cost_bump(&t->actors, actor, amount);
 
   t->seq += 1;
   voxgig_value* record =
-      cmap(8, "seq", v_num((double)t->seq), "entity", v_str(entity), "op", v_str(opname),
-           "actor", v_str(actor), "amount", v_num(amount), "currency", v_str(t->currency),
-           "source", v_str(source), "attempts", v_num((double)attempts));
+      cmap(8, "seq", v_num((double)t->seq), "entity", v_str(call.entity), "op",
+           v_str(call.op), "actor", v_str(actor), "amount", v_num(amount), "currency",
+           v_str(t->currency), "source", v_str(source), "attempts", v_num((double)attempts));
+  if (call.action) setp(record, "action", v_str(call.action));
   record = clean_util(ctx, record);
   t->last = record;
 
@@ -449,10 +436,15 @@ static void cost_finish(CostFeature* cf, Context* ctx, bool done) {
     if (!voxgig_is_number(an) || 0 == (int64_t)voxgig_as_double(an)) return;
   }
 
-  const char* entity = (ctx->op && ctx->op->entity[0] != '\0') ? ctx->op->entity : "_";
-  const char* opname = (ctx->op && ctx->op->name[0] != '\0') ? ctx->op->name : "_";
-
-  cost_commit(cf->track, cf->options, ctx, pending, entity, opname);
+  // cost_map_entry keeps its own copy of the key.
+  char* key = op_file_key(ctx);
+  CostCall call;
+  call.key = key;
+  call.entity = (ctx->op && ctx->op->entity[0] != '\0') ? ctx->op->entity : "_";
+  call.op = (ctx->op && ctx->op->name[0] != '\0') ? ctx->op->name : "_";
+  call.action = op_action(ctx);
+  cost_commit(cf->track, cf->options, ctx, pending, call);
+  free(key);
 }
 
 static const char* cost_name(Feature* f) { return ((CostFeature*)f)->name; }

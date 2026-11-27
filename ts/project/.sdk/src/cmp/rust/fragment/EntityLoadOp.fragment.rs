@@ -1,6 +1,6 @@
 // EJECT-START
 
-fn load(self: &Rc<Self>, reqmatch: Value, ctrl: Value) -> Result<Rc<Self>, ProjectNameError> {
+fn load_with(self: &Rc<Self>, reqmatch: Value, ctrl: Value, opwith: OpWith) -> Result<Rc<Self>, ProjectNameError> {
     let ctx = self.utility.make_context(
         CtxSpec {
             opname: Some("load".to_string()),
@@ -8,6 +8,8 @@ fn load(self: &Rc<Self>, reqmatch: Value, ctrl: Value) -> Result<Rc<Self>, Proje
             mtch: Some(self.mtch.borrow().clone()),
             data: Some(self.data.borrow().clone()),
             reqmatch: Some(reqmatch),
+            sources: Some(opwith.sources),
+            transfer: opwith.transfer,
             ..Default::default()
         },
         Some(&self.ent_ctx()),

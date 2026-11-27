@@ -6,6 +6,11 @@ import KOTLINPACKAGE.utility.Register
 // feature can replace or wrap it.
 typealias FetcherFn = (Context, String, MutableMap<String, Any?>) -> Any?
 
+// A body encoder: the data, the lifted sources, and back the content type and body.
+typealias EncodeFn = (Context, Any?, Map<String, Any?>) -> MutableMap<String, Any?>
+
+typealias RawFn = (Context) -> Unit
+
 /**
  * The utility object: every pipeline step as a replaceable function field,
  * mirroring the ts/go utility objects. Features and tests may replace
@@ -46,6 +51,9 @@ class Utility private constructor(register: Boolean) {
   lateinit var resultHeaders: (Context) -> Result
   lateinit var transformRequest: (Context) -> Any?
   lateinit var transformResponse: (Context) -> Any?
+  // The body codecs this SDK was generated with; see utility/codec/CodecIndex.
+  var codec: MutableMap<String, Any?> = linkedMapOf()
+  var multipartBoundary: ((Context) -> String)? = null
   var custom: MutableMap<String, Any?> = linkedMapOf()
 
   constructor() : this(true)
@@ -93,6 +101,8 @@ class Utility private constructor(register: Boolean) {
     u.resultHeaders = this.resultHeaders
     u.transformRequest = this.transformRequest
     u.transformResponse = this.transformResponse
+    u.codec = LinkedHashMap(this.codec)
+    u.multipartBoundary = this.multipartBoundary
 
     u.custom = LinkedHashMap(this.custom)
 

@@ -10,6 +10,7 @@
 
 defmodule ProjectName.Feature.Audit do
   alias Voxgig.Struct, as: S
+  alias ProjectName.Helpers, as: H
   alias ProjectName.Feature
 
   def new do
@@ -85,7 +86,7 @@ defmodule ProjectName.Feature.Audit do
           "outcome", outcome,
           "status", status,
           "correlationId", S.getprop(ctx, "id")
-        ]))
+        ] ++ action_kv(ctx)))
 
       client = S.getprop(f, "client")
       records = S.getprop(S.getprop(client, "_audit"), "records")
@@ -120,6 +121,13 @@ defmodule ProjectName.Feature.Audit do
     if S.size(records) > mx do
       S.delprop(records, 0)
       trim(records, mx)
+    end
+  end
+
+  defp action_kv(ctx) do
+    case H.op_action(ctx) do
+      nil -> []
+      action -> ["action", action]
     end
   end
 end

@@ -9,10 +9,13 @@ exports.opParams = opParams;
 exports.selectablePoints = selectablePoints;
 exports.pointRequires = pointRequires;
 exports.opReachable = opReachable;
+exports.opNeedsHandle = opNeedsHandle;
 exports.opNeedsAction = opNeedsAction;
 exports.ownPoint = ownPoint;
 exports.opActions = opActions;
 exports.entityActions = entityActions;
+exports.entitySlots = entitySlots;
+exports.modelCodecs = modelCodecs;
 exports.entityPath = entityPath;
 exports.directRoute = directRoute;
 exports.opRequestShape = opRequestShape;
@@ -89,6 +92,54 @@ function entityActions(entity) {
     });
     return out;
 }
+const SLOT_WRITERS = ['update', 'patch', 'create'];
+// A slot is an action whose active points answer or take bytes; the entity's
+// own bytes, by its plain load, are the unnamed slot ''.
+function entitySlots(entity) {
+    const slots = {};
+    const ops = (entity && entity.op) || {};
+    const binaryPoints = (opname, side) => (0, jostraca_1.each)(ops[opname]?.points || [])
+        .filter((pt) => false !== pt?.a && true === pt?.[side]?.binary &&
+        'raw' === pt?.[side]?.kind);
+    for (const pt of binaryPoints('load', 'rs')) {
+        const action = null == pt.q?.['$action'] ? '' : String(pt.q['$action']);
+        slots[action] = slots[action] || { name: action, action };
+        slots[action].read = 'load';
+    }
+    for (const opname of SLOT_WRITERS) {
+        for (const pt of binaryPoints(opname, 'rb')) {
+            const action = null == pt.q?.['$action'] ? '' : String(pt.q['$action']);
+            if ('' === action && null == slots['']) {
+                continue;
+            }
+            slots[action] = slots[action] || { name: action, action };
+            slots[action].write = slots[action].write || opname;
+        }
+    }
+    return Object.keys(slots).sort().map((key) => slots[key]);
+}
+// The body codecs a model's active points need: a request of each kind
+// besides JSON, and a raw response.
+function modelCodecs(model) {
+    const out = { form: false, multipart: false, raw: false, slots: false };
+    const entities = (0, apidef_1.getModelPath)(model, `main.${apidef_1.KIT}.entity`, { required: false }) || {};
+    (0, jostraca_1.each)(entities).forEach((entity) => {
+        if (0 < entitySlots(entity).length) {
+            out.slots = true;
+        }
+        (0, jostraca_1.each)(entity?.op || {}).forEach((op) => {
+            (0, jostraca_1.each)(op?.points || []).filter((pt) => false !== pt?.a).forEach((pt) => {
+                if ('form' === pt?.rb?.kind)
+                    out.form = true;
+                if ('multipart' === pt?.rb?.kind)
+                    out.multipart = true;
+                if ('raw' === pt?.rs?.kind)
+                    out.raw = true;
+            });
+        });
+    });
+    return out;
+}
 function entityPath(entity) {
     const ops = (entity && entity.op) || {};
     for (const opname of CANON_OP_ORDER) {
@@ -157,12 +208,22 @@ function samePath(points) {
     return points.every((pt) => first === (0, pointPath_1.pointPathKey)(pt));
 }
 // The rule makePoint applies to a call without an action: only a point
-// without one, and one the call fills.
+// without one, one the call fills, and one that does not answer bytes.
 function opReachable(op, given) {
     const points = op && op.points ? (0, jostraca_1.each)(op.points) : [];
     const have = new Set(given);
     const fills = (pt) => (0, pointPath_1.pointPlaceholders)(pt).every((name) => have.has(name));
-    return points.some((pt) => null == (pt && pt.q && pt.q['$action']) && fills(pt));
+    return points.some((pt) => null == (pt && pt.q && pt.q['$action']) && fills(pt) &&
+        !answersBytes(pt));
+}
+// A point whose response is bytes is read through its slot's handle: a plain
+// call of it is refused.
+function answersBytes(pt) {
+    return 'raw' === pt?.rs?.kind && true === pt?.rs?.binary;
+}
+function opNeedsHandle(op) {
+    const points = selectablePoints(op);
+    return 0 < points.length && points.every(answersBytes);
 }
 function opNeedsAction(op) {
     const points = op && op.points ? (0, jostraca_1.each)(op.points) : [];
@@ -364,13 +425,13 @@ function invalidRequest(ent) {
 // The entity's ACTIVE op names that the bundled targets generate, in canonical
 // CRUD order. Doc generators gate an op example on this, NOT on the raw
 // `Object.keys(ent.op)`: an op outside `CANON_OP_ORDER` generates no method,
-// and an op whose every route is an action is refused without one, so a plain
-// example of either would fail.
+// and one whose every route is an action, or answers bytes, is refused when
+// called plainly, so a plain example of any would fail.
 const CANON_OP_ORDER = ['list', 'load', 'create', 'update', 'patch', 'remove'];
 exports.CANON_OP_ORDER = CANON_OP_ORDER;
 function entityOps(ent) {
     const ops = (ent && ent.op) || {};
-    return CANON_OP_ORDER.filter((o) => ops[o] && ops[o].active !== false && !opNeedsAction(ops[o]));
+    return CANON_OP_ORDER.filter((o) => ops[o] && ops[o].active !== false && !opNeedsAction(ops[o]) && !opNeedsHandle(ops[o]));
 }
 // Unlike entityOps, keeps action-only ops: the README introductions always have.
 // None when no active entity has one.

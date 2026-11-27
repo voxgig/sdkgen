@@ -87,6 +87,8 @@ private:
     if (ctx->result) {
       map_put(record, "status", Value(ctx->result->status));
     }
+    std::string action = opAction(ctx);
+    if (!action.empty()) map_put(record, "action", Value(action));
     record = ctx->utility->clean(ctx, record);
 
     records.as_list()->push_back(record);

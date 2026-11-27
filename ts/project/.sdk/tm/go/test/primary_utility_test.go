@@ -1040,6 +1040,109 @@ func TestPrimaryUtility(t *testing.T) {
 			return result, nil
 		})
 	})
+
+	// A codec section a project's corpus has not pulled yet is skipped, as is
+	// one for a codec this SDK was generated without: its model has no such point.
+	runcodec := func(t *testing.T, name string, kind string, present bool, subject any) {
+		t.Helper()
+		section, _ := primary[name].(map[string]any)
+		cases, _ := section[kind].(map[string]any)
+		if nil == cases {
+			t.Skipf("this project's test.json has no %s.%s section", name, kind)
+		}
+		if !present {
+			t.Skipf("this SDK was generated without the codec %s.%s needs", name, kind)
+		}
+		if set, _ := cases["set"].([]any); 0 == len(set) {
+			t.Fatalf("test corpus section '%s.%s' is EMPTY", name, kind)
+		}
+		run.RunSet(t, cases, subject)
+	}
+
+	for _, kind := range []string{"form", "multipart", "raw"} {
+		kind := kind
+		present := true
+		switch kind {
+		case "form":
+			present = nil != utility.Codec.Form
+		case "multipart":
+			present = nil != utility.Codec.Multipart
+		}
+		t.Run("body-"+kind, func(t *testing.T) {
+			fixed := *utility
+			fixed.MultipartBoundary = func(*sdk.Context) string { return "BOUNDARY" }
+			runcodec(t, "prepareBody", kind, present, func(args ...any) (any, error) {
+				ctx := omniCtx(args[0], client, &fixed)
+				ctx.Reqdata, _ = codecSourced(client, ctx.Reqdata).(map[string]any)
+				ctx.Reqmatch, _ = codecSourced(client, ctx.Reqmatch).(map[string]any)
+				ctx.Spec = sdk.NewSpec(map[string]any{"headers": map[string]any{}})
+				body := fixed.PrepareBody(ctx)
+				if err, failed := body.(error); failed {
+					return nil, err
+				}
+				out := map[string]any{"body": codecLatin1(body)}
+				if ctype, ok := ctx.Spec.Headers["content-type"]; ok {
+					out["type"] = ctype
+				}
+				return out, nil
+			})
+		})
+	}
+
+	t.Run("resbody-raw", func(t *testing.T) {
+		runcodec(t, "resultBody", "raw", nil != utility.Codec.Raw, func(args ...any) (any, error) {
+			ctx := omniCtx(args[0], client, utility)
+			if respMap, ok := args[0].(map[string]any)["response"].(map[string]any); ok {
+				ctx.Response.Body = codecSourced(client, respMap["body"])
+			}
+			utility.ResultBody(ctx)
+			if nil != ctx.Result.Err {
+				return nil, ctx.Result.Err
+			}
+			omniSyncCtx(args[0], ctx)
+			if transfer := ctx.Ctrl.Transfer; nil != transfer && nil != transfer.Bytes {
+				ctrl, _ := args[0].(map[string]any)["ctrl"].(map[string]any)
+				if tm, ok := ctrl["transfer"].(map[string]any); ok {
+					tm["bytes"] = codecLatin1(transfer.Bytes)
+				}
+			}
+			return nil, nil
+		})
+	})
+
+	t.Run("fetchdef-encoded", func(t *testing.T) {
+		runcodec(t, "makeFetchDef", "encoded", true, func(args ...any) (any, error) {
+			ctx := omniCtx(args[0], client, utility)
+			ctx.Spec.Body = codecSourced(client, ctx.Spec.Body)
+			byurl := *utility
+			byurl.MakeUrl = func(ctx *sdk.Context) (string, error) { return ctx.Spec.Url, nil }
+			ctx.Utility = &byurl
+			fetchdef, err := byurl.MakeFetchDef(ctx)
+			if err != nil {
+				return nil, err
+			}
+			out := map[string]any{}
+			for k, v := range fetchdef {
+				out[k] = v
+			}
+			out["body"] = codecLatin1(fetchdef["body"])
+			return out, nil
+		})
+	})
+
+	t.Run("clean-binary", func(t *testing.T) {
+		runcodec(t, "clean", "binary", true, func(args ...any) (any, error) {
+			if 2 != len(args) {
+				return nil, fmt.Errorf("clean: expected 2 args, got %d", len(args))
+			}
+			ctx := omniCtx(codecSourced(client, args[0]), client, utility)
+			if "spec$" == args[1] {
+				return utility.Clean(ctx, map[string]any{
+					"headers": ctx.Spec.Headers, "body": ctx.Spec.Body}), nil
+			}
+			return utility.Clean(ctx, codecSourced(client, args[1])), nil
+		})
+	})
 }
 
 // Helper: test hook feature for featureHook test
@@ -1175,4 +1278,56 @@ func retargetAuth(node any, cred *plAuthCred) any {
 		return out
 	}
 	return node
+}
+
+// `source$` is a source built by Binary.Bytes, `bytes$` bytes; both latin1.
+// A blob source is a plain one here: the platform has no blob.
+func codecSourced(client *sdk.ProjectNameSDK, val any) any {
+	switch v := val.(type) {
+	case []any:
+		out := make([]any, len(v))
+		for i, item := range v {
+			out[i] = codecSourced(client, item)
+		}
+		return out
+	case map[string]any:
+		if text, ok := v["source$"].(string); ok {
+			opts := map[string]any{}
+			for _, key := range []string{"name", "type"} {
+				if s, ok := v[key].(string); ok {
+					opts[key] = s
+				}
+			}
+			return client.Binary.Bytes(codecBytes(text), opts)
+		}
+		if text, ok := v["bytes$"].(string); ok {
+			return codecBytes(text)
+		}
+		out := make(map[string]any, len(v))
+		for k, item := range v {
+			out[k] = codecSourced(client, item)
+		}
+		return out
+	}
+	return val
+}
+
+func codecBytes(latin1 string) []byte {
+	out := []byte{}
+	for _, r := range latin1 {
+		out = append(out, byte(r))
+	}
+	return out
+}
+
+func codecLatin1(body any) any {
+	data, ok := body.([]byte)
+	if !ok {
+		return body
+	}
+	runes := make([]rune, len(data))
+	for i, b := range data {
+		runes[i] = rune(b)
+	}
+	return string(runes)
 }

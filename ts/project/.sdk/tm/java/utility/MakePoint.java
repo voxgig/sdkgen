@@ -74,7 +74,16 @@ final class MakePoint {
     return best;
   }
 
+  // Once the point is known, a body of bytes it answers is refused and the
+  // sources its binary fields carry are lifted out of the data.
   static Map<String, Object> makePoint(Context ctx) {
+    Map<String, Object> point = selectPoint(ctx);
+    Sources.bytesRefused(ctx);
+    Sources.liftSources(ctx);
+    return point;
+  }
+
+  private static Map<String, Object> selectPoint(Context ctx) {
     Object outPoint = ctx.out.get("point");
     if (outPoint != null) {
       // A PrePoint feature hook (e.g. rbac) may short-circuit the
@@ -94,9 +103,10 @@ final class MakePoint {
 
     Object allowOpRaw = Struct.getpath(options, List.of("allow", "op"));
     String allowOp = allowOpRaw instanceof String ? (String) allowOpRaw : "";
-    if (!Helpers.allowed(allowOpRaw, op.name)) {
+    if (Helpers.opKeys(ctx).stream().noneMatch((key) -> Helpers.allowed(allowOpRaw, key))) {
+      String action = Helpers.opAction(ctx);
       throw ctx.makeError("point_op_allow",
-          "Operation \"" + op.name
+          "Operation \"" + op.name + (action == null ? "" : ":" + action)
               + "\" not allowed by SDK option allow.op value: \"" + allowOp + "\"");
     }
 

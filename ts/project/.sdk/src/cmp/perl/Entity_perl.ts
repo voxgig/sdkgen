@@ -4,7 +4,7 @@ import * as Path from 'node:path'
 import {
   cmp, camelify, names,
   File, Folder, Fragment,
-  entityClassName, entityCollection,
+  entityClassName, entityCollection, entitySlots,
 } from '@voxgig/sdkgen'
 
 import {
@@ -33,6 +33,31 @@ const Entity = cmp(function Entity(props: any) {
 
   const ff = Path.normalize(__dirname + '/../../../src/cmp/perl/fragment/')
 
+  const slots = entitySlots(entity)
+  const q = (v: string) => "'" + v.replace(/\\/g, '\\\\').replace(/'/g, "\\'") + "'"
+  const slotDefs = slots.map((slot: any) => '  ' + q(slot.name) + ' => { action => ' +
+    q(slot.action) + (null == slot.read ? '' : ', read => ' + q(slot.read)) +
+    (null == slot.write ? '' : ', write => ' + q(slot.write)) + ' },').join('\n')
+  const named = slots.filter((slot: any) => '' !== slot.name).map((slot: any) => slot.name)
+
+  const binaryImport = 0 === slots.length ? '' :
+    `require(Cwd::abs_path("$__dir/../utility/codec/handle.pm"));
+
+my $BINARY_SLOTS = {
+${slotDefs}
+};
+`
+
+  const binarySlot = 0 === slots.length ? '' :
+    `# An entity's bytes never enter its data: they are reached by slot` +
+    (0 === named.length ? '.' : ', one of ' + named.map(q).join(', ') +
+      (named.length < slots.length ? ', or none for its own' : '') + '.') + `
+sub binary {
+  my ($self, $slot) = @_;
+  return ${model.const.Name}BinaryHandle->new($self, $BINARY_SLOTS, $slot);
+}
+`
+
   Folder({ name: 'entity' }, () => {
 
     File({ name: entity.name + '_entity.pm' }, () => {
@@ -56,6 +81,9 @@ const Entity = cmp(function Entity(props: any) {
           entityname: entity.name,
 
           EntyClass: cls,
+
+          '# #BinaryImport\n': binaryImport,
+          '# #BinarySlot\n': binarySlot,
 
           // Feature-hook markers. jostraca's built-in `#Name-Tag` pattern is
           // hardcoded to `//` comments, so the Perl fragment's

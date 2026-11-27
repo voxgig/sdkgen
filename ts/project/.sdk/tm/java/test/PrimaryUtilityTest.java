@@ -19,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import static JAVAPACKAGE.sdktest.FeatureHarness.fhMap;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -1162,6 +1163,132 @@ public class PrimaryUtilityTest {
       OmniResolver.omniSyncCtx(args[0], ctx);
 
       return null;
+    });
+  }
+
+  // A codec section a project's corpus has not pulled yet is skipped, as is one
+  // for a codec this SDK was generated without: its model has no such point.
+  static void runcodec(String name, String kind, String codec, OmniResolver.Subject subject) {
+    OmniResolver.Run run = run();
+    Map<String, Object> section = Helpers.toMapAny(
+        Helpers.toMapAny(run.spec.get(name)) == null ? null
+            : Helpers.toMapAny(run.spec.get(name)).get(kind));
+    Assumptions.assumeTrue(section != null,
+        "this project's test.json has no " + name + "." + kind + " section");
+    Assumptions.assumeTrue(codec == null || utility().codec.get(codec) != null,
+        "this SDK was generated without a " + codec + " codec");
+    Object set = section.get("set");
+    assertTrue(set instanceof List && !((List<Object>) set).isEmpty(),
+        "test corpus section '" + name + "." + kind + "' is EMPTY");
+    run.runset(section, subject);
+  }
+
+  // `source$` is a source built by binary.bytes, `bytes$` bytes; both latin1.
+  static Object sourced(Object val) {
+    if (val instanceof List) {
+      List<Object> out = new ArrayList<>();
+      for (Object item : (List<Object>) val) {
+        out.add(sourced(item));
+      }
+      return out;
+    }
+    if (!(val instanceof Map)) {
+      return val;
+    }
+    Map<String, Object> map = (Map<String, Object>) val;
+    if (map.get("source$") instanceof String) {
+      byte[] data = ((String) map.get("source$")).getBytes(StandardCharsets.ISO_8859_1);
+      Object name = map.get("name");
+      Object type = map.get("type");
+      return client().binary.bytes(data, name instanceof String ? (String) name : null,
+          type instanceof String ? (String) type : null);
+    }
+    if (map.get("bytes$") instanceof String) {
+      return ((String) map.get("bytes$")).getBytes(StandardCharsets.ISO_8859_1);
+    }
+    Map<String, Object> out = new LinkedHashMap<>();
+    for (Map.Entry<String, Object> e : map.entrySet()) {
+      out.put(e.getKey(), sourced(e.getValue()));
+    }
+    return out;
+  }
+
+  static Object latin1(Object body) {
+    return body instanceof byte[]
+        ? new String((byte[]) body, StandardCharsets.ISO_8859_1) : body;
+  }
+
+  @Test
+  public void bodyForm() {
+    runbody("form", "form");
+  }
+
+  @Test
+  public void bodyMultipart() {
+    runbody("multipart", "multipart");
+  }
+
+  @Test
+  public void bodyRaw() {
+    runbody("raw", null);
+  }
+
+  private void runbody(String kind, String codec) {
+    Utility.CtxFn<String> boundary = utility().multipartBoundary;
+    utility().multipartBoundary = (ctx) -> "BOUNDARY";
+    try {
+      runcodec("prepareBody", kind, codec, (args) -> {
+        Context ctx = OmniResolver.omniCtx(args[0], client(), utility());
+        ctx.reqdata = Helpers.toMapAny(sourced(ctx.reqdata));
+        ctx.reqmatch = Helpers.toMapAny(sourced(ctx.reqmatch));
+        ctx.spec = new Spec();
+        Object body = latin1(utility().prepareBody.apply(ctx));
+        Object type = ctx.spec.headers.get("content-type");
+        return null == type ? fhMap("body", body) : fhMap("type", type, "body", body);
+      });
+    }
+    finally {
+      utility().multipartBoundary = boundary;
+    }
+  }
+
+  @Test
+  public void resbodyRaw() {
+    runcodec("resultBody", "raw", "raw", (args) -> {
+      Context ctx = OmniResolver.omniCtx(args[0], client(), utility());
+      ctx.response.body = sourced(ctx.response.body);
+      utility().resultBody.apply(ctx);
+      Map<String, Object> transfer = ctx.ctrl == null ? null : ctx.ctrl.transfer;
+      if (transfer != null && transfer.get("bytes") != null) {
+        transfer.put("bytes", latin1(transfer.get("bytes")));
+      }
+      OmniResolver.omniSyncCtx(args[0], ctx);
+      return null;
+    });
+  }
+
+  @Test
+  public void fetchdefEncoded() {
+    runcodec("makeFetchDef", "encoded", null, (args) -> {
+      Context ctx = OmniResolver.omniCtx(args[0], client(), utility());
+      ctx.spec.body = sourced(ctx.spec.body);
+      Utility own = utility().copy();
+      own.makeUrl = (c) -> c.spec.url;
+      ctx.utility = own;
+      Map<String, Object> fetchdef = new LinkedHashMap<>(own.makeFetchDef.apply(ctx));
+      fetchdef.put("body", latin1(fetchdef.get("body")));
+      return fetchdef;
+    });
+  }
+
+  // `spec$` is the context's own spec, read from the same map the context was built from.
+  @Test
+  public void cleanBinary() {
+    runcodec("clean", "binary", null, (args) -> {
+      Map<String, Object> cmap = Helpers.toMapAny(sourced(args[0]));
+      Context ctx = OmniResolver.omniCtx(cmap, client(), utility());
+      return utility().clean.apply(ctx,
+          "spec$".equals(args[1]) ? cmap.get("spec") : sourced(args[1]));
     });
   }
 

@@ -203,16 +203,40 @@ private func containsStr(_ list: [Value], _ s: String) -> Bool {
   return list.contains { $0.asString == s }
 }
 
-func prepareBodyUtil(_ ctx: Context) -> Value {
+func prepareBodyUtil(_ ctx: Context) throws -> Value {
   let op = ctx.op!
   if op.input == "data" {
-    if isRawRequest(ctx.point) { return rawBodyOf(ctx.reqdata) }
-    return ctx.utility!.transformRequest(ctx)
+    try liftSources(ctx)
+    if isRawRequest(ctx.point) { return rawBodyOf(ctx.sources ?? VMap()) }
+    let body = ctx.utility!.transformRequest(ctx)
+    if let kind = gpath(ctx.point, "body", "kind").asString, kind == "form" || kind == "multipart" {
+      return try encodeBody(ctx, kind, body)
+    }
+    return body
   }
   if let fields = gp(ctx.point, "fields").asList, !fields.items.isEmpty {
     return .map(matchBody(ctx, fields))
   }
   return .noval
+}
+
+// The encoded body, with its content type replacing any the headers carry: a
+// multipart boundary is the encoder's alone to choose.
+private func encodeBody(_ ctx: Context, _ kind: String, _ data: Value) throws -> Value {
+  guard let encode = ctx.utility?.codec[kind] as? Utility.BodyEncoder else {
+    throw ctx.makeError("body_codec_missing", "This SDK was generated without a \(kind) encoder.")
+  }
+
+  let encoded = try encode(ctx, data, ctx.sources ?? VMap())
+
+  if let headers = ctx.spec?.headers {
+    for k in headers.entries.keys where k.lowercased() == "content-type" {
+      _ = headers.entries.removeValue(forKey: k)
+    }
+    headers.entries["content-type"] = .string(encoded.media)
+  }
+
+  return encoded.body
 }
 
 // A list, load or remove routed to a method with a body sends the match

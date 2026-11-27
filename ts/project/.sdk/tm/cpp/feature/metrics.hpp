@@ -1,6 +1,7 @@
 // ProjectName SDK — metrics feature (mirrors java feature/MetricsFeature.java).
 // Statistics capture. Records per-operation counters and latency for every
-// call: totals plus a breakdown keyed by `<entity>.<op>`. Timing starts at
+// call: totals plus a breakdown keyed by the call's first op key
+// (`<entity>.<op>`, or `<entity>.<op>:<action>`). Timing starts at
 // endpoint resolution (PrePoint) and stops when the call returns (PreDone) or
 // fails (PreUnexpected); each operation is recorded exactly once (the
 // per-context start marker — java ctx.out — is kept here keyed by ctx.id).
@@ -75,15 +76,7 @@ private:
     long long dur = fopt::foptNow(options)() - start;
     if (dur < 0) dur = 0;
 
-    std::string entity = "_";
-    std::string opname = "_";
-    if (ctx->op) {
-      entity = ctx->op->entity;
-      opname = ctx->op->name;
-    }
-    std::string key = entity + "." + opname;
-
-    MetricsBucket& op = ops[key];
+    MetricsBucket& op = ops[opFileKey(ctx)];
 
     bump(total, ok, dur);
     bump(op, ok, dur);

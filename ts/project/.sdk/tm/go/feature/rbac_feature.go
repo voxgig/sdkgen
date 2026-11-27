@@ -2,6 +2,7 @@ package feature
 
 import (
 	"GOMODULE/core"
+	"GOMODULE/utility"
 )
 
 type RbacFeature struct {
@@ -64,18 +65,7 @@ func (f *RbacFeature) required(ctx *core.Context) (string, bool) {
 		return "", false
 	}
 
-	entity := ""
-	if ctx.Entity != nil {
-		entity = ctx.Entity.GetName()
-	} else if ctx.Op != nil {
-		entity = ctx.Op.Entity
-	}
-	opname := ""
-	if ctx.Op != nil {
-		opname = ctx.Op.Name
-	}
-
-	for _, key := range []string{entity + "." + opname, opname, "*"} {
+	for _, key := range utility.OpKeys(ctx) {
 		if r, ok := rules[key].(string); ok {
 			return r, true
 		}
@@ -86,12 +76,8 @@ func (f *RbacFeature) required(ctx *core.Context) (string, bool) {
 func (f *RbacFeature) reject(ctx *core.Context, required string) {
 	f.track(ctx, required, false)
 
-	opname := "?"
-	if ctx.Op != nil {
-		opname = ctx.Op.Name
-	}
 	err := ctx.MakeError("rbac_denied",
-		"Permission \""+required+"\" required for operation \""+opname+"\"")
+		"Permission \""+required+"\" required for operation \""+f.opname(ctx)+"\"")
 
 	// Short-circuit endpoint resolution; MakePoint surfaces this error
 	// before any network activity.
@@ -108,9 +94,24 @@ func (f *RbacFeature) track(ctx *core.Context, required string, allowed bool) {
 	if ctx.Op != nil {
 		opname = ctx.Op.Name
 	}
-	f.Last = map[string]any{
+	last := map[string]any{
 		"required": required,
 		"allowed":  allowed,
 		"op":       opname,
 	}
+	if action := utility.OpAction(ctx); "" != action {
+		last["action"] = action
+	}
+	f.Last = fclean(ctx, last)
+}
+
+func (f *RbacFeature) opname(ctx *core.Context) string {
+	name := "?"
+	if ctx.Op != nil {
+		name = ctx.Op.Name
+	}
+	if action := utility.OpAction(ctx); "" != action {
+		return name + ":" + action
+	}
+	return name
 }

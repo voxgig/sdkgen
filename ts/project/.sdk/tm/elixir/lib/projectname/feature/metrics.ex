@@ -1,13 +1,15 @@
 # ProjectName SDK metrics feature
 #
 # Statistics capture. Records per-operation counters and latency for every
-# call: totals plus a breakdown keyed by `<entity>.<op>`. Timing starts at
+# call: totals plus a breakdown keyed by `<entity>.<op>`, or
+# `<entity>.<op>:<action>` for a custom action. Timing starts at
 # endpoint resolution (PrePoint) and stops when the call returns (PreDone)
 # or fails (PreUnexpected). Aggregates live on `client._metrics`. The clock
 # is injectable (`now`) for deterministic tests.
 
 defmodule ProjectName.Feature.Metrics do
   alias Voxgig.Struct, as: S
+  alias ProjectName.Helpers, as: H
   alias ProjectName.Feature, as: F
 
   def new do
@@ -81,14 +83,7 @@ defmodule ProjectName.Feature.Metrics do
       dur = max(0, F.now(f) - start)
 
       metrics = S.getprop(S.getprop(f, "client"), "_metrics")
-      op = S.getprop(ctx, "op")
-
-      key =
-        if op != nil do
-          por(S.getprop(op, "entity"), "_") <> "." <> por(S.getprop(op, "name"), "_")
-        else
-          "_"
-        end
+      key = H.op_file_key(ctx)
 
       ops = S.getprop(metrics, "ops")
       op_bucket = S.getprop(ops, key)
@@ -121,10 +116,5 @@ defmodule ProjectName.Feature.Metrics do
     end
 
     nil
-  end
-
-  # Python `v or default`: falsy = nil, false, "".
-  defp por(v, d) do
-    if v == nil or v == false or v == "", do: d, else: v
   end
 end

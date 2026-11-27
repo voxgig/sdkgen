@@ -4,7 +4,7 @@ import * as Path from 'node:path'
 import {
   cmp, each, camelify, names,
   File, Content, Folder, Fragment, Line, FeatureHook, Slot,
-  entityClassName, entityCollection, opTypeName,
+  entityClassName, entityCollection, opTypeName, entitySlots,
 } from '@voxgig/sdkgen'
 
 import {
@@ -43,6 +43,20 @@ const Entity = cmp(function Entity(props: any) {
 
   const ff = Path.normalize(__dirname + '/../../../src/cmp/py/fragment/')
 
+  // The entity's binary slots, by name; '' is its own bytes, reached with no name.
+  const slots = entitySlots(entity)
+  const slotDefs = Object.fromEntries(slots.map((slot: any) => [slot.name, {
+    action: slot.action,
+    ...(null == slot.read ? {} : { read: slot.read }),
+    ...(null == slot.write ? {} : { write: slot.write }),
+  }]))
+  const named = slots.map((slot: any) => slot.name).filter((name: string) => '' !== name)
+  const slotType = 'Literal[' + named.map((name: string) => JSON.stringify(name)).join(', ') + ']'
+  const slotParam = 0 === named.length ? '' : named.length < slots.length ?
+    ', slot: Optional[' + slotType + '] = None' : ', slot: ' + slotType
+  const slotArg = 0 === named.length ? '' : ', slot'
+  const handleModule = model.const.Name.toLowerCase() + '_sdk.utility.codec.handle_codec'
+
   Folder({ name: model.const.Name.toLowerCase() + '_sdk' }, () => {
   Folder({ name: 'entity' }, () => {
 
@@ -69,6 +83,18 @@ const Entity = cmp(function Entity(props: any) {
           EntyClass: cls,
 
           '# #TypeImports': typeImport,
+
+          '# #BinaryImport': 0 === slots.length ? '' :
+            (0 === named.length ? '' : 'from typing import ' +
+              (named.length < slots.length ? 'Literal, Optional' : 'Literal') + '\n\n') +
+            'from ' + handleModule +
+            ' import BinaryHandle\n\nBINARY_SLOTS = ' + JSON.stringify(slotDefs, null, 4) + '\n',
+
+          '# #BinarySlot': 0 === slots.length ? '' :
+            `    # An entity's bytes never enter its data: they are reached by slot.
+    def binary(self${slotParam}) -> BinaryHandle:
+        return BinaryHandle(self, BINARY_SLOTS${slotArg})
+`,
 
           // Feature-hook markers. jostraca's built-in `#Name-Tag` pattern is
           // hardcoded to `//` comments, so the Python fragment's

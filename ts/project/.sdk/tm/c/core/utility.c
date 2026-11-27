@@ -14,6 +14,7 @@ Utility* utility_new(void) {
   u->fetcher->fn = fetcher_util;
   u->fetcher->state = NULL;
   u->custom = voxgig_new_map();
+  u->multipart_boundary = codec_table.multipart_boundary;
   return u;
 }
 
@@ -30,6 +31,7 @@ Utility* utility_copy(Utility* src) {
     }
   }
   u->custom = custom;
+  u->multipart_boundary = src->multipart_boundary;
   return u;
 }
 

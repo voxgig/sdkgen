@@ -21,9 +21,9 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   const opRowDefs: Record<string, string> = {
     load: '| `e_load` | `value -> value -> entity_obj` | Load a single entity by match criteria. Resolves to the entity. Raises on error. |',
     list: '| `e_list` | `value -> value -> entity_obj list` | List entities matching the criteria. Resolves to one entity per record. Raises on error. |',
-    create: '| `e_create` | `value -> value -> entity_obj` | Create a new entity. Resolves to the entity. Raises on error. |',
-    update: '| `e_update` | `value -> value -> entity_obj` | Update an existing entity. Resolves to the entity. Raises on error. |',
-    patch: '| `e_patch` | `value -> value -> entity_obj` | Change part of an existing entity. Resolves to the entity. Raises on error. |',
+    create: '| `e_create` | `?sources:(string * binary_source) list -> value -> value -> entity_obj` | Create a new entity. Resolves to the entity. Raises on error. |',
+    update: '| `e_update` | `?sources:(string * binary_source) list -> value -> value -> entity_obj` | Update an existing entity. Resolves to the entity. Raises on error. |',
+    patch: '| `e_patch` | `?sources:(string * binary_source) list -> value -> value -> entity_obj` | Change part of an existing entity. Resolves to the entity. Raises on error. |',
     remove: '| `e_remove` | `value -> value -> entity_obj` | Remove an entity. Resolves to the entity, marked deleted. Raises on error. |',
   }
   const opRows = ['load', 'list', 'create', 'update', 'patch', 'remove']

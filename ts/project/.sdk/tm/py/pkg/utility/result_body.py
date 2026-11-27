@@ -2,6 +2,8 @@
 
 import re
 
+from projectname_sdk.utility.voxgig_struct import voxgig_struct as vs
+
 from projectname_sdk.utility.media import header_value, is_binary_response
 
 
@@ -13,6 +15,12 @@ def result_body_util(ctx):
     result = ctx.result
 
     if result is not None:
+        raw = (getattr(ctx.utility, "codec", None) or {}).get("raw")
+        if response is not None and "raw" == vs.getpath(ctx.point, "response.kind") and \
+                callable(raw) and result.err is None and response.err is None and \
+                result.status < 400:
+            raw(ctx)
+            return result
         if response is not None and response.json_func is not None and response.body is not None:
             json_data = response.json_func()
             result.body = json_data

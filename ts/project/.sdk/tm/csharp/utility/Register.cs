@@ -41,5 +41,7 @@ public static partial class SdkUtility
         u.ResultHeaders = ResultHeadersUtil;
         u.TransformRequest = TransformRequestUtil;
         u.TransformResponse = TransformResponseUtil;
+        u.Codec = CodecIndex();
+        u.MultipartBoundary = u.Codec.GetValueOrDefault("multipartBoundary") as Func<Context, string>;
     }
 }

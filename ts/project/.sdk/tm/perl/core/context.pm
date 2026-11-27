@@ -47,6 +47,7 @@ sub new {
     $self->{ctrl}{explain} = $ctrl_raw->{explain} if Voxgig::Struct::ismap($ctrl_raw->{explain});
     $self->{ctrl}{actor} = $ctrl_raw->{actor} if exists $ctrl_raw->{actor};
     $self->{ctrl}{paging} = $ctrl_raw->{paging} if Voxgig::Struct::ismap($ctrl_raw->{paging});
+    $self->{ctrl}{transfer} = $ctrl_raw->{transfer} if Voxgig::Struct::ismap($ctrl_raw->{transfer});
   }
   elsif ($basectx && $basectx->{ctrl}
       && !defined ProjectNameHelpers::get_ctx_prop($ctxmap, 'opname')) {
@@ -78,6 +79,10 @@ sub new {
   $self->{reqdata} = ProjectNameHelpers::to_map($gcp->($ctxmap, 'reqdata')) || {};
   $self->{match} = ProjectNameHelpers::to_map($gcp->($ctxmap, 'match')) || {};
   $self->{reqmatch} = ProjectNameHelpers::to_map($gcp->($ctxmap, 'reqmatch')) || {};
+
+  # The values of the point's binary fields, lifted out of reqdata.
+  my $src = $gcp->($ctxmap, 'sources');
+  $self->{sources} = Voxgig::Struct::ismap($src) ? $src : undef;
 
   my $pt = $gcp->($ctxmap, 'point');
   $self->{point} = Voxgig::Struct::ismap($pt) ? $pt : ($basectx ? $basectx->{point} : undef);

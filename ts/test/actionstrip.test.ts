@@ -416,7 +416,7 @@ const BODY_SITES: Record<string, Site> = {
   swift: ['swift/Sources/ProjectNameSDK/utility/Prepare.swift', 'func prepareBodyUtil('],
   kotlin: ['kotlin/utility/Prepare.kt', 'fun prepareBody('],
   scala: ['scala/utility/Prepare.scala', 'def prepareBody('],
-  elixir: ['elixir/lib/projectname/utility.ex', 'def prepare_body_impl('],
+  elixir: ['elixir/lib/projectname/utility.ex', 'defp match_body('],
   clojure: ['clojure/src/sdk/core.clj', '(defn u-prepare-body '],
   ocaml: ['ocaml/sdk_runtime.ml', 'let prepare_body_util '],
 }

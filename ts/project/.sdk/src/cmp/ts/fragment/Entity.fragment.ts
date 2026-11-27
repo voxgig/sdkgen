@@ -16,6 +16,8 @@ import type {
 
 // #TypeImports
 
+// #BinaryImport
+
 
 class EntyClass extends ProjectNameEntityBase<EntityDataType> {
 
@@ -30,6 +32,8 @@ class EntyClass extends ProjectNameEntityBase<EntityDataType> {
   make(this: EntyClass) {
     return new EntyClass(this._client, this.entopts())
   }
+
+  // #BinarySlot
 
 
   // #LoadOp

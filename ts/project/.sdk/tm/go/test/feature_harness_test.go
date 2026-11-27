@@ -113,7 +113,12 @@ type fhHarness struct {
 // utility whose fetcher is the mock server, and the requested features
 // initialised against it. Fires PostConstruct once wiring is complete.
 func fhMake(server sdk.FetcherFunc, features ...fhFeature) *fhHarness {
-	client := sdk.TestSDK(nil, nil)
+	return fhMakeWith(nil, server, features...)
+}
+
+// fhMakeWith is fhMake over a client built with the given SDK options.
+func fhMakeWith(sdkopts map[string]any, server sdk.FetcherFunc, features ...fhFeature) *fhHarness {
+	client := sdk.TestSDK(nil, sdkopts)
 	client.Features = []sdk.Feature{}
 
 	utility := client.GetUtility()
@@ -154,8 +159,10 @@ type fhOpSpec struct {
 	path    string
 	query   map[string]any
 	headers map[string]any
-	body    any
-	ctrl    map[string]any
+	body     any
+	ctrl     map[string]any
+	reqmatch map[string]any
+	reqdata  map[string]any
 }
 
 type fhOpResult struct {
@@ -164,6 +171,16 @@ type fhOpResult struct {
 	err    error
 	result *sdk.Result
 	ctx    *sdk.Context
+}
+
+// fhOpInput names the request argument an operation reads, as the generated
+// operation declares it.
+func fhOpInput(op string) string {
+	switch op {
+	case "create", "update", "patch":
+		return "data"
+	}
+	return "match"
 }
 
 func fhDefaultMethod(op string) string {
@@ -221,10 +238,13 @@ func (h *fhHarness) op(o fhOpSpec) fhOpResult {
 	}
 
 	ctx := h.utility.MakeContext(map[string]any{
-		"opname": opname,
-		"ctrl":   ctrl,
+		"opname":   opname,
+		"ctrl":     ctrl,
+		"reqmatch": o.reqmatch,
+		"reqdata":  o.reqdata,
 	}, h.rootctx)
-	ctx.Op = sdk.NewOperation(map[string]any{"entity": entity, "name": opname})
+	ctx.Op = sdk.NewOperation(map[string]any{
+		"entity": entity, "name": opname, "input": fhOpInput(opname)})
 
 	h.utility.FeatureHook(ctx, "PostConstructEntity")
 

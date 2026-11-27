@@ -667,9 +667,8 @@ test "primary corpus: the shared cases drive this SDK's utilities" {
         }
 
         fn body(a: std.mem.Allocator, args: []const StdJson, po: *?StdJson, em: *?[]const u8) anyerror!StdJson {
-            _ = em;
             const ctx = try ctxOf(a, args);
-            const v = util.prepare_body_util(ctx);
+            const v = util.prepare_body_util(ctx) catch |e| return sdkfail(ctx, em, e);
             po.* = try publishCtx(a, ctx);
             return try vs.toStdJson(a, v);
         }
@@ -925,4 +924,268 @@ test "primary corpus: prepareAuth, on this SDK's own credential" {
     const before = omnirun.CASES;
     try run.runsetctx(try authRetarget(arena.allocator(), group, cred), .{ .name = "prepareAuth" }, authSubject);
     std.debug.print("\n  primary prepareAuth: {d} case(s)\n", .{omnirun.CASES - before});
+}
+
+// ---------------------------------------------------------------------------
+// THE CODEC SECTIONS. A section a project's corpus has not pulled yet is a
+// skip, as is one for a codec this SDK was generated without.
+// ---------------------------------------------------------------------------
+
+// Cases a closed value union cannot state: the data and the match are a
+// `Value`, which holds no source, so a source sits only beside the data, by
+// field name. One passed under a field not declared binary is refused, as the
+// sections' other cases check.
+const INEXPRESSIBLE = [_][]const u8{
+    "multipart: a source nested in other data is refused",
+    "multipart: a source in the match is refused",
+    "a source in a record",
+};
+
+fn hasCodec(name: []const u8) bool {
+    for (sdk.codec.CODECS) |c| {
+        if (std.mem.eql(u8, c, name)) return true;
+    }
+    return false;
+}
+
+fn expressible(a: std.mem.Allocator, group: StdJson) !StdJson {
+    var out: std.json.ObjectMap = .empty;
+    var it = group.object.iterator();
+    while (it.next()) |kv| {
+        if (!std.mem.eql(u8, kv.key_ptr.*, "set") or kv.value_ptr.* != .array) {
+            try out.put(a, kv.key_ptr.*, kv.value_ptr.*);
+            continue;
+        }
+        var kept = std.json.Array.init(a);
+        for (kv.value_ptr.*.array.items) |entry| {
+            const name: []const u8 = if (entry == .object)
+                (if (entry.object.get("name")) |n| (if (n == .string) n.string else "") else "")
+            else
+                "";
+            var drop = false;
+            for (INEXPRESSIBLE) |x| {
+                if (std.mem.eql(u8, x, name)) drop = true;
+            }
+            if (!drop) try kept.append(entry);
+        }
+        try out.put(a, "set", StdJson{ .array = kept });
+    }
+    return StdJson{ .object = out };
+}
+
+fn runCodec(section: []const u8, kind: []const u8, codec: ?[]const u8, subject: omnirun.CtxSubject) !void {
+    var run = try omnirun.makeRunner(testing.allocator, "primary");
+    defer run.deinit();
+    const group = run.group(section, kind) orelse {
+        std.debug.print("\n  SKIP primary {s}.{s}: this project's test.json has no such section\n", .{ section, kind });
+        return error.SkipZigTest;
+    };
+    if (codec) |c| {
+        if (!hasCodec(c)) {
+            std.debug.print("\n  SKIP primary {s}.{s}: this SDK was generated without a {s} codec\n", .{ section, kind, c });
+            return error.SkipZigTest;
+        }
+    }
+    const name = try std.fmt.allocPrint(h.A(), "{s}.{s}", .{ section, kind });
+    try run.runsetctx(try expressible(h.A(), group), .{ .name = name }, subject);
+    std.debug.print("\n  primary {s}: ran\n", .{name});
+}
+
+// `source$` and `bytes$` are latin1: one char per byte.
+fn latin1Bytes(a: std.mem.Allocator, text: []const u8) ![]const u8 {
+    var out: std.ArrayList(u8) = .empty;
+    var view = try std.unicode.Utf8View.init(text);
+    var it = view.iterator();
+    while (it.nextCodepoint()) |cp| try out.append(a, @intCast(cp & 0xff));
+    return out.items;
+}
+
+fn bytesLatin1(a: std.mem.Allocator, bytes: []const u8) ![]const u8 {
+    var out: std.ArrayList(u8) = .empty;
+    for (bytes) |b| {
+        var buf: [4]u8 = undefined;
+        const n = try std.unicode.utf8Encode(b, &buf);
+        try out.appendSlice(a, buf[0..n]);
+    }
+    return out.items;
+}
+
+fn marker(node: StdJson, key: []const u8) ?[]const u8 {
+    if (node != .object) return null;
+    const v = node.object.get(key) orelse return null;
+    return if (v == .string) v.string else null;
+}
+
+// A `bytes$` marker as the string of bytes the pipeline carries.
+fn sourcedBytes(a: std.mem.Allocator, node: StdJson) !StdJson {
+    if (marker(node, "bytes$")) |m| return StdJson{ .string = try latin1Bytes(a, m) };
+    return node;
+}
+
+fn markedSource(a: std.mem.Allocator, node: StdJson) !?sdk.BinarySource {
+    const data = marker(node, "source$") orelse marker(node, "bytes$") orelse return null;
+    const named = marker(node, "source$") != null;
+    return sdk.BinarySource.bytes(try latin1Bytes(a, data), if (named) marker(node, "name") else null, if (named) marker(node, "type") else null);
+}
+
+fn withKey(a: std.mem.Allocator, node: StdJson, key: []const u8, val: StdJson) !StdJson {
+    var out: std.json.ObjectMap = .empty;
+    var it = node.object.iterator();
+    while (it.next()) |kv| try out.put(a, kv.key_ptr.*, kv.value_ptr.*);
+    try out.put(a, key, val);
+    return StdJson{ .object = out };
+}
+
+fn fixedBoundary(_: *sdk.Context) []const u8 {
+    return "BOUNDARY";
+}
+
+fn codecCtx(a: std.mem.Allocator, raw: StdJson) !*sdk.Context {
+    const ctx = try corpusCtx(a, raw);
+    ctx.ctrl = sdk.Control.make();
+    if (raw == .object) {
+        if (raw.object.get("options")) |o| ctx.options = try vs.fromStdJson(a, o);
+        if (raw.object.get("ctrl")) |c| {
+            if (c == .object) {
+                if (c.object.get("transfer")) |t| {
+                    ctx.ctrl.transfer = sdk.Transfer.make(marker(t, "slot") orelse "", marker(t, "direction") orelse "");
+                }
+            }
+        }
+    }
+    return ctx;
+}
+
+const Codec = struct {
+    // The data's top-level sources move beside it, as a caller passes them.
+    fn body(a: std.mem.Allocator, args: []const StdJson, po: *?StdJson, em: *?[]const u8) anyerror!StdJson {
+        _ = po;
+        var raw = entryarg(args, 0);
+        var sources: std.ArrayList(sdk.SourceEntry) = .empty;
+        if (raw == .object) {
+            if (raw.object.get("reqdata")) |rd| {
+                if (rd == .object) {
+                    var kept: std.json.ObjectMap = .empty;
+                    var it = rd.object.iterator();
+                    while (it.next()) |kv| {
+                        const v = kv.value_ptr.*;
+                        if (try markedSource(a, v)) |src| {
+                            try sources.append(a, .{ .name = kv.key_ptr.*, .source = src });
+                        } else if (v == .array and 0 < v.array.items.len and (try markedSource(a, v.array.items[0])) != null) {
+                            for (v.array.items) |item| {
+                                if (try markedSource(a, item)) |src| try sources.append(a, .{ .name = kv.key_ptr.*, .source = src });
+                            }
+                        } else {
+                            try kept.put(a, kv.key_ptr.*, v);
+                        }
+                    }
+                    raw = try withKey(a, raw, "reqdata", StdJson{ .object = kept });
+                }
+            }
+        }
+        const ctx = try codecCtx(a, raw);
+        ctx.passed = sources.items;
+        ctx.spec = sdk.Spec.make(h.jo(&.{.{ "headers", h.omap() }}));
+        ctx.util().multipart_boundary = fixedBoundary;
+        const v = util.prepare_body_util(ctx) catch |e| {
+            if (ctx.pending_err) |pe| em.* = pe.msg;
+            return e;
+        };
+        var out: std.json.ObjectMap = .empty;
+        try out.put(a, "body", if (v == .string) StdJson{ .string = try bytesLatin1(a, v.string) } else try vs.toStdJson(a, v));
+        if (h.get_str(ctx.spec.?.headers, "content-type")) |t| try out.put(a, "type", StdJson{ .string = t });
+        return StdJson{ .object = out };
+    }
+
+    fn resbody(a: std.mem.Allocator, args: []const StdJson, po: *?StdJson, em: *?[]const u8) anyerror!StdJson {
+        var raw = entryarg(args, 0);
+        if (raw == .object) {
+            if (raw.object.get("response")) |r| {
+                if (r == .object) {
+                    if (r.object.get("body")) |b| raw = try withKey(a, raw, "response", try withKey(a, r, "body", try sourcedBytes(a, b)));
+                }
+            }
+        }
+        const ctx = try codecCtx(a, raw);
+        const result = util.result_body_util(ctx) orelse return error.NoResult;
+        if (result.err) |e| {
+            em.* = e.msg;
+            return error.Sdk;
+        }
+        var published = try publishCtx(a, ctx);
+        if (ctx.ctrl.transfer) |t| {
+            if (t.bytes) |b| {
+                var tr: std.json.ObjectMap = .empty;
+                try tr.put(a, "bytes", StdJson{ .string = try bytesLatin1(a, b) });
+                var ctrl: std.json.ObjectMap = .empty;
+                try ctrl.put(a, "transfer", StdJson{ .object = tr });
+                published = try withKey(a, published, "ctrl", StdJson{ .object = ctrl });
+            }
+        }
+        po.* = published;
+        return StdJson{ .null = {} };
+    }
+
+    fn fetchdef(a: std.mem.Allocator, args: []const StdJson, po: *?StdJson, em: *?[]const u8) anyerror!StdJson {
+        _ = po;
+        var raw = entryarg(args, 0);
+        if (raw == .object) {
+            if (raw.object.get("spec")) |s| {
+                if (s == .object) {
+                    if (s.object.get("body")) |b| raw = try withKey(a, raw, "spec", try withKey(a, s, "body", try sourcedBytes(a, b)));
+                }
+            }
+        }
+        const ctx = try codecCtx(a, raw);
+        const fd = util.make_fetch_def_util(ctx) catch |e| {
+            if (ctx.pending_err) |pe| em.* = pe.msg;
+            return e;
+        };
+        const sent = h.getp(fd, "body");
+        if (sent == .string) h.setp(fd, "body", h.vstr(try bytesLatin1(a, sent.string)));
+        return try vs.toStdJson(a, fd);
+    }
+
+    fn clean(a: std.mem.Allocator, args: []const StdJson, po: *?StdJson, em: *?[]const u8) anyerror!StdJson {
+        _ = po;
+        _ = em;
+        var raw = entryarg(args, 0);
+        var spec: StdJson = StdJson{ .null = {} };
+        if (raw == .object) {
+            if (raw.object.get("spec")) |s| {
+                if (s == .object) {
+                    spec = if (s.object.get("body")) |b| try withKey(a, s, "body", try sourcedBytes(a, b)) else s;
+                    raw = try withKey(a, raw, "spec", spec);
+                }
+            }
+        }
+        const ctx = try codecCtx(a, raw);
+        const arg = entryarg(args, 1);
+        const val = if (arg == .string and std.mem.eql(u8, arg.string, "spec$")) spec else arg;
+        return try vs.toStdJson(a, util.clean_util(ctx, try vs.fromStdJson(a, val)));
+    }
+};
+
+test "primary corpus: prepareBody.form" {
+    try runCodec("prepareBody", "form", "form", Codec.body);
+}
+
+test "primary corpus: prepareBody.multipart" {
+    try runCodec("prepareBody", "multipart", "multipart", Codec.body);
+}
+
+test "primary corpus: prepareBody.raw" {
+    try runCodec("prepareBody", "raw", null, Codec.body);
+}
+
+test "primary corpus: resultBody.raw" {
+    try runCodec("resultBody", "raw", "raw", Codec.resbody);
+}
+
+test "primary corpus: makeFetchDef.encoded" {
+    try runCodec("makeFetchDef", "encoded", null, Codec.fetchdef);
+}
+
+test "primary corpus: clean.binary" {
+    try runCodec("clean", "binary", null, Codec.clean);
 }

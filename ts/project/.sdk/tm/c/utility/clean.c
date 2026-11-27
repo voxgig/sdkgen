@@ -37,9 +37,9 @@ typedef struct {
 // The live bodies of this call that are bytes, each with its type. A
 // response read as text does not say how many bytes it was, so is unsized.
 typedef struct {
-  voxgig_value* live[3];
-  const char* type[3]; // NULL where none is declared
-  bool sized[3];
+  voxgig_value* live[4];
+  const char* type[4]; // NULL where none is declared
+  bool sized[4];
   size_t n;
 } BinaryBody;
 
@@ -383,8 +383,25 @@ static void binary_add(BinaryBody* bin, voxgig_value* live, int64_t min, const c
   bin->n++;
 }
 
-// The request body of a point the model marks binary, and a response body
-// that is bytes.
+// Whether an encoded body of this point can carry a file: a multipart
+// body, and a form body with a binary field.
+static bool encoded_binary(voxgig_value* body) {
+  const char* kind = get_str(body, "kind");
+  if (NULL == kind) return false;
+  if (0 == strcmp(kind, "multipart")) return true;
+  if (0 != strcmp(kind, "form")) return false;
+  voxgig_value* fields = getp(body, "fields");
+  voxgig_list* fl = voxgig_is_list(fields) ? voxgig_as_list(fields) : NULL;
+  for (size_t i = 0; NULL != fl && i < fl->len; i++) {
+    bool binary = false;
+    if (get_bool(fl->items[i], "binary", &binary) && binary) return true;
+  }
+  return false;
+}
+
+// The request body of a point the model marks binary, an encoded body that
+// can carry a file, and a response body that is bytes. The body is a string
+// here, so the point's kind is what tells it is bytes.
 static bool binary_body(Context* ctx, BinaryBody* bin) {
   bin->n = 0;
   if (!ctx) return false;
@@ -397,6 +414,10 @@ static bool binary_body(Context* ctx, BinaryBody* bin) {
     const char* media = get_str(body, "media");
     binary_add(bin, ctx->spec ? ctx->spec->body : NULL, min, media, true);
     binary_add(bin, media_raw_body(ctx->reqdata), min, media, true);
+    binary_add(bin, getp(ctx->lifted, "$body"), min, media, true);
+  } else if (encoded_binary(body) && ctx->spec) {
+    const char* type = response_header(ctx->spec->headers, "content-type");
+    binary_add(bin, ctx->spec->body, min, '\0' == type[0] ? NULL : type, true);
   }
 
   if (ctx->response) {

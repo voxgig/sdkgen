@@ -86,6 +86,8 @@ internal class FhOpSpec
     public Dictionary<string, object?>? Headers;
     public object? Body;
     public Dictionary<string, object?>? Ctrl;
+    public Dictionary<string, object?>? Reqmatch;
+    public Dictionary<string, object?>? Reqdata;
 }
 
 internal class FhOpResult
@@ -115,6 +117,12 @@ internal class FhHarness
             "remove" => "DELETE",
             _ => "GET",
         };
+    }
+
+    // Which request argument an operation reads, as the generated Context decides.
+    private static string FhOpInput(string op)
+    {
+        return op is "create" or "update" or "patch" ? "data" : "match";
     }
 
     private static string FhBuildUrl(Spec spec)
@@ -150,7 +158,10 @@ internal class FhHarness
         {
             ["entity"] = entity,
             ["name"] = opname,
+            ["input"] = FhOpInput(opname),
         });
+        ctx.Reqmatch = o.Reqmatch ?? new Dictionary<string, object?>();
+        ctx.Reqdata = o.Reqdata ?? new Dictionary<string, object?>();
 
         Utility.FeatureHook(ctx, "PostConstructEntity");
 
@@ -316,7 +327,12 @@ internal static class Fh
 
     public static bool SkipWithout(params string[] names)
     {
-        return names.Any(name => !HasFeature(name));
+        var absent = names.FirstOrDefault(name => !HasFeature(name));
+        if (absent != null)
+        {
+            Console.WriteLine("skip: feature not present in this SDK: " + absent);
+        }
+        return absent != null;
     }
 
     // Response builds a transport-shaped response the pipeline understands.
@@ -347,7 +363,15 @@ internal static class Fh
     public static FhHarness Make(FetcherFunc? server,
         params (BaseFeature f, Dictionary<string, object?>? options)[] features)
     {
-        var client = ProjectNameSDK.TestSDK(null, null);
+        return MakeWith(null, server, features);
+    }
+
+    // MakeWith also passes SDK options to the client, so a test can reach the
+    // real clean utility with a registered secret.
+    public static FhHarness MakeWith(Dictionary<string, object?>? sdkopts, FetcherFunc? server,
+        params (BaseFeature f, Dictionary<string, object?>? options)[] features)
+    {
+        var client = ProjectNameSDK.TestSDK(null, sdkopts);
         client.Features = new List<BaseFeature>();
 
         var utility = client.GetUtility();

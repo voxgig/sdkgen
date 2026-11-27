@@ -18,6 +18,12 @@
   (let [f (vs/getprop (config/make-config) "feature")]
     (and (vs/ismap f) (some? (vs/getprop f name)))))
 
+(defn- present? [name]
+  (or (feature-present? name)
+      (binding [*out* *err*]
+        (println (str "skip: feature not present in this SDK: " name))
+        false)))
+
 (defn fspec [name & kvs] {"name" name "options" (if (seq kvs) (apply vs/jm kvs) (vs/jm))})
 
 (defn default-method [opname]
@@ -92,12 +98,17 @@
                                                   (str "request: " (core/oget result :status) ": " (core/oget result :status-text)))))
         (when (nil? (core/oget result :err)) (core/oset! result :ok true))))))
 
-(defn make-harness [feature-specs & {:keys [server base headers] :or {base "http://api.test"}}]
+;; `options`, when given, are client options from make-options: the clean
+;; registry it fills lives under them.
+(defn make-harness [feature-specs & {:keys [server base headers options] :or {base "http://api.test"}}]
   (let [headers (or headers (vs/jm))
         utility (core/make-utility)
         _ (core/oset! utility :fetcher (or server (default-server)))
+        opts (if (vs/ismap options)
+               (doto ^java.util.Map options (.put "feature" (vs/jm)))
+               (vs/jm "base" base "headers" headers "feature" (vs/jm)))
         client {:features (atom []) :mode (atom "test") :store (atom {})
-                :options (atom (vs/jm "base" base "headers" headers "feature" (vs/jm)))}
+                :options (atom opts)}
         rootctx (core/make-context (vs/jm "client" client "utility" utility "options" (deref (:options client))) nil)]
     (doseq [fs feature-specs]
       (let [name (get fs "name")]
@@ -116,11 +127,12 @@
 (defn h-track [h k] (core/client-track (:client h) k))
 (defn h-feature [h name] (first (filter (fn [f] (= (core/feature-get-name f) name)) @(:features (:client h)))))
 
-(defn h-op [h & {:keys [opname entity method path query headers body ctrl]
+(defn h-op [h & {:keys [opname entity method path query headers body ctrl reqmatch reqdata]
                  :or {opname "load" entity "widget"}}]
   (let [utility (:utility h) rootctx (:rootctx h)
         method (or method (default-method opname))
-        ctx (core/make-context (vs/jm "opname" opname "entity" (fake-entity entity) "ctrl" (or ctrl (vs/jm))) rootctx)]
+        ctx (core/make-context (vs/jm "opname" opname "entity" (fake-entity entity) "ctrl" (or ctrl (vs/jm))
+                                      "reqmatch" reqmatch "reqdata" reqdata) rootctx)]
     (core/feature-hook ctx "PostConstructEntity")
     (try
       (core/feature-hook ctx "PrePoint")
@@ -162,7 +174,7 @@
 (defn run [rec]
   (letfn [(check [name skip-feat thunk]
             (t/run-check rec name
-                         (fn [] (if (and skip-feat (not (feature-present? skip-feat)))
+                         (fn [] (if (and skip-feat (not (present? skip-feat)))
                                   true (thunk)))))]
 
     (check "feature-test-present" nil (fn [] (t/is-true (feature-present? "test") "test feature present")))
@@ -214,14 +226,14 @@
 
     ;; ---- retry ----
     (check "retry-retries-then-succeeds" "retry"
-           (fn [] (when (feature-present? "netsim")
+           (fn [] (when (present? "netsim")
                     (let [c (make-clock)
                           h (make-harness [(fspec "netsim" "failTimes" 2 "failStatus" 503)
                                            (fspec "retry" "retries" 3 "minDelay" 10 "jitter" false "sleep" (clock-sleeper c))])]
                       (t/is-eq (get (h-op h) "ok") true "ok")
                       (t/is-eq (mget (h-track h "_retry") "attempts") 2 "attempts")))))
     (check "retry-gives-up-after-budget" "retry"
-           (fn [] (when (feature-present? "netsim")
+           (fn [] (when (present? "netsim")
                     (let [c (make-clock)
                           h (make-harness [(fspec "netsim" "failTimes" 9 "failStatus" 500)
                                            (fspec "retry" "retries" 2 "minDelay" 1 "jitter" false "sleep" (clock-sleeper c))])]
@@ -246,7 +258,7 @@
                     (t/is-eq (get res "ok") false "not ok")
                     (t/is-eq (count @calls) 3 "3 calls"))))
     (check "retry-honours-retry-after" "retry"
-           (fn [] (when (feature-present? "netsim")
+           (fn [] (when (present? "netsim")
                     (let [c (make-clock)
                           h (make-harness [(fspec "netsim" "rateLimitTimes" 1 "retryAfter" 2)
                                            (fspec "retry" "retries" 2 "minDelay" 10 "maxDelay" 60000 "jitter" false "sleep" (clock-sleeper c))])]
@@ -416,9 +428,121 @@
                     (let [deny (make-harness [(fspec "rbac" "deny" true "permissions" (vs/jt))])]
                       (t/is-eq (rcode (h-op deny)) "rbac_denied" "deny")))))
 
+    ;; ---- action keys ----
+    ;; A custom action is `$action` in the request argument, and its keys name
+    ;; it: `<entity>.<op>:<action>`, most specific first.
+    (let [audio #(vs/jm "$action" "audio" "id" "e1")
+          record #(vs/jm "id" "e1")
+          episode (fn [h req] (h-op h :entity "episode" :reqmatch req))]
+      (check "action-keys rbac: the record is granted and the action refused" "rbac"
+             (fn [] (let [[server calls] (recording-server nil)
+                          h (make-harness [(fspec "rbac" "rules" (vs/jm "episode.load" "read" "episode.load:audio" "audio")
+                                                  "permissions" (vs/jt "read"))] :server server)]
+                      (t/is-eq (get (episode h (record)) "ok") true "record ok")
+                      (let [res (episode h (audio))]
+                        (t/is-eq (rcode res) "rbac_denied" "action denied")
+                        (t/is-true (str/includes? (str (:msg (get res "error"))) "operation \"load:audio\"") "message"))
+                      (t/is-eq (count @calls) 1 "one call")
+                      (t/is-eq (mget (mget (h-track h "_rbac") "last") "action") "audio" "last action"))))
+      (check "action-keys rbac: the action is granted and the record refused" "rbac"
+             (fn [] (let [h (make-harness [(fspec "rbac" "rules" (vs/jm "episode.load" "read" "episode.load:audio" "audio")
+                                                  "permissions" (vs/jt "audio"))])]
+                      (t/is-eq (rcode (episode h (record))) "rbac_denied" "record denied")
+                      (t/is-eq (get (episode h (audio)) "ok") true "action ok"))))
+      (check "action-keys rbac: with no action rule an action falls back to its operation" "rbac"
+             (fn [] (let [h (make-harness [(fspec "rbac" "rules" (vs/jm "episode.load" "read") "permissions" (vs/jt))])]
+                      (t/is-eq (rcode (episode h (audio))) "rbac_denied" "fallback"))))
+      (check "action-keys metrics: an action is counted apart from its operation" "metrics"
+             (fn [] (let [h (make-harness [(fspec "metrics")])]
+                      (episode h (record)) (episode h (audio)) (episode h (audio))
+                      (let [m (h-track h "_metrics")]
+                        (t/is-eq (mget (mget m "total") "count") 3 "total")
+                        (t/is-eq (mget (mget (mget m "ops") "episode.load") "count") 1 "plain")
+                        (t/is-eq (mget (mget (mget m "ops") "episode.load:audio") "count") 2 "action")))))
+      (check "action-keys audit: a record names its action, and a plain one has none" "audit"
+             (fn [] (let [h (make-harness [(fspec "audit")])]
+                      (episode h (record)) (episode h (audio))
+                      (let [recs (mget (h-track h "_audit") "records")]
+                        (t/is-true (not (.containsKey ^java.util.Map (vs/getelem recs 0) "action")) "plain has no action")
+                        (t/is-eq (mget (vs/getelem recs 0) "op") "load" "plain op")
+                        (t/is-eq (mget (vs/getelem recs 1) "action") "audio" "action")
+                        (t/is-eq (mget (vs/getelem recs 1) "op") "load" "action op")))))
+      (check "action-keys cost: an action is priced and attributed apart from its operation" "cost"
+             (fn [] (let [sunk (atom [])
+                          h (make-harness [(fspec "cost" "rates" (vs/jm "episode.load" 1 "episode.load:audio" 5)
+                                                  "sink" (fn [r] (swap! sunk conj r)))])]
+                      (episode h (record)) (episode h (audio))
+                      (let [cost (h-track h "_cost")
+                            ops (mget cost "ops")]
+                        (t/is-eq (mget (mget cost "total") "amount") 6 "total")
+                        (t/is-eq (mget (mget ops "episode.load") "calls") 1 "plain calls")
+                        (t/is-eq (mget (mget ops "episode.load") "amount") 1 "plain amount")
+                        (t/is-eq (mget (mget ops "episode.load:audio") "calls") 1 "action calls")
+                        (t/is-eq (mget (mget ops "episode.load:audio") "amount") 5 "action amount")
+                        (t/is-true (not (.containsKey ^java.util.Map (nth @sunk 0) "action")) "plain sink")
+                        (t/is-eq (mget (nth @sunk 1) "action") "audio" "action sink")
+                        (t/is-eq (mget (mget cost "last") "action") "audio" "last")))))
+
+      ;; An action holding a registered secret is cleaned wherever a consumer
+      ;; reads it; a rule still matches the raw action.
+      (let [secret "ACTSECRET77"
+            secret-action #(vs/jm "$action" secret "id" "e1")
+            secret-options (fn [active & [keys]]
+                             (let [ctx (core/make-context (vs/jm "utility" (core/make-utility)) nil)
+                                   cleanopts (vs/jm "active" active)]
+                               (when keys (.put ^java.util.Map cleanopts "keys" keys))
+                               (core/oset! ctx :options (vs/jm "apikey" secret "clean" cleanopts))
+                               (core/oset! ctx :config (vs/jm "options" (vs/jm)))
+                               (core/u-make-options ctx)))
+            holds-secret? (fn [ops] (boolean (some #(str/includes? (str %) secret) (vs/keysof ops))))]
+        (check "action-keys rbac: an action holding a secret is cleaned in the record" "rbac"
+               (fn [] (let [opts (secret-options true)
+                            h (make-harness [(fspec "rbac" "rules" (vs/jm (str "episode.load:" secret) "audio")
+                                                    "permissions" (vs/jt "audio"))] :options opts)]
+                        (t/is-eq (get (episode h (secret-action)) "ok") true "raw rule decides")
+                        (let [last (mget (h-track h "_rbac") "last")]
+                          (t/is-eq (mget last "action") (vs/getpath opts "__derived__.clean.mask") "masked")
+                          (t/is-eq (mget last "required") "audio" "required"))
+                        (t/is-eq (mget (h-track h "_rbac") "allowed") 1 "allowed")
+                        (let [plain (make-harness [(fspec "rbac" "rules" (vs/jm "episode.load:audio" "audio")
+                                                          "permissions" (vs/jt "audio"))] :options (secret-options false))]
+                          (t/is-eq (get (episode plain (audio)) "ok") true "plain ok")
+                          (t/is-eq (mget (mget (h-track plain "_rbac") "last") "action") "audio" "plain action")))))
+        (check "action-keys metrics: an action holding a secret is cleaned in the bucket name" "metrics"
+               (fn [] (let [h (make-harness [(fspec "metrics")] :options (secret-options true))]
+                        (episode h (secret-action)) (episode h (audio))
+                        (let [ops (mget (h-track h "_metrics") "ops")]
+                          (t/is-false (holds-secret? ops) "no secret key")
+                          (t/is-eq (mget (mget ops "episode.load:audio") "count") 1 "plain name"))
+                        (let [off (make-harness [(fspec "metrics")] :options (secret-options false))]
+                          (episode off (secret-action))
+                          (t/is-true (holds-secret? (mget (h-track off "_metrics") "ops")) "clean off")))))
+        (check "action-keys: an action under a sensitive key name is masked in the record and bucket names" "rbac"
+               (fn [] (when (and (present? "metrics") (present? "cost"))
+                        (let [opts (secret-options true "apikey,action")
+                              mask (vs/getpath opts "__derived__.clean.mask")
+                              h (make-harness [(fspec "rbac" "rules" (vs/jm "episode.load:audio" "audio")
+                                                      "permissions" (vs/jt "audio"))
+                                               (fspec "metrics")
+                                               (fspec "cost" "rates" (vs/jm "episode.load:audio" 5))]
+                                              :options opts)]
+                          (t/is-eq (get (episode h (audio)) "ok") true "raw rule decides")
+                          (t/is-eq (mget (mget (h-track h "_rbac") "last") "action") mask "rbac masked")
+                          (t/is-eq (vec (vs/keysof (mget (h-track h "_metrics") "ops"))) [(str "episode.load:" mask)] "metrics name")
+                          (t/is-eq (vec (vs/keysof (mget (h-track h "_cost") "ops"))) [(str "episode.load:" mask)] "cost name")))))
+        (check "action-keys cost: an action holding a secret is cleaned in the bucket name" "cost"
+               (fn [] (let [h (make-harness [(fspec "cost" "rates" (vs/jm (str "episode.load:" secret) 7 "episode.load:audio" 5))]
+                                            :options (secret-options true))]
+                        (episode h (secret-action)) (episode h (audio))
+                        (let [cost (h-track h "_cost")
+                              ops (mget cost "ops")]
+                          (t/is-false (holds-secret? ops) "no secret key")
+                          (t/is-eq (mget (mget cost "total") "amount") 12 "raw rate decides")
+                          (t/is-eq (mget (mget ops "episode.load:audio") "amount") 5 "plain name")))))))
+
     ;; ---- metrics ----
     (check "metrics-counts-ok-err" "metrics"
-           (fn [] (when (feature-present? "netsim")
+           (fn [] (when (present? "netsim")
                     (let [h (make-harness [(fspec "netsim" "failTimes" 1 "failStatus" 500) (fspec "metrics")])]
                       (h-op h) (h-op h) (h-op h :opname "list")
                       (let [m (h-track h "_metrics")]
@@ -449,7 +573,7 @@
                         (t/is-eq (mget sent "X-Trace-Id") (mget (vs/getelem (mget tel "spans") 0) "traceId") "trace id")
                         (t/is-true (boolean (re-matches #"00-.+-.+-01" (str (mget sent "traceparent")))) "traceparent"))))))
     (check "telemetry-failed-span" "telemetry"
-           (fn [] (when (feature-present? "netsim")
+           (fn [] (when (present? "netsim")
                     (let [h (make-harness [(fspec "netsim" "failTimes" 1 "failStatus" 500) (fspec "telemetry")])]
                       (h-op h)
                       (let [tel (h-track h "_telemetry")]
@@ -475,7 +599,7 @@
                       ;; feature list of its own.
                       (t/is-eq (mget (mget (nth @seen 0) "headers") "authorization") "[redacted]" "redacted")))))
     (check "debug-captures-failures" "debug"
-           (fn [] (when (feature-present? "netsim")
+           (fn [] (when (present? "netsim")
                     (let [h (make-harness [(fspec "netsim" "failTimes" 1 "failStatus" 500) (fspec "debug")])]
                       (h-op h)
                       (let [entry (vs/getelem (mget (h-track h "_debug") "entries") 0)]
@@ -490,7 +614,7 @@
 
     ;; ---- audit ----
     (check "audit-one-record-per-op" "audit"
-           (fn [] (when (feature-present? "netsim")
+           (fn [] (when (present? "netsim")
                     (let [sink (atom [])
                           h (make-harness [(fspec "netsim" "failTimes" 1 "failStatus" 500)
                                            (fspec "audit" "actor" "svc" "sink" (fn [r] (swap! sink conj r)) "max" 5)])]
@@ -640,7 +764,7 @@
 
     ;; ---- composition ----
     (check "cache-plus-netsim-hit-skips-failure" "cache"
-           (fn [] (when (feature-present? "netsim")
+           (fn [] (when (present? "netsim")
                     (let [h (make-harness [(fspec "netsim" "failEvery" 2) (fspec "cache" "ttl" 10000)])]
                       (t/is-eq (get (h-op h :path "/w") "ok") true "1")
                       (t/is-eq (get (h-op h :path "/w") "ok") true "2 (cache hit)")

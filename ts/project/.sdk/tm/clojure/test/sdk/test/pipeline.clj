@@ -207,6 +207,30 @@
            (fn [] (let [ctx (make-ctx sdk "nope")
                         [_ err] ((core/uget ctx :make-point) ctx)]
                     (t/is-eq (:code err) "point_op_allow" "code"))))
+      (chk "an allow list entry may name an action: <entity>.<op>:<action>"
+           (fn [] (let [plain (vs/jm "method" "GET" "parts" (vs/jt "episode" "{id}") "select" (vs/jm "exist" (vs/jt "id")))
+                        audio (vs/jm "method" "GET" "parts" (vs/jt "episode" "{id}" "audio")
+                                     "select" (vs/jm "exist" (vs/jt "id") "$action" "audio"))
+                        point (fn [allow reqmatch]
+                                (let [ctx (make-ctx sdk "load")]
+                                  (core/oset! ctx :op (core/make-operation
+                                                        (vs/jm "name" "load" "entity" "episode" "input" "match"
+                                                               "points" (vs/jt plain audio))))
+                                  (core/oset! ctx :options (vs/jm "allow" (vs/jm "op" allow)))
+                                  (core/oset! ctx :reqmatch reqmatch)
+                                  (core/oset! ctx :match (vs/jm))
+                                  (let [[out err] ((core/uget ctx :make-point) ctx)]
+                                    (if (some? err) (:code err) out))))
+                        a #(vs/jm "$action" "audio" "id" "e1")
+                        r #(vs/jm "id" "e1")]
+                    (t/is-true (identical? audio (point "episode.load:audio" (a))) "action named")
+                    (t/is-eq (point "episode.load:audio" (r)) "point_op_allow" "plain refused")
+                    (t/is-true (identical? audio (point "Episode.Load:AUDIO" (a))) "any case")
+                    (t/is-eq (point "episode.load:video" (a)) "point_op_allow" "other action")
+                    (t/is-true (identical? audio (point "episode.load" (a))) "operation admits action")
+                    (t/is-true (identical? audio (point "load" (a))) "op admits action")
+                    (t/is-true (identical? plain (point "load" (r))) "op admits plain")
+                    (t/is-eq (point "list" (r)) "point_op_allow" "other op"))))
       (chk "point-rejects-no-endpoints"
            (fn [] (let [ctx (make-ctx sdk "load")]
                     (set-points! ctx (vs/jt))

@@ -6,6 +6,7 @@ import {
   File, Content, Copy, Folder, Fragment,
   inactiveFeatureExcludes,
   pluginExcludes,
+  codecExcludes,
   TEST_CONTROL_EXCLUDE,
   TargetLicense,
   TargetVersion,
@@ -32,6 +33,7 @@ import { MainEntity } from './MainEntity_csharp'
 import { SdkError } from './SdkError_csharp'
 import { EntityBase } from './EntityBase_csharp'
 import { EntityTypes } from './EntityTypes_csharp'
+import { CodecIndex } from './CodecIndex_csharp'
 
 
 const Main = cmp(async function Main(props: any) {
@@ -50,13 +52,16 @@ const Main = cmp(async function Main(props: any) {
   Copy({
     from: 'tm/' + target.name,
     exclude: [/src\//, TEST_CONTROL_EXCLUDE,
-      ...inactiveFeatureExcludes(props.ctx$, target), ...pluginExcludes(model)],
+      ...inactiveFeatureExcludes(props.ctx$, target), ...pluginExcludes(model),
+      ...codecExcludes(model)],
     replace: {
       ...props.ctx$.stdrep,
     }
   })
 
   PrepareAuth({ target })
+
+  CodecIndex({ target })
 
   // Generated files live in core/ beside the copied runtime.
   Folder({ name: 'core' }, () => {

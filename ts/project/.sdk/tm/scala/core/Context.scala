@@ -26,6 +26,8 @@ class Context(ctxmap: JMap[String, Object], basectx: Context) {
   var reqdata: JMap[String, Object] = null
   var matchData: JMap[String, Object] = null
   var reqmatch: JMap[String, Object] = null
+  // The values of the point's binary fields, lifted out of reqdata.
+  var sources: JMap[String, Object] = null
   var entity: Entity = null
   var shared: JMap[String, Object] = null
 
@@ -48,6 +50,7 @@ class Context(ctxmap: JMap[String, Object], basectx: Context) {
           m.get("explain") match { case e: JMap[_, _] => ctrl.explain = e.asInstanceOf[JMap[String, Object]]; case _ => }
           m.get("actor") match { case a: String => ctrl.actor = a; case _ => }
           m.get("paging") match { case p: JMap[_, _] => ctrl.paging = p.asInstanceOf[JMap[String, Object]]; case _ => }
+          m.get("transfer") match { case t: JMap[_, _] => ctrl.transfer = t.asInstanceOf[JMap[String, Object]]; case _ => }
         case c: Control => ctrl = c
         case _ =>
       }

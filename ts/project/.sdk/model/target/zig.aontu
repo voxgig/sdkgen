@@ -10,6 +10,8 @@ main: kit: target: zig: {
 
   provides: { sekreto: true, schema: true }
 
+  codec: tier: 'encoded'
+
   # Files earlier toolchains generated that this target has RETIRED
   # (vendor-tag rollout): the hand-written struct runner, whose engine half
   # AND assertion half are now the vendored omni port driven through

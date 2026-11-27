@@ -5,7 +5,8 @@
 # against the permissions the client holds; a disallowed call is
 # short-circuited with an "rbac_denied" error and never touches the
 # network. Required permissions come from "rules" (keyed by
-# "<entity>.<op>", "<op>", or "*"); the default when no rule matches is
+# "<entity>.<op>:<action>", "<entity>.<op>", "<op>", or "*", most specific
+# first); the default when no rule matches is
 # controlled by "deny" (default: allow when unspecified). Held permissions
 # are the "permissions" list (a "*" grants everything).
 
@@ -21,6 +22,7 @@ BEGIN { $__dir = File::Basename::dirname(Cwd::abs_path(__FILE__)) }
 require(Cwd::abs_path("$__dir/../lib/Voxgig/Struct.pm"));
 require(Cwd::abs_path("$__dir/../core/helpers.pm"));
 require(Cwd::abs_path("$__dir/base_feature.pm"));
+require(Cwd::abs_path("$__dir/../utility/op_key.pm"));
 
 package ProjectNameRbacFeature;
 
@@ -77,19 +79,9 @@ sub PrePoint {
 sub _required {
   my ($self, $ctx) = @_;
   my $rules = $self->{options}{rules} || {};
-  my $entity = '';
-  if ($ctx->{entity} && Scalar::Util::blessed($ctx->{entity})
-    && $ctx->{entity}->can('get_name')) {
-    $entity = $ctx->{entity}->get_name;
+  for my $key (ProjectNameUtilities::op_keys($ctx)) {
+    return $rules->{$key} if defined $rules->{$key};
   }
-  elsif ($ctx->{op}) {
-    $entity = $ctx->{op}{entity};
-  }
-  my $opname = $ctx->{op} ? $ctx->{op}{name} : '';
-
-  return $rules->{"$entity.$opname"} if defined $rules->{"$entity.$opname"};
-  return $rules->{$opname} if defined $rules->{$opname};
-  return $rules->{'*'} if defined $rules->{'*'};
   return undef;
 }
 
@@ -97,6 +89,8 @@ sub _reject {
   my ($self, $ctx, $required) = @_;
   $self->_track($ctx, $required, 0);
   my $opname = ($ctx->{op} && '' ne $ctx->{op}{name}) ? $ctx->{op}{name} : '?';
+  my $action = ProjectNameUtilities::op_action($ctx);
+  $opname .= ":$action" if defined $action;
   my $err = $ctx->make_error('rbac_denied',
     "Permission \"$required\" required for operation \"$opname\"");
   # Short-circuit endpoint resolution; make_point surfaces this error
@@ -113,11 +107,14 @@ sub _track {
     $self->{client}{_rbac} = $track;
   }
   $track->{ $allowed ? 'allowed' : 'denied' } += 1;
-  $track->{last} = {
+  my $last = {
     'required' => $required,
     'allowed' => $allowed ? Voxgig::Struct::JTRUE() : Voxgig::Struct::JFALSE(),
     'op' => ($ctx->{op} ? $ctx->{op}{name} : undef),
   };
+  my $action = ProjectNameUtilities::op_action($ctx);
+  $last->{action} = $action if defined $action;
+  $track->{last} = $ctx->{utility}{clean}->($ctx, $last);
   return;
 }
 

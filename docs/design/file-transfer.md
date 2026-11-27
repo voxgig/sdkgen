@@ -1,9 +1,22 @@
 # Design: files in the entity model — upload, download, partial and resumable transfer
 
-Status: **plan, with every ruling made** (2026-11-23). Nothing here is
-implemented. The maintainer ruled R1 to R8 on 2026-11-21 and the rest on
+Status: **plan, with every ruling made** (2026-11-23), **being carried out**
+since 2026-11-25. The maintainer ruled R1 to R8 on 2026-11-21 and the rest on
 2026-11-23, and section 12 records them all. Sections 4.2 and 4.3 keep the
 options that were not chosen, so the reasoning stays readable.
+
+What is done, by the work items of section 11: Phase 0 is in `main`, except
+the workflow half of `p0-ci-coverage`. Of Phase 1, the codecs are in every
+target at the Encoded tier with the tier table as a test
+(`p1-codecs-ts-js`, `p1-codecs-ports`, `p1-codecs-closed-union`,
+`p1-tier-test`), and the example app's first cut is in `ts/test/podcastdemo`
+(`p1-demo-app`); the primary corpus cases are drafted and not yet in
+create-sdkgen, and the reference SDK waits on its repository. Of Phase 2,
+the policy keys know a custom action in every target (`p2-action-keys`), and
+apidef writes `bn` on a file point and a file flow beside the basic one
+(`p2-apidef-file-facts`, the apidef half of `p2-flow-file-steps`); of Phase 3,
+apidef writes `session` on an entity (`p3-apidef-sessions`). Sections 2 and
+the appendices describe the code as it was surveyed, before any of this.
 
 Two of the later rulings changed words used throughout. The noun is
 `binary`: an entity's bytes are reached as `entity.binary('audio')`, and

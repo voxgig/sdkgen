@@ -46,7 +46,10 @@ pub fn fh_has_feature(name: []const u8) bool {
 
 pub fn fh_present(names: []const []const u8) bool {
     for (names) |name| {
-        if (!fh_has_feature(name)) return false;
+        if (!fh_has_feature(name)) {
+            std.debug.print("skip: feature not present in this SDK: {s}\n", .{name});
+            return false;
+        }
     }
     return true;
 }
@@ -309,6 +312,8 @@ pub const FhOpSpec = struct {
     headers: Value = .{ .null = {} },
     body: Value = .{ .null = {} },
     ctrl: Value = .{ .null = {} },
+    reqmatch: Value = .{ .null = {} },
+    reqdata: Value = .{ .null = {} },
 };
 
 pub const FhOpResult = struct {
@@ -321,6 +326,12 @@ pub const FhOpResult = struct {
 
 pub fn fh_err_code(err: ?*SdkError) []const u8 {
     return if (err) |e| e.code else "";
+}
+
+// Which request argument an operation reads, as the generated Context decides.
+fn fhOpInput(op: []const u8) []const u8 {
+    if (std.mem.eql(u8, op, "create") or std.mem.eql(u8, op, "update") or std.mem.eql(u8, op, "patch")) return "data";
+    return "match";
 }
 
 fn fhDefaultMethod(op: []const u8) []const u8 {
@@ -411,7 +422,10 @@ pub const FhHarness = struct {
         ctx.op = sdk.Operation.make(h.jo(&.{
             .{ "entity", h.vstr(entity) },
             .{ "name", h.vstr(opname) },
+            .{ "input", h.vstr(fhOpInput(opname)) },
         }));
+        ctx.reqmatch = if (o.reqmatch == .object) o.reqmatch else h.omap();
+        ctx.reqdata = if (o.reqdata == .object) o.reqdata else h.omap();
 
         self.utility.feature_hook(ctx, "PostConstructEntity");
 

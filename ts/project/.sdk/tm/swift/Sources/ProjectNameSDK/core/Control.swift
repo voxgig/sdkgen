@@ -10,6 +10,9 @@ public final class Control {
   public var explain: VMap? = nil
   public var actor: String = ""
   public var paging: VMap? = nil
+  // Set by an entity's binary handle: the slot, the direction its bytes
+  // move, and the bytes a read leaves.
+  public var transfer: VMap? = nil
 
   public init() {}
 }

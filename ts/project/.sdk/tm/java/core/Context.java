@@ -32,6 +32,8 @@ public class Context {
   public Map<String, Object> reqdata;
   public Map<String, Object> match;
   public Map<String, Object> reqmatch;
+  // The values of the point's binary fields, lifted out of reqdata.
+  public Map<String, Object> sources;
   public Entity entity;
   public Map<String, Object> shared;
 
@@ -77,6 +79,10 @@ public class Context {
         Object p = cm.get("paging");
         if (p instanceof Map) {
           this.ctrl.paging = (Map<String, Object>) p;
+        }
+        Object tr = cm.get("transfer");
+        if (tr instanceof Map) {
+          this.ctrl.transfer = (Map<String, Object>) tr;
         }
       }
       else if (cv instanceof Control) {

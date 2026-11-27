@@ -3,6 +3,7 @@ import type { Context, FeatureOptions } from '../../types'
 import type { ProjectNameSDK } from '../../ProjectNameSDK'
 
 import { BaseFeature } from '../base/BaseFeature'
+import { opAction } from '../../utility/OpKeyUtility'
 
 
 class AuditFeature extends BaseFeature {
@@ -50,7 +51,7 @@ class AuditFeature extends BaseFeature {
     }
     this._seen.add(ctx)
     this._seq++
-    const record = ctx.utility.clean(ctx, {
+    const entry: any = {
       seq: this._seq,
       ts: this._now(),
       actor: (ctx.ctrl && ctx.ctrl.actor) || this._options.actor || 'anonymous',
@@ -59,7 +60,12 @@ class AuditFeature extends BaseFeature {
       outcome,
       status: ctx.result && ctx.result.status,
       correlationId: ctx.id,
-    })
+    }
+    const action = opAction(ctx)
+    if (null != action) {
+      entry.action = action
+    }
+    const record = ctx.utility.clean(ctx, entry)
 
     const client: any = this._client
     const recs = client._audit.records

@@ -66,6 +66,11 @@ defmodule ProjectName.Utility do
     ]
 
     Enum.each(reg, fn {k, f} -> S.setprop(u, k, f) end)
+
+    # The body codecs this SDK was generated with; see codec/index.ex.
+    codec = ProjectName.Codec.Index.codec()
+    S.setprop(u, "codec", codec)
+    S.setprop(u, "multipart_boundary", S.getprop(codec, "multipart_boundary"))
     u
   end
 
@@ -360,10 +365,28 @@ defmodule ProjectName.Utility do
     response = S.getprop(ctx, "response")
     type = body_header(S.getprop(response, "headers"), "content-type")
 
+    kind = S.getprop(body, "kind")
+    spec = S.getprop(ctx, "spec")
+
     sent =
-      if S.getprop(body, "kind") == "raw" and S.getprop(body, "binary") == true do
-        bodies = [S.getprop(S.getprop(ctx, "spec"), "body"), raw_body(S.getprop(ctx, "reqdata"))]
+      if kind == "raw" and S.getprop(body, "binary") == true do
+        raw = Map.get(S.getprop(ctx, "sources") || %{}, "$body") || raw_body(S.getprop(ctx, "reqdata"))
+        data = if is_struct(raw, ProjectName.BinarySource), do: raw.data, else: nil
+        bodies = [S.getprop(spec, "body"), raw, data]
         [%{live: live.(bodies), type: if(is_binary(media), do: media, else: nil), sized: true}]
+      else
+        []
+      end
+
+    # An encoded multipart body, and a form body that carries a file: the
+    # body is a binary here whatever it holds, so the point's kind decides.
+    fields = S.getprop(body, "fields")
+    files = S.islist(fields) and Enum.any?(H.entries(fields), fn {_, f} -> S.getprop(f, "binary") == true end)
+
+    encoded =
+      if kind == "multipart" or (kind == "form" and files) do
+        ctype = body_header(S.getprop(spec, "headers"), "content-type")
+        [%{live: live.([S.getprop(spec, "body")]), type: if(ctype == "", do: nil, else: ctype), sized: true}]
       else
         []
       end
@@ -375,7 +398,7 @@ defmodule ProjectName.Utility do
         []
       end
 
-    Enum.reject(sent ++ answered, &(&1.live == []))
+    Enum.reject(sent ++ encoded ++ answered, &(&1.live == []))
   end
 
   # Bytes are described, never copied (ADR-006): the kind, the size where it
@@ -441,6 +464,9 @@ defmodule ProjectName.Utility do
 
       match?(%ProjectName.Error{}, val) ->
         S.jm(["code", clean_code(cfg, val.code), "message", clean_string(cfg, strof(val.msg))])
+
+      is_struct(val, ProjectName.BinarySource) ->
+        ProjectName.BinarySource.to_data(val)
 
       is_exception(val) ->
         S.jm(["message", clean_string(cfg, Exception.message(val))])
@@ -1031,7 +1057,22 @@ defmodule ProjectName.Utility do
       S.getprop(H.to_map(S.getprop(point, "select")), "$action")
   end
 
+  # Once the point is known, a body of bytes it answers is refused and the
+  # sources its binary fields carry are lifted out of the data.
   def make_point_impl(ctx) do
+    case select_point(ctx) do
+      {nil, err} when err != nil ->
+        {nil, err}
+
+      {point, _} ->
+        case ProjectName.Binary.bytes_refused(ctx) || ProjectName.Binary.lift_sources(ctx) do
+          nil -> {point, nil}
+          err -> {nil, err}
+        end
+    end
+  end
+
+  defp select_point(ctx) do
     out = S.getprop(ctx, "out")
     pre = S.getprop(out, "point")
 
@@ -1052,10 +1093,13 @@ defmodule ProjectName.Utility do
       npoints = S.size(points)
 
       cond do
-        not allowed?(allow_op, opname) ->
+        not Enum.any?(H.op_keys(ctx), &allowed?(allow_op, &1)) ->
+          action = H.op_action(ctx)
+
           {nil,
            Context.make_error(ctx, "point_op_allow",
-             "Operation \"" <> opname <> "\" not allowed by SDK option allow.op value: \"" <>
+             "Operation \"" <> opname <> if(action == nil, do: "", else: ":" <> action) <>
+               "\" not allowed by SDK option allow.op value: \"" <>
                H.str_or(allow_op, "") <> "\"")}
 
         npoints == 0 ->
@@ -1252,29 +1296,39 @@ defmodule ProjectName.Utility do
           S.setprop(spec, "path", prepare_path(ctx))
         end
 
-        ctrl = S.getprop(ctx, "ctrl")
-        explain = S.getprop(ctrl, "explain")
-        if explain != nil, do: S.setprop(explain, "spec", spec)
+        body = S.getprop(spec, "body")
 
-        # Whatever prepare_auth sets in the query, under whichever name, is
-        # the credential; a key it leaves as it was is the caller's.
-        query = Map.new(H.entries(S.getprop(spec, "query")))
-
-        {spec2, err} = prepare_auth(ctx)
-
-        if err != nil do
-          {nil, err}
+        if H.is_error(body) do
+          {nil, body}
         else
-          authquery =
-            for {key, val} <- H.entries(S.getprop(spec2, "query")),
-                not Map.has_key?(query, key) or Map.get(query, key) != val,
-                do: key
-
-          S.setprop(spec2, "authquery", S.jt(authquery))
-          S.setprop(ctx, "spec", spec2)
-          {spec2, nil}
+          finish_spec(ctx, spec)
         end
       end
+    end
+  end
+
+  defp finish_spec(ctx, spec) do
+    ctrl = S.getprop(ctx, "ctrl")
+    explain = S.getprop(ctrl, "explain")
+    if explain != nil, do: S.setprop(explain, "spec", spec)
+
+    # Whatever prepare_auth sets in the query, under whichever name, is
+    # the credential; a key it leaves as it was is the caller's.
+    query = Map.new(H.entries(S.getprop(spec, "query")))
+
+    {spec2, err} = prepare_auth(ctx)
+
+    if err != nil do
+      {nil, err}
+    else
+      authquery =
+        for {key, val} <- H.entries(S.getprop(spec2, "query")),
+            not Map.has_key?(query, key) or Map.get(query, key) != val,
+            do: key
+
+      S.setprop(spec2, "authquery", S.jt(authquery))
+      S.setprop(ctx, "spec", spec2)
+      {spec2, nil}
     end
   end
 
@@ -2009,10 +2063,57 @@ defmodule ProjectName.Utility do
   def prepare_body_impl(ctx) do
     op = S.getprop(ctx, "op")
 
+    if S.getprop(op, "input") != "data" do
+      match_body(ctx)
+    else
+      refused = ProjectName.Binary.lift_sources(ctx)
+      kind = S.getprop(S.getprop(S.getprop(ctx, "point"), "body"), "kind")
+
+      cond do
+        refused != nil ->
+          refused
+
+        kind == "raw" ->
+          case Map.get(S.getprop(ctx, "sources") || %{}, @raw_body) do
+            %ProjectName.BinarySource{data: data} -> data
+            raw -> raw
+          end
+
+        kind in ["form", "multipart"] ->
+          encode_body(ctx, kind, transform_request(ctx))
+
+        true ->
+          transform_request(ctx)
+      end
+    end
+  end
+
+  # The encoded body, with its content type replacing any the headers carry:
+  # a multipart boundary is the encoder's alone to choose.
+  defp encode_body(ctx, kind, data) do
+    encode = S.getprop(S.getprop(S.getprop(ctx, "utility"), "codec"), kind)
+
+    encoded =
+      if is_function(encode, 3),
+        do: encode.(ctx, data, S.getprop(ctx, "sources") || %{}),
+        else: Context.make_error(ctx, "body_codec_missing", "This SDK was generated without a " <> kind <> " encoder.")
+
+    headers = S.getprop(S.getprop(ctx, "spec"), "headers")
+
     cond do
-      S.getprop(op, "input") != "data" -> match_body(ctx)
-      raw_request?(S.getprop(ctx, "point")) -> raw_body(S.getprop(ctx, "reqdata"))
-      true -> transform_request(ctx)
+      H.is_error(encoded) ->
+        encoded
+
+      true ->
+        if S.ismap(headers) do
+          Enum.each(H.entries(headers), fn {k, _} ->
+            if is_binary(k) and String.downcase(k) == "content-type", do: S.delprop(headers, k)
+          end)
+
+          S.setprop(headers, "content-type", encoded["type"])
+        end
+
+        encoded["body"]
     end
   end
 
@@ -2401,7 +2502,22 @@ defmodule ProjectName.Utility do
   def result_body_impl(ctx) do
     response = S.getprop(ctx, "response")
     result = S.getprop(ctx, "result")
+    raw = S.getprop(S.getprop(S.getprop(ctx, "utility"), "codec"), "raw")
+    status = S.getprop(result, "status")
 
+    if result != nil and response != nil and is_function(raw, 1) and
+         S.getprop(S.getprop(S.getprop(ctx, "point"), "response"), "kind") == "raw" and
+         S.getprop(result, "err") == nil and S.getprop(response, "err") == nil and
+         is_integer(status) and status < 400 do
+      raw.(ctx)
+    else
+      json_body(ctx, response, result)
+    end
+
+    result
+  end
+
+  defp json_body(ctx, response, result) do
     if result != nil and response != nil do
       jf = S.getprop(response, "json_func")
       body = S.getprop(response, "body")
@@ -2809,6 +2925,7 @@ defmodule ProjectName.Utility do
                "headers", rh,
                "json", fn -> json_body end,
                "body", lossy_text(body_str),
+               "bytes", fn -> body_str end,
                "unreadable", unreadable
              ]), nil}
 
@@ -2853,7 +2970,7 @@ defmodule ProjectName.Utility do
   # A body that is not valid UTF-8 is kept as text, with a replacement
   # character for each byte that does not decode: whatever reads the response
   # afterwards serialises it, and a serialiser raises on such a binary.
-  defp lossy_text(body) do
+  def lossy_text(body) do
     if String.valid?(body), do: body, else: scrub(body, "")
   end
 

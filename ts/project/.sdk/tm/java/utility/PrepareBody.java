@@ -3,9 +3,12 @@ package JAVAPACKAGE.utility;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
+import JAVAPACKAGE.core.BinarySource;
 import JAVAPACKAGE.core.Context;
+import JAVAPACKAGE.core.Utility;
 import JAVAPACKAGE.utility.struct.Struct;
 
 final class PrepareBody {
@@ -14,10 +17,20 @@ final class PrepareBody {
 
   static Object prepareBody(Context ctx) {
     if ("data".equals(ctx.op.input)) {
+      Sources.liftSources(ctx);
+
       if (Media.isRawRequest(ctx.point)) {
-        return Media.rawBody(ctx.reqdata);
+        Object raw = ctx.sources.get(Media.RAW_BODY);
+        return Media.rawBody(raw instanceof BinarySource ? ((BinarySource) raw).data : raw);
       }
-      return ctx.utility.transformRequest.apply(ctx);
+
+      Object body = ctx.utility.transformRequest.apply(ctx);
+
+      Object kind = Struct.getprop(Struct.getprop(ctx.point, "body"), "kind");
+      if ("form".equals(kind) || "multipart".equals(kind)) {
+        return encodeBody(ctx, (String) kind, body);
+      }
+      return body;
     }
 
     Object fields = Struct.getprop(ctx.point, "fields");
@@ -26,6 +39,27 @@ final class PrepareBody {
     }
 
     return null;
+  }
+
+  // The encoded body, with its content type replacing any the headers carry:
+  // a multipart boundary is the encoder's alone to choose.
+  private static Object encodeBody(Context ctx, String kind, Object data) {
+    Object encode = ctx.utility.codec == null ? null : ctx.utility.codec.get(kind);
+    if (!(encode instanceof Utility.EncodeFn)) {
+      throw ctx.makeError("body_codec_missing",
+          "This SDK was generated without a " + kind + " encoder.");
+    }
+
+    Map<String, Object> encoded = ((Utility.EncodeFn) encode).encode(ctx, data,
+        ctx.sources == null ? new LinkedHashMap<>() : ctx.sources);
+
+    if (ctx.spec != null && ctx.spec.headers != null) {
+      ctx.spec.headers.keySet().removeIf((key) -> key != null
+          && "content-type".equals(key.toLowerCase(Locale.ROOT)));
+      ctx.spec.headers.put("content-type", encoded.get("type"));
+    }
+
+    return encoded.get("body");
   }
 
   // A list, load or remove routed to a method with a body sends the match

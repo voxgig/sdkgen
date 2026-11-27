@@ -3,7 +3,8 @@ import * as Path from 'node:path'
 
 import {
   cmp, each,
-  File, Copy, Folder, Fragment,
+  File, Copy, Folder, Fragment, Content,
+  codecExcludes, entityClassName, entityCollection,
   TEST_CONTROL_EXCLUDE,
   inactiveFeatureExcludes,
   pluginExcludes,
@@ -32,6 +33,7 @@ import { MainEntity } from './MainEntity_cpp'
 import { EntityBase } from './EntityBase_cpp'
 import { EntityTypes } from './EntityTypes_cpp'
 import { PrepareAuth } from './PrepareAuth_cpp'
+import { CodecIndex } from './CodecIndex_cpp'
 
 
 const Main = cmp(async function Main(props: any) {
@@ -52,7 +54,8 @@ const Main = cmp(async function Main(props: any) {
   Copy({
     from: 'tm/' + target.name,
     exclude: [/src\//, TEST_CONTROL_EXCLUDE,
-      ...inactiveFeatureExcludes(props.ctx$, target), ...pluginExcludes(model)],
+      ...inactiveFeatureExcludes(props.ctx$, target), ...pluginExcludes(model),
+      ...codecExcludes(model)],
     replace: {
       ...props.ctx$.stdrep,
     }
@@ -89,11 +92,23 @@ const Main = cmp(async function Main(props: any) {
             const entprops = { target, entity, entitySDK }
             MainEntity(entprops)
           })
+
+          const coll = entityCollection(model)
+          Content(`
+  // By name, for code that knows no entity (the codec suite); null for none.
+  SdkEntityPtr entityByName(const std::string& name, Value entopts = Value::undef()) {
+${each(entity, (ent: ModelEntity) => `    if ("${ent.name}" == name) return std::make_shared<${entityClassName(ent, coll)}>(this, entopts);
+`).join('')}    (void)entopts;
+    return nullptr;
+  }
+`)
         })
     })
   })
 
   PrepareAuth({ target })
+
+  CodecIndex({ target })
 
   // feature/<name>/kinds.cpp — the plugin definitions an active
   // plugin-bearing feature selected, and the Makefile's wiring gate for that

@@ -12,6 +12,8 @@ main: kit: target: kotlin: {
   # whose `needs` is exactly this tag — applies here. Without it
   # featureApplies() refuses the feature and Config emits neither the
   # import nor the registry entry.
+  codec: tier: 'encoded'
+
   provides: { sekreto: true, schema: true }
 
   superseded: [

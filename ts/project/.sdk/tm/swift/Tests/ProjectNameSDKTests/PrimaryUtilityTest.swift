@@ -963,7 +963,7 @@ final class PrimaryUtilityTest: XCTestCase {
   func testPrepareBodyBasic() {
     runsection("prepareBody") { args in
       let ctx = OmniResolver.omniCtx(args[0], self.client, self.utility)
-      return self.utility.prepareBody(ctx)
+      return try self.utility.prepareBody(ctx)
     }
   }
 

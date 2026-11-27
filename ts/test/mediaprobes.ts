@@ -122,8 +122,9 @@ const MEDIA_MODEL =
     remove: point('DELETE', '/cat/{id}', ''),
   }) +
   entity('picture', {
-    load: point('GET', '/picture/{id}', `rs: { kind: "raw", media: "image/jpeg", binary: true,
-          alternatives: [ { kind: "raw", media: "image/png", binary: true } ] }`),
+    // Text, so that a plain load may read it: bytes are read through a slot's handle.
+    load: point('GET', '/picture/{id}', `rs: { kind: "raw", media: "text/csv",
+          alternatives: [ { kind: "raw", media: "text/plain" } ] }`),
     update: point('PUT', '/picture/{id}', `rb: { kind: "json", media: "application/merge-patch+json" }
         ${ROUTED_BODY}`, undefined, ROUTED_ARGS),
     patch: point('PATCH', '/picture/{id}', 'rb: { kind: "json", media: "application/merge-patch+json" }'),
@@ -169,7 +170,7 @@ const MEDIA_CASES: MediaCase[] = [
   {
     name: 'no JSON asks for every declared type, in order',
     entity: 'picture', op: 'load', input: { id: 'p01' },
-    expect: { method: 'GET', path: '/picture/p01', accept: 'image/jpeg, image/png' },
+    expect: { method: 'GET', path: '/picture/p01', accept: 'text/csv, text/plain' },
   },
   {
     name: 'no declared response body sends no Accept',

@@ -10,7 +10,12 @@ async function resultBody(ctx) {
   const result = ctx.result
 
   if (result) {
-    if (response && response.json && null != response.body) {
+    const raw = ctx.utility.codec?.raw
+    if (null != response && 'raw' === ctx.point?.response?.kind && 'function' === typeof raw &&
+      null == result.err && null == response.err && result.status < 400) {
+      await raw(ctx)
+    }
+    else if (response && response.json && null != response.body) {
       try {
         const json = await response.json()
         result.body = json

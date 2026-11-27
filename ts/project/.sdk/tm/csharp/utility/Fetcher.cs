@@ -122,7 +122,7 @@ public static partial class SdkUtility
                 throw refused;
             }
 
-            var res = SendOnce(url, method, def);
+            var res = SendOnce(url, method, def, ctx);
             if (manual || RedirectMax <= hops || res["status"] is not int status ||
                 !RedirectStatus.Contains(status) ||
                 StructUtils.GetProp(res["headers"], "location") is not string location ||
@@ -181,7 +181,7 @@ public static partial class SdkUtility
     }
 
     private static Dictionary<string, object?> SendOnce(
-        string fullurl, string method, Dictionary<string, object?> fetchdef)
+        string fullurl, string method, Dictionary<string, object?> fetchdef, Context? ctx)
     {
         using var req = new HttpRequestMessage(new HttpMethod(method), fullurl);
 
@@ -239,9 +239,11 @@ public static partial class SdkUtility
             }
         }
 
-        using var resp = ClientFor(fetchdef).Send(req, HttpCompletionOption.ResponseContentRead);
-
-        var bodyText = resp.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+        // A raw response is left unread for the raw codec, which reads it to
+        // maxBuffer and disposes it; a failure is read as text, as ever.
+        var raw = "raw".Equals(StructUtils.GetProp(StructUtils.GetProp(ctx?.Point, "response"), "kind"));
+        var resp = ClientFor(fetchdef).Send(req, raw
+            ? HttpCompletionOption.ResponseHeadersRead : HttpCompletionOption.ResponseContentRead);
 
         var resheaders = new Dictionary<string, object?>();
         foreach (var kv in resp.Headers.Concat(resp.Content.Headers))
@@ -250,6 +252,21 @@ public static partial class SdkUtility
             resheaders[kv.Key.ToLowerInvariant()] =
                 vals.Count == 1 ? vals[0] : string.Join(", ", vals);
         }
+
+        var status = (int)resp.StatusCode;
+        if (raw && 200 <= status && status < 300)
+        {
+            return new Dictionary<string, object?>
+            {
+                ["status"] = status,
+                ["statusText"] = resp.ReasonPhrase ?? "",
+                ["headers"] = resheaders,
+                ["body"] = resp.Content.ReadAsStream(),
+            };
+        }
+
+        using var held = resp;
+        var bodyText = resp.Content.ReadAsStringAsync().GetAwaiter().GetResult();
 
         object? jsonBody = null;
         var unreadable = false;

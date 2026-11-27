@@ -51,6 +51,9 @@ class Context {
   match?: any
   reqmatch?: any
 
+  // The values of the point's binary fields, lifted out of reqdata.
+  sources?: Record<string, any>
+
   entity?: any
 
   // Shared persistent store.

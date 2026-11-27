@@ -1,12 +1,18 @@
 // EJECT-START
 
 pub fn patch(self: *EntyClass, reqdata: Value, ctrl: Value) EntResult {
+    return self.patch_with(reqdata, ctrl, .{});
+}
+
+pub fn patch_with(self: *EntyClass, reqdata: Value, ctrl: Value, opwith: binmod.OpWith) EntResult {
     const ctx = self.utility.make_context(CtxSpec{
         .opname = "patch",
         .ctrl = ctrl,
         .mtch = self.mtch,
         .data = self.data,
         .reqdata = reqdata,
+        .sources = opwith.sources,
+        .transfer = opwith.transfer,
     }, self.ent_ctx());
     return self.run_op_ent(ctx, patch_post_done);
 }

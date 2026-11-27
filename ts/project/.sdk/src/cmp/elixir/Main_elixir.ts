@@ -5,6 +5,7 @@ import {
   cmp, each,
   File, Folder, Content, Copy, Fragment,
   inactiveFeatureExcludes,
+  codecExcludes,
   pluginExcludes,
   targetFeatures,
   TargetLicense,
@@ -27,6 +28,7 @@ import { PrepareAuth } from './PrepareAuth_elixir'
 import { Gitignore } from './Gitignore_elixir'
 import { MainEntity } from './MainEntity_elixir'
 import { EntityTypes } from './EntityTypes_elixir'
+import { CodecIndex } from './CodecIndex_elixir'
 
 
 const HOOK_KEY =
@@ -61,7 +63,8 @@ const Main = cmp(async function Main(props: any) {
 
   Copy({
     from: 'tm/' + target.name,
-    exclude: [/src\//, /lib\/projectname\//, ...inactiveFeatureExcludes(props.ctx$, target)],
+    exclude: [/src\//, /lib\/projectname\//, ...inactiveFeatureExcludes(props.ctx$, target),
+      ...codecExcludes(model)],
     replace: {
       ...stdrep,
     }
@@ -74,6 +77,7 @@ const Main = cmp(async function Main(props: any) {
       exclude: [
         ...inactiveFeatureExcludes(props.ctx$, target, 'tm/' + target.name + '/lib/projectname'),
         ...pluginExcludes(model),
+        ...codecExcludes(model),
       ],
       replace: {
         ...stdrep,
@@ -141,6 +145,8 @@ end
     })
 
     PrepareAuth({ target })
+
+    CodecIndex({ target })
   })
 
   // Config module.

@@ -1,6 +1,6 @@
 // Statistics capture (mirrors feature/metrics.rs). Records per-operation
-// counters and latency for every call: totals plus a breakdown keyed by
-// `<entity>.<op>`. Timing starts at endpoint resolution (PrePoint) and stops
+// counters and latency for every call: totals plus a breakdown keyed by the
+// call's first op key (`<entity>.<op>`, or `<entity>.<op>:<action>`). Timing starts at endpoint resolution (PrePoint) and stops
 // when the call returns (PreDone) or fails (PreUnexpected); each operation is
 // recorded exactly once (the per-context start marker in ctx.out is consumed
 // on record). The clock is injectable (`now`) for deterministic tests.
@@ -65,17 +65,6 @@ static MetricsBucket* ops_entry(MetricsFeature* mf, const char* key) {
   return &mf->op_buckets[mf->ops_len++];
 }
 
-static char* dot_join(const char* a, const char* b) {
-  size_t na = a ? strlen(a) : 0;
-  size_t nb = b ? strlen(b) : 0;
-  char* s = (char*)malloc(na + nb + 2);
-  memcpy(s, a ? a : "", na);
-  s[na] = '.';
-  memcpy(s + na + 1, b ? b : "", nb);
-  s[na + 1 + nb] = '\0';
-  return s;
-}
-
 static void metrics_record(MetricsFeature* mf, Context* ctx, bool ok) {
   // Record once per operation: the missing start marker makes a second call
   // (PreDone followed by PreUnexpected on failure) a no-op.
@@ -91,12 +80,11 @@ static void metrics_record(MetricsFeature* mf, Context* ctx, bool ok) {
   int64_t dur = fopt_now_call(mf->options) - start;
   if (dur < 0) dur = 0;
 
-  const char* entity = ctx->op->entity;
-  const char* opname = ctx->op->name;
-  char* key = dot_join(entity, opname);
-
+  // ops_entry keeps its own copy of the key.
+  char* key = op_file_key(ctx);
   bump(&mf->total, ok, dur);
   bump(ops_entry(mf, key), ok, dur);
+  free(key);
 }
 
 static void metrics_pre_point(MetricsFeature* mf, Context* ctx) {

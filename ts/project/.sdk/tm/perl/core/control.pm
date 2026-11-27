@@ -16,6 +16,8 @@ sub new {
     actor     => $opts->{actor},
     # Per-call paging override (read by the paging feature when it is active).
     paging    => $opts->{paging},
+    # Set by an entity's binary handle: the slot and the direction its bytes move.
+    transfer  => $opts->{transfer},
   }, $class;
 }
 

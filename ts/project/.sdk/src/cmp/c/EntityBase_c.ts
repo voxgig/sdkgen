@@ -5,6 +5,7 @@ import {
   Folder,
   cmp,
   each,
+  entitySlots,
 } from '@voxgig/sdkgen'
 
 
@@ -46,9 +47,16 @@ Entity* ${evar}_entity_new(${Name}SDK* client, voxgig_value* entopts);
 Entity* ${ident}_${evar}(${Name}SDK* client, voxgig_value* entopts);
 voxgig_value* ${evar}_stream(Entity* e, const char* action, voxgig_value* args, voxgig_value* callopts, PNError** err);
 `)
+        if (0 < entitySlots(ent).length) {
+          Content(`BinaryHandle ${evar}_binary(Entity* e, const char* slot);
+`)
+        }
       })
 
       Content(`
+// The entity named \`name\` bound to this client, NULL when there is none.
+Entity* sdk_entity(${Name}SDK* client, const char* name, voxgig_value* entopts);
+
 #endif // ${guard}
 `)
     })
