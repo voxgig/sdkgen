@@ -94,6 +94,21 @@ static bool storable(voxgig_value* res) {
   return fres_status(res, &status) && status >= 200 && status < 300 && !unreadable;
 }
 
+// A body that declares another type than JSON passes by, unread.
+static bool json(voxgig_value* res) {
+  voxgig_value* rh = getp(res, "headers");
+  if (!voxgig_is_map(rh)) return true;
+  voxgig_map* hm = voxgig_as_map(rh);
+  for (size_t i = 0; i < hm->len; i++) {
+    voxgig_value* v = hm->entries[i].value;
+    if (0 == strcasecmp(hm->entries[i].key, "content-type") && voxgig_is_string(v)) {
+      const char* t = voxgig_as_string(v);
+      return '\0' == t[strspn(t, " \t")] || media_is_json(t);
+    }
+  }
+  return true;
+}
+
 // snapshot captures the response as a re-readable map:
 // { status: num, statusText: str, data: <json>, headers: <lowercased map> }.
 static voxgig_value* snapshot(voxgig_value* res) {
@@ -193,7 +208,7 @@ static voxgig_value* through(Fetcher* self, Context* ctx, const char* url,
   PNError* e = NULL;
   voxgig_value* out = st->inner->fn(st->inner, ctx, url, fetchdef, &e);
 
-  if (!e && storable(out)) {
+  if (!e && storable(out) && json(out)) {
     voxgig_value* snap = snapshot(out);
     int64_t ttl = fopt_int(options, "ttl", 5000);
     evict(track, options);

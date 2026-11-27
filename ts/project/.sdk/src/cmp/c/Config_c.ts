@@ -236,8 +236,13 @@ voxgig_value* secrets_rawfetch(Context* ctx, const char* url,
 
   CURLcode rc = curl_easy_perform(curl);
   long status = 0;
+  // Where a redirect points, resolved by curl, which follows none.
+  voxgig_value* rheaders = v_map();
   if (CURLE_OK == rc) {
+    char* location = NULL;
     curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &status);
+    curl_easy_getinfo(curl, CURLINFO_REDIRECT_URL, &location);
+    if (NULL != location) setp(rheaders, "location", v_str(location));
   }
   curl_slist_free_all(hdrs);
   curl_easy_cleanup(curl);
@@ -256,7 +261,7 @@ voxgig_value* secrets_rawfetch(Context* ctx, const char* url,
   voxgig_value* out = cmap(5,
     "status", v_num((double)status),
     "statusText", v_str(status >= 400 ? "ERR" : "OK"),
-    "headers", v_map(),
+    "headers", rheaders,
     "json", json_thunk(parsed),
     "body", v_str(text));
   free(body.data);

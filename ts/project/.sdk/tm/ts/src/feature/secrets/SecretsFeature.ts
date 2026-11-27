@@ -10,6 +10,35 @@ import { Sekreto, envkey } from './sekreto'
 import { FEATURE_PLUGINS } from '../../Config'
 
 
+const REDIRECT_MAX = 5
+
+
+// The next URL of a redirect that keeps its method, when that URL is on the
+// exchange's own origin. Any other redirect would drop the body or leave it.
+function moved(url: string, at: string, res: any): string | undefined {
+  const status = null == res ? 0 : res.status
+  if (307 !== status && 308 !== status) {
+    return undefined
+  }
+
+  const headers = res.headers
+  const location = null == headers ? undefined :
+    'function' === typeof headers.get ? headers.get('location') : headers.location
+
+  if ('string' !== typeof location || '' === location) {
+    return undefined
+  }
+
+  try {
+    const next = new URL(location, at)
+    return next.origin === new URL(url).origin ? next.href : undefined
+  }
+  catch (_err) {
+    return undefined
+  }
+}
+
+
 class SecretsFeature extends BaseFeature {
   version = '0.1.0'
   name = 'secrets'
@@ -41,6 +70,7 @@ class SecretsFeature extends BaseFeature {
       response: 'string' === typeof xopts.response ? xopts.response : 'access_token',
       statuses: Array.isArray(xopts.statuses) ? xopts.statuses : [401],
       retries: 'number' === typeof xopts.retries ? xopts.retries : 1,
+      redirect: 'same-origin' === xopts.redirect ? 'same-origin' : 'refuse',
     } : null
 
     const providers: any[] = []
@@ -214,13 +244,26 @@ class SecretsFeature extends BaseFeature {
       throw new Error("secrets: no fetch implementation for the token exchange")
     }
 
-    const res = await fetch(url, {
+    const fetchdef = {
       method: x.method,
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ [x.request]: this._refresh }),
-      // Never followed: a redirect would carry the refresh token on.
+      // Never followed by the client: a redirect would carry the refresh token on.
       redirect: 'manual',
-    })
+    }
+
+    let res = await fetch(url, fetchdef)
+
+    // By option alone, and only while the exchange stays on its own origin.
+    let at = url
+    for (let hops = 0; 'same-origin' === x.redirect && hops < REDIRECT_MAX; hops++) {
+      const next = moved(url, at, res)
+      if (null == next) {
+        break
+      }
+      at = next
+      res = await fetch(at, fetchdef)
+    }
 
     const status = null == res ? 0 : res.status
 

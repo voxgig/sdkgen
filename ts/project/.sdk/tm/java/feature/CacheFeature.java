@@ -9,6 +9,7 @@ import java.util.function.Supplier;
 import JAVAPACKAGE.core.Context;
 import JAVAPACKAGE.core.SdkClient;
 import JAVAPACKAGE.core.Utility;
+import JAVAPACKAGE.utility.Media;
 
 // Response caching for safe (read) requests. Wraps the active transport and
 // serves a fresh cached snapshot instead of hitting the network when the
@@ -108,6 +109,12 @@ public class CacheFeature extends BaseFeature {
       throw err;
     }
 
+    // A body that declares another type than JSON passes by, unread.
+    if (storable(res) && !json(res)) {
+      this.bypass++;
+      return res;
+    }
+
     if (storable(res)) {
       CacheSnapshot snapshot = snapshot(res);
       int ttl = FeatureOptions.foptInt(this.options, "ttl", 5000);
@@ -130,6 +137,11 @@ public class CacheFeature extends BaseFeature {
     int status = FeatureOptions.fresStatus(res);
     return status >= 200 && status < 300
         && !Boolean.TRUE.equals(((Map<String, Object>) res).get("unreadable"));
+  }
+
+  private boolean json(Object res) {
+    String type = FeatureOptions.fresHeader(res, "content-type");
+    return "".equals(type) || Media.isJsonMedia(type);
   }
 
   private CacheSnapshot snapshot(Object res) {

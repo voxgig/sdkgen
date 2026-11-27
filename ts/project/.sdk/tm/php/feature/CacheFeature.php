@@ -4,6 +4,7 @@ declare(strict_types=1);
 // ProjectName SDK cache feature
 
 require_once __DIR__ . '/BaseFeature.php';
+require_once __DIR__ . '/../utility/Media.php';
 
 // Response caching for safe (read) requests. Wraps the active transport and
 // serves a fresh cached snapshot instead of hitting the network when the
@@ -71,6 +72,12 @@ class ProjectNameCacheFeature extends ProjectNameBaseFeature
 
         [$res, $err] = $inner($ctx, $url, $fetchdef);
 
+        // A body that declares another type than JSON passes by, unread.
+        if ($this->_cacheable($res, $err) && !$this->_json($res)) {
+            $this->_track('bypass');
+            return [$res, $err];
+        }
+
         if ($this->_cacheable($res, $err)) {
             $snapshot = $this->_snapshot($res);
             $ttl = is_numeric($this->options['ttl'] ?? null) ? (float)$this->options['ttl'] : 5000.0;
@@ -92,6 +99,12 @@ class ProjectNameCacheFeature extends ProjectNameBaseFeature
         }
         $status = $res['status'] ?? null;
         return is_numeric($status) && (int)$status >= 200 && (int)$status < 300;
+    }
+
+    private function _json(array $res): bool
+    {
+        $type = ProjectNameMedia::headerValue($res['headers'] ?? null, 'content-type');
+        return '' === $type || ProjectNameMedia::isJsonMedia($type);
     }
 
     private function _snapshot(array $res): array

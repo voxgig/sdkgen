@@ -668,6 +668,24 @@ describe("feature", function()
       assert.are.equal(2, h.client._cache.bypass)
     end)
 
+    it("passes a body that declares another type than JSON by, unread", function()
+      local sent = {}
+      local rec = recording_server(function()
+        local res = make_response(200, nil, { ["content-type"] = "audio/wav" })
+        sent[#sent + 1] = res
+        return res
+      end)
+      local h = make_client({ features = {
+        { name = "cache" },
+      }, server = rec.server })
+      local a = h.op({ op = "load", path = "/w/1/audio" })
+      local b = h.op({ op = "load", path = "/w/1/audio" })
+      assert.are.equal(2, #rec.calls, "the body was stored")
+      assert.are.equal(sent[1], a.ctx.response, "the cache handed on a copy it had read")
+      assert.are.equal(sent[2], b.ctx.response)
+      assert.are.equal(2, h.client._cache.bypass)
+    end)
+
     it("re-fetches after the ttl", function()
       local clock = make_clock()
       local rec = recording_server()

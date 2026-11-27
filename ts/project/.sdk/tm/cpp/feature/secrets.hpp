@@ -101,6 +101,7 @@
 #define SDK_FEATURE_SECRETS_HPP
 
 #include <algorithm>
+#include <cctype>
 #include <cstdlib>
 #include <functional>
 #include <memory>
@@ -180,6 +181,7 @@ public:
     std::string response = "access_token";
     std::vector<int> statuses;
     int retries = 1;
+    bool sameorigin = false;
   };
 
   struct Track {
@@ -231,6 +233,7 @@ public:
       x->request = fopt::foptStr(xopts, "request", "refresh_token");
       x->response = fopt::foptStr(xopts, "response", "access_token");
       x->retries = fopt::foptInt(xopts, "retries", 1);
+      x->sameorigin = "same-origin" == fopt::foptStr(xopts, "redirect", "refuse");
       Value sl = fopt::foptList(xopts, "statuses");
       if (sl.is_list()) {
         for (const auto& s : *sl.as_list()) {
@@ -579,21 +582,38 @@ private:
     // bundled transport of last resort from the generated kinds.cpp.
     Value sysFetch = Struct::getpath(opts, {"system", "fetch"});
     Value res;
-    if (sysFetch.is_injector()) {
-      try {
-        vs::Injection inj(Value::undef(), Value::undef());
-        res = sysFetch.as_injector()(inj, vlist({Value(url), fetchdef}), std::string(""),
-                                     Value::undef());
-      } catch (const SdkErrorPtr& e) {
-        return e->msg;
-      } catch (const std::exception& e) {
-        return std::string("secrets: token exchange transport failed: ") + e.what();
+    auto send = [&](const std::string& at) -> std::string {
+      if (sysFetch.is_injector()) {
+        try {
+          vs::Injection inj(Value::undef(), Value::undef());
+          res = sysFetch.as_injector()(inj, vlist({Value(at), fetchdef}), std::string(""),
+                                       Value::undef());
+        } catch (const SdkErrorPtr& e) {
+          return e->msg;
+        } catch (const std::exception& e) {
+          return std::string("secrets: token exchange transport failed: ") + e.what();
+        }
+        return "";
       }
-    } else {
       std::vector<std::pair<std::string, std::string>> hdrs{{"content-type", "application/json"}};
-      SecretsRawResponse raw = secrets_rawfetch(x.method, url, hdrs, bodytext);
+      SecretsRawResponse raw = secrets_rawfetch(x.method, at, hdrs, bodytext);
       if (!raw.ok) return raw.err;
+      // The vendored client reports no headers, so no Location: nothing is followed.
       res = vmap({{"status", Value(raw.status)}, {"body", Value(raw.body)}});
+      return "";
+    };
+
+    std::string failed = send(url);
+    if (!failed.empty()) return failed;
+
+    // By option alone, and only while the exchange stays on its own origin.
+    std::string at = url;
+    for (int hops = 0; x.sameorigin && hops < REDIRECT_MAX; hops++) {
+      std::string next = moved(url, at, res);
+      if (next.empty()) break;
+      at = next;
+      failed = send(at);
+      if (!failed.empty()) return failed;
     }
 
     int status = fopt::fresStatus(res);
@@ -620,6 +640,68 @@ private:
     registerSecret(cred_);
     track_.buys++;
     return "";
+  }
+
+  static constexpr int REDIRECT_MAX = 5;
+
+  // "scheme://host:port" of an absolute http(s) URL, the port defaulted, and
+  // where its authority ends; "" when it is not one.
+  static std::string origin(const std::string& url, size_t* rest = nullptr) {
+    size_t sep = url.find("://");
+    if (std::string::npos == sep || 5 < sep) return "";
+    std::string scheme = url.substr(0, sep);
+    for (auto& c : scheme) c = (char)std::tolower((unsigned char)c);
+    if ("http" != scheme && "https" != scheme) return "";
+    size_t end = std::min(url.find_first_of("/?#", sep + 3), url.size());
+    size_t auth = url.rfind('@', end);
+    auth = (std::string::npos == auth || auth < sep + 3) ? sep + 3 : auth + 1;
+    size_t close = '[' == url[auth] ? url.find(']', auth) : auth;
+    if (std::string::npos == close || end < close) return "";
+    size_t colon = url.find(':', close);
+    if (end < colon) colon = std::string::npos;
+    size_t hostend = std::string::npos == colon ? end : colon;
+    if (hostend == auth) return "";
+    std::string port = "https" == scheme ? "443" : "80";
+    if (std::string::npos != colon && colon + 1 < end) {
+      port = url.substr(colon + 1, end - colon - 1);
+      if (5 < port.size() || std::string::npos != port.find_first_not_of("0123456789") ||
+          65535 < std::stol(port)) {
+        return "";
+      }
+      port = std::to_string(std::stol(port));
+    }
+    std::string host = url.substr(auth, hostend - auth);
+    for (auto& c : host) c = (char)std::tolower((unsigned char)c);
+    if (nullptr != rest) *rest = end;
+    return scheme + "://" + host + ":" + port;
+  }
+
+  // Where a 307 or 308 points, when that is on the exchange's own origin. Any
+  // other redirect would drop the body or leave the origin.
+  static std::string moved(const std::string& url, const std::string& at, const Value& res) {
+    int status = fopt::fresStatus(res);
+    std::string location = as_str(getp(getp(res, "headers"), "location"));
+    size_t rest = 0;
+    std::string own = origin(url);
+    if ((307 != status && 308 != status) || location.empty() || own.empty() ||
+        origin(at, &rest).empty()) {
+      return "";
+    }
+    std::string next;
+    if (std::string::npos != location.find("://")) {
+      next = location;
+    } else if (0 == location.rfind("//", 0)) {
+      next = at.substr(0, at.find("://") + 1) + location;
+    } else if ('/' == location[0]) {
+      next = at.substr(0, rest) + location;
+    } else if ('?' == location[0]) {
+      next = at.substr(0, at.find_first_of("?#")) + location;
+    } else {
+      size_t dir = at.find_last_of('/', std::min(at.find_first_of("?#", rest), at.size()) - 1);
+      next = (std::string::npos == dir || dir < rest) ? at.substr(0, rest) + "/" + location
+                                                     : at.substr(0, dir + 1) + location;
+    }
+    return own == origin(next) ? next : "";
   }
 
   bool spent(const Value& res) const {

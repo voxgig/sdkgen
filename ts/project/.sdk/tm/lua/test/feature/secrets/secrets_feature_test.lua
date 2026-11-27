@@ -876,6 +876,8 @@ describe("secrets", function()
       local other = assert(socket.bind("127.0.0.1", 0))
       if LOCATION == "OTHER" then
         LOCATION = "http://127.0.0.1:" .. select(2, other:getsockname()) .. "/api/auth/token"
+      elseif LOCATION == "ORIGIN" then
+        LOCATION = "http://127.0.0.1:" .. select(2, api:getsockname()) .. "/api/moved/token"
       end
       io.stdout:write(select(2, api:getsockname()), "\t", LOCATION, "\n")
       io.stdout:flush()
@@ -908,50 +910,60 @@ describe("secrets", function()
       end
     ]]
 
-    -- Real listeners and the feature's own transport: a stub follows nothing.
-    local has_socket = pcall(require, "socket.http")
-    ;(has_socket and it or pending)("a redirect answering the exchange is a failure, and nothing follows it",
-      function()
+    -- One exchange against the two listeners, the origin answering it with
+    -- `status` and `location`: the result, the base, the location as served
+    -- and every request the listeners got.
+    local function against_origins(status, location, xextra)
       local first = 0
       while arg and arg[first - 1] ~= nil do first = first - 1 end
       local lua = arg and first < 0 and arg[first] or "lua"
 
+      local script = os.tmpname()
+      local f = assert(io.open(script, "w"))
+      f:write(string.format("package.path = %q\npackage.cpath = %q\nSTATUS = %d\nLOCATION = %q\n",
+        package.path, package.cpath, status, location), origins_server)
+      f:close()
+      local child = assert(io.popen(string.format("%q %q", lua, script)))
+      local port, served = string.match(assert(child:read("*l")), "^(%d+)\t(.*)$")
+      local base = "http://127.0.0.1:" .. port .. "/api"
+
+      local exchange = { active = true, refresh = "REFRESH01" }
+      for k, v in pairs(xextra or {}) do exchange[k] = v end
+      local client = secrets_client(nil, {
+        base = base,
+        feature = { secrets = { active = true, name = "refresh_token", exchange = exchange } },
+      })
+      local res = client:direct({ path = "/thing" })
+
+      local stop = require("socket").connect("127.0.0.1", tonumber(port))
+      if stop then
+        stop:send("GET /stop HTTP/1.0\r\n\r\n")
+        stop:close()
+      end
+      local seen = {}
+      for line in child:lines() do
+        local where, method, path, body = string.match(line, "^(%S+)\t(%S*)\t(%S*)\t(.*)$")
+        seen[#seen + 1] = { where = where, method = method, path = path, body = body }
+      end
+      child:close()
+      os.remove(script)
+      return res, base, served, seen
+    end
+
+    -- Real listeners and the feature's own transport: a stub follows nothing.
+    local has_socket = pcall(require, "socket.http")
+    ;(has_socket and it or pending)("a redirect answering the exchange is a failure, and nothing follows it",
+      function()
       local refused, leaked, failures = 0, 0, {}
       for _, case in ipairs({ { 307, "OTHER" }, { 308, "OTHER" }, { 302, "OTHER" },
         { 307, "/api/moved/token" } }) do
-        local script = os.tmpname()
-        local f = assert(io.open(script, "w"))
-        f:write(string.format("package.path = %q\npackage.cpath = %q\nSTATUS = %d\nLOCATION = %q\n",
-          package.path, package.cpath, case[1], case[2]), origins_server)
-        f:close()
-        local child = assert(io.popen(string.format("%q %q", lua, script)))
-        local port, location = string.match(assert(child:read("*l")), "^(%d+)\t(.*)$")
-        local base = "http://127.0.0.1:" .. port .. "/api"
-
-        local client = secrets_client(nil, {
-          base = base,
-          feature = { secrets = {
-            active = true,
-            name = "refresh_token",
-            exchange = { active = true, refresh = "REFRESH01" },
-          } },
-        })
-        local res = client:direct({ path = "/thing" })
-
-        local stop = require("socket").connect("127.0.0.1", tonumber(port))
-        if stop then
-          stop:send("GET /stop HTTP/1.0\r\n\r\n")
-          stop:close()
-        end
+        local res, base, location, seen = against_origins(case[1], case[2])
         local followed = {}
-        for line in child:lines() do
-          local where, method, path, body = string.match(line, "^(%S+)\t(%S*)\t(%S*)\t(.*)$")
-          if where == "other" or path ~= "/api/auth/token" then
-            followed[#followed + 1] = where .. " " .. method .. " " .. path .. " " .. body
+        for _, r in ipairs(seen) do
+          if r.where == "other" or r.path ~= "/api/auth/token" then
+            followed[#followed + 1] = r.where .. " " .. r.method .. " " .. r.path .. " " .. r.body
           end
         end
-        child:close()
-        os.remove(script)
 
         local label = case[1] .. " to " .. location
         local message = tostring(res and res.err)
@@ -971,6 +983,56 @@ describe("secrets", function()
 
       assert.are.same({}, failures)
       assert.are.equal(4, refused)
+    end)
+
+    ;(has_socket and it or pending)(
+      "with the option, a redirect on the exchange's own origin is followed, and no other",
+      function()
+      local sent = ' {"refresh_token":"REFRESH01"}'
+      local followed, refused, elsewhere, looped, wrong = 0, 0, 0, 0, {}
+      -- Each case: the status, the Location, and the target the exchange is
+      -- asked again at, or false where the redirect is refused. A Location of
+      -- a query alone keeps the path that answered.
+      for _, case in ipairs({ { 307, "/api/moved/token", "/api/moved/token" },
+        { 308, "ORIGIN", "/api/moved/token" }, { 307, "?step=2", "/api/auth/token?step=2" },
+        { 307, "OTHER", false }, { 302, "/api/moved/token", false },
+        { 307, "/api/auth/token", false } }) do
+        local res, base, location, seen = against_origins(case[1], case[2],
+          { redirect = "same-origin" })
+        local mine, exchanged = {}, 0
+        for _, r in ipairs(seen) do
+          if r.where == "other" then
+            elsewhere = elsewhere + 1
+          elseif r.path == "/api/auth/token" then
+            exchanged = exchanged + 1
+          else
+            mine[#mine + 1] = r.method .. " " .. r.path .. " " .. r.body
+          end
+        end
+
+        local message = tostring(res and res.err)
+        local want = "token exchange failed: " .. case[1] .. " from " .. base .. "/auth/token"
+        if case[3] and res and res.ok == true and #mine == 2
+          and mine[1] == "POST " .. case[3] .. sent then
+          followed = followed + 1
+        elseif not case[3] and #mine == 0 and message:find(want, 1, true) then
+          refused = refused + 1
+        else
+          wrong[#wrong + 1] = case[1] .. " to " .. location .. ": " .. message .. " " ..
+            table.concat(mine, "; ")
+        end
+        if case[2] == "/api/auth/token" then looped = exchanged end
+      end
+
+      print("\nsecrets: exchange opt-in followed " .. followed .. " redirect(s) on its own origin, " ..
+        "refused " .. refused .. ", " .. elsewhere .. " elsewhere")
+
+      assert.are.equal(0, elsewhere, "the exchange reached another origin")
+      assert.are.same({}, wrong)
+      assert.are.equal(3, followed)
+      assert.are.equal(3, refused)
+      -- A redirect to itself stops at the hop limit.
+      assert.are.equal(6, looped)
     end)
 
     it("test mode buys nothing", function()

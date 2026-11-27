@@ -83,6 +83,8 @@ package ProjectNameSecretsFeature;
 
 our @ISA = ('ProjectNameBaseFeature');
 
+my $REDIRECT_MAX = 5;
+
 sub new {
   my ($class) = @_;
   my $self = ProjectNameBaseFeature::new($class);
@@ -203,6 +205,7 @@ sub _build {
       'statuses' => \@statuses,
       'retries' => (defined $xopts->{retries}
         ? ProjectNameHelpers::to_int($xopts->{retries}) : 1),
+      'redirect' => ('same-origin' eq _str($xopts->{redirect}, '') ? 'same-origin' : 'refuse'),
     };
     $self->{exchange}{retries} = 1 if 0 > $self->{exchange}{retries};
   }
@@ -597,15 +600,27 @@ sub _buy_once {
   # must arrive as that literal value, not as malformed JSON.
   my $body = Voxgig::Struct::jsonify({ $x->{request} => $self->{refresh} });
 
+  my $fetchdef = {
+    'method' => $x->{method},
+    'headers' => { 'content-type' => 'application/json' },
+    'body' => $body,
+    # Never followed by the client: a redirect would carry the refresh token on.
+    'redirect' => 'manual',
+  };
+
   my ($res, $err);
   my $ok = eval {
-    ($res, $err) = $fetch->($url, {
-      'method' => $x->{method},
-      'headers' => { 'content-type' => 'application/json' },
-      'body' => $body,
-      # Never followed: a redirect would carry the refresh token on.
-      'redirect' => 'manual',
-    });
+    ($res, $err) = $fetch->($url, $fetchdef);
+
+    # By option alone, and only while the exchange stays on its own origin.
+    my $at = $url;
+    for (my $hops = 0;
+      !defined $err && 'same-origin' eq $x->{redirect} && $hops < $REDIRECT_MAX; $hops++) {
+      my $next = _moved($url, $at, $res);
+      last unless defined $next;
+      $at = $next;
+      ($res, $err) = $fetch->($at, $fetchdef);
+    }
     1;
   };
 
@@ -677,6 +692,28 @@ sub _provider {
 
   return (undef, "secrets: provider $i: expected a map, got "
     . (ref($p) || (defined $p ? 'a scalar' : 'undef')));
+}
+
+
+# Where a method-keeping redirect points, when that is on the exchange's
+# own origin. Any other redirect would drop the body or leave the origin.
+sub _moved {
+  my ($url, $at, $res) = @_;
+  return undef unless Voxgig::Struct::ismap($res);
+  my $status = ProjectNameHelpers::to_int($res->{status});
+  return undef unless 307 == $status || 308 == $status;
+  my $location = Voxgig::Struct::ismap($res->{headers}) ? $res->{headers}{location} : undef;
+  return undef unless defined $location && !ref $location && '' ne $location;
+  my $next = ProjectNameUtilities::resolve_location($at, $location);
+  my $origin = sub {
+    my ($scheme, $host, $port) = lc($_[0] // '')
+      =~ m{\A([a-z][a-z0-9+.-]*)://(?:[^@/?#]*@)?(\[[^\]]*\]|[^:/?#]+)(?::(\d+))?};
+    return undef unless defined $host;
+    return join ':', $scheme, $host, $port // ('https' eq $scheme ? 443 : 80);
+  };
+  my $here = $origin->($url);
+  my $there = $origin->($next);
+  return defined $here && defined $there && $here eq $there ? $next : undef;
 }
 
 

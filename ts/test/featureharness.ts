@@ -57,6 +57,10 @@ function sandboxLoad(file: string, shims: Record<string, any>): any {
 const struct: any = sandboxLoad(Path.join(UTILITY_DIR, 'StructUtility.ts'), {})
 
 
+// The media helpers a feature template may import, from the real template.
+const media: any = sandboxLoad(Path.join(UTILITY_DIR, 'MediaUtility.ts'), {})
+
+
 // The real BaseFeature template, loaded once and shared as the superclass.
 let _BaseFeature: any = null
 function loadBase(): any {
@@ -77,6 +81,8 @@ function loadFeatureModule(name: string): any {
     '../../ProjectNameSDK': {},
 
     '../../Config': { FEATURE_PLUGINS: {} },
+
+    '../../utility/MediaUtility': media,
 
     // The GENERATED schema module, which exists only inside a real SDK: the
     // validate feature reads its per-entity specs from it. Stubbed EMPTY so

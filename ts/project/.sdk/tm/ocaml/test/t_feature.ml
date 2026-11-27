@@ -178,6 +178,21 @@ let () =
         ignore (op h ~op:"load" ~path:"/w" ()); ignore (op h ~op:"load" ~path:"/w" ());
         check_int "calls" (List.length !calls) 2;
         check_vnum "bypass" (getp (track h "cache") "bypass") 2.);
+    test "cache.non_json_body_passes_by_unread" (fun () ->
+        let sent = ref [] in
+        let (srv, calls) = recording_server ~reply:(fun _ _ ->
+            let res = make_response ~headers:[("content-type", Str "audio/wav")] 200 Noval in
+            sent := !sent @ [res];
+            (res, None)) () in
+        let h = make_client ~server:srv [("cache", empty_map ())] in
+        let a = op h ~op:"load" ~path:"/w/1/audio" () in
+        let b = op h ~op:"load" ~path:"/w/1/audio" () in
+        check_int "the body was stored" (List.length !calls) 2;
+        check "the cache handed on a copy it had read"
+          (match !sent with s :: _ -> a.or_response == s | [] -> false);
+        check "the second read was handed on as returned"
+          (match !sent with _ :: s :: _ -> b.or_response == s | _ -> false);
+        check_vnum "bypass" (getp (track h "cache") "bypass") 2.);
     test "cache.refetches_after_ttl" (fun () ->
         let c = make_clock () in
         let (srv, calls) = recording_server () in

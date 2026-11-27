@@ -7,6 +7,8 @@
 // are snapshotted on capture so both the current caller and later hits can
 // re-read the JSON body repeatedly.
 
+using ProjectNameSdk.Util;
+
 using static ProjectNameSdk.Feature.FeatureOptions;
 
 namespace ProjectNameSdk.Feature;
@@ -99,6 +101,13 @@ public class CacheFeature : BaseFeature
             err = ex;
         }
 
+        // A body that declares another type than JSON passes by, unread.
+        if (err == null && Storable(res) && !Json(res))
+        {
+            Bypass++;
+            return res;
+        }
+
         if (err == null && Storable(res))
         {
             var snapshot = Snapshot(res);
@@ -124,6 +133,13 @@ public class CacheFeature : BaseFeature
         var (status, has) = FresStatus(res);
         return has && status >= 200 && status < 300 &&
             !(res is Dictionary<string, object?> rm && rm.TryGetValue("unreadable", out var u) && u is true);
+    }
+
+    private static bool Json(object? res)
+    {
+        var headers = res is Dictionary<string, object?> rm ? rm.GetValueOrDefault("headers") : null;
+        var type = Response.HeaderValue(headers, "content-type");
+        return type == "" || SdkUtility.IsJsonMedia(type);
     }
 
     private static CacheSnapshot Snapshot(object? res)

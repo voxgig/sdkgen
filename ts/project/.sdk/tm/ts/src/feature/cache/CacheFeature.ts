@@ -3,6 +3,7 @@ import type { Context, FeatureOptions } from '../../types'
 import type { ProjectNameSDK } from '../../ProjectNameSDK'
 
 import { BaseFeature } from '../base/BaseFeature'
+import { headerValue, isJsonMedia } from '../../utility/MediaUtility'
 
 
 class CacheFeature extends BaseFeature {
@@ -55,6 +56,12 @@ class CacheFeature extends BaseFeature {
 
     const res = await inner(ctx, url, fetchdef)
 
+    // A body that declares another type than JSON passes by, unread.
+    if (this._cacheable(res) && !this._json(res)) {
+      this._track('bypass')
+      return res
+    }
+
     if (this._cacheable(res)) {
       const snapshot = await this._snapshot(res)
 
@@ -83,6 +90,12 @@ class CacheFeature extends BaseFeature {
     }
     const status = res.status
     return 'number' === typeof status && status >= 200 && status < 300
+  }
+
+
+  _json(this: any, res: any): boolean {
+    const type = headerValue(res.headers, 'content-type')
+    return '' === type || isJsonMedia(type)
   }
 
 

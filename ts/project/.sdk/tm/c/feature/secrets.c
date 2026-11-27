@@ -100,6 +100,7 @@ typedef struct {
   int64_t* statuses;
   size_t nstatuses;
   int64_t retries;
+  bool sameorigin;
 } SecretsExchange;
 
 typedef struct {
@@ -341,6 +342,90 @@ static void secrets_setcred(SecretsFeature* f, const char* value) {
 
 // ---- the exchange -----------------------------------------------------------
 
+#define SECRETS_REDIRECT_MAX 5
+
+// "scheme://host:port" of an absolute http(s) URL, the port defaulted; and,
+// in *rest, where its authority ends. 0 when it is not one.
+static int secrets_origin(const char* url, char* out, size_t size, const char** rest) {
+  const char* sep = strstr(url, "://");
+  size_t slen = NULL == sep ? 0 : (size_t)(sep - url);
+  char scheme[6] = "";
+  if (5 < slen) return 0;
+  for (size_t i = 0; i < slen; i++) {
+    scheme[i] = (char)('A' <= url[i] && url[i] <= 'Z' ? url[i] - 'A' + 'a' : url[i]);
+  }
+  int https = 0 == strcmp(scheme, "https");
+  if (!https && 0 != strcmp(scheme, "http")) return 0;
+  const char* auth = sep + 3;
+  const char* end = auth + strcspn(auth, "/?#");
+  for (const char* at = auth; at < end; at++) if ('@' == *at) auth = at + 1;
+  const char* colon = '[' == *auth ? memchr(auth, ']', (size_t)(end - auth)) : auth;
+  if (NULL == colon) return 0;
+  colon = memchr(colon, ':', (size_t)(end - colon));
+  const char* hostend = NULL == colon ? end : colon;
+  if (hostend == auth) return 0;
+  long port = https ? 443 : 80;
+  if (NULL != colon && colon + 1 < end) {
+    char* stop = NULL;
+    port = strtol(colon + 1, &stop, 10);
+    if (stop != end || port < 0 || 65535 < port) return 0;
+  }
+  int n = snprintf(out, size, "%s://%.*s:%ld", https ? "https" : "http",
+                   (int)(hostend - auth), auth, port);
+  if (n < 0 || (size_t)n >= size) return 0;
+  for (char* c = out; '\0' != *c; c++) if ('A' <= *c && *c <= 'Z') *c = (char)(*c - 'A' + 'a');
+  if (NULL != rest) *rest = end;
+  return 1;
+}
+
+// Where a 307 or 308 points, when that is on the exchange's own origin. Any
+// other redirect would drop the body or leave the origin.
+static char* secrets_moved(sek_pool* pool, const char* url, const char* at, voxgig_value* res) {
+  int64_t status = to_int(getp(res, "status"));
+  const char* location = get_str(getp(res, "headers"), "location");
+  char own[320];
+  char from[320];
+  char to[320];
+  const char* rest = NULL;
+  if ((307 != status && 308 != status) || NULL == location || '\0' == location[0] ||
+      !secrets_origin(url, own, sizeof(own), NULL) ||
+      !secrets_origin(at, from, sizeof(from), &rest)) {
+    return NULL;
+  }
+  char* next;
+  if (NULL != strstr(location, "://")) {
+    next = sek_strdup(pool, location);
+  } else if ('/' == location[0] && '/' == location[1]) {
+    next = sek_fmt(pool, "%.*s:%s", (int)(strstr(at, "://") - at), at, location);
+  } else if ('/' == location[0]) {
+    next = sek_fmt(pool, "%.*s%s", (int)(rest - at), at, location);
+  } else if ('?' == location[0]) {
+    next = sek_fmt(pool, "%.*s%s", (int)strcspn(at, "?#"), at, location);
+  } else {
+    size_t dir = (size_t)(rest - at);
+    for (size_t i = dir; '\0' != at[i] && '?' != at[i] && '#' != at[i]; i++) {
+      if ('/' == at[i]) dir = i + 1;
+    }
+    next = sek_fmt(pool, "%.*s%s%s", (int)dir, at, dir == (size_t)(rest - at) ? "/" : "", location);
+  }
+  return secrets_origin(next, to, sizeof(to), NULL) && 0 == strcmp(own, to) ? next : NULL;
+}
+
+// One request of the exchange: options.system.fetch when supplied, else the
+// transport of last resort. A pool-owned message on failure.
+static const char* secrets_send(SecretsFeature* f, Context* ctx, voxgig_value* sys_fetch,
+                                const char* url, voxgig_value* fetchdef, voxgig_value** res) {
+  if (voxgig_is_func(sys_fetch)) {
+    *res = call_vfn(sys_fetch, clist(2, v_str(url), v_share(fetchdef)));
+    const char* emsg = get_str(*res, "__err__");
+    return NULL == emsg ? NULL : sek_strdup(f->pool, emsg);
+  }
+  PNError* ferr = NULL;
+  *res = secrets_rawfetch(ctx, url, fetchdef, &ferr);
+  return NULL == ferr ? NULL :
+    sek_strdup(f->pool, ferr->msg ? ferr->msg : "secrets: transport failed");
+}
+
 // Buy an access token with the refresh token. Answers sekreto-style: a
 // pool-owned message, or NULL for success with the token in f->cred.
 static const char* secrets_buy(SecretsFeature* f, Context* ctx) {
@@ -402,15 +487,18 @@ static const char* secrets_buy(SecretsFeature* f, Context* ctx) {
   // supplied one (the seam every live c request already uses), else the
   // bundled transport of last resort from the generated kinds.c.
   voxgig_value* sys_fetch = getpath2(options, "system", "fetch");
-  voxgig_value* res;
-  if (voxgig_is_func(sys_fetch)) {
-    res = call_vfn(sys_fetch, clist(2, v_str(url), v_share(fetchdef)));
-    const char* emsg = get_str(res, "__err__");
-    if (NULL != emsg) return sek_strdup(f->pool, emsg);
-  } else {
-    PNError* ferr = NULL;
-    res = secrets_rawfetch(ctx, url, fetchdef, &ferr);
-    if (NULL != ferr) return sek_strdup(f->pool, ferr->msg ? ferr->msg : "secrets: transport failed");
+  voxgig_value* res = NULL;
+  const char* sent = secrets_send(f, ctx, sys_fetch, url, fetchdef, &res);
+  if (NULL != sent) return sent;
+
+  // By option alone, and only while the exchange stays on its own origin.
+  const char* at = url;
+  for (int hops = 0; x->sameorigin && hops < SECRETS_REDIRECT_MAX; hops++) {
+    char* next = secrets_moved(f->pool, url, at, res);
+    if (NULL == next) break;
+    at = next;
+    sent = secrets_send(f, ctx, sys_fetch, at, fetchdef, &res);
+    if (NULL != sent) return sent;
   }
 
   int64_t status = to_int(getp(res, "status"));
@@ -638,6 +726,7 @@ static void secrets_init(Feature* fb, Context* ctx, voxgig_value* options) {
     x->request = fopt_str(xopts, "request", "refresh_token");
     x->response = fopt_str(xopts, "response", "access_token");
     x->retries = fopt_int(xopts, "retries", 1);
+    x->sameorigin = 0 == strcmp("same-origin", fopt_str(xopts, "redirect", "refuse"));
     voxgig_value* sl = fopt_list(xopts, "statuses");
     if (voxgig_is_list(sl) && 0 < voxgig_as_list(sl)->len) {
       voxgig_list* l = voxgig_as_list(sl);

@@ -1656,51 +1656,69 @@ fn listener(
     (port, handle)
 }
 
-#[test]
-fn a_redirect_answering_the_exchange_is_a_failure_and_nothing_follows_it() {
-    if skipped_without_auth() {
-        return;
+// The origin answers the exchange as `case` says, counting it, and records
+// what else it gets; the other origin records everything.
+struct Origins {
+    case: std::sync::Arc<std::sync::Mutex<(i64, String)>>,
+    exchanged: std::sync::Arc<std::sync::atomic::AtomicUsize>,
+    elsewhere: Seen,
+    followed: Seen,
+    origin: String,
+    base: String,
+    away: String,
+    ports: Vec<u16>,
+    stop: std::sync::Arc<std::sync::atomic::AtomicBool>,
+    threads: Vec<std::thread::JoinHandle<()>>,
+}
+
+impl Origins {
+    fn start() -> Origins {
+        use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+        use std::sync::{Arc, Mutex};
+
+        let stop = Arc::new(AtomicBool::new(false));
+        let case: Arc<Mutex<(i64, String)>> = Arc::new(Mutex::new((307, String::new())));
+        let exchanged = Arc::new(AtomicUsize::new(0));
+        let elsewhere = Seen::default();
+        let followed = Seen::default();
+
+        let (otherport, otherthread) =
+            listener(Arc::new(|_path: &str| None), elsewhere.clone(), stop.clone());
+        let answering = case.clone();
+        let counting = exchanged.clone();
+        let (originport, originthread) = listener(
+            Arc::new(move |path: &str| {
+                if "/api/auth/token" != path {
+                    return None;
+                }
+                counting.fetch_add(1, Ordering::SeqCst);
+                let (status, location) = answering.lock().unwrap().clone();
+                Some(format!("{} Moved\r\nLocation: {}", status, location))
+            }),
+            followed.clone(),
+            stop.clone(),
+        );
+
+        let origin = format!("http://127.0.0.1:{}", originport);
+        Origins {
+            case,
+            exchanged,
+            elsewhere,
+            followed,
+            base: format!("{}/api", origin),
+            origin,
+            away: format!("http://127.0.0.1:{}/api/auth/token", otherport),
+            ports: vec![otherport, originport],
+            stop,
+            threads: vec![otherthread, originthread],
+        }
     }
-    use std::sync::atomic::{AtomicBool, Ordering};
-    use std::sync::{Arc, Mutex};
 
-    let stop = Arc::new(AtomicBool::new(false));
-    let case: Arc<Mutex<(i64, String)>> = Arc::new(Mutex::new((307, String::new())));
-    let elsewhere = Seen::default();
-    let followed = Seen::default();
-
-    let (otherport, otherthread) =
-        listener(Arc::new(|_path: &str| None), elsewhere.clone(), stop.clone());
-    let answering = case.clone();
-    let (originport, originthread) = listener(
-        Arc::new(move |path: &str| {
-            if "/api/auth/token" != path {
-                return None;
-            }
-            let (status, location) = answering.lock().unwrap().clone();
-            Some(format!("{} Moved\r\nLocation: {}", status, location))
-        }),
-        followed.clone(),
-        stop.clone(),
-    );
-
-    let base = format!("http://127.0.0.1:{}/api", originport);
-    let away = format!("http://127.0.0.1:{}/api/auth/token", otherport);
-    let cases: Vec<(i64, String)> = vec![
-        (307, away.clone()),
-        (308, away.clone()),
-        (302, away.clone()),
-        (307, "/api/moved/token".to_string()),
-    ];
-
-    let mut refused = 0;
-    let mut allowed: Vec<String> = Vec::new();
-
-    for (status, location) in cases.iter() {
-        *case.lock().unwrap() = (*status, location.clone());
-
-        let client = ProjectNameSDK::new(jo(vec![
-            ("base", Value::str(base.clone())),
+    fn client(&self, extra: Vec<(&str, Value)>) -> Rc<ProjectNameSDK> {
+        let mut xopts = vec![("refresh", Value::str(REFRESH))];
+        xopts.extend(extra);
+        ProjectNameSDK::new(jo(vec![
+            ("base", Value::str(self.base.clone())),
             ("allow", jo(vec![("op", Value::str("direct,graphql"))])),
             (
                 "feature",
@@ -1709,21 +1727,57 @@ fn a_redirect_answering_the_exchange_is_a_failure_and_nothing_follows_it() {
                     jo(vec![
                         ("active", Value::Bool(true)),
                         ("name", Value::str("refresh_token")),
-                        exchange(vec![("refresh", Value::str(REFRESH))]),
+                        exchange(xopts),
                     ]),
                 )]),
             ),
         ]))
-        .unwrap();
+        .unwrap()
+    }
 
-        let message = match client.direct(jo(vec![("path", Value::str("/thing"))])) {
-            Ok(res) => get_str(&res, "err").unwrap_or_else(|| format!("{:?}", res)),
-            Err(err) => err.msg,
-        };
+    fn close(self) {
+        self.stop.store(true, std::sync::atomic::Ordering::SeqCst);
+        for port in &self.ports {
+            let _ = std::net::TcpStream::connect(("127.0.0.1", *port));
+        }
+        for thread in self.threads {
+            thread.join().unwrap();
+        }
+    }
+}
+
+fn direct_message(res: Result<Value, RUSTCRATE::core::error::ProjectNameError>) -> String {
+    match res {
+        Ok(res) => get_str(&res, "err").unwrap_or_else(|| format!("{:?}", res)),
+        Err(err) => err.msg,
+    }
+}
+
+#[test]
+fn a_redirect_answering_the_exchange_is_a_failure_and_nothing_follows_it() {
+    if skipped_without_auth() {
+        return;
+    }
+    let o = Origins::start();
+    let cases: Vec<(i64, String)> = vec![
+        (307, o.away.clone()),
+        (308, o.away.clone()),
+        (302, o.away.clone()),
+        (307, "/api/moved/token".to_string()),
+    ];
+
+    let mut refused = 0;
+    let mut allowed: Vec<String> = Vec::new();
+
+    for (status, location) in cases.iter() {
+        *o.case.lock().unwrap() = (*status, location.clone());
+
+        let message =
+            direct_message(o.client(vec![]).direct(jo(vec![("path", Value::str("/thing"))])));
 
         if message.contains(&format!(
             "token exchange failed: {} from {}/auth/token",
-            status, base
+            status, o.base
         )) {
             refused += 1;
         } else {
@@ -1731,14 +1785,9 @@ fn a_redirect_answering_the_exchange_is_a_failure_and_nothing_follows_it() {
         }
     }
 
-    stop.store(true, Ordering::SeqCst);
-    let _ = std::net::TcpStream::connect(("127.0.0.1", otherport));
-    let _ = std::net::TcpStream::connect(("127.0.0.1", originport));
-    otherthread.join().unwrap();
-    originthread.join().unwrap();
-
-    let elsewhere = elsewhere.lock().unwrap().clone();
-    let followed = followed.lock().unwrap().clone();
+    let elsewhere = o.elsewhere.lock().unwrap().clone();
+    let followed = o.followed.lock().unwrap().clone();
+    o.close();
     println!(
         "secrets: exchange refused {} redirect(s), {} followed",
         refused,
@@ -1749,6 +1798,84 @@ fn a_redirect_answering_the_exchange_is_a_failure_and_nothing_follows_it() {
     assert!(followed.is_empty(), "a request followed a refused exchange: {:?}", followed);
     assert!(allowed.is_empty(), "a redirect was not a failed exchange: {:?}", allowed);
     assert_eq!(refused, cases.len());
+}
+
+#[test]
+fn with_the_option_a_redirect_on_the_exchanges_own_origin_is_followed_and_no_other() {
+    if skipped_without_auth() {
+        return;
+    }
+    use std::sync::atomic::Ordering;
+
+    let o = Origins::start();
+    // The target the exchange is asked again at, if followed; a Location of a
+    // query alone keeps the path that answered.
+    let cases: Vec<(i64, String, Option<&str>)> = vec![
+        (307, "/api/moved/token".to_string(), Some("/api/moved/token")),
+        (308, format!("{}/api/moved/token", o.origin), Some("/api/moved/token")),
+        (307, "?step=2".to_string(), Some("/api/auth/token?step=2")),
+        (307, o.away.clone(), None),
+        (302, "/api/moved/token".to_string(), None),
+        (307, "/api/auth/token".to_string(), None),
+    ];
+
+    let mut wrong: Vec<String> = Vec::new();
+    let mut followed = 0;
+    let mut refused = 0;
+    let mut looped = 0;
+
+    for (status, location, next) in cases.iter() {
+        *o.case.lock().unwrap() = (*status, location.clone());
+        o.followed.lock().unwrap().clear();
+        o.exchanged.store(0, Ordering::SeqCst);
+
+        let res = o
+            .client(vec![("redirect", Value::str("same-origin"))])
+            .direct(jo(vec![("path", Value::str("/thing"))]));
+        let ok = matches!(&res, Ok(r) if getp(r, "ok") == Value::Bool(true));
+        let message = direct_message(res);
+        let seen: Vec<String> =
+            o.followed.lock().unwrap().iter().map(|s| s.trim().to_string()).collect();
+        let report = format!("{} to {}: {} {:?}", status, location, message, seen);
+
+        if let Some(next) = next {
+            let asked = format!("POST {} {{\"refresh_token\":\"{}\"}}", next, REFRESH);
+            if ok && 2 == seen.len() && asked == seen[0] {
+                followed += 1;
+            } else {
+                wrong.push(report);
+            }
+        } else if seen.is_empty()
+            && message.contains(&format!(
+                "token exchange failed: {} from {}/auth/token",
+                status, o.base
+            ))
+        {
+            refused += 1;
+        } else {
+            wrong.push(report);
+        }
+
+        if "/api/auth/token" == location {
+            looped = o.exchanged.load(Ordering::SeqCst);
+        }
+    }
+
+    let elsewhere = o.elsewhere.lock().unwrap().clone();
+    o.close();
+    println!(
+        "secrets: exchange opt-in followed {} redirect(s) on its own origin, refused {}, {} elsewhere",
+        followed,
+        refused,
+        elsewhere.len()
+    );
+
+    assert!(elsewhere.is_empty(), "the exchange reached another origin: {:?}", elsewhere);
+    assert!(wrong.is_empty(), "{:?}", wrong);
+    assert_eq!(followed, 3);
+    assert_eq!(refused, 3);
+    // A redirect to itself stops at the hop limit.
+    assert_eq!(looped, 6);
 }
 
 

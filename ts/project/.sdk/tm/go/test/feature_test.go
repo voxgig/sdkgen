@@ -588,6 +588,38 @@ func TestFeatureCache(t *testing.T) {
 		}
 	})
 
+	t.Run("a-body-that-declares-another-type-than-json-passes-by-unread", func(t *testing.T) {
+		sent := []map[string]any{}
+		rec := &fhRecorder{reply: func(_ int, _ map[string]any) (any, error) {
+			res := fhResponse(200, nil, map[string]any{"content-type": "audio/wav"})
+			res["body"] = "RIFF"
+			sent = append(sent, res)
+			return res, nil
+		}}
+		f := feat.NewCacheFeature()
+		h := fhMake(rec.fetch, fhF(f, nil))
+		handed := []any{}
+		cached := h.utility.Fetcher
+		h.utility.Fetcher = func(ctx *sdk.Context, url string, fetchdef map[string]any) (any, error) {
+			res, err := cached(ctx, url, fetchdef)
+			handed = append(handed, res)
+			return res, err
+		}
+		h.op(fhOpSpec{op: "load", path: "/w/1/audio"})
+		h.op(fhOpSpec{op: "load", path: "/w/1/audio"})
+		if len(rec.calls) != 2 {
+			t.Fatalf("the body was stored: expected 2 calls, got %d", len(rec.calls))
+		}
+		for i := range sent {
+			if reflect.ValueOf(handed[i]).Pointer() != reflect.ValueOf(sent[i]).Pointer() {
+				t.Errorf("read %d: the cache handed on a copy it had read", i)
+			}
+		}
+		if f.Bypass != 2 {
+			t.Errorf("expected 2 bypasses, got %d", f.Bypass)
+		}
+	})
+
 	t.Run("refetches-after-ttl", func(t *testing.T) {
 		clock := &fhClock{}
 		rec := &fhRecorder{}

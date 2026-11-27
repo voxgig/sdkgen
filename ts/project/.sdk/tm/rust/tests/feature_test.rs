@@ -647,6 +647,47 @@ fn feature_cache_does_not_cache_non_2xx() {
 }
 
 #[test]
+fn feature_cache_passes_a_body_of_another_type_than_json_by_unread() {
+    if !fh_present(&["cache"]) {
+        return;
+    }
+    let sent: Rc<RefCell<Vec<Value>>> = Rc::new(RefCell::new(Vec::new()));
+    let keep = sent.clone();
+    let (server, calls) = fh_recorder(Some(Rc::new(move |_n, _fd| {
+        let res = fh_response(
+            200,
+            Value::Noval,
+            jo(vec![("content-type", Value::str("audio/wav"))]),
+        );
+        keep.borrow_mut().push(res.clone());
+        Ok(res)
+    })));
+    let f = Rc::new(RefCell::new(CacheFeature::new()));
+    let h = fh_make(Some(server), vec![(fr(&f), Value::Noval)]);
+    let read = || {
+        h.op(FhOpSpec {
+            op: "load".to_string(),
+            path: "/w/1/audio".to_string(),
+            ..Default::default()
+        })
+    };
+    let handed = |r: &FhOpResult| {
+        r.ctx.response.borrow().as_ref().map(|res| res.borrow().headers.clone())
+    };
+    let a = read();
+    let b = read();
+    assert_eq!(calls.borrow().len(), 2, "the body was stored");
+    // The transport's own response shares its headers map; a rebuilt copy does not.
+    let same = |got: Option<Value>, i: usize| match (got, getp(&sent.borrow()[i], "headers")) {
+        (Some(Value::Map(x)), Value::Map(y)) => Rc::ptr_eq(&x, &y),
+        _ => false,
+    };
+    assert!(same(handed(&a), 0), "the cache handed on a copy it had read");
+    assert!(same(handed(&b), 1), "the cache handed on a copy it had read");
+    assert_eq!(f.borrow().track.borrow().bypass, 2, "expected 2 bypasses");
+}
+
+#[test]
 fn feature_cache_refetches_after_ttl() {
     if !fh_present(&["cache"]) {
         return;

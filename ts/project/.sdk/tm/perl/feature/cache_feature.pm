@@ -20,6 +20,7 @@ BEGIN { $__dir = File::Basename::dirname(Cwd::abs_path(__FILE__)) }
 require(Cwd::abs_path("$__dir/../lib/Voxgig/Struct.pm"));
 require(Cwd::abs_path("$__dir/../core/helpers.pm"));
 require(Cwd::abs_path("$__dir/base_feature.pm"));
+require(Cwd::abs_path("$__dir/../utility/media.pm"));
 
 package ProjectNameCacheFeature;
 
@@ -83,6 +84,12 @@ sub through {
 
   my ($res, $err) = $inner->($ctx, $url, $fetchdef);
 
+  # A body that declares another type than JSON passes by, unread.
+  if (!defined $err && $self->_cacheable($res) && !_json($res)) {
+    $self->_track('bypass');
+    return ($res, $err);
+  }
+
   if (!defined $err && $self->_cacheable($res)) {
     my $snapshot = $self->_snapshot($res);
     my $ttl = defined $self->{options}{ttl} ? $self->{options}{ttl} : 5000;
@@ -108,6 +115,12 @@ sub _cacheable {
   return 0 unless defined $status && !ref($status)
     && Scalar::Util::looks_like_number($status);
   return ($status >= 200 && $status < 300) ? 1 : 0;
+}
+
+sub _json {
+  my ($res) = @_;
+  my $type = ProjectNameUtilities::header_value($res->{headers}, 'content-type');
+  return '' eq $type || ProjectNameUtilities::is_json_media($type);
 }
 
 sub _snapshot {

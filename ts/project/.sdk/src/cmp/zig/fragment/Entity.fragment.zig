@@ -172,8 +172,7 @@ pub const EntyClass = struct {
     /// are a materialised slice the caller walks; a failed operation is
     /// `.err`, as an operation's is. `callopts` parameterises the call:
     /// inbound yields the streaming feature's items when active, else the
-    /// materialised items; outbound attaches an iterable `body` to the
-    /// request (reqdata `body$`); `ctrl` threads pipeline control.
+    /// materialised items; `ctrl` threads pipeline control.
     pub fn stream(self: *EntyClass, action: []const u8, args: Value, callopts: Value) StreamResult {
         const utility = self.utility;
 
@@ -203,18 +202,6 @@ pub const EntyClass = struct {
             .data = self.data,
             .reqmatch = reqmatch,
         }, self.ent_ctx());
-
-        // Outbound: attach a caller `body` so the transport can stream a
-        // request payload (reqdata `body$`).
-        const body = h.getp(stream_opts, "body");
-        if (!h.is_noval(body)) {
-            const reqdata: Value = switch (ctx.reqdata) {
-                .object => ctx.reqdata,
-                else => h.omap(),
-            };
-            h.setp(reqdata, "body$", body);
-            ctx.reqdata = reqdata;
-        }
 
         // Run the same pipeline as run_op, firing the feature hooks (an
         // active streaming feature attaches result.stream on PreResult). A

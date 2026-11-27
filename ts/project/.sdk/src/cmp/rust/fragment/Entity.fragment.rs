@@ -171,18 +171,6 @@ impl EntyClass {
             Some(&self.ent_ctx()),
         );
 
-        // Outbound: attach a caller `body` so the transport can stream a
-        // request payload (reqdata `body$`).
-        let body = getp(&stream_opts, "body");
-        if !body.is_noval() && !body.is_null() {
-            let reqdata = match ctx.reqdata.borrow().clone() {
-                Value::Map(m) => Value::Map(m),
-                _ => Value::empty_map(),
-            };
-            setp(&reqdata, "body$", body);
-            *ctx.reqdata.borrow_mut() = reqdata;
-        }
-
         // Run the same pipeline as run_op. A failed step leaves through
         // make_error, as an operation's does.
         let fail = |e: ProjectNameError| self.utility.make_error(&ctx, Some(e)).map(stream_items);

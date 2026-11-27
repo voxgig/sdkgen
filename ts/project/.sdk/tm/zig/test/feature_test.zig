@@ -416,6 +416,39 @@ test "feature cache: does not cache non-2xx" {
     try testing.expect(cf.track.bypass == 2);
 }
 
+var audio_sent: [2]Value = undefined;
+var audio_n: usize = 0;
+
+fn replyAudio(_: i64, _: *sdk.Context, _: Value) fh.E!Value {
+    const res = fh.fh_response(200, vnull(), h.jo(&.{.{ "content-type", h.vstr("audio/wav") }}));
+    if (audio_n < audio_sent.len) audio_sent[audio_n] = res;
+    audio_n += 1;
+    return res;
+}
+
+// The response's headers are the transport's own map; a rebuilt copy has another.
+fn handedIs(r: fh.FhOpResult, i: usize) bool {
+    const res = r.ctx.response orelse return false;
+    if (i >= audio_n) return false;
+    const own = h.getp(audio_sent[i], "headers");
+    return res.headers == .object and own == .object and res.headers.object == own.object;
+}
+
+test "feature cache: a body that declares another type than JSON passes by, unread" {
+    if (!fh.fh_present(&.{"cache"})) return;
+    audio_n = 0;
+    const rec = fh.Recorder.new(replyAudio);
+    const f = sdk.CacheFeature.make();
+    const cf: *sdk.CacheFeature = @ptrCast(@alignCast(f.ptr));
+    const hh = fh.fh_make(rec.fetcher(), &.{.{ .feat = f, .options = vnull() }});
+    const a = hh.op(.{ .op = "load", .path = "/w/1/audio" });
+    const b = hh.op(.{ .op = "load", .path = "/w/1/audio" });
+    try testing.expect(rec.count() == 2);
+    try testing.expect(handedIs(a, 0));
+    try testing.expect(handedIs(b, 1));
+    try testing.expect(cf.track.bypass == 2);
+}
+
 test "feature cache: refetches after ttl" {
     if (!fh.fh_present(&.{"cache"})) return;
     const clock = fh.FhClock.new();

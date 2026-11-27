@@ -112,9 +112,8 @@ let rec make (client : sdk_client) (entopts_in : value) : entity_obj =
    * the whole result). When the streaming feature is active the result carries
    * a stream closure and this yields from it (honouring chunkSize); otherwise
    * it falls back to the materialised items, so stream always yields.
-   * callopts parameterises the call: ctrl (per-call pipeline control), body (an
-   * enumerable/list payload attached to the request for outbound streaming),
-   * and signal (a 0-arity fn -> Bool; iteration stops when it returns true). *)
+   * callopts parameterises the call: ctrl (per-call pipeline control) and
+   * signal (a 0-arity fn -> Bool; iteration stops when it returns true). *)
   ent.e_stream <- (fun action args callopts ->
       let callopts = match to_map callopts with Map _ as m -> m | _ -> empty_map () in
       (* A copy: the caller's ctrl gains no key, and explain stays its own record. *)
@@ -131,13 +130,6 @@ let rec make (client : sdk_client) (entopts_in : value) : entity_obj =
             cs_match = Some ent.e_match; cs_data = Some ent.e_data;
             cs_reqmatch = Some reqmatch }
           (Some entctx) in
-      let body = getp callopts "body" in
-      (if not (is_nullish body) then begin
-         let reqdata = match to_map ctx.c_reqdata with Map _ as m -> m | _ -> empty_map () in
-         setp reqdata "body$" body;
-         ctx.c_reqdata <- reqdata;
-         scratch_set ctx "stream_out" body
-       end);
       ignore (run_op ctx (fun () -> ()));
       let signal = getp callopts "signal" in
       let aborted () = match signal with Func _ -> call_json signal = Bool true | _ -> false in

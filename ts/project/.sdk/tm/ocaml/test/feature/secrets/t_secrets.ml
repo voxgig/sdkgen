@@ -911,6 +911,67 @@ let () =
           check (label ^ ": not a failed exchange: " ^ message) r) results;
       check_int "redirects refused" refused 4);
 
+  (* On system.fetch alone: the vendored HTTP client answers no headers, so
+   * no Location reaches the feature through it. *)
+  test "exchange.with_the_option_a_redirect_on_its_own_origin_is_followed_and_no_other" (fun () ->
+      let base = "http://secrets.test/api" in
+      let exchange = base ^ "/auth/token" and moved = base ^ "/moved/token" in
+      let away = "http://elsewhere.test/api/auth/token" in
+      let url_of c = match getp c "url" with Str u -> u | _ -> "" in
+      let on_origin u = String.starts_with ~prefix:"http://secrets.test/" u in
+      (* Each case: the status, the Location, and the url the exchange is asked
+       * again at; a Location of a query alone keeps the path that answered. *)
+      let cases = [(307, "/api/moved/token", Some moved); (308, moved, Some moved);
+                   (307, "?step=2", Some (exchange ^ "?step=2")); (307, away, None);
+                   (302, "/api/moved/token", None); (307, "/api/auth/token", None)] in
+      let results = List.map (fun (status, location, next) ->
+          let (r, fetch) = recorder () in
+          r.reply <- Some (fun _ url _ ->
+              if url = exchange then
+                jo [("status", vint_of status); ("statusText", Str "X");
+                    ("headers", jo [("location", Str location)]); ("body", Str "");
+                    ("json", json_thunk Noval)]
+              else if url = base ^ "/thing" then ok200 (jo [("id", Str "r01")])
+              else if on_origin url then ok200 (jo [("access_token", Str "MOVED01")])
+              else ok200 (jo [("access_token", Str "ELSEWHERE01")]));
+          let client = live ~base fetch [("name", Str "refresh_token");
+                                         xchg [("refresh", Str "REFRESH01");
+                                               ("redirect", Str "same-origin")]] in
+          let res = direct client in
+          let message = res_err res in
+          let asked = List.filter (fun c -> url_of c <> base ^ "/thing") !(r.calls) in
+          let manual = List.for_all (fun c ->
+              getp (getp c "fetchdef") "redirect" = Str "manual") asked in
+          let same = match asked with
+            | first :: rest -> List.for_all (fun c ->
+                getp (getp c "fetchdef") "method" = getp (getp first "fetchdef") "method"
+                && getp (getp c "fetchdef") "body" = getp (getp first "fetchdef") "body") rest
+            | [] -> false in
+          let urls = List.map url_of asked in
+          let want = "token exchange failed: " ^ string_of_int status ^ " from " ^ exchange in
+          let verdict =
+            if None <> next && res_ok res && manual && same
+               && Some urls = Option.map (fun n -> [exchange; n]) next then `Followed
+            else if None = next && manual && contains message want
+                    && List.for_all (fun u -> u = exchange) urls then `Refused
+            else `Wrong (string_of_int status ^ " to " ^ location ^ ": " ^ message
+                         ^ " " ^ String.concat "; " urls) in
+          (verdict, location, List.length urls,
+           List.length (List.filter (fun c -> not (on_origin (url_of c))) !(r.calls))))
+          cases in
+      let count v = List.length (List.filter (fun (w, _, _, _) -> w = v) results) in
+      let elsewhere = List.fold_left (fun n (_, _, _, e) -> n + e) 0 results in
+      let looped = List.fold_left (fun n (_, l, a, _) ->
+          if l = "/api/auth/token" then a else n) 0 results in
+      Printf.printf "secrets: exchange opt-in followed %d redirect(s) on its own origin, refused %d, %d elsewhere\n"
+        (count `Followed) (count `Refused) elsewhere;
+      check_int "the exchange reached another origin" elsewhere 0;
+      List.iter (function (`Wrong m, _, _, _) -> check m false | _ -> ()) results;
+      check_int "followed" (count `Followed) 3;
+      check_int "refused" (count `Refused) 3;
+      (* A redirect to itself stops at the hop limit. *)
+      check_int "the loop's exchange count" looped 6);
+
   test "exchange.test_mode_buys_nothing" (fun () ->
       (* A non-live client: the credential becomes the deterministic
        * `test-<response>` and no purchase is attempted. Observed through

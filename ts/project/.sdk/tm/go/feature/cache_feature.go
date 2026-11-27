@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"GOMODULE/core"
+	"GOMODULE/utility"
 )
 
 type CacheFeature struct {
@@ -108,11 +109,23 @@ func (f *CacheFeature) through(ctx *core.Context, url string, fetchdef map[strin
 }
 
 // A body the transport could not read as JSON passes through, for the operation to report.
+// A body that declares another type than JSON passes by, unread.
 func (f *CacheFeature) storable(res any) bool {
 	status, ok := fresStatus(res)
 	rm, _ := res.(map[string]any)
 	unreadable, _ := rm["unreadable"].(bool)
-	return ok && status >= 200 && status < 300 && !unreadable
+	return ok && status >= 200 && status < 300 && !unreadable && f.json(rm)
+}
+
+func (f *CacheFeature) json(rm map[string]any) bool {
+	headers, _ := rm["headers"].(map[string]any)
+	for key, val := range headers {
+		if strings.EqualFold("content-type", key) {
+			media, _ := val.(string)
+			return "" == media || utility.IsJSONMedia(media)
+		}
+	}
+	return true
 }
 
 func (f *CacheFeature) snapshot(res any) *cacheSnapshot {

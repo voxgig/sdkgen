@@ -98,8 +98,6 @@ class EntyClass
   # call materialises the whole result). `callopts` parameterises the call:
   #   - inbound (download): the Enumerator yields items/chunks (from the
   #     streaming feature when active, else the materialised items);
-  #   - outbound (upload): an iterable `body` in callopts is attached to the
-  #     request so the transport can stream the payload;
   #   - `ctrl` (pipeline control) and `signal` (cancellation) honoured.
   def stream(action, args = nil, callopts = nil)
     utility = @_utility
@@ -118,14 +116,6 @@ class EntyClass
     args.each { |k, v| ctxmap[k] = v } if args.is_a?(Hash)
 
     ctx = utility.make_context.call(ctxmap, @_entctx)
-
-    # Outbound: expose the caller's iterable payload so the request builder /
-    # transport can stream it as the request body.
-    body = callopts["body"]
-    unless body.nil?
-      ctx.reqdata["body$"] = body
-      ctx.meta["stream_out"] = body
-    end
 
     aborted = lambda do
       return false if signal.nil?

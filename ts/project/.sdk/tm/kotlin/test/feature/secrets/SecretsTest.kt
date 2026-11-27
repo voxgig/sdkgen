@@ -1240,18 +1240,27 @@ class SecretsTest {
     assertEquals("test-access_token", secretsFeatureOf(client)!!.credential())
   }
 
-  // Real listeners and the SDK's raw HTTP path: a stub follows nothing.
-  @Test
-  fun aRedirectAnsweringTheExchangeIsAFailureAndNothingFollowsIt() {
-    val elsewhere = java.util.Collections.synchronizedList(mutableListOf<String>())
-    val followed = java.util.Collections.synchronizedList(mutableListOf<String>())
-    var answer: Pair<Int, String> = 307 to ""
+  // Two real listeners and the SDK's raw HTTP path: a stub follows nothing.
+  // The origin answers the exchange as `answer` says and records what else
+  // it gets.
+  private class Origins {
+    val elsewhere: MutableList<String> = java.util.Collections.synchronizedList(mutableListOf<String>())
+    val followed: MutableList<String> = java.util.Collections.synchronizedList(mutableListOf<String>())
+    val exchanged = java.util.concurrent.atomic.AtomicInteger()
+    @Volatile var answer: Pair<Int, String> = 307 to ""
+    var origin = ""
+    var base = ""
+    var away = ""
+  }
+
+  private fun withOrigins(run: (Origins) -> Unit) {
+    val o = Origins()
 
     val other = com.sun.net.httpserver.HttpServer.create(
       java.net.InetSocketAddress("127.0.0.1", 0), 0)
     other.createContext("/") { ex ->
       val body = String(ex.requestBody.readAllBytes(), Charsets.UTF_8)
-      elsewhere.add(ex.requestMethod + " " + ex.requestURI.rawPath + " " + body)
+      o.elsewhere.add(ex.requestMethod + " " + ex.requestURI.rawPath + " " + body)
       val out = "{\"access_token\":\"ELSEWHERE01\"}".toByteArray()
       ex.responseHeaders.set("Content-Type", "application/json")
       ex.sendResponseHeaders(200, out.size.toLong())
@@ -1261,14 +1270,17 @@ class SecretsTest {
     val origin = com.sun.net.httpserver.HttpServer.create(
       java.net.InetSocketAddress("127.0.0.1", 0), 0)
     origin.createContext("/") { ex ->
-      ex.requestBody.readAllBytes()
-      val path = ex.requestURI.rawPath
+      val body = String(ex.requestBody.readAllBytes(), Charsets.UTF_8)
+      val query = ex.requestURI.rawQuery
+      val path = ex.requestURI.rawPath + (if (query == null) "" else "?" + query)
       if ("/api/auth/token" == path) {
+        o.exchanged.incrementAndGet()
+        val answer = o.answer
         ex.responseHeaders.set("Location", answer.second)
         ex.sendResponseHeaders(answer.first, -1)
         ex.close()
       } else {
-        followed.add(ex.requestMethod + " " + path)
+        o.followed.add((ex.requestMethod + " " + path + " " + body).trim())
         val out = "{\"access_token\":\"MOVED01\"}".toByteArray()
         ex.responseHeaders.set("Content-Type", "application/json")
         ex.sendResponseHeaders(200, out.size.toLong())
@@ -1279,41 +1291,59 @@ class SecretsTest {
     other.start()
     origin.start()
 
-    val base = "http://127.0.0.1:" + origin.address.port + "/api"
-    val away = "http://127.0.0.1:" + other.address.port + "/api/auth/token"
+    o.origin = "http://127.0.0.1:" + origin.address.port
+    o.base = o.origin + "/api"
+    o.away = "http://127.0.0.1:" + other.address.port + "/api/auth/token"
 
     try {
-      val answers = listOf(307 to away, 308 to away, 302 to away, 307 to "/api/moved/token")
+      run(o)
+    } finally {
+      origin.stop(0)
+      other.stop(0)
+    }
+  }
+
+  private fun redirectClient(o: Origins, exchange: Map<String, Any?> = mapOf()): ProjectNameSDK =
+    withSecrets { extend ->
+      val x = map("active" to true, "refresh" to "REFRESH01")
+      x.putAll(exchange)
+      val opts = map(
+        "base" to o.base,
+        "allow" to map("op" to "direct,graphql"),
+        "feature" to map("secrets" to map(
+          "active" to true,
+          "name" to "refresh_token",
+          "exchange" to x,
+        )),
+      )
+      if (extend) {
+        opts["extend"] = mutableListOf<Any?>(SecretsFeature())
+      }
+      ProjectNameSDK(opts)
+    }
+
+  // The direct call's result, and its error message (the result when none).
+  private fun directOutcome(client: ProjectNameSDK): Pair<Map<String, Any?>?, String> =
+    try {
+      val res = client.direct(map("path" to "/thing"))
+      val err = res["err"] as? Throwable
+      res to (if (null != err) messageOf(err) else res.toString())
+    } catch (e: RuntimeException) {
+      null to messageOf(e)
+    }
+
+  @Test
+  fun aRedirectAnsweringTheExchangeIsAFailureAndNothingFollowsIt() {
+    withOrigins { o ->
+      val answers = listOf(307 to o.away, 308 to o.away, 302 to o.away, 307 to "/api/moved/token")
       val allowed = mutableListOf<String>()
       var refused = 0
 
       for (a in answers) {
-        answer = a
-        val client = withSecrets { extend ->
-          val opts = map(
-            "base" to base,
-            "allow" to map("op" to "direct,graphql"),
-            "feature" to map("secrets" to map(
-              "active" to true,
-              "name" to "refresh_token",
-              "exchange" to map("active" to true, "refresh" to "REFRESH01"),
-            )),
-          )
-          if (extend) {
-            opts["extend"] = mutableListOf<Any?>(SecretsFeature())
-          }
-          ProjectNameSDK(opts)
-        }
+        o.answer = a
+        val message = directOutcome(redirectClient(o)).second
 
-        val message = try {
-          val res = client.direct(map("path" to "/thing"))
-          val err = res["err"] as? Throwable
-          if (null != err) messageOf(err) else res.toString()
-        } catch (e: RuntimeException) {
-          messageOf(e)
-        }
-
-        if (message.contains("token exchange failed: " + a.first + " from " + base + "/auth/token")) {
+        if (message.contains("token exchange failed: " + a.first + " from " + o.base + "/auth/token")) {
           refused++
         } else {
           allowed.add("" + a.first + " to " + a.second + ": " + message)
@@ -1321,15 +1351,72 @@ class SecretsTest {
       }
 
       println("secrets: exchange refused " + refused + " redirect(s), " +
-        (elsewhere.size + followed.size) + " followed")
+        (o.elsewhere.size + o.followed.size) + " followed")
 
-      assertEquals(listOf<String>(), elsewhere.toList(), "the exchange reached another origin")
-      assertEquals(listOf<String>(), followed.toList(), "a request followed a refused exchange")
+      assertEquals(listOf<String>(), o.elsewhere.toList(), "the exchange reached another origin")
+      assertEquals(listOf<String>(), o.followed.toList(), "a request followed a refused exchange")
       assertEquals(listOf<String>(), allowed, "a redirect was not a failed exchange")
       assertEquals(answers.size, refused)
-    } finally {
-      origin.stop(0)
-      other.stop(0)
+    }
+  }
+
+  @Test
+  fun withTheOptionARedirectOnTheExchangesOwnOriginIsFollowedAndNoOther() {
+    withOrigins { o ->
+      val sent = " {\"refresh_token\":\"REFRESH01\"}"
+      // Each case: the status, the Location, and the path the exchange is
+      // asked again at, or null where the redirect is refused.
+      val cases = listOf<Triple<Int, String, String?>>(
+        Triple(307, "/api/moved/token", "/api/moved/token"),
+        Triple(308, o.origin + "/api/moved/token", "/api/moved/token"),
+        // A Location of a query alone keeps the path that answered.
+        Triple(307, "?step=2", "/api/auth/token?step=2"),
+        Triple(307, o.away, null),
+        Triple(302, "/api/moved/token", null),
+        Triple(307, "/api/auth/token", null),
+      )
+
+      val wrong = mutableListOf<String>()
+      var followed = 0
+      var refused = 0
+      var looped = 0
+
+      for ((status, location, path) in cases) {
+        o.answer = status to location
+        o.followed.clear()
+        o.exchanged.set(0)
+
+        val (res, message) = directOutcome(redirectClient(o, mapOf("redirect" to "same-origin")))
+        val seen = "" + status + " to " + location + ": " + message + " " + o.followed.toList()
+
+        if (path != null) {
+          if (true == res?.get("ok") && 2 == o.followed.size && "POST " + path + sent == o.followed[0]) {
+            followed++
+          } else {
+            wrong.add(seen)
+          }
+        } else if (o.followed.isEmpty() && message.contains(
+            "token exchange failed: " + status + " from " + o.base + "/auth/token")) {
+          refused++
+        } else {
+          wrong.add(seen)
+        }
+
+        if ("/api/auth/token" == location) {
+          looped = o.exchanged.get()
+        }
+      }
+
+      println("secrets: exchange opt-in followed " + followed +
+        " redirect(s) on its own origin, refused " + refused + ", " +
+        o.elsewhere.size + " elsewhere")
+
+      assertEquals(listOf<String>(), o.elsewhere.toList(), "the exchange reached another origin")
+      assertEquals(listOf<String>(), wrong)
+      assertEquals(3, followed)
+      assertEquals(3, refused)
+      // A redirect to itself stops at the hop limit.
+      assertEquals(6, looped)
     }
   }
 }

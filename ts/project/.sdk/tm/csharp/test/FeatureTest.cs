@@ -544,6 +544,35 @@ public class FeatureCacheTest
     }
 
     [Fact]
+    public void BodyOfAnotherTypeThanJsonPassesByUnread()
+    {
+        if (Fh.SkipWithout("cache")) return;
+        var sent = new List<Dictionary<string, object?>>();
+        var rec = new FhRecorder
+        {
+            Reply = (_, _) =>
+            {
+                var res = Fh.Response(200, null, new Dictionary<string, object?>
+                {
+                    ["content-type"] = "audio/wav",
+                });
+                res["body"] = new byte[] { 0x52, 0x49, 0x46, 0x46 };
+                sent.Add(res);
+                return res;
+            },
+        };
+        var f = new CacheFeature();
+        var h = Fh.Make(rec.Fetch, (f, null));
+        var a = h.Op(new FhOpSpec { Op = "load", Path = "/w/1/audio" });
+        var b = h.Op(new FhOpSpec { Op = "load", Path = "/w/1/audio" });
+        Assert.True(2 == rec.Calls.Count, "the body was stored");
+        Assert.True(ReferenceEquals(sent[0]["body"], a.Ctx?.Response?.Body),
+            "the cache handed on a copy it had read");
+        Assert.True(ReferenceEquals(sent[1]["body"], b.Ctx?.Response?.Body));
+        Assert.Equal(2, f.Bypass);
+    }
+
+    [Fact]
     public void InactiveDoesNotWrap()
     {
         if (Fh.SkipWithout("cache")) return;

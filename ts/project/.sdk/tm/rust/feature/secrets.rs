@@ -47,6 +47,7 @@ struct SecretsExchange {
     response: String,
     statuses: Vec<i64>,
     retries: i64,
+    redirect: String,
 }
 
 /// Everything the transport closure needs, behind one RefCell.
@@ -238,6 +239,11 @@ impl Feature for SecretsFeature {
                 response: fopt_str(&xopts, "response", "access_token"),
                 statuses,
                 retries: fopt_int(&xopts, "retries", 1),
+                redirect: if "same-origin" == fopt_str(&xopts, "redirect", "refuse") {
+                    "same-origin".to_string()
+                } else {
+                    "refuse".to_string()
+                },
             });
         }
 
@@ -720,18 +726,31 @@ fn buy_once(state: &Rc<RefCell<SecretsState>>) -> Result<String, ProjectNameErro
 
     let sys_fetch = getpath(&["system", "fetch"], &options);
 
-    let res = if let Value::Func(_) = sys_fetch {
-        let out = call_vfn(
-            &sys_fetch,
-            &ja(vec![Value::str(url.clone()), fetchdef.clone()]),
-        );
-        if let Some(msg) = get_str(&out, "__err__") {
-            return Err(fail(&msg));
+    let fetch = |at: &str| -> Result<Value, ProjectNameError> {
+        if let Value::Func(_) = sys_fetch {
+            let out = call_vfn(&sys_fetch, &ja(vec![Value::str(at), fetchdef.clone()]));
+            if let Some(msg) = get_str(&out, "__err__") {
+                return Err(fail(&msg));
+            }
+            Ok(out)
+        } else {
+            raw_exchange_fetch(at, &fetchdef)
         }
-        out
-    } else {
-        raw_exchange_fetch(&url, &fetchdef)?
     };
+
+    let mut res = fetch(&url)?;
+
+    // By option alone, and only while the exchange stays on its own origin.
+    let mut at = url.clone();
+    let mut hops = 0;
+    while "same-origin" == x.redirect && hops < REDIRECT_MAX {
+        match moved(&url, &at, &res) {
+            Some(next) => at = next,
+            None => break,
+        }
+        res = fetch(&at)?;
+        hops += 1;
+    }
 
     let status = to_int(&getp(&res, "status"));
     if !(200..300).contains(&status) {
@@ -761,6 +780,27 @@ fn buy_once(state: &Rc<RefCell<SecretsState>>) -> Result<String, ProjectNameErro
     }
 
     Ok(token)
+}
+
+const REDIRECT_MAX: usize = 5;
+
+// The URL a body-keeping redirect names, while it stays on the exchange's own
+// origin. Any other redirect would drop the body or leave the origin.
+fn moved(url: &str, at: &str, res: &Value) -> Option<String> {
+    let status = to_int(&getp(res, "status"));
+    if 307 != status && 308 != status {
+        return None;
+    }
+    let location = get_str(&getp(res, "headers"), "location").filter(|l| !l.is_empty())?;
+    let agent = exchange_agent();
+    let from = agent.request("GET", at).request_url().ok()?;
+    let next = from.as_url().join(&location).ok()?;
+    let own = agent.request("GET", url).request_url().ok()?;
+    if next.origin() == own.as_url().origin() {
+        Some(next.to_string())
+    } else {
+        None
+    }
 }
 
 // One pooled agent for every exchange; a followed redirect would carry the token.
@@ -803,6 +843,13 @@ fn raw_exchange_fetch(fullurl: &str, fetchdef: &Value) -> Result<Value, ProjectN
 
     let status = resp.status() as i64;
 
+    let headers = Value::empty_map();
+    for name in resp.headers_names() {
+        if let Some(val) = resp.header(&name) {
+            setp(&headers, &name.to_lowercase(), Value::str(val));
+        }
+    }
+
     let text = resp
         .into_string()
         .map_err(|err| fail(&format!("secrets: token exchange body: {}", err)))?;
@@ -815,6 +862,7 @@ fn raw_exchange_fetch(fullurl: &str, fetchdef: &Value) -> Result<Value, ProjectN
 
     Ok(jo(vec![
         ("status", Value::Num(status as f64)),
+        ("headers", headers),
         ("json", json_thunk(parsed)),
     ]))
 }

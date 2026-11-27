@@ -802,13 +802,16 @@ struct Moved {
 };
 static const std::vector<Moved> MOVED = {{307, true}, {308, true}, {302, true}, {307, false}};
 
-static Value redirectClient(const std::string& base, const Value& fetch) {
+static Value redirectClient(const std::string& base, const Value& fetch,
+                            const std::string& redirect = "") {
+  Value x = exchangeOn(vmap({{"refresh", Value(std::string("REFRESH01"))}}));
+  if (!redirect.empty()) map_put(x, "redirect", Value(redirect));
   Value opts = vmap({
     {"base", Value(base)},
     {"feature", vmap({{"secrets", vmap({
       {"active", Value(true)},
       {"name", Value(std::string("refresh_token"))},
-      {"exchange", exchangeOn(vmap({{"refresh", Value(std::string("REFRESH01"))}}))}})}})}});
+      {"exchange", x}})}})}});
   if (fetch.is_injector()) map_put(opts, "system", vmap({{"fetch", fetch}}));
   return direct(std::make_shared<ProjectNameSDK>(opts));
 }
@@ -997,6 +1000,76 @@ static void t_exchange_redirect_refused() {
   redirectSystemFetch();
 }
 
+// The option through the caller's system.fetch, the one transport whose
+// answer carries a Location in every cpp build.
+static void t_exchange_redirect_same_origin() {
+  const std::string base = "http://api.test/api";
+  const std::string sent = " POST manual {\"refresh_token\":\"REFRESH01\"}";
+  const std::string asked = base + "/auth/token" + sent;
+  // The url the exchange is asked again at, empty when refused; a Location of
+  // a query alone keeps the path that answered.
+  struct Case {
+    int status;
+    std::string location;
+    std::string next;
+  };
+  const std::vector<Case> cases = {
+    {307, "/api/moved/token", base + "/moved/token"},
+    {308, "http://api.test/api/moved/token", base + "/moved/token"},
+    {307, "?step=2", base + "/auth/token?step=2"},
+    {307, "http://other.test/api/auth/token", ""},
+    {302, "/api/moved/token", ""},
+    {307, "/api/auth/token", ""}};
+
+  int followed = 0;
+  int refused = 0;
+  int elsewhere = 0;
+  size_t looped = 0;
+  std::vector<std::string> wrong;
+
+  for (const Case& c : cases) {
+    std::vector<std::string> calls;
+    vs::Injector fn = [&](vs::Injection&, const Value& args, const std::string&,
+                          const Value&) -> Value {
+      std::string url = as_str(vs::getelem(args, Value(int64_t(0))));
+      Value fd = vs::getelem(args, Value(int64_t(1)));
+      if (0 != url.rfind("http://api.test/", 0)) elsewhere++;
+      if (base + "/thing" == url) return fhResponse(200, vmap({{"ok", Value(true)}}), Value::undef());
+      calls.push_back(url + " " + as_str(getp(fd, "method")) + " " +
+                      as_str(getp(fd, "redirect")) + " " + as_str(getp(fd, "body")));
+      if (base + "/auth/token" != url) {
+        return fhResponse(200, vmap({{"access_token", Value(std::string("MOVED01"))}}), Value::undef());
+      }
+      return vmap({{"status", Value(c.status)},
+                   {"headers", vmap({{"location", Value(c.location)}})},
+                   {"body", Value(std::string(""))}});
+    };
+    Value res = redirectClient(base, Value(fn), "same-origin");
+
+    bool loop = "/api/auth/token" == c.location;
+    if (loop) looped = calls.size();
+    bool follows = !c.next.empty();
+    std::vector<std::string> want = follows ? std::vector<std::string>{asked, c.next + sent}
+      : std::vector<std::string>(loop ? std::max<size_t>(calls.size(), 1) : 1, asked);
+    bool failed = !okOf(res) && contains(errOf(res), redirectWant(c.status, base));
+    if (calls == want && (follows ? okOf(res) : failed)) {
+      (follows ? followed : refused)++;
+    } else {
+      std::string seen;
+      for (const auto& call : calls) seen += "[" + call + "]";
+      wrong.push_back(std::to_string(c.status) + " to " + c.location + ": " + errOf(res) + " " + seen);
+    }
+  }
+
+  std::printf("secrets: exchange opt-in followed %d redirect(s) on its own origin, refused %d, "
+              "%d elsewhere\n", followed, refused, elsewhere);
+  for (const auto& w : wrong) ASSERT_TRUE(false, "same-origin: " + w);
+  ASSERT_EQ(elsewhere, 0, "same-origin: the exchange reached another origin");
+  ASSERT_EQ(followed, 3, "same-origin: every redirect on the origin followed");
+  ASSERT_EQ(refused, 3, "same-origin: every other redirect refused");
+  ASSERT_EQ(looped, (size_t)6, "same-origin: a redirect to itself is followed five times");
+}
+
 int main() {
   // Read from the config, never from a probe: an SDK whose config declares no
   // auth places no credential, and these tests assert on the one it places.
@@ -1041,6 +1114,7 @@ int main() {
   RUN(t_exchange_auth_null_suppresses);
   RUN(t_exchange_test_mode_buys_nothing);
   RUN(t_exchange_redirect_refused);
+  RUN(t_exchange_redirect_same_origin);
 
   std::printf("secrets: ran %d case(s)\n", CASES);
   return sdktest::summary("secrets_test");

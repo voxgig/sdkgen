@@ -181,8 +181,6 @@ open class ProjectNameEntityBase: Entity {
   // the call:
   //   - inbound (download): iterate the yielded items/chunks (from the
   //     streaming feature when active, else the materialised items);
-  //   - outbound (upload): pass a streamable payload as callopts["body"] - it
-  //     is attached to the request so the transport can send it;
   //   - callopts["ctrl"] threads pipeline control and callopts["signal"] (a
   //     native () -> Bool that returns true when aborted) is honoured between
   //     yields.
@@ -212,13 +210,6 @@ open class ProjectNameEntityBase: Entity {
     }
 
     let ctx = utility.makeContext(ctxmap, entctx)
-
-    // Outbound: expose the caller's streamable payload so the request builder
-    // / transport can stream it as the request body.
-    if let body = opts.entries["body"], !isNil(body) {
-      ctx.reqdata.entries["body$"] = body
-      ctx.ctrl.streamOut = body
-    }
 
     // Run the same pipeline the op methods run.
     let materialised = try runOp(ctx, {})

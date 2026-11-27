@@ -3371,9 +3371,13 @@ const UNUSABLE = [
 
 
 // The shipped secrets suite answers its token exchange with redirects and
-// says how many it refused. Exit zero is not enough: a case that skipped
-// passes in every one of these frameworks.
+// says how many it refused, and how many it followed once the option allows
+// one on its own origin. Exit zero is not enough: a case that skipped passes
+// in every one of these frameworks.
 const EXCHANGE_LINE = /secrets: exchange refused (\d+) redirect\(s\), (\d+) followed/
+
+const EXCHANGE_OPTIN_LINE =
+  /secrets: exchange opt-in followed (\d+) redirect\(s\) on its own origin, refused (\d+), (\d+) elsewhere/
 
 function exchangeRefused(target: string, out: string) {
   const line = EXCHANGE_LINE.exec(out)
@@ -3382,6 +3386,14 @@ function exchangeRefused(target: string, out: string) {
   ok(0 < Number(line![1]), target + ': the token exchange refused no redirect')
   strictEqual(Number(line![2]), 0,
     target + ': a redirect that answered the token exchange was followed')
+
+  const optin = EXCHANGE_OPTIN_LINE.exec(out)
+  ok(null != optin, target + ': the secrets suite did not say what its token exchange ' +
+    'did with a redirect once the option allows one:\n' + tail(out))
+  ok(0 < Number(optin![1]), target + ': with the option, no redirect on its own origin was followed')
+  ok(0 < Number(optin![2]), target + ': with the option, no redirect was refused')
+  strictEqual(Number(optin![3]), 0,
+    target + ': with the option, the token exchange reached another origin')
 }
 
 
@@ -8337,9 +8349,10 @@ const FEATURE_SUITE_LANES: { target: string, runner: string }[] = [
   { target: 'js', runner: Path.join('test', 'feature.test.js') },
 ]
 
-// The features that pass what they record through clean. Each must run a test,
-// or a generation that left one out would pass the lane.
-const FEATURE_SUITE_SUBJECTS = ['audit', 'debug', 'proxy', 'telemetry']
+// The features that pass what they record through clean, and the cache, which
+// must pass a file by. Each must run a test, or a generation that left one out
+// would pass the lane.
+const FEATURE_SUITE_SUBJECTS = ['audit', 'cache', 'debug', 'proxy', 'telemetry']
 
 // The abort block drives every transport wrapper that waits, and the lane
 // generates each of them, so none of its tests may skip.
@@ -8382,7 +8395,7 @@ describe('the feature suite runs from a generated SDK', () => {
       const sdkroot = Path.join(tmp, lane.target)
       // netsim too: the audit test, and the failure-path tests, skip without it.
       await generateTo(lane.target, sdkroot, undefined,
-        [...CLEAN_FEATURES, 'netsim', 'proxy', 'ratelimit', 'retry', 'timeout'])
+        [...CLEAN_FEATURES, 'cache', 'netsim', 'proxy', 'ratelimit', 'retry', 'timeout'])
       const notready = null == clean.prepare ? null : clean.prepare(sdkroot)
       ok(null == notready, lane.target + ': ' + notready)
 

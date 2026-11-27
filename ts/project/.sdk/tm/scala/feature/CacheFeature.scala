@@ -3,6 +3,7 @@ package SCALAPACKAGE.feature
 import java.util.{ArrayList, LinkedHashMap, List => JList, Map => JMap}
 import java.util.function.Supplier
 import SCALAPACKAGE.core.{Context, FetcherFn, SdkClient}
+import SCALAPACKAGE.utility.Media
 
 // Response caching for safe (read) requests. Wraps the active transport and
 // serves a fresh cached snapshot instead of hitting the network when the
@@ -97,6 +98,12 @@ class CacheFeature extends BaseFeature("cache", "0.0.1", true) {
         throw err
     }
 
+    // A body that declares another type than JSON passes by, unread.
+    if (storable(res) && !json(res)) {
+      this.bypass += 1
+      return res
+    }
+
     if (storable(res)) {
       val snapshot = this.snapshot(res)
       val ttl = FeatureOptions.foptInt(this.options, "ttl", 5000)
@@ -119,6 +126,11 @@ class CacheFeature extends BaseFeature("cache", "0.0.1", true) {
     val status = FeatureOptions.fresStatus(res)
     status >= 200 && status < 300 &&
       java.lang.Boolean.TRUE != res.asInstanceOf[JMap[String, Object]].get("unreadable")
+  }
+
+  private def json(res: Object): Boolean = {
+    val ctype = FeatureOptions.fresHeader(res, "content-type")
+    "" == ctype || Media.isJsonMedia(ctype)
   }
 
   private def snapshot(res: Object): CacheSnapshot = {

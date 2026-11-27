@@ -1899,39 +1899,102 @@ public class SecretsFeatureTest
         }
     }
 
+    // Real origins: this one answers the exchange as Answer says and
+    // records whatever else it gets; the other records everything.
+    private sealed class RedirectOrigins : IDisposable
+    {
+        public readonly List<string> Elsewhere = new();
+        public readonly List<string> Followed = new();
+        public int Exchanged;
+        public (int Status, string Location) Answer = (307, "");
+        public readonly ExchangeOrigin Origin;
+        public readonly ExchangeOrigin Other;
+
+        public RedirectOrigins()
+        {
+            Other = new ExchangeOrigin((method, path, body) =>
+            {
+                lock (Elsewhere)
+                {
+                    Elsewhere.Add(method + " " + path + " " + body);
+                }
+                return ("200 OK", null, "{\"access_token\":\"ELSEWHERE01\"}");
+            });
+            Origin = new ExchangeOrigin((method, path, body) =>
+            {
+                lock (Followed)
+                {
+                    if ("/api/auth/token" == path)
+                    {
+                        Exchanged++;
+                        return (Answer.Status + " X", Answer.Location, "");
+                    }
+                    Followed.Add((method + " " + path + " " + body).Trim());
+                }
+                return ("200 OK", null, "{\"access_token\":\"MOVED01\"}");
+            });
+        }
+
+        public string Base => Origin.Base + "/api";
+        public string Away => Other.Base + "/api/auth/token";
+
+        public void Dispose()
+        {
+            Origin.Dispose();
+            Other.Dispose();
+        }
+    }
+
+    private static ProjectNameSDK RedirectClient(RedirectOrigins o, string? redirect = null)
+    {
+        return WithSecrets(extend =>
+        {
+            var exchange = new Dictionary<string, object?>
+            {
+                ["active"] = true,
+                ["refresh"] = "REFRESH01",
+            };
+            if (null != redirect)
+            {
+                exchange["redirect"] = redirect;
+            }
+            var opts = new Dictionary<string, object?>
+            {
+                ["base"] = o.Base,
+                ["allow"] = new Dictionary<string, object?>
+                {
+                    ["op"] = "create,update,load,list,remove,command,direct,graphql",
+                },
+                ["feature"] = new Dictionary<string, object?>
+                {
+                    ["secrets"] = new Dictionary<string, object?>
+                    {
+                        ["active"] = true,
+                        ["name"] = "refresh_token",
+                        ["exchange"] = exchange,
+                    },
+                },
+            };
+            if (extend)
+            {
+                opts["extend"] = new List<object?> { new SecretsFeature() };
+            }
+            return new ProjectNameSDK(opts);
+        });
+    }
+
     // Real listeners and the SDK's own raw fetch: a stub follows nothing.
     [Fact]
     public void ARedirectAnsweringTheExchangeIsAFailureAndNothingFollowsIt()
     {
         if (SkippedWithoutAuth()) return;
 
-        var elsewhere = new List<string>();
-        var followed = new List<string>();
-        (int Status, string Location) answer = (307, "");
+        using var o = new RedirectOrigins();
+        var elsewhere = o.Elsewhere;
+        var followed = o.Followed;
 
-        using var other = new ExchangeOrigin((method, path, body) =>
-        {
-            lock (elsewhere)
-            {
-                elsewhere.Add(method + " " + path + " " + body);
-            }
-            return ("200 OK", null, "{\"access_token\":\"ELSEWHERE01\"}");
-        });
-        using var origin = new ExchangeOrigin((method, path, body) =>
-        {
-            if ("/api/auth/token" == path)
-            {
-                return (answer.Status + " X", answer.Location, "");
-            }
-            lock (followed)
-            {
-                followed.Add(method + " " + path);
-            }
-            return ("200 OK", null, "{\"access_token\":\"MOVED01\"}");
-        });
-
-        var basev = origin.Base + "/api";
-        var away = other.Base + "/api/auth/token";
+        var basev = o.Base;
+        var away = o.Away;
         var answers = new[] { (307, away), (308, away), (302, away), (307, "/api/moved/token") };
 
         var allowed = new List<string>();
@@ -1939,36 +2002,8 @@ public class SecretsFeatureTest
 
         foreach (var next in answers)
         {
-            answer = next;
-            var client = WithSecrets(extend =>
-            {
-                var opts = new Dictionary<string, object?>
-                {
-                    ["base"] = basev,
-                    ["allow"] = new Dictionary<string, object?>
-                    {
-                        ["op"] = "create,update,load,list,remove,command,direct,graphql",
-                    },
-                    ["feature"] = new Dictionary<string, object?>
-                    {
-                        ["secrets"] = new Dictionary<string, object?>
-                        {
-                            ["active"] = true,
-                            ["name"] = "refresh_token",
-                            ["exchange"] = new Dictionary<string, object?>
-                            {
-                                ["active"] = true,
-                                ["refresh"] = "REFRESH01",
-                            },
-                        },
-                    },
-                };
-                if (extend)
-                {
-                    opts["extend"] = new List<object?> { new SecretsFeature() };
-                }
-                return new ProjectNameSDK(opts);
-            });
+            o.Answer = next;
+            var client = RedirectClient(o);
 
             var res = client.Direct(new Dictionary<string, object?> { ["path"] = "/thing" });
             var message = ErrMessage(res);
@@ -1994,6 +2029,91 @@ public class SecretsFeatureTest
         Assert.True(0 == allowed.Count,
             "a redirect was not a failed exchange: " + string.Join(" | ", allowed));
         Assert.Equal(answers.Length, refused);
+    }
+
+    [Fact]
+    public void WithTheOptionARedirectOnTheExchangesOwnOriginIsFollowedAndNoOther()
+    {
+        if (SkippedWithoutAuth()) return;
+
+        using var o = new RedirectOrigins();
+        var sent = " {\"refresh_token\":\"REFRESH01\"}";
+        // Each case: the status, the Location, and the path the exchange is
+        // asked again at, or null where the redirect is refused.
+        var cases = new (int, string, string?)[]
+        {
+            (307, "/api/moved/token", "/api/moved/token"),
+            (308, o.Origin.Base + "/api/moved/token", "/api/moved/token"),
+            // A Location of a query alone keeps the path that answered.
+            (307, "?step=2", "/api/auth/token?step=2"),
+            (307, o.Away, null),
+            (302, "/api/moved/token", null),
+            (307, "/api/auth/token", null),
+        };
+
+        var wrong = new List<string>();
+        var followed = 0;
+        var refused = 0;
+        var looped = 0;
+
+        foreach (var (status, location, path) in cases)
+        {
+            lock (o.Followed)
+            {
+                o.Answer = (status, location);
+                o.Followed.Clear();
+                o.Exchanged = 0;
+            }
+
+            var res = RedirectClient(o, "same-origin")
+                .Direct(new Dictionary<string, object?> { ["path"] = "/thing" });
+            var message = ErrMessage(res);
+
+            List<string> seen;
+            lock (o.Followed)
+            {
+                seen = new List<string>(o.Followed);
+                if ("/api/auth/token" == location)
+                {
+                    looped = o.Exchanged;
+                }
+            }
+            var report = status + " to " + location + ": ok=" + res["ok"] + " " + message +
+                " [" + string.Join(" | ", seen) + "]";
+
+            if (null != path)
+            {
+                if (Equals(res["ok"], true) && 2 == seen.Count && "POST " + path + sent == seen[0])
+                {
+                    followed++;
+                }
+                else
+                {
+                    wrong.Add(report);
+                }
+            }
+            else if (0 == seen.Count && message.Contains(
+                "token exchange failed: " + status + " from " + o.Base + "/auth/token"))
+            {
+                refused++;
+            }
+            else
+            {
+                wrong.Add(report);
+            }
+        }
+
+        Console.WriteLine("secrets: exchange opt-in followed " + followed +
+            " redirect(s) on its own origin, refused " + refused + ", " +
+            o.Elsewhere.Count + " elsewhere");
+
+        Assert.True(0 == o.Elsewhere.Count,
+            "the exchange reached another origin: " + string.Join(" | ", o.Elsewhere));
+        Assert.True(0 == wrong.Count, string.Join(" || ", wrong));
+        Assert.Equal(3, followed);
+        Assert.Equal(3, refused);
+        // A redirect to itself stops at the hop limit.
+        Assert.Equal(6, looped);
     }
 
     private static int FreePort()

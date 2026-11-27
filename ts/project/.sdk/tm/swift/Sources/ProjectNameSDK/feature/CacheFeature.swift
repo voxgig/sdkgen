@@ -87,6 +87,12 @@ public final class CacheFeature: BaseFeature {
       err = error
     }
 
+    // A body that declares another type than JSON passes by, unread.
+    if err == nil && CacheFeature.storable(res) && !CacheFeature.json(res) {
+      bypass += 1
+      return res
+    }
+
     if err == nil && CacheFeature.storable(res) {
       let snap = CacheFeature.snapshot(res)
       let ttl = foptInt(options, "ttl", 5000)
@@ -111,6 +117,11 @@ public final class CacheFeature: BaseFeature {
   private static func storable(_ res: Value) -> Bool {
     let (status, has) = fresStatus(res)
     return has && status >= 200 && status < 300 && gp(res, "unreadable") != .bool(true)
+  }
+
+  private static func json(_ res: Value) -> Bool {
+    let type = Response.headerValue(gp(res, "headers"), "content-type")
+    return type.isEmpty || isJsonMedia(.string(type))
   }
 
   private static func snapshot(_ res: Value) -> CacheSnapshot {

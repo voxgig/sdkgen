@@ -82,6 +82,34 @@ setmetatable(SecretsFeature, { __index = BaseFeature })
 local NOTAPROVIDER = "sekreto: not a provider or a provider spec: "
 
 
+local REDIRECT_MAX = 5
+
+
+local function origin(u)
+  local parsed = require("socket.url").parse(u) or {}
+  local scheme = string.lower(parsed.scheme or "")
+  return scheme .. "://" .. string.lower(parsed.host or "") .. ":" ..
+    tostring(parsed.port or (scheme == "https" and 443 or 80))
+end
+
+
+-- Where a redirect keeping method and body (307 or 308) points, on the
+-- exchange's own origin. Any other would drop the body or leave the origin.
+local function moved(url, at, res)
+  local status = type(res) == "table" and helpers.to_int(vs.getprop(res, "status")) or -1
+  local headers = type(res) == "table" and vs.getprop(res, "headers") or nil
+  local location = type(headers) == "table" and headers["location"] or nil
+  if (status ~= 307 and status ~= 308) or type(location) ~= "string" or location == "" then
+    return nil
+  end
+  local ok, next = pcall(function()
+    local resolved = require("socket.url").absolute(at, (string.gsub(location, "%s", "")))
+    return origin(resolved) == origin(url) and resolved or nil
+  end)
+  return ok and next or nil
+end
+
+
 local function optstr(map, key, dflt)
   local v = map ~= nil and map[key] or nil
   if type(v) == "string" and v ~= "" then
@@ -207,6 +235,7 @@ function SecretsFeature:init(ctx, options)
       response = optstr(xopts, "response", "access_token"),
       statuses = statuses,
       retries = optnum(xopts, "retries", 1),
+      redirect = xopts["redirect"] == "same-origin" and "same-origin" or "refuse",
     }
   end
 
@@ -613,7 +642,7 @@ local function raw_exchange_fetch(fullurl, fetchdef)
   end
 
   local chunks = {}
-  local res, code = http.request({
+  local res, code, rawheaders = http.request({
     url = fullurl,
     method = fetchdef["method"] or "POST",
     headers = headers,
@@ -628,9 +657,14 @@ local function raw_exchange_fetch(fullurl, fetchdef)
   end
 
   local raw = table.concat(chunks)
+  local resheaders = {}
+  for k, v in pairs(type(rawheaders) == "table" and rawheaders or {}) do
+    resheaders[string.lower(k)] = v
+  end
 
   return {
     status = code,
+    headers = resheaders,
     json = function()
       if #raw == 0 then
         return nil
@@ -676,13 +710,25 @@ function SecretsFeature:_buy_once()
   -- The body is ENCODED, never concatenated: a refresh token (or a
   -- configured request-field name) carrying a quote, backslash or newline
   -- must arrive as that literal value, not as malformed JSON.
-  local res, err = fetch(url, {
+  local fetchdef = {
     method = x.method,
     headers = { ["content-type"] = "application/json" },
     body = json.encode({ [x.request] = self._refresh }),
-    -- Never followed: a redirect would carry the refresh token on.
+    -- Never followed by the client: a redirect would carry the refresh token on.
     redirect = "manual",
-  })
+  }
+  local res, err = fetch(url, fetchdef)
+
+  -- By option alone, and only while the exchange stays on its own origin.
+  local at = url
+  for _ = 1, x.redirect == "same-origin" and REDIRECT_MAX or 0 do
+    local next = err == nil and moved(url, at, res) or nil
+    if next == nil then
+      break
+    end
+    at = next
+    res, err = fetch(at, fetchdef)
+  end
 
   if err ~= nil then
     return nil, sekreto.SekretoError(
