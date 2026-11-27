@@ -100,6 +100,10 @@ public class AuditFeature extends BaseFeature {
     if (ctx.result != null) {
       record.put("status", ctx.result.status);
     }
+    String action = Helpers.opAction(ctx);
+    if (action != null) {
+      record.put("action", action);
+    }
 
     if (ctx.utility != null && ctx.utility.clean != null) {
       Map<String, Object> cleaned = Helpers.toMapAny(ctx.utility.clean.apply(ctx, record));

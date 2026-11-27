@@ -17,6 +17,7 @@
 #include "../feature/audit.hpp"
 #include "../feature/cache.hpp"
 #include "../feature/clienttrack.hpp"
+#include "../feature/cost.hpp"
 #include "../feature/debug.hpp"
 #include "../feature/idempotency.hpp"
 #include "../feature/metrics.hpp"
@@ -662,6 +663,117 @@ static void debug_inactiveRecordsNothing() {
   ASSERT_EQ((int)f->entries.as_list()->size(), 0, "expected no entries");
 }
 
+// ============================ action keys ==============================
+// A custom action is `$action` in the request argument, and its keys name
+// it, `<entity>.<op>:<action>` first.
+
+static Value akAudio() { return fhMap({{"$action", Value("audio")}, {"id", Value("e1")}}); }
+static Value akRecord() { return fhMap({{"id", Value("e1")}}); }
+static FhOpSpec akLoad(const Value& reqmatch) {
+  return fhOp("load").setEntity("episode").setReqmatch(reqmatch);
+}
+static Value akRules() {
+  return fhMap({{"episode.load", Value("read")}, {"episode.load:audio", Value("audio")}});
+}
+
+static void actionKeys_rbacRecordGrantedActionRefused() {
+  if (!have({"rbac"})) return;
+  auto rec = std::make_shared<FhRecorder>();
+  FetcherFn server = [rec](CtxPtr c, const std::string& u, const Value& fd) { return rec->fetch(c, u, fd); };
+  auto f = std::make_shared<RbacFeature>();
+  auto h = fhMake(server, {FF(f, fhMap({{"rules", akRules()}, {"permissions", vlist({Value("read")})}}))});
+  ASSERT_TRUE(h->op(akLoad(akRecord())).ok, "expected the record ok");
+  FhOpResult res = h->op(akLoad(akAudio()));
+  ASSERT_EQ(fhErrCode(res.err), std::string("rbac_denied"), "expected the action denied");
+  ASSERT_EQ((int)rec->calls.size(), 1, "expected one network call");
+  ASSERT_EQ_VAL(getp(f->last, "action"), Value("audio"), "expected last.action audio");
+  ASSERT_TRUE(res.err && std::string(res.err->msg).find("operation \"load:audio\"") != std::string::npos,
+              "expected the message to name load:audio");
+}
+
+static void actionKeys_rbacActionGrantedRecordRefused() {
+  if (!have({"rbac"})) return;
+  auto f = std::make_shared<RbacFeature>();
+  auto h = fhMake(nullptr, {FF(f, fhMap({{"rules", akRules()}, {"permissions", vlist({Value("audio")})}}))});
+  ASSERT_EQ(fhErrCode(h->op(akLoad(akRecord())).err), std::string("rbac_denied"), "expected the record denied");
+  ASSERT_TRUE(getp(f->last, "action").is_undef(), "expected a plain call's last to have no action");
+  ASSERT_TRUE(h->op(akLoad(akAudio())).ok, "expected the action ok");
+}
+
+static void actionKeys_rbacActionFallsBackToOperation() {
+  if (!have({"rbac"})) return;
+  auto h = fhMake(nullptr, {FF(std::make_shared<RbacFeature>(),
+      fhMap({{"rules", fhMap({{"episode.load", Value("read")}})}, {"permissions", vlist()}}))});
+  ASSERT_EQ(fhErrCode(h->op(akLoad(akAudio())).err), std::string("rbac_denied"),
+            "expected the operation's rule to apply");
+}
+
+static void actionKeys_rbacDataOpReadsReqdata() {
+  if (!have({"rbac"})) return;
+  auto h = fhMake(nullptr, {FF(std::make_shared<RbacFeature>(),
+      fhMap({{"rules", fhMap({{"episode.create:upload", Value("write")}})}, {"permissions", vlist()}}))});
+  Value upload = fhMap({{"$action", Value("upload")}});
+  ASSERT_EQ(fhErrCode(h->op(fhOp("create").setEntity("episode").setReqdata(upload)).err),
+            std::string("rbac_denied"), "expected a data op to read reqdata");
+  ASSERT_TRUE(h->op(fhOp("create").setEntity("episode").setReqmatch(upload)).ok,
+              "expected a data op to ignore reqmatch");
+}
+
+static void actionKeys_metricsCountedApart() {
+  if (!have({"metrics"})) return;
+  auto f = std::make_shared<MetricsFeature>();
+  auto h = fhMake(nullptr, {FF(f, Value::undef())});
+  h->op(akLoad(akRecord()));
+  h->op(akLoad(akAudio()));
+  h->op(akLoad(akAudio()));
+  ASSERT_EQ(f->total.count, 3, "expected total 3");
+  ASSERT_EQ(f->ops["episode.load"].count, 1, "expected episode.load 1");
+  ASSERT_EQ(f->ops["episode.load:audio"].count, 2, "expected episode.load:audio 2");
+}
+
+static void actionKeys_auditRecordNamesAction() {
+  if (!have({"audit"})) return;
+  auto f = std::make_shared<AuditFeature>();
+  auto h = fhMake(nullptr, {FF(f, Value::undef())});
+  h->op(akLoad(akRecord()));
+  h->op(akLoad(akAudio()));
+  Value r0 = (*f->records.as_list())[0];
+  Value r1 = (*f->records.as_list())[1];
+  ASSERT_TRUE(r0.is_map() && getp(r0, "action").is_undef(), "expected record 0 to have no action");
+  ASSERT_EQ_VAL(getp(r0, "op"), Value("load"), "expected record 0 op load");
+  ASSERT_EQ_VAL(getp(r1, "action"), Value("audio"), "expected record 1 action audio");
+  ASSERT_EQ_VAL(getp(r1, "op"), Value("load"), "expected record 1 op load");
+}
+
+static void actionKeys_costPricedApart() {
+  if (!have({"cost"})) return;
+  Value sunk = vlist();
+  auto f = std::make_shared<CostFeature>();
+  auto h = fhMake(nullptr, {FF(f, fhMap({
+      {"rates", fhMap({{"episode.load", Value(1)}, {"episode.load:audio", Value(5)}})},
+      {"sink", collectFn(sunk)}}))});
+  h->op(akLoad(akRecord()));
+  h->op(akLoad(akAudio()));
+  ASSERT_EQ(f->total.amount, 6.0, "expected total 6");
+  ASSERT_EQ(f->ops["episode.load"].calls, 1, "expected episode.load calls 1");
+  ASSERT_EQ(f->ops["episode.load"].amount, 1.0, "expected episode.load amount 1");
+  ASSERT_EQ(f->ops["episode.load:audio"].calls, 1, "expected episode.load:audio calls 1");
+  ASSERT_EQ(f->ops["episode.load:audio"].amount, 5.0, "expected episode.load:audio amount 5");
+  ASSERT_EQ((int)sunk.as_list()->size(), 2, "expected 2 sunk records");
+  ASSERT_TRUE(getp((*sunk.as_list())[0], "action").is_undef(), "expected sink record 0 to have no action");
+  ASSERT_EQ_VAL(getp((*sunk.as_list())[1], "action"), Value("audio"), "expected sink record 1 action audio");
+  ASSERT_EQ_VAL(getp(f->last, "action"), Value("audio"), "expected last.action audio");
+}
+
+static void actionKeys_costActionFallsBackToOperationRate() {
+  if (!have({"cost"})) return;
+  auto f = std::make_shared<CostFeature>();
+  auto h = fhMake(nullptr, {FF(f, fhMap({{"rates", fhMap({{"episode.load", Value(2)}, {"*", Value(9)}})}}))});
+  h->op(akLoad(akAudio()));
+  ASSERT_EQ(f->ops["episode.load:audio"].calls, 1, "expected episode.load:audio calls 1");
+  ASSERT_EQ(f->ops["episode.load:audio"].amount, 2.0, "expected episode.load:audio amount 2");
+}
+
 // ============================ audit ====================================
 
 static void audit_oneRecordPerOpSinkActor() {
@@ -968,6 +1080,14 @@ int main() {
   T_RUN(debug_injectedClockAndCustomRedact);
   T_RUN(debug_inactiveRecordsNothing);
 
+  T_RUN(actionKeys_rbacRecordGrantedActionRefused);
+  T_RUN(actionKeys_rbacActionGrantedRecordRefused);
+  T_RUN(actionKeys_rbacActionFallsBackToOperation);
+  T_RUN(actionKeys_rbacDataOpReadsReqdata);
+  T_RUN(actionKeys_metricsCountedApart);
+  T_RUN(actionKeys_auditRecordNamesAction);
+  T_RUN(actionKeys_costPricedApart);
+  T_RUN(actionKeys_costActionFallsBackToOperationRate);
   T_RUN(audit_oneRecordPerOpSinkActor);
   T_RUN(audit_defaultActorAnonymous);
   T_RUN(audit_injectedClock);

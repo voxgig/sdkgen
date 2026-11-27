@@ -120,6 +120,8 @@ struct FhOpSpec {
   Value headers = Value::undef();
   Value body = Value::undef();
   Value ctrl = Value::undef();
+  Value reqmatch = Value::undef(); // the call's request argument (match ops)
+  Value reqdata = Value::undef();  // the call's request argument (data ops)
 
   FhOpSpec& setOp(const std::string& v) { op = v; return *this; }
   FhOpSpec& setEntity(const std::string& v) { entity = v; return *this; }
@@ -129,6 +131,8 @@ struct FhOpSpec {
   FhOpSpec& setHeaders(const Value& v) { headers = v; return *this; }
   FhOpSpec& setBody(const Value& v) { body = v; return *this; }
   FhOpSpec& setCtrl(const Value& v) { ctrl = v; return *this; }
+  FhOpSpec& setReqmatch(const Value& v) { reqmatch = v; return *this; }
+  FhOpSpec& setReqdata(const Value& v) { reqdata = v; return *this; }
 };
 inline FhOpSpec fhOp(const std::string& op) { FhOpSpec s; s.op = op; return s; }
 
@@ -139,6 +143,11 @@ struct FhOpResult {
   ResultPtr result;
   CtxPtr ctx;
 };
+
+// Which request argument an operation reads, as the generated Context decides.
+inline std::string fhOpInput(const std::string& op) {
+  return (op == "create" || op == "update" || op == "patch") ? "data" : "match";
+}
 
 inline std::string fhDefaultMethod(const std::string& op) {
   if (op == "create") return "POST";
@@ -226,10 +235,13 @@ struct FhHarness {
     CtxSpec cs;
     cs.setOpname(opname);
     cs.ctrlMap = ctrl;
+    cs.reqmatch = o.reqmatch;
+    cs.reqdata = o.reqdata;
     CtxPtr ctx = utility->makeContext(cs, rootctx);
     Value opdef = vmap();
     map_put(opdef, "entity", Value(entity));
     map_put(opdef, "name", Value(opname));
+    map_put(opdef, "input", Value(fhOpInput(opname)));
     ctx->op = std::make_shared<Operation>(opdef);
 
     utility->featureHook(ctx, "PostConstructEntity");

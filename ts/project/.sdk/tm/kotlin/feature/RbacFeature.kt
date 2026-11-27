@@ -1,13 +1,16 @@
 package KOTLINPACKAGE.feature
 
 import KOTLINPACKAGE.core.Context
+import KOTLINPACKAGE.core.Helpers
 import KOTLINPACKAGE.core.SdkClient
 
 // Client-side role/permission enforcement. Before an operation resolves its
 // endpoint, the required permission for that entity+operation is checked
 // against the permissions the client holds; a disallowed call is
 // short-circuited with an `rbac_denied` error (via ctx.out["point"], which
-// makePoint surfaces) and never touches the network.
+// makePoint surfaces) and never touches the network. Required permissions
+// come from `rules`, keyed by `<entity>.<op>:<action>`, `<entity>.<op>`,
+// `<op>` or `*`, most specific first.
 class RbacFeature : BaseFeature("rbac", "0.0.1", true) {
 
   private var client: SdkClient? = null
@@ -58,10 +61,7 @@ class RbacFeature : BaseFeature("rbac", "0.0.1", true) {
   private fun required(ctx: Context): String? {
     val rules = FeatureOptions.foptMap(this.options, "rules") ?: return null
 
-    val entity = if (ctx.entity != null) ctx.entity!!.name else ctx.op.entity
-    val opname = ctx.op.name
-
-    for (key in arrayOf("$entity.$opname", opname, "*")) {
+    for (key in Helpers.opKeys(ctx)) {
       val r = rules[key]
       if (r is String) {
         return r
@@ -73,7 +73,8 @@ class RbacFeature : BaseFeature("rbac", "0.0.1", true) {
   private fun reject(ctx: Context, required: String) {
     track(ctx, required, false)
 
-    val opname = ctx.op.name
+    val action = Helpers.opAction(ctx)
+    val opname = if (action == null) ctx.op.name else ctx.op.name + ":" + action
     val err = ctx.makeError(
       "rbac_denied",
       "Permission \"" + required + "\" required for operation \"" + opname + "\"",
@@ -95,6 +96,10 @@ class RbacFeature : BaseFeature("rbac", "0.0.1", true) {
     rec["required"] = required
     rec["allowed"] = wasAllowed
     rec["op"] = opname
+    val action = Helpers.opAction(ctx)
+    if (action != null) {
+      rec["action"] = action
+    }
     this.last = rec
   }
 }

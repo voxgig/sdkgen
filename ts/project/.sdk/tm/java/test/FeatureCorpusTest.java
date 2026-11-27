@@ -203,9 +203,14 @@ public class FeatureCorpusTest {
 
   private static Object invoke(ProjectNameSDK client, Op op, Map<String, Object> ctrl)
       throws Exception {
+    return invoke(client, op, new LinkedHashMap<String, Object>(), ctrl);
+  }
+
+  private static Object invoke(ProjectNameSDK client, Op op, Map<String, Object> arg,
+      Map<String, Object> ctrl) throws Exception {
     Object ent = op.accessor.invoke(client, new Object[] {null});
     try {
-      return op.call.invoke(ent, new LinkedHashMap<String, Object>(), ctrl);
+      return op.call.invoke(ent, arg, ctrl);
     }
     catch (java.lang.reflect.InvocationTargetException ite) {
       // Unwrap: a reflective call reports the SDK's error as its cause, and a
@@ -490,9 +495,13 @@ public class FeatureCorpusTest {
                 ? new LinkedHashMap<>((Map<String, Object>) step.get("ctrl"))
                 : new LinkedHashMap<>();
             Object wanterr = step.get("err");
+            Map<String, Object> arg = new LinkedHashMap<>();
+            if (null != step.get("action")) {
+              arg.put("$action", step.get("action"));
+            }
 
             try {
-              invoke(client, op, ctrl);
+              invoke(client, op, arg, ctrl);
               if (null != wanterr) {
                 fail(label + ": " + step.get("op") + " was expected to fail, and did not");
               }

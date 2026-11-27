@@ -921,6 +921,36 @@ inline std::string Context::to_string() const {
   return "Context " + vs::jsonify(record, 0);
 }
 
+// ---- operation keys ----
+// (mirrors ts src/utility/OpKeyUtility.ts)
+
+// The custom action a call names: `$action` in its own request argument,
+// never in a response. Empty when there is none.
+inline std::string opAction(const CtxPtr& ctx) {
+  if (!ctx || !ctx->op) return "";
+  Value req = "data" == ctx->op->input ? ctx->reqdata : ctx->reqmatch;
+  Value action = getp(req, "$action", Value(nullptr));
+  return action.is_string() ? action.as_string() : "";
+}
+
+// The keys an operation is looked up and filed by, most specific first:
+// `<entity>.<op>:<action>`, `<entity>.<op>`, `<op>`, `*`.
+inline std::vector<std::string> opKeys(const CtxPtr& ctx) {
+  auto set = [](const std::string& s) { return !s.empty() && "_" != s; };
+  std::string name = "_";
+  std::string entity = "_";
+  if (ctx && ctx->op && set(ctx->op->name)) name = ctx->op->name;
+  if (ctx && ctx->op && set(ctx->op->entity)) {
+    entity = ctx->op->entity;
+  } else if (ctx && ctx->entity && set(ctx->entity->getName())) {
+    entity = ctx->entity->getName();
+  }
+  std::string base = entity + "." + name;
+  std::string action = opAction(ctx);
+  if (action.empty()) return {base, name, "*"};
+  return {base + ":" + action, base, name, "*"};
+}
+
 // ---- SdkClient ----
 inline SdkClient::SdkClient(const Value& options_) {
   utility = std::make_shared<Utility>();

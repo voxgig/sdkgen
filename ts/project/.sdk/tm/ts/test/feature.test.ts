@@ -491,8 +491,10 @@ describe('feature', () => {
       const h = makeClient({ features: [{ name: 'metrics' }] })
       await h.op({ entity: 'episode', op: 'load', reqmatch: RECORD })
       await h.op({ entity: 'episode', op: 'load', reqmatch: AUDIO })
+      await h.op({ entity: 'episode', op: 'load', reqmatch: AUDIO })
+      strictEqual(h.client._metrics.total.count, 3)
       strictEqual(h.client._metrics.ops['episode.load'].count, 1)
-      strictEqual(h.client._metrics.ops['episode.load:audio'].count, 1)
+      strictEqual(h.client._metrics.ops['episode.load:audio'].count, 2)
     })
 
     test('audit: a record names its action, and a plain one has none', { skip: skipWithout('audit') }, async () => {
@@ -501,17 +503,25 @@ describe('feature', () => {
       await h.op({ entity: 'episode', op: 'load', reqmatch: AUDIO })
       const recs = h.client._audit.records
       ok(!('action' in recs[0]))
+      strictEqual(recs[0].op, 'load')
       strictEqual(recs[1].action, 'audio')
+      strictEqual(recs[1].op, 'load')
     })
 
     test('cost: an action is priced and attributed apart from its operation', { skip: skipWithout('cost') }, async () => {
+      const sink: any[] = []
       const h = makeClient({ features: [{ name: 'cost', options: {
-        rates: { 'episode.load': 1, 'episode.load:audio': 5 } } }] })
+        rates: { 'episode.load': 1, 'episode.load:audio': 5 },
+        sink: (r: any) => sink.push(r) } }] })
       await h.op({ entity: 'episode', op: 'load', reqmatch: RECORD })
       await h.op({ entity: 'episode', op: 'load', reqmatch: AUDIO })
+      strictEqual(h.client._cost.total.amount, 6)
       deepStrictEqual(h.client._cost.ops['episode.load'], { calls: 1, amount: 1 })
       deepStrictEqual(h.client._cost.ops['episode.load:audio'], { calls: 1, amount: 5 })
       strictEqual(h.client._cost.last.action, 'audio')
+      strictEqual(sink.length, 2)
+      ok(!('action' in sink[0]))
+      strictEqual(sink[1].action, 'audio')
     })
   })
 

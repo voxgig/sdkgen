@@ -139,9 +139,10 @@ object MakePoint {
 
     val allowOpRaw = Struct.getpath(options, java.util.List.of("allow", "op"))
     val allowOp = allowOpRaw match { case s: String => s; case _ => "" }
-    if (!Helpers.allowed(allowOpRaw, op.name)) {
+    if (!Helpers.opKeys(ctx).stream().anyMatch(key => Helpers.allowed(allowOpRaw, key))) {
+      val action = Helpers.opAction(ctx)
       throw ctx.makeError("point_op_allow",
-        "Operation \"" + op.name + "\" not allowed by SDK option allow.op value: \"" + allowOp + "\"")
+        "Operation \"" + op.name + (if (action == null) "" else ":" + action) + "\" not allowed by SDK option allow.op value: \"" + allowOp + "\"")
     }
 
     if (op.points.isEmpty) {

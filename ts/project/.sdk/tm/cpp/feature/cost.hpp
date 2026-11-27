@@ -3,12 +3,12 @@
 // feature: money is spent per HTTP ATTEMPT (a retried call is charged again,
 // because the upstream API charges it again), but it is owed by an OPERATION.
 // So the transport wrap prices each attempt, and preDone attributes the
-// running total to `<entity>.<op>` and to the caller (the per-call ctrl
+// running total to the call's first op key and to the caller (the per-call ctrl
 // actor, the same actor the audit feature records).
 //
 // The price of an attempt comes from the first source that answers: a
-// response header (`header` x `perUnit`), the rate table (`rates`, keyed
-// `<entity>.<op>` / `<op>` / `*`), then the flat `unit`. A body figure
+// response header (`header` x `perUnit`), the rate table (`rates`, keyed as
+// rbac's rules are), then the flat `unit`. A body figure
 // (`path` x `perUnit`, e.g. "usage.total_tokens") is read at preDone instead,
 // from the already-parsed result, and describes the whole call, so it
 // REPLACES the per-attempt estimate rather than adding to it.
@@ -152,6 +152,14 @@ private:
   std::map<std::string, Pending> pending;
   int seq = 0;
 
+  // What a spend is filed under. An empty action names none.
+  struct Call {
+    std::string key = "_._";
+    std::string entity = "_";
+    std::string op = "_";
+    std::string action;
+  };
+
   void finish(CtxPtr ctx, bool done) {
     if (!active) return;
 
@@ -171,21 +179,21 @@ private:
     // nothing is the whole point of ordering cost inside the cache.
     if (!done && 0 == p.attempts) return;
 
-    std::string entity = "_";
-    std::string opname = "_";
+    Call call;
+    call.key = opKeys(ctx)[0];
     if (ctx->op) {
-      if (!ctx->op->entity.empty()) entity = ctx->op->entity;
-      if (!ctx->op->name.empty()) opname = ctx->op->name;
+      if (!ctx->op->entity.empty()) call.entity = ctx->op->entity;
+      if (!ctx->op->name.empty()) call.op = ctx->op->name;
     }
-
-    commit(ctx, p, entity, opname);
+    call.action = opAction(ctx);
+    commit(ctx, p, call);
   }
+
 
   // Commit one operation's spend: totals, budget, per-op and per-actor
   // attribution, and the record. Shared by finish and the raw-request path in
   // charge, which has no preDone to reach.
-  void commit(CtxPtr ctx, const Pending& p, const std::string& entity,
-              const std::string& opname) {
+  void commit(CtxPtr ctx, const Pending& p, const Call& call) {
     double amount = p.amount;
     double reported = p.reported;
     double estimated = p.estimated;
@@ -210,19 +218,20 @@ private:
     if (ctx->ctrl && !ctx->ctrl->actor.empty()) actor = ctx->ctrl->actor;
 
     total.calls++;
-    bump(ops, entity + "." + opname, amount);
+    bump(ops, call.key, amount);
     bump(actors, actor, amount);
 
     seq++;
     Value record = vmap();
     map_put(record, "seq", Value(seq));
-    map_put(record, "entity", Value(entity));
-    map_put(record, "op", Value(opname));
+    map_put(record, "entity", Value(call.entity));
+    map_put(record, "op", Value(call.op));
     map_put(record, "actor", Value(actor));
     map_put(record, "amount", Value(amount));
     map_put(record, "currency", Value(currency));
     map_put(record, "source", Value(source));
     map_put(record, "attempts", Value(p.attempts));
+    if (!call.action.empty()) map_put(record, "action", Value(call.action));
     record = ctx->utility->clean(ctx, record);
     last = record;
 
@@ -275,7 +284,7 @@ private:
     if (!p.piped) {
       Pending copy = p;
       pending.erase(ctx->id);
-      commit(ctx, copy, "_", "direct");
+      commit(ctx, copy, Call{"_.direct", "_", "direct", ""});
     }
 
     if (threw) {
@@ -318,18 +327,12 @@ private:
     return 0.0;
   }
 
-  // The rate table uses the same lookup grammar as rbac's rules:
-  // `<entity>.<op>`, then `<op>`, then `*`.
+  // The rate table is keyed as rbac's rules are.
   bool rateFor(CtxPtr ctx, double& out) {
     Value rates = fopt::foptMap(options, "rates");
     if (is_nullish(rates)) return false;
 
-    std::string entity = "";
-    if (ctx->entity != nullptr) entity = ctx->entity->getName();
-    else if (ctx->op) entity = ctx->op->entity;
-    std::string opname = ctx->op ? ctx->op->name : "";
-
-    for (const std::string& key : {entity + "." + opname, opname, std::string("*")}) {
+    for (const std::string& key : opKeys(ctx)) {
       Value v = getp(rates, key);
       if (v.is_number()) {
         out = v.as_double();

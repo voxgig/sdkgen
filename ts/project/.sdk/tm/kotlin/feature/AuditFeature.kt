@@ -78,6 +78,10 @@ class AuditFeature : BaseFeature("audit", "0.0.1", true) {
     if (result != null) {
       raw["status"] = result.status
     }
+    val action = Helpers.opAction(ctx)
+    if (action != null) {
+      raw["action"] = action
+    }
     val record = Helpers.toMapAny(ctx.utility?.clean?.invoke(ctx, raw)) ?: raw
 
     this.records.add(record)

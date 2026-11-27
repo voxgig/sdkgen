@@ -8,7 +8,8 @@ import JAVAPACKAGE.core.Helpers;
 import JAVAPACKAGE.core.SdkClient;
 
 // Statistics capture. Records per-operation counters and latency for every
-// call: totals plus a breakdown keyed by `<entity>.<op>`. Timing starts at
+// call: totals plus a breakdown keyed by `<entity>.<op>`, or
+// `<entity>.<op>:<action>` for a custom action. Timing starts at
 // endpoint resolution (PrePoint) and stops when the call returns (PreDone)
 // or fails (PreUnexpected); each operation is recorded exactly once (the
 // per-context start marker in ctx.out is consumed on record). The clock is
@@ -81,13 +82,7 @@ public class MetricsFeature extends BaseFeature {
       dur = 0;
     }
 
-    String entity = "_";
-    String opname = "_";
-    if (ctx.op != null) {
-      entity = ctx.op.entity;
-      opname = ctx.op.name;
-    }
-    String key = entity + "." + opname;
+    String key = Helpers.opKeys(ctx).get(0);
 
     MetricsBucket op = this.ops.get(key);
     if (op == null) {

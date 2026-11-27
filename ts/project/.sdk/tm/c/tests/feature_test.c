@@ -883,6 +883,148 @@ static void test_audit_inactive_records_nothing(void) {
 }
 
 // =============================================================================
+// action keys: a custom action is `$action` in the request argument, and its
+// keys name it, `<entity>.<op>:<action>` first.
+// =============================================================================
+
+static voxgig_value* ak_audio(void) { return cmap(2, "$action", v_str("audio"), "id", v_str("e1")); }
+static voxgig_value* ak_record(void) { return cmap(1, "id", v_str("e1")); }
+
+static FhOpSpec ak_load(voxgig_value* reqmatch) {
+  FhOpSpec o; memset(&o, 0, sizeof(o));
+  o.entity = "episode"; o.op = "load"; o.reqmatch = reqmatch;
+  return o;
+}
+
+static voxgig_value* ak_rules(void) {
+  return cmap(2, "episode.load", v_str("read"), "episode.load:audio", v_str("audio"));
+}
+
+static void test_action_keys_rbac_record_granted_action_refused(void) {
+  if (!fh_present("rbac")) return;
+  voxgig_value* calls;
+  Fetcher* srv = fh_recorder(NULL, NULL, &calls);
+  Feature* f = feature_rbac_new();
+  FhFeat feats[] = {{f, cmap(2, "rules", ak_rules(), "permissions", clist(1, v_str("read")))}};
+  FhHarness h = fh_make(srv, feats, 1);
+  CHECK(fh_op(&h, ak_load(ak_record())).ok, "action-keys rbac: record ok");
+  FhOpResult res = fh_op(&h, ak_load(ak_audio()));
+  CHECK_STR_EQ(fh_err_code(res.err), "rbac_denied", "action-keys rbac: action denied");
+  CHECK_INT_EQ(rec_count(calls), 1, "action-keys rbac: one network call");
+  CHECK_STR_EQ(get_str(getp(feature_track(f), "last"), "action"), "audio",
+               "action-keys rbac: last.action audio");
+  CHECK(res.err && res.err->msg && strstr(res.err->msg, "operation \"load:audio\""),
+        "action-keys rbac: message names load:audio");
+}
+
+static void test_action_keys_rbac_action_granted_record_refused(void) {
+  if (!fh_present("rbac")) return;
+  Feature* f = feature_rbac_new();
+  FhFeat feats[] = {{f, cmap(2, "rules", ak_rules(), "permissions", clist(1, v_str("audio")))}};
+  FhHarness h = fh_make(NULL, feats, 1);
+  CHECK_STR_EQ(fh_err_code(fh_op(&h, ak_load(ak_record())).err), "rbac_denied",
+               "action-keys rbac: record denied");
+  CHECK(v_is_noval(getp(getp(feature_track(f), "last"), "action")),
+        "action-keys rbac: a plain call's last has no action");
+  CHECK(fh_op(&h, ak_load(ak_audio())).ok, "action-keys rbac: action ok");
+}
+
+static void test_action_keys_rbac_action_falls_back_to_operation(void) {
+  if (!fh_present("rbac")) return;
+  Feature* f = feature_rbac_new();
+  FhFeat feats[] = {{f, cmap(2, "rules", cmap(1, "episode.load", v_str("read")),
+                            "permissions", v_list())}};
+  FhHarness h = fh_make(NULL, feats, 1);
+  CHECK_STR_EQ(fh_err_code(fh_op(&h, ak_load(ak_audio())).err), "rbac_denied",
+               "action-keys rbac: fallback to the operation's rule");
+}
+
+static void test_action_keys_rbac_data_op_reads_reqdata(void) {
+  if (!fh_present("rbac")) return;
+  Feature* f = feature_rbac_new();
+  FhFeat feats[] = {{f, cmap(2, "rules", cmap(1, "episode.create:upload", v_str("write")),
+                            "permissions", v_list())}};
+  FhHarness h = fh_make(NULL, feats, 1);
+  FhOpSpec o; memset(&o, 0, sizeof(o));
+  o.entity = "episode"; o.op = "create";
+  o.reqdata = cmap(1, "$action", v_str("upload"));
+  CHECK_STR_EQ(fh_err_code(fh_op(&h, o).err), "rbac_denied",
+               "action-keys rbac: data op reads reqdata");
+  o.reqdata = NULL;
+  o.reqmatch = cmap(1, "$action", v_str("upload"));
+  CHECK(fh_op(&h, o).ok, "action-keys rbac: data op ignores reqmatch");
+}
+
+static void test_action_keys_metrics_counted_apart(void) {
+  if (!fh_present("metrics")) return;
+  Feature* f = feature_metrics_new();
+  FhFeat feats[] = {{f, v_undef()}};
+  FhHarness h = fh_make(NULL, feats, 1);
+  fh_op(&h, ak_load(ak_record()));
+  fh_op(&h, ak_load(ak_audio()));
+  fh_op(&h, ak_load(ak_audio()));
+  voxgig_value* t = feature_track(f);
+  CHECK_INT_EQ(to_int(getp(getp(t, "total"), "count")), 3, "action-keys metrics: total 3");
+  CHECK_INT_EQ(to_int(getp(getp(getp(t, "ops"), "episode.load"), "count")), 1,
+               "action-keys metrics: episode.load 1");
+  CHECK_INT_EQ(to_int(getp(getp(getp(t, "ops"), "episode.load:audio"), "count")), 2,
+               "action-keys metrics: episode.load:audio 2");
+}
+
+static void test_action_keys_audit_record_names_action(void) {
+  if (!fh_present("audit")) return;
+  voxgig_value* sunk = v_list();
+  Feature* f = feature_audit_new();
+  FhFeat feats[] = {{f, cmap(1, "sink", vfn(collect_fn, sunk))}};
+  FhHarness h = fh_make(NULL, feats, 1);
+  fh_op(&h, ak_load(ak_record()));
+  fh_op(&h, ak_load(ak_audio()));
+  voxgig_value* r0 = voxgig_getelem(sunk, v_int(0), v_undef());
+  voxgig_value* r1 = voxgig_getelem(sunk, v_int(1), v_undef());
+  CHECK(voxgig_is_map(r0) && v_is_noval(getp(r0, "action")), "action-keys audit: r0 no action");
+  CHECK_STR_EQ(get_str(r0, "op"), "load", "action-keys audit: r0 op load");
+  CHECK_STR_EQ(get_str(r1, "action"), "audio", "action-keys audit: r1 action audio");
+  CHECK_STR_EQ(get_str(r1, "op"), "load", "action-keys audit: r1 op load");
+}
+
+static void test_action_keys_cost_priced_apart(void) {
+  if (!fh_present("cost")) return;
+  voxgig_value* sunk = v_list();
+  Feature* f = feature_cost_new();
+  FhFeat feats[] = {{f, cmap(2, "rates",
+                            cmap(2, "episode.load", v_num(1), "episode.load:audio", v_num(5)),
+                            "sink", vfn(collect_fn, sunk))}};
+  FhHarness h = fh_make(NULL, feats, 1);
+  fh_op(&h, ak_load(ak_record()));
+  fh_op(&h, ak_load(ak_audio()));
+  voxgig_value* t = feature_track(f);
+  voxgig_value* ops = getp(t, "ops");
+  CHECK_INT_EQ(to_int(getp(getp(t, "total"), "amount")), 6, "action-keys cost: total 6");
+  CHECK_INT_EQ(to_int(getp(getp(ops, "episode.load"), "calls")), 1, "action-keys cost: load calls 1");
+  CHECK_INT_EQ(to_int(getp(getp(ops, "episode.load"), "amount")), 1, "action-keys cost: load amount 1");
+  CHECK_INT_EQ(to_int(getp(getp(ops, "episode.load:audio"), "calls")), 1,
+               "action-keys cost: audio calls 1");
+  CHECK_INT_EQ(to_int(getp(getp(ops, "episode.load:audio"), "amount")), 5,
+               "action-keys cost: audio amount 5");
+  voxgig_value* r0 = voxgig_getelem(sunk, v_int(0), v_undef());
+  voxgig_value* r1 = voxgig_getelem(sunk, v_int(1), v_undef());
+  CHECK(voxgig_is_map(r0) && v_is_noval(getp(r0, "action")), "action-keys cost: r0 no action");
+  CHECK_STR_EQ(get_str(r1, "action"), "audio", "action-keys cost: r1 action audio");
+  CHECK_STR_EQ(get_str(getp(t, "last"), "action"), "audio", "action-keys cost: last.action");
+}
+
+static void test_action_keys_cost_action_falls_back_to_operation_rate(void) {
+  if (!fh_present("cost")) return;
+  Feature* f = feature_cost_new();
+  FhFeat feats[] = {{f, cmap(1, "rates", cmap(2, "episode.load", v_num(2), "*", v_num(9)))}};
+  FhHarness h = fh_make(NULL, feats, 1);
+  fh_op(&h, ak_load(ak_audio()));
+  voxgig_value* audio = getp(getp(feature_track(f), "ops"), "episode.load:audio");
+  CHECK_INT_EQ(to_int(getp(audio, "calls")), 1, "action-keys cost fallback: calls 1");
+  CHECK_INT_EQ(to_int(getp(audio, "amount")), 2, "action-keys cost fallback: amount 2");
+}
+
+// =============================================================================
 // clienttrack
 // =============================================================================
 
@@ -1212,6 +1354,15 @@ int main(void) {
   RUN(test_audit_default_actor_anonymous);
   RUN(test_audit_injected_clock);
   RUN(test_audit_inactive_records_nothing);
+  // action keys
+  RUN(test_action_keys_rbac_record_granted_action_refused);
+  RUN(test_action_keys_rbac_action_granted_record_refused);
+  RUN(test_action_keys_rbac_action_falls_back_to_operation);
+  RUN(test_action_keys_rbac_data_op_reads_reqdata);
+  RUN(test_action_keys_metrics_counted_apart);
+  RUN(test_action_keys_audit_record_names_action);
+  RUN(test_action_keys_cost_priced_apart);
+  RUN(test_action_keys_cost_action_falls_back_to_operation_rate);
   // clienttrack
   RUN(test_clienttrack_stable_client_id_unique_request_ids_ua);
   RUN(test_clienttrack_does_not_clobber_caller_ua);

@@ -231,6 +231,8 @@ typedef struct {
   voxgig_value* headers;
   voxgig_value* body;
   voxgig_value* ctrl;
+  voxgig_value* reqmatch; // the call's request argument (match ops)
+  voxgig_value* reqdata;  // the call's request argument (data ops)
 } FhOpSpec;
 
 typedef struct {
@@ -246,6 +248,13 @@ FH const char* fh_default_method(const char* op) {
   if (strcmp(op, "update") == 0 || strcmp(op, "patch") == 0) return "PATCH";
   if (strcmp(op, "remove") == 0) return "DELETE";
   return "GET";
+}
+
+// Which request argument an operation reads, as the generated Context decides.
+FH const char* fh_op_input(const char* op) {
+  return (strcmp(op, "create") == 0 || strcmp(op, "update") == 0 || strcmp(op, "patch") == 0)
+             ? "data"
+             : "match";
 }
 
 FH char* fh_scalar_str(voxgig_value* v) {
@@ -371,8 +380,11 @@ FH FhOpResult fh_op(FhHarness* h, FhOpSpec o) {
   memset(&cs, 0, sizeof(cs));
   cs.opname = opname;
   cs.ctrl = ctrl;
+  cs.reqmatch = o.reqmatch;
+  cs.reqdata = o.reqdata;
   Context* ctx = make_context_util(cs, h->rootctx);
-  ctx->op = operation_new(cmap(2, "entity", v_str(entity), "name", v_str(opname)));
+  ctx->op = operation_new(cmap(3, "entity", v_str(entity), "name", v_str(opname), "input",
+                               v_str(fh_op_input(opname))));
 
   Utility* util = context_util(ctx);
 

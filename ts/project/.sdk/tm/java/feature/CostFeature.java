@@ -21,7 +21,7 @@ import JAVAPACKAGE.utility.struct.Struct;
 //
 // The price of an attempt comes from the first source that answers: a
 // response header (`header` x `perUnit`), the rate table (`rates`, keyed
-// `<entity>.<op>` / `<op>` / `*`), then the flat `unit`. A body figure
+// as rbac's rules are), then the flat `unit`. A body figure
 // (`path` x `perUnit`, e.g. "usage.total_tokens") is read at preDone
 // instead, from the already-parsed result, and describes the whole call, so
 // it REPLACES the per-attempt estimate rather than adding to it.
@@ -195,7 +195,7 @@ public class CostFeature extends BaseFeature {
     // pipeline hooks, so there is no prePoint to gate on and no preDone to
     // commit. Their spend is committed here, or it would never be counted.
     if (!pending.piped) {
-      commit(ctx, pending, "_", "direct");
+      commit(ctx, pending, "_.direct", "_", "direct", null);
       ctx.out.remove(COST_PENDING_KEY);
     }
 
@@ -251,14 +251,16 @@ public class CostFeature extends BaseFeature {
     String opname = (ctx.op != null && ctx.op.name != null && !"".equals(ctx.op.name))
         ? ctx.op.name : "_";
 
-    commit(ctx, pending, entity, opname);
+    commit(ctx, pending, Helpers.opKeys(ctx).get(0), entity, opname, Helpers.opAction(ctx));
   }
 
   // Commit one operation's spend: totals, budget, per-op and per-actor
   // attribution, and the record. Shared by finish and the raw-request path in
-  // charge, which has no preDone to reach.
+  // charge, which has no preDone to reach. `key` is what the spend is filed
+  // under; `action` is null for a call that names none.
   @SuppressWarnings("unchecked")
-  private void commit(Context ctx, CostPending pending, String entity, String opname) {
+  private void commit(Context ctx, CostPending pending, String key, String entity,
+      String opname, String action) {
     double amount = pending.amount;
     double reported = pending.reported;
     double estimated = pending.estimated;
@@ -287,7 +289,7 @@ public class CostFeature extends BaseFeature {
     }
 
     this.total.calls++;
-    bump(this.ops, entity + "." + opname, amount);
+    bump(this.ops, key, amount);
     bump(this.actors, actor, amount);
 
     this.seq++;
@@ -300,6 +302,9 @@ public class CostFeature extends BaseFeature {
     record.put("currency", this.currency);
     record.put("source", source);
     record.put("attempts", pending.attempts);
+    if (action != null) {
+      record.put("action", action);
+    }
     if (ctx.utility != null && ctx.utility.clean != null) {
       Map<String, Object> cleaned = Helpers.toMapAny(ctx.utility.clean.apply(ctx, record));
       record = cleaned == null ? record : cleaned;
@@ -341,23 +346,14 @@ public class CostFeature extends BaseFeature {
     return "none";
   }
 
-  // The rate table uses the same lookup grammar as rbac's rules:
-  // `<entity>.<op>`, then `<op>`, then `*`.
+  // The rate table is keyed as rbac's rules are.
   private Double rate(Context ctx) {
     Map<String, Object> rates = FeatureOptions.foptMap(this.options, "rates");
     if (rates == null || rates.isEmpty()) {
       return null;
     }
 
-    String entity = "";
-    if (ctx.entity != null) {
-      entity = ctx.entity.getName();
-    } else if (ctx.op != null && ctx.op.entity != null) {
-      entity = ctx.op.entity;
-    }
-    String opname = (ctx.op != null && ctx.op.name != null) ? ctx.op.name : "";
-
-    for (String key : new String[] { entity + "." + opname, opname, "*" }) {
+    for (String key : Helpers.opKeys(ctx)) {
       Object val = rates.get(key);
       if (val instanceof Number) {
         return ((Number) val).doubleValue();
