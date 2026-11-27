@@ -8459,6 +8459,274 @@ function tapRan(out: string, name: string): number {
 }
 
 
+// Every other SDK target ships a suite that drives every feature it was
+// generated with through an offline harness, and is built for the full set.
+// Each lane generates the full set, runs that suite alone, and reads the
+// framework's own count: exit zero is not enough, since every framework
+// passes a suite that skipped or was filtered to nothing.
+type FullsetLane = {
+  target: string,
+  runner: string,
+  needs: string,
+  prepare?: (sdkroot: string) => string | null,
+  // The suite's source, for the names a filter selects it by.
+  command: (suite: string) => { bin: string, args: string[], env?: NodeJS.ProcessEnv } | null,
+  // How many tests ran, where the framework reports none failed or skipped.
+  passed: (out: string) => number | null,
+  // Whether the output shows a test of the feature running, where it names tests.
+  ran?: (out: string, feature: string) => boolean,
+  report?: (sdkroot: string) => string,
+}
+
+const FULLSET_FEATURES = Fs.readdirSync(Path.join(SCAFFOLD, 'model', 'feature'))
+  .filter((f: string) => f.endsWith('.aontu') && 'feature-index.aontu' !== f)
+  .map((f: string) => f.replace(/\.aontu$/, ''))
+
+// The line each suite's guard prints when the feature a test needs is absent.
+// A suite may also guard a feature only a package installs, which no lane
+// generates.
+const FEATURE_ABSENT = /feature (?:"(\w+)" )?not present in this SDK(?:: (\w+))?/g
+
+function absentFeatures(out: string): string[] {
+  return [...out.matchAll(FEATURE_ABSENT)].map((m) => m[1] ?? m[2])
+    .filter((name) => FULLSET_FEATURES.includes(name))
+}
+
+function capital(name: string): string {
+  return name[0].toUpperCase() + name.slice(1)
+}
+
+function declared(suite: string, re: RegExp): string[] {
+  return [...suite.matchAll(re)].map((m) => m[1])
+}
+
+function counted(out: string, re: RegExp): number | null {
+  const m = out.match(re)
+  return null == m ? null : Number(m[1])
+}
+
+// A TAP stream whose plan every test met, with none failed or skipped.
+function tapPassed(out: string): number | null {
+  const plan = counted(out, /^1\.\.(\d+)$/m)
+  if (null == plan || /^not ok /m.test(out) || /^ok \d+ .*# (SKIP|TODO)/im.test(out)) return null
+  return (out.match(/^ok \d+ /gm) || []).length === plan ? plan : null
+}
+
+const FULLSET_LANES: FullsetLane[] = [
+  {
+    target: 'go',
+    runner: 'test/feature_test.go',
+    needs: 'go',
+    command: (suite) => {
+      const go = toolchain('go')
+      return null == go ? null : {
+        bin: go,
+        args: ['test', './test/', '-count=1', '-v', '-run',
+          '^(' + declared(suite, /^func (Test\w+)\(t \*testing\.T\)/gm).join('|') + ')$'],
+      }
+    },
+    passed: (out) => /^ok\s/m.test(out) && !/--- (FAIL|SKIP):/.test(out)
+      ? (out.match(/^\s*--- PASS: /gm) || []).length : null,
+    ran: (out, name) => new RegExp('^--- PASS: TestFeature' + capital(name) + ' ', 'm').test(out),
+  },
+  {
+    target: 'rust',
+    runner: 'tests/feature_test.rs',
+    needs: 'cargo',
+    // cargo hides a passing test's stderr, where a skip is printed.
+    command: () => cargoTest(['--test', 'feature_test', '--', '--nocapture', '--test-threads=1']),
+    passed: (out) => counted(out, /^test result: ok\. (\d+) passed; 0 failed; 0 ignored;/m),
+    ran: (out, name) => new RegExp('^test feature_' + name + '_\\w+ \\.\\.\\. ', 'm').test(out),
+  },
+  {
+    target: 'c',
+    runner: 'tests/feature_test.c',
+    needs: 'make, sh and a C compiler',
+    prepare: (sdkroot) => {
+      const built = run(toolchain('make')!, ['-j', '2', 'CC=' + cCompiler(),
+        'tests/feature_test.out', 'tests/sdk_pipeline_test.out'], sdkroot)
+      return built.ok ? null : 'the generated feature suite does not build:\n' + tail(built.out)
+    },
+    command: () => {
+      const sh = toolchain('sh')
+      return null == toolchain('make') || null == cCompiler() || null == sh ? null
+        : { bin: sh, args: ['-c', './tests/feature_test.out && ./tests/sdk_pipeline_test.out'] }
+    },
+    passed: (out) => /^feature: \d+ checks, 0 failed$/m.test(out) &&
+      /^sdk_pipeline: [1-9]\d* checks, 0 failed$/m.test(out)
+      ? counted(out, /^feature: (\d+) behaviors run$/m) : null,
+  },
+  {
+    target: 'cpp',
+    runner: 'test/feature_test.cpp',
+    needs: 'make and a C++ compiler',
+    prepare: (sdkroot) => {
+      const built = run(toolchain('make')!, ['-j', '2', 'CXX=' + cleanCxx(), 'test/feature_test.out'],
+        sdkroot)
+      return built.ok ? null : 'the generated feature suite does not build:\n' + tail(built.out)
+    },
+    command: () => null == toolchain('make') || null == cleanCxx() ? null
+      : { bin: Path.join('test', 'feature_test.out'), args: [] },
+    passed: (out) => counted(out, /^feature_test: (\d+) tests, \d+ checks, 0 failures$/m),
+  },
+  {
+    target: 'csharp',
+    runner: 'test/FeatureTest.cs',
+    needs: 'dotnet',
+    prepare: (sdkroot) => CLEAN_LANES.find((l) => 'csharp' === l.target)!.prepare!(sdkroot),
+    // The detailed console logger shows what a passing test printed.
+    command: (suite) => {
+      const dotnet = toolchain('dotnet')
+      return null == dotnet ? null : {
+        bin: dotnet,
+        args: ['test', '--nologo', '--no-build', '-v', 'quiet',
+          '--logger', 'console;verbosity=detailed', '--filter',
+          declared(suite, /^public class (\w+)/gm).map((c) => 'FullyQualifiedName~.' + c + '.')
+            .join('|'),
+          'test'],
+      }
+    },
+    passed: (out) => counted(out, /^Total tests: (\d+)\r?\n\s+Passed: \1\r?\n\s+Total time/m),
+    ran: (out, name) => new RegExp('Passed \\S+\\.Feature' + capital(name) + 'Test\\.').test(out),
+  },
+  {
+    target: 'java',
+    runner: 'test/FeatureTest.java',
+    needs: 'java and maven',
+    command: () => maven(['-Dtest=FeatureTest']),
+    passed: (out) => counted(out,
+      /^\[INFO\] Tests run: (\d+), Failures: 0, Errors: 0, Skipped: 0$/m),
+    ran: (out, name) => new RegExp('<testcase name="' + name + '_').test(out),
+    report: (sdkroot) => surefireReport(sdkroot, 'FeatureTest'),
+  },
+  {
+    target: 'kotlin',
+    runner: 'test/FeatureTest.kt',
+    needs: 'gradle (which resolves the Kotlin plugin from the network)',
+    command: () => gradleTest('*.FeatureTest'),
+    passed: (out) => counted(out,
+      /<testsuite name="[^"]*\.FeatureTest" tests="(\d+)" skipped="0" failures="0" errors="0"/),
+    ran: (out, name) => new RegExp('<testcase name="' + name + '_').test(out),
+    report: (sdkroot) => junitReport(sdkroot, 'FeatureTest'),
+  },
+  {
+    target: 'swift',
+    runner: 'Tests/DemoSdkTests/FeatureTest.swift',
+    needs: 'swift',
+    prepare: (sdkroot) => CLEAN_LANES.find((l) => 'swift' === l.target)!.prepare!(sdkroot),
+    command: (suite) => swiftTest('\\.(' +
+      declared(suite, /^final class (\w+): XCTestCase/gm).join('|') + ')/'),
+    passed: (out) => counted(out, /Executed (\d+) tests?, with 0 failures/),
+    ran: (out, name) =>
+      new RegExp("Test Case '[^']*Feature" + capital(name) + "Test[^']*' passed").test(out),
+  },
+  {
+    target: 'py',
+    runner: 'test/test_feature.py',
+    needs: 'python3 with pytest',
+    command: () => pytest(['test/test_feature.py', '-v']),
+    passed: (out) => counted(out, /^=+ (\d+) passed in /m),
+    ran: (out, name) =>
+      new RegExp('::Test' + capital(name) + 'Feature::\\w+ PASSED').test(out),
+  },
+  {
+    target: 'php',
+    runner: 'test/FeatureTest.php',
+    needs: 'php with phpunit (on PATH, PHPUNIT=<path to phpunit.phar>, or composer to install it)',
+    command: () => phpunitViaComposer(['--testdox', 'test/FeatureTest.php']),
+    passed: (out) => counted(out, /^OK \((\d+) tests?, \d+ assertions?\)$/m),
+    ran: (out, name) => new RegExp('^ ✔ ' + capital(name) + ' ', 'm').test(out),
+  },
+  {
+    target: 'rb',
+    runner: 'test/feature_test.rb',
+    needs: 'ruby with minitest',
+    command: () => minitest(['test/feature_test.rb', '-v']),
+    passed: (out) => counted(out, /^(\d+) runs, \d+ assertions, 0 failures, 0 errors, 0 skips$/m),
+    ran: (out, name) =>
+      new RegExp('^FeatureTest#test_' + name + '_\\w+ = [\\d.]+ s = \\.$', 'm').test(out),
+  },
+  {
+    target: 'lua',
+    runner: 'test/feature_test.lua',
+    needs: 'lua 5.4 with busted and the dkjson rock',
+    command: () => {
+      const lua = toolchain('lua5.4') || toolchain('lua')
+      if (null == lua || !probeOk(lua, ['-e', 'require "dkjson"'])) return null
+      return busted(['-o', 'TAP', 'test/feature_test.lua'])
+    },
+    passed: tapPassed,
+    ran: (out, name) => new RegExp('^ok \\d+ - feature ' + name + ' ', 'm').test(out),
+  },
+  {
+    target: 'perl',
+    runner: 't/feature.t',
+    needs: 'perl',
+    command: () => {
+      const perl = toolchain('perl')
+      return null == perl ? null : { bin: perl, args: ['-Ilib', 't/feature.t'] }
+    },
+    passed: tapPassed,
+    ran: (out, name) => new RegExp('^ok \\d+ - ' + name + ' ', 'm').test(out),
+  },
+  {
+    target: 'elixir',
+    runner: 'test/feature_test.exs',
+    needs: 'elixir + mix',
+    command: () => mixTest(['--trace', Path.join('test', 'feature_test.exs')]),
+    passed: (out) => counted(out, /^(\d+) tests?, 0 failures$/m),
+    ran: (out, name) => new RegExp('^\\s*\\* test ' + name + ' .*\\([\\d.]+m?s\\)', 'm').test(out),
+  },
+  {
+    target: 'ocaml',
+    runner: 'test/t_feature.ml',
+    needs: 'ocamlc, make and a C compiler',
+    command: () => ocamlMake('test-feature'),
+    passed: (out) => counted(out, /^SDK PASS (\d+) {2}FAIL 0$/m),
+  },
+  {
+    target: 'zig',
+    runner: 'test/feature_test.zig',
+    needs: 'zig 0.16',
+    command: () => {
+      const zig = toolchain('zig')
+      if (null == zig) return null
+      const version = run(zig, ['version'], process.cwd())
+      return !version.ok || !/^0\.16\./.test(version.out.trim()) ? null
+        : { bin: zig, args: ['build', 'test-feature', '-j2', '--summary', 'all'] }
+    },
+    passed: (out) => {
+      const m = out.match(/run test (\d+) pass \((\d+) total\)/)
+      return null != m && m[1] === m[2] ? Number(m[1]) : null
+    },
+  },
+  {
+    target: 'scala',
+    runner: 'sdktest/SdkTestMain.scala',
+    needs: 'scala-cli (which resolves the Scala compiler from the network)',
+    command: () => {
+      const scalacli = toolchain('scala-cli')
+      return null == scalacli ? null
+        : { bin: scalacli, args: ['run', '.', '--main-class', 'SdkTestMain'] }
+    },
+    passed: (out) => counted(out, /^RUNTIME PASS (\d+) {2}FAIL 0$/m),
+  },
+  {
+    target: 'clojure',
+    runner: 'test/sdk/test/feature.clj',
+    needs: 'the clojure CLI (`clojure`)',
+    // The runner has no entry point for one suite, so it runs the SDK's own
+    // suites and counts this one's checks.
+    command: () => {
+      const clj = toolchain('clojure')
+      return null == clj ? null : { bin: clj, args: ['-M:test', '--sdk-only'] }
+    },
+    passed: (out) => /^SDK: PASS \d+ {2}FAIL 0$/m.test(out)
+      ? counted(out, /^feature: ran (\d+) check\(s\)$/m) : null,
+  },
+]
+
+
 describe('the feature suite runs from a generated SDK', () => {
 
   let tmp = ''
@@ -8496,6 +8764,52 @@ describe('the feature suite runs from a generated SDK', () => {
       strictEqual(tapRan(ran.out, 'action-keys'), FEATURE_SUITE_ACTION_KEY_TESTS,
         lane.target + ': not every action-key test ran in the generated feature suite:\n' +
         tail(ran.out))
+    })
+  }
+
+  for (const lane of FULLSET_LANES) {
+    test(lane.target + ': the generated feature suite passes', async (t) => {
+      const sdkroot = Path.join(tmp, lane.target)
+      const files = await generateTo(lane.target, sdkroot, undefined, FULLSET_FEATURES)
+      ok(null != files[lane.runner], lane.target + ': the feature suite was not generated: ' +
+        'expected ' + lane.runner)
+
+      const cmd = lane.command(files[lane.runner])
+      if (null == cmd) {
+        return t.skip('no usable ' + lane.target + ' toolchain here (' + lane.needs + ')')
+      }
+
+      const notready = null == lane.prepare ? null : lane.prepare(sdkroot)
+      ok(null == notready, lane.target + ': ' + notready)
+
+      // Most of these runs build the SDK first.
+      const ran = run(cmd.bin, cmd.args, sdkroot, cmd.env, 30 * 60 * 1000)
+
+      if (ran.unlaunchable) {
+        return t.skip(lane.target + ': the toolchain could not be started here: ' +
+          tail(ran.out, 3))
+      }
+
+      const gap = UNUSABLE.find((re) => re.test(ran.out))
+      if (null != gap && !ran.ok) {
+        return t.skip(lane.target + ': toolchain present but not usable (' +
+          gap.source + '):\n' + tail(ran.out))
+      }
+
+      ok(ran.ok, 'the generated ' + lane.target + ' feature suite FAILED:\n' + tail(ran.out, 60))
+
+      const seen = ran.out + (null == lane.report ? '' : '\n' + lane.report(sdkroot))
+      const passed = lane.passed(seen)
+      ok(null != passed && 0 < passed, lane.target + ': the feature suite did not report ' +
+        'tests run with none failed or skipped:\n' + tail(seen))
+      deepStrictEqual(absentFeatures(seen), [],
+        lane.target + ': the suite skipped tests of features it was generated with')
+      if (null != lane.ran) {
+        for (const name of FEATURE_SUITE_SUBJECTS) {
+          ok(lane.ran(seen, name), lane.target + ': no ' + name +
+            ' test ran in the generated feature suite:\n' + tail(seen))
+        }
+      }
     })
   }
 })

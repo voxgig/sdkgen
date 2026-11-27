@@ -55,6 +55,10 @@ let has_feature (name : string) : bool =
   | Map _ as fm -> not (is_nullish (getp fm name))
   | _ -> false
 
+let fh_present (name : string) : bool =
+  has_feature name
+  || (prerr_endline ("skip: feature not present in this SDK: " ^ name); false)
+
 (* ----- op result ----- *)
 type op_result = {
   or_ok : bool;

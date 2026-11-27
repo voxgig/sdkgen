@@ -18,6 +18,12 @@
   (let [f (vs/getprop (config/make-config) "feature")]
     (and (vs/ismap f) (some? (vs/getprop f name)))))
 
+(defn- present? [name]
+  (or (feature-present? name)
+      (binding [*out* *err*]
+        (println (str "skip: feature not present in this SDK: " name))
+        false)))
+
 (defn fspec [name & kvs] {"name" name "options" (if (seq kvs) (apply vs/jm kvs) (vs/jm))})
 
 (defn default-method [opname]
@@ -162,7 +168,7 @@
 (defn run [rec]
   (letfn [(check [name skip-feat thunk]
             (t/run-check rec name
-                         (fn [] (if (and skip-feat (not (feature-present? skip-feat)))
+                         (fn [] (if (and skip-feat (not (present? skip-feat)))
                                   true (thunk)))))]
 
     (check "feature-test-present" nil (fn [] (t/is-true (feature-present? "test") "test feature present")))
@@ -214,14 +220,14 @@
 
     ;; ---- retry ----
     (check "retry-retries-then-succeeds" "retry"
-           (fn [] (when (feature-present? "netsim")
+           (fn [] (when (present? "netsim")
                     (let [c (make-clock)
                           h (make-harness [(fspec "netsim" "failTimes" 2 "failStatus" 503)
                                            (fspec "retry" "retries" 3 "minDelay" 10 "jitter" false "sleep" (clock-sleeper c))])]
                       (t/is-eq (get (h-op h) "ok") true "ok")
                       (t/is-eq (mget (h-track h "_retry") "attempts") 2 "attempts")))))
     (check "retry-gives-up-after-budget" "retry"
-           (fn [] (when (feature-present? "netsim")
+           (fn [] (when (present? "netsim")
                     (let [c (make-clock)
                           h (make-harness [(fspec "netsim" "failTimes" 9 "failStatus" 500)
                                            (fspec "retry" "retries" 2 "minDelay" 1 "jitter" false "sleep" (clock-sleeper c))])]
@@ -246,7 +252,7 @@
                     (t/is-eq (get res "ok") false "not ok")
                     (t/is-eq (count @calls) 3 "3 calls"))))
     (check "retry-honours-retry-after" "retry"
-           (fn [] (when (feature-present? "netsim")
+           (fn [] (when (present? "netsim")
                     (let [c (make-clock)
                           h (make-harness [(fspec "netsim" "rateLimitTimes" 1 "retryAfter" 2)
                                            (fspec "retry" "retries" 2 "minDelay" 10 "maxDelay" 60000 "jitter" false "sleep" (clock-sleeper c))])]
@@ -418,7 +424,7 @@
 
     ;; ---- metrics ----
     (check "metrics-counts-ok-err" "metrics"
-           (fn [] (when (feature-present? "netsim")
+           (fn [] (when (present? "netsim")
                     (let [h (make-harness [(fspec "netsim" "failTimes" 1 "failStatus" 500) (fspec "metrics")])]
                       (h-op h) (h-op h) (h-op h :opname "list")
                       (let [m (h-track h "_metrics")]
@@ -449,7 +455,7 @@
                         (t/is-eq (mget sent "X-Trace-Id") (mget (vs/getelem (mget tel "spans") 0) "traceId") "trace id")
                         (t/is-true (boolean (re-matches #"00-.+-.+-01" (str (mget sent "traceparent")))) "traceparent"))))))
     (check "telemetry-failed-span" "telemetry"
-           (fn [] (when (feature-present? "netsim")
+           (fn [] (when (present? "netsim")
                     (let [h (make-harness [(fspec "netsim" "failTimes" 1 "failStatus" 500) (fspec "telemetry")])]
                       (h-op h)
                       (let [tel (h-track h "_telemetry")]
@@ -475,7 +481,7 @@
                       ;; feature list of its own.
                       (t/is-eq (mget (mget (nth @seen 0) "headers") "authorization") "[redacted]" "redacted")))))
     (check "debug-captures-failures" "debug"
-           (fn [] (when (feature-present? "netsim")
+           (fn [] (when (present? "netsim")
                     (let [h (make-harness [(fspec "netsim" "failTimes" 1 "failStatus" 500) (fspec "debug")])]
                       (h-op h)
                       (let [entry (vs/getelem (mget (h-track h "_debug") "entries") 0)]
@@ -490,7 +496,7 @@
 
     ;; ---- audit ----
     (check "audit-one-record-per-op" "audit"
-           (fn [] (when (feature-present? "netsim")
+           (fn [] (when (present? "netsim")
                     (let [sink (atom [])
                           h (make-harness [(fspec "netsim" "failTimes" 1 "failStatus" 500)
                                            (fspec "audit" "actor" "svc" "sink" (fn [r] (swap! sink conj r)) "max" 5)])]
@@ -626,7 +632,7 @@
 
     ;; ---- composition ----
     (check "cache-plus-netsim-hit-skips-failure" "cache"
-           (fn [] (when (feature-present? "netsim")
+           (fn [] (when (present? "netsim")
                     (let [h (make-harness [(fspec "netsim" "failEvery" 2) (fspec "cache" "ttl" 10000)])]
                       (t/is-eq (get (h-op h :path "/w") "ok") true "1")
                       (t/is-eq (get (h-op h :path "/w") "ok") true "2 (cache hit)")

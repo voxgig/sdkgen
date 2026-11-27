@@ -316,7 +316,12 @@ internal static class Fh
 
     public static bool SkipWithout(params string[] names)
     {
-        return names.Any(name => !HasFeature(name));
+        var absent = names.FirstOrDefault(name => !HasFeature(name));
+        if (absent != null)
+        {
+            Console.WriteLine("skip: feature not present in this SDK: " + absent);
+        }
+        return absent != null;
     }
 
     // Response builds a transport-shaped response the pipeline understands.

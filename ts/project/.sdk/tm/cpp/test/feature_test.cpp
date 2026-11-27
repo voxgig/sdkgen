@@ -36,7 +36,12 @@ using namespace sdk::fh;
 // Every enterprise feature is present in this generated SDK; `have` mirrors
 // JUnit's Assumptions.assumeTrue (skip when a feature is absent).
 static bool have(std::initializer_list<std::string> names) {
-  for (const auto& n : names) if (!fhHasFeature(n)) return false;
+  for (const auto& n : names) {
+    if (!fhHasFeature(n)) {
+      std::cerr << "skip: feature not present in this SDK: " << n << "\n";
+      return false;
+    }
+  }
   return true;
 }
 

@@ -24,7 +24,10 @@ defmodule ProjectName.FeatureTest do
 
   defp harness(specs, opts \\ %{}), do: FH.new(specs, opts)
 
-  defp has?(name), do: FH.has_feature(name)
+  defp has?(name) do
+    FH.has_feature(name) or
+      (IO.puts(:stderr, "skip: feature not present in this SDK: " <> name) && false)
+  end
 
   defp track(h, key), do: S.getprop(h.client, key)
 

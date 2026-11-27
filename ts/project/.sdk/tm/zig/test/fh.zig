@@ -46,7 +46,10 @@ pub fn fh_has_feature(name: []const u8) bool {
 
 pub fn fh_present(names: []const []const u8) bool {
     for (names) |name| {
-        if (!fh_has_feature(name)) return false;
+        if (!fh_has_feature(name)) {
+            std.debug.print("skip: feature not present in this SDK: {s}\n", .{name});
+            return false;
+        }
     }
     return true;
 }

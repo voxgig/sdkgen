@@ -108,6 +108,10 @@ SDK_TEST = $(RUNTIME) sdk_config.ml $(ENTITIES) sdk_client.ml sdk_error.ml \
   test/t_pipeline.ml test/t_feature.ml test/custom_utility.ml \
   $(ENTITY_TESTS) $(CLEAN_TESTS) $(DOC_TESTS) $(FEATURE_TESTS) test/t_main.ml
 
+# The feature suite alone.
+FEATURE_SUITE = $(RUNTIME) sdk_config.ml $(ENTITIES) sdk_client.ml sdk_error.ml \
+  test/testutil.ml test/harness.ml test/t_feature.ml test/t_main.ml
+
 # The struct corpus needs only the struct library and the corpus engine —
 # omni carries its own JSON reader and regex engine, so nothing of the SDK
 # runtime is linked here.
@@ -123,12 +127,15 @@ PRIMARY_SRC = $(RUNTIME) sdk_config.ml $(ENTITIES) sdk_client.ml sdk_error.ml \
 SMOKE_SRC = utility/vregex.ml utility/voxgig_struct.ml \
   $(OMNI) test/omni_smoke_test.ml
 
-.PHONY: test test-sdk test-omni test-corpus test-primary test-concurrency build lint clean
+.PHONY: test test-sdk test-feature test-omni test-corpus test-primary test-concurrency build lint clean
 
 test: test-sdk test-omni test-corpus test-primary test-concurrency
 
 test-sdk: run_sdk_test
 	./run_sdk_test
+
+test-feature: run_feature_test
+	./run_feature_test
 
 test-omni: run_omni_smoke
 	./run_omni_smoke
@@ -151,6 +158,9 @@ SDK_UNIX = $(if $(filter unix.cma,$(FEATURE_LIB)),,unix.cma)
 # it), stub objects and link flags LAST.
 run_sdk_test: $(SDK_TEST) $(FEATURE_OBJ)
 	$(OCAMLC) $(INC) -I +unix $(SDK_UNIX) $(FEATURE_LIB) $(SDK_TEST) $(FEATURE_OBJ) $(FEATURE_LINK) -o run_sdk_test
+
+run_feature_test: $(FEATURE_SUITE) $(FEATURE_OBJ)
+	$(OCAMLC) $(INC) -I +unix $(SDK_UNIX) $(FEATURE_LIB) $(FEATURE_SUITE) $(FEATURE_OBJ) $(FEATURE_LINK) -o run_feature_test
 
 run_omni_smoke: $(SMOKE_SRC)
 	$(OCAMLC) $(INC) $(SMOKE_SRC) -o run_omni_smoke
@@ -176,4 +186,4 @@ clean:
 	  test/vendor/omni/*.cmi test/vendor/omni/*.cmo \
 	  feature/*.cmi feature/*.cmo feature/*/*/*.cmi feature/*/*/*.cmo \
 	  feature/*/*/*.o test/feature/*/*.cmi test/feature/*/*.cmo \
-	  run_sdk_test run_omni_smoke run_struct_corpus run_primary_corpus run_concurrency_test a.out
+	  run_sdk_test run_feature_test run_omni_smoke run_struct_corpus run_primary_corpus run_concurrency_test a.out

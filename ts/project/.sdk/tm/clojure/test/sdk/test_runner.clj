@@ -118,7 +118,9 @@
     ;; The shared corpus, driven through this SDK's utilities.
     (when-not sdk-only? (primary/run-corpus rec))
     (pipeline/run rec)
-    (feature/run rec)
+    (let [ran (atom 0)]
+      (feature/run (fn [name ok? msg] (swap! ran inc) (rec name ok? msg)))
+      (println (str "feature: ran " @ran " check(s)")))
     (run-feature-suites rec)
     (netsim/run rec)
     (concurrency/run rec)

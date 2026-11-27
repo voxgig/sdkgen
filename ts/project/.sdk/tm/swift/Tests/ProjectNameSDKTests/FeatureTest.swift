@@ -184,7 +184,9 @@ enum Fh {
     gp(SdkConfig.makeConfig(), "feature").asMap?.entries[name] != nil
   }
   static func skipWithout(_ names: String...) -> Bool {
-    names.contains { !hasFeature($0) }
+    guard let absent = names.first(where: { !hasFeature($0) }) else { return false }
+    print("skip: feature not present in this SDK: \(absent)")
+    return true
   }
   static func errCode(_ e: Error?) -> String { SdkRunner.errCode(e) }
 

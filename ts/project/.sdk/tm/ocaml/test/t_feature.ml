@@ -19,7 +19,7 @@ let () =
   test "at_least_test_feature_present" (fun () -> check "test present" (has_feature "test"));
 
   (* ---------------- netsim ---------------- *)
-  if has_feature "netsim" then begin
+  if fh_present "netsim" then begin
     test "netsim.fixed_latency_then_delegate" (fun () ->
         let c = make_clock () in
         let h = make_client [("netsim", jo [("latency", Num 250.); ("sleep", clock_sleep_fn c)])] in
@@ -67,7 +67,7 @@ let () =
   end;
 
   (* ---------------- retry ---------------- *)
-  if has_feature "retry" then begin
+  if fh_present "retry" then begin
     test "retry.transient_then_succeeds" (fun () ->
         let c = make_clock () in
         let h = make_client [
@@ -113,7 +113,7 @@ let () =
   end;
 
   (* ---------------- timeout ---------------- *)
-  if has_feature "timeout" then begin
+  if fh_present "timeout" then begin
     test "timeout.slow_times_out" (fun () ->
         let c = make_clock () in
         let h = make_client [
@@ -139,7 +139,7 @@ let () =
   end;
 
   (* ---------------- ratelimit ---------------- *)
-  if has_feature "ratelimit" then begin
+  if fh_present "ratelimit" then begin
     test "ratelimit.throttles" (fun () ->
         let c = make_clock () in
         let h = make_client [("ratelimit", jo [("rate", Num 1.); ("burst", Num 2.); ("now", clock_now_fn c); ("sleep", clock_sleep_fn c)])] in
@@ -158,7 +158,7 @@ let () =
   end;
 
   (* ---------------- cache ---------------- *)
-  if has_feature "cache" then begin
+  if fh_present "cache" then begin
     test "cache.serves_repeated_read" (fun () ->
         let (srv, calls) = recording_server () in
         let h = make_client ~server:srv [("cache", jo [("ttl", Num 10000.)])] in
@@ -219,7 +219,7 @@ let () =
   end;
 
   (* ---------------- idempotency ---------------- *)
-  if has_feature "idempotency" then begin
+  if fh_present "idempotency" then begin
     let hdr calls = getp (getp (List.nth !calls 0) "fetchdef") "headers" in
     test "idempotency.adds_key_mutating" (fun () ->
         let (srv, calls) = recording_server () in
@@ -255,7 +255,7 @@ let () =
   end;
 
   (* ---------------- rbac ---------------- *)
-  if has_feature "rbac" then begin
+  if fh_present "rbac" then begin
     test "rbac.denies_before_call" (fun () ->
         let (srv, calls) = recording_server () in
         let h = make_client ~server:srv [("rbac", jo [("rules", jo [("widget.remove", Str "admin")]); ("permissions", empty_list ())])] in
@@ -281,7 +281,7 @@ let () =
   end;
 
   (* ---------------- metrics ---------------- *)
-  if has_feature "metrics" then begin
+  if fh_present "metrics" then begin
     test "metrics.counts_ok_err_per_op" (fun () ->
         let h = make_client [("netsim", jo [("failTimes", Num 1.); ("failStatus", Num 500.)]); ("metrics", empty_map ())] in
         ignore (op h ~op:"load" ()); ignore (op h ~op:"load" ()); ignore (op h ~op:"list" ());
@@ -304,7 +304,7 @@ let () =
   end;
 
   (* ---------------- telemetry ---------------- *)
-  if has_feature "telemetry" then begin
+  if fh_present "telemetry" then begin
     test "telemetry.opens_spans_propagates" (fun () ->
         let (srv, calls) = recording_server () in
         let exported = ref [] in
@@ -346,7 +346,7 @@ let () =
   end;
 
   (* ---------------- debug ---------------- *)
-  if has_feature "debug" then begin
+  if fh_present "debug" then begin
     test "debug.redacted_trace_max_onentry" (fun () ->
         let seen = ref [] in
         let h = make_client [("debug", jo [("max", Num 1.); ("onEntry", vfunc1 (fun e -> seen := !seen @ [e]; Noval))])] in
@@ -375,7 +375,7 @@ let () =
   end;
 
   (* ---------------- audit ---------------- *)
-  if has_feature "audit" then begin
+  if fh_present "audit" then begin
     test "audit.one_record_per_op" (fun () ->
         let sink = ref [] in
         let h = make_client [("netsim", jo [("failTimes", Num 1.); ("failStatus", Num 500.)]); ("audit", jo [("actor", Str "svc"); ("sink", vfunc1 (fun r -> sink := !sink @ [r]; Noval)); ("max", Num 5.)])] in
@@ -409,7 +409,7 @@ let () =
   end;
 
   (* ---------------- clienttrack ---------------- *)
-  if has_feature "clienttrack" then begin
+  if fh_present "clienttrack" then begin
     test "clienttrack.stable_id_ua" (fun () ->
         let (srv, calls) = recording_server () in
         let h = make_client ~server:srv [("clienttrack", jo [("clientName", Str "Acme"); ("clientVersion", Str "2.0.0")])] in
@@ -440,7 +440,7 @@ let () =
   end;
 
   (* ---------------- paging ---------------- *)
-  if has_feature "paging" then begin
+  if fh_present "paging" then begin
     let has s sub =
       let hl = String.length s and nl = String.length sub in
       let rec go i = if i + nl > hl then false else if String.sub s i nl = sub then true else go (i + 1) in nl = 0 || go 0 in
@@ -477,7 +477,7 @@ let () =
   end;
 
   (* ---------------- streaming ---------------- *)
-  if has_feature "streaming" then begin
+  if fh_present "streaming" then begin
     test "streaming.streams_items" (fun () ->
         let c = make_clock () in
         let (srv, _) = recording_server ~reply:(fun _ _ -> (make_response 200 (ja [Str "a"; Str "b"; Str "c"]), None)) () in
@@ -509,7 +509,7 @@ let () =
   end;
 
   (* ---------------- proxy ---------------- *)
-  if has_feature "proxy" then begin
+  if fh_present "proxy" then begin
     let fd calls = getp (List.nth !calls 0) "fetchdef" in
     test "proxy.routes_and_agent" (fun () ->
         let (srv, calls) = recording_server () in
@@ -540,7 +540,7 @@ let () =
   end;
 
   (* ---------------- composition ---------------- *)
-  if has_feature "cache" && has_feature "netsim" then
+  if fh_present "cache" && fh_present "netsim" then
     test "composition.cache_plus_netsim" (fun () ->
         let h = make_client [("netsim", jo [("failEvery", Num 2.)]); ("cache", jo [("ttl", Num 10000.)])] in
         check "1ok" (op h ~op:"load" ~path:"/w" ()).or_ok;
