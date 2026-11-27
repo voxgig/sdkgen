@@ -941,13 +941,14 @@ SKIP: {
     is_deeply($explained->{fetchdef}{body}, $desc,
       "$cname: the explained fetch definition describes the body");
 
-    # The request data holds what the caller gave: a filehandle is a stream
-    # there, and an equal string is the body wherever it sits.
+    # The body lifted out of the request data holds what the caller gave: a
+    # filehandle is a stream there, and an equal string is the body wherever
+    # it sits.
     my $ctx = $watch{$key}{ctx};
     my $body = $given{$key};
-    my $live = $ctx->{reqdata}{'$body'};
-    my $held = $ctx->{utility}{clean}->($ctx, { 'reqdata' => $ctx->{reqdata}, 'copy' => "$CONTENT" });
-    is_deeply($held->{reqdata}{'$body'}, (ref $body ? $stream : $desc),
+    my $live = $ctx->{sources}{'$body'};
+    my $held = $ctx->{utility}{clean}->($ctx, { 'sources' => $ctx->{sources}, 'copy' => "$CONTENT" });
+    is_deeply($held->{sources}{'$body'}, (ref $body ? $stream : $desc),
       "$cname: the request data describes the body");
     is_deeply($held->{copy}, $desc, "$cname: an equal string is described");
     ok((ref $body ? ref $live && Scalar::Util::refaddr($live) == Scalar::Util::refaddr($body)

@@ -12,8 +12,9 @@ use omni_resolver::{entrycount, jpath, tostruct, Json, Run};
 use RUSTCRATE::core::helpers::{get_str, getp, ja, jo, setp, to_map, vfn};
 use RUSTCRATE::utility::voxgigstruct as vs;
 use RUSTCRATE::{
-    new as new_sdk, test_sdk, BaseFeature, Context, CtxSpec, Feature, FeatureRef, Operation,
-    ProjectNameError, ProjectNameSDK, SdkResult, Spec, Utility, Value,
+    bytes_value, new as new_sdk, test_sdk, BaseFeature, BinarySource, Context, CtxSpec, Feature,
+    FeatureRef, Operation, ProjectNameError, ProjectNameSDK, SdkResult, Sources, Spec, Utility,
+    Value,
 };
 
 const PENDING_SECTIONS: &[&str] = &[
@@ -1225,7 +1226,7 @@ fn primary_prepare_body_basic() {
     runsection(&mut run, "prepareBody", move |args| {
         let ctx = make_ctx_from_map(&args[0].clone(), &client, &utility);
         fixctx(&ctx, &client);
-        Ok(utility.prepare_body(&ctx))
+        utility.prepare_body(&ctx)
     });
 }
 
@@ -1419,4 +1420,213 @@ fn primary_new_sdk_smoke() {
         Err(err) => assert_eq!(err.code, "server_var_required"),
     }
     let _ = to_map(&Value::Noval);
+}
+
+// Cases a closed value union cannot state: the data and the match are a
+// `Value`, which holds no source, so a source sits only beside the data, by
+// field name. One passed under a field not declared binary is refused, as the
+// sections' other cases check.
+const INEXPRESSIBLE: &[&str] = &[
+    "multipart: a source nested in other data is refused",
+    "multipart: a source in the match is refused",
+    "a source in a record",
+];
+
+// A codec section a project's corpus has not pulled yet is skipped, as is one
+// for a codec this SDK was generated without: its model has no such point.
+fn runcodec<F>(name: &str, kind: &str, codec: Option<&str>, subject: F)
+where
+    F: FnMut(&mut Vec<Value>) -> Result<Value, ProjectNameError> + 'static,
+{
+    let mut run = primary_run();
+    let section = run.set(&[name, kind]);
+    if section.isabsent() {
+        println!("SKIP {}.{}: this project's test.json has no such section", name, kind);
+        return;
+    }
+    if let Some(codec) = codec {
+        if !RUSTCRATE::utility::codec::CODECS.contains(&codec) {
+            println!("SKIP {}.{}: this SDK was generated without a {} codec", name, kind, codec);
+            return;
+        }
+    }
+    let all = section.get("set").aslist().cloned().unwrap_or_default();
+    assert!(!all.is_empty(), "test corpus section '{}.{}' is EMPTY", name, kind);
+    let kept: Vec<Json> = all
+        .into_iter()
+        .filter(|entry| !INEXPRESSIBLE.contains(&entry.get("name").asstr().unwrap_or("")))
+        .collect();
+    let mut entries: Vec<(&str, Json)> = Vec::new();
+    if let Some(m) = section.asmap() {
+        for (k, v) in m.iter().filter(|(k, _)| "set" != k.as_str()) {
+            entries.push((k.as_str(), v.clone()));
+        }
+    }
+    entries.push(("set", Json::list(kept)));
+    let section = Json::map(entries);
+
+    let before = run.failures.len();
+    run.run_set_args(&section, true, &format!("{}.{}", name, kind), subject);
+    if before < run.failures.len() {
+        panic!("{}", run.failures[before..].join("\n"));
+    }
+}
+
+fn marker_bytes(val: &Value, key: &str) -> Option<Vec<u8>> {
+    match getp(val, key) {
+        Value::Str(s) => Some(s.chars().map(|c| c as u32 as u8).collect()),
+        _ => None,
+    }
+}
+
+// `source$` (latin1) is a source built by binary().bytes, `bytes$` bytes.
+fn marked_source(val: &Value) -> Option<BinarySource> {
+    if let Some(data) = marker_bytes(val, "source$") {
+        return Some(BinarySource::bytes(
+            data,
+            get_str(val, "name").as_deref(),
+            get_str(val, "type").as_deref(),
+        ));
+    }
+    marker_bytes(val, "bytes$").map(|data| BinarySource::bytes(data, None, None))
+}
+
+// The data's top-level sources move beside it, as a caller passes them.
+fn sourced_data(data: &Value) -> (Value, Sources) {
+    let out = Value::empty_map();
+    let mut sources = Vec::new();
+    if let Value::Map(m) = data {
+        for (k, v) in m.borrow().iter() {
+            if let Some(src) = marked_source(v) {
+                sources.push((k.clone(), src));
+            } else if let Value::List(items) = v {
+                let srcs: Vec<BinarySource> = items.borrow().iter().filter_map(marked_source).collect();
+                if !srcs.is_empty() && srcs.len() == items.borrow().len() {
+                    sources.extend(srcs.into_iter().map(|s| (k.clone(), s)));
+                } else {
+                    setp(&out, k, v.clone());
+                }
+            } else {
+                setp(&out, k, v.clone());
+            }
+        }
+    }
+    (out, sources)
+}
+
+// Bytes as the pipeline carries them.
+fn sourced_bytes(val: &Value) -> Value {
+    match marker_bytes(val, "bytes$") {
+        Some(data) => bytes_value(&data),
+        None => val.clone(),
+    }
+}
+
+fn latin1_of(body: &Value) -> Value {
+    match body {
+        Value::List(_) => match RUSTCRATE::utility::media::body_bytes(body) {
+            Some(bytes) => Value::str(bytes.iter().map(|b| *b as char).collect::<String>()),
+            None => body.clone(),
+        },
+        other => other.clone(),
+    }
+}
+
+fn boundary_client() -> (Rc<ProjectNameSDK>, Rc<Utility>) {
+    let (client, utility) = base_client();
+    *utility.multipart_boundary.borrow_mut() = Rc::new(|_ctx| "BOUNDARY".to_string());
+    (client, utility)
+}
+
+fn body_codec(kind: &'static str) {
+    let (client, utility) = boundary_client();
+    runcodec("prepareBody", kind, if "raw" == kind { None } else { Some(kind) }, move |args| {
+        let ctxmap = args[0].clone();
+        let (reqdata, sources) = sourced_data(&getp(&ctxmap, "reqdata"));
+        setp(&ctxmap, "reqdata", reqdata);
+        let ctx = make_ctx_from_map(&ctxmap, &client, &utility);
+        fixctx(&ctx, &client);
+        *ctx.passed.borrow_mut() = sources;
+        *ctx.spec.borrow_mut() =
+            Some(Rc::new(RefCell::new(Spec::new(&jo(vec![("headers", Value::empty_map())])))));
+        let body = utility.prepare_body(&ctx)?;
+        let out = jo(vec![("body", latin1_of(&body))]);
+        let spec = ctx.spec.borrow().clone().unwrap();
+        if let Value::Str(ty) = getp(&spec.borrow().headers, "content-type") {
+            setp(&out, "type", Value::str(ty));
+        }
+        Ok(out)
+    });
+}
+
+#[test]
+fn primary_body_form() {
+    body_codec("form");
+}
+
+#[test]
+fn primary_body_multipart() {
+    body_codec("multipart");
+}
+
+#[test]
+fn primary_body_raw() {
+    body_codec("raw");
+}
+
+#[test]
+fn primary_resbody_raw() {
+    let (client, utility) = base_client();
+    runcodec("resultBody", "raw", Some("raw"), move |args| {
+        let ctxmap = args[0].clone();
+        let response = getp(&ctxmap, "response");
+        if let Value::Map(_) = response {
+            setp(&response, "body", sourced_bytes(&getp(&response, "body")));
+        }
+        let ctx = make_ctx_from_map(&ctxmap, &client, &utility);
+        if let Value::Map(_) = getp(&ctxmap, "options") {
+            *ctx.options.borrow_mut() = getp(&ctxmap, "options");
+        }
+        let result = utility.result_body(&ctx).expect("a result");
+        if let Some(err) = result.borrow().err.clone() {
+            return Err(err);
+        }
+        setp(&ctxmap, "result", jo(vec![("body", result.borrow().body.clone())]));
+        let transfer = ctx.ctrl.borrow().borrow().transfer.clone();
+        if let Some(bytes) = transfer.and_then(|t| t.borrow().bytes.clone()) {
+            let t = getp(&getp(&ctxmap, "ctrl"), "transfer");
+            setp(&t, "bytes", latin1_of(&bytes_value(&bytes)));
+        }
+        Ok(Value::Noval)
+    });
+}
+
+#[test]
+fn primary_fetchdef_encoded() {
+    let (client, utility) = base_client();
+    runcodec("makeFetchDef", "encoded", None, move |args| {
+        let ctxmap = args[0].clone();
+        let spec = getp(&ctxmap, "spec");
+        setp(&spec, "body", sourced_bytes(&getp(&spec, "body")));
+        let ctx = make_ctx_from_map(&ctxmap, &client, &utility);
+        fixctx(&ctx, &client);
+        let fetchdef = utility.make_fetch_def(&ctx)?;
+        setp(&fetchdef, "body", latin1_of(&getp(&fetchdef, "body")));
+        Ok(fetchdef)
+    });
+}
+
+#[test]
+fn primary_clean_binary() {
+    let (client, utility) = base_client();
+    runcodec("clean", "binary", None, move |args| {
+        let ctxmap = args[0].clone();
+        let spec = getp(&ctxmap, "spec");
+        if let Value::Map(_) = spec {
+            setp(&spec, "body", sourced_bytes(&getp(&spec, "body")));
+        }
+        let ctx = make_ctx_from_map(&ctxmap, &client, &utility);
+        let val = if Value::str("spec$") == args[1] { spec } else { args[1].clone() };
+        Ok(utility.clean(&ctx, &val))
+    });
 }

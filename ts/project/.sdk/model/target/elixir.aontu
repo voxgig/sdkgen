@@ -8,6 +8,8 @@ main: kit: target: elixir: {
   base: 'BASE'
   srcfeature: false
 
+  codec: tier: 'encoded'
+
   provides: { sekreto: true, schema: true }
 
   # Files earlier toolchains generated that this target has RETIRED

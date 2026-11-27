@@ -74,6 +74,9 @@ defmodule ProjectName.Context do
         if ac != nil, do: S.setprop(ctrl, "actor", ac)
         pg = S.getprop(ctrl_raw, "paging")
         if S.ismap(pg), do: S.setprop(ctrl, "paging", pg)
+        # Set by an entity's binary handle: the slot and the direction its bytes move.
+        tr = S.getprop(ctrl_raw, "transfer")
+        if S.ismap(tr), do: S.setprop(ctrl, "transfer", tr)
         S.setprop(ctx, "ctrl", ctrl)
 
       basectx != nil and bp.("ctrl") != nil and gp.("opname") == nil ->

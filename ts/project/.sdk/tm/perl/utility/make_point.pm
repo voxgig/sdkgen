@@ -15,6 +15,7 @@ require(Cwd::abs_path("$__dir/../core/error.pm"));
 require(Cwd::abs_path("$__dir/prepare_method.pm"));
 require(Cwd::abs_path("$__dir/param.pm"));
 require(Cwd::abs_path("$__dir/op_key.pm"));
+require(Cwd::abs_path("$__dir/binary.pm"));
 
 package ProjectNameUtilities;
 
@@ -71,7 +72,17 @@ sub _unfilled {
   return @missing;
 }
 
+# Once the point is known, a body of bytes it answers is refused and the
+# sources its binary fields carry are lifted out of the data.
 $REGISTRY{make_point} = sub {
+  my ($ctx) = @_;
+  my ($point, $err) = _select_point($ctx);
+  return (undef, $err) if $err;
+  $err = bytes_refused($ctx) // lift_sources($ctx);
+  return $err ? (undef, $err) : ($point, undef);
+};
+
+sub _select_point {
   my ($ctx) = @_;
 
   if ($ctx->{out}{point}) {
@@ -206,6 +217,6 @@ $REGISTRY{make_point} = sub {
   }
 
   return ($ctx->{point}, undef);
-};
+}
 
 1;

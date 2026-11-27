@@ -30,6 +30,23 @@ type sdk_error = {
 
 exception Sdk_error_exc of sdk_error
 
+(* Refuses a request body or a response body by its code; the pipeline stage
+ * that called the codec turns it into the operation's error. *)
+exception Body_error of sdk_error
+
+(* File content a caller hands the SDK, held as given. A string here is
+ * content, never a path. OCaml's string is the byte carrier: the request
+ * body is a `Str` and system.fetch carries it as one. *)
+type binary_source = {
+  bs_data : string;
+  bs_name : string option;
+  bs_type : string option;
+}
+
+(* A value lifted out of the request data under a binary name: a source the
+ * caller passed beside the data, or what the data itself held there. *)
+type lifted = LSource of binary_source | LValue of value
+
 (* A pipeline stage stashes its product (or a feature-supplied short-circuit
  * error) on ctx.out under the stage name (mirrors the py ctx.out dict). *)
 type out_entry =
@@ -46,6 +63,8 @@ and control = {
   mutable ctrl_explain : value;   (* Map when explain is on, else Noval *)
   mutable ctrl_actor : value;     (* Str or Noval *)
   mutable ctrl_paging : value;    (* Map or Noval *)
+  (* A binary handle's slot and direction; a read leaves `bytes` in it. *)
+  mutable ctrl_transfer : value;  (* Map or Noval *)
 }
 
 and operation = {
@@ -167,6 +186,16 @@ and utility = {
   mutable u_result_headers : ctx -> unit;
   mutable u_transform_request : ctx -> value;
   mutable u_transform_response : ctx -> value;
+  (* The body codecs this SDK was generated with (Sdk_codec): an absent one
+   * is None, never a call into a trimmed module. *)
+  mutable u_codec : codec;
+  mutable u_multipart_boundary : (ctx -> string) option;
+}
+
+and codec = {
+  cd_form : (ctx -> value -> (string * lifted) list -> (string * string, sdk_error) Stdlib.result) option;
+  cd_multipart : (ctx -> value -> (string * lifted) list -> (string * string, sdk_error) Stdlib.result) option;
+  cd_raw : (ctx -> unit) option;
 }
 
 (* A pipeline feature: name/version/active bookkeeping, the `f_options`
@@ -213,9 +242,11 @@ and entity_obj = {
    * these signatures. *)
   mutable e_load : value -> value -> entity_obj;
   mutable e_list : value -> value -> entity_obj list;
-  mutable e_create : value -> value -> entity_obj;
-  mutable e_update : value -> value -> entity_obj;
-  mutable e_patch : value -> value -> entity_obj;
+  (* `value` has no variant for file content, so a source travels beside the
+   * data, by field name; a raw body's under `$body`. *)
+  mutable e_create : ?sources:(string * binary_source) list -> value -> value -> entity_obj;
+  mutable e_update : ?sources:(string * binary_source) list -> value -> value -> entity_obj;
+  mutable e_patch : ?sources:(string * binary_source) list -> value -> value -> entity_obj;
   mutable e_remove : value -> value -> entity_obj;
   (* e_remove resolves to the entity, marked. The instance KEEPS the data it
    * held - a caller can still read what was deleted - but it is no longer a
@@ -224,6 +255,20 @@ and entity_obj = {
   mutable e_mark_deleted : unit -> unit;
   (* stream action args callopts -> a lazy Seq over result items. *)
   mutable e_stream : string -> value -> value -> value Seq.t;
+  (* The handle on a binary slot (None: the entity's own bytes). *)
+  mutable e_binary : string option -> binary_handle;
+}
+
+(* An entity's named bytes. Each call is one run of the entity's own
+ * operation on the slot's point; in core only whole, in-memory bodies move.
+ * A read answers the bytes as a string, the target's byte carrier. *)
+and binary_handle = {
+  bh_name : string;
+  bh_bytes : ?range:value -> ?ctrl:value -> unit -> string;
+  bh_put : ?ctrl:value -> binary_source -> entity_obj;
+  bh_save : unit -> unit;
+  bh_stream : unit -> unit;
+  bh_open : unit -> unit;
 }
 
 (* Construction spec for a context (py passes an untyped ctxmap dict that
@@ -249,6 +294,7 @@ and ctxspec = {
   mutable cs_spec : spec option;
   mutable cs_result : result option;
   mutable cs_response : response option;
+  mutable cs_sources : (string * binary_source) list option;
 }
 
 and ctx = {
@@ -281,4 +327,8 @@ and ctx = {
   (* Set by make_error as it fires PreUnexpected, which fires once per
    * operation. *)
   mutable c_unexpected_fired : bool;
+  (* The sources passed beside the data, and, once the point is known, every
+   * value of its binary names (None until then). *)
+  mutable c_given : (string * binary_source) list;
+  mutable c_sources : (string * lifted) list option;
 }

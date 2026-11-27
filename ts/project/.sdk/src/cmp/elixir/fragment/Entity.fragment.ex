@@ -18,6 +18,8 @@ defmodule ProjectName.Entity.EntityName do
   def match_set(ent, args \\ nil), do: EntityBase.match_set(ent, args)
   def match_get(ent), do: EntityBase.match_get(ent)
 
+  # #BinarySlot
+
   # Streaming operation (see EntityBase.stream): runs `action` through the
   # pipeline and returns a lazy Stream over result items.
   def stream(ent, action, args \\ nil, callopts \\ nil),

@@ -357,6 +357,8 @@ ${updateLines}    // ${'patch' === opname ? 'Only the fields to change' : 'Field
             const note = bodyNote(ent.op[opname], {
               tier: codecTier(target),
               values: 'a string value holding the bytes',
+              source: 'a source made by `sdk.BinarySource.bytes(data, name, type)`, beside the ' +
+                'data in `OpWith.sources` to the operation\'s `_with` form',
             })
             if ('' !== note) Content(note)
           }

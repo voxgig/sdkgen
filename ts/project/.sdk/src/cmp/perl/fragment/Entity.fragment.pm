@@ -14,6 +14,8 @@ require(Cwd::abs_path("$__dir/../core/helpers.pm"));
 
 package EntyClass;
 
+# #BinaryImport
+
 sub new {
   my ($class, $client, $entopts) = @_;
   $entopts = {} unless defined $entopts;
@@ -118,6 +120,8 @@ sub match_get {
   $self->{_utility}{feature_hook}->($self->{_entctx}, 'GetMatch');
   return Voxgig::Struct::clone($self->{_match});
 }
+
+# #BinarySlot
 
 # #LoadOp
 

@@ -1,3 +1,5 @@
+use std::cell::RefCell;
+use std::rc::Rc;
 
 use crate::core::error::ProjectNameError;
 use crate::utility::voxgigstruct::Value;
@@ -11,6 +13,14 @@ pub struct Control {
     pub explain: Value,
     pub actor: String,
     pub paging: Value,
+    // Set by an entity's binary handle: the slot and the direction its bytes move.
+    pub transfer: Option<Rc<RefCell<Transfer>>>,
+}
+
+pub struct Transfer {
+    pub slot: String,
+    pub direction: String,
+    pub bytes: Option<Vec<u8>>,
 }
 
 impl Control {
@@ -21,6 +31,7 @@ impl Control {
             explain: Value::Noval,
             actor: String::new(),
             paging: Value::Noval,
+            transfer: None,
         }
     }
 

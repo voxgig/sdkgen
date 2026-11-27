@@ -4,7 +4,7 @@ import * as Path from 'node:path'
 import {
   cmp, camelify,
   File, Content, Folder, Fragment,
-  entityClassName, entityCollection,
+  entityClassName, entityCollection, entitySlots,
 } from '@voxgig/sdkgen'
 
 import {
@@ -50,7 +50,10 @@ const Entity = cmp(function Entity(props: any) {
                 // ENTITY (`list` to a vector of them), so an unsupported op
                 // has to declare the same return type to satisfy the trait.
                 const ret = 'list' === opname ? 'Vec<Rc<Self>>' : 'Rc<Self>'
-                Content({ indent }, `fn ${opname}(self: &Rc<Self>, _${arg}: Value, _ctrl: Value) -> Result<${ret}, ${model.const.Name}Error> {
+                const sig = 'list' === opname || 'remove' === opname ?
+                  `fn ${opname}(self: &Rc<Self>, _${arg}: Value, _ctrl: Value)` :
+                  `fn ${opname}_with(self: &Rc<Self>, _${arg}: Value, _ctrl: Value, _opwith: OpWith)`
+                Content({ indent }, `${sig} -> Result<${ret}, ${model.const.Name}Error> {
     Err(crate::core::helpers::unsupported_op("${opname}", &self.name))
 }
 `)
@@ -78,10 +81,43 @@ const Entity = cmp(function Entity(props: any) {
         }
       })
 
+      BinarySlots({ entity, cls })
+
     })
   })
 })
 
+
+
+// Rust has no optional argument: a lone unnamed slot takes none, else `binary("")`.
+const BinarySlots = cmp(function BinarySlots(props: any) {
+  const { entity, cls } = props
+  const slots = entitySlots(entity)
+  if (0 === slots.length) {
+    return
+  }
+
+  const opt = (v?: string) => null == v ? 'None' : 'Some("' + v + '")'
+  const rows = slots.map((s: any) =>
+    `    BinarySlot { name: ${JSON.stringify(s.name)}, action: ${JSON.stringify(s.action)}, ` +
+    `read: ${opt(s.read)}, write: ${opt(s.write)} },`).join('\n')
+  const only = 1 === slots.length && '' === slots[0].name
+
+  Content(`
+
+use crate::utility::codec::handle::{BinaryHandle, BinarySlot};
+
+pub const BINARY_SLOTS: &[BinarySlot] = &[
+${rows}
+];
+
+impl ${cls} {
+    pub fn binary(self: &Rc<Self>${only ? '' : ', slot: &str'}) -> BinaryHandle<Self> {
+        BinaryHandle::new(self.clone(), BINARY_SLOTS, ${only ? '""' : 'slot'})
+    }
+}
+`)
+})
 
 
 export {

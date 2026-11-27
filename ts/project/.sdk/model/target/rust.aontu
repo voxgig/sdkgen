@@ -13,6 +13,8 @@ main: kit: target: rust: {
   # a feature that resolves secrets through sekreto can apply here.
   provides: { sekreto: true, schema: true }
 
+  codec: tier: 'encoded'
+
   superseded: [
     'tests/struct_runner/mod.rs'
   ]
@@ -24,6 +26,7 @@ main: kit: target: rust: {
   deps: {
     'ureq': { active: true, version: '2', kind: prod }
     'flate2': { active: true, version: '1', kind: prod }
+    'getrandom': { active: true, version: '0.2', kind: prod }
   }
 }
 

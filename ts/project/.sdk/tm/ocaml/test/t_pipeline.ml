@@ -39,11 +39,13 @@ let make_factory (cl : sdk_client) (made : value list ref) : entity_obj =
     e_match_set = (fun _ -> ()); e_match_get = (fun () -> empty_map ());
     (* Ops resolve to the ENTITY (see Sdk_types); this fake never runs them. *)
     e_load = (fun _ _ -> failwith "unused"); e_list = (fun _ _ -> []);
-    e_create = (fun _ _ -> failwith "unused");
-    e_update = (fun _ _ -> failwith "unused"); e_patch = (fun _ _ -> failwith "unused");
+    e_create = (fun ?sources:_ _ _ -> failwith "unused");
+    e_update = (fun ?sources:_ _ _ -> failwith "unused");
+    e_patch = (fun ?sources:_ _ _ -> failwith "unused");
     e_remove = (fun _ _ -> failwith "unused");
     e_deleted = false; e_mark_deleted = (fun () -> ());
     e_stream = (fun _ _ _ -> Seq.empty);
+    e_binary = (fun _ -> failwith "unused");
   } in
   child ()
 

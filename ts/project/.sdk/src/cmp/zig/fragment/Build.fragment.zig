@@ -118,4 +118,5 @@ pub fn build(b: *std.Build) void {
         feature_step.dependOn(&run_feature.step);
     }
     // #FeatureTestSteps
+    // #CodecTestStep
 }

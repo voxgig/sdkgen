@@ -337,6 +337,7 @@ let result_data = result.e_data_get ()
             const note = bodyNote(ent.op[opname], {
               tier: codecTier(target),
               values: 'a `Str` holding the bytes',
+              source: 'a source made by `Sdk_binary.bytes ?name ?type_ data`, beside the data in `~sources`',
             })
             if ('' !== note) Content(note)
           }

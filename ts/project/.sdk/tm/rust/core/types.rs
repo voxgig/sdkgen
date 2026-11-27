@@ -3,10 +3,12 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use crate::core::context::Context;
+use crate::core::control::Transfer;
 use crate::core::error::ProjectNameError;
 use crate::core::response::Response;
 use crate::core::result::SdkResult;
 use crate::core::spec::Spec;
+use crate::utility::binary::Sources;
 use crate::utility::voxgigstruct::Value;
 
 /// Feature: every pipeline hook, with no-op defaults. Features are trait
@@ -78,13 +80,40 @@ pub trait Entity {
 
 /// ProjectNameEntityBase: the full CRUD contract every generated entity
 /// implements. Ops the API spec doesn't define are runtime-error stubs.
+/// The with-forms take what the closed `Value` union cannot carry: the
+/// sources of the call's binary fields, and a binary handle's transfer.
 pub trait ProjectNameEntityBase: Entity + Sized {
-    fn load(self: &Rc<Self>, reqmatch: Value, ctrl: Value) -> Result<Rc<Self>, ProjectNameError>;
+    fn load_with(self: &Rc<Self>, reqmatch: Value, ctrl: Value, opwith: OpWith) -> Result<Rc<Self>, ProjectNameError>;
     fn list(self: &Rc<Self>, reqmatch: Value, ctrl: Value) -> Result<Vec<Rc<Self>>, ProjectNameError>;
-    fn create(self: &Rc<Self>, reqdata: Value, ctrl: Value) -> Result<Rc<Self>, ProjectNameError>;
-    fn update(self: &Rc<Self>, reqdata: Value, ctrl: Value) -> Result<Rc<Self>, ProjectNameError>;
-    fn patch(self: &Rc<Self>, reqdata: Value, ctrl: Value) -> Result<Rc<Self>, ProjectNameError>;
+    fn create_with(self: &Rc<Self>, reqdata: Value, ctrl: Value, opwith: OpWith) -> Result<Rc<Self>, ProjectNameError>;
+    fn update_with(self: &Rc<Self>, reqdata: Value, ctrl: Value, opwith: OpWith) -> Result<Rc<Self>, ProjectNameError>;
+    fn patch_with(self: &Rc<Self>, reqdata: Value, ctrl: Value, opwith: OpWith) -> Result<Rc<Self>, ProjectNameError>;
     fn remove(self: &Rc<Self>, reqmatch: Value, ctrl: Value) -> Result<Rc<Self>, ProjectNameError>;
+
+    fn load(self: &Rc<Self>, reqmatch: Value, ctrl: Value) -> Result<Rc<Self>, ProjectNameError> {
+        self.load_with(reqmatch, ctrl, OpWith::default())
+    }
+    fn create(self: &Rc<Self>, reqdata: Value, ctrl: Value) -> Result<Rc<Self>, ProjectNameError> {
+        self.create_with(reqdata, ctrl, OpWith::default())
+    }
+    fn update(self: &Rc<Self>, reqdata: Value, ctrl: Value) -> Result<Rc<Self>, ProjectNameError> {
+        self.update_with(reqdata, ctrl, OpWith::default())
+    }
+    fn patch(self: &Rc<Self>, reqdata: Value, ctrl: Value) -> Result<Rc<Self>, ProjectNameError> {
+        self.patch_with(reqdata, ctrl, OpWith::default())
+    }
+}
+
+#[derive(Default, Clone)]
+pub struct OpWith {
+    pub sources: Sources,
+    pub transfer: Option<Rc<RefCell<Transfer>>>,
+}
+
+impl OpWith {
+    pub fn sources(sources: Sources) -> OpWith {
+        OpWith { sources, transfer: None }
+    }
 }
 
 /// Transport: `(ctx, url, fetchdef) -> transport-shaped response map`.

@@ -315,10 +315,28 @@ local function binary_bodies(ctx, cfg)
   end
 
   local body = type(ctx.point) == "table" and ctx.point.body or nil
+  local spec_body = type(ctx.spec) == "table" and ctx.spec.body or nil
   if type(body) == "table" and body.kind == "raw" and body.binary == true then
-    add(type(body.media) == "string" and body.media or nil, true,
-      type(ctx.spec) == "table" and ctx.spec.body or nil,
-      type(ctx.reqdata) == "table" and ctx.reqdata[media.RAW_BODY] or nil)
+    local raw = type(ctx.sources) == "table" and ctx.sources[media.RAW_BODY] or nil
+    if raw == nil and type(ctx.reqdata) == "table" then
+      raw = ctx.reqdata[media.RAW_BODY]
+    end
+    add(type(body.media) == "string" and body.media or nil, true, spec_body,
+      type(raw) == "string" and raw or nil, type(raw) == "table" and raw.data or nil)
+  end
+
+  -- An encoded multipart body, and a form body that carries a file: a string
+  -- either way, told from text by the point's kind alone.
+  local files = false
+  if type(body) == "table" and type(body.fields) == "table" then
+    for _, field in ipairs(body.fields) do
+      files = files or (type(field) == "table" and field.binary == true)
+    end
+  end
+  if type(body) == "table" and (body.kind == "multipart" or (body.kind == "form" and files)) then
+    local ctype = media.header_value(type(ctx.spec) == "table" and ctx.spec.headers or nil,
+      "content-type")
+    add(ctype ~= "" and ctype or nil, true, spec_body)
   end
 
   local response = ctx.response

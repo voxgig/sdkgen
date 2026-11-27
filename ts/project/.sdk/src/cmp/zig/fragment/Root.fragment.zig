@@ -30,6 +30,14 @@ pub const Context = context.Context;
 pub const CtxSpec = context.CtxSpec;
 pub const ProjectNameError = errmod.ProjectNameError;
 
+// A file's bytes beside the request data, and what an operation's with-form takes.
+pub const binary = @import("core/binary.zig");
+pub const BinarySource = binary.BinarySource;
+pub const SourceEntry = binary.SourceEntry;
+pub const OpWith = binary.OpWith;
+pub const Transfer = @import("core/control.zig").Transfer;
+pub const codec = @import("utility/codec/index.zig");
+
 // Internals exposed for the template test suite.
 pub const types_mod = types;
 pub const BaseFeature = @import("feature/base.zig").BaseFeature;

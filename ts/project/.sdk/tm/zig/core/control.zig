@@ -13,6 +13,8 @@ pub const Control = struct {
     explain: Value = .{ .null = {} },
     actor: []const u8 = "",
     paging: Value = .{ .null = {} },
+    // Set by an entity's binary handle: the slot and the direction its bytes move.
+    transfer: ?*Transfer = null,
 
     pub fn make() *Control {
         const c = h.A().create(Control) catch unreachable;
@@ -22,5 +24,17 @@ pub const Control = struct {
 
     pub fn has_explain(self: *const Control) bool {
         return self.explain == .object;
+    }
+};
+
+pub const Transfer = struct {
+    slot: []const u8 = "",
+    direction: []const u8 = "",
+    bytes: ?[]const u8 = null,
+
+    pub fn make(slot: []const u8, direction: []const u8) *Transfer {
+        const t = h.A().create(Transfer) catch unreachable;
+        t.* = .{ .slot = slot, .direction = direction };
+        return t;
     }
 };

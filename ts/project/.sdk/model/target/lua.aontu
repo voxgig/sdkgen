@@ -9,6 +9,7 @@ main: kit: target: lua: {
   srcfeature: false
 
   provides: { sekreto: true, schema: true }
+  codec: tier: 'encoded'
 
   # Files earlier toolchains generated that this target has RETIRED
   # (vendor-tag rollout): the struct-corpus runner (test/runner.lua is

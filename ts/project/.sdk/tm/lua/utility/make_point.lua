@@ -2,6 +2,7 @@
 
 local vs = require("utility.struct.struct")
 local helpers = require("core.helpers")
+local binary = require("utility.binary")
 
 -- How many path segments a point has.
 local function parts_len(point)
@@ -66,7 +67,7 @@ local function unfilled(ctx, point)
 end
 
 
-local function make_point_util(ctx)
+local function select_point(ctx)
   if ctx.out["point"] ~= nil then
     local preset = ctx.out["point"]
     -- PrePoint short-circuit: a feature (e.g. rbac) may place an SDK error
@@ -222,6 +223,20 @@ local function make_point_util(ctx)
   end
 
   return ctx.point, nil
+end
+
+-- Once the point is known, a body of bytes it answers is refused and the
+-- sources its binary fields carry are lifted out of the data.
+local function make_point_util(ctx)
+  local point, err = select_point(ctx)
+  if err ~= nil then
+    return nil, err
+  end
+  err = binary.bytes_refused(ctx) or binary.lift_sources(ctx)
+  if err ~= nil then
+    return nil, err
+  end
+  return point, nil
 end
 
 return make_point_util

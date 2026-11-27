@@ -4,7 +4,9 @@
 
 pub mod voxgigstruct;
 
+pub mod binary;
 pub mod clean;
+pub mod codec;
 pub mod done;
 pub mod feature_add;
 pub mod feature_hook;

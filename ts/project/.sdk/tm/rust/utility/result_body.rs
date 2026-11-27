@@ -12,6 +12,24 @@ pub fn result_body_util(ctx: &Rc<Context>) -> Option<Rc<RefCell<SdkResult>>> {
     let result = ctx.result.borrow().clone();
 
     if let Some(result) = &result {
+        if let (Some(response), Some(read)) = (&response, crate::utility::codec::reader()) {
+            let raw = crate::core::helpers::get_str(
+                &crate::core::helpers::getp(&ctx.point.borrow(), "response"),
+                "kind",
+            )
+            .as_deref()
+                == Some("raw");
+            let clear = {
+                let r = result.borrow();
+                r.err.is_none() && response.borrow().err.is_none() && r.status < 400
+            };
+            if raw && clear {
+                if let Err(err) = read(ctx) {
+                    result.borrow_mut().err = Some(err);
+                }
+                return Some(result.clone());
+            }
+        }
         if let Some(response) = &response {
             let (json, body, unreadable) = {
                 let r = response.borrow();

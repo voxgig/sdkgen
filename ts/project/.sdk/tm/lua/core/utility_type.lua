@@ -85,6 +85,8 @@ function Utility.copy(src)
   u.result_headers = src.result_headers
   u.transform_request = src.transform_request
   u.transform_response = src.transform_response
+  u.codec = src.codec
+  u.multipart_boundary = src.multipart_boundary
   u.custom = {}
   for k, v in pairs(src.custom) do
     u.custom[k] = v

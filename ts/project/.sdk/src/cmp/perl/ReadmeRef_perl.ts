@@ -333,6 +333,7 @@ ${updateLines}    # ${'patch' === opname ? 'Only the fields to change' : 'Fields
               tier: codecTier(target),
               values: 'a byte string, a character string, sent as UTF-8, or a filehandle',
               once: 'a filehandle',
+              source: 'a source made by `$client->binary->bytes($data, { name => ..., type => ... })`',
             })
             if ('' !== note) Content(note)
           }

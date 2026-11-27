@@ -12200,6 +12200,80 @@ const CODEC_LANES: CodecLane[] = [
         env: pythonEnv() }
     },
   },
+  {
+    target: 'perl',
+    runner: 't/codec_test.t',
+    needs: 'perl',
+    command: () => {
+      const perl = toolchain('perl')
+      return null == perl ? null : { bin: perl, args: ['-Ilib', Path.join('t', 'codec_test.t')] }
+    },
+  },
+  {
+    target: 'lua',
+    runner: 'test/codec_test.lua',
+    needs: 'lua with busted, dkjson and luasocket',
+    command: () => {
+      const lua = mediaLua()
+      const suite = busted(['--no-auto-insulate', Path.join('test', 'codec_test.lua')])
+      if (null == lua || null == suite || !probeOk(lua, ['-e', 'require "socket"'])) return null
+      return { ...suite, env: { ...process.env, LUA: lua } }
+    },
+  },
+  {
+    target: 'ocaml',
+    runner: 'test/codec_test.ml',
+    needs: 'ocamlc with its unix and threads libraries, and make',
+    prepare: (sdkroot) => {
+      const built = run(toolchain('make')!, ['OCAMLC=' + toolchain('ocamlc'), 'build'], sdkroot)
+      return built.ok ? null : 'the generated SDK does not type-check:\n' + tail(built.out)
+    },
+    command: () => {
+      const make = toolchain('make')
+      const ocamlc = toolchain('ocamlc')
+      return null == make || null == ocamlc ? null
+        : { bin: make, args: ['OCAMLC=' + ocamlc, 'test-codec'] }
+    },
+  },
+  {
+    target: 'rust',
+    runner: 'tests/codec_test.rs',
+    needs: 'cargo',
+    // cargo hides a passing test's stdout; the case line must reach the lane.
+    command: () => cargoTest(['--test', 'codec_test', '--', '--nocapture']),
+  },
+  {
+    target: 'zig',
+    runner: 'test/codec_test.zig',
+    needs: 'zig 0.16, which the generated build.zig requires',
+    // The suite prints its line with std.debug.print; `run` merges stderr
+    // into the output it hands back.
+    command: () => {
+      const zig = toolchain('zig')
+      if (null == zig) return null
+      const version = run(zig, ['version'], process.cwd())
+      return version.ok && /^0\.16\./.test(version.out.trim())
+        ? { bin: zig, args: ['build', 'test-codec', '--summary', 'all'] }
+        : null
+    },
+  },
+  {
+    target: 'elixir',
+    runner: 'test/codec_test.exs',
+    needs: 'elixir + mix',
+    command: () => mixTest([Path.join('test', 'codec_test.exs')]),
+  },
+  {
+    target: 'clojure',
+    runner: 'test/sdk/test/codec_test.clj',
+    needs: 'the clojure CLI (`clojure`)',
+    // sdk.test-runner requires the codec suite where it shipped and prints
+    // its line; --sdk-only skips the corpus steps.
+    command: () => {
+      const clj = toolchain('clojure')
+      return null == clj ? null : { bin: clj, args: ['-M:test', '--sdk-only'] }
+    },
+  },
 ]
 
 
@@ -12246,11 +12320,13 @@ describe('the body codecs run from a generated SDK', () => {
     })
   }
 
+  // The generated index is the one codec file such an SDK holds.
   test('a model without body codecs ships no codec source and no codec suite', async () => {
-    for (const target of ['ts', 'js']) {
-      const files = await generateTo(target, Path.join(tmp, 'plain-' + target))
-      deepStrictEqual(Object.keys(files).filter((f) => /codec/i.test(f)),
-        ['src/utility/codec/index.' + target], target + ' ships codec source it does not use')
+    for (const lane of CODEC_LANES) {
+      const files = Object.keys(await generateTo(lane.target, Path.join(tmp, 'plain-' + lane.target)))
+      const codec = files.filter((f) => /codec/i.test(f))
+      ok(1 >= codec.length, lane.target + ' ships codec source it does not use: ' + codec.join(', '))
+      ok(!files.includes(lane.runner), lane.target + ' ships a codec suite with no codec to run')
     }
   })
 })

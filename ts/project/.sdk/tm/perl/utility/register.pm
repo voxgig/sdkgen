@@ -41,12 +41,17 @@ require(Cwd::abs_path("$__dir/result_body.pm"));
 require(Cwd::abs_path("$__dir/result_headers.pm"));
 require(Cwd::abs_path("$__dir/transform_request.pm"));
 require(Cwd::abs_path("$__dir/transform_response.pm"));
+require(Cwd::abs_path("$__dir/codec/index.pm"));
 
 $ProjectNameUtility::REGISTRAR = sub {
   my ($u) = @_;
   for my $k (keys %ProjectNameUtilities::REGISTRY) {
     $u->{$k} = $ProjectNameUtilities::REGISTRY{$k};
   }
+  # The body codecs this SDK was generated with; see codec/index.pm.
+  $u->{codec} = { %ProjectNameUtilities::CODEC };
+  $u->{multipart_boundary} = $ProjectNameUtilities::CODEC{multipart_boundary}
+    if exists $ProjectNameUtilities::CODEC{multipart_boundary};
   # The vendored struct utility, reachable as $utility->{struct}{<fn>}.
   $u->{struct} = ProjectNameHelpers::struct_facade();
 };

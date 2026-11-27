@@ -8,6 +8,8 @@ main: kit: target: clojure: {
   base: 'BASE'
   srcfeature: false
 
+  codec: tier: 'encoded'
+
   provides: { sekreto: true, schema: true }
 
   deps: &: {

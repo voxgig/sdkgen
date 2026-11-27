@@ -3650,7 +3650,10 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
     ocaml: {
       file: /^ocaml\/sdk_types\.ml$/,
       decl: new RegExp('mutable e_' + OP + ' : (?<type>[^;]+);', 'g'),
-      returns: (op) => 'value -> value -> entity_obj' + ('list' === op ? ' list' : ''),
+      // A file source travels beside the data, by name: `value` has no variant for it.
+      returns: (op) => (['create', 'update', 'patch'].includes(op) ?
+        '?sources:(string * binary_source) list -> ' : '') +
+        'value -> value -> entity_obj' + ('list' === op ? ' list' : ''),
     },
     perl: {
       file: /^perl\/entity\/\w+_entity\.pm$/,
@@ -3678,7 +3681,8 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
     },
     rust: {
       file: /^rust\/entity\/\w+\.rs$/,
-      decl: new RegExp('fn ' + OP + '\\(self: &Rc<Self>[^)]*\\) -> Result<(?<type>[^,]+),', 'g'),
+      // An operation that may take sources is declared in its `_with` form.
+      decl: new RegExp('fn ' + OP + '(?:_with)?\\(self: &Rc<Self>[^)]*\\) -> Result<(?<type>[^,]+),', 'g'),
       returns: (op) => 'list' === op ? 'Vec<Rc<Self>>' : 'Rc<Self>',
     },
     scala: {

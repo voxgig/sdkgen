@@ -5,7 +5,7 @@ import {
   cmp, each, names, cmap,
   List, File, Content, Copy, Folder, Fragment, Line, FeatureHook,
   inactiveFeatureExcludes,
-  targetFeatures, pluginExcludes,
+  targetFeatures, pluginExcludes, codecExcludes,
   TEST_CONTROL_EXCLUDE,
   TargetLicense,
 } from '@voxgig/sdkgen'
@@ -29,6 +29,7 @@ import { PrepareAuth } from './PrepareAuth_lua'
 import { Gitignore } from './Gitignore_lua'
 import { MainEntity } from './MainEntity_lua'
 import { EntityTypes } from './EntityTypes_lua'
+import { CodecIndex } from './CodecIndex_lua'
 
 
 const CONTAINED = ['secrets']
@@ -61,7 +62,8 @@ const Main = cmp(async function Main(props: any) {
   Copy({
     from: 'tm/' + target.name,
     exclude: [/src\//, TEST_CONTROL_EXCLUDE,
-      ...containerExcludes, ...inactiveFeatureExcludes(props.ctx$, target), ...pluginExcludes(model)],
+      ...containerExcludes, ...inactiveFeatureExcludes(props.ctx$, target), ...pluginExcludes(model),
+      ...codecExcludes(model)],
     replace: {
       ...props.ctx$.stdrep,
     }
@@ -188,6 +190,8 @@ self._utility.feature_hook(self._rootctx, "${name}")
   // Called at the TARGET ROOT, like Config above (that Folder({name:'.'})
   // is the root itself), because the lua tree has no src/ wrapper: the
   PrepareAuth({ target })
+
+  CodecIndex({ target })
 
   File({ name: 'features.' + target.ext }, () => {
     Content(`-- ${model.const.Name} SDK feature factory

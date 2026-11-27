@@ -296,7 +296,7 @@ describe('makePoint', () => {
 
 
 // Source, so it proves the refusal is there, not that it runs. Each entry is
-// the file and the start of the function's definition.
+// the file and the start of the function that selects the point.
 describe('makePoint in every target', () => {
 
   const TEMPLATES: Record<string, [string, string]> = {
@@ -309,8 +309,8 @@ describe('makePoint in every target', () => {
     java: ['java/utility/MakePoint.java', 'static Map<String, Object> makePoint('],
     js: ['js/src/utility/MakePointUtility.js', 'function makePoint('],
     kotlin: ['kotlin/utility/MakePoint.kt', 'fun makePoint('],
-    lua: ['lua/utility/make_point.lua', 'local function make_point_util('],
-    ocaml: ['ocaml/sdk_runtime.ml', 'let make_point_util '],
+    lua: ['lua/utility/make_point.lua', 'local function select_point('],
+    ocaml: ['ocaml/sdk_runtime.ml', 'and select_point '],
     perl: ['perl/utility/make_point.pm', '$REGISTRY{make_point}'],
     php: ['php/utility/MakePoint.php', 'public static function call('],
     py: ['py/pkg/utility/make_point.py', 'def make_point_util('],

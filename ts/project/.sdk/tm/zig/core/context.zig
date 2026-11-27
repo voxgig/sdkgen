@@ -14,6 +14,7 @@ const result_mod = @import("result.zig");
 const types = @import("types.zig");
 const utility_mod = @import("utility.zig");
 const sdk = @import("sdk.zig");
+const binary = @import("binary.zig");
 
 const Value = h.Value;
 const Control = control_mod.Control;
@@ -50,6 +51,10 @@ pub const CtxSpec = struct {
     spec: ?*Spec = null,
     result: ?*SdkResult = null,
     response: ?*Response = null,
+    // The sources the call passes beside its data, by field name.
+    sources: binary.Sources = &.{},
+    // The transfer record of a binary handle's call.
+    transfer: ?*control_mod.Transfer = null,
 };
 
 pub const Context = struct {
@@ -75,6 +80,10 @@ pub const Context = struct {
     entity: ?Entity,
     shared: Value,
     pending_err: ?*SdkError = null,
+    // The sources the call passed, until the lift takes them.
+    passed: binary.Sources = &.{},
+    // The values of the point's binary fields, lifted out of reqdata.
+    sources: ?[]const binary.Lifted = null,
 
     fn mapOrEmpty(v: ?Value) Value {
         if (v) |val| {
@@ -97,6 +106,13 @@ pub const Context = struct {
             if (h.getp(cm, "explain") == .object) c.explain = h.getp(cm, "explain");
             if (h.get_str(cm, "actor")) |a| c.actor = a;
             if (h.getp(cm, "paging") == .object) c.paging = h.getp(cm, "paging");
+            const transfer = h.getp(cm, "transfer");
+            if (transfer == .object) {
+                c.transfer = control_mod.Transfer.make(
+                    h.get_str(transfer, "slot") orelse "",
+                    h.get_str(transfer, "direction") orelse "",
+                );
+            }
             ctrl = c;
         } else if (ctxspec.ctrl_obj) |co| {
             ctrl = co;
@@ -174,7 +190,10 @@ pub const Context = struct {
             .entity = entity,
             .shared = shared,
             .pending_err = null,
+            .passed = ctxspec.sources,
+            .sources = null,
         };
+        if (ctxspec.transfer) |t| ctx.ctrl.transfer = t;
 
         const opname = ctxspec.opname orelse "";
         ctx.op = ctx.resolve_op(opname);

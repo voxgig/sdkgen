@@ -1,6 +1,6 @@
 // EJECT-START
 
-fn patch(self: &Rc<Self>, reqdata: Value, ctrl: Value) -> Result<Rc<Self>, ProjectNameError> {
+fn patch_with(self: &Rc<Self>, reqdata: Value, ctrl: Value, opwith: OpWith) -> Result<Rc<Self>, ProjectNameError> {
     let ctx = self.utility.make_context(
         CtxSpec {
             opname: Some("patch".to_string()),
@@ -8,6 +8,8 @@ fn patch(self: &Rc<Self>, reqdata: Value, ctrl: Value) -> Result<Rc<Self>, Proje
             mtch: Some(self.mtch.borrow().clone()),
             data: Some(self.data.borrow().clone()),
             reqdata: Some(reqdata),
+            sources: Some(opwith.sources),
+            transfer: opwith.transfer,
             ..Default::default()
         },
         Some(&self.ent_ctx()),

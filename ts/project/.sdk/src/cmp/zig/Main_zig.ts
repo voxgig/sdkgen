@@ -3,6 +3,7 @@ import * as Path from 'node:path'
 
 import {
   cmp, each,
+  codecExcludes, codecsUsed,
   File, Content, Copy, Folder, Fragment,
   inactiveFeatureExcludes,
   pluginExcludes,
@@ -29,6 +30,7 @@ import { Gitignore } from './Gitignore_zig'
 import { MainEntity } from './MainEntity_zig'
 import { Package } from './Package_zig'
 import { PrepareAuth } from './PrepareAuth_zig'
+import { CodecIndex } from './CodecIndex_zig'
 
 
 const FEATURE_TESTS: Record<string, string> = {
@@ -95,6 +97,7 @@ const Main = cmp(async function Main(props: any) {
       /build\.zig\.zon$/,
       ...inactiveFeatureExcludes(props.ctx$, target),
       ...pluginExcludes(model),
+      ...codecExcludes(model),
     ],
     replace: {
       ...props.ctx$.stdrep,
@@ -150,9 +153,33 @@ const Main = cmp(async function Main(props: any) {
 `)
           }
         },
+
+        '#CodecTestStep': ({ indent }: any) => {
+          if (!Object.values(codecsUsed(model)).some((u) => u)) return
+          Content({ indent }, `// The codec suite: part of \`zig build test\`, and alone as
+// \`zig build test-codec\`; the generator's codec lane reads its line.
+{
+    const codec_mod = b.createModule(.{
+        .root_source_file = b.path("test/codec_test.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    codec_mod.addImport("voxgig-struct", struct_mod);
+    codec_mod.addImport("sdk", sdk_mod);
+    const codec_test = b.addTest(.{ .root_module = codec_mod });
+    const run_codec = b.addRunArtifact(codec_test);
+    run_codec.has_side_effects = true;
+    test_step.dependOn(&run_codec.step);
+    const codec_step = b.step("test-codec", "Run the codec suite alone");
+    codec_step.dependOn(&run_codec.step);
+}
+`)
+        },
       }
     })
   })
+
+  CodecIndex({ target })
 
   File({ name: 'root.zig' }, () => {
     Fragment({

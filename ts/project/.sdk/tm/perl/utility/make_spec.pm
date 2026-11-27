@@ -82,7 +82,9 @@ $REGISTRY{make_spec} = sub {
       $ProjectNameUtilities::GRAPHQL_CONTENT_TYPE;
   }
   else {
-    $ctx->{spec}{body} = $utility->{prepare_body}->($ctx);
+    my $body = $utility->{prepare_body}->($ctx);
+    return (undef, $body) if Scalar::Util::blessed($body) && $body->isa('ProjectNameError');
+    $ctx->{spec}{body} = $body;
     $ctx->{spec}{path} = $utility->{prepare_path}->($ctx);
   }
 

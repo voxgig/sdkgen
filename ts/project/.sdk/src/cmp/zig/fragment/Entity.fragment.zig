@@ -8,6 +8,7 @@ const types = @import("../core/types.zig");
 const ctxmod = @import("../core/context.zig");
 const utility_mod = @import("../core/utility.zig");
 const sdk = @import("../core/sdk.zig");
+const binmod = @import("../core/binary.zig");
 
 const Value = h.Value;
 const Context = ctxmod.Context;
@@ -35,6 +36,8 @@ pub const EntListResult = union(enum) {
 };
 
 pub const EntyClass = struct {
+    pub const Result = EntResult;
+
     name: []const u8 = "entityname",
     client: *sdk.ProjectNameSDK,
     utility: *Utility,
@@ -315,4 +318,6 @@ pub const EntyClass = struct {
     // #PatchOp
 
     // #RemoveOp
+
+    // #BinarySlot
 };

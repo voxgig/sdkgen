@@ -100,6 +100,11 @@ impl ProjectNameSDK {
         Utility::copy(&self.utility)
     }
 
+    // The one source core builds: `client.binary().bytes(data, name, type)`.
+    pub fn binary(&self) -> crate::utility::binary::Binary {
+        crate::utility::binary::Binary
+    }
+
     pub fn get_root_ctx(&self) -> Rc<Context> {
         self.rootctx
             .borrow()

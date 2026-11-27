@@ -24,6 +24,7 @@ const RUST_METHOD_RESERVED = new Set<string>([
   'clone', 'new', 'default', 'drop', 'from', 'into', 'to_string',
   'as_ref', 'as_mut', 'borrow', 'borrow_mut', 'deref', 'deref_mut',
   'eq', 'ne', 'cmp', 'partial_cmp', 'hash', 'fmt', 'next', 'iter',
+  'binary',
 ])
 
 

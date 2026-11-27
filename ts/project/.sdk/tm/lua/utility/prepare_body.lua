@@ -2,6 +2,7 @@
 
 local vs = require("utility.struct.struct")
 local media = require("utility.media")
+local binary = require("utility.binary")
 
 -- A list, load or remove routed to a method with a body sends the match
 -- fields that body declares, never a path parameter, and never a header,
@@ -37,14 +38,59 @@ local function match_body(ctx, fields)
   return body
 end
 
+-- The encoded body, with its content type replacing any the headers carry:
+-- a multipart boundary is the encoder's alone to choose.
+local function encode_body(ctx, kind, data)
+  local codec = ctx.utility.codec
+  local encode = type(codec) == "table" and codec[kind] or nil
+  if type(encode) ~= "function" then
+    return nil, ctx:make_error("body_codec_missing",
+      "This SDK was generated without a " .. kind .. " encoder.")
+  end
+
+  local encoded, err = encode(ctx, data, ctx.sources or {})
+  if err ~= nil then
+    return nil, err
+  end
+
+  local headers = ctx.spec ~= nil and ctx.spec.headers or nil
+  if type(headers) == "table" then
+    local drop = {}
+    for key in pairs(headers) do
+      if type(key) == "string" and string.lower(key) == "content-type" then
+        drop[#drop + 1] = key
+      end
+    end
+    for _, key in ipairs(drop) do
+      headers[key] = nil
+    end
+    headers["content-type"] = encoded.type
+  end
+  return encoded.body, nil
+end
+
+-- Answers the body, or nil and an error for make_spec to raise.
 local function prepare_body_util(ctx)
   local op = ctx.op
 
   if op.input == "data" then
+    local refused = binary.lift_sources(ctx)
+    if refused ~= nil then
+      return nil, refused
+    end
+
     if media.is_raw_request(ctx.point) then
-      return media.raw_body(ctx.reqdata)
+      local raw = media.raw_body(ctx.sources)
+      if binary.is_source(raw) then
+        return raw.data
+      end
+      return raw
     end
     local body = ctx.utility.transform_request(ctx)
+    local kind = vs.getpath(ctx.point, "body.kind")
+    if kind == "form" or kind == "multipart" then
+      return encode_body(ctx, kind, body)
+    end
     return body
   end
 

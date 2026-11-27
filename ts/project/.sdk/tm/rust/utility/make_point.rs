@@ -4,6 +4,7 @@ use crate::core::context::Context;
 use crate::core::error::ProjectNameError;
 use crate::core::helpers::{allowed, getp, getpath, op_action, op_keys, to_map};
 use crate::core::types::OutVal;
+use crate::utility::binary::{bytes_refused, lift_sources};
 use crate::utility::make_url::placeholders;
 use crate::utility::param::param_value;
 use crate::utility::voxgigstruct as vs;
@@ -70,7 +71,16 @@ fn unfilled(ctx: &Rc<Context>, point: &Value) -> Vec<String> {
     missing
 }
 
+// Once the point is known, a body of bytes it answers is refused and the
+// sources its binary fields carry are lifted out of the data.
 pub fn make_point_util(ctx: &Rc<Context>) -> Result<Value, ProjectNameError> {
+    let point = select_point(ctx)?;
+    bytes_refused(ctx)?;
+    lift_sources(ctx)?;
+    Ok(point)
+}
+
+fn select_point(ctx: &Rc<Context>) -> Result<Value, ProjectNameError> {
     match ctx.out_get("point") {
         // A PrePoint feature hook (e.g. rbac) may short-circuit the
         // operation by storing an error here; surface it before any

@@ -1,12 +1,18 @@
 // EJECT-START
 
 pub fn update(self: *EntyClass, reqdata: Value, ctrl: Value) EntResult {
+    return self.update_with(reqdata, ctrl, .{});
+}
+
+pub fn update_with(self: *EntyClass, reqdata: Value, ctrl: Value, opwith: binmod.OpWith) EntResult {
     const ctx = self.utility.make_context(CtxSpec{
         .opname = "update",
         .ctrl = ctrl,
         .mtch = self.mtch,
         .data = self.data,
         .reqdata = reqdata,
+        .sources = opwith.sources,
+        .transfer = opwith.transfer,
     }, self.ent_ctx());
     return self.run_op_ent(ctx, update_post_done);
 }

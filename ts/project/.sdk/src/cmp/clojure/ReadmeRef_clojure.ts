@@ -339,6 +339,7 @@ ${updateLines}      ;; ${'patch' === opname ? 'Only the fields to change' : 'Fie
             const note = bodyNote(ent.op[opname], {
               tier: codecTier(target),
               values: 'a byte array, a `String` or an `InputStream`',
+              source: 'a source made by `(api/binary-bytes data {:name name :type type})`',
               once: 'an `InputStream`',
             })
             if ('' !== note) Content(note)

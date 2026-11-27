@@ -10,6 +10,7 @@ import { cmp, each, Folder, File, Content, entityCollection,
 import { TestEntity } from './TestEntity_rust'
 import { TestDirect } from './TestDirect_rust'
 import { TestClean } from './TestClean_rust'
+import { TestCodec } from './TestCodec_rust'
 import { ReadmeExamplesTest } from './ReadmeExamplesTest_rust'
 import { crateIdent } from './utility_rust'
 
@@ -48,6 +49,8 @@ fn exists_test_mode() {
     })
 
     TestClean({ target, rustcrate })
+
+    TestCodec({ target, rustcrate })
 
     // Validate the documented rust examples in the READMEs are well-formed.
     ReadmeExamplesTest({ target })

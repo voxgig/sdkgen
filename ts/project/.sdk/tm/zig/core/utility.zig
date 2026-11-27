@@ -23,6 +23,8 @@ const sdk = @import("sdk.zig");
 // The GENERATED option spec make_options validates against. A leaf module
 // (it imports only helpers and jsonparse), so this closes no cycle.
 const schema = @import("schema.zig");
+const binary = @import("binary.zig");
+const codec = @import("../utility/codec/index.zig");
 
 const Value = h.Value;
 const Context = ctxmod.Context;
@@ -53,9 +55,13 @@ fn is_true(v: Value) bool {
 
 var fetch_dummy: u8 = 0;
 
+pub const BoundaryFn = *const fn (ctx: *Context) []const u8;
+
 pub const Utility = struct {
     fetcher: Fetcher,
     custom: Value,
+    // The multipart boundary seam; see utility/codec.
+    multipart_boundary: BoundaryFn = codec.multipart_boundary,
 
     pub fn new() *Utility {
         const u = h.A().create(Utility) catch unreachable;
@@ -75,8 +81,12 @@ pub const Utility = struct {
             var it = src.custom.object.iterator();
             while (it.next()) |kv| h.setp(custom, kv.key_ptr.*, kv.value_ptr.*);
         }
-        u.* = .{ .fetcher = src.fetcher, .custom = custom };
+        u.* = .{ .fetcher = src.fetcher, .custom = custom, .multipart_boundary = src.multipart_boundary };
         return u;
+    }
+
+    pub fn boundary(self: *Utility, ctx: *Context) []const u8 {
+        return self.multipart_boundary(ctx);
     }
 
     pub fn fetch(self: *Utility, ctx: *Context, url: []const u8, fetchdef: Value) E!Value {
@@ -402,8 +412,28 @@ fn clean_binary_body(ctx: *Context) ?CleanBinary {
     if (is_raw_request(ctx.point) and is_true(h.getp(body, "binary"))) {
         bin.live[0] = if (ctx.spec) |s| s.body else h.vnull();
         bin.live[1] = raw_body(ctx.reqdata);
+        for (ctx.sources orelse &.{}) |l| {
+            if (std.mem.eql(u8, l.name, RAW_BODY) and l.source == null) bin.live[1] = l.data;
+        }
         bin.media[0] = h.get_str(body, "media");
         bin.media[1] = bin.media[0];
+    }
+    // An encoded multipart body, and a form body that carries a file, are a
+    // string here: described by the point's kind.
+    const kind = h.get_str(body, "kind") orelse "";
+    var files = false;
+    const fields = h.getp(body, "fields");
+    if (fields == .array) {
+        for (fields.array.data.items) |f| {
+            if (is_true(h.getp(f, "binary"))) files = true;
+        }
+    }
+    if (std.mem.eql(u8, kind, "multipart") or (std.mem.eql(u8, kind, "form") and files)) {
+        if (ctx.spec) |s| {
+            bin.live[0] = s.body;
+            const ctype = body_header(s.headers, "content-type");
+            bin.media[0] = if (ctype.len == 0) null else ctype;
+        }
     }
     if (ctx.response) |resp| {
         const ctype = body_header(resp.headers, "content-type");
@@ -1007,7 +1037,16 @@ fn unfilled_params(ctx: *Context, point: Value) [][]const u8 {
     return missing.toOwnedSlice(h.A()) catch &.{};
 }
 
+// Once the point is known, a body of bytes it answers is refused and the
+// sources its binary fields carry are lifted out of the data.
 pub fn make_point_util(ctx: *Context) E!Value {
+    const point = try select_point(ctx);
+    try binary.bytes_refused(ctx);
+    try binary.lift_sources(ctx);
+    return point;
+}
+
+fn select_point(ctx: *Context) E!Value {
     if (ctx.out_get("point")) |ov| {
         switch (ov) {
             .err => |e| return ctx.fail_err(e),
@@ -1212,7 +1251,7 @@ pub fn make_spec_util(ctx: *Context) E!*Spec {
         spec.query = h.omap();
         h.setp(spec.headers, "content-type", h.vstr(GRAPHQL_CONTENT_TYPE));
     } else {
-        spec.body = prepare_body_util(ctx);
+        spec.body = try prepare_body_util(ctx);
         spec.path = prepare_path_util(ctx);
     }
 
@@ -1682,6 +1721,39 @@ pub fn raw_body(reqdata: Value) Value {
     return h.getp(reqdata, RAW_BODY);
 }
 
+// A source is sent as its bytes; the data's own `$body` as it was.
+fn lifted_raw_body(ctx: *Context) Value {
+    var out: Value = h.vnull();
+    for (ctx.sources orelse &.{}) |l| {
+        if (!std.mem.eql(u8, l.name, RAW_BODY)) continue;
+        if (l.source) |src| return h.vstr(src.data);
+        out = l.data;
+    }
+    return out;
+}
+
+// The encoded body, with its content type replacing any the headers carry:
+// a multipart boundary is the encoder's alone to choose.
+fn encode_body(ctx: *Context, kind: []const u8, data: Value) E!Value {
+    const encode = codec.encoder(kind) orelse
+        return ctx.fail("body_codec_missing", fmt("This SDK was generated without a {s} encoder.", .{kind}));
+    const encoded = try encode(ctx, data, ctx.sources orelse &.{});
+    if (ctx.spec) |spec| {
+        const headers = spec.headers;
+        if (headers == .object) {
+            while (true) {
+                var kit = headers.object.iterator();
+                const named: ?[]const u8 = while (kit.next()) |kv| {
+                    if (std.ascii.eqlIgnoreCase(kv.key_ptr.*, "content-type")) break kv.key_ptr.*;
+                } else null;
+                _ = headers.object.fetchOrderedRemove(named orelse break);
+            }
+            h.setp(headers, "content-type", h.vstr(encoded.ty));
+        }
+    }
+    return encoded.body;
+}
+
 pub fn prepare_headers_util(ctx: *Context) Value {
     const options: Value = if (ctx.client) |client| client.options_map() else ctx.options;
 
@@ -1779,10 +1851,16 @@ fn cookie_pair(wire: []const u8, val: Value) []const u8 {
     return std.mem.join(h.A(), "; ", pairs.items) catch "";
 }
 
-pub fn prepare_body_util(ctx: *Context) Value {
+pub fn prepare_body_util(ctx: *Context) E!Value {
     if (std.mem.eql(u8, ctx.op.input, "data")) {
-        if (is_raw_request(ctx.point)) return raw_body(ctx.reqdata);
-        return transform_request_util(ctx);
+        try binary.lift_sources(ctx);
+        if (is_raw_request(ctx.point)) return lifted_raw_body(ctx);
+        const body = transform_request_util(ctx);
+        const kind = h.get_str(h.getp(ctx.point, "body"), "kind") orelse "";
+        if (std.mem.eql(u8, kind, "form") or std.mem.eql(u8, kind, "multipart")) {
+            return encode_body(ctx, kind, body);
+        }
+        return body;
     }
     const fields = h.getp(ctx.point, "fields");
     if (fields == .array and fields.array.data.items.len != 0) return match_body(ctx, fields);
@@ -2176,6 +2254,15 @@ pub fn result_body_util(ctx: *Context) ?*SdkResult {
 
     if (result) |res| {
         if (response) |resp| {
+            const raw = std.mem.eql(u8, h.get_str(h.getp(ctx.point, "response"), "kind") orelse "", "raw");
+            if (codec.reader()) |read| {
+                if (raw and res.err == null and resp.err == null and res.status < 400) {
+                    read(ctx) catch {
+                        res.err = ctx.take_err();
+                    };
+                    return result;
+                }
+            }
             const json = resp.json;
             const body = resp.body;
             if (json == .function and !h.is_noval(body)) {

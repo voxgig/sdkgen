@@ -413,6 +413,30 @@ describe('codec: bodies are described in every diagnostic', () => {
 
 
 describe('codec: core opens no file', () => {
+  // The multipart boundary reads the operating system's random source, which
+  // is the one file core may open.
+  test('no perl codec utility opens a file', () => {
+    for (const rel of ['utility/binary.pm', 'utility/prepare_body.pm', 'utility/make_point.pm',
+      'utility/codec/form.pm', 'utility/codec/multipart.pm', 'utility/codec/raw.pm',
+      'utility/codec/handle.pm']) {
+      const src = readFileSync(Path.join(TM, 'perl', rel), 'utf8')
+        .replace(/open\(my \$fh, '<:raw', '\/dev\/urandom'\)/g, '')
+      ok(!/\b(sys)?open(dir)?\s*\(|\bopen\s+my\b|IO::File|File::Slurp|Path::Tiny|-[ef]\s+\$/
+        .test(src), 'perl ' + rel + ' opens a file')
+    }
+  })
+
+  test('no lua codec utility opens a file', () => {
+    for (const rel of ['utility/binary.lua', 'utility/prepare_body.lua', 'utility/make_point.lua',
+      'utility/codec/form.lua', 'utility/codec/multipart.lua', 'utility/codec/raw.lua',
+      'utility/codec/handle.lua']) {
+      const src = readFileSync(Path.join(TM, 'lua', rel), 'utf8')
+        .replace(/io\.open\("\/dev\/urandom", "rb"\)/g, '')
+      ok(!/\bio\.(open|lines|input)\b|\bos\.(remove|rename)\b|require\(?\s*["']lfs["']/.test(src),
+        'lua ' + rel + ' opens a file')
+    }
+  })
+
   test('no ts or js utility imports fs', () => {
     for (const lang of LANGS) {
       for (const rel of ['BinaryUtility', 'PrepareBodyUtility', 'MakePointUtility',
@@ -459,6 +483,48 @@ describe('codec: core opens no file', () => {
       const src = readFileSync(Path.join(TM, 'php', 'utility', rel + '.php'), 'utf8')
       ok(!/\b(fopen|file_get_contents|file_put_contents|readfile|file|opendir|scandir|tmpfile|tempnam|SplFileObject|SplFileInfo)\s*\(/
         .test(src), 'php ' + rel + ' reaches the filesystem')
+    }
+  })
+
+  test('no ocaml codec, lift or handle source reaches the filesystem', () => {
+    for (const rel of ['sdk_binary', 'codec/form_codec', 'codec/multipart_codec',
+      'codec/raw_codec', 'codec/handle_codec']) {
+      const src = readFileSync(Path.join(TM, 'ocaml', rel + '.ml'), 'utf8')
+      ok(!/\b(open_in\w*|open_out\w*|In_channel|Out_channel|Unix|Filename|Sys\.(file_exists|readdir|is_directory|remove|rename))\b/
+        .test(src), 'ocaml ' + rel + ' reaches the filesystem')
+    }
+  })
+
+  test('no rust codec, lift or body step reaches the filesystem', () => {
+    for (const rel of ['binary', 'prepare_body', 'make_point', 'codec/form', 'codec/multipart',
+      'codec/raw', 'codec/handle']) {
+      const src = readFileSync(Path.join(TM, 'rust', 'utility', rel + '.rs'), 'utf8')
+      ok(!/\bstd::fs\b|\bfs::|File::(open|create)|OpenOptions/.test(src), 'rust ' + rel + ' opens a file')
+    }
+  })
+
+  test('no zig codec, lift or body step reaches the filesystem', () => {
+    for (const rel of ['core/binary', 'utility/codec/form', 'utility/codec/multipart',
+      'utility/codec/raw', 'utility/codec/handle']) {
+      const src = readFileSync(Path.join(TM, 'zig', rel + '.zig'), 'utf8')
+      ok(!/\bstd\.fs\b|\bIo\.Dir\b|\bopenFile\b|\bcreateFile\b/.test(src), 'zig ' + rel + ' opens a file')
+    }
+  })
+
+  test('no elixir or clojure codec source names the filesystem', () => {
+    const scans: [string, string[], RegExp][] = [
+      ['elixir', ['lib/projectname/binary.ex', 'lib/projectname/codec/form.ex',
+        'lib/projectname/codec/multipart.ex', 'lib/projectname/codec/raw.ex',
+        'lib/projectname/codec/handle.ex'], /\bFile\.(?!Stream\b)|:file\.|\bPath\./],
+      ['clojure', ['src/sdk/binary.clj', 'src/sdk/codec/form.clj', 'src/sdk/codec/multipart.clj',
+        'src/sdk/codec/raw.clj', 'src/sdk/codec/handle.clj'],
+      /clojure\.java\.io|java\.io\.File\b|java\.nio\.file|\bslurp\b|FileInputStream/],
+    ]
+    for (const [lang, files, fsre] of scans) {
+      for (const rel of files) {
+        const src = readFileSync(Path.join(TM, lang, rel), 'utf8')
+        ok(!fsre.test(src), lang + ' ' + rel + ' names the filesystem')
+      }
     }
   })
 })

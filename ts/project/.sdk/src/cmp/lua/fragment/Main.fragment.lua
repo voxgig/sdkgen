@@ -52,6 +52,10 @@ ProjectNameSDK.__newindex = function(self, key, val)
   end
 end
 
+-- Builds the file sources a binary field or a raw body takes:
+-- `client.binary.bytes(data, { name = ..., type = ... })`.
+ProjectNameSDK.binary = require("utility.binary").binary
+
 -- The client's own record: what a serialiser or clean's snapshot sees in
 -- place of the client, so neither reaches the options through it.
 function ProjectNameSDK:to_record()

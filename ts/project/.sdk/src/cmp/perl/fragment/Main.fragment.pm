@@ -116,6 +116,12 @@ sub get_root_ctx {
   return $self->{_rootctx};
 }
 
+# Builds the file sources a binary field or a raw body takes:
+# `$client->binary->bytes($data, { name => ..., type => ... })`.
+sub binary {
+  return 'ProjectNameBinary';
+}
+
 # The options and the root context both hold the credential, so the
 # client's printed form is its name alone; `options_map` is the documented
 # way to read them back.

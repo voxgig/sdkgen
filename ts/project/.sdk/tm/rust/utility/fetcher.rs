@@ -192,6 +192,10 @@ fn default_http_fetch(
         }
     }
 
+    if crate::utility::media::is_raw_response(&ctx.point.borrow()) {
+        return raw_response(ctx, resp, status, status_text, headers);
+    }
+
     // ureq decodes gzip and no deflate, which a server may send whatever the
     // request asked for.
     let deflate = resp
@@ -219,6 +223,49 @@ fn default_http_fetch(
         ("headers", headers),
         ("json", json_thunk(json_body)),
         ("body", Value::str(body_txt)),
+        ("unreadable", Value::Bool(unreadable)),
+    ]))
+}
+
+// A raw body as its bytes, read no further than one byte past maxBuffer, and
+// not at all when its declared length is already past it: the raw reader
+// refuses either. Text stays a string; other bytes are a list of byte values.
+fn raw_response(
+    ctx: &Rc<Context>,
+    resp: ureq::Response,
+    status: i64,
+    status_text: String,
+    headers: Value,
+) -> Result<Value, ProjectNameError> {
+    use std::io::Read;
+    let max = crate::utility::binary::max_buffer(ctx);
+    let declared = resp.header("content-length").and_then(|v| v.trim().parse::<usize>().ok());
+    let mut bytes: Vec<u8> = Vec::new();
+    if declared.map_or(true, |n| n <= max) {
+        resp.into_reader()
+            .take(max as u64 + 1)
+            .read_to_end(&mut bytes)
+            .map_err(|e| ProjectNameError::new("fetch_body", &format!("{}", e)))?;
+    }
+    // A failure is read as any other: as JSON, else as unreadable.
+    let (body, parsed) = match String::from_utf8(bytes) {
+        Ok(text) => {
+            let parsed = if text.trim().is_empty() {
+                Ok(Value::Noval)
+            } else {
+                crate::utility::jsonparse::json_parse(&text)
+            };
+            (Value::str(text), parsed)
+        }
+        Err(e) => (crate::utility::media::bytes_value(e.as_bytes()), Ok(Value::Noval)),
+    };
+    let unreadable = parsed.is_err();
+    Ok(jo(vec![
+        ("status", Value::Num(status as f64)),
+        ("statusText", Value::str(status_text)),
+        ("headers", headers),
+        ("json", json_thunk(parsed.unwrap_or(Value::Noval))),
+        ("body", body),
         ("unreadable", Value::Bool(unreadable)),
     ]))
 }

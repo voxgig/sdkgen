@@ -8,6 +8,8 @@ local helpers = require("core.helpers")
 local EntyClass = {}
 EntyClass.__index = EntyClass
 
+-- #BinaryImport
+
 
 function EntyClass.new(client, entopts)
   entopts = entopts or {}
@@ -42,6 +44,9 @@ end
 function EntyClass:get_name()
   return self._name
 end
+
+
+-- #BinarySlot
 
 
 -- The entity serialises and prints as its data, as ts does: the instance

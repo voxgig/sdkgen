@@ -13,6 +13,8 @@ function Control.new(opts)
   -- Per-call feature inputs (audit actor, paging cursor/page).
   self.actor = opts.actor
   self.paging = opts.paging
+  -- Set by an entity's binary handle: the slot and the direction its bytes move.
+  self.transfer = opts.transfer
   return self
 end
 

@@ -17,7 +17,8 @@ defmodule ProjectName.Control do
       "err", nil,
       "explain", S.getprop(m, "explain"),
       "actor", S.getprop(m, "actor"),
-      "paging", S.getprop(m, "paging")
+      "paging", S.getprop(m, "paging"),
+      "transfer", S.getprop(m, "transfer")
     ])
   end
 end
@@ -102,6 +103,8 @@ defmodule ProjectName.Response do
       "headers", S.getprop(m, "headers"),
       "json_func", if(S.isfunc(jf), do: jf, else: nil),
       "body", S.getprop(m, "body"),
+      # The undecoded bytes, where a transport keeps them beside the text.
+      "bytes_func", if(S.isfunc(S.getprop(m, "bytes")), do: S.getprop(m, "bytes"), else: nil),
       "err", S.getprop(m, "err"),
       # Set by a transport that could not read a non-blank body as JSON.
       "unreadable", S.getprop(m, "unreadable") == true

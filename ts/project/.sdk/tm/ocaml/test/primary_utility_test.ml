@@ -184,6 +184,87 @@ let rec auth_retarget (cred : auth_cred) (node : O.json) : O.json =
                @ [(dest, O.JMap (List.remove_assoc cred.ac_name bag @ [(cred.ac_name, v)]))]))
   | other -> other
 
+
+(* ---- the body codec sections ---- *)
+
+(* The corpus writes bytes as latin1 characters; a JSON string reads as UTF-8. *)
+let to_latin1 (s : string) : string =
+  let b = Buffer.create (String.length s) in
+  let i = ref 0 in
+  while !i < String.length s do
+    let c = Char.code s.[!i] in
+    if c land 0xE0 = 0xC0 && !i + 1 < String.length s then begin
+      Buffer.add_char b (Char.chr (((c land 0x1F) lsl 6) lor (Char.code s.[!i + 1] land 0x3F)));
+      i := !i + 2
+    end
+    else (Buffer.add_char b s.[!i]; incr i)
+  done;
+  Buffer.contents b
+
+let of_latin1 (s : string) : string =
+  let b = Buffer.create (String.length s) in
+  String.iter (fun ch ->
+      let c = Char.code ch in
+      if c < 0x80 then Buffer.add_char b ch
+      else begin
+        Buffer.add_char b (Char.chr (0xC0 lor (c lsr 6)));
+        Buffer.add_char b (Char.chr (0x80 lor (c land 0x3F)))
+      end) s;
+  Buffer.contents b
+
+(* `source$` is a source built by Sdk_binary.bytes, `bytes$` bytes. *)
+let marker_source (v : value) : binary_source option =
+  match getp v "source$", getp v "bytes$" with
+  | Str d, _ -> Some (Sdk_binary.bytes ?name:(get_str v "name") ?type_:(get_str v "type") (to_latin1 d))
+  | _, Str d -> Some (Sdk_binary.bytes (to_latin1 d))
+  | _ -> None
+
+let rec debytes (v : value) : value =
+  match v with
+  | Map m ->
+    (match getp v "bytes$" with
+     | Str d -> Str (to_latin1 d)
+     | _ -> let out = empty_map () in
+       List.iter (fun (k, x) -> setp out k (debytes x)) m.entries; out)
+  | List r -> ja (List.map debytes !r)
+  | v -> v
+
+(* A source has no slot in `value`, so one in the data moves beside it, as a
+ * caller passes it: a top-level field by its name, and any other by its path,
+ * which the lift then refuses. *)
+let rec sources_in (path : string) (v : value) : (string * binary_source) list =
+  match v with
+  | Map _ when getp v "source$" <> Noval -> (match marker_source v with Some s -> [(path, s)] | None -> [])
+  | Map m -> List.concat_map (fun (k, x) -> sources_in (if path = "" then k else path ^ "." ^ k) x) m.entries
+  | List r -> List.concat (List.mapi (fun i x -> sources_in (path ^ "." ^ string_of_int i) x) !r)
+  | _ -> []
+
+let sourced (c : ctx) : unit =
+  let given = ref [] in
+  (match c.c_reqdata with
+   | Map m ->
+     let out = empty_map () in
+     List.iter (fun (k, x) ->
+         match x with
+         | Map _ when getp x "source$" <> Noval ->
+           (match marker_source x with Some s -> given := !given @ [(k, s)] | None -> ())
+         | List r when List.exists (fun e -> getp e "source$" <> Noval) !r ->
+           given := !given @ List.filter_map (fun e ->
+               match marker_source e with
+               | Some s -> Some (k, s)
+               | None -> (match e with Str t -> Some (k, Sdk_binary.bytes t) | _ -> None)) !r
+         | _ ->
+           (match sources_in k x with
+            | [] -> setp out k (debytes x)
+            | found -> given := !given @ found)) m.entries;
+     c.c_reqdata <- out
+   | _ -> ());
+  given := !given @ sources_in "" c.c_reqmatch;
+  c.c_given <- !given
+
+let body_guarded f c =
+  try f c with Body_error e | Sdk_error_exc e -> raise (Failure e.err_msg)
+
 let () =
   let testfile = if Array.length Sys.argv > 1 then Sys.argv.(1) else "SDKREL/.sdk/test/test.json" in
   let r = R.make_run testfile "primary" in
@@ -238,6 +319,77 @@ let () =
   primary_ctx "resultHeaders" (fun c -> result_headers_util c; result_value c.c_result);
   primary_ctx "transformRequest" (fun c -> transform_request_util c);
   primary_ctx "transformResponse" (fun c -> transform_response_util c);
+
+
+  (* A codec section a project's corpus has not pulled yet is skipped, as is
+   * one for a codec this SDK was generated without. *)
+  let runcodec name kind (present : bool) f =
+    if not present then
+      r.R.skipped <- (name ^ "." ^ kind ^ " (this SDK was generated without that codec)") :: r.R.skipped
+    else
+      R.runset_args r (name ^ "." ^ kind) (R.getset r [name; kind])
+        (fun args ->
+           let ctxmap = arg args 0 in
+           let c = ctx_from cl ctxmap in
+           (match R.getp ctxmap "options" with Map _ as o -> c.c_options <- o | _ -> ());
+           (match R.getp (R.getp ctxmap "ctrl") "transfer" with
+            | Map _ as t -> c.c_ctrl.ctrl_transfer <- t | _ -> ());
+           let out = body_guarded f c in
+           publish ctxmap c;
+           out)
+  in
+  let boundary = u.u_multipart_boundary in
+  u.u_multipart_boundary <- Some (fun _ -> "BOUNDARY");
+  List.iter (fun (kind, present) ->
+      runcodec "prepareBody" kind present (fun c ->
+          sourced c;
+          let sp = new_spec (jo [("headers", empty_map ())]) in
+          c.c_spec <- Some sp;
+          let body = match prepare_body_util c with Str b -> Str (of_latin1 b) | v -> v in
+          match Sdk_binary.header_value sp.sp_headers "content-type" with
+          | "" -> jo [("body", body)]
+          | t -> jo [("type", Str t); ("body", body)]))
+    [("form", Option.is_some u.u_codec.cd_form);
+     ("multipart", Option.is_some u.u_codec.cd_multipart);
+     ("raw", true)];
+  u.u_multipart_boundary <- boundary;
+  runcodec "resultBody" "raw" (Option.is_some u.u_codec.cd_raw) (fun c ->
+      (match c.c_response with Some rs -> rs.rs_body <- debytes rs.rs_body | None -> ());
+      result_body_util c;
+      (match getp c.c_ctrl.ctrl_transfer "bytes" with
+       | Str b -> setp c.c_ctrl.ctrl_transfer "bytes" (Str (of_latin1 b))
+       | _ -> ());
+      result_value c.c_result);
+  runcodec "makeFetchDef" "encoded" true (fun c ->
+      (match c.c_spec with
+       | Some sp ->
+         sp.sp_body <- debytes sp.sp_body;
+         c.c_utility <- Some { u with u_make_url = (fun _ -> (sp.sp_url, None)) }
+       | None -> ());
+      match make_fetch_def_util c with
+      | (fd, None) -> (match getp fd "body" with Str b -> setp fd "body" (Str (of_latin1 b)) | _ -> ()); fd
+      | (_, Some e) -> raise (Failure e.err_msg));
+  (* A source serialises as its description here, so that is what clean meets. *)
+  let described v =
+    let rec walk v = match v with
+      | Map _ when getp v "source$" <> Noval ->
+        (match marker_source v with Some s -> Sdk_binary.describe s | None -> v)
+      | Map m -> let out = empty_map () in List.iter (fun (k, x) -> setp out k (walk x)) m.entries; out
+      | List r -> ja (List.map walk !r)
+      | v -> v in
+    walk v in
+  R.runset_args r "clean.binary" (R.getset r ["clean"; "binary"]) (fun args ->
+        let ctxmap = arg args 0 in
+        let c = ctx_from cl ctxmap in
+        (match c.c_spec with Some sp -> sp.sp_body <- debytes sp.sp_body | None -> ());
+        let v = arg args 1 in
+        let v = match v with
+          | Str "spec$" ->
+            (* The spec as the corpus gives it: spec_to_value adds this port's defaults. *)
+            (match c.c_spec with Some sp -> jo [("body", sp.sp_body); ("headers", sp.sp_headers)]
+                                | None -> Noval)
+          | v -> described v in
+        u.u_clean c v);
 
   (* Sections that take a bare map or explicit args rather than a ctx. *)
   let primary_args name f =

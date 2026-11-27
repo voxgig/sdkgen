@@ -76,7 +76,11 @@ local function make_spec_util(ctx)
     ctx.spec.query = {}
     ctx.spec.headers["content-type"] = graphql.CONTENT_TYPE
   else
-    ctx.spec.body = utility.prepare_body(ctx)
+    local body, berr = utility.prepare_body(ctx)
+    if berr ~= nil then
+      return nil, berr
+    end
+    ctx.spec.body = body
     ctx.spec.path = utility.prepare_path(ctx)
   end
 

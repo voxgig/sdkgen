@@ -1,6 +1,6 @@
 // EJECT-START
 
-fn update(self: &Rc<Self>, reqdata: Value, ctrl: Value) -> Result<Rc<Self>, ProjectNameError> {
+fn update_with(self: &Rc<Self>, reqdata: Value, ctrl: Value, opwith: OpWith) -> Result<Rc<Self>, ProjectNameError> {
     let ctx = self.utility.make_context(
         CtxSpec {
             opname: Some("update".to_string()),
@@ -8,6 +8,8 @@ fn update(self: &Rc<Self>, reqdata: Value, ctrl: Value) -> Result<Rc<Self>, Proj
             mtch: Some(self.mtch.borrow().clone()),
             data: Some(self.data.borrow().clone()),
             reqdata: Some(reqdata),
+            sources: Some(opwith.sources),
+            transfer: opwith.transfer,
             ..Default::default()
         },
         Some(&self.ent_ctx()),

@@ -1,25 +1,82 @@
 use std::rc::Rc;
 
 use crate::core::context::Context;
+use crate::core::error::ProjectNameError;
 use crate::core::helpers::{get_bool, get_str, getp, setp};
-use crate::utility::media::{is_raw_request, raw_body};
+use crate::utility::binary::{bytes_body, lift_sources, Lifted};
+use crate::utility::media::{is_raw_request, RAW_BODY};
 use crate::utility::voxgigstruct::Value;
 
-pub fn prepare_body_util(ctx: &Rc<Context>) -> Value {
+pub fn prepare_body_util(ctx: &Rc<Context>) -> Result<Value, ProjectNameError> {
     let op = ctx.op.borrow().clone();
 
     if op.input == "data" {
+        lift_sources(ctx)?;
+
         if is_raw_request(&ctx.point.borrow()) {
-            return raw_body(&ctx.reqdata.borrow());
+            return Ok(raw_body(ctx));
         }
-        return crate::utility::transform_request::transform_request_util(ctx);
+
+        let body = crate::utility::transform_request::transform_request_util(ctx);
+
+        let kind = get_str(&getp(&ctx.point.borrow(), "body"), "kind").unwrap_or_default();
+        if "form" == kind || "multipart" == kind {
+            return encode_body(ctx, &kind, &body);
+        }
+        return Ok(body);
     }
 
     if !point_fields(&ctx.point.borrow()).is_empty() {
-        return match_body(ctx);
+        return Ok(match_body(ctx));
     }
 
-    Value::Noval
+    Ok(Value::Noval)
+}
+
+// A source is sent as its bytes; the data's own `$body` as it was.
+fn raw_body(ctx: &Rc<Context>) -> Value {
+    let sources = ctx.sources.borrow();
+    let lifted = sources.iter().flatten().filter(|(name, _)| RAW_BODY == name);
+    let mut out = Value::Noval;
+    for (_, value) in lifted {
+        match value {
+            Lifted::Source(src) => return bytes_body(&src.data),
+            Lifted::Data(v) => out = v.clone(),
+        }
+    }
+    out
+}
+
+// The encoded body, with its content type replacing any the headers carry:
+// a multipart boundary is the encoder's alone to choose.
+fn encode_body(ctx: &Rc<Context>, kind: &str, data: &Value) -> Result<Value, ProjectNameError> {
+    let encode = crate::utility::codec::encoder(kind).ok_or_else(|| {
+        ctx.make_error(
+            "body_codec_missing",
+            &format!("This SDK was generated without a {} encoder.", kind),
+        )
+    })?;
+
+    let lifted = ctx.sources.borrow().clone().unwrap_or_default();
+    let encoded = encode(ctx, data, &lifted)?;
+
+    if let Some(spec) = ctx.spec.borrow().clone() {
+        let headers = spec.borrow().headers.clone();
+        if let Value::Map(m) = &headers {
+            let named: Vec<String> = m
+                .borrow()
+                .keys()
+                .filter(|k| k.eq_ignore_ascii_case("content-type"))
+                .cloned()
+                .collect();
+            for k in named {
+                m.borrow_mut().shift_remove(&k);
+            }
+            setp(&headers, "content-type", Value::str(encoded.ty));
+        }
+    }
+
+    Ok(encoded.body)
 }
 
 // The names a point lists as its body fields.

@@ -11,9 +11,13 @@ use crate::core::types::{FeatureRef, FetcherFn};
 use crate::utility as u;
 use crate::utility::voxgigstruct::Value;
 
+pub type BoundaryFn = Rc<dyn Fn(&Rc<Context>) -> String>;
+
 pub struct Utility {
     pub fetcher: RefCell<FetcherFn>,
     pub custom: RefCell<Value>,
+    // The multipart boundary seam; see utility::codec.
+    pub multipart_boundary: RefCell<BoundaryFn>,
 }
 
 impl Utility {
@@ -23,6 +27,7 @@ impl Utility {
                 u::fetcher::fetcher_util(ctx, url, fetchdef)
             })),
             custom: RefCell::new(Value::empty_map()),
+            multipart_boundary: RefCell::new(Rc::new(u::codec::multipart_boundary)),
         })
     }
 
@@ -38,6 +43,7 @@ impl Utility {
         Rc::new(Utility {
             fetcher: RefCell::new(src.fetcher.borrow().clone()),
             custom: RefCell::new(custom),
+            multipart_boundary: RefCell::new(src.multipart_boundary.borrow().clone()),
         })
     }
 
@@ -154,7 +160,12 @@ impl Utility {
         u::prepare_auth::prepare_auth_util(ctx)
     }
 
-    pub fn prepare_body(&self, ctx: &Rc<Context>) -> Value {
+    pub fn multipart_boundary(&self, ctx: &Rc<Context>) -> String {
+        let f = self.multipart_boundary.borrow().clone();
+        f(ctx)
+    }
+
+    pub fn prepare_body(&self, ctx: &Rc<Context>) -> Result<Value, ProjectNameError> {
         u::prepare_body::prepare_body_util(ctx)
     }
 

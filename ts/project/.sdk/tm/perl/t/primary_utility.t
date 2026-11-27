@@ -910,6 +910,113 @@ runsection('prepareBody', sub {
 });
 
 
+# === body codecs ===
+
+# A codec section a project's corpus has not pulled yet is skipped, as is one
+# for a codec this SDK was generated without: its model has no such point.
+sub runcodec {
+  my ($name, $kind, $codec, $subject) = @_;
+  my $label = "$name.$kind";
+  SKIP: {
+    my $section = ref($spec) eq 'HASH' && ref($spec->{$name}) eq 'HASH'
+      ? $spec->{$name}{$kind} : undef;
+    skip("this project's test.json has no $label section", 1) unless ref($section) eq 'HASH';
+    skip("this SDK was generated without a $codec codec", 1)
+      if defined $codec && ref $utility->{codec}{$codec} ne 'CODE';
+    unless (ref($section->{set}) eq 'ARRAY' && @{ $section->{set} }) {
+      fail("test corpus section '$label' is EMPTY");
+      return;
+    }
+    my $ok = eval { $runset->($section, $subject); 1 };
+    if ($ok) { pass($label) }
+    else { fail($label); diag("$label: $@") }
+  }
+  return;
+}
+
+sub _latin1_bytes {
+  my ($text) = @_;
+  my $bytes = "$text";
+  utf8::downgrade($bytes);
+  return $bytes;
+}
+
+sub _latin1_text {
+  my ($bytes) = @_;
+  return $bytes unless defined $bytes && !ref $bytes;
+  my $text = "$bytes";
+  utf8::upgrade($text);
+  return $text;
+}
+
+# `source$` is a source built by binary->bytes, `bytes$` bytes; both latin1.
+# A `blob` flag builds the same source: perl has no blob type.
+sub sourced {
+  my ($val) = @_;
+  return [ map { sourced($_) } @$val ] if ref($val) eq 'ARRAY';
+  return $val unless ref($val) eq 'HASH' && !ProjectNameOmni::isview($val);
+  if (defined $val->{'source$'} && !ref $val->{'source$'}) {
+    return $client->binary->bytes(_latin1_bytes($val->{'source$'}),
+      { name => $val->{name}, type => $val->{type} });
+  }
+  return _latin1_bytes($val->{'bytes$'}) if defined $val->{'bytes$'} && !ref $val->{'bytes$'};
+  return { map { ($_ => sourced($val->{$_})) } keys %$val };
+}
+
+sub _raise {
+  my ($val) = @_;
+  die $val if Scalar::Util::blessed($val) && $val->isa('ProjectNameError');
+  return $val;
+}
+
+for my $kind (qw(form multipart raw)) {
+  runcodec('prepareBody', $kind, ('raw' eq $kind ? undef : $kind), sub {
+    my ($view) = @_;
+    my $ctx = ProjectNameOmni::livectx($view);
+    local $ctx->{utility}{multipart_boundary} = sub { 'BOUNDARY' };
+    $ctx->{reqdata} = sourced($ctx->{reqdata});
+    $ctx->{reqmatch} = sourced($ctx->{reqmatch});
+    $ctx->{spec} = { 'headers' => {} };
+    my $body = _latin1_text(_raise($ctx->{utility}{prepare_body}->($ctx)));
+    my $type = $ctx->{spec}{headers}{'content-type'};
+    return defined $type ? { 'type' => $type, 'body' => $body } : { 'body' => $body };
+  });
+}
+
+runcodec('resultBody', 'raw', 'raw', sub {
+  my ($view) = @_;
+  my $ctx = ProjectNameOmni::livectx($view);
+  $ctx->{response}{body} = sourced($ctx->{response}{body});
+  my $result = $ctx->{utility}{result_body}->($ctx);
+  _raise($result->{err});
+  my $transfer = $ctx->{ctrl}{transfer};
+  $transfer->{bytes} = _latin1_text($transfer->{bytes})
+    if ref $transfer eq 'HASH' && defined $transfer->{bytes};
+  return $result;
+});
+
+runcodec('makeFetchDef', 'encoded', undef, sub {
+  my ($view) = @_;
+  my $ctx = ProjectNameOmni::livectx($view);
+  $ctx->{spec}{body} = sourced($ctx->{spec}{body});
+  local $ctx->{utility}{make_url} = sub { ($ctx->{spec}{url}, undef) };
+  my $fetchdef = _unwrap($ctx->{utility}{make_fetch_def}->($ctx));
+  return { %$fetchdef, 'body' => _latin1_text($fetchdef->{body}) };
+});
+
+runcodec('clean', 'binary', undef, sub {
+  my ($cview, $val) = @_;
+  my $live = ProjectNameOmni::livectx($cview);
+  # The corpus writes a spec as its body and headers; the context's own spec
+  # object adds every other field with its default.
+  my $spec = $live->{spec};
+  local $live->{spec} = { 'body' => sourced($spec->{body}), 'headers' => $spec->{headers} }
+    if defined $spec;
+  return $utility->{clean}->($live,
+    (defined $val && !ref $val && 'spec$' eq $val) ? $live->{spec} : sourced($val));
+});
+
+
 # === prepareHeaders ===
 
 runsection('prepareHeaders', sub {

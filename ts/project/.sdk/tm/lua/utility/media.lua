@@ -132,11 +132,11 @@ function M.media_headers(point, headers)
 end
 
 -- A string, of bytes or text, sent as it is.
-function M.raw_body(reqdata)
-  if type(reqdata) ~= "table" then
+function M.raw_body(values)
+  if type(values) ~= "table" then
     return nil
   end
-  return reqdata[M.RAW_BODY]
+  return values[M.RAW_BODY]
 end
 
 return M

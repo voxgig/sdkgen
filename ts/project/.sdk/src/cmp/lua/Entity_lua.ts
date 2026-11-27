@@ -4,7 +4,7 @@ import * as Path from 'node:path'
 import {
   cmp, each, camelify, names,
   File, Content, Folder, Fragment, Line, FeatureHook, Slot,
-  entityClassName, entityCollection,
+  entityClassName, entityCollection, entitySlots,
 } from '@voxgig/sdkgen'
 
 import {
@@ -35,6 +35,32 @@ const Entity = cmp(function Entity(props: any) {
 
   const ff = Path.normalize(__dirname + '/../../../src/cmp/lua/fragment/')
 
+  // The entity's binary slots, by name; '' is its own bytes, reached with no name.
+  const slots = entitySlots(entity)
+  const q = (v: string) => JSON.stringify(v)
+  const slotDefs = slots.map((slot: any) => '  [' + q(slot.name) + '] = { action = ' +
+    q(slot.action) + (null == slot.read ? '' : ', read = ' + q(slot.read)) +
+    (null == slot.write ? '' : ', write = ' + q(slot.write)) + ' },').join('\n')
+  const named = slots.filter((slot: any) => '' !== slot.name).map((slot: any) => slot.name)
+
+  const binaryImport = 0 === slots.length ? '' :
+    `local BinaryHandle = require("utility.codec.handle")
+
+local BINARY_SLOTS = {
+${slotDefs}
+}
+`
+
+  const binarySlot = 0 === slots.length ? '' :
+    `-- An entity's bytes never enter its data: they are reached by slot` +
+    (0 === named.length ? '.' : ', one of ' + named.map(q).join(', ') +
+      (named.length < slots.length ? ', or none for its own' : '') + '.') + `
+---@return table
+function ${cls}:binary(slot)
+  return BinaryHandle.new(self, BINARY_SLOTS, slot)
+end
+`
+
   Folder({ name: 'entity' }, () => {
 
     File({ name: entity.name + '_entity.' + target.ext }, () => {
@@ -58,6 +84,9 @@ const Entity = cmp(function Entity(props: any) {
           entityname: entity.name,
 
           EntyClass: cls,
+
+          '-- #BinaryImport\n': binaryImport,
+          '-- #BinarySlot\n': binarySlot,
 
           '/(?<indent>[ \\t]*)-- #(?<name>[A-Za-z0-9]+)-Hook[ \\t]*\\n?/':
             ({ name, indent }: any) =>

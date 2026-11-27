@@ -53,7 +53,7 @@ FEATURE_OBJ ?=
 FEATURE_LINK ?=
 -include $(wildcard feature/*/feature.mk)
 
-INC = -I utility -I . -I test -I test/vendor/omni $(FEATURE_INC)
+INC = -I utility -I codec -I . -I test -I test/vendor/omni $(FEATURE_INC)
 
 # The shared JSON corpus lives in the sibling .sdk workspace.
 CORPUS = SDKREL/.sdk/test/test.json
@@ -74,8 +74,16 @@ CORPUS = SDKREL/.sdk/test/test.json
 # template can hold only one answer. It goes after sdk_helpers.ml, whose
 # client/value accessors it uses, and before sdk_runtime.ml, which binds
 # `prepare_auth_util` to it and registers that in the utility record.
+#
+# The body codecs under codec/ ship only when the model's points use them, so
+# they are listed by wildcard in a fixed order; sdk_codec.ml, GENERATED, names
+# those present, and sdk_runtime.ml reads it.
+CODEC_SRC = $(wildcard codec/form_codec.ml codec/multipart_codec.ml \
+  codec/raw_codec.ml codec/handle_codec.ml)
+
 RUNTIME = utility/vregex.ml utility/voxgig_struct.ml sdk_json.ml \
   sdk_types.ml sdk_helpers.ml sdk_schema.ml sdk_prepare_auth.ml \
+  sdk_binary.ml $(CODEC_SRC) sdk_codec.ml \
   sdk_runtime.ml sdk_features.ml $(FEATURE_SRC)
 
 # The vendored corpus engine plus the adapter that drives it. Order matters:
@@ -112,6 +120,10 @@ SDK_TEST = $(RUNTIME) sdk_config.ml $(ENTITIES) sdk_client.ml sdk_error.ml \
 FEATURE_SUITE = $(RUNTIME) sdk_config.ml $(ENTITIES) sdk_client.ml sdk_error.ml \
   test/testutil.ml test/harness.ml test/t_feature.ml test/t_main.ml
 
+# Every body point through a local listener, when the SDK has codecs.
+CODEC_TESTS = $(wildcard test/codec_test.ml)
+CODEC_SUITE = $(RUNTIME) sdk_config.ml $(ENTITIES) sdk_client.ml sdk_error.ml $(CODEC_TESTS)
+
 # The struct corpus needs only the struct library and the corpus engine —
 # omni carries its own JSON reader and regex engine, so nothing of the SDK
 # runtime is linked here.
@@ -127,9 +139,9 @@ PRIMARY_SRC = $(RUNTIME) sdk_config.ml $(ENTITIES) sdk_client.ml sdk_error.ml \
 SMOKE_SRC = utility/vregex.ml utility/voxgig_struct.ml \
   $(OMNI) test/omni_smoke_test.ml
 
-.PHONY: test test-sdk test-feature test-omni test-corpus test-primary test-concurrency build lint clean
+.PHONY: test test-sdk test-feature test-omni test-corpus test-primary test-concurrency test-codec build lint clean
 
-test: test-sdk test-omni test-corpus test-primary test-concurrency
+test: test-sdk test-omni test-corpus test-primary test-concurrency $(if $(CODEC_TESTS),test-codec)
 
 test-sdk: run_sdk_test
 	./run_sdk_test
@@ -148,6 +160,9 @@ test-primary: run_primary_corpus
 
 test-concurrency: run_concurrency_test
 	./run_concurrency_test
+
+test-codec: run_codec_test
+	./run_codec_test
 
 # The sdk suite sets the GET-only flag with Unix.putenv; a feature tier that
 # links unix.cma already brings it.
@@ -175,6 +190,10 @@ run_concurrency_test: $(CONCURRENCY_SRC) $(FEATURE_OBJ)
 	$(OCAMLC) $(INC) -I +unix -I +threads unix.cma threads.cma $(filter-out unix.cma,$(FEATURE_LIB)) \
 	  $(CONCURRENCY_SRC) $(FEATURE_OBJ) $(FEATURE_LINK) -o run_concurrency_test
 
+run_codec_test: $(CODEC_SUITE) $(FEATURE_OBJ)
+	$(OCAMLC) $(INC) -I +unix -I +threads unix.cma threads.cma $(filter-out unix.cma,$(FEATURE_LIB)) \
+	  $(CODEC_SUITE) $(FEATURE_OBJ) $(FEATURE_LINK) -o run_codec_test
+
 # Type-check the SDK library (a clean compile means it is sound).
 build: lint
 lint:
@@ -186,4 +205,4 @@ clean:
 	  test/vendor/omni/*.cmi test/vendor/omni/*.cmo \
 	  feature/*.cmi feature/*.cmo feature/*/*/*.cmi feature/*/*/*.cmo \
 	  feature/*/*/*.o test/feature/*/*.cmi test/feature/*/*.cmo \
-	  run_sdk_test run_feature_test run_omni_smoke run_struct_corpus run_primary_corpus run_concurrency_test a.out
+	  run_sdk_test run_feature_test run_omni_smoke run_struct_corpus run_primary_corpus run_concurrency_test run_codec_test a.out
