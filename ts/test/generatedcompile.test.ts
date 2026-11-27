@@ -11706,3 +11706,94 @@ describe('probes driven through a generated SDK', () => {
     }
   }
 })
+
+// The features that keep state per call must let it go with the call. Each
+// target's own feature suite pins it: many calls, half of them failing, no
+// table left holding a context, and one audit record per call.
+const PER_CALL_FEATURES = ['test', 'log', 'netsim', 'audit', 'debug', 'telemetry', 'metrics', 'cost']
+
+const PER_CALL_LANES: {
+  target: string,
+  needs: string,
+  // Every feature: a cpp suite naming them all is trimmed with any one.
+  every?: boolean,
+  prepare?: (sdkroot: string) => string | null,
+  command: () => { bin: string, args: string[], env?: NodeJS.ProcessEnv } | null,
+  ran: RegExp,
+}[] = [
+  {
+    target: 'rb',
+    needs: 'ruby with minitest',
+    command: () => {
+      const rb = toolchain('ruby')
+      if (null == rb || !probeOk(rb, ['-e', 'require "minitest/autorun"'])) return null
+      return { bin: rb, args: ['test/feature_test.rb', '-v', '-n', '/audit|context_past/'],
+        env: rubyEnv() }
+    },
+    ran: /test_no_feature_keeps_a_context_past_its_call = [\d.]+ s = \./,
+  },
+  {
+    target: 'perl',
+    needs: 'perl',
+    command: () => {
+      const perl = toolchain('perl')
+      return null == perl ? null : { bin: perl, args: ['-Ilib', 't/feature.t'] }
+    },
+    ran: /^ok \d+ - audit records every one of 20 calls$/m,
+  },
+  {
+    target: 'cpp',
+    needs: 'make and a C++ compiler',
+    every: true,
+    prepare: (sdkroot) => {
+      const make = toolchain('make')
+      const cxx = cleanCxx()
+      if (null == make || null == cxx) return 'no make or C++ compiler'
+      const built = run(make, ['CXX=' + cxx, 'test/feature_test.out'], sdkroot)
+      return built.ok ? null : 'the generated feature suite does not compile:\n' + tail(built.out)
+    },
+    command: () => null == toolchain('make') || null == cleanCxx() ? null
+      : { bin: Path.join('test', 'feature_test.out'), args: [] },
+    ran: /feature_test: \d+ tests, \d+ checks, 0 fail/,
+  },
+]
+
+
+describe('per-call feature state ends with the call', () => {
+
+  let tmp = ''
+
+  before(() => {
+    tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-percall-'))
+  })
+
+  after(() => {
+    if ('' !== tmp) Fs.rmSync(tmp, { recursive: true, force: true })
+  })
+
+  for (const lane of PER_CALL_LANES) {
+    test(lane.target + ': no feature keeps a context past its call', async (t) => {
+      const cmd = lane.command()
+      if (null == cmd) {
+        return t.skip('no usable ' + lane.target + ' toolchain here (' + lane.needs + ')')
+      }
+      const sdkroot = Path.join(tmp, lane.target)
+      const every = Fs.readdirSync(Path.join(SCAFFOLD, 'model', 'feature'))
+        .filter((f: string) => f.endsWith('.aontu') && 'feature-index.aontu' !== f)
+        .map((f: string) => f.replace(/\.aontu$/, ''))
+      const features = true === lane.every ? every : PER_CALL_FEATURES
+      await generateTo(lane.target, sdkroot,
+        features.map((f: string) => 'main: kit: feature: ' + f + ': active: true').join('\n'),
+        features)
+      const notready = null == lane.prepare ? null : lane.prepare(sdkroot)
+      ok(null == notready, lane.target + ': ' + notready)
+
+      const ran = run(cmd.bin, cmd.args, sdkroot, cmd.env)
+      ok(ran.ok, 'the generated ' + lane.target + ' feature suite FAILED:\n' + tail(ran.out, 60))
+      ok(lane.ran.test(ran.out), lane.target + ': the per-call state test did not run:\n' +
+        tail(ran.out))
+    })
+  }
+})
+
+

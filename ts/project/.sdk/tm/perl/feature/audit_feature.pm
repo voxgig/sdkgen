@@ -14,7 +14,6 @@ use warnings;
 
 use File::Basename ();
 use Cwd ();
-use Scalar::Util ();
 
 my $__dir;
 BEGIN { $__dir = File::Basename::dirname(Cwd::abs_path(__FILE__)) }
@@ -36,7 +35,6 @@ sub new {
   $self->{client} = undef;
   $self->{options} = {};
   $self->{seq} = 0;
-  $self->{seen} = {};
   return $self;
 }
 
@@ -46,7 +44,6 @@ sub init {
   $self->{options} = Voxgig::Struct::ismap($options) ? $options : {};
   $self->{active} = ProjectNameHelpers::is_true($self->{options}{active});
   $self->{seq} = 0;
-  $self->{seen} = {};
 
   return unless $self->{active};
 
@@ -76,10 +73,10 @@ sub PreUnexpected {
 sub _emit {
   my ($self, $ctx, $outcome) = @_;
   # One record per operation (PreDone + a following PreUnexpected on a
-  # non-2xx must not double-log).
-  my $addr = Scalar::Util::refaddr($ctx);
-  return if exists $self->{seen}{$addr};
-  $self->{seen}{$addr} = 1;
+  # non-2xx must not double-log). The marker lives on the context: a table
+  # keyed by refaddr grows per call, and a reused address skips a call.
+  return if $ctx->{out}{audit_seen};
+  $ctx->{out}{audit_seen} = 1;
   $self->{seq} += 1;
 
   my $record = $ctx->{utility}{clean}->($ctx, {

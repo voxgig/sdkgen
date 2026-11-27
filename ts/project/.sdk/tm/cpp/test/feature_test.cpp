@@ -700,6 +700,26 @@ static void audit_inactiveRecordsNothing() {
   ASSERT_EQ((int)f->records.as_list()->size(), 0, "expected no records");
 }
 
+static void audit_perCallMarkerEndsWithTheCall() {
+  if (!have({"audit", "netsim"})) return;
+  auto f = std::make_shared<AuditFeature>();
+  auto h = fhMake(nullptr, {
+      FF(std::make_shared<NetsimFeature>(), fhMap({{"failEvery", Value(2)}, {"failStatus", Value(500)}})),
+      FF(f, Value::undef())});
+  std::vector<std::weak_ptr<Context>> held;
+  for (int i = 0; i < 20; i++) {
+    auto res = h->op(fhOp("load").setPath("/w/" + std::to_string(i)));
+    ASSERT_TRUE(nullptr != res.ctx, "expected the call's context");
+    if (nullptr == res.ctx) return;
+    ASSERT_TRUE(res.ctx->out.extra.count("audit_seen") == 1, "expected the marker on the call's context");
+    held.push_back(res.ctx);
+  }
+  ASSERT_EQ((int)f->records.as_list()->size(), 20, "expected one record per call");
+  int alive = 0;
+  for (auto& w : held) if (!w.expired()) alive++;
+  ASSERT_EQ(alive, 0, "expected no context kept alive past its call");
+}
+
 // ============================ clienttrack ==============================
 
 static void clienttrack_stableClientIdUniqueRequestIdsUa() {
@@ -967,6 +987,7 @@ int main() {
   T_RUN(audit_defaultActorAnonymous);
   T_RUN(audit_injectedClock);
   T_RUN(audit_inactiveRecordsNothing);
+  T_RUN(audit_perCallMarkerEndsWithTheCall);
 
   T_RUN(clienttrack_stableClientIdUniqueRequestIdsUa);
   T_RUN(clienttrack_doesNotClobberCallerUa);

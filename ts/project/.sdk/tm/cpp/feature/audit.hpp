@@ -4,13 +4,12 @@
 // on the feature (bounded by `max`, default 1000) and, when a `sink` callback
 // is supplied, are pushed to it. The actor is the per-call ctrl actor,
 // falling back to the options `actor`, then "anonymous". Each operation is
-// audited exactly once (the per-context seen marker — java ctx.out — is kept
-// here keyed by ctx.id). Timestamps use the injectable `now` clock.
+// audited exactly once (the per-context seen marker, java's ctx.out, is kept
+// in ctx->out.extra). Timestamps use the injectable `now` clock.
 
 #ifndef SDK_FEATURE_AUDIT_HPP
 #define SDK_FEATURE_AUDIT_HPP
 
-#include <map>
 #include <string>
 
 #include "../core/types.hpp"
@@ -52,15 +51,15 @@ public:
   }
 
 private:
-  std::map<std::string, bool> seen;
-
   void emit(CtxPtr ctx, const std::string& outcome) {
     if (!active) return;
 
     // One record per operation (PreDone + a following PreUnexpected on a
     // failure must not double-log).
-    if (seen.count(ctx->id) && seen[ctx->id]) return;
-    seen[ctx->id] = true;
+    auto& extra = ctx->out.extra;
+    auto at = extra.find("audit_seen");
+    if (at != extra.end() && at->second.is_bool() && at->second.as_bool()) return;
+    extra["audit_seen"] = Value(true);
 
     seq++;
 

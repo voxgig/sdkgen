@@ -883,6 +883,28 @@ if (has_feature('audit')) {
 else { note('feature "audit" not present in this SDK') }
 
 
+# === per-call state ===
+
+{
+  my @names = grep { has_feature($_) } qw(audit debug telemetry metrics cost);
+  if (has_feature('netsim') && @names) {
+    my $h = harness([fspec('netsim', 'failEvery' => 2, 'failStatus' => 500),
+      map { fspec($_) } @names]);
+    $h->op('path' => "/w/$_") for 1 .. 20;
+    for my $name (@names) {
+      my $f = $h->feature($name);
+      for my $table (qw(seen entries spans starts pending)) {
+        next unless ref($f->{$table}) eq 'HASH';
+        is(scalar(keys %{ $f->{$table} }), 0,
+          "$name $table holds no call after 20 calls");
+      }
+    }
+    is(scalar @{ $h->track('_audit')->{records} }, 20, 'audit records every one of 20 calls')
+      if grep { 'audit' eq $_ } @names;
+  }
+}
+
+
 # === clienttrack ===
 
 if (has_feature('clienttrack')) {

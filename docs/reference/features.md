@@ -1091,8 +1091,10 @@ A record is
 `{ seq, ts, actor, entity, op, outcome, status, correlationId }`.
 
 **Notes.** Exactly one record per operation: a `PreDone` followed by
-`PreUnexpected` on a non-2xx does not double-log. A throwing `sink` is
-swallowed, so audit forwarding can never take down a call.
+`PreUnexpected` on a non-2xx does not double-log. The mark that says so is
+kept on the call's own context, so the feature holds nothing once a call
+ends, however long the client lives. A throwing `sink` is swallowed, so
+audit forwarding can never take down a call.
 
 ## `debug`
 

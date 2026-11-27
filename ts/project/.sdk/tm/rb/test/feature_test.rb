@@ -853,6 +853,28 @@ class FeatureTest < Minitest::Test
   end
 
 
+  # === per-call state ===
+
+  def test_no_feature_keeps_a_context_past_its_call
+    skip_unless_feature("netsim")
+    names = %w[audit debug telemetry metrics cost].select { |n| H.has_feature?(n) }
+    skip "no feature here keeps per-call state" if names.empty?
+    h = harness([fspec("netsim", "failEvery" => 2, "failStatus" => 500)] +
+      names.map { |n| fspec(n) })
+    20.times { |i| h.op(path: "/w/#{i}") }
+    names.each do |n|
+      f = h.feature(n)
+      f.instance_variables.each do |iv|
+        table = f.instance_variable_get(iv)
+        next unless table.is_a?(Hash)
+        held = table.keys.count { |k| k.is_a?(ProjectNameContext) }
+        assert_equal 0, held, "#{n} #{iv} still holds #{held} context(s) after 20 calls"
+      end
+    end
+    assert_equal 20, h.track(:@_audit)["records"].length if names.include?("audit")
+  end
+
+
   # === clienttrack ===
 
   def test_clienttrack_stable_client_id_unique_request_ids_and_ua

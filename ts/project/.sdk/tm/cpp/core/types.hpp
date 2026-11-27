@@ -491,6 +491,9 @@ struct CtxOut {
   ResponsePtr request;
   ResponsePtr response;
   ResultPtr result;
+  // Per-call feature state that must end with the call (the c port's
+  // ctx_out_extra).
+  std::map<std::string, Value> extra;
 };
 
 // ---- Context ----------------------------------------------------------
