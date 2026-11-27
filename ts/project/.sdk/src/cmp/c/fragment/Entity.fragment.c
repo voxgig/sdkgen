@@ -33,6 +33,13 @@ static Entity* entyvar_create(Entity* e, voxgig_value* reqdata, voxgig_value* ct
 static Entity* entyvar_update(Entity* e, voxgig_value* reqdata, voxgig_value* ctrl, PNError** err);
 static Entity* entyvar_patch(Entity* e, voxgig_value* reqdata, voxgig_value* ctrl, PNError** err);
 static Entity* entyvar_remove(Entity* e, voxgig_value* reqmatch, voxgig_value* ctrl, PNError** err);
+static Entity* entyvar_create_with(Entity* e, voxgig_value* reqdata, const BinaryField* sources,
+                                   size_t nsources, voxgig_value* ctrl, PNError** err);
+static Entity* entyvar_update_with(Entity* e, voxgig_value* reqdata, const BinaryField* sources,
+                                   size_t nsources, voxgig_value* ctrl, PNError** err);
+static Entity* entyvar_patch_with(Entity* e, voxgig_value* reqdata, const BinaryField* sources,
+                                  size_t nsources, voxgig_value* ctrl, PNError** err);
+static const BinarySlotDef* entyvar_binary_slots(Entity* e, size_t* n);
 static void entyvar_mark_deleted(Entity* e);
 static bool entyvar_deleted(Entity* e);
 
@@ -262,6 +269,8 @@ static voxgig_value* entyvar_matchv(Entity* e, voxgig_value* args) {
 
 // #RemoveOp
 
+// #BinarySlot
+
 // A remove resolves to the entity, marked deleted. The instance KEEPS the
 // data it held - a caller can still read what was deleted - but it is no
 // longer a live record.
@@ -286,4 +295,8 @@ static const EntityVT entyvar_VT = {
   entyvar_update,
   entyvar_patch,
   entyvar_remove,
+  entyvar_create_with,
+  entyvar_update_with,
+  entyvar_patch_with,
+  entyvar_binary_slots,
 };

@@ -4,7 +4,7 @@ import * as Path from 'node:path'
 import {
   cmp, camelify,
   File, Content, Folder, Fragment,
-  entityClassName, entityCollection,
+  entityClassName, entityCollection, entitySlots,
 } from '@voxgig/sdkgen'
 
 import {
@@ -56,10 +56,45 @@ const Entity = cmp(function Entity(props: any) {
   return NULL;
 }
 `)
+                if (['create', 'update', 'patch'].includes(opname)) {
+                  Content({ indent }, `
+static Entity* ${evar}_${opname}_with(Entity* e, voxgig_value* reqarg, const BinaryField* sources,
+                                 size_t nsources, voxgig_value* ctrl, PNError** err) {
+  (void)sources; (void)nsources;
+  return ${evar}_${opname}(e, reqarg, ctrl, err);
+}
+`)
+                }
               } :
               ({ indent }: any) => {
                 EntityOperation({ ff, opname, indent, entity, entrep, cls, evar })
               }, a), {}))
+
+      // The entity's binary slots, by name; "" is its own bytes.
+      const slots = entitySlots(entity)
+      const cstr = (v: any) => null == v ? 'NULL' : JSON.stringify(String(v))
+      const binarySlot = ({ indent }: any) => Content({ indent }, 0 === slots.length ? `
+static const BinarySlotDef* ${evar}_binary_slots(Entity* e, size_t* n) {
+  (void)e;
+  *n = 0;
+  return NULL;
+}
+` : `
+static const BinarySlotDef ${evar}_BINARY_SLOTS[] = {
+${slots.map((s: any) => `  { ${cstr(s.name)}, ${cstr(s.action)}, ${cstr(s.read)}, ${cstr(s.write)} },`).join('\n')}
+};
+
+static const BinarySlotDef* ${evar}_binary_slots(Entity* e, size_t* n) {
+  (void)e;
+  *n = sizeof(${evar}_BINARY_SLOTS) / sizeof(${evar}_BINARY_SLOTS[0]);
+  return ${evar}_BINARY_SLOTS;
+}
+
+// The handle of one of this entity's binary slots: ${slots.map((s: any) => '"' + s.name + '"').join(', ')}.
+BinaryHandle ${evar}_binary(Entity* e, const char* slot) {
+  return entity_binary(e, slot);
+}
+`)
 
       Fragment({
         from: ff + 'Entity.fragment.c',
@@ -76,6 +111,8 @@ const Entity = cmp(function Entity(props: any) {
             Content({ indent }, `feature_hook_util(ctx, "${name}");`),
 
           ...opfrags,
+
+          '#BinarySlot': binarySlot,
         }
       })
 

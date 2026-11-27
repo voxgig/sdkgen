@@ -107,6 +107,13 @@ entity. A slot's other methods fail with `binary_feature_inactive`. A plain
 operation on a route that answers bytes is refused with
 `binary_sink_required`, whose message names the handle.
 
+Every bundled SDK target is at the `encoded` tier. In `rust`, `c`, `cpp`,
+`zig` and `ocaml` the request data cannot hold a source, so `create`,
+`update` and `patch` take the sources as an argument beside the data, and a
+name there that the point does not declare binary is refused. A target with
+no type for a file's content, such as a `Blob`, builds a source from bytes or
+a string alone.
+
 | `err.code` | Meaning |
 | --- | --- |
 | `binary_source_refused` | A source outside a binary field, or a part media type with a line break. |

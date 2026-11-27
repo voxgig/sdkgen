@@ -300,9 +300,9 @@ describe('makePoint', () => {
 describe('makePoint in every target', () => {
 
   const TEMPLATES: Record<string, [string, string]> = {
-    c: ['c/utility/make_point.c', 'voxgig_value* make_point_util('],
+    c: ['c/utility/make_point.c', 'static voxgig_value* select_point('],
     clojure: ['clojure/src/sdk/core.clj', '(defn u-make-point '],
-    cpp: ['cpp/utility/pipeline.hpp', 'inline Value makePoint('],
+    cpp: ['cpp/utility/pipeline.hpp', 'inline Value selectPoint('],
     csharp: ['csharp/utility/MakePoint.cs', 'MakePointUtil(Context ctx)'],
     elixir: ['elixir/lib/projectname/utility.ex', 'def make_point_impl('],
     go: ['go/utility/make_point.go', 'func makePointUtil('],

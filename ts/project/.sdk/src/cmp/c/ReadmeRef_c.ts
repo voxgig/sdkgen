@@ -349,6 +349,9 @@ Entity* result = ${evar}->vt->${opname}(${evar}, ${cmapExpr(updatePairs)}, NULL,
             const note = bodyNote(ent.op[opname], {
               tier: codecTier(target),
               values: 'a string value holding the bytes, such as `voxgig_new_string_n`',
+              source: 'a `BinaryField` beside the data, through `entity_' + opname +
+                '_with(e, data, sources, n, ctrl, &err)`, its source made by ' +
+                '`binary_bytes(data, len, name, type)`',
             })
             if ('' !== note) Content(note)
           }

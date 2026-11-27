@@ -87,10 +87,10 @@ describe('codec tier', () => {
     }
   })
 
-  test('the tier table: ts and js encode; the others do not yet', () => {
+  test('the tier table: every target encodes', () => {
     const table = Object.fromEntries(SDK_TARGETS.map((t) => [t, codecTier(TARGETS[t])]))
     const encoded = SDK_TARGETS.filter((t) => atTier(TARGETS[t], 'encoded'))
-    deepStrictEqual(encoded, ['clojure', 'csharp', 'elixir', 'go', 'java', 'js', 'kotlin', 'lua', 'ocaml', 'perl', 'php', 'py', 'rb', 'rust', 'scala', 'swift', 'ts', 'zig'], JSON.stringify(table))
+    deepStrictEqual(encoded, ['c', 'clojure', 'cpp', 'csharp', 'elixir', 'go', 'java', 'js', 'kotlin', 'lua', 'ocaml', 'perl', 'php', 'py', 'rb', 'rust', 'scala', 'swift', 'ts', 'zig'], JSON.stringify(table))
   })
 
   for (const t of SDK_TARGETS) {

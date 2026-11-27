@@ -94,7 +94,7 @@ static char* join_names(voxgig_value* names) {
   return out;
 }
 
-voxgig_value* make_point_util(Context* ctx, PNError** err) {
+static voxgig_value* select_point(Context* ctx, PNError** err) {
   *err = NULL;
 
   // PrePoint short-circuit.
@@ -270,4 +270,14 @@ voxgig_value* make_point_util(Context* ctx, PNError** err) {
   }
 
   return ctx->point;
+}
+
+// Once the point is known, a body of bytes it answers is refused and the
+// binary values of the call are lifted out of the data.
+voxgig_value* make_point_util(Context* ctx, PNError** err) {
+  voxgig_value* point = select_point(ctx, err);
+  if (NULL != *err) return NULL;
+  *err = binary_bytes_refused(ctx);
+  if (NULL == *err) *err = binary_lift_sources(ctx);
+  return NULL == *err ? point : NULL;
 }

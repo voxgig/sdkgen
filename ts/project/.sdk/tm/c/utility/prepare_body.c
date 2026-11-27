@@ -2,7 +2,10 @@
 
 #include "sdk.h"
 
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 
 static const char* ROUTED_KINDS[] = { "header", "cookie", "query" };
 
@@ -62,10 +65,57 @@ static voxgig_value* match_body(Context* ctx, voxgig_value* fields) {
   return body;
 }
 
-voxgig_value* prepare_body_util(Context* ctx) {
+// The encoded body, with its content type replacing any the headers carry:
+// a multipart boundary is the encoder's alone to choose.
+static voxgig_value* encode_body(Context* ctx, const char* kind, voxgig_value* data,
+                                 PNError** err) {
+  CodecEncodeFn encode = 0 == strcmp(kind, "form") ? codec_table.form : codec_table.multipart;
+  if (NULL == encode) {
+    char msg[96];
+    snprintf(msg, sizeof(msg), "This SDK was generated without a %s encoder.", kind);
+    *err = context_make_error(ctx, "body_codec_missing", msg);
+    return NULL;
+  }
+
+  char* type = NULL;
+  voxgig_value* body = encode(ctx, data, &type, err);
+  if (NULL != *err) return NULL;
+
+  voxgig_value* headers = NULL != ctx->spec ? ctx->spec->headers : NULL;
+  if (voxgig_is_map(headers)) {
+    voxgig_map* hm = voxgig_as_map(headers);
+    for (size_t j = hm->len; j > 0; j--) {
+      if (0 == strcasecmp(hm->entries[j - 1].key, "content-type")) {
+        voxgig_value* dk = voxgig_new_string(hm->entries[j - 1].key);
+        voxgig_delprop(headers, dk);
+        voxgig_release(dk);
+      }
+    }
+    setp(headers, "content-type", v_str(type));
+  }
+  free(type);
+  return body;
+}
+
+// A raw body: a given source's bytes, else the lifted value as it is.
+static voxgig_value* raw_body(Context* ctx) {
+  const BinarySource* src = binary_lifted_source(ctx, "$body");
+  if (NULL != src) return voxgig_new_string_n((const char*)src->data, src->len);
+  return getp(ctx->lifted, "$body");
+}
+
+voxgig_value* prepare_body_util(Context* ctx, PNError** err) {
+  *err = NULL;
   if (strcmp(ctx->op->input, "data") == 0) {
-    if (media_is_raw_request(ctx->point)) return media_raw_body(ctx->reqdata);
-    return transform_request_util(ctx);
+    *err = binary_lift_sources(ctx);
+    if (NULL != *err) return NULL;
+    if (media_is_raw_request(ctx->point)) return raw_body(ctx);
+    voxgig_value* body = transform_request_util(ctx);
+    const char* kind = get_str(getp(ctx->point, "body"), "kind");
+    if (NULL != kind && (0 == strcmp(kind, "form") || 0 == strcmp(kind, "multipart"))) {
+      return encode_body(ctx, kind, body, err);
+    }
+    return body;
   }
   voxgig_value* fields = getp(ctx->point, "fields");
   voxgig_value* body = voxgig_is_list(fields) && 0 < voxgig_as_list(fields)->len

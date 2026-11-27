@@ -12296,6 +12296,28 @@ const CODEC_LANES: CodecLane[] = [
     needs: 'gradle (which resolves the Kotlin plugin from the network)',
     command: () => gradleTest('*CodecTest*'),
   },
+  {
+    target: 'c',
+    runner: 'tests/codec_test.c',
+    needs: 'make, sh and a C compiler with POSIX sockets',
+    prepare: (sdkroot) => {
+      const built = run(toolchain('make')!, ['CC=' + cCompiler(), 'tests/codec_test.out'], sdkroot)
+      return built.ok ? null : 'the generated SDK or its codec suite does not build:\n' + tail(built.out)
+    },
+    command: () => null == toolchain('make') || null == cCompiler() || null == toolchain('sh') ? null
+      : { bin: toolchain('sh')!, args: ['-c', './tests/codec_test.out'] },
+  },
+  {
+    target: 'cpp',
+    runner: 'test/codec_test.cpp',
+    needs: 'make and a C++17 compiler',
+    prepare: (sdkroot) => {
+      const built = run(toolchain('make')!, ['CXX=' + cleanCxx(), 'test/codec_test.out'], sdkroot)
+      return built.ok ? null : 'the generated SDK or its codec suite does not build:\n' + tail(built.out)
+    },
+    command: () => null == toolchain('make') || null == cleanCxx() || null == toolchain('sh') ? null
+      : { bin: toolchain('sh')!, args: ['-c', './test/codec_test.out'] },
+  },
 ]
 
 
@@ -12342,12 +12364,13 @@ describe('the body codecs run from a generated SDK', () => {
     })
   }
 
-  // The generated index is the one codec file such an SDK holds.
+  // The generated index is the only codec file such an SDK holds.
   test('a model without body codecs ships no codec source and no codec suite', async () => {
     for (const lane of CODEC_LANES) {
       const files = Object.keys(await generateTo(lane.target, Path.join(tmp, 'plain-' + lane.target)))
-      const codec = files.filter((f) => /codec/i.test(f))
-      ok(1 >= codec.length, lane.target + ' ships codec source it does not use: ' + codec.join(', '))
+      const codec = files.filter((f) => /codec/i.test(f) &&
+        /form|multipart|raw|handle/i.test(Path.basename(f)))
+      deepStrictEqual(codec, [], lane.target + ' ships codec source it does not use')
       ok(!files.includes(lane.runner), lane.target + ' ships a codec suite with no codec to run')
     }
   })

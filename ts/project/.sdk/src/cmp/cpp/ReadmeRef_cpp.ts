@@ -328,6 +328,8 @@ ${updateLines}    // ${'patch' === opname ? 'Only the fields to change' : 'Field
             const note = bodyNote(ent.op[opname], {
               tier: codecTier(target),
               values: 'a `std::string` holding the bytes',
+              source: 'a source made by `binary::bytes(data, name, type)` beside the data, ' +
+                'through `' + opname + 'With(data, sources, ctrl)`',
             })
             if ('' !== note) Content(note)
           }

@@ -177,7 +177,9 @@ static void test_primary_prepare_body_basic(void) {
   cs.utility = U;
   cs.reqdata = cmap(1, "name", v_str("x"));
   Context* ctx = make_context_util(cs, sdk_get_root_ctx(C));
-  voxgig_value* body = prepare_body_util(ctx);
+  PNError* berr = NULL;
+  voxgig_value* body = prepare_body_util(ctx, &berr);
+  CHECK(NULL == berr, "prepare_body: no error");
   CHECK_STR_EQ(get_str(body, "name"), "x", "prepare_body returns reqdata for data op");
 }
 

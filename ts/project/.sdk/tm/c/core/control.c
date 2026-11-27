@@ -13,6 +13,7 @@ Control* control_new(void) {
   c->explain = voxgig_new_undef();
   c->actor = (char*)calloc(1, 1);
   c->paging = voxgig_new_undef();
+  c->transfer = voxgig_new_undef();
   return c;
 }
 

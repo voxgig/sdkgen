@@ -1,12 +1,18 @@
 // EJECT-START
 
   SdkEntityPtr create(const Value& reqdata, const Value& ctrl) override {
+    return createWith(reqdata, BinarySources(), ctrl);
+  }
+
+  SdkEntityPtr createWith(const Value& reqdata, BinarySources sources,
+                      const Value& ctrl) override {
     CtxSpec cs;
     cs.setOpname("create");
     cs.ctrlMap = ctrl.is_map() ? ctrl : vmap();
     cs.match = this->match_;
     cs.data = this->data_;
     cs.reqdata = reqdata.is_map() ? reqdata : vmap();
+    cs.sources = std::make_shared<const BinarySources>(std::move(sources));
     CtxPtr ctx = this->utility->makeContext(cs, this->entctx);
 
     runOp(ctx, [this, ctx]() {

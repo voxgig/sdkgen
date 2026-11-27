@@ -13,7 +13,8 @@ static void entyvar_update_postdone(entyvar_entity* self, Context* ctx) {
   }
 }
 
-static Entity* entyvar_update(Entity* e, voxgig_value* reqdata, voxgig_value* ctrl, PNError** err) {
+static Entity* entyvar_update_with(Entity* e, voxgig_value* reqdata, const BinaryField* sources,
+                                 size_t nsources, voxgig_value* ctrl, PNError** err) {
   entyvar_entity* self = (entyvar_entity*)e;
   CtxSpec cs;
   memset(&cs, 0, sizeof(cs));
@@ -22,6 +23,8 @@ static Entity* entyvar_update(Entity* e, voxgig_value* reqdata, voxgig_value* ct
   cs.mtch = self->mtch;
   cs.data = self->data;
   cs.reqdata = reqdata;
+  cs.sources = sources;
+  cs.nsources = nsources;
   Context* ctx = make_context_util(cs, entyvar_ent_ctx(self));
   entyvar_run_op(self, ctx, entyvar_update_postdone, err);
   if (*err) return NULL;
@@ -30,6 +33,10 @@ static Entity* entyvar_update(Entity* e, voxgig_value* reqdata, voxgig_value* ct
   // result into it, and the caller reaches the record through vt->data.
 
   return e;
+}
+
+static Entity* entyvar_update(Entity* e, voxgig_value* reqdata, voxgig_value* ctrl, PNError** err) {
+  return entyvar_update_with(e, reqdata, NULL, 0, ctrl, err);
 }
 
 // EJECT-END

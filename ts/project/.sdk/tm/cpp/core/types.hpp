@@ -18,6 +18,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <ostream>
 #include <shared_mutex>
 #include <stdexcept>
@@ -156,6 +157,70 @@ public:
   Value explain = Value::undef(); // map when explain-capture is active
   std::string actor = "";
   Value paging = Value::undef();
+  // A binary handle's {slot, direction}: a map when supplied. A read leaves
+  // the body under `bytes`, a string holding them.
+  Value transfer = Value::undef();
+};
+
+// ---- Binary sources ---------------------------------------------------
+//
+// `Value` has no variant for a source or for bytes held as bytes, so a
+// source travels as a typed argument BESIDE the data (createWith and its
+// siblings), never inside it. A string is content, never a path.
+
+// File content a caller hands the SDK, owned. The bytes are a std::string,
+// the byte container the request body and system.fetch already carry.
+class BinarySource {
+public:
+  std::string data;
+  std::optional<std::string> name;
+  std::optional<std::string> type;
+
+  std::size_t size() const { return data.size(); }
+
+  // A source serialised anywhere is described, never copied.
+  Value describe() const {
+    Value desc = vmap();
+    map_put(desc, "binary$", Value("bytes"));
+    map_put(desc, "size", Value(static_cast<long long>(data.size())));
+    if (type) map_put(desc, "type", Value(*type));
+    return desc;
+  }
+};
+
+// The sources of a create, update or patch, by field name. A repeated name
+// is a list of files; the name `$body` is a raw body.
+using BinarySources = std::vector<std::pair<std::string, BinarySource>>;
+
+namespace binary {
+
+// The one source core builds: bytes, or a string's own bytes. An empty type
+// is no type.
+inline BinarySource bytes(std::string data, std::optional<std::string> name = std::nullopt,
+                          std::optional<std::string> type = std::nullopt) {
+  BinarySource src;
+  src.data = std::move(data);
+  src.name = std::move(name);
+  if (type && !type->empty()) src.type = std::move(type);
+  return src;
+}
+
+inline BinarySource bytes(const std::vector<uint8_t>& data,
+                          std::optional<std::string> name = std::nullopt,
+                          std::optional<std::string> type = std::nullopt) {
+  return bytes(std::string(data.begin(), data.end()), std::move(name), std::move(type));
+}
+
+}  // namespace binary
+
+// A slot the entity component derived from the model: the action whose
+// points move its bytes ("" for the entity's own), and the operations that
+// read and write them (empty for none).
+struct BinarySlotDef {
+  std::string name;
+  std::string action;
+  std::string read;
+  std::string write;
 };
 
 // ---- Spec -------------------------------------------------------------
@@ -471,6 +536,9 @@ struct CtxSpec {
 
   OpMapPtr opmap;
 
+  // The sources a create, update or patch was given.
+  std::shared_ptr<const BinarySources> sources;
+
   void setOpname(const std::string& n) {
     opname = n;
     has_opname = true;
@@ -518,6 +586,13 @@ public:
   Value reqmatch = Value::undef();
   Entity* entity = nullptr;
   Value shared = Value::undef();
+
+  // The sources the call was given, never inherited.
+  std::shared_ptr<const BinarySources> given;
+  // Set once the binary values of the point are lifted out of reqdata;
+  // `lifted` then maps each name lifted from the data to its value.
+  bool sourcesLifted = false;
+  Value lifted = Value::undef();
 
   Context(const CtxSpec& cs, const CtxPtr& basectx);
 
@@ -575,6 +650,22 @@ public:
   std::function<Value(CtxPtr)> transformResponse;
   Value custom = vmap();
 
+  // An encoded body: the content type and the bytes.
+  struct Encoded {
+    std::string type;
+    std::string body;
+  };
+  // The body codecs this SDK was generated with (utility/codec/index.hpp);
+  // one the model does not use is empty.
+  struct Codecs {
+    std::function<Encoded(CtxPtr, const Value&)> form;
+    std::function<Encoded(CtxPtr, const Value&)> multipart;
+    std::function<void(CtxPtr)> raw;
+  };
+  Codecs codec;
+  // Swappable; empty when this SDK was generated without a multipart encoder.
+  std::function<std::string(CtxPtr)> multipartBoundary;
+
   Utility() { register_all(*this); }
 
 private:
@@ -617,6 +708,8 @@ public:
     u->resultHeaders = resultHeaders;
     u->transformRequest = transformRequest;
     u->transformResponse = transformResponse;
+    u->codec = codec;
+    u->multipartBoundary = multipartBoundary;
     // Shallow copy of custom: keep the (function) Values by reference.
     u->custom = vmap();
     if (custom.is_map()) {
@@ -705,6 +798,16 @@ public:
   virtual SdkEntityPtr update(const Value& reqdata, const Value& ctrl) = 0;
   virtual SdkEntityPtr patch(const Value& reqdata, const Value& ctrl) = 0;
   virtual SdkEntityPtr remove(const Value& reqmatch, const Value& ctrl) = 0;
+
+  // A create, update or patch with sources for binary fields beside the data.
+  virtual SdkEntityPtr createWith(const Value& reqdata, BinarySources sources,
+                                  const Value& ctrl) = 0;
+  virtual SdkEntityPtr updateWith(const Value& reqdata, BinarySources sources,
+                                  const Value& ctrl) = 0;
+  virtual SdkEntityPtr patchWith(const Value& reqdata, BinarySources sources,
+                                 const Value& ctrl) = 0;
+  // The entity's binary slots, sorted by name; empty when it has none.
+  virtual std::vector<BinarySlotDef> binarySlots() const { return {}; }
 };
 
 // ---- EntityBase (shared entity runtime + runOp) -----------------------
@@ -791,6 +894,8 @@ inline Context::Context(const CtxSpec& cs, const CtxPtr& basectx) {
     if (a.is_string()) ctrl->actor = a.as_string();
     Value p = getp(cs.ctrlMap, "paging");
     if (p.is_map()) ctrl->paging = p;
+    Value tr = getp(cs.ctrlMap, "transfer");
+    if (tr.is_map()) ctrl->transfer = tr;
   } else if (basectx && basectx->ctrl && cs.opname.empty()) {
     ctrl = basectx->ctrl;
   }
@@ -839,6 +944,9 @@ inline Context::Context(const CtxSpec& cs, const CtxPtr& basectx) {
   if (!spec && basectx) spec = basectx->spec;
   if (!result && basectx) result = basectx->result;
   if (!response && basectx) response = basectx->response;
+
+  given = cs.sources;
+  lifted = vmap();
 
   // Resolve operation.
   op = resolveOp(cs.has_opname ? cs.opname : std::string(""));

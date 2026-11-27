@@ -591,3 +591,24 @@ describe('codec: core opens no file, in py', () => {
   })
 })
 
+
+describe('codec: core opens no file, in the closed-union targets', () => {
+  const FILE_API = /\bf?open\s*\(\s*[^)\s]|<(fcntl|dirent|sys\/stat)\.h>|\bstd::(i|o)?fstream\b|<fstream>|<filesystem>/
+
+  const SOURCES: Record<string, string[]> = {
+    c: ['utility/binary.c', 'utility/prepare_body.c', 'utility/make_point.c',
+      'utility/codec/form.c', 'utility/codec/multipart.c', 'utility/codec/raw.c',
+      'utility/codec/handle.c'],
+    cpp: ['utility/binary.hpp', 'utility/pipeline.hpp', 'utility/codec/form.hpp',
+      'utility/codec/multipart.hpp', 'utility/codec/raw.hpp', 'utility/codec/handle.hpp'],
+  }
+
+  for (const [lang, files] of Object.entries(SOURCES)) {
+    test(lang + ': no codec, lift or handle source names a file API', () => {
+      for (const rel of files) {
+        const src = readFileSync(Path.join(TM, lang, rel), 'utf8')
+        ok(!FILE_API.test(src), lang + ' ' + rel + ' names a file API')
+      }
+    })
+  }
+})

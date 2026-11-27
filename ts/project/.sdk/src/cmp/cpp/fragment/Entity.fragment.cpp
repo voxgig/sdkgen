@@ -8,6 +8,7 @@
 #include <memory>
 
 #include "../core/types.hpp"
+// #BinaryImport
 
 namespace sdk {
 
@@ -37,6 +38,8 @@ public:
   // #PatchOp
 
   // #RemoveOp
+
+  // #BinarySlot
 };
 
 } // namespace sdk

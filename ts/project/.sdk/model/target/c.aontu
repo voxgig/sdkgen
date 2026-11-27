@@ -11,6 +11,8 @@ main: kit: target: c: {
   # Applicability tags (docs/design/feature-tags.md): this target vendors
   # the c port of @voxgig/sekreto (with voxgig/plugin under it) inside its
   # gated `feature/secrets/` container, so the `secrets` feature applies.
+  codec: tier: 'encoded'
+
   provides: { sekreto: true, schema: true }
 
   superseded: [

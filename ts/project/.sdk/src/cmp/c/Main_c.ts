@@ -3,7 +3,8 @@ import * as Path from 'node:path'
 
 import {
   cmp, each,
-  File, Copy, Folder, Fragment,
+  File, Copy, Folder, Fragment, Content,
+  codecExcludes,
   inactiveFeatureExcludes,
   pluginExcludes,
   targetFeatures,
@@ -31,6 +32,8 @@ import { MainEntity } from './MainEntity_c'
 import { EntityBase } from './EntityBase_c'
 import { EntityTypes } from './EntityTypes_c'
 import { PrepareAuth } from './PrepareAuth_c'
+import { CodecIndex } from './CodecIndex_c'
+import { cVarName } from './utility_c'
 
 
 const Main = cmp(async function Main(props: any) {
@@ -51,7 +54,8 @@ const Main = cmp(async function Main(props: any) {
   Copy({
     from: 'tm/' + target.name,
     exclude: [/src\//,
-      ...inactiveFeatureExcludes(props.ctx$, target), ...pluginExcludes(model)],
+      ...inactiveFeatureExcludes(props.ctx$, target), ...pluginExcludes(model),
+      ...codecExcludes(model)],
     replace: {
       ...props.ctx$.stdrep,
     }
@@ -74,6 +78,14 @@ const Main = cmp(async function Main(props: any) {
           each(entity, (entity: ModelEntity) => {
             MainEntity({ target, entity })
           })
+
+          // By name, for code that knows no entity (the codec suite).
+          Content(`
+Entity* sdk_entity(${model.const.Name}SDK* client, const char* name, voxgig_value* entopts) {
+${each(entity, (ent: ModelEntity) => `  if (0 == strcmp(name, "${ent.name}")) return ${cVarName(ent.name)}_entity_new(client, entopts);
+`).join('')}  return NULL;
+}
+`)
         })
     })
 
@@ -83,6 +95,8 @@ const Main = cmp(async function Main(props: any) {
   })
 
   PrepareAuth({ target })
+
+  CodecIndex({ target })
 
   // feature/<name>/kinds.c — the plugin definitions an active plugin-bearing
   // feature selected, and the Makefile's wiring gate for that feature's

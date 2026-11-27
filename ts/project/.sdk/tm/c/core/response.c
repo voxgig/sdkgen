@@ -32,6 +32,8 @@ Response* response_new(voxgig_value* resmap) {
   r->err = NULL;
   bool unreadable = false;
   r->unreadable = get_bool(resmap, "unreadable", &unreadable) && unreadable;
+  bool overflow = false;
+  r->overflow = get_bool(resmap, "overflow", &overflow) && overflow;
   return r;
 }
 

@@ -8,6 +8,7 @@ import {
   Content,
   File,
   cmp,
+  entitySlots,
   opReachable,
   invalidRequest,
 } from '@voxgig/sdkgen'
@@ -137,7 +138,8 @@ function failureTests(ident: string, evar: string, entity: ModelEntity, hasList:
   }
 
   const bad = invalidRequest(entity)
-  if (null != bad) {
+  const loadAnswersBytes = entitySlots(entity).some((slot: any) => '' === slot.name && null != slot.read)
+  if (null != bad && !('load' === bad.op && loadAnswersBytes)) {
     const pairs = Object.entries(bad.args)
     const args = pairs
       .map(([k, v]) => JSON.stringify(k) + ', ' +
