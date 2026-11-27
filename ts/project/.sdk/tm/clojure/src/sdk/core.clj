@@ -2017,6 +2017,10 @@
       (let [builder (HttpRequest/newBuilder (URI/create fullurl))
             has-ua (atom false)]
         (.method builder (str/upper-case method-str) (body-publisher fetchdef))
+        ;; A bound in milliseconds, for a caller beneath the timeout feature.
+        (let [bound (vs/getprop fetchdef "timeout")]
+          (when (and (number? bound) (pos? bound))
+            (.timeout builder (java.time.Duration/ofMillis (long bound)))))
         (doseq [item (or (vs/items headers) [])]
           (let [k (vs/getprop item 0) v (vs/getprop item 1)]
             (when (string? v)

@@ -613,6 +613,8 @@ sub _buy_once {
     'body' => $body,
     # Never followed by the client: a redirect would carry the refresh token on.
     'redirect' => 'manual',
+    # Its own bound, in milliseconds: the timeout feature's wrapper is above it.
+    'timeout' => 30000,
   };
 
   my ($res, $err);

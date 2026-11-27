@@ -162,6 +162,10 @@ sub _send_once {
   $new_args{http_proxy} = $new_args{https_proxy} = "$fetchdef->{proxy}"
     if defined $fetchdef->{proxy} && !ref $fetchdef->{proxy}
       && length $fetchdef->{proxy};
+  # A bound in milliseconds, for a caller beneath the timeout feature.
+  $new_args{timeout} = $fetchdef->{timeout} / 1000
+    if defined $fetchdef->{timeout} && !ref $fetchdef->{timeout}
+      && $fetchdef->{timeout} =~ /\A\d+(?:\.\d+)?\z/ && $fetchdef->{timeout} > 0;
 
   # A request that got no answer fails the operation.
   my $res = eval { _http_client(%new_args)->request($method, $fullurl, $opts) };

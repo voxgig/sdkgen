@@ -206,6 +206,10 @@ private fun fetchOnce(fullurl: String, fetchdef: MutableMap<String, Any?>): Muta
   } catch (e: RuntimeException) {
     throw RuntimeException("fetch: invalid url: $fullurl", e)
   }
+  // A bound in milliseconds, for a caller beneath the timeout feature.
+  (fetchdef["timeout"] as? Number)?.toLong()?.takeIf { it > 0 }?.let {
+    reqb.timeout(java.time.Duration.ofMillis(it))
+  }
 
   var hasUA = false
   val headersRaw = fetchdef["headers"]

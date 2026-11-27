@@ -706,6 +706,8 @@ class SecretsFeature : BaseFeature("secrets", "0.1.0", true) {
       "body" to body,
       // Never followed by the client: a redirect would carry the refresh token on.
       "redirect" to "manual",
+      // Its own bound, in milliseconds: the timeout feature's wrapper is above it.
+      "timeout" to 30000,
     )
 
     // The SDK's own transport, beneath every feature's wrapper: it holds the

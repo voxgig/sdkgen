@@ -469,6 +469,8 @@ class ProjectNameSecretsFeature < ProjectNameBaseFeature
       "body" => JSON.generate({ x["request"] => @refresh }),
       # Never followed by the client: a redirect would carry the refresh token on.
       "redirect" => "manual",
+      # Its own bound, in milliseconds: the timeout feature's wrapper is above.
+      "timeout" => 30_000,
     }
 
     res, err = fetch.call(url, fetchdef)

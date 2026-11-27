@@ -1306,7 +1306,9 @@ buys a real token; either refusal is the operation's error. A `system.fetch`
 you supply carries the purchase unguarded, as it carries every other request.
 `cpp`, `zig` and `ocaml` are the deliberate exception: their core ships no
 HTTP client, so the purchase goes out through the vendored sekreto client,
-which only the GET-only guard is applied before. A vault provider's own
+which only the GET-only guard is applied before. The purchase has its own
+30-second limit; the timeout feature's wrappers do not see it. In `cpp`, `zig`
+and `ocaml` the vendored client's own 10-second limit applies instead. A vault provider's own
 requests go to the vault rather than to the API under test, and stay outside
 the guard until sekreto can be handed it.
 

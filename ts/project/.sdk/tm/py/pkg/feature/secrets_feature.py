@@ -350,6 +350,9 @@ class ProjectNameSecretsFeature(ProjectNameBaseFeature):
             # Never followed by the client: a redirect would carry the
             # refresh token on.
             "redirect": "manual",
+            # Seconds; its own bound, as the timeout feature's wrapper is
+            # above this call.
+            "timeout": 30,
         }
 
         res, err = fetch(url, fetchdef)

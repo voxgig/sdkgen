@@ -50,7 +50,7 @@ import {
 import { HOOK_KINDS, HOOK_PROBES, hookCounts } from './hookprobes'
 import { LOAD_LIVE, LOAD_PROBES, loadOutcomes } from './loadprobes'
 import {
-  GETONLY_FEATURES, GETONLY_PATH, GETONLY_PROBES, getOnlyModel, getOnlyOutcome,
+  GETONLY_FEATURES, GETONLY_PATH, GETONLY_PROBES, GETONLY_STALL_MS, getOnlyModel, getOnlyOutcome,
 } from './getonlyprobes'
 
 
@@ -11341,6 +11341,28 @@ function tlsServer(dir: string, name: string): Promise<{ port: number, log: stri
 }
 
 
+// A server that accepts every connection and never answers.
+function silentServer(dir: string): Promise<{ port: number, stop: () => void }> {
+  const file = Path.join(dir, 'silent-server.cjs')
+  Fs.writeFileSync(file, "const s = require('node:net').createServer(() => {})\n" +
+    "s.listen(0, '127.0.0.1', () => console.log('listening ' + s.address().port))\n")
+  const proc = spawn(process.execPath, [file], { stdio: ['ignore', 'pipe', 'inherit'] })
+  return new Promise((resolve, reject) => {
+    let seen = ''
+    proc.on('error', reject)
+    proc.on('exit', (code) => reject(new Error('silent server exited: ' + code)))
+    proc.stdout!.on('data', (chunk) => {
+      seen += String(chunk)
+      const m = /listening (\d+)/.exec(seen)
+      if (null != m) {
+        proc.removeAllListeners('exit')
+        resolve({ port: Number(m[1]), stop: () => proc.kill('SIGKILL') })
+      }
+    })
+  })
+}
+
+
 // A base URL nothing listens on: a port the system handed out, then closed.
 async function refusedBase(): Promise<string> {
   const server = Net.createServer()
@@ -11790,7 +11812,9 @@ describe('probes driven through a generated SDK', () => {
             }
           }
 
+          const opened = Date.now()
           const open = await probe(false)()
+          const baseline = Date.now() - opened
           if (open.ran.unlaunchable) {
             return t.skip(lane.target + ': the toolchain could not be started here: ' +
               tail(open.ran.out, 3))
@@ -11809,6 +11833,27 @@ describe('probes driven through a generated SDK', () => {
             tail(guarded.ran.out))
           ok(outcome!.message.includes('[GET-ONLY GUARD] blocked POST ' + GETONLY_PATH),
             lane.target + ' probe output:\n' + tail(guarded.ran.out))
+
+          // A token endpoint that accepts and never answers fails the purchase
+          // at the exchange's own limit.
+          const silent = await silentServer(sdkroot)
+          let stalled: ReturnType<typeof run>
+          const began = Date.now()
+          try {
+            stalled = lane.exec(sdkroot, {
+              ...nestedTestEnv(), GETONLY_BASE: 'http://127.0.0.1:' + silent.port,
+            }, writer(sdkroot), { name: 'getonly', source: GETONLY_PROBES })
+          }
+          finally {
+            silent.stop()
+          }
+          const waited = Date.now() - began
+          ok(stalled.ok, lane.target + ': the stalled probe failed:\n' + tail(stalled.out, 60))
+          const stall = getOnlyOutcome(stalled.out)
+          ok(null != stall && 'ok' !== stall.code, lane.target + ': a silent token endpoint did ' +
+            'not fail the load:\n' + tail(stalled.out))
+          ok(waited < baseline + GETONLY_STALL_MS, lane.target + ': the stalled purchase took ' +
+            waited + 'ms against ' + baseline + 'ms answered, past the exchange limit')
 
           // The test feature makes the client a test-mode one, which buys no token.
           const offline = await probe(false, true)()

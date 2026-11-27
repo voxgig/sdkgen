@@ -705,6 +705,8 @@ public class SecretsFeature extends BaseFeature {
     fetchdef.put("body", Json.stringify(payload));
     // Never followed by the client: a redirect would carry the refresh token on.
     fetchdef.put("redirect", "manual");
+    // Its own bound, in milliseconds: the timeout feature's wrapper is above it.
+    fetchdef.put("timeout", 30000);
 
     // Not the wrapped transport, which would recurse on the first expiry.
     Object res = exchangeFetch(url, fetchdef);

@@ -654,6 +654,8 @@ public final class SecretsFeature: BaseFeature {
     fetchdef.entries["body"] = .string(body)
     // Never followed by the client: a redirect would carry the refresh token on.
     fetchdef.entries["redirect"] = .string("manual")
+    // Its own bound, in milliseconds: the timeout feature's wrapper is above it.
+    fetchdef.entries["timeout"] = .int(30000)
 
     // The SDK's own transport, beneath every feature's wrapper: it holds the
     // test feature's block and the GET-only guard, and the wrapped one would

@@ -13,6 +13,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 
 	vs "github.com/voxgig/struct"
 
@@ -49,6 +50,10 @@ func clientFor(ctx *core.Context, fetchdef map[string]any) *http.Client {
 	// A shallow copy shares the pooled Transport; only CheckRedirect differs.
 	policy := *client
 	policy.CheckRedirect = followRedirect(ctx)
+	// A bound in milliseconds, for a caller beneath the timeout feature.
+	if ms := core.ToInt(fetchdef["timeout"]); 0 < ms {
+		policy.Timeout = time.Duration(ms) * time.Millisecond
+	}
 	if redirect, ok := fetchdef["redirect"].(string); ok && redirect == "manual" {
 		policy.CheckRedirect = func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse

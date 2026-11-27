@@ -40,6 +40,9 @@ type SecretsFeature struct {
 	cred string
 }
 
+// Milliseconds the token purchase may take.
+const secretsExchangeTimeout = 30000
+
 type secretsExchange struct {
 	path     string
 	method   string
@@ -514,6 +517,8 @@ func (f *SecretsFeature) buyonce() (string, error) {
 		"body":    string(bodybytes),
 		// Never followed by the client: a redirect would carry the refresh token on.
 		"redirect": "manual",
+		// Its own bound: the timeout feature's wrapper is above this call.
+		"timeout": secretsExchangeTimeout,
 	}
 
 	res, err := fetch(url, fetchdef)

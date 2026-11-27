@@ -166,12 +166,16 @@ class ProjectNameFetcher
             $header_lines[] = 'User-Agent: ' . self::DEFAULT_USER_AGENT;
         }
 
+        // A bound in milliseconds, for a caller beneath the timeout feature.
+        $bound = $fetchdef['timeout'] ?? null;
+        $bound = is_numeric($bound) && 0 < $bound ? (int)$bound : 30000;
+
         // Prefer cURL when available — its header capture is reliable across
         // PHP versions, while file_get_contents + custom stream wrappers
         // don't propagate $http_response_header for user-defined wrappers
         // in PHP 8.3+.
         if (function_exists('curl_init')) {
-            return self::curlFetch($fullurl, $method_str, $body_str, $header_lines);
+            return self::curlFetch($fullurl, $method_str, $body_str, $header_lines, $bound);
         }
 
         $opts = [
@@ -179,6 +183,7 @@ class ProjectNameFetcher
                 'method' => $method_str,
                 'ignore_errors' => true,
                 'follow_location' => 0,
+                'timeout' => $bound / 1000,
             ],
         ];
 
@@ -280,13 +285,13 @@ class ProjectNameFetcher
         return [$decoded, null];
     }
 
-    private static function curlFetch(string $fullurl, string $method, $body_str, array $header_lines): array
+    private static function curlFetch(string $fullurl, string $method, $body_str, array $header_lines, int $bound): array
     {
         $ch = self::curlHandle($fullurl);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_HEADER, false);
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+        curl_setopt($ch, CURLOPT_TIMEOUT_MS, $bound);
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
         // '' offers every encoding this cURL decodes, and decodes it: a

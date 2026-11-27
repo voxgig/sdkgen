@@ -264,7 +264,9 @@
           fetchdef (vs/jm "method" (:method x)
                           "headers" (vs/jm "content-type" "application/json")
                           "body" body
-                          "redirect" "manual")
+                          "redirect" "manual"
+                          ;; Its own bound, in milliseconds: the timeout feature's wrapper is above it.
+                          "timeout" 30000)
           ;; By option alone, and only while the exchange stays on its own origin.
           [res err] (loop [at url
                            answer (fetch url fetchdef)

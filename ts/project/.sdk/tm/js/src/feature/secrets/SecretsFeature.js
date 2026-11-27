@@ -374,6 +374,8 @@ class SecretsFeature extends BaseFeature {
       body: JSON.stringify({ [x.request]: this._refresh }),
       // Never followed by the client: a redirect would carry the refresh token on.
       redirect: 'manual',
+      // Its own bound: the timeout feature's wrapper is above it.
+      signal: AbortSignal.timeout(30000),
     }
 
     // The SDK's own transport, beneath every feature's wrapper: the wrapped

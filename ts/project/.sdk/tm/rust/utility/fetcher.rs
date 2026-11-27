@@ -133,6 +133,12 @@ fn default_http_fetch(
 
     let resp = loop {
         let mut req = agent.request(&method, &url);
+        // A bound in milliseconds, for a caller beneath the timeout feature.
+        if let Value::Num(ms) = getp(fetchdef, "timeout") {
+            if 0.0 < ms {
+                req = req.timeout(std::time::Duration::from_millis(ms as u64));
+            }
+        }
         for (name, value) in &headers {
             req = req.set(name, value);
         }

@@ -189,6 +189,12 @@ module ProjectNameUtilities
       end
 
       http = ProjectNameUtilities.http_checkout(key, uri, proxy)
+      # A bound in milliseconds, for a caller beneath the timeout feature;
+      # a pooled connection goes back with Net::HTTP's own.
+      bound = fetchdef["timeout"]
+      bound = bound.is_a?(Numeric) && bound > 0 ? bound / 1000.0 : 60
+      http.read_timeout = bound
+      http.write_timeout = bound
       begin
         # Net::HTTP retries idempotent requests; an EOF can follow a committed POST.
         resp = http.request(request) do |r|

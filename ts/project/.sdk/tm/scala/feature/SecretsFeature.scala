@@ -519,6 +519,8 @@ class SecretsFeature extends BaseFeature("secrets", "0.1.0", true) {
     fetchdef.put("body", Struct.jsonify(bodymap, flags))
     // Never followed by the client: a redirect would carry the refresh token on.
     fetchdef.put("redirect", "manual")
+    // Its own bound, in milliseconds: the timeout feature's wrapper is above it.
+    fetchdef.put("timeout", java.lang.Integer.valueOf(30000))
 
     var res = exchangefetch(url, fetchdef)
 

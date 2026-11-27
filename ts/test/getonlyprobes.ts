@@ -14,6 +14,10 @@ function getOnlyModel(target: string): string {
 
 const GETONLY_FEATURES = ['test', 'log', 'secrets']
 
+// How much longer than an answered run a stalled one may take, past the
+// exchange's own limit.
+const GETONLY_STALL_MS = 45000
+
 // The token endpoint the exchange posts to, by default.
 const GETONLY_PATH = '/auth/token'
 
@@ -21,7 +25,7 @@ type GetOnlyOutcome = { code: string, message: string }
 
 // `getonly-probe: <code> <message>`, the code `ok` for a load that returned.
 function getOnlyOutcome(out: string): GetOnlyOutcome | null {
-  const m = /getonly-probe: (\S+) ?(.*)/.exec(out)
+  const m = /getonly-probe: (\S*) ?(.*)/.exec(out)
   return null == m ? null : { code: m[1], message: m[2].trim() }
 }
 
@@ -558,6 +562,7 @@ export {
   GETONLY_FEATURES,
   GETONLY_PATH,
   GETONLY_PROBES,
+  GETONLY_STALL_MS,
   getOnlyModel,
   getOnlyOutcome,
 }

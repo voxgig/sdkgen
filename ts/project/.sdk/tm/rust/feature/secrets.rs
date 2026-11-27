@@ -756,6 +756,8 @@ fn buy_once(state: &Rc<RefCell<SecretsState>>) -> Result<String, ProjectNameErro
         ),
         ("body", Value::str(body)),
         ("redirect", Value::str("manual")),
+        // Its own bound, in milliseconds: the timeout feature's wrapper is above it.
+        ("timeout", Value::Num(30000.0)),
     ]);
 
     // The SDK's own transport beneath every wrapper: the test block and GET-only guard.

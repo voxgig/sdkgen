@@ -2782,7 +2782,11 @@ defmodule ProjectName.Utility do
     # A 3xx rides back as a normal response: follow_redirects decides the
     # next request, and a `redirect: "manual"` annotation (set by the station
     # feature when a hosts egress policy is active) makes the 3xx the answer.
-    case :httpc.request(method, request, [autoredirect: false], body_format: :binary) do
+    # A bound in milliseconds, for a caller beneath the timeout feature.
+    bound = S.getprop(fetchdef, "timeout")
+    httpopts = [autoredirect: false] ++ if is_number(bound) and bound > 0, do: [timeout: trunc(bound)], else: []
+
+    case :httpc.request(method, request, httpopts, body_format: :binary) do
       {:ok, {{_v, status, _reason}, resp_headers, resp_body}} ->
         rh =
           Enum.reduce(resp_headers, S.jm([]), fn {k, v}, acc ->
