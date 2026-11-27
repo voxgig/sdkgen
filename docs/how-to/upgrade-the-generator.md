@@ -100,7 +100,7 @@ and regenerate.
 
 ## The secrets feature follows the same rule
 
-From 4.48.2, the secrets feature places a credential only where the rest of
+From 4.49.0, the secrets feature places a credential only where the rest of
 the SDK does. Over an API whose spec declares no authentication it resolves
 no key, buys no access token, and retries no refusal, where 4.48.0 and 4.48.1
 still sent the key it resolved, and bought a token when an exchange was
