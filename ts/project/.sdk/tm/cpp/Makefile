@@ -11,6 +11,13 @@
 CXX ?= g++
 CXXFLAGS ?= -std=c++17 -O0 -g -Wall -Wextra -Wno-unused-parameter -pthread
 
+# A test is one translation unit over the whole header-only runtime, and on
+# Windows an object file holds too few sections for the largest of them
+# unless the assembler is asked for the big format.
+ifeq ($(OS),Windows_NT)
+CXXFLAGS += -Wa,-mbig-obj
+endif
+
 # ---- gated feature payloads (model/feature/<name>.aontu plugin groups) --------
 #
 # A gated feature's vendored payload sits two levels under feature/

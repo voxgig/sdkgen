@@ -8736,7 +8736,11 @@ const FULLSET_LANES: FullsetLane[] = [
     runner: 'test/feature_test.exs',
     needs: 'elixir + mix',
     command: () => mixTest(['--trace', Path.join('test', 'feature_test.exs')]),
-    passed: (out) => counted(out, /^(\d+) tests?, 0 failures$/m),
+    // Either of ExUnit's epilogues, with nothing skipped or excluded after it.
+    passed: (out) => {
+      const m = out.match(/^(?:(\d+) tests?, 0 failures|Result: (\d+) passed)\b(.*)$/m)
+      return null == m || /skipped|excluded|invalid|failed/.test(m[3]) ? null : Number(m[1] ?? m[2])
+    },
     ran: (out, name) => new RegExp('^\\s*\\* test ' + name + ' .*\\([\\d.]+m?s\\)', 'm').test(out),
   },
   {
@@ -8863,7 +8867,9 @@ describe('the feature suite runs from a generated SDK', () => {
 
       ok(ran.ok, 'the generated ' + lane.target + ' feature suite FAILED:\n' + tail(ran.out, 60))
 
-      const seen = ran.out + (null == lane.report ? '' : '\n' + lane.report(sdkroot))
+      // A tool colours its summary where it takes the output for a terminal.
+      const seen = ran.out.replace(/\x1b(?:\[[0-9;]*m|\([0B])/g, '') +
+        (null == lane.report ? '' : '\n' + lane.report(sdkroot))
       const passed = lane.passed(seen)
       ok(null != passed && 0 < passed, lane.target + ': the feature suite did not report ' +
         'tests run with none failed or skipped:\n' + tail(seen))
