@@ -68,6 +68,7 @@ function DebugFeature:PreRequest(ctx)
   local entry = {
     op = ((ctx.op ~= nil and ctx.op.entity) or "_") .. "." ..
       ((ctx.op ~= nil and ctx.op.name) or "_"),
+    correlationId = ctx.id,
     method = method,
     url = url,
     headers = self:_redact(ctx, headers),

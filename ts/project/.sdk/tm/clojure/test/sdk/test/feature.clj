@@ -641,6 +641,20 @@
                       (t/is-eq (mget (vs/getelem recs 0) "seq") 2 "seq 2")
                       (t/is-eq (mget (vs/getelem recs 1) "seq") 3 "seq 3")))))
 
+    ;; ---- one call, one id ----
+    (check "telemetry-debug-audit-one-call-context-id" "telemetry"
+           (fn [] (when (and (feature-present? "debug") (feature-present? "audit"))
+                    (let [h (make-harness [(fspec "telemetry") (fspec "debug") (fspec "audit")])
+                          ids (fn [recs] (mapv (fn [rec] (mget rec "correlationId")) recs))]
+                      (h-op h)
+                      (h-op h :opname "list")
+                      (let [calls (ids (mget (h-track h "_audit") "records"))]
+                        (t/is-eq (count calls) 2 "one audit record per call")
+                        (t/is-true (every? (fn [id] (and (string? id) (not= "" id))) calls) (pr-str calls))
+                        (t/is-true (not= (nth calls 0) (nth calls 1)) "a different id per call")
+                        (t/is-eq (ids (mget (h-track h "_telemetry") "spans")) calls "span ids")
+                        (t/is-eq (ids (mget (h-track h "_debug") "entries")) calls "debug entry ids"))))))
+
     ;; ---- clienttrack ----
     (check "clienttrack-stable-id-unique-req" "clienttrack"
            (fn [] (let [[server calls] (recording-server nil)

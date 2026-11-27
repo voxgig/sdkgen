@@ -40,6 +40,7 @@ public final class DebugFeature: BaseFeature {
 
     let entry = VMap()
     entry.entries["op"] = .string(entity + "." + opname)
+    entry.entries["correlationId"] = .string(ctx.id)
     entry.entries["start"] = .int(foptNow(options)())
     if let spec = ctx.spec {
       entry.entries["method"] = .string(spec.method)

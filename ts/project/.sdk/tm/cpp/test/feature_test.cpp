@@ -893,6 +893,33 @@ static void audit_inactiveRecordsNothing() {
   ASSERT_EQ((int)f->records.as_list()->size(), 0, "expected no records");
 }
 
+// ============================ one call, one id =========================
+
+static void telemetryDebugAudit_carryOneCallsContextId() {
+  if (!have({"telemetry", "debug", "audit"})) return;
+  auto tf = std::make_shared<TelemetryFeature>();
+  auto df = std::make_shared<DebugFeature>();
+  auto af = std::make_shared<AuditFeature>();
+  auto h = fhMake(nullptr, {FF(tf, Value::undef()), FF(df, Value::undef()), FF(af, Value::undef())});
+  h->op(fhOp("load"));
+  h->op(fhOp("list"));
+  auto ids = [](const Value& recs) {
+    Value out = vlist();
+    for (const auto& rec : *recs.as_list()) out.as_list()->push_back(getp(rec, "correlationId"));
+    return out;
+  };
+  Value calls = ids(af->records);
+  ASSERT_EQ((int)calls.as_list()->size(), 2, "expected 2 audit records");
+  for (const auto& id : *calls.as_list()) {
+    ASSERT_TRUE(id.is_string() && !id.as_string().empty(),
+                "expected a non-empty string id, got " + sdktest::vstr(calls));
+  }
+  ASSERT_TRUE(vs::getelem(calls, Value(int64_t(0))) != vs::getelem(calls, Value(int64_t(1))),
+              "expected one id per call");
+  ASSERT_EQ_VAL(ids(tf->spans), calls, "expected the spans' ids");
+  ASSERT_EQ_VAL(ids(df->entries), calls, "expected the debug entries' ids");
+}
+
 // ============================ clienttrack ==============================
 
 static void clienttrack_stableClientIdUniqueRequestIdsUa() {
@@ -1172,6 +1199,8 @@ int main() {
   T_RUN(audit_defaultActorAnonymous);
   T_RUN(audit_injectedClock);
   T_RUN(audit_inactiveRecordsNothing);
+
+  T_RUN(telemetryDebugAudit_carryOneCallsContextId);
 
   T_RUN(clienttrack_stableClientIdUniqueRequestIdsUa);
   T_RUN(clienttrack_doesNotClobberCallerUa);

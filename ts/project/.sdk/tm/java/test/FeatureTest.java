@@ -1033,6 +1033,34 @@ public class FeatureTest {
     assertEquals(0, f.records.size(), "expected no records");
   }
 
+  // --- one call, one id -----------------------------------------------------------
+
+  @Test
+  public void correlation_telemetryDebugAndAuditCarryOneCallsContextId() {
+    assumeFeatures("telemetry", "debug", "audit");
+    TelemetryFeature telemetry = new TelemetryFeature();
+    DebugFeature debug = new DebugFeature();
+    AuditFeature audit = new AuditFeature();
+    FhHarness h = fhMake(null, fhF(telemetry, null), fhF(debug, null), fhF(audit, null));
+    h.op(fhOp("load"));
+    h.op(fhOp("list"));
+    Function<List<Map<String, Object>>, List<Object>> ids = (recs) -> {
+      List<Object> out = new ArrayList<>();
+      for (Map<String, Object> rec : recs) {
+        out.add(rec.get("correlationId"));
+      }
+      return out;
+    };
+    List<Object> calls = ids.apply(audit.records);
+    assertEquals(2, calls.size(), "expected one audit record per call");
+    for (Object id : calls) {
+      assertTrue(id instanceof String && !"".equals(id), "expected a context id, got " + calls);
+    }
+    assertNotEquals(calls.get(0), calls.get(1), "expected a different id per call");
+    assertEquals(calls, ids.apply(telemetry.spans), "expected the spans to carry the audit ids");
+    assertEquals(calls, ids.apply(debug.entries), "expected the debug entries to carry the audit ids");
+  }
+
   // --- clienttrack ----------------------------------------------------------------
 
   @Test

@@ -49,6 +49,7 @@ public:
 
     Value entry = vmap();
     map_put(entry, "op", Value(entity + "." + opname));
+    map_put(entry, "correlationId", Value(ctx->id));
     map_put(entry, "start", Value((long long) fopt::foptNow(options)()));
     if (ctx->spec) {
       map_put(entry, "method", Value(ctx->spec->method));

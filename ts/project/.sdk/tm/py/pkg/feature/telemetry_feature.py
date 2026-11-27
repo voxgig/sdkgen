@@ -51,6 +51,7 @@ class ProjectNameTelemetryFeature(ProjectNameBaseFeature):
         span = {
             "traceId": self._id("trace"),
             "spanId": self._id("span"),
+            "correlationId": ctx.id,
             "name": entity + "." + opname,
             "start": self._now(),
             "end": None,

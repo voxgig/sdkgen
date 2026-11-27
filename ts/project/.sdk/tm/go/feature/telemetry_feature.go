@@ -49,10 +49,11 @@ func (f *TelemetryFeature) PrePoint(ctx *core.Context) {
 	}
 
 	span := map[string]any{
-		"traceId": f.id("trace"),
-		"spanId":  f.id("span"),
-		"name":    entity + "." + opname,
-		"start":   foptNow(f.options)(),
+		"traceId":       f.id("trace"),
+		"spanId":        f.id("span"),
+		"correlationId": ctx.Id,
+		"name":          entity + "." + opname,
+		"start":         foptNow(f.options)(),
 	}
 	ctx.Out[telemetrySpanKey] = span
 	f.ActiveSpans++

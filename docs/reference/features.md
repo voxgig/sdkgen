@@ -1074,8 +1074,10 @@ feature: {
 }
 ```
 
-A finished span is `{ traceId, spanId, name, start, end, durationMs, ok }`,
-where `name` is `<entity>.<op>`.
+A finished span is
+`{ traceId, spanId, correlationId, name, start, end, durationMs, ok }`,
+where `name` is `<entity>.<op>` and `correlationId` is the operation's own
+id, the one its `audit` record and `debug` entry carry.
 
 ## `metrics`
 
@@ -1169,7 +1171,9 @@ feature: { debug: { active: true, onEntry: (e) => console.error(e) } }
 ```
 
 An entry is
-`{ op, method, url, headers, start, status, ok, durationMs, error }`.
+`{ op, correlationId, method, url, headers, start, status, ok, durationMs, error }`,
+where `correlationId` is the operation's own id, as on its `telemetry`
+span and its `audit` record, so one call's three records can be joined.
 
 **Notes.** Replacing `redact` replaces only the feature's own additions;
 the SDK's `clean` rules still apply to every entry. A throwing `onEntry` is

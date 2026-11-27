@@ -52,6 +52,7 @@ public:
     Value span = vmap();
     map_put(span, "traceId", Value(id("trace")));
     map_put(span, "spanId", Value(id("span")));
+    map_put(span, "correlationId", Value(ctx->id));
     map_put(span, "name", Value(entity + "." + opname));
     map_put(span, "start", Value((long long) fopt::foptNow(options)()));
     pending[ctx->id] = span;

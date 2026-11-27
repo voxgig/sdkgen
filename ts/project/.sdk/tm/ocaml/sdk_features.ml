@@ -663,6 +663,7 @@ let telemetry_feature () : feature =
           let entity = if ctx.c_op.op_entity <> "" then ctx.c_op.op_entity else "_" in
           let opname = if ctx.c_op.op_name <> "" then ctx.c_op.op_name else "_" in
           let span = jo [("traceId", Str (gen_id "trace")); ("spanId", Str (gen_id "span"));
+                         ("correlationId", Str ctx.c_id);
                          ("name", Str (entity ^ "." ^ opname)); ("start", Num (now_of !options));
                          ("end", Noval); ("durationMs", Noval); ("ok", Noval)] in
           scratch_set ctx "telemetry_span" span;
@@ -731,6 +732,7 @@ let debug_feature () : feature =
           let opname = (if ctx.c_op.op_entity <> "" then ctx.c_op.op_entity else "_") ^ "." ^ (if ctx.c_op.op_name <> "" then ctx.c_op.op_name else "_") in
           let entry = jo [
             ("op", Str opname);
+            ("correlationId", Str ctx.c_id);
             ("method", (match ctx.c_spec with Some s -> Str s.sp_method | None -> Noval));
             ("url", (match ctx.c_spec with Some s -> Str (if s.sp_url <> "" then s.sp_url else s.sp_path) | None -> Noval));
             ("headers", redact ctx (match ctx.c_spec with Some s -> s.sp_headers | None -> Noval));

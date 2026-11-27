@@ -52,6 +52,7 @@ public class TelemetryFeature : BaseFeature
         {
             ["traceId"] = Id("trace"),
             ["spanId"] = Id("span"),
+            ["correlationId"] = ctx.Id,
             ["name"] = entity + "." + opname,
             ["start"] = FoptNow(_options)(),
         };

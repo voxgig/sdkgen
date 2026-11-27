@@ -36,6 +36,7 @@ class DebugFeature extends BaseFeature {
     const spec = ctx.spec || {}
     const entry = {
       op: ((ctx.op && ctx.op.entity) || '_') + '.' + ((ctx.op && ctx.op.name) || '_'),
+      correlationId: ctx.id,
       method: spec.method,
       url: spec.url || spec.path,
       headers: this._redact(ctx, spec.headers),

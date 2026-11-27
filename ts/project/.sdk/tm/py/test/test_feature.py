@@ -826,6 +826,29 @@ class TestActionKeys:
         assert self.SECRET not in keys[0]
 
 
+# --- one call, one id -------------------------------------------------------
+@pytest.mark.skipif(not (has_feature("telemetry") and has_feature("debug")
+                         and has_feature("audit")),
+                    reason="telemetry, debug or audit not in this SDK")
+class TestOneCallOneId:
+
+    def test_telemetry_debug_and_audit_carry_one_calls_context_id(self):
+        h = make_client([{"name": "telemetry"}, {"name": "debug"},
+                         {"name": "audit"}])
+        h.op(op="load")
+        h.op(op="list")
+
+        def ids(recs):
+            return [rec.get("correlationId") for rec in recs]
+
+        calls = ids(h.client._audit["records"])
+        assert len(calls) == 2
+        assert all(isinstance(cid, str) and cid != "" for cid in calls), calls
+        assert calls[0] != calls[1]
+        assert ids(h.client._telemetry["spans"]) == calls
+        assert ids(h.client._debug["entries"]) == calls
+
+
 # --- clienttrack ------------------------------------------------------------------
 @pytest.mark.skipif(not has_feature("clienttrack"),
                     reason="clienttrack not in this SDK")

@@ -64,6 +64,7 @@ function TelemetryFeature:PrePoint(ctx)
   local span = {
     traceId = self:_id("trace"),
     spanId = self:_id("span"),
+    correlationId = ctx.id,
     name = ((ctx.op ~= nil and ctx.op.entity) or "_") .. "." ..
       ((ctx.op ~= nil and ctx.op.name) or "_"),
     start = self:_now(),

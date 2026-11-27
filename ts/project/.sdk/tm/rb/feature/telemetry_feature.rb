@@ -42,6 +42,7 @@ class ProjectNameTelemetryFeature < ProjectNameBaseFeature
     span = {
       "traceId" => _id("trace"),
       "spanId" => _id("span"),
+      "correlationId" => ctx.id,
       "name" => "#{ctx.op ? ctx.op.entity : '_'}.#{ctx.op ? ctx.op.name : '_'}",
       "start" => _now,
       "end" => nil,

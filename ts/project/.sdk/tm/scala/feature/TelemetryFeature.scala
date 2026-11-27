@@ -45,6 +45,7 @@ class TelemetryFeature extends BaseFeature("telemetry", "0.0.1", true) {
     val span = new LinkedHashMap[String, Object]()
     span.put("traceId", id("trace"))
     span.put("spanId", id("span"))
+    span.put("correlationId", ctx.id)
     span.put("name", entity + "." + opname)
     span.put("start", java.lang.Long.valueOf(FeatureOptions.foptNow(this.options).getAsLong()))
     ctx.out.put(TELEMETRY_SPAN_KEY, span)

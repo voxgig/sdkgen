@@ -1724,6 +1724,47 @@ fn feature_action_keys_sensitive_action_key_is_masked() {
     assert_eq!(t.ops.get(&bucket).map(|b| (b.calls, b.amount)), Some((1, 5.0)));
 }
 
+// --- one call, one id -----------------------------------------------------------
+
+#[test]
+fn feature_telemetry_debug_audit_carry_one_calls_context_id() {
+    if !fh_present(&["telemetry", "debug", "audit"]) {
+        return;
+    }
+    let tf = Rc::new(RefCell::new(TelemetryFeature::new()));
+    let df = Rc::new(RefCell::new(DebugFeature::new()));
+    let af = Rc::new(RefCell::new(AuditFeature::new()));
+    let h = fh_make(
+        None,
+        vec![
+            (fr(&tf), Value::Noval),
+            (fr(&df), Value::Noval),
+            (fr(&af), Value::Noval),
+        ],
+    );
+    h.op(opspec("load"));
+    h.op(opspec("list"));
+    let ids = |recs: &[Value]| -> Vec<Value> {
+        recs.iter().map(|rec| getp(rec, "correlationId")).collect()
+    };
+    let calls = ids(&af.borrow().records);
+    assert_eq!(calls.len(), 2, "expected 2 audit records");
+    assert!(
+        calls
+            .iter()
+            .all(|id| matches!(id, Value::Str(s) if !s.is_empty())),
+        "expected non-empty string ids, got {:?}",
+        calls
+    );
+    assert_ne!(calls[0], calls[1], "expected one id per call");
+    assert_eq!(ids(&tf.borrow().spans), calls, "expected the spans' ids");
+    assert_eq!(
+        ids(&df.borrow().entries),
+        calls,
+        "expected the debug entries' ids"
+    );
+}
+
 // --- clienttrack ----------------------------------------------------------------
 
 #[test]
