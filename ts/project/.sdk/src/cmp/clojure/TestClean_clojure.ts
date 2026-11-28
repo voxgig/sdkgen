@@ -432,9 +432,8 @@ ${candidates(entity)}
           ;; The generated config's own clean block is read beside the
           ;; caller's, and is not changed by it.
           (let [config (vs/jm "options" (vs/jm "clean" (vs/jm "keys" "zzsens" "values" (:config CANARY))))
-                built (core/u-make-options
-                       (atom {:config config :options (vs/jm "clean" (vs/jm "values" (:value CANARY)))}))
-                cfgctx (atom {:options built})
+                cfgctx (atom {:config config :options (vs/jm "clean" (vs/jm "values" (:value CANARY)))})
+                _ (core/oset! cfgctx :options (core/u-make-options cfgctx))
                 seeded (core/u-clean cfgctx (str "config " (:config CANARY) " caller " (:value CANARY)))]
             (swap! sinks conj {:name "config-clean" :text (str seeded)})
             (t/is-eq seeded (str "config " MASK " caller " MASK) "the config's clean values are registered")
@@ -465,6 +464,12 @@ ${candidates(entity)}
                               :record (core/u-clean root "record PLAINRECORD-t5r3e1w9")
                               :alias (core/u-clean root "alias PLAINALIAS-m2n4b6v8")
                               :rule (core/u-clean root "rule PLAINRULE-k7j5h3g1")}))
+          ;; The clean registry holds every credential in plain form, and is no option.
+          (let [held (core/client-options-map (construct (vs/jm "apikey" (:apikey CANARY))))
+                text (pr-str held)]
+            (t/is-eq (vs/getprop held "apikey") (:apikey CANARY) "options-map keeps the caller's apikey")
+            (t/is-eq (leaks (str/replace-first text (:apikey CANARY) "")) []
+                     (str "options-map carries a credential beyond the option the caller set: " text)))
           (let [leaked (filterv (fn [s] (seq (leaks (:text s)))) @sinks)]
             (println (str "clean: swept " (count @sinks) " surface(s), " (count leaked) " leak(s)"))
             (t/is-eq (count leaked) 0
@@ -531,7 +536,7 @@ ${candidates(entity)}
   (t/run-check rec "clean-a-registered-value-used-as-a-property-name"
     (fn []
       (let [cfg (core/make-clean-config (vs/jm "keys" "key,secret,token"))
-            ctx (atom {:options (vs/jm "__derived__" (vs/jm "clean" cfg))})]
+            ctx (atom {:cleancfg cfg})]
         (core/u-clean-add ctx "ZZVAL-abc123")
         (core/u-clean-add ctx "ZZVAL-xyz789")
         (let [out (core/u-clean ctx (vs/jm "ZZVAL-abc123" 1 "ZZVAL-xyz789" 2 "plain" 3))]
@@ -543,7 +548,7 @@ ${candidates(entity)}
   (t/run-check rec "clean-add-sensitive-registers-every-scalar-under-a-sensitive-name"
     (fn []
       (let [cfg (core/make-clean-config (vs/jm "keys" "key,secret,token"))
-            ctx (atom {:options (vs/jm "__derived__" (vs/jm "clean" cfg))})
+            ctx (atom {:cleancfg cfg})
             _ (core/u-clean-add-sensitive ctx (vs/jm "apikey" (vs/jm "value" "NESTED-SECRET-1")
                                                      "headers" (vs/jm "X-Api-Token" (vs/jt "LISTED-SECRET-2"))
                                                      "secret" 123456789

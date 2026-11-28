@@ -176,17 +176,17 @@ class PagingFeature extends BaseFeature {
     const afterVar = this._options.afterVar || 'after'
     const firstVar = this._options.firstVar || 'first'
 
-    const declared: Record<string, boolean> = {}
+    const declared = new Set<string>()
     for (const v of ((point.graphql && point.graphql.vars) || [])) {
-      declared[v.name] = true
+      declared.add(v.name)
     }
 
-    if (null != paging.cursor && declared[afterVar]) {
+    if (null != paging.cursor && declared.has(afterVar)) {
       vars[afterVar] = paging.cursor
     }
 
     if (null != this._options.limit && null == vars[firstVar] &&
-      declared[firstVar]) {
+      declared.has(firstVar)) {
       vars[firstVar] = this._options.limit
     }
   }

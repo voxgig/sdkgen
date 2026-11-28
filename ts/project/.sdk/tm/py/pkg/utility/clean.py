@@ -68,17 +68,11 @@ def _prop(obj, name):
     return getattr(obj, name, None)
 
 
-def _options_of(ctx):
-    return _prop(ctx, "options")
-
-
-# The derived block make_options builds; a context without options
-# (make_error is reached with a bare one) falls back to the schema defaults,
-# so nothing leaves raw for want of a constructor.
+# The registry make_options builds; a context without one (make_error is
+# reached with a bare one) falls back to the schema defaults, so nothing
+# leaves raw for want of a constructor.
 def _clean_config(ctx):
-    options = _options_of(ctx)
-    derived = options.get("__derived__") if isinstance(options, dict) else None
-    cfg = derived.get("clean") if isinstance(derived, dict) else None
+    cfg = _prop(ctx, "cleancfg")
     if isinstance(cfg, dict) and isinstance(cfg.get("values"), list):
         return cfg
     return make_clean_config(OPTSPEC.get("clean"))

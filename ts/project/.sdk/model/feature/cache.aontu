@@ -3,7 +3,7 @@ main: kit: feature: cache: {
 
   name: key()
   title: "Response cache"
-  description: "Response caching for safe read requests"
+  description: "Per-client response caching for safe read requests"
   version: '0.0.1'
   active: true
   base: 'BASE'
@@ -12,16 +12,18 @@ main: kit: feature: cache: {
   config: {
     options: {
       active: false
-      # time-to-live in milliseconds
+      # time-to-live in milliseconds; a response's Cache-Control max-age caps it
       ttl: 5000
-      # maximum cached entries (oldest evicted)
+      # maximum cached entries in this client's store (oldest evicted)
       max: 256
-      # cacheable request methods
+      # cacheable request methods; any other but GET and HEAD is a write, which
+      # drops its own path, everything under it and its parent path's entry
       methods: ['GET']
     }
   }
 
   # Cache wraps the transport in init(); it dispatches no pipeline hooks.
+  # The key is the method, the URL and a keyed digest of the request headers.
   hook: {}
 }
 

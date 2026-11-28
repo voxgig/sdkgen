@@ -239,7 +239,13 @@ public static partial class SdkUtility
             }
         }
 
-        using var resp = ClientFor(fetchdef).Send(req, HttpCompletionOption.ResponseContentRead);
+        // A bound in milliseconds, for a caller beneath the timeout feature.
+        using var bound = new System.Threading.CancellationTokenSource();
+        if (Helpers.ToInt(fetchdef.GetValueOrDefault("timeout")) is var ms && 0 < ms)
+        {
+            bound.CancelAfter(ms);
+        }
+        using var resp = ClientFor(fetchdef).Send(req, HttpCompletionOption.ResponseContentRead, bound.Token);
 
         var bodyText = resp.Content.ReadAsStringAsync().GetAwaiter().GetResult();
 

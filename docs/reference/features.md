@@ -31,7 +31,7 @@ is no runtime to install and no service to call.
 | [`retry`](#retry) | Retries transient failures with exponential backoff, jitter, and `Retry-After` | transport |
 | [`timeout`](#timeout) | Bounds each request with a deadline and aborts the transport | transport |
 | [`ratelimit`](#ratelimit) | Keeps the client under a quota with a token bucket | transport |
-| [`cache`](#cache) | Serves safe reads from a bounded TTL cache | transport |
+| [`cache`](#cache) | Serves safe reads from a bounded per-client cache | transport |
 | [`proxy`](#proxy) | Routes outbound calls through an HTTP(S) proxy | transport |
 | [`netsim`](#netsim) | Injects latency, failures and outages for offline tests | transport |
 | [`cost`](#cost) | Prices every call, attributes the spend, and stops on a budget | transport + hooks |
@@ -468,15 +468,14 @@ Two processes each get their own bucket.
 
 ## `cache`
 
-> Response caching for safe read requests
+> Per-client response caching for safe read requests
 
 Serves a cached snapshot instead of hitting the network when the same
-method and URL was fetched within `ttl` milliseconds. Only successful
-(2xx) responses to cacheable methods are stored, keyed by method plus URL.
-The store is bounded: at `max` entries the oldest is evicted. A body that
-is not JSON is never stored: it passes through, so the operation raises
-the same `response_content_type` or `response_json_invalid` error it
-raises without the cache.
+request was answered within `ttl` milliseconds. Only successful (2xx)
+responses to cacheable methods are stored. The store is bounded: at `max`
+entries the oldest is evicted. A body that is not JSON is never stored: it
+passes through, so the operation raises the same `response_content_type`
+or `response_json_invalid` error it raises without the cache.
 
 Response bodies are one-shot streams, so a hit cannot simply replay the
 original object. The feature normalises the body on capture, which means
@@ -488,8 +487,8 @@ repeatedly.
 | Option | Default | Meaning |
 | --- | --- | --- |
 | `active` | `false` | Enable the feature. |
-| `ttl` | `5000` | Freshness window in ms. |
-| `max` | `256` | Maximum entries before eviction. |
+| `ttl` | `5000` | Freshness window in ms; a response's `max-age` can shorten it. |
+| `max` | `256` | Maximum entries in this client's store before eviction. |
 | `methods` | `['GET']` | Methods eligible for caching. |
 | `now()` | `Date.now` | Injectable clock. |
 
@@ -497,10 +496,76 @@ repeatedly.
 feature: { cache: { active: true, ttl: 30000, max: 1000 } }
 ```
 
+### The store and the key
+
+The store belongs to one client instance. Two clients never share an
+entry, and nothing is written outside the process.
+
+An entry's key is the method, the full URL, and a digest of the request
+headers. The digest covers every header, sorted by lowercased name, with
+its value. It is a keyed hash under a secret drawn at random when the
+client is built, so no header value appears in the key in plain form, and
+two clients digest the same headers differently. Two requests that differ
+only in a header, such as a tenant or a credential, never share an entry.
+
+The keyed hash is HMAC-SHA256 wherever the standard library has it: `ts`,
+`js`, `go`, `py`, `rb`, `php`, `perl`, `java`, `kotlin`, `scala`,
+`csharp`, `clojure`, `elixir` and `zig`. Where it does not, the target
+uses a keyed hash it does have:
+
+| Target | Keyed hash |
+| --- | --- |
+| `rust` | The standard library's SipHash, under the random keys of a per-client `RandomState`. |
+| `swift` | The standard library's `Hasher`, with its per-process random seed and a random per-client salt. |
+| `ocaml` | HMAC-MD5, built over the standard library's `Digest`. |
+| `c`, `cpp`, `lua` | SipHash-2-4, shipped in the feature, under a random per-client key. |
+
+### Writes invalidate
+
+A request whose method is neither GET nor HEAD, and is not listed in
+`methods`, is a write. It passes through to the transport, and afterwards,
+whether or not it succeeded, the cache drops two kinds of entry, matched
+on the URL path with any query string ignored:
+
+- every entry whose path is the path the write was sent to, or lies under it;
+- every entry whose path is exactly that path's parent, the
+  collection listing the write has made stale.
+
+Nothing else is dropped, and in particular nothing else under the parent.
+A `PUT /planet/p1` drops `/planet/p1`, `/planet/p1/moon` and every
+`/planet` listing, but keeps `/planet/p2` and anything under `/moon`. A
+`POST /planet` drops every `/planet` listing, everything under `/planet`
+and the exact root listing, and keeps the other collections.
+
+### `Cache-Control`
+
+The response's `Cache-Control` header is read before anything is stored:
+
+- `no-store`, `private` and `no-cache` prevent storing. The response is
+  counted as a `bypass`.
+- `max-age=N` caps the entry's lifetime at N seconds when that is shorter
+  than `ttl`. It never extends `ttl`.
+
+`Expires`, `ETag` and conditional revalidation are out of scope: the cache
+does not read `Expires` and does not send `If-None-Match`. A `no-cache`
+response may be stored only if it is checked with the server again before
+reuse, and since that check is out of scope, the cache does not store it.
+
 **Notes.** `client._cache` counts `hit`, `miss` and `bypass` (a request
-that was cacheable by method but whose response was not stored). This is
-a plain TTL cache: it does not read `Cache-Control` or revalidate with
-`ETag`.
+that was cacheable by method but whose response was not stored).
+
+One hazard remains. A client shared between tenants, where the tenant is
+chosen per call by something that is not a request header, such as a path
+segment the server ignores or an option never sent to the server, gets one
+entry for every tenant. The key cannot tell those calls apart. Give each
+tenant its own client, or send the tenant as a header.
+
+**Migration.** Before this release the key was the method and URL alone,
+no response header was read, and a write left the store untouched. A
+repeat of a GET with different headers now goes to the network, a write
+drops its own entries and its parent listing, and a response marked `no-store` or with
+a short `max-age` is cached for less time or not at all. A consumer that
+relied on a shared entry across credentials gets one entry per credential.
 
 ## `proxy`
 
@@ -726,6 +791,11 @@ client._cost.ops['report.generate']
 client._cost.actors['user:42']
 client._cost.budget         // { limit, spent, remaining, exceeded }
 ```
+
+An actor is any string, `__proto__` and `constructor` included: each gets an
+entry of its own and nothing outside `client._cost` changes. In ts and js the
+`ops` and `actors` tables have no prototype, so read them by key, with
+`Object.keys`, or with `Object.hasOwn`, not with a `hasOwnProperty` method.
 
 ### The budget
 
@@ -966,6 +1036,9 @@ Required permissions are looked up in `rules`, most specific first:
 `'<entity>.<op>'`, then `'<op>'`, then `'*'`. When no rule matches, `deny`
 decides: allow by default, or default-deny if you set it. Held permissions
 come from `permissions`, where `'*'` grants everything.
+A permission is held only when `permissions` names it, so a required
+permission spelled like a built-in property, such as `constructor`, is not
+held by default.
 
 **Seam:** `PrePoint`.
 
@@ -1017,8 +1090,10 @@ feature: {
 }
 ```
 
-A finished span is `{ traceId, spanId, name, start, end, durationMs, ok }`,
-where `name` is `<entity>.<op>`.
+A finished span is
+`{ traceId, spanId, correlationId, name, start, end, durationMs, ok }`,
+where `name` is `<entity>.<op>` and `correlationId` is the operation's own
+id, the one its `audit` record and `debug` entry carry.
 
 ## `metrics`
 
@@ -1042,6 +1117,8 @@ feature: { metrics: { active: true } }
 client._metrics.total          // { count: 12, ok: 11, err: 1, totalMs: 840, maxMs: 210 }
 client._metrics.ops['product.list']   // the same shape, for one operation
 ```
+
+In ts and js, `ops` has no prototype, as `client._cost.ops` has none.
 
 **Notes.** A non-2xx result reaches `PreDone` before the pipeline throws,
 so `PreUnexpected` then fires for the same operation. The feature records
@@ -1081,8 +1158,10 @@ A record is
 `{ seq, ts, actor, entity, op, outcome, status, correlationId }`.
 
 **Notes.** Exactly one record per operation: a `PreDone` followed by
-`PreUnexpected` on a non-2xx does not double-log. A throwing `sink` is
-swallowed, so audit forwarding can never take down a call.
+`PreUnexpected` on a non-2xx does not double-log. The mark that says so is
+kept on the call's own context, so the feature holds nothing once a call
+ends, however long the client lives. A throwing `sink` is swallowed, so
+audit forwarding can never take down a call.
 
 ## `debug`
 
@@ -1109,7 +1188,9 @@ feature: { debug: { active: true, onEntry: (e) => console.error(e) } }
 ```
 
 An entry is
-`{ op, method, url, headers, start, status, ok, durationMs, error }`.
+`{ op, correlationId, method, url, headers, start, status, ok, durationMs, error }`,
+where `correlationId` is the operation's own id, as on its `telemetry`
+span and its `audit` record, so one call's three records can be joined.
 
 **Notes.** Replacing `redact` replaces only the feature's own additions;
 the SDK's `clean` rules still apply to every entry. A throwing `onEntry` is
@@ -1219,6 +1300,21 @@ redirect points. In `ocaml`, `cpp` and `zig` the client the exchange ships
 with reports no response headers, so the option takes effect there only
 with a `system.fetch` of the caller's own, and without one the exchange
 refuses as it does by default.
+
+The purchase goes through the SDK's own transport, beneath every feature
+that wraps it, so it is held to what that transport refuses. A GET-only live
+run (`VOXGIG_GETONLY_GUARD=TRUE`) refuses it with `fetch_getonly_block` before
+anything is sent, redirect hops included, and a client with the `test`
+feature active refuses it with `fetch_test_block`, so an offline suite never
+buys a real token; either refusal is the operation's error. A `system.fetch`
+you supply carries the purchase unguarded, as it carries every other request.
+`cpp`, `zig` and `ocaml` are the deliberate exception: their core ships no
+HTTP client, so the purchase goes out through the vendored sekreto client,
+which only the GET-only guard is applied before. The purchase has its own
+30-second limit; the timeout feature's wrappers do not see it. In `cpp`, `zig`
+and `ocaml` the vendored client's own 10-second limit applies instead. A vault provider's own
+requests go to the vault rather than to the API under test, and stay outside
+the guard until sekreto can be handed it.
 
 Set `name` to the refresh secret when exchanging — `name` is what the chain
 is asked for.

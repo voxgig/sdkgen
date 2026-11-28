@@ -65,6 +65,7 @@ import voxgig.plugin.{Definition, VBool, VList, VMap, VNull, VNum, VStr, Value}
 class SecretsFeature extends BaseFeature("secrets", "0.1.0", true) {
 
   private var client: SdkClient = null
+  private var rootctx: Context = null
 
   // Every value this feature resolves or buys is a secret the SDK handles,
   // and none arrives under an option key the intake registration saw.
@@ -141,6 +142,7 @@ class SecretsFeature extends BaseFeature("secrets", "0.1.0", true) {
   // Sync by feature contract: build the chain, never look anything up here.
   override def init(ctx: Context, options: JMap[String, Object]): Unit = {
     this.client = ctx.client
+    this.rootctx = ctx
     this.liveopts = ctx.options
     this.active = FeatureOptions.foptBool(options, "active", false)
 
@@ -517,6 +519,8 @@ class SecretsFeature extends BaseFeature("secrets", "0.1.0", true) {
     fetchdef.put("body", Struct.jsonify(bodymap, flags))
     // Never followed by the client: a redirect would carry the refresh token on.
     fetchdef.put("redirect", "manual")
+    // Its own bound, in milliseconds: the timeout feature's wrapper is above it.
+    fetchdef.put("timeout", java.lang.Integer.valueOf(30000))
 
     var res = exchangefetch(url, fetchdef)
 
@@ -568,34 +572,17 @@ class SecretsFeature extends BaseFeature("secrets", "0.1.0", true) {
     token
   }
 
-  // Deliberately NOT the SDK transport. The transport is what this feature
-  // wraps, and sending the token request back through it would recurse on
-  // the first expiry - and would route the exchange through the test mock,
-  // which knows nothing about it. `system.fetch` when the caller supplied
-  // one, else the platform fetcher directly: Fetcher.defaultHttpFetch
-  // already answers in the {status, headers, json} shape the seam promises
-  // and, unlike Fetcher.fetcher, is gated on neither mode nor the test
-  // feature.
+  // The SDK's own transport, beneath every feature's wrapper: it holds the
+  // test feature's block and the GET-only guard, and the wrapped one would
+  // recurse on the first expiry.
   private def exchangefetch(
     url: String,
     fetchdef: JMap[String, Object],
-  ): JMap[String, Object] = {
-    var sysfetch: Object = null
-    if (this.liveopts != null) {
-      sysfetch = Struct.getpath(this.liveopts, java.util.List.of("system", "fetch"))
-      if (sysfetch eq Struct.UNDEF) sysfetch = null
+  ): JMap[String, Object] =
+    Fetcher.fetcher(this.rootctx, url, fetchdef) match {
+      case m: JMap[_, _] => m.asInstanceOf[JMap[String, Object]]
+      case _ => null
     }
-
-    sysfetch match {
-      case bf: BiFunction[_, _, _] =>
-        bf.asInstanceOf[BiFunction[String, JMap[String, Object], Object]]
-          .apply(url, fetchdef) match {
-            case m: JMap[_, _] => m.asInstanceOf[JMap[String, Object]]
-            case _ => null
-          }
-      case _ => Fetcher.defaultHttpFetch(url, fetchdef)
-    }
-  }
 
   // Where a 307 or 308 points, when that is on the exchange's own origin. Any
   // other redirect would drop the body or leave the origin.

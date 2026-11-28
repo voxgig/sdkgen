@@ -559,7 +559,7 @@ describe('pipeline:result helpers', () => {
     const secret = 'PIPELINE-SECRET-a1b2c3d4e5f6'
     const text = 'x'.repeat(150) + secret + 'y'.repeat(100)
     const ctx = base({
-      options: { __derived__: { clean: { active: true, keys: [], values: [], mask: '[redacted]', hint: 0, min: 4 } } },
+      cleancfg: { active: true, keys: [], values: [], mask: '[redacted]', hint: 0, min: 4 },
       spec: { headers: { 'user-agent': 'Probe ' + secret } },
       response: { body: 'body', json: async () => { throw Object.assign(new SyntaxError('bad json'), { text }) } },
       result: { status: 200, headers: { 'content-type': 'text/html' } },

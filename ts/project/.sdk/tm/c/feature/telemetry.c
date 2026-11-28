@@ -116,6 +116,7 @@ static void telemetry_pre_point(TelemetryFeature* tf, Context* ctx) {
   char* spanid = telemetry_id(tf, "span");
   setp(span, "spanId", v_str(spanid));
   free(spanid);
+  setp(span, "correlationId", v_str(ctx->id));
 
   size_t nl = strlen(entity) + strlen(opname) + 2; // '.' + '\0'
   char* namebuf = (char*)malloc(nl);

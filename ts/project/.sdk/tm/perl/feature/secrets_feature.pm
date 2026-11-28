@@ -334,6 +334,7 @@ sub transport {
   # provider ERROR refuses the request with the provider's own message;
   # never an unauthenticated send.
   my $err = $self->resolve();
+  return (undef, $err) if Scalar::Util::blessed($err) && $err->isa('ProjectNameError');
   if (defined $err) {
     return (undef, $ctx->make_error('secrets_resolve', $err));
   }
@@ -594,24 +595,12 @@ sub _buy_once {
   $path =~ s{\A/+}{};
   my $url = "$base/$path";
 
-  # Deliberately NOT the SDK transport. The transport is what this feature
-  # wraps, and sending the token request back through it would recurse on
-  # the first expiry - and would route the exchange through the test mock,
-  # which knows nothing about it. `system.fetch` (the caller's own
-  # transport seam) when supplied, else the raw HTTP fetch the utility
-  # registry keeps beside its own fetcher.
-  my $fetch = ProjectNameHelpers::gpath($options, 'system.fetch');
-  if (!(defined $fetch && 'CODE' eq ref $fetch)) {
-    # utility/fetcher.pm keeps the raw HTTP transport as a package global
-    # BESIDE its registered fetcher, precisely so a caller that must not
-    # recurse through the wrapper (or trip the test-mode block) can reach
-    # it. `once` is disabled because this file names it exactly once.
-    no warnings 'once';
-    $fetch = $ProjectNameUtilities::DefaultHttpFetch;
-  }
-
-  return (undef, 'secrets: no fetch implementation for the token exchange')
-    if !(defined $fetch && 'CODE' eq ref $fetch);
+  # The SDK's own transport, beneath every feature's wrapper: it holds the
+  # test feature's block and the GET-only guard, and the wrapped one would
+  # recurse on the first expiry.
+  my $ctx = $self->{ctx};
+  no warnings 'once';
+  my $fetch = sub { $ProjectNameUtilities::REGISTRY{fetcher}->($ctx, @_) };
 
   # The body is MARSHALLED, never concatenated: a refresh token (or a
   # configured request-field name) carrying a quote, backslash or newline
@@ -624,6 +613,8 @@ sub _buy_once {
     'body' => $body,
     # Never followed by the client: a redirect would carry the refresh token on.
     'redirect' => 'manual',
+    # Its own bound, in milliseconds: the timeout feature's wrapper is above it.
+    'timeout' => 30000,
   };
 
   my ($res, $err);
@@ -643,6 +634,10 @@ sub _buy_once {
   };
 
   return (undef, _trim("$@")) if !$ok;
+
+  # The transport's own refusal, the GET-only guard's among them, is the
+  # operation's error.
+  return (undef, $err) if Scalar::Util::blessed($err) && $err->isa('ProjectNameError');
 
   return (undef, 'secrets: token exchange failed: ' . _trim("$err") . " from $url")
     if defined $err;

@@ -125,6 +125,7 @@ static void debug_pre_request(DebugFeature* df, Context* ctx) {
   voxgig_value* entry = v_map();
   char* op = dot_join(entity, opname);
   setp(entry, "op", v_str(op));
+  setp(entry, "correlationId", v_str(ctx->id));
   setp(entry, "start", v_num((double)fopt_now_call(df->options)));
   if (ctx->spec) {
     Spec* s = ctx->spec;

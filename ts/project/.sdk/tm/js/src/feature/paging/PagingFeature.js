@@ -189,17 +189,17 @@ class PagingFeature extends BaseFeature {
 
     // Only bind variables the operation actually declares, or the server
     // rejects the document.
-    const declared = {}
+    const declared = new Set()
     for (const v of ((point.graphql && point.graphql.vars) || [])) {
-      declared[v.name] = true
+      declared.add(v.name)
     }
 
-    if (null != paging.cursor && declared[afterVar]) {
+    if (null != paging.cursor && declared.has(afterVar)) {
       vars[afterVar] = paging.cursor
     }
 
     if (null != this._options.limit && null == vars[firstVar] &&
-      declared[firstVar]) {
+      declared.has(firstVar)) {
       vars[firstVar] = this._options.limit
     }
   }

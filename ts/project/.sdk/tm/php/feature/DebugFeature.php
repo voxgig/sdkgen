@@ -55,6 +55,7 @@ class ProjectNameDebugFeature extends ProjectNameBaseFeature
         $entry = [
             'op' => ($ctx->op->entity !== '' ? $ctx->op->entity : '_')
                 . '.' . ($ctx->op->name !== '' ? $ctx->op->name : '_'),
+            'correlationId' => $ctx->id,
             'method' => $spec !== null ? $spec->method : null,
             'url' => $spec !== null ? ($spec->url !== '' ? $spec->url : $spec->path) : null,
             'headers' => $this->_redact($ctx, $spec !== null ? $spec->headers : null),

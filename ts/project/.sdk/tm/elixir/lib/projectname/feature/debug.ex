@@ -51,6 +51,7 @@ defmodule ProjectName.Feature.Debug do
       entry =
         S.jm([
           "op", opname,
+          "correlationId", S.getprop(ctx, "id"),
           "method", if(spec != nil, do: S.getprop(spec, "method"), else: nil),
           "url",
           if(spec != nil, do: H.or_(S.getprop(spec, "url"), S.getprop(spec, "path")), else: nil),

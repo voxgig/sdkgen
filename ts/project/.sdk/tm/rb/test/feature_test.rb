@@ -610,6 +610,58 @@ class FeatureTest < Minitest::Test
     assert_equal 3, calls.length
   end
 
+  def test_cache_keys_on_the_request_headers
+    skip_unless_feature("cache")
+    server, calls = H.recording_server
+    h = harness([fspec("cache", "ttl" => 10000)], server: server)
+    h.op(path: "/w/1", headers: { "x-tenant" => "tenant-a" })
+    h.op(path: "/w/1", headers: { "X-Tenant" => "tenant-b" })
+    assert_equal 2, calls.length
+    h.op(path: "/w/1", headers: { "x-tenant" => "tenant-b" })
+    assert_equal 2, calls.length
+  end
+
+  def test_cache_a_write_drops_its_collection
+    skip_unless_feature("cache")
+    server, calls = H.recording_server
+    h = harness([fspec("cache", "ttl" => 10000)], server: server)
+    paths = ["/w/1", "/w", "/w/1/part", "/other/1", "/w/2"]
+    paths.each { |p| h.op(path: p) }
+    h.op(opname: "update", method: "PUT", path: "/w/1")
+    paths.each { |p| h.op(path: p) }
+    assert_equal 9, calls.length
+    assert_equal 2, h.track(:@_cache)["hit"]
+  end
+
+  def test_cache_control_prevents_storing
+    skip_unless_feature("cache")
+    ["no-store", "private", "No-Cache", "max-age=60, private"].each do |control|
+      server, calls = H.recording_server do |_n, _fd|
+        [H.make_response(200, { "ok" => true }, { "Cache-Control" => control }), nil]
+      end
+      h = harness([fspec("cache", "ttl" => 10000)], server: server)
+      h.op(path: "/w")
+      h.op(path: "/w")
+      assert_equal 2, calls.length, control
+    end
+  end
+
+  def test_cache_max_age_caps_the_ttl
+    skip_unless_feature("cache")
+    clock = H::Clock.new
+    server, calls = H.recording_server do |_n, _fd|
+      [H.make_response(200, { "ok" => true }, { "cache-control" => "max-age=1" }), nil]
+    end
+    h = harness([fspec("cache", "ttl" => 10000, "now" => clock.now)], server: server)
+    h.op(path: "/w")
+    clock.advance(500)
+    h.op(path: "/w")
+    assert_equal 1, calls.length
+    clock.advance(600)
+    h.op(path: "/w")
+    assert_equal 2, calls.length
+  end
+
   def test_cache_inactive_does_not_wrap
     skip_unless_feature("cache")
     server, calls = H.recording_server
@@ -850,6 +902,47 @@ class FeatureTest < Minitest::Test
     recs = h.track(:@_audit)["records"]
     assert_equal 2, recs.length
     assert_equal [2, 3], recs.map { |r| r["seq"] }
+  end
+
+
+  # === per-call state ===
+
+  def test_no_feature_keeps_a_context_past_its_call
+    skip_unless_feature("netsim")
+    names = %w[audit debug telemetry metrics cost].select { |n| H.has_feature?(n) }
+    skip "no feature here keeps per-call state" if names.empty?
+    h = harness([fspec("netsim", "failEvery" => 2, "failStatus" => 500)] +
+      names.map { |n| fspec(n) })
+    20.times { |i| h.op(path: "/w/#{i}") }
+    names.each do |n|
+      f = h.feature(n)
+      f.instance_variables.each do |iv|
+        table = f.instance_variable_get(iv)
+        next unless table.is_a?(Hash)
+        held = table.keys.count { |k| k.is_a?(ProjectNameContext) }
+        assert_equal 0, held, "#{n} #{iv} still holds #{held} context(s) after 20 calls"
+      end
+    end
+    assert_equal 20, h.track(:@_audit)["records"].length if names.include?("audit")
+  end
+
+
+  # === one call, one id ===
+
+  def test_telemetry_debug_and_audit_carry_one_calls_context_id
+    skip_unless_feature("telemetry")
+    skip_unless_feature("debug")
+    skip_unless_feature("audit")
+    h = harness([fspec("telemetry"), fspec("debug"), fspec("audit")])
+    h.op
+    h.op(opname: "list")
+    ids = ->(recs) { recs.map { |r| r["correlationId"] } }
+    calls = ids.call(h.track(:@_audit)["records"])
+    assert_equal 2, calls.length
+    assert calls.all? { |id| id.is_a?(String) && !id.empty? }, calls.inspect
+    refute_equal calls[0], calls[1]
+    assert_equal calls, ids.call(h.track(:@_telemetry)["spans"])
+    assert_equal calls, ids.call(h.track(:@_debug)["entries"])
   end
 
 

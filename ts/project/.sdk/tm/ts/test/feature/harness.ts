@@ -93,9 +93,8 @@ function makeClient(spec: {
 
   // One clean registry per client, as makeOptions gives a real one, so a value
   // a feature registers with cleanAdd is masked by every clean after it.
-  const derived = (stdutil as any).makeOptions({
-    utility, options: { feature: { test: { active: true } } }, config: {},
-  }).__derived__
+  const regctx: any = { utility, options: { feature: { test: { active: true } } }, config: {} }
+  const derived = (stdutil as any).makeOptions(regctx).__derived__
 
   const client: any = {
     _mode: spec.mode || 'test',
@@ -121,6 +120,7 @@ function makeClient(spec: {
       client,
       utility,
       options: client._options,
+      cleancfg: regctx.cleancfg,
       out: {},
       ctrl: over.ctrl || {},
       meta: {},

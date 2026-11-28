@@ -252,15 +252,10 @@
           base0 (let [b (vs/getprop options "base")] (if (string? b) b ""))
           base (str/replace base0 #"/+$" "")
           url (str base "/" (str/replace (:path x) #"^/+" ""))
-          sysfetch (vs/getpath options "system.fetch")
-          ;; Deliberately NOT the SDK transport. The transport is what this
-          ;; feature wraps, so sending the token request back through it
-          ;; would recurse on the first expiry - and would route the
-          ;; purchase through the test mock, which knows nothing about it.
-          ;; `system.fetch` is honoured because that is the seam a caller
-          ;; uses to supply a transport at all; otherwise core's own raw
-          ;; HTTP path, which returns the same [res err] shape.
-          fetch (if (vs/isfunc sysfetch) sysfetch core/default-http-fetch)
+          ;; The SDK's own transport, beneath every feature's wrapper: it
+          ;; holds the test feature's block and the GET-only guard, and the
+          ;; wrapped one would recurse on the first expiry.
+          fetch (fn [at fd] (core/u-fetcher (st fa :rootctx) at fd))
           ;; The body is MARSHALLED, never concatenated: a refresh token (or
           ;; a configured request-field name) carrying a quote, backslash or
           ;; newline must arrive as that literal value, not as broken JSON.
@@ -269,7 +264,9 @@
           fetchdef (vs/jm "method" (:method x)
                           "headers" (vs/jm "content-type" "application/json")
                           "body" body
-                          "redirect" "manual")
+                          "redirect" "manual"
+                          ;; Its own bound, in milliseconds: the timeout feature's wrapper is above it.
+                          "timeout" 30000)
           ;; By option alone, and only while the exchange stays on its own origin.
           [res err] (loop [at url
                            answer (fetch url fetchdef)
@@ -281,6 +278,8 @@
                           (recur next (fetch next fetchdef) (inc hops))
                           answer)))]
 
+      (when (core/sdk-error? err)
+        (core/sdk-throw err))
       (when (some? err)
         (throw (sekreto/sekretoerror
                 (str "secrets: token exchange failed: " (core/err-msg err) " from " url))))
@@ -480,8 +479,11 @@
   ;; provider ERROR refuses the request with the provider's own message,
   ;; and never an unauthenticated send.
   (let [failed (resolve! fa)]
-    (if (some? failed)
+    (cond
+      (core/sdk-error? (core/ex->sdk failed)) [nil (core/ex->sdk failed)]
+      (some? failed)
       [nil (core/ctx-error ctx ERROR-CODE (str "secrets: " (core/err-msg failed)))]
+      :else
       (do
         (let [token (credential fa)]
           (when (seq token) (reauth! fa fetchdef token)))
@@ -513,6 +515,7 @@
   (let [options (if (vs/ismap options) options (vs/jm))]
     (swap! fa assoc
            :client (core/oget ctx :client)
+           :rootctx ctx
            :options options
            :liveopts (core/oget ctx :options)
            :active (= true (vs/getprop options "active")))

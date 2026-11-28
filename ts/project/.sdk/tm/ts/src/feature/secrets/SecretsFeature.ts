@@ -1,6 +1,7 @@
 import type { Context, FeatureOptions } from '../../types'
 
 import { BaseFeature } from '../base/BaseFeature'
+import { fetcher } from '../../utility/FetcherUtility'
 import { Sekreto, envkey } from './sekreto'
 // The plugin DEFINITIONS the model selected for this feature, emitted by
 // Config generically from the catalogue's active `plugin.def` entries.
@@ -261,9 +262,20 @@ class SecretsFeature extends BaseFeature {
       body: JSON.stringify({ [x.request]: this._refresh }),
       // Never followed by the client: a redirect would carry the refresh token on.
       redirect: 'manual',
+      // Its own bound: the timeout feature's wrapper is above it.
+      signal: AbortSignal.timeout(30000),
     }
 
-    let res = await fetch(url, fetchdef)
+    // The SDK transport beneath every wrapper; its GET-only refusal fails the op.
+    const send = async (at: string) => {
+      const sent: any = await fetcher(this._client._rootctx, at, fetchdef)
+      if (sent instanceof Error) {
+        throw sent
+      }
+      return sent
+    }
+
+    let res = await send(url)
 
     // By option alone, and only while the exchange stays on its own origin.
     let at = url
@@ -273,7 +285,7 @@ class SecretsFeature extends BaseFeature {
         break
       }
       at = next
-      res = await fetch(at, fetchdef)
+      res = await send(at)
     }
 
     const status = null == res ? 0 : res.status

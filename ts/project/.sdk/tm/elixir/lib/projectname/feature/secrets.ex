@@ -714,21 +714,20 @@ defmodule ProjectName.Feature.Secrets do
           "headers", S.jm(["content-type", "application/json"]),
           "body", S.jsonify(S.jm([x.request, refresh]), S.jm(["indent", 0])),
           # Never followed by the client: a redirect would carry the refresh token on.
-          "redirect", "manual"
+          "redirect", "manual",
+          # Its own bound, in milliseconds: the timeout feature's wrapper is above it.
+          "timeout", 30000
         ])
 
-      sysfetch = S.getpath(options, "system.fetch")
+      # The SDK's own transport, beneath every feature's wrapper: it holds
+      # the test feature's block and the GET-only guard, and the wrapped one
+      # would recurse on the first expiry.
+      client = S.getprop(f, "client")
+      rootctx = if client != nil, do: S.getprop(client, "_rootctx"), else: nil
 
-      # Deliberately NOT the SDK transport. The transport is what this
-      # feature wraps, and sending the token request back through it would
-      # recurse on the first expiry - and would route the exchange through
-      # the test mock, which knows nothing about it. `options.system.fetch`
-      # is preferred when set, so a test can intercept the purchase.
       ask = fn at ->
         try do
-          if S.isfunc(sysfetch),
-            do: sysfetch.(at, fetchdef),
-            else: raw_exchange_fetch(at, fetchdef)
+          ProjectName.Utility.fetcher_impl(rootctx, at, fetchdef)
         rescue
           e -> {nil, fail(e)}
         end
@@ -813,52 +812,6 @@ defmodule ProjectName.Feature.Secrets do
     if S.ismap(body), do: S.getprop(body, name), else: nil
   end
 
-  # The token-exchange transport of last resort: plain :httpc, same result
-  # shape the system.fetch seam promises. It exists so an exchange works
-  # with ordinary SDK options - requiring a custom transport for the COMMON
-  # case would reject every live token purchase before a request was made.
-  defp raw_exchange_fetch(url, fetchdef) do
-    Application.ensure_all_started(:inets)
-    Application.ensure_all_started(:ssl)
-
-    method =
-      H.or_(S.getprop(fetchdef, "method"), "POST") |> to_string() |> String.downcase() |> String.to_atom()
-
-    body = tostr(S.getprop(fetchdef, "body"))
-
-    hlist =
-      Enum.map(H.entries(H.or_(S.getprop(fetchdef, "headers"), S.jm([]))), fn {k, v} ->
-        {String.to_charlist(to_string(k)), String.to_charlist(to_string(v))}
-      end)
-
-    request =
-      if method in [:post, :put, :patch, :delete] do
-        {String.to_charlist(url), hlist, ~c"application/json", body}
-      else
-        {String.to_charlist(url), hlist}
-      end
-
-    case :httpc.request(method, request, [autoredirect: false], body_format: :binary) do
-      {:ok, {{_v, status, _reason}, rh, resbody}} ->
-        text = if is_binary(resbody), do: resbody, else: to_string(resbody)
-
-        parsed =
-          try do
-            ProjectName.Json.parse(text)
-          rescue
-            _ -> nil
-          end
-
-        headers =
-          S.jm(Enum.flat_map(rh, fn {k, v} -> [String.downcase(to_string(k)), to_string(v)] end))
-
-        {S.jm(["status", status, "headers", headers, "json", fn -> parsed end, "body", text]), nil}
-
-      {:error, reason} ->
-        {nil, err("secrets_exchange_failed", "secrets: token exchange transport: " <> inspect(reason))}
-    end
-  end
-
   # ---- small helpers -------------------------------------------------------
 
   defp statuses(v) do
@@ -908,6 +861,7 @@ defmodule ProjectName.Feature.Secrets do
   # an exception, or a plain string from the default HTTP path.
   defp aserr(e, code) do
     cond do
+      match?(%ProjectName.Error{}, e) -> e
       is_exception(e) -> fail(e)
       is_binary(e) -> err(code, e)
       true -> err(code, inspect(e))

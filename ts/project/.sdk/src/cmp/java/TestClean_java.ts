@@ -971,6 +971,14 @@ public class CleanTest {
       release(handler);
     }
 
+    // The clean registry holds every credential in plain form, and is no option.
+    Map<String, Object> held = construct(jm("apikey", CANARY_APIKEY)).optionsMap();
+    String heldjson = Struct.jsonify(plain(held, 0, new IdentityHashMap<>()));
+    assertEquals(CANARY_APIKEY, held.get("apikey"));
+    assertEquals(List.of(), leaks(heldjson.replaceFirst(
+        java.util.regex.Pattern.quote("\\"" + CANARY_APIKEY + "\\""), "")),
+        "optionsMap carries a credential beyond the option the caller set: " + heldjson);
+
     List<String> leaked = new ArrayList<>();
     for (Sink s : sinks) {
       List<String> found = leaks(s.text);

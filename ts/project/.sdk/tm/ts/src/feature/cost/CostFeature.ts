@@ -29,8 +29,9 @@ class CostFeature extends BaseFeature {
       client._cost = {
         currency: this._options.currency || 'USD',
         total: { calls: 0, attempts: 0, amount: 0, reported: 0, estimated: 0 },
-        ops: {},
-        actors: {},
+        // Keyed by a caller's string, so no prototype to collide with.
+        ops: Object.create(null),
+        actors: Object.create(null),
         budget: { limit, spent: 0, remaining: limit, exceeded: false },
         last: undefined,
       }

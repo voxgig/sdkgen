@@ -134,7 +134,7 @@ function loadPipeline(lang: string): { cleanmod: any, makeError: any, done: any 
 
 function ctxWith(mod: any, over?: any): any {
   return {
-    options: { __derived__: { clean: mod.makeCleanConfig({ ...CLEAN_DEFAULTS, ...(over || {}) }) } },
+    cleancfg: mod.makeCleanConfig({ ...CLEAN_DEFAULTS, ...(over || {}) }),
   }
 }
 

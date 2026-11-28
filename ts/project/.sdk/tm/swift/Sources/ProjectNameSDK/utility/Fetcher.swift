@@ -135,6 +135,10 @@ private func sendOnce(_ fullurl: String, _ fetchdef: VMap) throws -> Value {
 
   var req = URLRequest(url: url)
   req.httpMethod = gp(fetchdef, "method").asString ?? "GET"
+  // A bound in milliseconds, for a caller beneath the timeout feature.
+  if let ms = gp(fetchdef, "timeout").asDouble, ms > 0 {
+    req.timeoutInterval = ms / 1000
+  }
 
   let body = gp(fetchdef, "body")
   if let text = body.asString, text != "" {

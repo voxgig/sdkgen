@@ -488,6 +488,66 @@ public class FeatureTest {
   }
 
   @Test
+  public void cache_keysOnRequestHeaders() {
+    assumeFeatures("cache");
+    FhRecorder rec = new FhRecorder();
+    FhHarness h = fhMake(rec::fetch, fhF(new CacheFeature(), fhMap("ttl", 10000)));
+    h.op(fhOp("load").path("/w/1").headers(fhMap("x-tenant", "tenant-a")));
+    h.op(fhOp("load").path("/w/1").headers(fhMap("X-Tenant", "tenant-b")));
+    assertEquals(2, rec.calls.size(), "a second tenant was served the first tenant's entry");
+    h.op(fhOp("load").path("/w/1").headers(fhMap("x-tenant", "tenant-b")));
+    assertEquals(2, rec.calls.size(), "the same headers did not share an entry");
+  }
+
+  @Test
+  public void cache_aWriteDropsItsCollection() {
+    assumeFeatures("cache");
+    FhRecorder rec = new FhRecorder();
+    CacheFeature f = new CacheFeature();
+    FhHarness h = fhMake(rec::fetch, fhF(f, fhMap("ttl", 10000)));
+    String[] paths = {"/w/1", "/w", "/w/1/part", "/other/1", "/w/2"};
+    for (String p : paths) {
+      h.op(fhOp("load").path(p));
+    }
+    h.op(fhOp("update").method("PUT").path("/w/1"));
+    for (String p : paths) {
+      h.op(fhOp("load").path(p));
+    }
+    assertEquals(9, rec.calls.size(), "expected the collection refetched and /other cached");
+    assertEquals(2, f.hit, "expected /other served from cache");
+  }
+
+  @Test
+  public void cache_cacheControlPreventsStoring() {
+    assumeFeatures("cache");
+    for (String control : new String[] {"no-store", "private", "No-Cache", "max-age=60, private"}) {
+      FhRecorder rec = new FhRecorder();
+      rec.reply = (n, fetchdef) -> fhResponse(200, fhMap("ok", true), fhMap("Cache-Control", control));
+      FhHarness h = fhMake(rec::fetch, fhF(new CacheFeature(), fhMap("ttl", 10000)));
+      h.op(fhOp("load").path("/w"));
+      h.op(fhOp("load").path("/w"));
+      assertEquals(2, rec.calls.size(), control + " was stored");
+    }
+  }
+
+  @Test
+  public void cache_maxAgeCapsTheTtl() {
+    assumeFeatures("cache");
+    FhClock clock = new FhClock();
+    FhRecorder rec = new FhRecorder();
+    rec.reply = (n, fetchdef) -> fhResponse(200, fhMap("ok", true), fhMap("cache-control", "max-age=1"));
+    FhHarness h = fhMake(rec::fetch, fhF(new CacheFeature(),
+        fhMap("ttl", 10000, "now", (LongSupplier) clock::now)));
+    h.op(fhOp("load").path("/w"));
+    clock.advance(500);
+    h.op(fhOp("load").path("/w"));
+    assertEquals(1, rec.calls.size(), "expected a hit inside max-age");
+    clock.advance(600);
+    h.op(fhOp("load").path("/w"));
+    assertEquals(2, rec.calls.size(), "expected max-age=1 to expire the entry before the ttl");
+  }
+
+  @Test
   public void cache_inactiveDoesNotWrap() {
     assumeFeatures("cache");
     FhRecorder rec = new FhRecorder();
@@ -828,6 +888,34 @@ public class FeatureTest {
     FhHarness h = fhMake(null, fhF(f, fhMap("active", false)));
     h.op(fhOp("load"));
     assertEquals(0, f.records.size(), "expected no records");
+  }
+
+  // --- one call, one id -----------------------------------------------------------
+
+  @Test
+  public void correlation_telemetryDebugAndAuditCarryOneCallsContextId() {
+    assumeFeatures("telemetry", "debug", "audit");
+    TelemetryFeature telemetry = new TelemetryFeature();
+    DebugFeature debug = new DebugFeature();
+    AuditFeature audit = new AuditFeature();
+    FhHarness h = fhMake(null, fhF(telemetry, null), fhF(debug, null), fhF(audit, null));
+    h.op(fhOp("load"));
+    h.op(fhOp("list"));
+    Function<List<Map<String, Object>>, List<Object>> ids = (recs) -> {
+      List<Object> out = new ArrayList<>();
+      for (Map<String, Object> rec : recs) {
+        out.add(rec.get("correlationId"));
+      }
+      return out;
+    };
+    List<Object> calls = ids.apply(audit.records);
+    assertEquals(2, calls.size(), "expected one audit record per call");
+    for (Object id : calls) {
+      assertTrue(id instanceof String && !"".equals(id), "expected a context id, got " + calls);
+    }
+    assertNotEquals(calls.get(0), calls.get(1), "expected a different id per call");
+    assertEquals(calls, ids.apply(telemetry.spans), "expected the spans to carry the audit ids");
+    assertEquals(calls, ids.apply(debug.entries), "expected the debug entries to carry the audit ids");
   }
 
   // --- clienttrack ----------------------------------------------------------------

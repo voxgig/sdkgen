@@ -472,6 +472,52 @@
 ;; cache
 ;; ---------------------------------------------------------------------------
 
+(def ^:private cache-unstored #{"no-store" "private" "no-cache"})
+
+(defn- cache-header-text [v]
+  (cond (nil? v) nil
+        (string? v) v
+        (and (number? v) (== v (Math/floor (double v)))) (str (long v))
+        :else (str v)))
+
+(defn- cache-digest [^javax.crypto.spec.SecretKeySpec secret headers]
+  (let [pairs (if (instance? java.util.Map headers)
+                (sort (keep (fn [[k v]] (when-let [t (cache-header-text v)] [(str/lower-case (str k)) t]))
+                            (seq ^java.util.Map headers)))
+                [])
+        mac (doto (javax.crypto.Mac/getInstance "HmacSHA256") (.init secret))]
+    (doseq [[k v] pairs]
+      (.update mac (.getBytes (str k ":" v "\n") "UTF-8")))
+    (apply str (map #(format "%02x" (bit-and (long %) 0xff)) (.doFinal mac)))))
+
+;; The configured ttl capped by the response's Cache-Control; zero when the
+;; response may not be stored.
+(defn- cache-lifetime [headers ttl]
+  (let [control (str/lower-case (or (some (fn [[k v]] (when (= "cache-control" (str/lower-case (str k))) (cache-header-text v)))
+                                          (when (instance? java.util.Map headers) (seq ^java.util.Map headers)))
+                                    ""))
+        directives (map str/trim (str/split control #","))]
+    (if (some cache-unstored directives)
+      0
+      (reduce (fn [life d]
+                (if-let [[_ secs] (re-matches #"max-age\s*=\s*\"?(\d+)\"?" d)]
+                  (long (min life (*' 1000 (bigint secs))))
+                  life))
+              (long ttl) directives))))
+
+(defn- cache-scope [url]
+  (str/replace (first (str/split (str url) #"[?#]" 2)) #"/+$" ""))
+
+(defn- cache-parent [scope]
+  (let [scheme (str/index-of scope "://")
+        root (if (nil? scheme) 0 (str/index-of scope "/" (+ scheme 3)))]
+    (if (nil? root)
+      scope
+      (subs scope 0 (max root (or (str/last-index-of scope "/") 0))))))
+
+(defn- cache-under? [scope prefix]
+  (or (= scope prefix) (str/starts-with? scope (str prefix "/"))))
+
 (defn cache-feature []
   (let [fa (new-feature "cache" false "0.0.1")
         track! (fn [kind]
@@ -506,12 +552,22 @@
                      (let [oldest (first (keys (:store @fa)))]
                        (if (nil? oldest) (swap! fa assoc :store {})
                            (swap! fa update :store dissoc oldest))))))
+        invalidate! (fn [url]
+                      (let [path (cache-scope url)
+                            collection (cache-parent path)]
+                        (swap! fa update :store
+                               (fn [store]
+                                 (into {} (remove (fn [[_ e]] (let [scope (mget e "scope")]
+                                                                (or (cache-under? scope path)
+                                                                    (= scope collection))))
+                                                  store))))))
         through (fn [ctx url fetchdef inner]
                   (let [method (str/upper-case (str (or (and (vs/ismap fetchdef) (vs/getprop fetchdef "method")) "GET")))
                         methods (or (opt fa "methods") (vs/jt "GET"))]
-                    (if (not (some #(= % method) (vec methods)))
-                      (inner ctx url fetchdef)
-                      (let [key (str method " " url)
+                    (cond
+                      (some #(= % method) (vec methods))
+                      (let [key (str method " " url " "
+                                     (cache-digest (:secret @fa) (when (vs/ismap fetchdef) (vs/getprop fetchdef "headers"))))
                             now (now-ms fa)
                             hit (get (:store @fa) key)]
                         (if (and (some? hit) (> (mget hit "expiry") now))
@@ -524,17 +580,32 @@
 
                               (and (nil? err) (cacheable? res))
                               (let [snap (snapshot res)
-                                    ttl (opt fa "ttl" 5000)]
-                                (evict!)
-                                (swap! fa update :store assoc key (vs/jm "expiry" (+ now ttl) "snapshot" snap))
-                                (track! "miss")
-                                [(replay snap) nil])
+                                    ttl (cache-lifetime (mget snap "headers") (opt fa "ttl" 5000))]
+                                (if (<= ttl 0)
+                                  (do (track! "bypass") [(replay snap) nil])
+                                  (do
+                                    (swap! fa update :store dissoc key)
+                                    (evict!)
+                                    (swap! fa update :store assoc key
+                                           (vs/jm "expiry" (+ now ttl) "scope" (cache-scope url) "snapshot" snap))
+                                    (track! "miss")
+                                    [(replay snap) nil])))
 
-                              :else (do (track! "bypass") [res err]))))))))]
+                              :else (do (track! "bypass") [res err])))))
+
+                      (contains? #{"GET" "HEAD"} method)
+                      (inner ctx url fetchdef)
+
+                      :else
+                      (try (inner ctx url fetchdef)
+                           (finally (invalidate! url))))))]
     (swap! fa assoc
            "init" (fn [ctx options]
                     (swap! fa assoc :client (core/oget ctx :client)
-                           :options (if (vs/ismap options) options (vs/jm)) :active (opts-active? options) :store {})
+                           :options (if (vs/ismap options) options (vs/jm)) :active (opts-active? options) :store {}
+                           :secret (let [bytes (byte-array 32)]
+                                     (.nextBytes (java.security.SecureRandom.) bytes)
+                                     (javax.crypto.spec.SecretKeySpec. bytes "HmacSHA256")))
                     (when (active? fa)
                       (wrap-fetcher! ctx (fn [fctx url fd inner] (through fctx url fd inner))))))
     fa))
@@ -1054,6 +1125,7 @@
              (when (active? fa)
                (let [op (core/oget ctx :op)
                      span (vs/jm "traceId" (gen-id2 "trace") "spanId" (gen-id2 "span")
+                                 "correlationId" (core/oget ctx :id)
                                  "name" (str (if op (core/op-entity op) "_") "." (if op (core/op-name op) "_"))
                                  "start" (now-ms fa) "end" nil "durationMs" nil "ok" nil)]
                  (swap! fa update :spans assoc ctx span)
@@ -1175,6 +1247,7 @@
                      method (when spec (core/oget spec :method))
                      headers (when spec (core/oget spec :headers))
                      entry (vs/jm "op" (str (if op (core/op-entity op) "_") "." (if op (core/op-name op) "_"))
+                                  "correlationId" (core/oget ctx :id)
                                   "method" method "url" url "headers" (redact ctx headers) "start" (now-ms fa)
                                   "status" nil "ok" nil "durationMs" nil "error" nil)]
                  (swap! fa update :entries assoc ctx entry))))

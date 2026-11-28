@@ -3,7 +3,7 @@ use std::rc::Rc;
 
 use crate::core::context::Context;
 use crate::core::error::ProjectNameError;
-use crate::core::helpers::{getp, getpath, jo, setp};
+use crate::core::helpers::{getp, jo, setp};
 use crate::core::response::{header_value, is_binary_response, Response};
 use crate::core::spec::Spec;
 use crate::utility::media::{is_raw_request, RAW_BODY};
@@ -13,8 +13,8 @@ use crate::utility::voxgigstruct::Value;
 // Every registered secret VALUE (and its encoded forms) is replaced wherever
 // it appears in a string, and every value under a sensitive KEY name is
 // masked whatever it holds. The registry is the Rc-shared `values` list of
-// `options.__derived__.clean`, so a feature registering a value later
-// reaches the list every context reads.
+// the context's `cleancfg`, held beside the options rather than in them, so a
+// feature registering a value later reaches the list every context reads.
 
 const MAXDEPTH: usize = 32;
 const CIRCULAR: &str = "[circular]";
@@ -95,8 +95,8 @@ fn count(val: &Value, dflt: usize) -> usize {
     }
 }
 
-/// The derived clean block from a clean option block: what make_options
-/// stores under `__derived__.clean`.
+/// The clean registry from a clean option block: what make_options stores
+/// on the context as `cleancfg`.
 pub fn make_clean_config(cleanopts: &Value) -> Value {
     let active = !matches!(getp(cleanopts, "active"), Value::Bool(false));
     let mask = match getp(cleanopts, "mask") {
@@ -116,18 +116,13 @@ pub fn make_clean_config(cleanopts: &Value) -> Value {
     ])
 }
 
-fn derived_block(options: &Value) -> Value {
-    getpath(&["__derived__", "clean"], options)
-}
-
-// A context without options (make_error is reached with a bare one) falls
+// A context without a registry (make_error is reached with a bare one) falls
 // back to the schema defaults, so nothing leaves raw for want of a
 // constructor.
 fn config_block(ctx: &Context) -> Value {
-    let options = ctx.options.borrow().clone();
-    let derived = derived_block(&options);
-    if let Value::Map(_) = derived {
-        return derived;
+    let cfg = ctx.cleancfg.borrow().clone();
+    if let Value::Map(_) = cfg {
+        return cfg;
     }
     make_clean_config(&getp(&crate::core::schema::optspec(), "clean"))
 }
@@ -192,23 +187,22 @@ fn forms(value: &str) -> Vec<String> {
     out
 }
 
-/// Register a secret value against an options map. Idempotent; shorter
-/// than `min` is not a secret the SDK can mask without blanking ordinary
-/// text. A map with no derived block registers nothing.
-pub fn clean_add_opts(options: &Value, value: &str) {
-    let block = derived_block(options);
+/// Register a secret value in a clean registry. Idempotent; shorter than
+/// `min` is not a secret the SDK can mask without blanking ordinary text.
+/// Anything but a registry map registers nothing.
+pub fn clean_add_cfg(block: &Value, value: &str) {
     if !matches!(block, Value::Map(_)) {
         return;
     }
-    let min = count(&getp(&block, "min"), 4).max(1);
+    let min = count(&getp(block, "min"), 4).max(1);
     if value.chars().count() < min {
         return;
     }
-    let list = match getp(&block, "values") {
+    let list = match getp(block, "values") {
         Value::List(l) => l,
         _ => {
             let l = Value::empty_list();
-            setp(&block, "values", l.clone());
+            setp(block, "values", l.clone());
             match l {
                 Value::List(l) => l,
                 _ => return,
@@ -236,10 +230,10 @@ pub fn clean_add_opts(options: &Value, value: &str) {
     }
 }
 
-/// Register a secret value the context's options will mask from now on.
+/// Register a secret value the context's registry will mask from now on.
 pub fn clean_add(ctx: &Rc<Context>, value: &str) {
-    let options = ctx.options.borrow().clone();
-    clean_add_opts(&options, value);
+    let cfg = ctx.cleancfg.borrow().clone();
+    clean_add_cfg(&cfg, value);
 }
 
 fn mask_value(cfg: &CleanConfig, value: &str) -> String {
@@ -478,14 +472,13 @@ pub fn clean_str(ctx: &Rc<Context>, val: &str) -> String {
     clean_string(&cfg, val)
 }
 
-/// Clean a value against an options map rather than a context, for a
-/// feature that holds the options but no context.
-pub fn clean_opts(options: &Value, val: &Value) -> Value {
-    let block = derived_block(options);
+/// Clean a value against a registry rather than a context, for a feature
+/// that holds the registry but no context.
+pub fn clean_cfg(block: &Value, val: &Value) -> Value {
     if !matches!(block, Value::Map(_)) {
         return val.clone();
     }
-    clean_with(&read_config(&block), None, val)
+    clean_with(&read_config(block), None, val)
 }
 
 /// Is this key name sensitive under the context's clean configuration?
@@ -508,25 +501,24 @@ pub fn clean_error(ctx: &Rc<Context>, mut err: ProjectNameError) -> ProjectNameE
 }
 
 /// Every scalar under a sensitive name, at any depth and of any shape, is
-/// registered against `options`: a credential mistyped as a map or a number
-/// is still a credential.
-pub fn clean_add_sensitive_opts(options: &Value, val: &Value) {
-    let block = derived_block(options);
+/// registered in `block`: a credential mistyped as a map or a number is
+/// still a credential.
+pub fn clean_add_sensitive_cfg(block: &Value, val: &Value) {
     if !matches!(block, Value::Map(_)) {
         return;
     }
-    let cfg = read_config(&block);
-    add_sensitive(&cfg, options, val, false, 0, &mut Vec::new());
+    let cfg = read_config(block);
+    add_sensitive(&cfg, block, val, false, 0, &mut Vec::new());
 }
 
 pub fn clean_add_sensitive(ctx: &Rc<Context>, val: &Value) {
-    let options = ctx.options.borrow().clone();
-    clean_add_sensitive_opts(&options, val);
+    let cfg = ctx.cleancfg.borrow().clone();
+    clean_add_sensitive_cfg(&cfg, val);
 }
 
 fn add_sensitive(
     cfg: &CleanConfig,
-    options: &Value,
+    block: &Value,
     val: &Value,
     under: bool,
     depth: usize,
@@ -536,8 +528,8 @@ fn add_sensitive(
         return;
     }
     match val {
-        Value::Str(s) if under => clean_add_opts(options, s),
-        Value::Num(n) if under => clean_add_opts(options, &vs::value::num_to_string(*n)),
+        Value::Str(s) if under => clean_add_cfg(block, s),
+        Value::Num(n) if under => clean_add_cfg(block, &vs::value::num_to_string(*n)),
         Value::List(_) | Value::Map(_) => {
             let ptr = node_ptr(val).unwrap_or(0);
             if seen.contains(&ptr) {
@@ -547,13 +539,13 @@ fn add_sensitive(
             match val {
                 Value::List(l) => {
                     for v in l.borrow().iter() {
-                        add_sensitive(cfg, options, v, under, depth + 1, seen);
+                        add_sensitive(cfg, block, v, under, depth + 1, seen);
                     }
                 }
                 Value::Map(m) => {
                     for (k, v) in m.borrow().iter() {
                         let sub = under || sensitive_key(cfg, Some(k));
-                        add_sensitive(cfg, options, v, sub, depth + 1, seen);
+                        add_sensitive(cfg, block, v, sub, depth + 1, seen);
                     }
                 }
                 _ => {}

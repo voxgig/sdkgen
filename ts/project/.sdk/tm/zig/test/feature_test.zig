@@ -488,6 +488,71 @@ test "feature cache: inactive does not wrap" {
     try testing.expect(rec.count() == 2);
 }
 
+var cache_control: []const u8 = "";
+
+fn replyControl(_: i64, _: *sdk.Context, _: Value) fh.E!Value {
+    return fh.fh_response(200, h.jo(&.{.{ "ok", h.vbool(true) }}), h.jo(&.{.{ "Cache-Control", h.vstr(cache_control) }}));
+}
+
+test "feature cache: keys on request headers" {
+    if (!fh.fh_present(&.{"cache"})) return;
+    const rec = fh.Recorder.new(null);
+    const f = sdk.CacheFeature.make();
+    const hh = fh.fh_make(rec.fetcher(), &.{.{ .feat = f, .options = h.jo(&.{.{ "ttl", h.vnum(10000) }}) }});
+    _ = hh.op(.{ .op = "load", .path = "/w/1", .headers = h.jo(&.{.{ "x-tenant", h.vstr("tenant-a") }}) });
+    _ = hh.op(.{ .op = "load", .path = "/w/1", .headers = h.jo(&.{.{ "X-Tenant", h.vstr("tenant-b") }}) });
+    try testing.expect(rec.count() == 2);
+    _ = hh.op(.{ .op = "load", .path = "/w/1", .headers = h.jo(&.{.{ "x-tenant", h.vstr("tenant-b") }}) });
+    try testing.expect(rec.count() == 2);
+}
+
+test "feature cache: a write drops its collection" {
+    if (!fh.fh_present(&.{"cache"})) return;
+    const rec = fh.Recorder.new(null);
+    const f = sdk.CacheFeature.make();
+    const cf: *sdk.CacheFeature = @ptrCast(@alignCast(f.ptr));
+    const hh = fh.fh_make(rec.fetcher(), &.{.{ .feat = f, .options = h.jo(&.{.{ "ttl", h.vnum(10000) }}) }});
+    const paths = [_][]const u8{ "/w/1", "/w", "/w/1/part", "/other/1", "/w/2" };
+    for (paths) |p| _ = hh.op(.{ .op = "load", .path = p });
+    _ = hh.op(.{ .op = "update", .method = "PUT", .path = "/w/1" });
+    for (paths) |p| _ = hh.op(.{ .op = "load", .path = p });
+    try testing.expect(rec.count() == 9);
+    try testing.expect(cf.track.hit == 2);
+}
+
+test "feature cache: Cache-Control prevents storing" {
+    if (!fh.fh_present(&.{"cache"})) return;
+    const controls = [_][]const u8{ "no-store", "private", "No-Cache", "max-age=60, private" };
+    for (controls) |control| {
+        cache_control = control;
+        const rec = fh.Recorder.new(replyControl);
+        const f = sdk.CacheFeature.make();
+        const hh = fh.fh_make(rec.fetcher(), &.{.{ .feat = f, .options = h.jo(&.{.{ "ttl", h.vnum(10000) }}) }});
+        _ = hh.op(.{ .op = "load", .path = "/w" });
+        _ = hh.op(.{ .op = "load", .path = "/w" });
+        try testing.expect(rec.count() == 2);
+    }
+}
+
+test "feature cache: max-age caps the ttl" {
+    if (!fh.fh_present(&.{"cache"})) return;
+    cache_control = "max-age=1";
+    const clock = fh.FhClock.new();
+    const rec = fh.Recorder.new(replyControl);
+    const f = sdk.CacheFeature.make();
+    const hh = fh.fh_make(rec.fetcher(), &.{.{ .feat = f, .options = h.jo(&.{
+        .{ "ttl", h.vnum(10000) },
+        .{ "now", clock.now_fn() },
+    }) }});
+    _ = hh.op(.{ .op = "load", .path = "/w" });
+    clock.advance(500);
+    _ = hh.op(.{ .op = "load", .path = "/w" });
+    try testing.expect(rec.count() == 1);
+    clock.advance(600);
+    _ = hh.op(.{ .op = "load", .path = "/w" });
+    try testing.expect(rec.count() == 2);
+}
+
 // =====================================================================
 // idempotency
 // =====================================================================
@@ -826,6 +891,41 @@ test "feature audit: inactive records nothing" {
     const hh = fh.fh_make(null, &.{.{ .feat = f, .options = h.jo(&.{.{ "active", h.vbool(false) }}) }});
     _ = hh.op(.{ .op = "load" });
     try testing.expect(af.records.items.len == 0);
+}
+
+// =====================================================================
+// one call, one id
+// =====================================================================
+
+test "feature telemetry, debug and audit: carry one call's context id" {
+    if (!fh.fh_present(&.{ "telemetry", "debug", "audit" })) return;
+    const tfeat = sdk.TelemetryFeature.make();
+    const tf: *sdk.TelemetryFeature = @ptrCast(@alignCast(tfeat.ptr));
+    const dfeat = sdk.DebugFeature.make();
+    const df: *sdk.DebugFeature = @ptrCast(@alignCast(dfeat.ptr));
+    const afeat = sdk.AuditFeature.make();
+    const af: *sdk.AuditFeature = @ptrCast(@alignCast(afeat.ptr));
+    const hh = fh.fh_make(null, &.{
+        .{ .feat = tfeat, .options = vnull() },
+        .{ .feat = dfeat, .options = vnull() },
+        .{ .feat = afeat, .options = vnull() },
+    });
+    _ = hh.op(.{ .op = "load" });
+    _ = hh.op(.{ .op = "list" });
+    const calls = af.records.items;
+    try testing.expect(calls.len == 2);
+    for (calls) |rec| {
+        const id = h.get_str(rec, "correlationId") orelse "";
+        try testing.expect(id.len != 0);
+    }
+    try testing.expect(!h.veq(h.getp(calls[0], "correlationId"), h.getp(calls[1], "correlationId")));
+    try testing.expect(tf.spans.items.len == calls.len);
+    try testing.expect(df.entries.items.len == calls.len);
+    for (calls, tf.spans.items, df.entries.items) |rec, span, entry| {
+        const id = h.getp(rec, "correlationId");
+        try testing.expect(h.veq(h.getp(span, "correlationId"), id));
+        try testing.expect(h.veq(h.getp(entry, "correlationId"), id));
+    }
 }
 
 // =====================================================================

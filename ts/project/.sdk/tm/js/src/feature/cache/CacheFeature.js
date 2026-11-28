@@ -5,13 +5,9 @@ const { headerValue, isJsonMedia } = require('../../utility/MediaUtility')
 
 
 // Response caching for safe (read) requests. Wraps the active transport and
-// serves a fresh cached snapshot instead of hitting the network when the
-// same method+URL was fetched within `ttl` ms. Only successful responses to
-// cacheable methods (default: GET) are stored, keyed by method+URL. The
-// cache is bounded (`max` entries, oldest evicted) and every hit/miss is
-// recorded on `client._cache` for inspection. One-shot response bodies are
-// normalised on capture so both the current caller and later hits can read
-// the JSON body repeatedly.
+// serves a cached snapshot for a repeat of the same method, URL and headers.
+// The store is per client and bounded; see the features reference for the
+// key, the write invalidation and the Cache-Control rules.
 class CacheFeature extends BaseFeature {
   version = '0.0.1'
   name = 'cache'
@@ -20,6 +16,7 @@ class CacheFeature extends BaseFeature {
   _client
   _options = {}
   _store = new Map()
+  _key = undefined
 
 
   init(ctx, options) {
@@ -32,6 +29,7 @@ class CacheFeature extends BaseFeature {
     }
 
     this._store = new Map()
+    this._key = cacheKey()
 
     const self = this
     const utility = ctx.utility
@@ -48,10 +46,18 @@ class CacheFeature extends BaseFeature {
     const methods = this._options.methods || ['GET']
 
     if (methods.indexOf(method) < 0) {
-      return inner(ctx, url, fetchdef)
+      if (SAFE_METHODS.indexOf(method) >= 0) {
+        return inner(ctx, url, fetchdef)
+      }
+      try {
+        return await inner(ctx, url, fetchdef)
+      }
+      finally {
+        this._invalidate(url)
+      }
     }
 
-    const key = method + ' ' + url
+    const key = method + ' ' + url + ' ' + await this._digest(fetchdef && fetchdef.headers)
     const now = this._now()
     const hit = this._store.get(key)
 
@@ -78,15 +84,41 @@ class CacheFeature extends BaseFeature {
         return this._replay(snapshot)
       }
 
-      const ttl = null == this._options.ttl ? 5000 : this._options.ttl
+      const ttl = cacheLifetime(snapshot.headers,
+        null == this._options.ttl ? 5000 : this._options.ttl)
+      if (ttl <= 0) {
+        this._track('bypass')
+        return this._replay(snapshot)
+      }
+
+      this._store.delete(key)
       this._evict()
-      this._store.set(key, { expiry: now + ttl, snapshot })
+      this._store.set(key, { expiry: now + ttl, scope: urlScope(url), snapshot })
       this._track('miss')
       return this._replay(snapshot)
     }
 
     this._track('bypass')
     return res
+  }
+
+
+  async _digest(headers) {
+    const subtle = globalThis.crypto.subtle
+    const mac = await subtle.sign('HMAC', await this._key,
+      new TextEncoder().encode(headerText(headers)))
+    return Array.from(new Uint8Array(mac), (b) => b.toString(16).padStart(2, '0')).join('')
+  }
+
+
+  _invalidate(url) {
+    const path = urlScope(url)
+    const collection = urlParent(path)
+    for (const [key, entry] of this._store) {
+      if (scopeUnder(entry.scope, path) || entry.scope === collection) {
+        this._store.delete(key)
+      }
+    }
   }
 
 
@@ -185,6 +217,81 @@ class CacheFeature extends BaseFeature {
     }
     client._cache[kind]++
   }
+}
+
+
+const SAFE_METHODS = ['GET', 'HEAD']
+
+const UNSTORED = ['no-store', 'private', 'no-cache']
+
+
+// A fresh random secret per client: the key holds a digest of the headers,
+// never a header value.
+function cacheKey() {
+  const crypto = globalThis.crypto
+  return crypto.subtle.importKey('raw', crypto.getRandomValues(new Uint8Array(32)),
+    { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
+}
+
+
+function headerText(headers) {
+  const pairs = []
+  for (const name of Object.keys(headers || {})) {
+    if (null != headers[name]) {
+      pairs.push([name.toLowerCase(), String(headers[name])])
+    }
+  }
+  pairs.sort((a, b) => a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : a[1] < b[1] ? -1 : a[1] > b[1] ? 1 : 0)
+  return pairs.map((p) => p[0] + ':' + p[1] + '\n').join('')
+}
+
+
+// The configured ttl, capped by the response's Cache-Control; zero when the
+// response may not be stored.
+function cacheLifetime(headers, ttl) {
+  let control = ''
+  for (const name of Object.keys(headers || {})) {
+    if ('cache-control' === name.toLowerCase()) {
+      control = String(headers[name])
+    }
+  }
+  let life = ttl
+  for (const part of control.toLowerCase().split(',')) {
+    const directive = part.trim()
+    if (UNSTORED.indexOf(directive) >= 0) {
+      return 0
+    }
+    const age = directive.match(/^max-age\s*=\s*"?(\d+)"?$/)
+    if (null != age) {
+      life = Math.min(life, Number(age[1]) * 1000)
+    }
+  }
+  return life
+}
+
+
+function urlScope(url) {
+  let scope = String(url).split(/[?#]/)[0]
+  while (scope.endsWith('/')) {
+    scope = scope.slice(0, -1)
+  }
+  return scope
+}
+
+
+function urlParent(scope) {
+  const scheme = scope.indexOf('://')
+  const root = scheme < 0 ? 0 : scope.indexOf('/', scheme + 3)
+  if (root < 0) {
+    return scope
+  }
+  const cut = scope.lastIndexOf('/')
+  return scope.slice(0, cut < root ? root : cut)
+}
+
+
+function scopeUnder(scope, prefix) {
+  return scope === prefix || scope.startsWith(prefix + '/')
 }
 
 

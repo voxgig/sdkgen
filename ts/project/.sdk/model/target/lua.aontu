@@ -34,6 +34,12 @@ main: kit: feature: &: target: lua: deps: &: {
 }
 
 
+main: kit: target: lua: feature: {
+  trim: true
+  fullset: ['test/feature_test.lua']
+}
+
+
 main: kit: target: lua: publish: {
   registry: {
     name: 'luarocks'

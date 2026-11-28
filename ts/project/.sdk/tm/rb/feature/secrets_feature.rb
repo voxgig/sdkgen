@@ -47,11 +47,11 @@
 # mutex is always the innermost lock so the three can never deadlock.
 
 require 'json'
-require 'net/http'
 require 'uri'
 
 require_relative 'base_feature'
 require_relative '../utility/struct/voxgig_struct'
+require_relative '../utility/fetcher'
 require_relative 'secrets/voxgig_sekreto'
 
 class ProjectNameSecretsFeature < ProjectNameBaseFeature
@@ -236,6 +236,7 @@ class ProjectNameSecretsFeature < ProjectNameBaseFeature
     # provider ERROR refuses the request with the provider's own message;
     # never an unauthenticated send.
     err = resolve
+    return nil, err if err.is_a?(ProjectNameError)
     unless err.nil?
       return nil, ctx.make_error("secrets_provider", err.to_s)
     end
@@ -454,27 +455,22 @@ class ProjectNameSecretsFeature < ProjectNameBaseFeature
     base = options["base"].is_a?(String) ? options["base"] : ""
     url = base.sub(%r{/+\z}, "") + "/" + x["path"].sub(%r{\A/+}, "")
 
-    fetch = VoxgigStruct.getpath(options, "system.fetch")
-
-    # No custom transport supplied - the ordinary case. make_options leaves
-    # system.fetch unset, so the exchange gets its own raw HTTP path. Local
-    # and minimal on purpose: see the NOT-the-SDK-transport note below.
-    fetch = ProjectNameSecretsFeature.method(:raw_exchange_fetch) unless fetch.is_a?(Proc)
+    # The SDK's own transport, beneath every feature's wrapper: it holds the
+    # test feature's block and the GET-only guard, and the wrapped one would
+    # recurse on the first expiry.
+    fetch = ->(at, fd) { ProjectNameUtilities::Fetcher.call(@ctx, at, fd) }
 
     # The body is MARSHALLED, never concatenated: a refresh token (or a
     # configured request-field name) carrying a quote, backslash or newline
     # must arrive as that literal value, not as malformed JSON.
-    #
-    # Deliberately NOT the SDK transport. The transport is what this
-    # feature wraps, and sending the token request back through it would
-    # recurse on the first expiry - and would route the exchange through
-    # the test mock, which knows nothing about it.
     fetchdef = {
       "method" => x["method"],
       "headers" => { "content-type" => "application/json" },
       "body" => JSON.generate({ x["request"] => @refresh }),
       # Never followed by the client: a redirect would carry the refresh token on.
       "redirect" => "manual",
+      # Its own bound, in milliseconds: the timeout feature's wrapper is above.
+      "timeout" => 30_000,
     }
 
     res, err = fetch.call(url, fetchdef)
@@ -490,6 +486,7 @@ class ProjectNameSecretsFeature < ProjectNameBaseFeature
       res, err = fetch.call(at, fetchdef)
     end
 
+    raise err if err.is_a?(ProjectNameError)
     unless err.nil?
       raise VoxgigSekreto::SekretoError,
         "secrets: token exchange failed: #{err} from #{url}"
@@ -598,57 +595,5 @@ class ProjectNameSecretsFeature < ProjectNameBaseFeature
 
   def _str(value, dflt)
     value.is_a?(String) && !value.empty? ? value : dflt
-  end
-
-  # Token-exchange transport of last resort: plain net/http, answering the
-  # same [res, err] shape the system.fetch seam promises ("status" +
-  # "json"). It exists so an exchange works with ordinary SDK options -
-  # requiring a custom transport for the COMMON case would reject every
-  # live token purchase before a request was made.
-  def self.raw_exchange_fetch(fullurl, fetchdef)
-    uri = URI.parse(fullurl)
-    http = Net::HTTP.new(uri.host, uri.port)
-    http.use_ssl = (uri.scheme == "https")
-    http.open_timeout = 30
-    http.read_timeout = 30
-
-    method_str = (fetchdef["method"] || "POST").to_s.upcase
-    klass = case method_str
-            when "PUT" then Net::HTTP::Put
-            when "PATCH" then Net::HTTP::Patch
-            when "GET" then Net::HTTP::Get
-            else Net::HTTP::Post
-            end
-
-    request = klass.new(uri)
-    (fetchdef["headers"] || {}).each do |k, v|
-      request[k] = v.to_s if v.is_a?(String)
-    end
-    body = fetchdef["body"]
-    request.body = body if body.is_a?(String)
-
-    # Net::HTTP#request follows no redirect: a 3xx is returned as its status.
-    resp = http.request(request)
-    raw = resp.body
-
-    # A non-2xx answer IS a response: hand back its status so the caller
-    # reports "token exchange failed: <status>" rather than a transport
-    # error.
-    resp_headers = {}
-    resp.each_header { |k, v| resp_headers[k.downcase] = v }
-
-    return {
-      "status" => resp.code.to_i,
-      "headers" => resp_headers,
-      "json" => -> {
-        begin
-          raw.nil? || raw.empty? ? nil : JSON.parse(raw)
-        rescue StandardError
-          nil
-        end
-      },
-    }, nil
-  rescue StandardError => e
-    return nil, e
   end
 end

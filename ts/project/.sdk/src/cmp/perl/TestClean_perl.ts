@@ -745,12 +745,12 @@ SKIP: {
   # is not changed by it.
   my $util = $hooked->get_utility();
   my $cfgclean = { 'keys' => 'zzsens', 'values' => $CANARY{config} };
-  my $built = $util->{make_options}->($util->{make_context}->({
+  my $cfgctx = $util->{make_context}->({
     'utility' => $util,
     'config' => { 'options' => { 'clean' => $cfgclean } },
     'options' => { 'clean' => { 'values' => $CANARY{value} } },
-  }, undef));
-  my $cfgctx = $util->{make_context}->({ 'options' => $built }, undef);
+  }, undef);
+  $cfgctx->{options} = $util->{make_options}->($cfgctx);
   my $seeded = $util->{clean}->($cfgctx, "config $CANARY{config} caller $CANARY{value}");
   push @sinks, { 'name' => 'config-clean', 'text' => "$seeded" };
   is($seeded, "config $MASK caller $MASK", "the config's clean values are registered");
@@ -793,6 +793,15 @@ SKIP: {
   my $frecord = $fclean->($featured->get_root_ctx(), 'record PLAINRECORD-t5r3e1w9');
   my $falias = $fclean->($featured->get_root_ctx(), 'alias PLAINALIAS-m2n4b6v8');
   my $frule = $fclean->($featured->get_root_ctx(), 'rule PLAINRULE-k7j5h3g1');
+
+  # The clean registry holds every credential in plain form, and is no option.
+  my $held = construct({ 'apikey' => $CANARY{apikey} })->options_map();
+  my $heldjson = $JSON->encode($held);
+  my $heldquoted = $JSON->encode([$CANARY{apikey}]) =~ s/^\\[|\\]$//gr;
+  is($held->{apikey}, $CANARY{apikey}, 'options_map keeps the apikey the caller set');
+  is_deeply([ leaks($heldjson =~ s/\\Q$heldquoted\\E//r) ], [],
+    'options_map carries no credential beyond the option the caller set')
+    or diag($heldjson);
 
   my @leaked = grep { @{ $_->{found} } }
     map { { 'name' => $_->{name}, 'found' => [ leaks($_->{text}) ] } } @sinks;

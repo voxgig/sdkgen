@@ -87,9 +87,7 @@ func makeOptionsUtil(ctx *core.Context) (map[string]any, error) {
 		}
 	}
 	cleancfg := makeCleanConfig(cleanraw)
-	cleanctx := &core.Context{Options: map[string]any{
-		"__derived__": map[string]any{"clean": cleancfg},
-	}}
+	cleanctx := &core.Context{CleanCfg: cleancfg}
 	cleanAddOptions(cleanctx, cleanOmit(opts, "clean"))
 	for _, block := range []map[string]any{cfgopts, opts} {
 		for _, s := range cleanSplit(vs.GetPath(block, []any{"clean", "values"})) {
@@ -246,10 +244,10 @@ func makeOptionsUtil(ctx *core.Context) (map[string]any, error) {
 		}
 	}
 
-	opts["__derived__"] = map[string]any{
-		"clean":        cleancfg,
-		"featureorder": featureorder,
-	}
+	opts["__derived__"] = map[string]any{"featureorder": featureorder}
+
+	// Beside the options, not in them: OptionsMap hands them to callers.
+	ctx.CleanCfg = cleancfg
 
 	// Again over the merged result: the config's own defaults can carry one.
 	cleanAddOptions(cleanctx, cleanOmit(opts, "clean", "__derived__"))

@@ -659,9 +659,9 @@ ${candidateLines}
     // and is not changed by it.
     let config = vm(("options", .map(vm(("clean", .map(vm(
       ("keys", .string("zzsens")), ("values", .string(canaryConfig)))))))))
-    let built = makeOptionsUtil(Context(
-      ["config": config, "options": vm(("clean", .map(vm(("values", .string(canaryValue))))))], nil))
-    let cfgctx = Context(["options": built], nil)
+    let cfgctx = Context(
+      ["config": config, "options": vm(("clean", .map(vm(("values", .string(canaryValue))))))], nil)
+    cfgctx.options = makeOptionsUtil(cfgctx)
     let seeded = cleanUtil(cfgctx, .string("config " + canaryConfig + " caller " + canaryValue)).asString ?? ""
     box.sinks.append(Sink(name: "config-clean", text: seeded))
     XCTAssertEqual(seeded, "config " + mask + " caller " + mask)
@@ -710,7 +710,8 @@ ${candidateLines}
         ("rules", .map(vm(("zztoken.load", .string("PLAINRULE-k7j5h3g1")))))))),
       ("test", .map(vm(("active", .bool(false)), ("entity", .map(record)))))))
     featopts.entries["entity"] = .map(alias)
-    let fctx = Context(["options": makeOptionsUtil(Context(["options": featopts], nil))], nil)
+    let fctx = Context(["options": featopts], nil)
+    fctx.options = makeOptionsUtil(fctx)
     let fplain = cleanUtil(fctx, .string("kind PLAINSETTING-q8w2e4r6")).asString
     let ftoken = cleanUtil(fctx, .string("token FEATTOKEN-z9y8x7w6")).asString
     let frecord = cleanUtil(fctx, .string("record PLAINRECORD-t5r3e1w9")).asString
@@ -723,6 +724,16 @@ ${candidateLines}
     XCTAssertEqual(gp(raw, "ok"), .bool(false))
     let rawerr = gp(raw, "err").asNative as? ${Name}Error
     box.sinks += ${Name}CleanTest.formsOf("direct", rawerr)
+
+    // The clean registry holds every credential in plain form, and is no option.
+    let heldopts = VMap()
+    heldopts.entries["apikey"] = .string(canaryApikey)
+    let held = ${Name}SDK(${Name}CleanTest.offline(heldopts)).optionsMap()
+    var helddump = ""
+    dump(held, to: &helddump, maxDepth: 16)
+    XCTAssertEqual(gp(held, "apikey"), .string(canaryApikey))
+    let heldrest = helddump.range(of: canaryApikey).map { helddump.replacingCharacters(in: $0, with: "") } ?? helddump
+    XCTAssertEqual(leaks(heldrest), [], "optionsMap carries a credential beyond the option the caller set: " + helddump)
 
     let leaked = box.sinks
       .map { (name: $0.name, found: leaks($0.text)) }
@@ -798,7 +809,7 @@ ${candidateLines}
 
   func testARegisteredValueUsedAsAPropertyNameIsMaskedCollisionsKept() {
     let cfg = makeCleanConfig(gp(SdkSchema.optspec, "clean"))
-    let ctx = Context(["options": vm(("__derived__", .map(vm(("clean", .nat(cfg))))))], nil)
+    let ctx = Context(["cleancfg": cfg], nil)
     cleanAddUtil(ctx, .string("ZZVAL-abc123"))
     cleanAddUtil(ctx, .string("ZZVAL-xyz789"))
     let src = vm(("ZZVAL-abc123", .int(1)), ("ZZVAL-xyz789", .int(2)), ("plain", .int(3)))
@@ -814,7 +825,7 @@ ${candidateLines}
 
   func testCleanAddSensitiveRegistersEveryScalarUnderASensitiveName() {
     let cfg = makeCleanConfig(gp(SdkSchema.optspec, "clean"))
-    let ctx = Context(["options": vm(("__derived__", .map(vm(("clean", .nat(cfg))))))], nil)
+    let ctx = Context(["cleancfg": cfg], nil)
     cleanAddSensitiveUtil(ctx, .map(vm(
       ("apikey", .map(vm(("value", .string("NESTED-SECRET-1"))))),
       ("headers", .map(vm(("X-Api-Token", .list(VList([.string("LISTED-SECRET-2")])))))),
@@ -912,8 +923,7 @@ ${candidateLines}
 
   func testBytesAreDescribedWhereverTheySit() {
     let cfg = makeCleanConfig(gp(SdkSchema.optspec, "clean"))
-    let options = vm(("__derived__", .map(vm(("clean", .nat(cfg))))))
-    let ctx = Context(["options": options], nil)
+    let ctx = Context(["cleancfg": cfg], nil)
     let bytes = ${Name}CleanTest.described(canaryContentBytes.count, nil)
 
     let live = Value.nat(Data(canaryContentBytes))
@@ -934,13 +944,13 @@ ${candidateLines}
     XCTAssertEqual(cleanUtil(ctx, .string(canaryContent)), .string(canaryContent))
 
     let offcfg = makeCleanConfig(.map(vm(("active", .bool(false)))))
-    let offctx = Context(["options": vm(("__derived__", .map(vm(("clean", .nat(offcfg))))))], nil)
+    let offctx = Context(["cleancfg": offcfg], nil)
     XCTAssertEqual(cleanUtil(offctx, live), live)
 
     // By the model: only at a point marked binary is a string body bytes.
     func cleanedAt(_ declared: VMap, _ body: Value) -> Value {
       let pctx = Context([
-        "options": options,
+        "cleancfg": cfg,
         "point": vm(("body", .map(declared))),
         "spec": Spec(vm(("body", body))),
         "reqdata": vm(("$body", body)),

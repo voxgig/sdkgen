@@ -156,6 +156,66 @@ async function usableOps(want) {
 }
 
 
+
+const READ_OPS = ['list', 'load']
+const WRITE_OPS = ['create', 'update', 'patch', 'remove']
+
+
+// A read and a write of one entity (#READ, #WRITE), each driven as usableOps
+// drives an op; #ITEM is a write of the same entity driven with ITEM_ARGS.
+async function usablePair() {
+  const found = {}
+  for (const cand of candidates(makeClient({}))) {
+    const role = READ_OPS.includes(cand.op) ? 'read' : WRITE_OPS.includes(cand.op) ? 'write' : ''
+    const seen = found[cand.entity] = found[cand.entity] || {}
+    if ('' === role || null != seen[role]) { continue }
+    try {
+      await makeClient({})[cand.accessor]()[cand.op]({}, {})
+    }
+    catch (e) { continue }
+    seen[role] = cand
+    if (null != seen.read && null != seen.write) {
+      return { read: seen.read, write: seen.write, item: await usableItem(cand.entity) }
+    }
+  }
+  return undefined
+}
+
+
+const ITEM_ARGS = { id: 'corpus-item' }
+
+async function usableItem(entity) {
+  for (const cand of candidates(makeClient({}))) {
+    if (entity !== cand.entity || !['update', 'patch', 'remove'].includes(cand.op)) { continue }
+    try {
+      await makeClient({})[cand.accessor]()[cand.op]({ ...ITEM_ARGS }, {})
+      return cand
+    }
+    catch (e) { continue }
+  }
+  return undefined
+}
+
+
+// A step may wait before its call, may add request headers for its call, and
+// may pass `args` as the operation's first argument.
+async function runStep(client, ref, step) {
+  if (null != step.wait) {
+    await new Promise((resolve) => setTimeout(resolve, step.wait))
+  }
+  const options = client._rootctx.options
+  const prior = options.headers
+  if (null != step.headers) {
+    options.headers = { ...(prior || {}), ...step.headers }
+  }
+  try {
+    await client[ref.accessor]()[ref.op]({ ...(step.args || {}) }, step.ctrl || {})
+  }
+  finally {
+    options.headers = prior
+  }
+}
+
 // Replace #OP1/#OP2 throughout a case, keys included.
 function resolve(node, tokens) {
   if ('string' === typeof node) {
@@ -169,12 +229,23 @@ function resolve(node, tokens) {
   if (null != node && 'object' === typeof node) {
     const out = {}
     for (const k of Object.keys(node)) {
-      out[resolve(k, tokens)] = resolve(node[k], tokens)
+      Object.defineProperty(out, resolve(k, tokens), {
+        value: resolve(node[k], tokens), enumerable: true, writable: true, configurable: true,
+      })
     }
     return out
   }
   return node
 }
+
+
+// No case may write onto the shared prototypes, as a `__proto__` key can.
+function shared() {
+  return [Object.prototype, Object]
+    .map((o) => Object.getOwnPropertyNames(o).sort().join(',')).join(' | ')
+}
+
+const PRISTINE = shared()
 
 
 // Which #OPn tokens a case uses. A case wanting more operations than this SDK
@@ -214,6 +285,7 @@ describe('FeatureCorpus', () => {
   let corpus
   let ops = []
   let byKey = {}
+  let pair
 
 
   before(async () => {
@@ -221,6 +293,10 @@ describe('FeatureCorpus', () => {
     ops = await usableOps(2)
     byKey = {}
     for (const o of ops) { byKey[o.key] = o }
+    pair = await usablePair()
+    for (const o of pair ? [pair.read, pair.write, pair.item] : []) {
+      if (null != o) { byKey[o.key] = o }
+    }
   })
 
 
@@ -285,6 +361,20 @@ describe('FeatureCorpus', () => {
           continue
         }
 
+        const paired = /#(READ|WRITE|ITEM|OTHER)\b/.test(JSON.stringify(raw))
+        if (paired && null == pair) {
+          t.diagnostic(`skip "${raw.name}": needs a read and a write of one entity, this SDK offers none`)
+          continue
+        }
+        const other = null == pair ? undefined :
+          ops.find((o) => o.entity !== pair.read.entity)
+        const lacking = [['#ITEM', pair?.item], ['#OTHER', other]]
+          .find(([tok, op]) => null == op && new RegExp(tok + '\\b').test(JSON.stringify(raw)))
+        if (null != lacking) {
+          t.diagnostic(`skip "${raw.name}": needs ${lacking[0]}, which this SDK cannot drive`)
+          continue
+        }
+
         const missing = missingFeature(probe, raw)
         if (null != missing) {
           t.diagnostic(`skip "${raw.name}": needs the ${missing} feature, ` +
@@ -294,6 +384,12 @@ describe('FeatureCorpus', () => {
 
         const tokens = {}
         for (let i = 0; i < need; i++) { tokens['#OP' + (i + 1)] = ops[i].key }
+        if (paired && null != pair) {
+          tokens['#READ'] = pair.read.key
+          tokens['#WRITE'] = pair.write.key
+          if (null != pair.item) { tokens['#ITEM'] = pair.item.key }
+          if (null != other) { tokens['#OTHER'] = other.key }
+        }
 
         const kase = resolve(raw, tokens)
         ran++
@@ -307,7 +403,7 @@ describe('FeatureCorpus', () => {
             ok(null != ref, `${kase.name}: no operation ${step.op}`)
             let err = undefined
             try {
-              await client[ref.accessor]()[ref.op]({}, step.ctrl || {})
+              await runStep(client, ref, step)
             }
             catch (e) {
               err = e
@@ -324,6 +420,8 @@ describe('FeatureCorpus', () => {
           }
 
           subset(client[`_${name}`], kase.out, `${kase.name}: _${name}`)
+          deepStrictEqual(shared(), PRISTINE,
+            `${kase.name}: the case wrote onto Object or Object.prototype`)
         }
         catch (err) {
           const msg = String(err?.message ?? err)

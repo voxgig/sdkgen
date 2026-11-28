@@ -65,6 +65,9 @@ sub new {
   my $o = $gcp->($ctxmap, 'options');
   $self->{options} = Voxgig::Struct::ismap($o) ? $o : ($basectx ? $basectx->{options} : undef);
 
+  # The clean registry, beside the options rather than in them.
+  $self->{cleancfg} = $gcp->($ctxmap, 'cleancfg') // ($basectx ? $basectx->{cleancfg} : undef);
+
   my $e = $gcp->($ctxmap, 'entity');
   $self->{entity} = defined $e ? $e : ($basectx ? $basectx->{entity} : undef);
 

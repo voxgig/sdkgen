@@ -57,8 +57,10 @@ function sandboxLoad(file: string, shims: Record<string, any>): any {
 const struct: any = sandboxLoad(Path.join(UTILITY_DIR, 'StructUtility.ts'), {})
 
 
-// The media helpers a feature template may import, from the real template.
+// The media helpers and SDK transport a feature may import, as templated.
 const media: any = sandboxLoad(Path.join(UTILITY_DIR, 'MediaUtility.ts'), {})
+const fetcherUtility: any = sandboxLoad(Path.join(UTILITY_DIR, 'FetcherUtility.ts'),
+  { '../types': {}, './MediaUtility': media })
 
 
 // The real BaseFeature template, loaded once and shared as the superclass.
@@ -83,6 +85,7 @@ function loadFeatureModule(name: string): any {
     '../../Config': { FEATURE_PLUGINS: {} },
 
     '../../utility/MediaUtility': media,
+    '../../utility/FetcherUtility': fetcherUtility,
 
     // The GENERATED schema module, which exists only inside a real SDK: the
     // validate feature reads its per-entity specs from it. Stubbed EMPTY so
@@ -197,20 +200,21 @@ function makeClient(spec: {
     },
   }
 
+  const cleancfg = cleanmod.makeCleanConfig({ ...CLEAN_DEFAULTS, ...((spec.options || {}).clean || {}) })
+
   const client: any = {
     _mode: spec.mode || 'test',
     _features: [],
     _options: {
       base, headers: spec.headers || {}, feature: {},
       ...(spec.options || {}),
-      __derived__: { clean: cleanmod.makeCleanConfig({ ...CLEAN_DEFAULTS, ...((spec.options || {}).clean || {}) }) },
     },
     options() { return this._options },
     utility() { return utility },
   }
   for (const raw of [client._options.apikey, client._options.secret]
     .concat(cleanmod.splitvalues(client._options.clean?.values))) {
-    cleanmod.cleanAdd({ options: client._options }, raw)
+    cleanmod.cleanAdd({ cleancfg }, raw)
   }
 
   function makeErr(code: string, msg: string): any {
@@ -228,6 +232,7 @@ function makeClient(spec: {
       client,
       utility,
       options: client._options,
+      cleancfg,
       out: {},
       ctrl: over.ctrl || {},
       meta: {},

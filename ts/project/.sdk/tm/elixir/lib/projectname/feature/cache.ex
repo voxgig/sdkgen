@@ -1,13 +1,7 @@
 # ProjectName SDK cache feature
 #
-# Response caching for safe (read) requests. Wraps the active transport and
-# serves a fresh cached snapshot instead of hitting the network when the same
-# method+URL was fetched within `ttl` ms (default 5000). Only successful (2xx)
-# responses to cacheable methods (default: GET) are stored, keyed by
-# method+URL. The cache is bounded (`max` entries, default 256, oldest evicted
-# first) and every hit/miss is recorded on `client._cache` for inspection.
-# Response bodies are snapshotted on capture so both the current caller and
-# later hits can read the JSON body repeatedly.
+# Response caching for safe (read) requests, per client: see the features
+# reference for the key, the write invalidation and the Cache-Control rules.
 
 defmodule ProjectName.Feature.Cache do
   alias Voxgig.Struct, as: S
@@ -25,6 +19,7 @@ defmodule ProjectName.Feature.Cache do
 
     if active do
       S.setprop(f, "store", S.jm([]))
+      S.setprop(f, "secret", :crypto.strong_rand_bytes(32))
 
       utility = S.getprop(ctx, "utility")
       inner = S.getprop(utility, "fetcher")
@@ -47,39 +42,160 @@ defmodule ProjectName.Feature.Cache do
 
     methods = opt_list(S.getprop(opts, "methods"), ["GET"])
 
-    if method not in methods do
-      inner.(ctx, url, fetchdef)
+    cond do
+      method in methods ->
+        lookup(f, opts, store, method, ctx, url, fetchdef, inner)
+
+      method in ["GET", "HEAD"] ->
+        inner.(ctx, url, fetchdef)
+
+      true ->
+        try do
+          inner.(ctx, url, fetchdef)
+        after
+          invalidate(f, url)
+        end
+    end
+  end
+
+  defp lookup(f, opts, store, method, ctx, url, fetchdef, inner) do
+    headers = if S.ismap(fetchdef), do: S.getprop(fetchdef, "headers"), else: nil
+    key = method <> " " <> url <> " " <> digest(S.getprop(f, "secret"), headers)
+    now = F.now(f)
+    hit = S.getprop(store, key)
+
+    if hit != nil and S.getprop(hit, "expiry") > now do
+      track(f, "hit")
+      {replay(S.getprop(hit, "snapshot")), nil}
     else
-      key = method <> " " <> url
-      now = F.now(f)
-      hit = S.getprop(store, key)
+      {res, err} = inner.(ctx, url, fetchdef)
 
-      if hit != nil and S.getprop(hit, "expiry") > now do
-        track(f, "hit")
-        {replay(S.getprop(hit, "snapshot")), nil}
-      else
-        {res, err} = inner.(ctx, url, fetchdef)
+      cond do
+        # A body that declares another type than JSON passes by, unread.
+        err == nil and cacheable(res) and not json?(res) ->
+          track(f, "bypass")
+          {res, err}
 
-        cond do
-          # A body that declares another type than JSON passes by, unread.
-          err == nil and cacheable(res) and not json?(res) ->
+        err == nil and cacheable(res) ->
+          snap = snapshot(res)
+          ttl = lifetime(S.getprop(snap, "headers"), case S.getprop(opts, "ttl") do nil -> 5000; v -> v end)
+
+          if ttl <= 0 do
             track(f, "bypass")
-            {res, err}
-
-          err == nil and cacheable(res) ->
-            snap = snapshot(res)
-            ttl = case S.getprop(opts, "ttl") do nil -> 5000; v -> v end
+            {replay(snap), nil}
+          else
+            S.delprop(store, key)
             evict(f)
-            S.setprop(store, key, S.jm(["expiry", now + ttl, "snapshot", snap]))
+            S.setprop(store, key, S.jm(["expiry", now + ttl, "scope", scope(url), "snapshot", snap]))
             track(f, "miss")
             {replay(snap), nil}
+          end
 
-          true ->
-            track(f, "bypass")
-            {res, err}
-        end
+        true ->
+          track(f, "bypass")
+          {res, err}
       end
     end
+  end
+
+  defp header_text(nil), do: nil
+  defp header_text(v) when is_binary(v), do: v
+  defp header_text(v) when is_float(v) and v == trunc(v), do: Integer.to_string(trunc(v))
+  defp header_text(v), do: to_string(v)
+
+  defp digest(secret, headers) do
+    pairs =
+      if S.ismap(headers) do
+        H.entries(headers)
+        |> Enum.flat_map(fn {k, v} ->
+          case header_text(v) do
+            nil -> []
+            text -> [{String.downcase(to_string(k)), text}]
+          end
+        end)
+        |> Enum.sort()
+      else
+        []
+      end
+
+    text = Enum.map_join(pairs, "", fn {k, v} -> k <> ":" <> v <> "\n" end)
+    Base.encode16(:crypto.mac(:hmac, :sha256, secret, text), case: :lower)
+  end
+
+  defp invalidate(f, url) do
+    store = S.getprop(f, "store")
+    path = scope(url)
+    collection = parent(path)
+
+    H.entries(store)
+    |> Enum.filter(fn {_k, e} ->
+      entry = S.getprop(e, "scope")
+      under?(entry, path) or entry == collection
+    end)
+    |> Enum.each(fn {k, _e} -> S.delprop(store, k) end)
+  end
+
+  # The configured ttl capped by the response's Cache-Control; zero when the
+  # response may not be stored.
+  defp lifetime(headers, ttl) do
+    control =
+      if S.ismap(headers) do
+        Enum.find_value(H.entries(headers), "", fn {k, v} ->
+          if String.downcase(to_string(k)) == "cache-control", do: String.downcase(header_text(v) || "")
+        end)
+      else
+        ""
+      end
+
+    directives = control |> String.split(",") |> Enum.map(&String.trim/1)
+
+    if Enum.any?(directives, &(&1 in ["no-store", "private", "no-cache"])) do
+      0
+    else
+      Enum.reduce(directives, ttl, fn d, life ->
+        case Regex.run(~r/^max-age\s*=\s*"?(\d+)"?$/, d) do
+          [_, secs] -> min(life, String.to_integer(secs) * 1000)
+          _ -> life
+        end
+      end)
+    end
+  end
+
+  defp scope(url) do
+    [base | _] = String.split(to_string(url), ["?", "#"], parts: 2)
+    String.replace(base, ~r{/+$}, "")
+  end
+
+  defp parent(scope) do
+    root =
+      case :binary.match(scope, "://") do
+        :nomatch ->
+          0
+
+        {at, 3} ->
+          case :binary.match(scope, "/", scope: {at + 3, byte_size(scope) - at - 3}) do
+            :nomatch -> nil
+            {slash, 1} -> slash
+          end
+      end
+
+    case root do
+      nil ->
+        scope
+
+      root ->
+        cut =
+          case :binary.matches(scope, "/") do
+            [] -> 0
+            found -> found |> List.last() |> elem(0)
+          end
+
+        binary_part(scope, 0, max(cut, root))
+    end
+  end
+
+  defp under?(scope, prefix) do
+    scope == prefix or String.starts_with?(scope, prefix <> "/")
   end
 
   # A body the transport could not read as JSON passes through, for the operation to report.

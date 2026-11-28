@@ -763,6 +763,74 @@ class FeatureTest extends TestCase
         $this->assertCount(3, $rec->calls);
     }
 
+    public function test_cache_keys_on_the_request_headers(): void
+    {
+        $this->needs('cache');
+        $rec = new FtRecorder();
+        $h = new FtHarness([
+            ['name' => 'cache', 'options' => ['ttl' => 10000]],
+        ], $rec->server());
+        $h->op(['op' => 'load', 'path' => '/w/1', 'headers' => ['x-tenant' => 'tenant-a']]);
+        $h->op(['op' => 'load', 'path' => '/w/1', 'headers' => ['X-Tenant' => 'tenant-b']]);
+        $this->assertCount(2, $rec->calls);
+        $h->op(['op' => 'load', 'path' => '/w/1', 'headers' => ['x-tenant' => 'tenant-b']]);
+        $this->assertCount(2, $rec->calls);
+    }
+
+    public function test_cache_a_write_drops_its_collection(): void
+    {
+        $this->needs('cache');
+        $rec = new FtRecorder();
+        $h = new FtHarness([
+            ['name' => 'cache', 'options' => ['ttl' => 10000]],
+        ], $rec->server());
+        $paths = ['/w/1', '/w', '/w/1/part', '/other/1', '/w/2'];
+        foreach ($paths as $p) {
+            $h->op(['op' => 'load', 'path' => $p]);
+        }
+        $h->op(['op' => 'update', 'method' => 'PUT', 'path' => '/w/1']);
+        foreach ($paths as $p) {
+            $h->op(['op' => 'load', 'path' => $p]);
+        }
+        $this->assertCount(9, $rec->calls);
+        $this->assertSame(2, $h->client->_cache['hit']);
+    }
+
+    public function test_cache_control_prevents_storing(): void
+    {
+        $this->needs('cache');
+        foreach (['no-store', 'private', 'No-Cache', 'max-age=60, private'] as $control) {
+            $rec = new FtRecorder(function (int $_n) use ($control) {
+                return FtHarness::response(200, ['ok' => true], ['Cache-Control' => $control]);
+            });
+            $h = new FtHarness([
+                ['name' => 'cache', 'options' => ['ttl' => 10000]],
+            ], $rec->server());
+            $h->op(['op' => 'load', 'path' => '/w']);
+            $h->op(['op' => 'load', 'path' => '/w']);
+            $this->assertCount(2, $rec->calls, $control);
+        }
+    }
+
+    public function test_cache_max_age_caps_the_ttl(): void
+    {
+        $this->needs('cache');
+        $clock = new FtClock();
+        $rec = new FtRecorder(function (int $_n) {
+            return FtHarness::response(200, ['ok' => true], ['cache-control' => 'max-age=1']);
+        });
+        $h = new FtHarness([
+            ['name' => 'cache', 'options' => ['ttl' => 10000, 'now' => $clock->now()]],
+        ], $rec->server());
+        $h->op(['op' => 'load', 'path' => '/w']);
+        $clock->advance(500);
+        $h->op(['op' => 'load', 'path' => '/w']);
+        $this->assertCount(1, $rec->calls);
+        $clock->advance(600);
+        $h->op(['op' => 'load', 'path' => '/w']);
+        $this->assertCount(2, $rec->calls);
+    }
+
 
     // --- idempotency ----------------------------------------------------------
 
@@ -1036,6 +1104,28 @@ class FeatureTest extends TestCase
         $rec = $h->client->_audit['records'][0];
         $this->assertSame('anonymous', $rec['actor']);
         $this->assertEquals(42, $rec['ts']);
+    }
+
+
+    // --- one call, one id -----------------------------------------------------
+
+    public function test_telemetry_debug_and_audit_carry_one_calls_context_id(): void
+    {
+        $this->needs('telemetry', 'debug', 'audit');
+        $h = new FtHarness([
+            ['name' => 'telemetry'], ['name' => 'debug'], ['name' => 'audit'],
+        ]);
+        $h->op(['op' => 'load']);
+        $h->op(['op' => 'list']);
+        $calls = array_column($h->client->_audit['records'], 'correlationId');
+        $this->assertCount(2, $calls);
+        foreach ($calls as $id) {
+            $this->assertIsString($id);
+            $this->assertNotSame('', $id);
+        }
+        $this->assertNotSame($calls[0], $calls[1]);
+        $this->assertSame($calls, array_column($h->client->_telemetry['spans'], 'correlationId'));
+        $this->assertSame($calls, array_column($h->client->_debug['entries'], 'correlationId'));
     }
 
 

@@ -1,13 +1,12 @@
 -- ProjectName SDK cache feature
 --
--- Response caching for safe (read) requests. Wraps the active transport
--- and serves a fresh cached snapshot instead of hitting the network when
--- the same method+URL was fetched within `ttl` ms (default 5000). Only
--- successful (2xx) responses to cacheable methods (default: GET) are
--- stored, keyed by method+URL. The cache is bounded (`max` entries,
--- default 256, oldest evicted first) and every hit/miss/bypass is counted
--- on `client._cache`. Snapshots are replayed with a re-readable `json()`
--- body so both the original caller and later hits can parse repeatedly.
+-- Response caching for safe (read) requests, per client: see the features
+-- reference for the key, the write invalidation and the Cache-Control
+-- rules.
+
+-- Lua has no HMAC: SipHash-2-4 under a random per-client key separates
+-- header sets within one store without holding a header value. It is not a
+-- cryptographic commitment.
 
 local BaseFeature = require("feature.base_feature")
 local media = require("utility.media")
@@ -15,6 +14,138 @@ local media = require("utility.media")
 local CacheFeature = {}
 CacheFeature.__index = CacheFeature
 setmetatable(CacheFeature, { __index = BaseFeature })
+
+local UNSTORED = { ["no-store"] = true, ["private"] = true, ["no-cache"] = true }
+
+
+local function rotl(x, b)
+  return (x << b) | (x >> (64 - b))
+end
+
+
+local function sipround(v0, v1, v2, v3)
+  v0 = v0 + v1; v1 = rotl(v1, 13); v1 = v1 ~ v0; v0 = rotl(v0, 32)
+  v2 = v2 + v3; v3 = rotl(v3, 16); v3 = v3 ~ v2
+  v0 = v0 + v3; v3 = rotl(v3, 21); v3 = v3 ~ v0
+  v2 = v2 + v1; v1 = rotl(v1, 17); v1 = v1 ~ v2; v2 = rotl(v2, 32)
+  return v0, v1, v2, v3
+end
+
+
+local function siphash24(key, data)
+  local k0, k1 = string.unpack("<i8<i8", key)
+  local v0 = 0x736f6d6570736575 ~ k0
+  local v1 = 0x646f72616e646f6d ~ k1
+  local v2 = 0x6c7967656e657261 ~ k0
+  local v3 = 0x7465646279746573 ~ k1
+  local len = #data
+  local full = len - (len % 8)
+  for i = 1, full, 8 do
+    local m = string.unpack("<i8", data, i)
+    v3 = v3 ~ m
+    v0, v1, v2, v3 = sipround(v0, v1, v2, v3)
+    v0, v1, v2, v3 = sipround(v0, v1, v2, v3)
+    v0 = v0 ~ m
+  end
+  local b = len << 56
+  for i = 0, (len % 8) - 1 do
+    b = b | (string.byte(data, full + i + 1) << (8 * i))
+  end
+  v3 = v3 ~ b
+  v0, v1, v2, v3 = sipround(v0, v1, v2, v3)
+  v0, v1, v2, v3 = sipround(v0, v1, v2, v3)
+  v0 = v0 ~ b
+  v2 = v2 ~ 0xff
+  for _ = 1, 4 do
+    v0, v1, v2, v3 = sipround(v0, v1, v2, v3)
+  end
+  return v0 ~ v1 ~ v2 ~ v3
+end
+
+
+-- The system's random source where it has one; otherwise math.random, which
+-- is not a cryptographic generator.
+CacheFeature._siphash24 = siphash24
+
+
+local function cache_secret()
+  local f = io.open("/dev/urandom", "rb")
+  local bytes = f and f:read(16) or ""
+  if f then
+    f:close()
+  end
+  while #bytes < 16 do
+    bytes = bytes .. string.char(math.random(0, 255))
+  end
+  return bytes
+end
+
+
+local function header_text(v)
+  if v == nil then
+    return nil
+  end
+  if math.type(v) == "float" and v == math.floor(v) then
+    return string.format("%d", math.tointeger(v))
+  end
+  return tostring(v)
+end
+
+
+-- The configured ttl capped by the response's Cache-Control; zero when the
+-- response may not be stored.
+local function cache_lifetime(headers, ttl)
+  local control = ""
+  for k, v in pairs(headers or {}) do
+    if type(k) == "string" and string.lower(k) == "cache-control" then
+      control = string.lower(header_text(v) or "")
+    end
+  end
+  local life = ttl
+  for part in string.gmatch(control .. ",", "([^,]*),") do
+    local directive = string.match(part, "^%s*(.-)%s*$")
+    if UNSTORED[directive] then
+      return 0
+    end
+    local secs = string.match(directive, '^max%-age%s*=%s*"?(%d+)"?$')
+    if secs ~= nil then
+      life = math.min(life, tonumber(secs) * 1000)
+    end
+  end
+  return life
+end
+
+
+local function url_scope(url)
+  local base = string.match(url, "^[^?#]*")
+  return (string.gsub(base, "/+$", ""))
+end
+
+
+local function url_parent(scope)
+  local root = 0
+  local scheme = string.find(scope, "://", 1, true)
+  if scheme ~= nil then
+    root = string.find(scope, "/", scheme + 3, true)
+    if root == nil then
+      return scope
+    end
+    root = root - 1
+  end
+  local cut = 0
+  for i = #scope, 1, -1 do
+    if string.sub(scope, i, i) == "/" then
+      cut = i - 1
+      break
+    end
+  end
+  return string.sub(scope, 1, math.max(cut, root))
+end
+
+
+local function scope_under(scope, prefix)
+  return scope == prefix or string.sub(scope, 1, #prefix + 1) == prefix .. "/"
+end
 
 
 function CacheFeature.new()
@@ -46,6 +177,7 @@ function CacheFeature:init(ctx, options)
 
   self.store = {}
   self.order = {}
+  self.secret = cache_secret()
 
   local cache_self = self
   local utility = ctx.utility
@@ -72,10 +204,19 @@ function CacheFeature:_through(ctx, fullurl, fetchdef, inner)
     end
   end
   if not cacheable_method then
-    return inner(ctx, fullurl, fetchdef)
+    if method == "GET" or method == "HEAD" then
+      return inner(ctx, fullurl, fetchdef)
+    end
+    local out = table.pack(pcall(inner, ctx, fullurl, fetchdef))
+    self:_invalidate(fullurl)
+    if not out[1] then
+      error(out[2], 0)
+    end
+    return table.unpack(out, 2, out.n)
   end
 
-  local key = method .. " " .. fullurl
+  local headers = fetchdef ~= nil and fetchdef["headers"] or nil
+  local key = method .. " " .. fullurl .. " " .. self:_digest(headers)
   local now = self:_now()
   local hit = self.store[key]
 
@@ -94,18 +235,74 @@ function CacheFeature:_through(ctx, fullurl, fetchdef, inner)
 
   if self:_cacheable(res, err) then
     local snapshot = self:_snapshot(res)
-    local ttl = self.options["ttl"] == nil and 5000 or self.options["ttl"]
-    self:_evict()
-    if self.store[key] == nil then
-      table.insert(self.order, key)
+    local ttl = cache_lifetime(snapshot.headers,
+      self.options["ttl"] == nil and 5000 or self.options["ttl"])
+    if ttl <= 0 then
+      self:_track("bypass")
+      return self:_replay(snapshot), nil
     end
-    self.store[key] = { expiry = now + ttl, snapshot = snapshot }
+    self:_drop(key)
+    self:_evict()
+    table.insert(self.order, key)
+    self.store[key] = { expiry = now + ttl, scope = url_scope(fullurl), snapshot = snapshot }
     self:_track("miss")
     return self:_replay(snapshot), nil
   end
 
   self:_track("bypass")
   return res, err
+end
+
+
+function CacheFeature:_digest(headers)
+  local pairs_ = {}
+  if type(headers) == "table" then
+    for k, v in pairs(headers) do
+      local text = type(k) == "string" and header_text(v) or nil
+      if text ~= nil then
+        table.insert(pairs_, { string.lower(k), text })
+      end
+    end
+  end
+  table.sort(pairs_, function(a, b)
+    if a[1] ~= b[1] then
+      return a[1] < b[1]
+    end
+    return a[2] < b[2]
+  end)
+  local parts = {}
+  for _, p in ipairs(pairs_) do
+    table.insert(parts, p[1] .. ":" .. p[2] .. "\n")
+  end
+  return string.format("%016x", siphash24(self.secret, table.concat(parts)))
+end
+
+
+function CacheFeature:_invalidate(url)
+  local path = url_scope(url)
+  local collection = url_parent(path)
+  local dropped = {}
+  for key, entry in pairs(self.store) do
+    if scope_under(entry.scope, path) or entry.scope == collection then
+      table.insert(dropped, key)
+    end
+  end
+  for _, key in ipairs(dropped) do
+    self:_drop(key)
+  end
+end
+
+
+function CacheFeature:_drop(key)
+  if self.store[key] == nil then
+    return
+  end
+  self.store[key] = nil
+  for i = #self.order, 1, -1 do
+    if self.order[i] == key then
+      table.remove(self.order, i)
+    end
+  end
 end
 
 

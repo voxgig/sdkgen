@@ -53,6 +53,7 @@ defmodule ProjectName.Feature.Telemetry do
         S.jm([
           "traceId", gen_id(f, "trace"),
           "spanId", gen_id(f, "span"),
+          "correlationId", S.getprop(ctx, "id"),
           "name", entity <> "." <> opname,
           "start", F.now(f),
           "end", nil,

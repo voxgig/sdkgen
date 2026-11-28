@@ -44,14 +44,13 @@ module ProjectNameUtilities
       n.nil? || n.nan? || n.infinite? || n < 0 ? dflt : n.floor
     end
 
-    # The derived block make_options builds; a context without options
-    # (make_error is reached with a bare one) falls back to the schema
-    # defaults, so nothing leaves raw for want of a constructor. A Hash
-    # stands in for a context before one exists (make_options).
+    # The registry make_options builds; a context without one (make_error is
+    # reached with a bare one) falls back to the schema defaults, so nothing
+    # leaves raw for want of a constructor. A Hash stands in for a context
+    # before one exists (make_options).
     def self.config(ctx)
-      opts = ctx.respond_to?(:options) ? ctx.options : (ctx.is_a?(Hash) ? ctx["options"] : nil)
-      derived = opts.is_a?(Hash) ? VoxgigStruct.getpath(opts, "__derived__.clean") : nil
-      return derived if derived.is_a?(Hash)
+      cfg = ctx.respond_to?(:cleancfg) ? ctx.cleancfg : (ctx.is_a?(Hash) ? ctx["cleancfg"] : nil)
+      return cfg if cfg.is_a?(Hash)
       make_config(ProjectNameSchema::OPTSPEC["clean"])
     end
 

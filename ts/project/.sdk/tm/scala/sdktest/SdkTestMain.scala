@@ -428,6 +428,34 @@ object SdkTestMain {
         (sent.get(1).get("headers") eq b.ctx.response.headers),
         "the cache handed on a copy it had read")
       eqI("cache.notJson.bypass", 2, f.bypass) }
+    { val rec = new FhRecorder()
+      val h = fhMake((c, u, fd) => rec.fetch(c, u, fd), fhF(new CacheFeature(), om("ttl" -> I(10000))))
+      h.op(fhOp("load").withPath("/w/1").withHeaders(om("x-tenant" -> "tenant-a")))
+      h.op(fhOp("load").withPath("/w/1").withHeaders(om("X-Tenant" -> "tenant-b")))
+      eqI("cache.tenantHeader", 2, rec.calls.size())
+      h.op(fhOp("load").withPath("/w/1").withHeaders(om("x-tenant" -> "tenant-b")))
+      eqI("cache.sameHeaders", 2, rec.calls.size()) }
+    { val rec = new FhRecorder(); val f = new CacheFeature()
+      val h = fhMake((c, u, fd) => rec.fetch(c, u, fd), fhF(f, om("ttl" -> I(10000))))
+      val paths = Seq("/w/1", "/w", "/w/1/part", "/other/1", "/w/2")
+      paths.foreach(p => h.op(fhOp("load").withPath(p)))
+      h.op(fhOp("update").withMethod("PUT").withPath("/w/1"))
+      paths.foreach(p => h.op(fhOp("load").withPath(p)))
+      eqI("cache.writeDrops", 9, rec.calls.size()); eqI("cache.writeKeepsOther", 2, f.hit) }
+    for (control <- Seq("no-store", "private", "No-Cache", "max-age=60, private")) {
+      val rec = new FhRecorder()
+      rec.reply = (n, fd) => fhResponse(200, om("ok" -> B(true)), om("Cache-Control" -> control))
+      val h = fhMake((c, u, fd) => rec.fetch(c, u, fd), fhF(new CacheFeature(), om("ttl" -> I(10000))))
+      h.op(fhOp("load").withPath("/w")); h.op(fhOp("load").withPath("/w"))
+      eqI("cache.unstored " + control, 2, rec.calls.size())
+    }
+    { val clk = new FhClock(); val rec = new FhRecorder()
+      rec.reply = (n, fd) => fhResponse(200, om("ok" -> B(true)), om("cache-control" -> "max-age=1"))
+      val h = fhMake((c, u, fd) => rec.fetch(c, u, fd), fhF(new CacheFeature(), om("ttl" -> I(10000), "now" -> f0(clk.nowFn))))
+      h.op(fhOp("load").withPath("/w")); clk.advance(500); h.op(fhOp("load").withPath("/w"))
+      eqI("cache.insideMaxAge", 1, rec.calls.size())
+      clk.advance(600); h.op(fhOp("load").withPath("/w"))
+      eqI("cache.maxAge", 2, rec.calls.size()) }
   }
 
   private def testIdempotency(): Unit = {
@@ -539,6 +567,28 @@ object SdkTestMain {
     { val f = new AuditFeature()
       val h = fhMake(null, fhF(f, om("active" -> B(false))))
       h.op(fhOp("load")); eqI("audit.inactive", 0, f.records.size()) }
+  }
+
+  private def testCorrelation(): Unit = {
+    { val telemetry = new TelemetryFeature(); val debug = new DebugFeature(); val audit = new AuditFeature()
+      val h = fhMake(null, fhF(telemetry, null), fhF(debug, null), fhF(audit, null))
+      h.op(fhOp("load")); h.op(fhOp("list"))
+      def ids(recs: JList[JMap[String, Object]]): JList[Object] = {
+        val out = new ArrayList[Object]()
+        val it = recs.iterator()
+        while (it.hasNext) out.add(it.next().get("correlationId"))
+        out
+      }
+      val calls = ids(audit.records)
+      eqI("correlation.calls", 2, calls.size())
+      val it = calls.iterator()
+      while (it.hasNext) {
+        val id = it.next()
+        check("correlation.id", id.isInstanceOf[String] && "" != id, "expected a context id, got " + calls)
+      }
+      check("correlation.distinct", 2 == calls.size() && !jeq(calls.get(0), calls.get(1)), "expected a different id per call, got " + calls)
+      eq("correlation.spans", calls, ids(telemetry.spans))
+      eq("correlation.debug", calls, ids(debug.entries)) }
   }
 
   private def testClienttrack(): Unit = {
@@ -1048,7 +1098,8 @@ object SdkTestMain {
       "netsim" -> testNetsim, "retry" -> testRetry, "timeout" -> testTimeout,
       "ratelimit" -> testRatelimit, "cache" -> testCache, "idempotency" -> testIdempotency,
       "rbac" -> testRbac, "metrics" -> testMetrics, "telemetry" -> testTelemetry,
-      "debug" -> testDebug, "audit" -> testAudit, "clienttrack" -> testClienttrack,
+      "debug" -> testDebug, "audit" -> testAudit, "correlation" -> testCorrelation,
+      "clienttrack" -> testClienttrack,
       "paging" -> testPaging, "streaming" -> testStreaming, "proxy" -> testProxy,
       "composition" -> testComposition, "featureAdd" -> testFeatureAdd,
       "featureOrder" -> testFeatureOrder, "entityCrud" -> testEntityCrud,

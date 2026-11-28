@@ -266,9 +266,11 @@ final class MakeOptions {
     }
 
     Map<String, Object> derived = new LinkedHashMap<>();
-    derived.put("clean", cleancfg);
     derived.put("featureorder", featureorder);
     opts.put("__derived__", derived);
+
+    // Beside the options, not in them: optionsMap hands them to callers.
+    ctx.cleancfg = cleancfg;
 
     // Again over the merged result: the config's own defaults can carry one.
     Clean.addSensitiveOptions(cleancfg, without(opts, "clean", "__derived__"));

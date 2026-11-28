@@ -61,8 +61,8 @@ pub fn make_options_util(ctx: &Rc<Context>) -> Result<Value, ProjectNameError> {
     let optspec = crate::core::schema::optspec();
 
     // The secret registry exists BEFORE validation, fed from the raw input.
-    // Its block is Rc-shared: what is registered into `cleanopts` here is
-    // what `opts.__derived__.clean` carries out below.
+    // Its block is Rc-shared: what is registered here is what the context's
+    // `cleancfg` carries out below.
     let cleancfg = clean::make_clean_config(&vs::merge(
         &ja(vec![
             Value::empty_map(),
@@ -72,11 +72,10 @@ pub fn make_options_util(ctx: &Rc<Context>) -> Result<Value, ProjectNameError> {
         ]),
         None,
     ));
-    let cleanopts = jo(vec![("__derived__", jo(vec![("clean", cleancfg.clone())]))]);
-    clean::clean_add_sensitive_opts(&cleanopts, &without(&opts, &["clean"]));
+    clean::clean_add_sensitive_cfg(&cleancfg, &without(&opts, &["clean"]));
     for src in [&cfgopts, &opts] {
         for value in clean::splitvalues(&getpath(&["clean", "values"], src)) {
-            clean::clean_add_opts(&cleanopts, &value);
+            clean::clean_add_cfg(&cleancfg, &value);
         }
     }
 
@@ -200,14 +199,12 @@ pub fn make_options_util(ctx: &Rc<Context>) -> Result<Value, ProjectNameError> {
     let order_list =
         Value::list(feature_order.into_iter().map(|n| Value::str(n)).collect());
 
-    setp(
-        &opts,
-        "__derived__",
-        jo(vec![("clean", cleancfg), ("featureorder", order_list)]),
-    );
+    setp(&opts, "__derived__", jo(vec![("featureorder", order_list)]));
+
+    *ctx.cleancfg.borrow_mut() = cleancfg.clone();
 
     // Again over the merged result: the config's own defaults can carry one.
-    clean::clean_add_sensitive_opts(&opts, &without(&opts, &["clean", "__derived__"]));
+    clean::clean_add_sensitive_cfg(&cleancfg, &without(&opts, &["clean", "__derived__"]));
 
     Ok(opts)
 }

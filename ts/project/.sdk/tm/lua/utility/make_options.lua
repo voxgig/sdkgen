@@ -180,7 +180,7 @@ local function make_options_util(ctx)
     vs.clone(cfgclean),
     vs.clone(rawclean),
   }))
-  local cleanctx = { options = { __derived__ = { clean = cleancfg } } }
+  local cleanctx = { cleancfg = cleancfg }
   cleanmod.clean_add_sensitive(cleanctx, secret_scan(opts, { clean = true, extend = true }))
   for _, block in ipairs({ cfgclean, rawclean }) do
     for _, raw in ipairs(cleanmod.splitvalues(block.values)) do
@@ -405,10 +405,10 @@ local function make_options_util(ctx)
   cleanmod.clean_add_sensitive(cleanctx,
     secret_scan(opts, { clean = true, extend = true, __derived__ = true }))
 
-  opts["__derived__"] = {
-    clean = cleancfg,
-    featureorder = featureorder,
-  }
+  opts["__derived__"] = { featureorder = featureorder }
+
+  -- Beside the options, not in them: options_map hands them to callers.
+  ctx.cleancfg = cleancfg
 
   return opts
 end

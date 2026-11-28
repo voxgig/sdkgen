@@ -13,10 +13,9 @@ using Voxgig.Struct;
 
 namespace ProjectNameSdk.Util;
 
-// The derived clean block, MUTABLE after MakeOptions since features register
+// The clean registry, MUTABLE after MakeOptions since features register
 // values later. Fields rather than properties: System.Text.Json serialises
-// properties, so a JSON of the options shows this block as {} and never the
-// registry it holds.
+// properties, so a JSON of a context never shows the registry it holds.
 public sealed class CleanConfig
 {
     public bool Active = true;
@@ -119,15 +118,11 @@ public static partial class SdkUtility
         };
     }
 
-    // A context without options (MakeError accepts a bare one) still masks by
-    // the schema defaults.
+    // A context without a registry (MakeError accepts a bare one) still masks
+    // by the schema defaults.
     internal static CleanConfig CleanConfigOf(Context? ctx)
     {
-        if (ctx?.Options != null &&
-            ctx.Options.TryGetValue("__derived__", out var draw) &&
-            draw is Dictionary<string, object?> derived &&
-            derived.TryGetValue("clean", out var craw) &&
-            craw is CleanConfig cfg)
+        if (ctx?.CleanCfg is CleanConfig cfg)
         {
             return cfg;
         }

@@ -410,7 +410,11 @@ Rules:
   each target's `test/feature/Corpus.test.*`. Feature cases use the ARRAY form
   of `options.feature` (position is add-order, and add-order is nesting order),
   and the tokens `#OP1`/`#OP2` for two operations the runner discovers from
-  the client — no case may name an entity. A section that runs but defers part
+  the client — no case may name an entity. `#READ`/`#WRITE` are a read and a
+  write of one entity, found the same way; a case using them skips, by name,
+  on an SDK with no such pair. A step may carry `headers` (added to the
+  client's default request headers for that call alone) and `wait`
+  (milliseconds slept before it). A section that runs but defers part
   of its subject says so with `partial:`, not `basic: pending:`. `ts`, `js`,
   `go`, `py`, `rb`, `php`, `perl` and `java` have runners; the other targets
   do not yet.
@@ -903,7 +907,11 @@ emitted broken source reached the fleet unchallenged.
   pipeline's own request. The registry is filled by `make_options` (raw
   input, BEFORE validate, so the constructor's own rejection is clean),
   `prepareAuth` (the Basic composite), the `secrets` feature (resolved values,
-  bought tokens) and `proxy` (URL userinfo). `err.ctx` stays for a debugger
+  bought tokens) and `proxy` (URL userinfo). It holds every credential in
+  plain form, so it lives on the client's root context beside the options
+  (`cleancfg`, inherited by every child context), never inside them:
+  `options()` returns what the caller set, and the sweep pins that by
+  serialising it. `err.ctx` stays for a debugger
   and is out of every serialiser. A hook sees the raw spec on purpose: it must
   read the real header to add its own. Configuration is the `clean` block of
   `main.kit.optspec`, once; `active: false` is the only opt-out. The sweep
@@ -1077,6 +1085,28 @@ emitted broken source reached the fleet unchallenged.
   `rust/feature/mod.rs` comes from `Main_rust`. And the shared test harness
   must not live in the file that gets dropped — go and csharp keep it in
   `feature_harness_test.go` / `FeatureHarness.cs` for exactly that reason.
+- **A table keyed by a string the CALLER supplies is not a plain object in
+  ts or js.** The cost feature's `actors` and `ops` are keyed by whatever the
+  caller names, and a key of `__proto__` reads the object's prototype, so
+  the increment that followed landed on `Object.prototype` (#510). A table
+  callers read back by key, as the features reference shows, is
+  `Object.create(null)`; one nothing reads from outside the feature is a
+  `Set` or a `Map`. The ts and js corpus runners check after every case that
+  neither shared prototype gained a property, and they DEFINE each case's
+  keys rather than assigning them, or a `__proto__` key in the fixture
+  vanishes before the assertion. The dynamic targets have no such hazard (a
+  py dict, an rb hash, a lua table and the rest keep the key as a key), so
+  this is a ts/js rule, not a parity gap.
+- **Per-call feature state lives on the CALL'S CONTEXT, never in a table on
+  the feature.** A feature lives as long as the client, so a table keyed by
+  context holds every finished call forever (#431: rb's audit Hash, perl's
+  `refaddr` map, cpp's id map). The once-per-call mark goes in `ctx.out`
+  (cpp's `out.extra`, c's `ctx_out_extra`), as go, java and py always did.
+  Removing the entry at `PreDone` is not enough: a non-2xx reaches `PreDone`
+  and then `PreUnexpected`, and the second would record the call again. An
+  address is not a key for it either, because a finished call's address is
+  reused. The "per-call feature state ends with the call" lane in
+  `generatedcompile.test.ts` runs each target's own pin.
 
 ---
 

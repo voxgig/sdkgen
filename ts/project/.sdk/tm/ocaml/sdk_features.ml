@@ -262,9 +262,93 @@ let ratelimit_feature () : feature =
 (* cache                                                               *)
 (* ------------------------------------------------------------------ *)
 
+(* No HMAC in the stdlib: HMAC-MD5 over Digest separates header sets within
+   one client's store without holding a header value. It is not a
+   cryptographic commitment. *)
+let cache_hmac (key : string) (msg : string) : string =
+  let key = if String.length key > 64 then Digest.string key else key in
+  let key = key ^ String.make (64 - String.length key) '\000' in
+  let pad c = String.map (fun ch -> Char.chr (Char.code ch lxor c)) key in
+  Digest.to_hex (Digest.string (pad 0x5c ^ Digest.string (pad 0x36 ^ msg)))
+
+let cache_secret () : string =
+  let from_os =
+    try
+      let ic = open_in_bin "/dev/urandom" in
+      Fun.protect ~finally:(fun () -> close_in_noerr ic) (fun () -> Some (really_input_string ic 32))
+    with _ -> None in
+  match from_os with
+  | Some s -> s
+  | None ->
+    let st = Random.State.make_self_init () in
+    String.init 32 (fun _ -> Char.chr (Random.State.int st 256))
+
+let cache_header_text (v : value) : string option =
+  match v with Noval | Null -> None | Str s -> Some s | _ -> Some (vstr_of v)
+
+let cache_digest (secret : string) (headers : value) : string =
+  let pairs = match headers with
+    | Map _ ->
+      List.filter_map (fun k ->
+          Option.map (fun t -> (string_lower k, t)) (cache_header_text (getp headers k))) (keysof headers)
+    | _ -> [] in
+  let text = String.concat "" (List.map (fun (k, v) -> k ^ ":" ^ v ^ "\n") (List.sort compare pairs)) in
+  cache_hmac secret text
+
+(* The configured ttl capped by the response's Cache-Control; zero when the
+   response may not be stored. *)
+let cache_lifetime (headers : value) (ttl : float) : float =
+  let control = match headers with
+    | Map _ ->
+      List.fold_left (fun acc k ->
+          if string_lower k = "cache-control" then
+            (match cache_header_text (getp headers k) with Some t -> string_lower t | None -> acc)
+          else acc) "" (keysof headers)
+    | _ -> "" in
+  let directives = List.map String.trim (String.split_on_char ',' control) in
+  if List.exists (fun d -> List.mem d ["no-store"; "private"; "no-cache"]) directives then 0.
+  else
+    List.fold_left (fun life d ->
+        let n = String.length d in
+        if n > 7 && String.sub d 0 7 = "max-age" then begin
+          let rest = String.trim (String.sub d 7 (n - 7)) in
+          if String.length rest > 0 && rest.[0] = '=' then begin
+            let v = String.trim (String.sub rest 1 (String.length rest - 1)) in
+            let lv = String.length v in
+            let v = if lv >= 2 && v.[0] = '"' && v.[lv - 1] = '"' then String.sub v 1 (lv - 2) else v in
+            let rec digits i = i >= String.length v || (v.[i] >= '0' && v.[i] <= '9' && digits (i + 1)) in
+            if v <> "" && digits 0 then
+              (match float_of_string_opt v with Some secs -> Float.min life (secs *. 1000.) | None -> life)
+            else life
+          end else life
+        end else life) ttl directives
+
+let cache_scope (url : string) : string =
+  let n = String.length url in
+  let rec cut i = if i >= n then n else (match url.[i] with '?' | '#' -> i | _ -> cut (i + 1)) in
+  let rec trim e = if e > 0 && url.[e - 1] = '/' then trim (e - 1) else e in
+  String.sub url 0 (trim (cut 0))
+
+let cache_parent (scope : string) : string =
+  let n = String.length scope in
+  let rec find_scheme i = if i + 3 > n then None else if String.sub scope i 3 = "://" then Some i else find_scheme (i + 1) in
+  let root = match find_scheme 0 with
+    | None -> Some 0
+    | Some at -> String.index_from_opt scope (at + 3) '/' in
+  match root with
+  | None -> scope
+  | Some root ->
+    let cut = match String.rindex_opt scope '/' with Some c -> c | None -> 0 in
+    String.sub scope 0 (max cut root)
+
+let cache_under (scope : string) (prefix : string) : bool =
+  let lp = String.length prefix in
+  scope = prefix || (String.length scope > lp && String.sub scope 0 lp = prefix && scope.[lp] = '/')
+
 let cache_feature () : feature =
   let options = ref (empty_map ()) in
   let store = ref [] in
+  let secret = ref "" in
   let f = { f_name = "cache"; f_version = "0.0.1"; f_active = true; f_options = Noval;
             f_init = (fun _ _ -> ()); f_hook = (fun _ _ -> ()) } in
   let track ctx kind =
@@ -293,12 +377,20 @@ let cache_feature () : feature =
   let evict () =
     let mx = opt_int !options "max" ~default:256 in
     while List.length !store >= mx do (match !store with _ :: tl -> store := tl | [] -> ()) done in
+  let invalidate url =
+    let path = cache_scope url in
+    let collection = cache_parent path in
+    store := List.filter (fun (_, e) ->
+        let scope = vstr_of (getp e "scope") in
+        not (cache_under scope path || scope = collection)) !store in
   let through ctx url fetchdef inner =
     let meth = match getp fetchdef "method" with Str s -> string_upper s | _ -> "GET" in
     let methods = List.map string_upper (opt_str_list !options "methods" ~default:["GET"]) in
-    if not (List.mem meth methods) then inner ctx url fetchdef
-    else begin
-      let key = meth ^ " " ^ url in
+    if not (List.mem meth methods) then begin
+      if meth = "GET" || meth = "HEAD" then inner ctx url fetchdef
+      else Fun.protect ~finally:(fun () -> invalidate url) (fun () -> inner ctx url fetchdef)
+    end else begin
+      let key = meth ^ " " ^ url ^ " " ^ cache_digest !secret (getp fetchdef "headers") in
       let now = now_of !options in
       match List.assoc_opt key !store with
       | Some hit when (match getp hit "expiry" with Num e -> e > now | _ -> false) ->
@@ -309,11 +401,16 @@ let cache_feature () : feature =
         if err = None && cacheable res && not (json res) then (track ctx "bypass"; (res, err))
         else if err = None && cacheable res then begin
           let snap = snapshot res in
-          let ttl = opt_num !options "ttl" ~default:5000. in
-          evict ();
-          store := (List.remove_assoc key !store) @ [(key, jo [("expiry", Num (now +. ttl)); ("snapshot", snap)])];
-          track ctx "miss";
-          (replay snap, None)
+          let ttl = cache_lifetime (getp snap "headers") (opt_num !options "ttl" ~default:5000.) in
+          if ttl <= 0. then (track ctx "bypass"; (replay snap, None))
+          else begin
+            store := List.remove_assoc key !store;
+            evict ();
+            store := !store @ [(key, jo [("expiry", Num (now +. ttl)); ("scope", Str (cache_scope url));
+                                         ("snapshot", snap)])];
+            track ctx "miss";
+            (replay snap, None)
+          end
         end else (track ctx "bypass"; (res, err))
     end in
   f.f_init <- (fun ctx opts ->
@@ -321,6 +418,7 @@ let cache_feature () : feature =
       f.f_active <- opt_active opts;
       if f.f_active then begin
         store := [];
+        secret := cache_secret ();
         let u = cu ctx in
         let inner = u.u_fetcher in
         u.u_fetcher <- (fun fctx url fd -> through fctx url fd inner)
@@ -665,6 +763,7 @@ let telemetry_feature () : feature =
           let entity = if ctx.c_op.op_entity <> "" then ctx.c_op.op_entity else "_" in
           let opname = if ctx.c_op.op_name <> "" then ctx.c_op.op_name else "_" in
           let span = jo [("traceId", Str (gen_id "trace")); ("spanId", Str (gen_id "span"));
+                         ("correlationId", Str ctx.c_id);
                          ("name", Str (entity ^ "." ^ opname)); ("start", Num (now_of !options));
                          ("end", Noval); ("durationMs", Noval); ("ok", Noval)] in
           scratch_set ctx "telemetry_span" span;
@@ -733,6 +832,7 @@ let debug_feature () : feature =
           let opname = (if ctx.c_op.op_entity <> "" then ctx.c_op.op_entity else "_") ^ "." ^ (if ctx.c_op.op_name <> "" then ctx.c_op.op_name else "_") in
           let entry = jo [
             ("op", Str opname);
+            ("correlationId", Str ctx.c_id);
             ("method", (match ctx.c_spec with Some s -> Str s.sp_method | None -> Noval));
             ("url", (match ctx.c_spec with Some s -> Str (if s.sp_url <> "" then s.sp_url else s.sp_path) | None -> Noval));
             ("headers", redact ctx (match ctx.c_spec with Some s -> s.sp_headers | None -> Noval));

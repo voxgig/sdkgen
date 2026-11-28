@@ -32,6 +32,7 @@ pub struct CtxSpec {
     pub config: Option<Value>,
     pub entopts: Option<Value>,
     pub options: Option<Value>,
+    pub cleancfg: Option<Value>,
     pub entity: Option<Rc<dyn Entity>>,
     pub shared: Option<Value>,
     pub opmap: Option<OpMap>,
@@ -57,6 +58,8 @@ pub struct Context {
     pub config: RefCell<Value>,
     pub entopts: RefCell<Value>,
     pub options: RefCell<Value>,
+    /// The clean registry, beside the options rather than in them.
+    pub cleancfg: RefCell<Value>,
     pub opmap: RefCell<OpMap>,
     pub response: RefCell<Option<Rc<RefCell<Response>>>>,
     pub result: RefCell<Option<Rc<RefCell<SdkResult>>>>,
@@ -135,6 +138,10 @@ impl Context {
             .options
             .or_else(|| basectx.map(|b| b.options.borrow().clone()))
             .unwrap_or(Value::Noval);
+        let cleancfg = ctxspec
+            .cleancfg
+            .or_else(|| basectx.map(|b| b.cleancfg.borrow().clone()))
+            .unwrap_or(Value::Noval);
         let entity = ctxspec
             .entity
             .or_else(|| basectx.and_then(|b| b.entity.borrow().clone()));
@@ -212,6 +219,7 @@ impl Context {
             config: RefCell::new(config),
             entopts: RefCell::new(entopts),
             options: RefCell::new(options),
+            cleancfg: RefCell::new(cleancfg),
             opmap: RefCell::new(opmap),
             response: RefCell::new(response),
             result: RefCell::new(result),

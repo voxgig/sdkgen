@@ -772,6 +772,106 @@ fn feature_cache_inactive_does_not_wrap() {
     assert_eq!(calls.borrow().len(), 2, "expected 2 calls");
 }
 
+fn fh_cache_load(h: &FhHarness, path: &str, headers: Value) {
+    h.op(FhOpSpec {
+        op: "load".to_string(),
+        path: path.to_string(),
+        headers,
+        ..Default::default()
+    });
+}
+
+#[test]
+fn feature_cache_keys_on_request_headers() {
+    if !fh_present(&["cache"]) {
+        return;
+    }
+    let (server, calls) = fh_recorder(None);
+    let f = Rc::new(RefCell::new(CacheFeature::new()));
+    let h = fh_make(Some(server), vec![(fr(&f), jo(vec![("ttl", Value::Num(10000.0))]))]);
+    fh_cache_load(&h, "/w/1", jo(vec![("x-tenant", Value::str("tenant-a"))]));
+    fh_cache_load(&h, "/w/1", jo(vec![("X-Tenant", Value::str("tenant-b"))]));
+    assert_eq!(calls.borrow().len(), 2, "a second tenant was served the first tenant's entry");
+    fh_cache_load(&h, "/w/1", jo(vec![("x-tenant", Value::str("tenant-b"))]));
+    assert_eq!(calls.borrow().len(), 2, "the same headers did not share an entry");
+}
+
+#[test]
+fn feature_cache_a_write_drops_its_collection() {
+    if !fh_present(&["cache"]) {
+        return;
+    }
+    let (server, calls) = fh_recorder(None);
+    let f = Rc::new(RefCell::new(CacheFeature::new()));
+    let h = fh_make(Some(server), vec![(fr(&f), jo(vec![("ttl", Value::Num(10000.0))]))]);
+    let paths = ["/w/1", "/w", "/w/1/part", "/other/1", "/w/2"];
+    for p in paths {
+        fh_cache_load(&h, p, Value::Noval);
+    }
+    h.op(FhOpSpec {
+        op: "update".to_string(),
+        method: "PUT".to_string(),
+        path: "/w/1".to_string(),
+        ..Default::default()
+    });
+    for p in paths {
+        fh_cache_load(&h, p, Value::Noval);
+    }
+    assert_eq!(calls.borrow().len(), 9, "expected the collection refetched and /other cached");
+    assert_eq!(f.borrow().track.borrow().hit, 2, "expected /other served from cache");
+}
+
+#[test]
+fn feature_cache_control_prevents_storing() {
+    if !fh_present(&["cache"]) {
+        return;
+    }
+    for control in ["no-store", "private", "No-Cache", "max-age=60, private"] {
+        let (server, calls) = fh_recorder(Some(Rc::new(move |_n, _fd| {
+            Ok(fh_response(
+                200,
+                jo(vec![("ok", Value::Bool(true))]),
+                jo(vec![("Cache-Control", Value::str(control))]),
+            ))
+        })));
+        let f = Rc::new(RefCell::new(CacheFeature::new()));
+        let h = fh_make(Some(server), vec![(fr(&f), jo(vec![("ttl", Value::Num(10000.0))]))]);
+        fh_cache_load(&h, "/w", Value::Noval);
+        fh_cache_load(&h, "/w", Value::Noval);
+        assert_eq!(calls.borrow().len(), 2, "{} was stored", control);
+    }
+}
+
+#[test]
+fn feature_cache_max_age_caps_the_ttl() {
+    if !fh_present(&["cache"]) {
+        return;
+    }
+    let clock = FhClock::new();
+    let (server, calls) = fh_recorder(Some(Rc::new(|_n, _fd| {
+        Ok(fh_response(
+            200,
+            jo(vec![("ok", Value::Bool(true))]),
+            jo(vec![("cache-control", Value::str("max-age=1"))]),
+        ))
+    })));
+    let f = Rc::new(RefCell::new(CacheFeature::new()));
+    let h = fh_make(
+        Some(server),
+        vec![(
+            fr(&f),
+            jo(vec![("ttl", Value::Num(10000.0)), ("now", clock.now_fn())]),
+        )],
+    );
+    fh_cache_load(&h, "/w", Value::Noval);
+    clock.advance(500);
+    fh_cache_load(&h, "/w", Value::Noval);
+    assert_eq!(calls.borrow().len(), 1, "expected a hit inside max-age");
+    clock.advance(600);
+    fh_cache_load(&h, "/w", Value::Noval);
+    assert_eq!(calls.borrow().len(), 2, "expected max-age=1 to expire the entry before the ttl");
+}
+
 // --- idempotency ----------------------------------------------------------------
 
 #[test]
@@ -1395,6 +1495,47 @@ fn feature_audit_inactive_records_nothing() {
     let h = fh_make(None, vec![(fr(&f), jo(vec![("active", Value::Bool(false))]))]);
     h.op(opspec("load"));
     assert_eq!(f.borrow().records.len(), 0, "expected no records");
+}
+
+// --- one call, one id -----------------------------------------------------------
+
+#[test]
+fn feature_telemetry_debug_audit_carry_one_calls_context_id() {
+    if !fh_present(&["telemetry", "debug", "audit"]) {
+        return;
+    }
+    let tf = Rc::new(RefCell::new(TelemetryFeature::new()));
+    let df = Rc::new(RefCell::new(DebugFeature::new()));
+    let af = Rc::new(RefCell::new(AuditFeature::new()));
+    let h = fh_make(
+        None,
+        vec![
+            (fr(&tf), Value::Noval),
+            (fr(&df), Value::Noval),
+            (fr(&af), Value::Noval),
+        ],
+    );
+    h.op(opspec("load"));
+    h.op(opspec("list"));
+    let ids = |recs: &[Value]| -> Vec<Value> {
+        recs.iter().map(|rec| getp(rec, "correlationId")).collect()
+    };
+    let calls = ids(&af.borrow().records);
+    assert_eq!(calls.len(), 2, "expected 2 audit records");
+    assert!(
+        calls
+            .iter()
+            .all(|id| matches!(id, Value::Str(s) if !s.is_empty())),
+        "expected non-empty string ids, got {:?}",
+        calls
+    );
+    assert_ne!(calls[0], calls[1], "expected one id per call");
+    assert_eq!(ids(&tf.borrow().spans), calls, "expected the spans' ids");
+    assert_eq!(
+        ids(&df.borrow().entries),
+        calls,
+        "expected the debug entries' ids"
+    );
 }
 
 // --- clienttrack ----------------------------------------------------------------

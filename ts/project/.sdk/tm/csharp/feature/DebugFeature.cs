@@ -47,6 +47,7 @@ public class DebugFeature : BaseFeature
         var entry = new Dictionary<string, object?>
         {
             ["op"] = entity + "." + opname,
+            ["correlationId"] = ctx.Id,
             ["start"] = FoptNow(_options)(),
         };
         if (ctx.Spec != null)

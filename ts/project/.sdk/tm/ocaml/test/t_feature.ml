@@ -215,7 +215,41 @@ let () =
         let (srv, calls) = recording_server () in
         let h = make_client ~server:srv [("cache", jo [("active", Bool false)])] in
         ignore (op h ~op:"load" ~path:"/x" ()); ignore (op h ~op:"load" ~path:"/x" ());
-        check_int "calls" (List.length !calls) 2)
+        check_int "calls" (List.length !calls) 2);
+    test "cache.keys_on_request_headers" (fun () ->
+        let (srv, calls) = recording_server () in
+        let h = make_client ~server:srv [("cache", jo [("ttl", Num 10000.)])] in
+        ignore (op h ~op:"load" ~path:"/w/1" ~headers:[("x-tenant", Str "tenant-a")] ());
+        ignore (op h ~op:"load" ~path:"/w/1" ~headers:[("X-Tenant", Str "tenant-b")] ());
+        check_int "tenant calls" (List.length !calls) 2;
+        ignore (op h ~op:"load" ~path:"/w/1" ~headers:[("x-tenant", Str "tenant-b")] ());
+        check_int "same headers calls" (List.length !calls) 2);
+    test "cache.write_drops_collection" (fun () ->
+        let (srv, calls) = recording_server () in
+        let h = make_client ~server:srv [("cache", jo [("ttl", Num 10000.)])] in
+        let paths = ["/w/1"; "/w"; "/w/1/part"; "/other/1"; "/w/2"] in
+        List.iter (fun p -> ignore (op h ~op:"load" ~path:p ())) paths;
+        ignore (op h ~op:"update" ~method_:"PUT" ~path:"/w/1" ());
+        List.iter (fun p -> ignore (op h ~op:"load" ~path:p ())) paths;
+        check_int "calls" (List.length !calls) 9;
+        check_vnum "hit" (getp (track h "cache") "hit") 2.);
+    test "cache.control_prevents_storing" (fun () ->
+        List.iter (fun control ->
+            let (srv, calls) = recording_server
+                ~reply:(fun _ _ -> (make_response ~headers:[("Cache-Control", Str control)] 200 (jo [("ok", Bool true)]), None)) () in
+            let h = make_client ~server:srv [("cache", jo [("ttl", Num 10000.)])] in
+            ignore (op h ~op:"load" ~path:"/w" ()); ignore (op h ~op:"load" ~path:"/w" ());
+            check_int control (List.length !calls) 2)
+          ["no-store"; "private"; "No-Cache"; "max-age=60, private"]);
+    test "cache.max_age_caps_ttl" (fun () ->
+        let c = make_clock () in
+        let (srv, calls) = recording_server
+            ~reply:(fun _ _ -> (make_response ~headers:[("cache-control", Str "max-age=1")] 200 (jo [("ok", Bool true)]), None)) () in
+        let h = make_client ~server:srv [("cache", jo [("ttl", Num 10000.); ("now", clock_now_fn c)])] in
+        ignore (op h ~op:"load" ~path:"/w" ()); clock_advance c 500.; ignore (op h ~op:"load" ~path:"/w" ());
+        check_int "inside max-age" (List.length !calls) 1;
+        clock_advance c 600.; ignore (op h ~op:"load" ~path:"/w" ());
+        check_int "after max-age" (List.length !calls) 2)
   end;
 
   (* ---------------- idempotency ---------------- *)
@@ -406,6 +440,22 @@ let () =
         let h = make_client [("audit", jo [("active", Bool false)])] in
         ignore (op h ~op:"load" ());
         check_int "records" (size (getp (track h "audit") "records")) 0)
+  end;
+
+  (* ---------------- one call, one id ---------------- *)
+  if has_feature "telemetry" && has_feature "debug" && has_feature "audit" then begin
+    test "telemetry_debug_audit.one_context_id" (fun () ->
+        let h = make_client [("telemetry", empty_map ()); ("debug", empty_map ()); ("audit", empty_map ())] in
+        ignore (op h ~op:"load" ());
+        ignore (op h ~op:"list" ());
+        let ids recs = ja (List.init (size recs) (fun i -> getp (getelem recs (Num (float_of_int i))) "correlationId")) in
+        let calls = ids (getp (track h "audit") "records") in
+        check_int "records" (size calls) 2;
+        check ("string ids " ^ stringify calls)
+          (List.for_all (function Str s -> s <> "" | _ -> false) (match calls with List r -> !r | _ -> []));
+        check "one id per call" (not (veq (getelem calls (Num 0.)) (getelem calls (Num 1.))));
+        check "span ids" (veq (ids (getp (track h "telemetry") "spans")) calls);
+        check "debug entry ids" (veq (ids (getp (track h "debug") "entries")) calls))
   end;
 
   (* ---------------- clienttrack ---------------- *)

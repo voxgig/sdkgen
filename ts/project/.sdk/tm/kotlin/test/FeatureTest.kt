@@ -454,6 +454,65 @@ class FeatureTest {
   }
 
   @Test
+  fun cache_keysOnRequestHeaders() {
+    assumeFeatures("cache")
+    val rec = FhRecorder()
+    val h = fhMake(rec::fetch, fhF(CacheFeature(), fhMap("ttl", 10000)))
+    h.op(fhOp("load").path("/w/1").headers(fhMap("x-tenant", "tenant-a")))
+    h.op(fhOp("load").path("/w/1").headers(fhMap("X-Tenant", "tenant-b")))
+    assertEquals(2, rec.calls.size, "a second tenant was served the first tenant's entry")
+    h.op(fhOp("load").path("/w/1").headers(fhMap("x-tenant", "tenant-b")))
+    assertEquals(2, rec.calls.size, "the same headers did not share an entry")
+  }
+
+  @Test
+  fun cache_aWriteDropsItsCollection() {
+    assumeFeatures("cache")
+    val rec = FhRecorder()
+    val f = CacheFeature()
+    val h = fhMake(rec::fetch, fhF(f, fhMap("ttl", 10000)))
+    val paths = listOf("/w/1", "/w", "/w/1/part", "/other/1", "/w/2")
+    for (p in paths) {
+      h.op(fhOp("load").path(p))
+    }
+    h.op(fhOp("update").method("PUT").path("/w/1"))
+    for (p in paths) {
+      h.op(fhOp("load").path(p))
+    }
+    assertEquals(9, rec.calls.size, "expected the collection refetched and /other cached")
+    assertEquals(2, f.hit, "expected /other served from cache")
+  }
+
+  @Test
+  fun cache_cacheControlPreventsStoring() {
+    assumeFeatures("cache")
+    for (control in listOf("no-store", "private", "No-Cache", "max-age=60, private")) {
+      val rec = FhRecorder()
+      rec.reply = { _, _ -> fhResponse(200, fhMap("ok", true), fhMap("Cache-Control", control)) }
+      val h = fhMake(rec::fetch, fhF(CacheFeature(), fhMap("ttl", 10000)))
+      h.op(fhOp("load").path("/w"))
+      h.op(fhOp("load").path("/w"))
+      assertEquals(2, rec.calls.size, "$control was stored")
+    }
+  }
+
+  @Test
+  fun cache_maxAgeCapsTheTtl() {
+    assumeFeatures("cache")
+    val clock = FhClock()
+    val rec = FhRecorder()
+    rec.reply = { _, _ -> fhResponse(200, fhMap("ok", true), fhMap("cache-control", "max-age=1")) }
+    val h = fhMake(rec::fetch, fhF(CacheFeature(), fhMap("ttl", 10000, "now", nowFn(clock))))
+    h.op(fhOp("load").path("/w"))
+    clock.advance(500)
+    h.op(fhOp("load").path("/w"))
+    assertEquals(1, rec.calls.size, "expected a hit inside max-age")
+    clock.advance(600)
+    h.op(fhOp("load").path("/w"))
+    assertEquals(2, rec.calls.size, "expected max-age=1 to expire the entry before the ttl")
+  }
+
+  @Test
   fun cache_inactiveDoesNotWrap() {
     assumeFeatures("cache")
     val rec = FhRecorder()
@@ -766,6 +825,26 @@ class FeatureTest {
     val h = fhMake(null, fhF(f, fhMap("active", false)))
     h.op(fhOp("load"))
     assertEquals(0, f.records.size, "expected no records")
+  }
+
+  // --- one call, one id -----------------------------------------------------------
+
+  @Test
+  fun correlation_telemetryDebugAndAuditCarryOneCallsContextId() {
+    assumeFeatures("telemetry", "debug", "audit")
+    val telemetry = TelemetryFeature()
+    val debug = DebugFeature()
+    val audit = AuditFeature()
+    val h = fhMake(null, fhF(telemetry, null), fhF(debug, null), fhF(audit, null))
+    h.op(fhOp("load"))
+    h.op(fhOp("list"))
+    val ids = { recs: List<Map<String, Any?>> -> recs.map { it["correlationId"] } }
+    val calls = ids(audit.records)
+    assertEquals(2, calls.size, "expected one audit record per call")
+    assertTrue(calls.all { it is String && "" != it }, "expected a context id per call, got $calls")
+    assertNotEquals(calls[0], calls[1], "expected a different id per call")
+    assertEquals(calls, ids(telemetry.spans), "expected the spans to carry the audit ids")
+    assertEquals(calls, ids(debug.entries), "expected the debug entries to carry the audit ids")
   }
 
   // --- clienttrack ----------------------------------------------------------------

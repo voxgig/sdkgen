@@ -645,6 +645,67 @@ func TestFeatureCache(t *testing.T) {
 		}
 	})
 
+	t.Run("keys-on-request-headers", func(t *testing.T) {
+		rec := &fhRecorder{}
+		h := fhMake(rec.fetch, fhF(feat.NewCacheFeature(), map[string]any{"ttl": 10000}))
+		h.op(fhOpSpec{op: "load", path: "/w/1", headers: map[string]any{"x-tenant": "tenant-a"}})
+		h.op(fhOpSpec{op: "load", path: "/w/1", headers: map[string]any{"X-Tenant": "tenant-b"}})
+		if len(rec.calls) != 2 {
+			t.Errorf("a second tenant was served the first tenant's entry: %d calls", len(rec.calls))
+		}
+		h.op(fhOpSpec{op: "load", path: "/w/1", headers: map[string]any{"x-tenant": "tenant-b"}})
+		if len(rec.calls) != 2 {
+			t.Errorf("the same headers did not share an entry: %d calls", len(rec.calls))
+		}
+	})
+
+	t.Run("a-write-drops-its-collection", func(t *testing.T) {
+		rec := &fhRecorder{}
+		h := fhMake(rec.fetch, fhF(feat.NewCacheFeature(), map[string]any{"ttl": 10000}))
+		paths := []string{"/w/1", "/w", "/w/1/part", "/other/1", "/w/2"}
+		for _, p := range paths {
+			h.op(fhOpSpec{op: "load", path: p})
+		}
+		h.op(fhOpSpec{op: "update", method: "PUT", path: "/w/1"})
+		for _, p := range paths {
+			h.op(fhOpSpec{op: "load", path: p})
+		}
+		if len(rec.calls) != 9 {
+			t.Errorf("expected the collection refetched and /other cached: %d calls", len(rec.calls))
+		}
+	})
+
+	t.Run("cache-control-prevents-storing", func(t *testing.T) {
+		for _, control := range []string{"no-store", "private", "No-Cache", "max-age=60, private"} {
+			rec := &fhRecorder{reply: func(_ int, _ map[string]any) (any, error) {
+				return fhResponse(200, map[string]any{"ok": true}, map[string]any{"Cache-Control": control}), nil
+			}}
+			h := fhMake(rec.fetch, fhF(feat.NewCacheFeature(), map[string]any{"ttl": 10000}))
+			h.op(fhOpSpec{op: "load", path: "/w"})
+			h.op(fhOpSpec{op: "load", path: "/w"})
+			if len(rec.calls) != 2 {
+				t.Errorf("%s was stored: %d calls", control, len(rec.calls))
+			}
+		}
+	})
+
+	t.Run("max-age-caps-the-ttl", func(t *testing.T) {
+		clock := &fhClock{}
+		rec := &fhRecorder{reply: func(_ int, _ map[string]any) (any, error) {
+			return fhResponse(200, map[string]any{"ok": true}, map[string]any{"cache-control": "max-age=1"}), nil
+		}}
+		h := fhMake(rec.fetch, fhF(feat.NewCacheFeature(),
+			map[string]any{"ttl": 10000, "now": clock.now}))
+		h.op(fhOpSpec{op: "load", path: "/w"})
+		clock.advance(500)
+		h.op(fhOpSpec{op: "load", path: "/w"})
+		clock.advance(600)
+		h.op(fhOpSpec{op: "load", path: "/w"})
+		if len(rec.calls) != 2 {
+			t.Errorf("expected max-age=1 to expire the entry before the ttl: %d calls", len(rec.calls))
+		}
+	})
+
 	t.Run("inactive-does-not-wrap", func(t *testing.T) {
 		rec := &fhRecorder{}
 		h := fhMake(rec.fetch, fhF(feat.NewCacheFeature(), map[string]any{"active": false}))
@@ -1043,6 +1104,46 @@ func TestFeatureAudit(t *testing.T) {
 		h.op(fhOpSpec{op: "load"})
 		if len(f.Records) != 0 {
 			t.Errorf("expected no records, got %d", len(f.Records))
+		}
+	})
+}
+
+// --- one call, one id -----------------------------------------------------------
+
+func TestFeatureOneCallOneId(t *testing.T) {
+	fhSkipWithout(t, "telemetry", "debug", "audit")
+
+	t.Run("telemetry-debug-and-audit-carry-one-calls-context-id", func(t *testing.T) {
+		ft := feat.NewTelemetryFeature()
+		fd := feat.NewDebugFeature()
+		fa := feat.NewAuditFeature()
+		h := fhMake(nil, fhF(ft, nil), fhF(fd, nil), fhF(fa, nil))
+		h.op(fhOpSpec{op: "load"})
+		h.op(fhOpSpec{op: "list"})
+		ids := func(recs []map[string]any) []any {
+			out := []any{}
+			for _, rec := range recs {
+				out = append(out, rec["correlationId"])
+			}
+			return out
+		}
+		calls := ids(fa.Records)
+		if len(calls) != 2 {
+			t.Fatalf("expected 2 audit records, got %d", len(calls))
+		}
+		for _, id := range calls {
+			if s, ok := id.(string); !ok || s == "" {
+				t.Fatalf("expected non-empty string ids, got %v", calls)
+			}
+		}
+		if calls[0] == calls[1] {
+			t.Errorf("expected one id per call, got %v", calls)
+		}
+		if spans := ids(ft.Spans); !reflect.DeepEqual(spans, calls) {
+			t.Errorf("expected span ids %v, got %v", calls, spans)
+		}
+		if entries := ids(fd.Entries); !reflect.DeepEqual(entries, calls) {
+			t.Errorf("expected debug entry ids %v, got %v", calls, entries)
 		}
 	})
 }

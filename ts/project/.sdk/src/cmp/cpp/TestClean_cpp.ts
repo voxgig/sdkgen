@@ -738,6 +738,19 @@ static void no_credential_leaves_the_sdk() {
   ASSERT_TRUE(is_false(getp(direct, "ok")), "a transport failure should fail direct()");
   addForms(sinks, "direct", direct);
 
+  // The clean registry holds every credential in plain form, and is no option.
+  {
+    Value held = construct(vmap({{"apikey", Value(CANARY_APIKEY)}}))->optionsMap();
+    std::string heldjson = vs::jsonify(held, 0);
+    ASSERT_TRUE(getp(held, "apikey").is_string() && CANARY_APIKEY == getp(held, "apikey").as_string(),
+                "optionsMap keeps the caller's apikey");
+    std::string heldrest = heldjson;
+    size_t at = heldrest.find(CANARY_APIKEY);
+    if (std::string::npos != at) heldrest.erase(at, CANARY_APIKEY.size());
+    ASSERT_TRUE(leaks(heldrest).empty(),
+                "optionsMap carries a credential beyond the option the caller set: " + heldjson);
+  }
+
   std::string leaked;
   int leakcount = 0;
   for (const Sink& s : sinks) {

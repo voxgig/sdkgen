@@ -26,7 +26,7 @@ function makeOptions(ctx: Context) {
   const layer = (b: any) => null != b && 'object' === typeof b && !Array.isArray(b) ? b : {}
   const cleancfg = makeCleanConfig(merge([{}, (OPTSPEC as any).clean,
     struct.clone(layer(cfgopts.clean)), layer(opts.clean)]))
-  const cleanctx: any = { options: { __derived__: { clean: cleancfg } } }
+  const cleanctx: any = { cleancfg }
   cleanAddSensitive(cleanctx, settings(opts))
   for (const raw of [...splitvalues(cfgopts.clean?.values), ...splitvalues(opts.clean?.values)]) {
     cleanAdd(cleanctx, raw)
@@ -111,13 +111,13 @@ function makeOptions(ctx: Context) {
     featureorder = names
   }
 
-  opts.__derived__ = {
-    clean: cleancfg,
-    featureorder,
-  }
+  opts.__derived__ = { featureorder }
+
+  // Beside the options, not in them: options() hands them to callers.
+  ctx.cleancfg = cleancfg
 
   // Again over the merged result: the config's own defaults can carry one.
-  cleanAddSensitive({ options: opts } as any, settings(opts))
+  cleanAddSensitive(cleanctx, settings(opts))
 
   return opts
 }

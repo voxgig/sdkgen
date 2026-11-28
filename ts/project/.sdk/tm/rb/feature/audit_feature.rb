@@ -12,6 +12,8 @@
 require_relative 'base_feature'
 
 class ProjectNameAuditFeature < ProjectNameBaseFeature
+  AUDIT_SEEN_KEY = "audit_seen"
+
   def initialize
     super
     @version = "0.0.1"
@@ -21,7 +23,6 @@ class ProjectNameAuditFeature < ProjectNameBaseFeature
     @client = nil
     @options = {}
     @seq = 0
-    @seen = {}
   end
 
   def init(ctx, options)
@@ -29,7 +30,6 @@ class ProjectNameAuditFeature < ProjectNameBaseFeature
     @options = options.is_a?(Hash) ? options : {}
     @active = @options["active"] == true
     @seq = 0
-    @seen = {}
 
     return unless @active
 
@@ -53,9 +53,10 @@ class ProjectNameAuditFeature < ProjectNameBaseFeature
 
   def _emit(ctx, outcome)
     # One record per operation (PreDone + a following PreUnexpected on a
-    # non-2xx must not double-log).
-    return if @seen.key?(ctx)
-    @seen[ctx] = true
+    # non-2xx must not double-log). The marker lives on the context, so it
+    # goes when the call does.
+    return if ctx.out[AUDIT_SEEN_KEY] == true
+    ctx.out[AUDIT_SEEN_KEY] = true
     @seq += 1
 
     record = ctx.utility.clean.call(ctx, {

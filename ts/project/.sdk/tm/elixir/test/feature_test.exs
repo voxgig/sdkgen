@@ -458,6 +458,67 @@ defmodule ProjectName.FeatureTest do
     end
   end
 
+  test "cache keys on the request headers" do
+    if has?("cache") do
+      {server, calls} = FH.recording_server()
+      h = harness([fspec("cache", %{"ttl" => 10000})], %{server: server})
+      FH.op(h, %{path: "/w/1", headers: S.jm(["x-tenant", "tenant-a"])})
+      FH.op(h, %{path: "/w/1", headers: S.jm(["X-Tenant", "tenant-b"])})
+      assert S.size(calls) == 2
+      FH.op(h, %{path: "/w/1", headers: S.jm(["x-tenant", "tenant-b"])})
+      assert S.size(calls) == 2
+    end
+  end
+
+  test "cache drops a write's collection" do
+    if has?("cache") do
+      {server, calls} = FH.recording_server()
+      h = harness([fspec("cache", %{"ttl" => 10000})], %{server: server})
+      paths = ["/w/1", "/w", "/w/1/part", "/other/1", "/w/2"]
+      Enum.each(paths, fn p -> FH.op(h, %{path: p}) end)
+      FH.op(h, %{op: "update", method: "PUT", path: "/w/1"})
+      Enum.each(paths, fn p -> FH.op(h, %{path: p}) end)
+      assert S.size(calls) == 9
+      assert S.getprop(track(h, "_cache"), "hit") == 2
+    end
+  end
+
+  test "cache does not store what Cache-Control forbids" do
+    if has?("cache") do
+      for control <- ["no-store", "private", "No-Cache", "max-age=60, private"] do
+        {server, calls} =
+          FH.recording_server(fn _n, _fd ->
+            {FH.make_response(200, S.jm(["ok", true]), S.jm(["Cache-Control", control])), nil}
+          end)
+
+        h = harness([fspec("cache", %{"ttl" => 10000})], %{server: server})
+        FH.op(h, %{path: "/w"})
+        FH.op(h, %{path: "/w"})
+        assert S.size(calls) == 2, control
+      end
+    end
+  end
+
+  test "cache caps the ttl by max-age" do
+    if has?("cache") do
+      clock = FH.make_clock()
+
+      {server, calls} =
+        FH.recording_server(fn _n, _fd ->
+          {FH.make_response(200, S.jm(["ok", true]), S.jm(["cache-control", "max-age=1"])), nil}
+        end)
+
+      h = harness([fspec("cache", %{"ttl" => 10000, "now" => FH.clock_now(clock)})], %{server: server})
+      FH.op(h, %{path: "/w"})
+      FH.clock_advance(clock, 500)
+      FH.op(h, %{path: "/w"})
+      assert S.size(calls) == 1
+      FH.clock_advance(clock, 600)
+      FH.op(h, %{path: "/w"})
+      assert S.size(calls) == 2
+    end
+  end
+
   # === idempotency ===
 
   test "idempotency adds a key to mutating ops" do
@@ -711,6 +772,29 @@ defmodule ProjectName.FeatureTest do
       assert S.size(recs) == 2
       seqs = Enum.map(0..(S.size(recs) - 1), fn i -> S.getprop(S.getelem(recs, i), "seq") end)
       assert seqs == [2, 3]
+    end
+  end
+
+  # === one call, one id ===
+
+  test "telemetry, debug and audit carry one call's context id" do
+    if has?("telemetry") and has?("debug") and has?("audit") do
+      h = harness([fspec("telemetry"), fspec("debug"), fspec("audit")])
+      FH.op(h, %{op: "load"})
+      FH.op(h, %{op: "list"})
+
+      ids = fn recs ->
+        Enum.map(0..(S.size(recs) - 1)//1, fn i ->
+          S.getprop(S.getelem(recs, i), "correlationId")
+        end)
+      end
+
+      calls = ids.(S.getprop(track(h, "_audit"), "records"))
+      assert length(calls) == 2
+      assert Enum.all?(calls, fn id -> is_binary(id) and id != "" end), inspect(calls)
+      assert Enum.at(calls, 0) != Enum.at(calls, 1)
+      assert ids.(S.getprop(track(h, "_telemetry"), "spans")) == calls
+      assert ids.(S.getprop(track(h, "_debug"), "entries")) == calls
     end
   end
 

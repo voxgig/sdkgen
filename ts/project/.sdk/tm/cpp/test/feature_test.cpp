@@ -430,6 +430,79 @@ static void cache_inactiveDoesNotWrap() {
   ASSERT_EQ((int)rec->calls.size(), 2, "expected 2 calls");
 }
 
+// The reference vectors of the SipHash paper: key 00..0f, message 00..len-1.
+static void cache_siphashMatchesTheReferenceVectors() {
+  if (!have({"cache"})) return;
+  const std::vector<std::pair<size_t, uint64_t>> vectors = {{0, 0x726fdb47dd0e0e31ULL}, {1, 0x74f839c593dc67fdULL}, {2, 0x0d6c8009d9a94f5aULL}, {3, 0x85676696d7fb7e2dULL}, {4, 0xcf2794e0277187b7ULL}, {5, 0x18765564cd99a68dULL}, {6, 0xcbc9466e58fee3ceULL}, {7, 0xab0200f58b01d137ULL}, {8, 0x93f5f5799a932462ULL}, {15, 0xa129ca6149be45e5ULL}, {16, 0x3f2acc7f57c29bdbULL}, {63, 0x958a324ceb064572ULL}};
+  uint8_t key[16];
+  for (int i = 0; i < 16; i++) key[i] = static_cast<uint8_t>(i);
+  std::string msg;
+  for (int i = 0; i < 64; i++) msg.push_back(static_cast<char>(i));
+  for (const auto& v : vectors) {
+    ASSERT_TRUE(CacheFeature::siphash24(key, msg.substr(0, v.first)) == v.second,
+                "siphash reference vector " + std::to_string(v.first));
+  }
+}
+
+static void cache_keysOnRequestHeaders() {
+  if (!have({"cache"})) return;
+  auto rec = std::make_shared<FhRecorder>();
+  FetcherFn server = [rec](CtxPtr c, const std::string& u, const Value& fd) { return rec->fetch(c, u, fd); };
+  auto h = fhMake(server, {FF(std::make_shared<CacheFeature>(), fhMap({{"ttl", Value(10000)}}))});
+  h->op(fhOp("load").setPath("/w/1").setHeaders(fhMap({{"x-tenant", Value("tenant-a")}})));
+  h->op(fhOp("load").setPath("/w/1").setHeaders(fhMap({{"X-Tenant", Value("tenant-b")}})));
+  ASSERT_EQ((int)rec->calls.size(), 2, "a second tenant was served the first tenant's entry");
+  h->op(fhOp("load").setPath("/w/1").setHeaders(fhMap({{"x-tenant", Value("tenant-b")}})));
+  ASSERT_EQ((int)rec->calls.size(), 2, "the same headers did not share an entry");
+}
+
+static void cache_aWriteDropsItsCollection() {
+  if (!have({"cache"})) return;
+  auto rec = std::make_shared<FhRecorder>();
+  FetcherFn server = [rec](CtxPtr c, const std::string& u, const Value& fd) { return rec->fetch(c, u, fd); };
+  auto f = std::make_shared<CacheFeature>();
+  auto h = fhMake(server, {FF(f, fhMap({{"ttl", Value(10000)}}))});
+  const char* paths[] = {"/w/1", "/w", "/w/1/part", "/other/1", "/w/2"};
+  for (const char* p : paths) h->op(fhOp("load").setPath(p));
+  h->op(fhOp("update").setMethod("PUT").setPath("/w/1"));
+  for (const char* p : paths) h->op(fhOp("load").setPath(p));
+  ASSERT_EQ((int)rec->calls.size(), 9, "expected the collection refetched and /other cached");
+  ASSERT_EQ(f->hit, 2, "expected /other served from cache");
+}
+
+static void cache_cacheControlPreventsStoring() {
+  if (!have({"cache"})) return;
+  for (std::string control : {"no-store", "private", "No-Cache", "max-age=60, private"}) {
+    auto rec = std::make_shared<FhRecorder>();
+    rec->reply = [control](int, const Value&) {
+      return fhResponse(200, fhMap({{"ok", Value(true)}}), fhMap({{"Cache-Control", Value(control)}}));
+    };
+    FetcherFn server = [rec](CtxPtr c, const std::string& u, const Value& fd) { return rec->fetch(c, u, fd); };
+    auto h = fhMake(server, {FF(std::make_shared<CacheFeature>(), fhMap({{"ttl", Value(10000)}}))});
+    h->op(fhOp("load").setPath("/w"));
+    h->op(fhOp("load").setPath("/w"));
+    ASSERT_EQ((int)rec->calls.size(), 2, control + " was stored");
+  }
+}
+
+static void cache_maxAgeCapsTheTtl() {
+  if (!have({"cache"})) return;
+  FhClock clock;
+  auto rec = std::make_shared<FhRecorder>();
+  rec->reply = [](int, const Value&) {
+    return fhResponse(200, fhMap({{"ok", Value(true)}}), fhMap({{"cache-control", Value("max-age=1")}}));
+  };
+  FetcherFn server = [rec](CtxPtr c, const std::string& u, const Value& fd) { return rec->fetch(c, u, fd); };
+  auto h = fhMake(server, {FF(std::make_shared<CacheFeature>(), fhMap({{"ttl", Value(10000)}, {"now", clock.nowFn()}}))});
+  h->op(fhOp("load").setPath("/w"));
+  clock.advance(500);
+  h->op(fhOp("load").setPath("/w"));
+  ASSERT_EQ((int)rec->calls.size(), 1, "expected a hit inside max-age");
+  clock.advance(600);
+  h->op(fhOp("load").setPath("/w"));
+  ASSERT_EQ((int)rec->calls.size(), 2, "expected max-age=1 to expire the entry before the ttl");
+}
+
 // ============================ idempotency ==============================
 
 static void idempotency_addsKeyToMutatingOps() {
@@ -700,6 +773,53 @@ static void audit_inactiveRecordsNothing() {
   ASSERT_EQ((int)f->records.as_list()->size(), 0, "expected no records");
 }
 
+static void audit_perCallMarkerEndsWithTheCall() {
+  if (!have({"audit", "netsim"})) return;
+  auto f = std::make_shared<AuditFeature>();
+  auto h = fhMake(nullptr, {
+      FF(std::make_shared<NetsimFeature>(), fhMap({{"failEvery", Value(2)}, {"failStatus", Value(500)}})),
+      FF(f, Value::undef())});
+  std::vector<std::weak_ptr<Context>> held;
+  for (int i = 0; i < 20; i++) {
+    auto res = h->op(fhOp("load").setPath("/w/" + std::to_string(i)));
+    ASSERT_TRUE(nullptr != res.ctx, "expected the call's context");
+    if (nullptr == res.ctx) return;
+    ASSERT_TRUE(res.ctx->out.extra.count("audit_seen") == 1, "expected the marker on the call's context");
+    held.push_back(res.ctx);
+  }
+  ASSERT_EQ((int)f->records.as_list()->size(), 20, "expected one record per call");
+  int alive = 0;
+  for (auto& w : held) if (!w.expired()) alive++;
+  ASSERT_EQ(alive, 0, "expected no context kept alive past its call");
+}
+
+// ============================ one call, one id =========================
+
+static void telemetryDebugAudit_carryOneCallsContextId() {
+  if (!have({"telemetry", "debug", "audit"})) return;
+  auto tf = std::make_shared<TelemetryFeature>();
+  auto df = std::make_shared<DebugFeature>();
+  auto af = std::make_shared<AuditFeature>();
+  auto h = fhMake(nullptr, {FF(tf, Value::undef()), FF(df, Value::undef()), FF(af, Value::undef())});
+  h->op(fhOp("load"));
+  h->op(fhOp("list"));
+  auto ids = [](const Value& recs) {
+    Value out = vlist();
+    for (const auto& rec : *recs.as_list()) out.as_list()->push_back(getp(rec, "correlationId"));
+    return out;
+  };
+  Value calls = ids(af->records);
+  ASSERT_EQ((int)calls.as_list()->size(), 2, "expected 2 audit records");
+  for (const auto& id : *calls.as_list()) {
+    ASSERT_TRUE(id.is_string() && !id.as_string().empty(),
+                "expected a non-empty string id, got " + sdktest::vstr(calls));
+  }
+  ASSERT_TRUE(vs::getelem(calls, Value(int64_t(0))) != vs::getelem(calls, Value(int64_t(1))),
+              "expected one id per call");
+  ASSERT_EQ_VAL(ids(tf->spans), calls, "expected the spans' ids");
+  ASSERT_EQ_VAL(ids(df->entries), calls, "expected the debug entries' ids");
+}
+
 // ============================ clienttrack ==============================
 
 static void clienttrack_stableClientIdUniqueRequestIdsUa() {
@@ -935,6 +1055,11 @@ int main() {
   T_RUN(cache_refetchesAfterTtl);
   T_RUN(cache_evictsOldestPastMax);
   T_RUN(cache_inactiveDoesNotWrap);
+  T_RUN(cache_keysOnRequestHeaders);
+  T_RUN(cache_aWriteDropsItsCollection);
+  T_RUN(cache_cacheControlPreventsStoring);
+  T_RUN(cache_maxAgeCapsTheTtl);
+  T_RUN(cache_siphashMatchesTheReferenceVectors);
 
   T_RUN(idempotency_addsKeyToMutatingOps);
   T_RUN(idempotency_addsKeyByHttpMethod);
@@ -967,6 +1092,9 @@ int main() {
   T_RUN(audit_defaultActorAnonymous);
   T_RUN(audit_injectedClock);
   T_RUN(audit_inactiveRecordsNothing);
+  T_RUN(audit_perCallMarkerEndsWithTheCall);
+
+  T_RUN(telemetryDebugAudit_carryOneCallsContextId);
 
   T_RUN(clienttrack_stableClientIdUniqueRequestIdsUa);
   T_RUN(clienttrack_doesNotClobberCallerUa);

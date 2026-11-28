@@ -60,9 +60,7 @@ class ProjectNameMakeOptions
         $cfgclean = $block($cfgopts['clean'] ?? null);
         $specclean = $block(\Voxgig\Struct\Struct::getprop($optspec, 'clean'));
         $cleancfg = ProjectNameClean::config(array_merge($specclean, $cfgclean, $rawclean));
-        $cleanctx = new ProjectNameContext([
-            'options' => ['__derived__' => ['clean' => $cleancfg]],
-        ], null);
+        $cleanctx = new ProjectNameContext(['cleancfg' => $cleancfg], null);
         $rawopts = is_object($options) ? get_object_vars($options)
             : (is_array($options) ? $options : []);
         unset($rawopts['clean']);
@@ -314,10 +312,10 @@ class ProjectNameMakeOptions
         unset($merged['clean']);
         ProjectNameClean::add_options($cleanctx, $merged);
 
-        $opts['__derived__'] = [
-            'clean' => $cleancfg,
-            'featureorder' => $featureorder,
-        ];
+        $opts['__derived__'] = ['featureorder' => $featureorder];
+
+        // Beside the options, not in them: options_map hands them to callers.
+        $ctx->cleancfg = $cleancfg;
 
         return $opts;
     }

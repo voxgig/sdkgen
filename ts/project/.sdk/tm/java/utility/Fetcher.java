@@ -226,6 +226,10 @@ public final class Fetcher {
     catch (RuntimeException e) {
       throw new RuntimeException("fetch: invalid url: " + fullurl, e);
     }
+    // A bound in milliseconds, for a caller beneath the timeout feature.
+    if (fetchdef.get("timeout") instanceof Number && 0 < ((Number) fetchdef.get("timeout")).longValue()) {
+      reqb.timeout(java.time.Duration.ofMillis(((Number) fetchdef.get("timeout")).longValue()));
+    }
 
     boolean hasUA = false;
     Object headersRaw = fetchdef.get("headers");
@@ -379,7 +383,7 @@ public final class Fetcher {
     }
   }
 
-  static Object fetcher(Context ctx, String fullurl, Map<String, Object> fetchdef) {
+  public static Object fetcher(Context ctx, String fullurl, Map<String, Object> fetchdef) {
     if (!"live".equals(ctx.client.mode)) {
       throw ctx.makeError("fetch_mode_block",
           "Request blocked by mode: \"" + ctx.client.mode
