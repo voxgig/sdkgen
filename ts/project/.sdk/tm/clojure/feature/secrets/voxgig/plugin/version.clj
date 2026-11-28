@@ -1,5 +1,5 @@
-;; VENDORED: @voxgig/plugin sdk-20261125-1959-0 (clojure/src/voxgig/plugin/version.clj)
-;; Source: https://github.com/voxgig/plugin @ 8605cdc5e68a691130ae9b585baf8c0091a66351  [tag: sdk-20261125-1959-0]
+;; VENDORED: @voxgig/plugin sdk-20261127-1940-0 (clojure/src/voxgig/plugin/version.clj)
+;; Source: https://github.com/voxgig/plugin @ 8605cdc5e68a691130ae9b585baf8c0091a66351  [tag: sdk-20261127-1940-0]
 ;; License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 (ns voxgig.plugin.version
   "Versions and ranges (section 11.2).

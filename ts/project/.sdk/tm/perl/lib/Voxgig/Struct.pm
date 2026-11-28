@@ -1,5 +1,5 @@
-# VENDORED: @voxgig/struct 0.1.1 (perl/lib/Voxgig/Struct.pm)
-# Source: https://github.com/voxgig/struct @ 358af9d51c90b589a295a70b2165dbe4629eaf8e  [tag: sdk-20261125-1959-0]
+# VENDORED: @voxgig/struct 0.2.0 (perl/lib/Voxgig/Struct.pm)
+# Source: https://github.com/voxgig/struct @ f92879818ed0ae05c9da5e5af734e9f4892ffb6a  [tag: sdk-20261127-1940-0]
 # License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 # Copyright (c) 2025-2026 Voxgig Ltd. MIT LICENSE.
 # Perl port of the canonical TypeScript implementation (ts/src/StructUtility.ts).
@@ -11,7 +11,7 @@ use strict;
 use warnings;
 use utf8;
 
-our $VERSION = '0.1.1';
+our $VERSION = '0.2.0';
 
 use Scalar::Util qw(blessed reftype looks_like_number refaddr);
 use List::Util qw();

@@ -1,5 +1,5 @@
-// VENDORED: @voxgig/sekreto sdk-20261125-1959-0 (c/plugins/support.h)
-// Source: https://github.com/voxgig/sekreto @ ee837130bf444ca46a5a46181bdd6743e118898c  [tag: sdk-20261125-1959-0]
+// VENDORED: @voxgig/sekreto sdk-20261127-1940-0 (c/plugins/support.h)
+// Source: https://github.com/voxgig/sekreto @ ee837130bf444ca46a5a46181bdd6743e118898c  [tag: sdk-20261127-1940-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 /* What the PLUGINS share and the core must never link: the HTTP
  * transport, the TLS seam, the SHA-256 primitives SigV4 is built from,

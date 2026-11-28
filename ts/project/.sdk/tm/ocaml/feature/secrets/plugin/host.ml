@@ -1,5 +1,5 @@
-(* VENDORED: @voxgig/plugin sdk-20261125-1959-0 (ocaml/src/host.ml) *)
-(* Source: https://github.com/voxgig/plugin @ 8605cdc5e68a691130ae9b585baf8c0091a66351  [tag: sdk-20261125-1959-0] *)
+(* VENDORED: @voxgig/plugin sdk-20261127-1940-0 (ocaml/src/host.ml) *)
+(* Source: https://github.com/voxgig/plugin @ 8605cdc5e68a691130ae9b585baf8c0091a66351  [tag: sdk-20261127-1940-0] *)
 (* License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream. *)
 (* The host: the lifecycle state machine (§5), extension points (§6),
    and resource capture (§8).

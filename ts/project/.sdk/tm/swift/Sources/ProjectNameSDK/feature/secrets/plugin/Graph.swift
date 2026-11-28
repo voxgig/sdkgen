@@ -1,5 +1,5 @@
-// VENDORED: @voxgig/plugin sdk-20261125-1959-0 (swift/src/Graph.swift)
-// Source: https://github.com/voxgig/plugin @ 8605cdc5e68a691130ae9b585baf8c0091a66351  [tag: sdk-20261125-1959-0]
+// VENDORED: @voxgig/plugin sdk-20261127-1940-0 (swift/src/Graph.swift)
+// Source: https://github.com/voxgig/plugin @ 8605cdc5e68a691130ae9b585baf8c0091a66351  [tag: sdk-20261127-1940-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 /// Whole-graph resolution (section 11.4) - a phase, not a discovery.
 ///

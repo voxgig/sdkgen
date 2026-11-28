@@ -1,6 +1,6 @@
 <?php
-// VENDORED: @voxgig/omni sdk-20261125-1959-0 (php/src/Util.php)
-// Source: https://github.com/voxgig/omni @ ef55ad0fa48470146a81a1d652c859b03ebab6fc  [tag: sdk-20261125-1959-0]
+// VENDORED: @voxgig/omni sdk-20261127-1940-0 (php/src/Util.php)
+// Source: https://github.com/voxgig/omni @ ef55ad0fa48470146a81a1d652c859b03ebab6fc  [tag: sdk-20261127-1940-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 
 /**

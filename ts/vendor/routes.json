@@ -40,7 +40,7 @@
   "routed cannot see it. Declared, not derived - deriving it swept each",
   "port's CLI and tests in too."
  ],
- "tag": "sdk-20261125-1959-0",
+ "tag": "sdk-20261127-1940-0",
  "ignorenote": [
   "What a routed directory is EXPECTED to hold that is not vendored.",
   "--audit reports every OTHER unrouted file, so this list is what keeps a",
@@ -293,7 +293,7 @@
    "lib": "omni",
    "port": "javascript",
    "lang": "js",
-   "version": "0.1.5",
+   "version": "0.2.0",
    "dir": [
     "tm/js/test/vendor/omni"
    ],
@@ -412,7 +412,7 @@
    "lib": "omni",
    "port": "rust",
    "lang": "rust",
-   "version": "0.1.0",
+   "version": "0.2.0",
    "dir": [
     "tm/rust/tests/vendor/omni"
    ],
@@ -481,7 +481,7 @@
    "lib": "omni",
    "port": "typescript",
    "lang": "ts",
-   "version": "0.1.5",
+   "version": "0.2.0",
    "dir": [
     "tm/ts/test/vendor/omni"
    ],
@@ -2029,7 +2029,7 @@
    "lib": "struct",
    "port": "c",
    "lang": "c",
-   "version": "0.1.3",
+   "version": "0.2.0",
    "dir": [
     "tm/c/utility/struct"
    ],
@@ -2051,7 +2051,7 @@
    "lib": "struct",
    "port": "clojure",
    "lang": "clojure",
-   "version": "0.1.1",
+   "version": "0.2.0",
    "dir": [
     "tm/clojure/src/voxgig"
    ],
@@ -2063,7 +2063,7 @@
    "lib": "struct",
    "port": "cpp",
    "lang": "cpp",
-   "version": "0.1.4",
+   "version": "0.2.0",
    "dir": [
     "tm/cpp/utility/voxgigstruct"
    ],
@@ -2077,7 +2077,7 @@
    "lib": "struct",
    "port": "csharp",
    "lang": "csharp",
-   "version": "0.1.1",
+   "version": "0.2.0",
    "dir": [
     "tm/csharp/utility/struct"
    ],
@@ -2089,7 +2089,7 @@
    "lib": "struct",
    "port": "elixir",
    "lang": "elixir",
-   "version": "0.1.1",
+   "version": "0.2.0",
    "dir": [
     "tm/elixir/lib/utility/struct"
    ],
@@ -2101,7 +2101,7 @@
    "lib": "struct",
    "port": "go",
    "lang": "go",
-   "version": "0.2.0",
+   "version": "0.3.0",
    "file": {
     "go/voxgigstruct.go": "tm/go/utility/struct/voxgigstruct.go"
    }
@@ -2110,7 +2110,7 @@
    "lib": "struct",
    "port": "java",
    "lang": "java",
-   "version": "0.1.1",
+   "version": "0.2.0",
    "dir": [
     "tm/java/utility/struct"
    ],
@@ -2129,7 +2129,7 @@
    "lib": "struct",
    "port": "javascript",
    "lang": "js",
-   "version": "0.2.0",
+   "version": "0.3.0",
    "file": {
     "javascript/src/struct.js": "tm/js/src/utility/StructUtility.js"
    }
@@ -2138,7 +2138,7 @@
    "lib": "struct",
    "port": "kotlin",
    "lang": "kotlin",
-   "version": "0.1.1",
+   "version": "0.2.0",
    "dir": [
     "tm/kotlin/utility/struct"
    ],
@@ -2157,7 +2157,7 @@
    "lib": "struct",
    "port": "lua",
    "lang": "lua",
-   "version": "0.1.1",
+   "version": "0.2.0",
    "dir": [
     "tm/lua/utility/struct"
    ],
@@ -2177,7 +2177,7 @@
    "lib": "struct",
    "port": "ocaml",
    "lang": "ocaml",
-   "version": "0.1.1",
+   "version": "0.2.0",
    "dir": [
     "tm/ocaml/utility"
    ],
@@ -2190,7 +2190,7 @@
    "lib": "struct",
    "port": "perl",
    "lang": "perl",
-   "version": "0.1.1",
+   "version": "0.2.0",
    "file": {
     "perl/lib/Voxgig/Struct.pm": "tm/perl/lib/Voxgig/Struct.pm"
    }
@@ -2199,7 +2199,7 @@
    "lib": "struct",
    "port": "php",
    "lang": "php",
-   "version": "0.1.3",
+   "version": "0.2.0",
    "dir": [
     "tm/php/utility/struct"
    ],
@@ -2211,7 +2211,7 @@
    "lib": "struct",
    "port": "ruby",
    "lang": "rb",
-   "version": "0.1.1",
+   "version": "0.2.0",
    "dir": [
     "tm/rb/utility/struct"
    ],
@@ -2223,7 +2223,7 @@
    "lib": "struct",
    "port": "rust",
    "lang": "rust",
-   "version": "0.1.7",
+   "version": "0.2.0",
    "dir": [
     "tm/rust/utility/voxgigstruct"
    ],
@@ -2248,7 +2248,7 @@
    "lib": "struct",
    "port": "scala",
    "lang": "scala",
-   "version": "0.1.1",
+   "version": "0.2.0",
    "dir": [
     "tm/scala/utility/struct"
    ],
@@ -2268,7 +2268,7 @@
    "lib": "struct",
    "port": "swift",
    "lang": "swift",
-   "version": "0.1.3",
+   "version": "0.2.0",
    "dir": [
     "tm/swift/Sources/ProjectNameSDK/Struct"
    ],
@@ -2345,7 +2345,7 @@
    "lib": "struct",
    "port": "python",
    "lang": "py",
-   "version": "0.1.1",
+   "version": "0.2.0",
    "file": {
     "python/voxgig_struct/voxgig_struct.py": "tm/py/pkg/utility/voxgig_struct/voxgig_struct.py"
    }
@@ -2354,7 +2354,7 @@
    "lib": "struct",
    "port": "typescript",
    "lang": "ts",
-   "version": "0.4.0",
+   "version": "0.5.0",
    "file": {
     "typescript/src/StructUtility.ts": "tm/ts/src/utility/StructUtility.ts"
    }
@@ -2363,7 +2363,7 @@
    "lib": "struct",
    "port": "zig",
    "lang": "zig",
-   "version": "0.0.3",
+   "version": "0.1.0",
    "dir": [
     "tm/zig/utility/voxgigstruct"
    ],
